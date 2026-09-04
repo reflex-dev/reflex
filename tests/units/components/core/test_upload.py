@@ -298,6 +298,17 @@ def test_decode_event_args_decodes_json_object():
     assert _decode_event_args(json.dumps({"field": "value"})) == {"field": "value"}
 
 
+def test_decode_event_args_preserves_large_ints():
+    """A client-supplied integer beyond 64 bits must reach the handler exactly.
+
+    orjson rounds those to floats, so an upload arg carrying a large database
+    or snowflake id would be unpacked into the event as a rounded float.
+    """
+    big = 2**70 + 1
+
+    assert _decode_event_args(json.dumps({"row_id": big})) == {"row_id": big}
+
+
 def test_decode_event_args_missing_returns_empty():
     assert _decode_event_args(None) == {}
     assert _decode_event_args("") == {}

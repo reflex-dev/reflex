@@ -65,6 +65,7 @@ db = [
   "pydantic >=2.12.0,<3.0",
   "sqlmodel >=0.0.24,<0.1",
 ]
+orjson = ["reflex-base[orjson]"]
 pydantic = ["reflex-base[pydantic]"]
 
 [project.urls]
@@ -86,6 +87,7 @@ dev = [
   "hatchling",
   "libsass",
   "numpy",
+  "orjson",
   "pandas",
   "pillow",
   "playwright",
@@ -498,6 +500,9 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
+# Dev-only type checker with frequent releases; exempt so a fresh version is not
+# held back by the exclude-newer window.
+ty = false
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true

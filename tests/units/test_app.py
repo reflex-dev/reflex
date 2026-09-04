@@ -224,6 +224,118 @@ def test_default_app(app: App):
     assert app.admin_dash is None
 
 
+@pytest.fixture
+def restore_socketio_codec() -> Generator[None, None, None]:
+    """Restore the socket.io packet codec, which is a shared class attribute.
+
+    Yields:
+        None.
+    """
+    import engineio.packet
+    import socketio.packet
+
+    original = socketio.packet.Packet.json
+    original_engineio = engineio.packet.Packet.json
+    try:
+        yield
+    finally:
+        socketio.packet.Packet.json = original
+        engineio.packet.Packet.json = original_engineio
+
+
+def test_own_sio_codec_does_not_leak_to_other_servers(restore_socketio_codec: None):
+    """The server Reflex creates must not reconfigure anyone else's.
+
+    ``AsyncServer(json=...)`` assigns onto the shared ``socketio.packet.Packet``
+    and ``engineio.packet.Packet`` classes, so it would hand Reflex's sentinel
+    escaping to every other socket.io server and client in the process.
+    """
+    import engineio.packet
+    import socketio
+    import socketio.packet
+
+    from reflex.app import _SOCKET_JSON_CODEC
+
+    original = socketio.packet.Packet.json
+    original_engineio = engineio.packet.Packet.json
+    unrelated = socketio.AsyncServer(async_mode="asgi")
+
+    app = App()
+    app._enable_state()
+
+    own_packet_class: Any = app.sio.packet_class  # pyright: ignore[reportOptionalMemberAccess]
+    unrelated_packet_class: Any = unrelated.packet_class
+    assert own_packet_class.json is _SOCKET_JSON_CODEC
+    assert socketio.packet.Packet.json is original
+    assert engineio.packet.Packet.json is original_engineio
+    assert unrelated_packet_class.json is original
+
+
+def test_custom_sio_gets_sentinel_aware_codec(restore_socketio_codec: None):
+    """A custom server keeping the default codec gets Reflex's, so non-finite
+    floats and strings colliding with its sentinels round-trip escaped.
+    """
+    import socketio
+
+    from reflex.app import _SOCKET_JSON_CODEC
+
+    sio = socketio.AsyncServer(async_mode="asgi")
+    App(sio=sio)._enable_state()
+
+    packet_class: Any = sio.packet_class
+    assert packet_class.json is _SOCKET_JSON_CODEC
+    assert packet_class.json.dumps({"v": format.NAN_SENTINEL}) == (
+        f'{{"v":"{format.SENTINEL_ESCAPE_PREFIX}{format.NAN_SENTINEL}"}}'
+    )
+
+
+def test_custom_sio_keeps_explicit_codec(restore_socketio_codec: None):
+    """A codec the user passed to their own server is left alone."""
+    import socketio
+
+    codec = unittest.mock.Mock()
+    sio = socketio.AsyncServer(async_mode="asgi", json=codec)
+    App(sio=sio)._enable_state()
+
+    packet_class: Any = sio.packet_class
+    assert packet_class.json is codec
+
+
+def test_custom_sio_codec_does_not_leak_to_other_servers(
+    restore_socketio_codec: None,
+):
+    """Installing the codec must not reach socket.io servers Reflex does not own.
+
+    ``sio.packet_class`` is the shared ``socketio.packet.Packet`` class, so
+    assigning its ``json`` attribute would reconfigure every other socket.io
+    server and client in the process.
+    """
+    import socketio
+    import socketio.packet
+
+    original = socketio.packet.Packet.json
+    unrelated = socketio.AsyncServer(async_mode="asgi")
+
+    App(sio=socketio.AsyncServer(async_mode="asgi"))._enable_state()
+
+    unrelated_packet_class: Any = unrelated.packet_class
+    assert socketio.packet.Packet.json is original
+    assert unrelated_packet_class.json is original
+
+
+def test_socket_codec_preserves_large_ints():
+    """A client-sent integer beyond 64 bits must stay exact.
+
+    orjson rounds those to floats, so an event carrying a Snowflake or large
+    database ID would reach the handler as a rounded float.
+    """
+    from reflex.app import _SOCKET_JSON_CODEC
+
+    big = 2**70 + 1
+
+    assert _SOCKET_JSON_CODEC.loads(f'{{"id": {big}}}')["id"] == big
+
+
 def test_multiple_states_error(
     monkeypatch: pytest.MonkeyPatch,
     test_state: BaseState,

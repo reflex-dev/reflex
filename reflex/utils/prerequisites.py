@@ -514,6 +514,8 @@ def get_project_hash(raise_on_fail: bool = False) -> int | None:
     json_file = get_web_dir() / constants.Reflex.JSON
     if not json_file.exists() and not raise_on_fail:
         return None
+    # Must use stdlib json: orjson rounds integers beyond 64 bits to floats and
+    # project_hash is a 128-bit uuid int.
     data = json.loads(json_file.read_text())
     return data.get("project_hash")
 

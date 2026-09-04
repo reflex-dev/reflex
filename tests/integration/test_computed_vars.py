@@ -66,6 +66,11 @@ def ComputedVars():
         def special_floats(self) -> list[float]:
             return [42.9, float("nan"), float("inf"), float("-inf")]
 
+        # sentinel-colliding strings must survive the socket round trip
+        @rx.var(cache=True, initial_value=[])
+        def sentinel_strings(self) -> list[str]:
+            return ["__reflex_nan__", "__reflex_esc__x", "__reflex_inf__"]
+
         @rx.event
         def increment(self):
             self.count += 1
@@ -115,6 +120,11 @@ def ComputedVars():
                 rx.text(
                     State.special_floats.join(", "),
                     id="special_floats",
+                ),
+                rx.text("sentinel_strings:"),
+                rx.text(
+                    State.sentinel_strings.join(", "),
+                    id="sentinel_strings",
                 ),
             ),
         )
@@ -233,6 +243,10 @@ async def test_computed_vars(
     special_floats = driver.find_element(By.ID, "special_floats")
     assert special_floats
     assert special_floats.text == "42.9, NaN, Infinity, -Infinity"
+
+    sentinel_strings = driver.find_element(By.ID, "sentinel_strings")
+    assert sentinel_strings
+    assert sentinel_strings.text == "__reflex_nan__, __reflex_esc__x, __reflex_inf__"
 
     increment = driver.find_element(By.ID, "increment")
     assert increment.is_enabled()

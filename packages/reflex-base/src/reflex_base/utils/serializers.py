@@ -16,7 +16,17 @@ from datetime import date, datetime, time, timedelta
 from enum import Enum
 from importlib.util import find_spec
 from pathlib import Path
-from typing import Any, Literal, TypeVar, get_type_hints, overload
+from types import UnionType
+from typing import (
+    Any,
+    Literal,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
+)
 from uuid import UUID
 
 from reflex_base.constants.colors import Color
@@ -48,11 +58,31 @@ deserializers = {
 }
 
 
+# orjson serializes these without consulting ``default``. Datetimes and
+# dataclasses are absent because ``format`` passes those through explicitly.
+_ORJSON_NATIVE_TYPES = (Enum, UUID)
+
+
+def _union_members(type_: Any) -> tuple[Any, ...]:
+    """Return the members of a union annotation, or empty for anything else.
+
+    Args:
+        type_: The annotation a serializer was registered under.
+
+    Returns:
+        The union's members, or an empty tuple.
+    """
+    if get_origin(type_) in (Union, UnionType):
+        return get_args(type_)
+    return ()
+
+
 @overload
 def serializer(
     fn: None = None,
     to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]: ...
 
 
@@ -61,6 +91,7 @@ def serializer(
     fn: SERIALIZED_FUNCTION,
     to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> SERIALIZED_FUNCTION: ...
 
 
@@ -68,6 +99,7 @@ def serializer(
     fn: SERIALIZED_FUNCTION | None = None,
     to: Any = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> SERIALIZED_FUNCTION | Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]:
     """Decorator to add a serializer for a given type.
 
@@ -75,6 +107,8 @@ def serializer(
         fn: The function to decorate.
         to: The type returned by the serializer. If this is `str`, then any Var created from this type will be treated as a string.
         overwrite: Whether to overwrite the existing serializer.
+        _orjson_native_equivalent: Internal. orjson's native output already matches
+            this serializer, so keep the orjson fast paths enabled.
 
     Returns:
         The decorated function.
@@ -125,6 +159,17 @@ def serializer(
         # Register the serializer.
         SERIALIZERS[type_] = fn
         get_serializer.cache_clear()
+
+        # ``type_`` comes from an annotation, so it is not necessarily a class.
+        # A union registers under the union itself, and ``get_serializer``
+        # resolves a member through ``issubclass``, so its members count too.
+        if not _orjson_native_equivalent and any(
+            isinstance(candidate, type) and issubclass(candidate, _ORJSON_NATIVE_TYPES)
+            for candidate in (type_, *_union_members(type_))
+        ):
+            from reflex_base.utils.format import _mark_orjson_registry_shadowed
+
+            _mark_orjson_registry_shadowed()
 
         # Return the function.
         return fn
@@ -356,7 +401,8 @@ def serialize_path(path: Path) -> str:
     return str(path.as_posix())
 
 
-@serializer
+# orjson emits ``en.value`` for an Enum, exactly what this returns.
+@serializer(_orjson_native_equivalent=True)
 def serialize_enum(en: Enum) -> str:
     """Serialize a enum to a JSON string.
 
@@ -369,7 +415,8 @@ def serialize_enum(en: Enum) -> str:
     return en.value
 
 
-@serializer(to=str)
+# orjson emits ``str(uuid)`` for a UUID, exactly what this returns.
+@serializer(to=str, _orjson_native_equivalent=True)
 def serialize_uuid(uuid: UUID) -> str:
     """Serialize a UUID to a JSON string.
 
@@ -444,6 +491,26 @@ with contextlib.suppress(ImportError):
 with contextlib.suppress(ImportError):
     from plotly.graph_objects import Figure, layout
     from plotly.io import to_json
+    from plotly.io.json import config as plotly_json_config
+
+    def _loads_plotly(data: str) -> Any:
+        """Parse JSON that plotly produced, with the parser plotly dumped it with.
+
+        Args:
+            data: The JSON plotly emitted.
+
+        Returns:
+            The parsed figure or template data.
+        """
+        from reflex_base.utils.format import orjson_loads
+
+        # plotly's orjson engine and orjson_loads share the same 64-bit integer
+        # range, so the parse is exact whenever plotly dumped with orjson. Its
+        # stdlib engine can emit wider integers (a big id in customdata), which
+        # orjson would round to a float.
+        if plotly_json_config.default_engine == "json":
+            return json.loads(data)
+        return orjson_loads(data)
 
     @serializer
     def serialize_figure(figure: Figure) -> dict:
@@ -455,7 +522,7 @@ with contextlib.suppress(ImportError):
         Returns:
             The serialized figure.
         """
-        return json.loads(str(to_json(figure)))
+        return _loads_plotly(str(to_json(figure)))
 
     @serializer
     def serialize_template(template: layout.Template) -> dict:
@@ -468,8 +535,8 @@ with contextlib.suppress(ImportError):
             The serialized template.
         """
         return {
-            "data": json.loads(str(to_json(template.data))),
-            "layout": json.loads(str(to_json(template.layout))),
+            "data": _loads_plotly(str(to_json(template.data))),
+            "layout": _loads_plotly(str(to_json(template.layout))),
         }
 
 

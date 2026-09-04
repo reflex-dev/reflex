@@ -1382,6 +1382,8 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if isinstance(self, LiteralVar):
             return self._var_value
         try:
+            # stdlib: orjson rounds integers beyond 64 bits and rejects the
+            # bare NaN/Infinity tokens a JS expression may consist of.
             return json.loads(str(self))
         except ValueError:
             return str(self)

@@ -1,9 +1,17 @@
 import numpy as np
 import plotly.graph_objects as go
 import pytest
-from reflex_base.utils.serializers import serialize, serialize_figure
+from plotly.io.json import config as plotly_json_config
+from reflex_base.utils.serializers import (
+    serialize,
+    serialize_figure,
+    serialize_template,
+)
 
 import reflex as rx
+
+# Wider than the 64-bit range orjson parses exactly.
+BIG_INT = 2**80 + 1
 
 
 @pytest.fixture
@@ -75,3 +83,29 @@ def test_plotly_basic_locale_option_merges_into_config(plotly_fig: go.Figure):
     assert "locale" not in rendered.props
     assert "_rxGetPlotlyLocaleConfig" in str(config_var)
     assert "fr" in str(config_var)
+
+
+def test_serialize_figure_preserves_wide_integers(monkeypatch: pytest.MonkeyPatch):
+    """A customdata id wider than 64 bits survives plotly's stdlib engine.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(plotly_json_config, "default_engine", "json")
+    fig = go.Figure(data=[go.Scatter(x=[1], y=[2], customdata=[BIG_INT])])
+
+    assert serialize_figure(fig)["data"][0]["customdata"] == [BIG_INT]
+
+
+def test_serialize_template_preserves_wide_integers(monkeypatch: pytest.MonkeyPatch):
+    """Template data keeps integers wider than 64 bits on plotly's stdlib engine.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(plotly_json_config, "default_engine", "json")
+    template = go.layout.Template(data={"scatter": [go.Scatter(customdata=[BIG_INT])]})
+
+    serialized = serialize_template(template)
+
+    assert serialized["data"]["scatter"][0]["customdata"] == [BIG_INT]

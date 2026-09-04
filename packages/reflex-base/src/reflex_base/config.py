@@ -638,11 +638,11 @@ class Config(BaseConfig):
         Returns:
             The config as a JSON string.
         """
-        import json
+        from reflex_base.utils.format import json_dumps
 
-        from reflex_base.utils.serializers import serialize
-
-        return json.dumps(self, default=serialize)
+        # Every config has unset optional fields, so orjson_dumps could not tell
+        # their nulls from dropped non-finite floats and would redo this anyway.
+        return json_dumps(self)
 
     @staticmethod
     def _prepend_path(path: str, prefix: str) -> str:
