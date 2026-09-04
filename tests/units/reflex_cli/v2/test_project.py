@@ -81,8 +81,6 @@ def test_create_project_with_json_output(mocker: MockFixture):
             token="valid_token", validated_data={"foo": "bar"}
         ),
     )
-    mock_print = mocker.patch("reflex_cli.utils.console.print")
-
     project_name = "test_project"
     token = "valid_token"
 
@@ -97,7 +95,7 @@ def test_create_project_with_json_output(mocker: MockFixture):
         ),
     )
 
-    mock_print.assert_called_once_with(json.dumps({"name": "test_project", "id": 1}))
+    assert json.loads(result.stdout) == {"name": "test_project", "id": 1}
 
     assert result.exit_code == 0, result.output
 
@@ -509,8 +507,6 @@ def test_get_project_roles_as_json(mocker: MockFixture):
             {"role": "viewer", "user": "user2@example.com"},
         ],
     )
-    mock_console_print = mocker.patch("reflex_cli.utils.console.print")
-
     result = runner.invoke(
         hosting_cli,
         ["project", "roles", "--project-id", "test_project_id", "--json"],
@@ -523,12 +519,10 @@ def test_get_project_roles_as_json(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_print.assert_called_once_with(
-        json.dumps([
-            {"role": "admin", "user": "user1@example.com"},
-            {"role": "viewer", "user": "user2@example.com"},
-        ])
-    )
+    assert json.loads(result.stdout) == [
+        {"role": "admin", "user": "user1@example.com"},
+        {"role": "viewer", "user": "user2@example.com"},
+    ]
 
 
 def test_get_project_roles_empty_roles(mocker: MockFixture):
@@ -682,8 +676,6 @@ def test_get_project_role_permissions_as_json(mocker: MockFixture):
             {"permission": "write", "resource": "resource2"},
         ],
     )
-    mock_console_print = mocker.patch("reflex_cli.utils.console.print")
-
     result = runner.invoke(
         hosting_cli,
         [
@@ -704,12 +696,10 @@ def test_get_project_role_permissions_as_json(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_print.assert_called_once_with(
-        json.dumps([
-            {"permission": "read", "resource": "resource1"},
-            {"permission": "write", "resource": "resource2"},
-        ])
-    )
+    assert json.loads(result.stdout) == [
+        {"permission": "read", "resource": "resource1"},
+        {"permission": "write", "resource": "resource2"},
+    ]
 
 
 def test_get_project_role_permissions_empty_permissions(mocker: MockFixture):
@@ -823,8 +813,6 @@ def test_get_project_role_users_as_json(mocker: MockFixture):
             {"user_id": "user2", "role": "developer"},
         ],
     )
-    mock_console_print = mocker.patch("reflex_cli.utils.console.print")
-
     result = runner.invoke(
         hosting_cli,
         [
@@ -843,12 +831,10 @@ def test_get_project_role_users_as_json(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_print.assert_called_once_with(
-        json.dumps([
-            {"user_id": "user1", "role": "admin"},
-            {"user_id": "user2", "role": "developer"},
-        ])
-    )
+    assert json.loads(result.stdout) == [
+        {"user_id": "user1", "role": "admin"},
+        {"user_id": "user2", "role": "developer"},
+    ]
 
 
 def test_get_project_role_users_empty_users(mocker: MockFixture):
@@ -878,3 +864,105 @@ def test_get_project_role_users_empty_users(mocker: MockFixture):
         ),
     )
     mock_console_print.assert_called_once_with("[]")
+
+
+def _authed(mocker: MockFixture) -> hosting.AuthenticatedClient:
+    """Patch the client lookup and return the client it hands back.
+
+    Args:
+        mocker: The pytest-mock fixture.
+
+    Returns:
+        The authenticated client every command under test will receive.
+    """
+    client = hosting.AuthenticatedClient(token="fake-token", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
+    )
+    return client
+
+
+def test_invite_user_to_project_json_output(mocker: MockFixture):
+    """An invite reports who was invited to what role."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.invite_user_to_project", return_value="ok")
+
+    result = runner.invoke(
+        hosting_cli, ["project", "invite", "role-1", "user-1", "--json"]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "role_id": "role-1",
+        "user_id": "user-1",
+        "invited": True,
+    }
+
+
+def test_select_project_json_output(mocker: MockFixture):
+    """Selecting a project reports the project it selected."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_project", return_value={"id": "p1"})
+    mocker.patch("reflex_cli.utils.hosting.select_project", return_value="selected p1")
+
+    result = runner.invoke(hosting_cli, ["project", "select", "p1", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "project_id": "p1",
+        "selected": True,
+        "message": "selected p1",
+    }
+
+
+def test_get_selected_project_json_output(mocker: MockFixture):
+    """The selected project comes back as a document rather than a table."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_selected_project", return_value="p1")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        return_value={"id": "p1", "name": "My Project"},
+    )
+
+    result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "project_id": "p1",
+        "name": "My Project",
+        "error": None,
+    }
+
+
+def test_get_selected_project_json_output_when_none(mocker: MockFixture):
+    """No selection is a document saying so, not a warning to parse."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_selected_project", return_value=None)
+
+    result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "project_id": None,
+        "name": None,
+        "error": None,
+    }
+
+
+def test_get_selected_project_json_output_when_the_lookup_fails(mocker: MockFixture):
+    """A failed lookup is not the same document as nothing being selected."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_selected_project", return_value="p1")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        side_effect=RuntimeError("project service unavailable"),
+    )
+
+    result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
+
+    assert result.exit_code == 1
+    assert json.loads(result.stdout) == {
+        "project_id": "p1",
+        "name": None,
+        "error": "project service unavailable",
+    }

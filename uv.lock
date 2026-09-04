@@ -3801,6 +3801,11 @@ db = [
 pydantic = [
     { name = "reflex-base", extra = ["pydantic"] },
 ]
+testing = [
+    { name = "psutil" },
+    { name = "selenium" },
+    { name = "uvicorn" },
+]
 
 [package.dev-dependencies]
 dev = [

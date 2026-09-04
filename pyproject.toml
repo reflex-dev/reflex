@@ -66,6 +66,11 @@ db = [
   "sqlmodel >=0.0.24,<0.1",
 ]
 pydantic = ["reflex-base[pydantic]"]
+testing = [
+  "psutil >=7.0.0,<8.0",
+  "selenium >=4.0.0,<5.0",
+  "uvicorn >=0.34.0,<1.0",
+]
 
 [project.urls]
 homepage = "https://reflex.dev"
