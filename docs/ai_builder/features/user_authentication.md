@@ -111,7 +111,7 @@ Neither timestamp means "signed in". A person appears here when they approve the
 
 Blocking refuses a person whatever else would admit them, and ends the sessions they are holding. Unblocking lets them sign in again; it does not restore the old session.
 
-Use it to remove somebody who is abusing an app. It is available on every plan, because being unable to revoke access is worse than being unable to configure it.
+Use it to remove somebody who is abusing an app. Blocking is available on every plan.
 
 ```md alert warning
 # A block can take up to 30 minutes to reach a running session
@@ -144,7 +144,7 @@ Access expires after an hour and is renewed silently, so nobody is asked to sign
 The renewal credential is stored in a browser cookie that expires after 7 days, so a session survives at most a week without a fresh trip through the sign-in page, whatever the token lifetimes suggest. Do not promise your users a longer one.
 ```
 
-Signing out of your app clears its own session only. It does not sign the person out of Reflex or out of any other app they are using, which is why a logout button in your app behaves the way people expect.
+Signing out of your app clears its own session only. It does not sign the person out of Reflex, or out of any other app they are using.
 
 ## Read the signed-in user in your app
 
