@@ -1191,7 +1191,7 @@ def minify_lookup(output_json: bool, minified_path: str):
     state's own name is optional, so both 'a.bU' and the full name seen in
     the frontend ('reflex___state____state.a.bU') resolve the same way.
     """
-    from reflex.minify import collect_all_states, get_state_full_path
+    from reflex.minify import collect_all_states, get_state_full_path, get_state_module
     from reflex.state import State
 
     config = _open_minify_session()
@@ -1249,7 +1249,7 @@ def minify_lookup(output_json: bool, minified_path: str):
                 "kind": "state",
                 "minified": part,
                 "state_id": part,  # we just matched on it
-                "module": found.__module__,
+                "module": get_state_module(found),
                 "class": found.__name__,
                 "full_path": get_state_full_path(found),
             })
@@ -1258,13 +1258,13 @@ def minify_lookup(output_json: bool, minified_path: str):
             if found is not None and not output_json:
                 logger.warning(
                     f"Segment '{part}' is both a substate id and an event handler id "
-                    f"of {current.__module__}.{current.__name__}; showing both."
+                    f"of {get_state_module(current)}.{current.__name__}; showing both."
                 )
             result_parts.append({
                 "kind": "event",
                 "minified": part,
                 "event_id": part,
-                "module": current.__module__,
+                "module": get_state_module(current),
                 "class": current.__name__,
                 "handler": handler,
                 "full_path": f"{current_path}.{handler}",

@@ -293,6 +293,22 @@ _FRAMEWORK_STATE_MODULES: frozenset[str] = frozenset({
 })
 
 
+def get_state_module(state_cls: type[BaseState]) -> str:
+    """The module a state class was defined in.
+
+    Prefers ``__original_module__`` so dynamically-relocated states (e.g.
+    ``ComponentState.create()``) report their import-site module rather than
+    ``reflex.istate.dynamic``.
+
+    Args:
+        state_cls: The state class.
+
+    Returns:
+        The dotted module name.
+    """
+    return getattr(state_cls, "__original_module__", None) or state_cls.__module__
+
+
 def _is_framework_state(state_cls: type[BaseState]) -> bool:
     """Whether ``state_cls`` is one of the framework's own state classes.
 
@@ -302,8 +318,7 @@ def _is_framework_state(state_cls: type[BaseState]) -> bool:
     Returns:
         ``True`` if ``state_cls`` belongs to a known framework module.
     """
-    module = getattr(state_cls, "__original_module__", None) or state_cls.__module__
-    return module in _FRAMEWORK_STATE_MODULES
+    return get_state_module(state_cls) in _FRAMEWORK_STATE_MODULES
 
 
 def install_minify_resolver() -> None:
@@ -409,8 +424,8 @@ def minified_name_to_int(name: str) -> int:
 def get_state_full_path(state_cls: type[BaseState]) -> str:
     """Build the unique ``module.Class.SubClass`` path for a state class.
 
-    Uses ``__original_module__`` when available so dynamically-relocated
-    states (e.g. ``ComponentState.create()``) keep their import-site path.
+    Uses :func:`get_state_module` so dynamically-relocated states (e.g.
+    ``ComponentState.create()``) keep their import-site path.
 
     Args:
         state_cls: The state class.
@@ -418,7 +433,7 @@ def get_state_full_path(state_cls: type[BaseState]) -> str:
     Returns:
         e.g. ``"myapp.state.AppState.UserState"``.
     """
-    module = getattr(state_cls, "__original_module__", None) or state_cls.__module__
+    module = get_state_module(state_cls)
     class_hierarchy: list[str] = []
     current: type[BaseState] | None = state_cls
     while current is not None:

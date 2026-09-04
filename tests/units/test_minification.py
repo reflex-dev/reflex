@@ -251,16 +251,18 @@ class TestGetStateFullPath:
 def temp_minify_json(tmp_path, monkeypatch):
     """Run the test against a fresh ``minify.json`` location.
 
-    Teardown undoes monkeypatch *before* clearing the cache so the registry
-    is rebuilt under unmodified env/cwd — otherwise other tests would inherit
-    minified names.
+    Runs inside a forked registration context so State subclasses defined in
+    the test never reach the shared substate tree. Teardown undoes monkeypatch
+    *before* clearing the cache so the registry is rebuilt under unmodified
+    env/cwd — otherwise other tests would inherit minified names.
 
     Yields:
         The temporary directory path.
     """
     monkeypatch.chdir(tmp_path)
-    clear_config_cache()
-    yield tmp_path
+    with RegistrationContext.get().fork():
+        clear_config_cache()
+        yield tmp_path
     monkeypatch.undo()
     clear_config_cache()
 
@@ -1331,6 +1333,7 @@ class TestMinifyLookupCLI:
         assert result.exit_code == 0, result.output
         output_data = json.loads(result.output)
         assert [entry["kind"] for entry in output_data] == ["state", "event"]
+        assert {entry["module"] for entry in output_data} == {__name__}
         assert output_data[1]["class"] == "HandlerLookupState"
         assert output_data[1]["handler"] == "increment"
         assert output_data[1]["event_id"] == "cX"
@@ -1354,9 +1357,7 @@ class TestMinifyLookupCLI:
         result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
 
         assert result.exit_code == 0, result.output
-        assert (
-            f"{HandlerTextState.__module__}.HandlerTextState.increment" in result.output
-        )
+        assert f"{__name__}.HandlerTextState.increment" in result.output
 
     def test_lookup_reports_ambiguous_final_segment(self, temp_minify_json, cli_runner):
         """A final segment that is both a substate id and a handler id yields both."""

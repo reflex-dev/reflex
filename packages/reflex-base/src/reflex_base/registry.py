@@ -402,7 +402,9 @@ class RegistrationContext(BaseContext):
         Clears the per-class ``get_name`` / ``get_full_name`` /
         ``get_class_substate`` lru_caches and calls :meth:`refresh_keys`.
         Uses ``object.__setattr__`` to mutate the frozen ``name_resolver``
-        slot.
+        slot. Install the resolver before user state classes register:
+        ``VarData`` and dependency metadata capture names at class-creation
+        time and are not rebuilt here.
 
         Args:
             resolver: The resolver to install. Pass :class:`DefaultNameResolver`

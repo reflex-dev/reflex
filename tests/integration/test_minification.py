@@ -205,11 +205,11 @@ def test_minification(
     count = driver.find_element(By.ID, "count_value")
     assert count.text == "0"
     driver.find_element(By.ID, "increment_btn").click()
-    AppHarness._poll_for(lambda: count.text == "1")
+    AppHarness.poll_for_or_raise_timeout(lambda: count.text == "1")
 
     if enabled:
         # Substate handler dispatch through minified names.
         message = driver.find_element(By.ID, "message_value")
         driver.find_element(By.ID, "update_msg_btn").click()
-        AppHarness._poll_for(lambda: "count is 1" in message.text)
+        AppHarness.poll_for_or_raise_timeout(lambda: "count is 1" in message.text)
         assert message.text == "count is 1"
