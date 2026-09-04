@@ -2593,3 +2593,35 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         "for Plain, one for WithProp, and one snapshot wrapper for the "
         f"LeafComponent boundary. Got: {sorted(ctx.memoize_wrappers)}"
     )
+
+
+def test_memo_wrapper_tag_contains_inner_tag_once() -> None:
+    """Auto-memo wrapper tags must not duplicate the wrapped component's tag.
+
+    Regression test for #6955: ``MemoComponent._compute_memo_tag`` previously
+    concatenated ``type(self).__qualname__`` (which already embeds the inner
+    tag as ``MemoComponent_<inner_tag>``) with ``self.tag`` again, producing
+    names like ``Memocomponent_plain_abc123_plain_abc123_<hash>``. The inner
+    tag must appear exactly once in the wrapper tag.
+    """
+    ctx, _page_ctx = _compile_single_page(lambda: Plain.create(STATE_VAR))
+
+    assert len(ctx.memoize_wrappers) == 1, (
+        f"Expected exactly one auto-memo wrapper, got: {sorted(ctx.memoize_wrappers)}"
+    )
+    wrapper_tag = next(iter(ctx.memoize_wrappers))
+    # The inner component's tag is "Plain"; after format_state_name it becomes
+    # lowercase "plain" in the wrapper tag. Count occurrences of the inner tag
+    # segment (case-insensitive, word-bounded to avoid matching hash substrings).
+    inner_tag_lower = Plain.tag.lower()
+    # Split on underscores and count exact matches of the inner tag
+    segments = wrapper_tag.lower().split("_")
+    inner_tag_occurrences = segments.count(inner_tag_lower)
+    assert inner_tag_occurrences == 1, (
+        f"Inner tag '{Plain.tag}' should appear exactly once in wrapper tag, "
+        f"found {inner_tag_occurrences} times. wrapper_tag={wrapper_tag}"
+    )
+    # The wrapper tag should still start with the MemoComponent prefix
+    assert wrapper_tag.lower().startswith("memocomponent"), (
+        f"Wrapper tag should keep the MemoComponent prefix, got: {wrapper_tag}"
+    )
