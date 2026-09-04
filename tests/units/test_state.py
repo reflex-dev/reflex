@@ -32,6 +32,7 @@ from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
+    ReservedStateFieldError,
     SetUndefinedStateVarError,
     StateSerializationError,
     UnretrievableVarValueError,
@@ -43,7 +44,14 @@ from typing_extensions import TypeAliasType
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.istate.data import HeaderData, RouterData, _FrozenDictStrStr
+from reflex.istate.data import (
+    HeaderData,
+    RouterData,
+    _FrozenDictStrStr,
+    router_connection_scope,
+    serialize_partial_router_data,
+    serialize_router_data,
+)
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -1085,6 +1093,118 @@ def test_get_client_ip(test_state, router_data):
     """
     test_state.router = RouterData.from_router_data(router_data)
     assert test_state.router.session.client_ip == "127.0.0.1"
+
+
+def test_partial_router_delta(test_state, router_data):
+    """get_delta ships a partial router payload only when flag and capability agree.
+
+    The comparison that arms `_router_static_unchanged` is driven end to end
+    through the event processor in
+    ``test_router_delta_partial_only_when_connection_scope_unchanged``; this
+    test treats the flag and the client capability as givens and pins down
+    ``get_delta``'s serialization for each combination.
+
+    Args:
+        test_state: A state.
+        router_data: The router data fixture.
+    """
+    router_field = constants.ROUTER + FIELD_MARKER
+
+    def router_delta_value(*, unchanged: bool, capable: bool, path: str):
+        test_state.router = RouterData.from_router_data({
+            **router_data,
+            RouteVar.PATH: path,
+        })
+        # The direct write above cleared the flag; apply the scenario.
+        test_state._router_static_unchanged = unchanged
+        test_state._partial_router_capable = capable
+        value = test_state.get_delta()[test_state.get_full_name()][router_field]
+        test_state._clean()
+        return value
+
+    # Unchanged connection scope + capable client: partial payload.
+    value = router_delta_value(unchanged=True, capable=True, path="/partial")
+    assert set(value) == {"page", "url", "route_id"}
+    assert value["route_id"] == "/partial"
+
+    # Capable client, but the connection scope changed: full payload.
+    value = router_delta_value(unchanged=False, capable=True, path="/changed")
+    assert isinstance(value, RouterData)
+
+    # Unchanged scope, but the client never advertised support (e.g. a cached
+    # pre-upgrade bundle during a rolling deployment): full payload.
+    value = router_delta_value(unchanged=True, capable=False, path="/legacy")
+    assert isinstance(value, RouterData)
+
+    # Any direct router write clears the flag, so a write after arming falls
+    # back to the full payload without help from the processor.
+    test_state._router_static_unchanged = True
+    test_state._partial_router_capable = True
+    test_state.router = RouterData.from_router_data({
+        **router_data,
+        RouteVar.PATH: "/direct",
+    })
+    value = test_state.get_delta()[test_state.get_full_name()][router_field]
+    assert isinstance(value, RouterData)
+    test_state._clean()
+
+
+def test_reserved_internal_router_fields_cannot_be_redefined():
+    """User states must not shadow the internal router bookkeeping fields.
+
+    A shadowing value would silently control whether router deltas are sent
+    partially, so redefinition raises instead.
+    """
+    for name in ("_router_static_unchanged", "_partial_router_capable"):
+        with pytest.raises(ReservedStateFieldError):
+            type(
+                "ShadowingState",
+                (BaseState,),
+                {
+                    "__module__": __name__,
+                    "__qualname__": "ShadowingState",
+                    "__annotations__": {name: bool},
+                    name: True,
+                },
+            )
+        # Mixins are checked at definition too, so the field cannot be
+        # smuggled into concrete states through a mixin base.
+        with pytest.raises(ReservedStateFieldError):
+            type(
+                "ShadowingMixin",
+                (BaseState,),
+                {
+                    "__module__": __name__,
+                    "__qualname__": "ShadowingMixin",
+                    "__annotations__": {name: bool},
+                    name: True,
+                },
+                mixin=True,
+            )
+
+
+def test_partial_router_delta_covers_every_elided_field(router_data):
+    """Every field a navigation delta omits must be one that is compared.
+
+    A field that is elided but not compared would leave a stale value on the
+    client forever, so changing any omitted field must be visible to the
+    processor's comparison.
+
+    Args:
+        router_data: The router data fixture.
+    """
+    router = RouterData.from_router_data(router_data)
+    omitted = set(serialize_router_data(router)) - set(
+        serialize_partial_router_data(router)
+    )
+    assert omitted, "partial payload must omit something, else there is no saving"
+
+    for omitted_field in omitted:
+        changed = dataclasses.replace(router, **{omitted_field: None})
+        assert router_connection_scope(changed) != router_connection_scope(router), (
+            f"router field {omitted_field!r} is omitted from navigation deltas but is"
+            " not compared, so a change to it would never reach the client"
+        )
 
 
 def test_get_current_page(test_state):

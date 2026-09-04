@@ -12,7 +12,7 @@ from enum import Enum
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any
 
-from reflex.istate.data import RouterData
+from reflex.istate.data import RouterData, router_connection_scope
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
@@ -415,11 +415,19 @@ class BaseStateEventProcessor(EventProcessor):
 
             # re-assign only when the value is set and different
             if router_data and state.router_data != router_data:
+                previous_router = state.router
                 # assignment will recurse into substates and force recalculation of
                 # dependent ComputedVar (dynamic route variables)
                 state.router_data = router_data
                 if state.router != (router := RouterData.from_router_data(router_data)):
                     state.router = router
+                    # When only the per-navigation fields changed, the delta
+                    # can elide the connection-scoped fields the client
+                    # already holds. Direct router writes elsewhere reset
+                    # this flag (see BaseState.__setattr__).
+                    state._router_static_unchanged = router_connection_scope(
+                        previous_router
+                    ) == router_connection_scope(router)
 
             # Preprocess the event.
             if (

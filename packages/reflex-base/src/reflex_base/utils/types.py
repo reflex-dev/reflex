@@ -185,7 +185,14 @@ PrimitiveToAnnotation = {
     dict: Dict,  # noqa: UP006
 }
 
-RESERVED_BACKEND_VAR_NAMES = {"_abc_impl", "_backend_vars", "_was_touched", "_mixin"}
+RESERVED_BACKEND_VAR_NAMES = {
+    "_abc_impl",
+    "_backend_vars",
+    "_partial_router_capable",
+    "_router_static_unchanged",
+    "_was_touched",
+    "_mixin",
+}
 
 
 class Unset:

@@ -2015,16 +2015,24 @@ class EventNamespace(AsyncNamespace):
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
-        if token_list:
-            await self.link_token_to_sid(sid, token_list[0])
-        else:
-            logger.warning(f"No token provided in connection for session {sid}")
-
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
             logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
+
+        if token_list:
+            await self.link_token_to_sid(
+                sid,
+                token_list[0],
+                # Only a frontend compiled by this exact backend version is
+                # known to merge partial router deltas; anything else (e.g. a
+                # cached bundle from before a rolling deployment) gets the
+                # full router in every delta.
+                partial_router_capable=subprotocol == constants.Reflex.VERSION,
+            )
+        else:
+            logger.warning(f"No token provided in connection for session {sid}")
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
@@ -2264,12 +2272,17 @@ class EventNamespace(AsyncNamespace):
         # handlers (e.g. error trackers) receive client errors too.
         self.app.frontend_exception_handler(Exception(report))
 
-    async def link_token_to_sid(self, sid: str, token: str):
+    async def link_token_to_sid(
+        self, sid: str, token: str, partial_router_capable: bool = False
+    ):
         """Link a token to a session id.
 
         Args:
             sid: The Socket.IO session id.
             token: The client token.
+            partial_router_capable: Whether the connected frontend advertised
+                (via exact version match on the websocket subprotocol) that it
+                merges partial router deltas.
         """
         # Use TokenManager for duplicate detection and Redis support
         new_token = await self._token_manager.link_token_to_sid(token, sid)
@@ -2285,3 +2298,4 @@ class EventNamespace(AsyncNamespace):
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
                 state.router = RouterData.from_router_data(state.router_data)
+                state._partial_router_capable = partial_router_capable

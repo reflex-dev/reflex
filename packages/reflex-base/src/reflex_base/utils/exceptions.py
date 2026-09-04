@@ -72,6 +72,10 @@ class VarNameError(ReflexError, NameError):
     """Custom NameError for when a state var has been shadowed by a substate var."""
 
 
+class ReservedStateFieldError(ReflexError, NameError):
+    """Raised when a state class declares a field name reserved for internal use."""
+
+
 class VarTypeError(ReflexError, TypeError):
     """Custom TypeError for var related errors."""
 

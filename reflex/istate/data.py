@@ -461,6 +461,26 @@ class RouterData:
         )
 
 
+# RouterData fields that are fixed for the lifetime of a client connection.
+# State deltas may omit these once the client has them (see
+# serialize_partial_router_data); the event processor decides that by
+# comparing exactly these fields, so adding one here is all that is needed to
+# keep the two in step.
+CONNECTION_SCOPED_ROUTER_FIELDS = ("session", "headers")
+
+
+def router_connection_scope(obj: RouterData) -> tuple:
+    """Get the connection-scoped router values used to detect client-visible changes.
+
+    Args:
+        obj: the RouterData object.
+
+    Returns:
+        A tuple of the connection-scoped field values, in declaration order.
+    """
+    return tuple(getattr(obj, name) for name in CONNECTION_SCOPED_ROUTER_FIELDS)
+
+
 @serializer(to=dict)
 def serialize_router_data(obj: RouterData) -> dict:
     """Serialize a RouterData object to a dict.
@@ -472,8 +492,31 @@ def serialize_router_data(obj: RouterData) -> dict:
         A dict representation of the RouterData object.
     """
     return {
-        "session": obj.session,
-        "headers": obj.headers,
+        **dict(
+            zip(
+                CONNECTION_SCOPED_ROUTER_FIELDS,
+                router_connection_scope(obj),
+                strict=True,
+            )
+        ),
+        **serialize_partial_router_data(obj),
+    }
+
+
+def serialize_partial_router_data(obj: RouterData) -> dict:
+    """Serialize only the per-navigation fields of a RouterData object.
+
+    Used for state deltas once the connection-scoped fields (session and
+    headers) have already been sent to the client; the frontend merges this
+    partial payload over its previously received router value.
+
+    Args:
+        obj: the RouterData object.
+
+    Returns:
+        A dict with the per-navigation fields of the RouterData object.
+    """
+    return {
         "page": obj._page,
         # ReflexURL is a str subclass, so json.dumps handles it natively and
         # never invokes the `default=serialize` hook. Call the URL serializer
