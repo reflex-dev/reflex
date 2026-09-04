@@ -50,6 +50,16 @@ function isSafari(ua) {
 }
 
 /**
+ * Converts a response chunk (string, Buffer or any ArrayBufferView) to a Buffer
+ * @param {any} chunk - The chunk written to the response
+ * @returns {Buffer} The chunk as a Buffer sharing the original memory when possible
+ */
+function toBuffer(chunk) {
+  if (typeof chunk === "string") return Buffer.from(chunk);
+  return Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+}
+
+/**
  * Creates a middleware that adds cache-busting for Safari browsers
  * @returns {NextHandleFunction} The middleware function
  */
@@ -127,7 +137,11 @@ function createSafariMiddleware() {
       return next();
     }
 
-    let buffer = "";
+    // Collect raw bytes and decode once at the end: the dev server may write
+    // plain Uint8Array chunks (not Buffer), and a multibyte character may span
+    // two chunks, so per-chunk string conversion corrupts the output.
+    /** @type {Buffer[]} */
+    const chunks = [];
     const _end = res.end.bind(res);
 
     res.setHeader("x-modified-by", "vite-plugin-safari-cachebust");
@@ -138,7 +152,7 @@ function createSafariMiddleware() {
      * @returns {boolean} Result of the write operation
      */
     res.write = function (chunk, ...args) {
-      buffer += chunk instanceof Buffer ? chunk.toString("utf-8") : chunk;
+      if (chunk) chunks.push(toBuffer(chunk));
       return true;
     };
 
@@ -149,11 +163,11 @@ function createSafariMiddleware() {
      * @returns {ServerResponse<IncomingMessage>} The server response
      */
     res.end = function (chunk, ...args) {
-      if (chunk) {
-        buffer += chunk instanceof Buffer ? chunk.toString("utf-8") : chunk;
-      }
-      buffer = rewriteModuleImports(buffer);
-      return _end(buffer, ...args);
+      // res.end(callback) is valid: the callback is not a chunk.
+      if (typeof chunk === "function") args.unshift(chunk);
+      else if (chunk) chunks.push(toBuffer(chunk));
+      const body = Buffer.concat(chunks).toString("utf-8");
+      return _end(rewriteModuleImports(body), ...args);
     };
     return next();
   };
