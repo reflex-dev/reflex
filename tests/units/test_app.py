@@ -37,6 +37,7 @@ from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
+from starlette.exceptions import HTTPException
 from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
 from starlette_admin.auth import AuthProvider
@@ -1458,6 +1459,37 @@ async def test_upload_file_without_annotation(
         == f"`{state.get_full_name()}.handle_upload2` handler should have a parameter annotated as list[rx.UploadFile]"
     )
 
+    await app.state_manager.close()
+
+@pytest.mark.asyncio
+async def test_upload_file_unknown_handler_returns_400(
+    token: str,
+):
+    """Test that an unregistered upload event handler raises a controlled 400.
+
+    A stale, misspelled, or since-removed handler name in the
+    ``reflex-event-handler`` header must not fall through to an unhandled
+    ``KeyError`` (which Starlette would surface as a 500); it should raise a
+    ``HTTPException`` before any form parsing or event dispatch happens.
+
+    Args:
+        token: a Token.
+    """
+    app = App(_state=State)
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": "no.such.State.handler",
+    }
+
+    fn = upload(app)
+    with pytest.raises(HTTPException) as err:
+        await fn(request_mock)
+    assert err.value.status_code == 400
+    assert err.value.detail == "Unknown upload event handler: 'no.such.State.handler'."
+    # The form should never have been read: the handler lookup fails first.
+    request_mock.form.assert_not_called()
     await app.state_manager.close()
 
 

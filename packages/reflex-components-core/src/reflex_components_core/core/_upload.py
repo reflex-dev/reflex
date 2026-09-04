@@ -835,7 +835,8 @@ def upload(app: App):
         Raises:
             UploadValueError: If the handler does not have a supported annotation.
             UploadTypeError: If a non-streaming upload is wired to a background task.
-            HTTPException: when the request does not include token / handler headers.
+            HTTPException: when the request does not include token / handler headers,
+                or when the handler header does not name a registered event handler.
         """
         from reflex_base.event import (
             resolve_upload_chunk_handler_param,
@@ -843,9 +844,12 @@ def upload(app: App):
         )
 
         token, handler_name = _require_upload_headers(request)
-        registered_event_handler = RegistrationContext.get().event_handlers[
-            handler_name
-        ]
+        registered_event_handler = RegistrationContext.get().event_handlers.get(handler_name)
+        if registered_event_handler is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown upload event handler: {handler_name!r}.",
+            )
         event_handler = registered_event_handler.handler
 
         if event_handler.is_background:
