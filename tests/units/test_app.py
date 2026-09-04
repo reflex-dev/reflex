@@ -558,7 +558,7 @@ def test_initialize_with_custom_admin_dashboard(
     from starlette_admin.contrib.sqla.admin import Admin
 
     custom_auth_provider = test_custom_auth_admin()
-    custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
+    custom_admin = Admin(test_get_engine, auth_provider=custom_auth_provider)
     app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
     assert app.admin_dash is not None
     assert app.admin_dash.admin is not None
@@ -4421,3 +4421,38 @@ def test_client_error_constants_match_frontend():
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
     )
+
+
+@pytest.mark.parametrize("compile_raises", [False, True])
+def test_compile_releases_memo_naming_caches(
+    mocker: MockerFixture, compile_raises: bool
+):
+    """``App._compile`` must release the memo-naming caches on every path.
+
+    The CLI and export paths reach ``_compile`` through
+    ``prerequisites.get_compiled_app`` and never touch ``App.__call__``, so the
+    release has to sit in the compile lifecycle -- and in a ``finally``, so a
+    failed compile does not leave the caches behind either.
+    """
+    from reflex_base.utils.deterministic_hash import (
+        _hash_str_encodings,
+        clear_hash_caches,
+    )
+
+    app = App()
+
+    def fake_compile_app(*_args: Any, **_kwargs: Any) -> bool:
+        # Stand in for the naming work a real compile does.
+        _hash_str_encodings["probe"] = b"probe"
+        if compile_raises:
+            msg = "compile blew up"
+            raise RuntimeError(msg)
+        return True
+
+    mocker.patch("reflex.compiler.compiler.compile_app", side_effect=fake_compile_app)
+    clear_hash_caches()
+
+    with pytest.raises(RuntimeError) if compile_raises else contextlib.nullcontext():
+        app._compile()
+
+    assert not _hash_str_encodings

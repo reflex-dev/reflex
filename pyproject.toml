@@ -31,8 +31,8 @@ dependencies = [
   "rich >=13,<16",
   "starlette >=1.3.1",
   "typing_extensions >=4.13.0",
-  "wrapt >=1.17.0,<2.2",
-  "reflex-base >= 0.9.9",
+  "wrapt >=1.17.0,<2.4",
+  "reflex-base >= 0.9.10.post1",
   "reflex-components-code >= 0.9.0",
   "reflex-components-core >= 0.9.6",
   "reflex-components-dataeditor >= 0.9.0",
@@ -271,6 +271,10 @@ preview = true
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
 "scripts/check_min_deps.py" = ["T201"]
+"scripts/check_outdated_deps.py" = ["T201"]
+"scripts/verify_pyi.py" = ["T201"]
+# Skill helper scripts are CLIs whose whole job is printing a report.
+".claude/skills/*/scripts/*.py" = ["T201"]
 
 [tool.pytest.ini_options]
 filterwarnings = "ignore:fields may not start with an underscore:RuntimeWarning"
@@ -417,6 +421,57 @@ directory = "misc"
 name = "Miscellaneous"
 showcontent = true
 
+# Packages that must not be reported by scripts/check_outdated_deps.py. An entry matches by
+# exact name, or by prefix when it ends in `*`.
+#
+# `*_held` is for packages blocked on work we own: the script errors if one is already at its
+# latest version, since that means the blocker is gone and the entry should be deleted.
+# `*_pinned` is for packages we do not drive -- pinned by policy or owned by another repo --
+# where reaching latest says nothing about whether the entry can go, so staleness is not
+# checked.
+[tool.check-outdated-deps]
+backend_held = [
+    # Exact-pinned by pydantic and playwright respectively, so they can only move when
+    # their parent does. Drop these once the parent releases pick up the newer version.
+    "pydantic-core",
+    "pyee",
+    # Held at 7.x: redis-py 8 hangs three redis-backed tests on Python 3.10/3.11
+    # (including `get_state`, so it is not test-only). See #7026 for the reproduction
+    # and the A/B that isolated it; requested in #6764.
+    "redis",
+]
+backend_pinned = [
+    # Linters are pinned deliberately and bumped on their own cadence.
+    "pyright",
+    "ruff",
+]
+frontend_held = [
+    # 2.x restructures the component props and drops the `filter` prop, so `rx.moment`
+    # needs a migration first (#7003).
+    "react-moment",
+    # plotly.js and plotly.js-locales move in lockstep, and 4.x removes the mapbox traces
+    # and subplot that `rx.plotly.mapbox` is built on, so both need a deprecation first
+    # (#7002). `react-plotly.js` is current and deliberately not held.
+    "plotly.js",
+    "plotly.js-locales",
+    # Held at 4.3.0: 4.3.1+ reworked source-file scanning (tailwindlabs/tailwindcss#20214)
+    # and walks the git-ignored `.web` tree, which collapses the docs prod build at scale.
+    # See the note on `Constants.VERSION` in reflex_base/plugins/tailwind_v4.py and #7022.
+    "tailwindcss",
+    "@tailwindcss/postcss",
+]
+frontend_pinned = [
+    # Pinned in other repos (reflex-enterprise and friends), so their versions are not
+    # ours to advance.
+    "@chakra-ui/*",
+    "lucide-react",
+    "@splinetool/runtime",
+    "framer-motion",
+    # ag-grid-community, -enterprise and -react release in lockstep; the shell filter
+    # needed both `ag-grid` and `ag-grid-react` to cover them.
+    "ag-grid*",
+]
+
 [tool.uv]
 required-version = ">=0.9.17"
 exclude-newer = "7 days"
@@ -445,13 +500,6 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
-# Pulled in transitively (docs app -> reflex-enterprise -> joserfc), so there is no floor
-# to pin here; exempt it so security fixes (CVE-2026-69247 shipped in 50.0.0) resolve as
-# soon as they publish instead of waiting out the exclude-newer window.
-cryptography = false
-# Security fix (CVE-2026-54283 form() DoS) shipped in starlette 1.3.1; exempt so the
-# pinned floor resolves before it ages out of the exclude-newer window.
-starlette = false
 # Dev-only type checker with frequent releases; exempt so a fresh version is not
 # held back by the exclude-newer window.
 ty = false

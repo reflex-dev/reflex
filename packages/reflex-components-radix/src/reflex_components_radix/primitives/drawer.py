@@ -22,7 +22,7 @@ class DrawerComponent(RadixPrimitiveComponent):
 
     library = "vaul@1.1.2"
 
-    lib_dependencies: list[str] = ["@radix-ui/react-dialog@1.1.21"]
+    lib_dependencies: list[str] = ["@radix-ui/react-dialog@1.1.23"]
 
 
 LiteralDirectionType = Literal["top", "bottom", "left", "right"]

@@ -131,6 +131,6 @@ class Moment(NoSSRComponent, MemoizationLeaf):
             # value at compile time so import all locales available.
             imports[""] = "moment/min/locales"
         if self.tz is not None:
-            imports["moment-timezone@0.6.2"] = ""
+            imports["moment-timezone@0.6.3"] = ""
 
         return imports

@@ -635,8 +635,11 @@ def _compile_vite_config(config: Config):
     return templates.vite_config_template(
         base=base,
         hmr=environment.VITE_HMR.get(),
-        force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get(),
+        force_full_reload=environment.VITE_FORCE_FULL_RELOAD.get()
+        or environment.REFLEX_DEV_PROD_REACT.get(),
         experimental_hmr=environment.VITE_EXPERIMENTAL_HMR.get(),
+        prod_react=environment.REFLEX_DEV_PROD_REACT.get(),
+        warmup_routes=environment.REFLEX_VITE_WARMUP_ROUTES.get(),
         sourcemap=environment.VITE_SOURCEMAP.get(),
         minify=environment.VITE_MINIFY.get(),
         allowed_hosts=config.vite_allowed_hosts,
