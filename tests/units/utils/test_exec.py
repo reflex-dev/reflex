@@ -8,6 +8,7 @@ from pytest_mock import MockerFixture
 from reflex_base.environment import environment
 
 from reflex.utils import exec as exec_utils
+from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
@@ -116,3 +117,118 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
 
     assert exec_utils.arbitrate_ssr(True) is False
+
+
+def test_get_routes_manifest_router_missing_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Return None when no routes manifest has been written."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    assert exec_utils.get_routes_manifest_router() is None
+
+
+def test_get_routes_manifest_router_invalid_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Return None when the routes manifest is not valid JSON."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "routes.json").write_text("not valid json{")
+    assert exec_utils.get_routes_manifest_router() is None
+
+
+def test_get_routes_manifest_router_matches_dynamic_routes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Build a matcher from the manifest that resolves dynamic routes."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "routes.json").write_text(
+        '["index", "articles/[id]", "posts/[[...splat]]", "404"]'
+    )
+
+    router = exec_utils.get_routes_manifest_router()
+
+    assert router is not None
+    assert router("/") == "index"
+    assert router("/articles/7") == "articles/[id]"
+    assert router("/posts/a/b") == "posts/[[...splat]]"
+    assert router("/definitely-not-a-page") is None
+
+
+def test_get_frontend_mount_builds_router_from_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The frontend mount picks up the routes manifest when no router is given."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/articles/7") == "articles/[id]"
+    assert router("/missing") is None
+
+
+def test_get_frontend_mount_router_respects_frontend_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """The mount-relative path is matched with the frontend path restored."""
+    from reflex_base.config import get_config
+
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    monkeypatch.setattr(get_config(), "frontend_path", "/sub")
+    (tmp_path / "build" / "client" / "sub").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/articles/7") == "articles/[id]"
+    assert router("/") == "index"
+    assert router("/missing") is None
+
+
+def test_get_frontend_mount_router_excludes_synthetic_404_route(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A literal /404 request stays a 404 despite the compiled 404 page route."""
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+    (tmp_path / "routes.json").write_text('["index", "articles/[id]", "404"]')
+
+    mount = exec_utils.get_frontend_mount()
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/404") is None
+    assert router("/404/") is None
+    assert router("/articles/7") == "articles/[id]"
+
+
+def test_get_frontend_mount_explicit_router_excludes_synthetic_404_route(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An explicitly passed app router is also filtered for the 404 page route."""
+    from reflex.route import get_router
+
+    monkeypatch.setenv(environment.REFLEX_WEB_WORKDIR.name, str(tmp_path))
+    (tmp_path / "build" / "client").mkdir(parents=True)
+
+    mount = exec_utils.get_frontend_mount(
+        router=get_router(["index", "articles/[id]", "404"])
+    )
+
+    static_files = mount.app
+    assert isinstance(static_files, PrecompressedStaticFiles)
+    router = static_files._router
+    assert router is not None
+    assert router("/404") is None
+    assert router("/articles/7") == "articles/[id]"

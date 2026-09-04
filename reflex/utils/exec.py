@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import functools
 import hashlib
 import importlib.util
 import json
@@ -12,7 +13,7 @@ import platform
 import re
 import subprocess
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
@@ -340,8 +341,62 @@ def notify_app_running():
     console.rule("[bold green]App Running")
 
 
-def get_frontend_mount():
+def _match_routable_page(router: Callable[[str], str | None], path: str) -> str | None:
+    """Match a path against the app routes, treating the 404 page as unroutable.
+
+    The compiler registers a synthetic ``404`` page, so a literal ``/404``
+    request would otherwise count as routable and lose its 404 status.
+
+    Args:
+        router: The app route matcher.
+        path: The request path.
+
+    Returns:
+        The matching route, or None when the path matches no route or only the
+        404 page.
+    """
+    route = router(path)
+    return route if route != constants.Page404.SLUG else None
+
+
+def _match_with_frontend_path(
+    router: Callable[[str], str | None], path: str
+) -> str | None:
+    """Match a mount-relative path against a route matcher expecting the frontend path.
+
+    Args:
+        router: The app route matcher.
+        path: The request path with the frontend path prefix already stripped.
+
+    Returns:
+        The matching route, or None if no route matches.
+    """
+    return router(get_config().prepend_frontend_path(path))
+
+
+def get_routes_manifest_router() -> Callable[[str], str | None] | None:
+    """Build a route matcher from the routes manifest written at compile time.
+
+    Returns:
+        A route matcher, or None when no manifest exists.
+    """
+    from reflex.route import get_router
+
+    manifest = get_web_dir() / constants.Dirs.ROUTES_MANIFEST
+    try:
+        routes = json.loads(manifest.read_text())
+    except (OSError, ValueError):
+        return None
+    return get_router(routes)
+
+
+def get_frontend_mount(router: Callable[[str], str | None] | None = None):
     """Get a Starlette Mount for the compiled frontend static files.
+
+    Args:
+        router: Optional route matcher (e.g. ``app.router``) used to serve
+            routable SPA paths with status 200 instead of 404. When None, a
+            matcher is built from the compiled routes manifest if present.
 
     Returns:
         A Mount serving the compiled frontend static files.
@@ -352,6 +407,15 @@ def get_frontend_mount():
     from reflex.utils.precompressed_staticfiles import PrecompressedStaticFiles
 
     config = get_config()
+
+    if router is None:
+        router = get_routes_manifest_router()
+    if router is not None:
+        router = functools.partial(_match_routable_page, router)
+        if config.frontend_path:
+            # The mount strips the frontend path from request paths, but the
+            # route matcher expects it present (it strips the prefix itself).
+            router = functools.partial(_match_with_frontend_path, router)
 
     static_dir = (
         prerequisites.get_web_dir()
@@ -365,6 +429,7 @@ def get_frontend_mount():
             directory=static_dir,
             html=True,
             encodings=config.frontend_compression_formats,
+            router=router,
         ),
         name="frontend",
     )

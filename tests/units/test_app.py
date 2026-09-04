@@ -261,6 +261,19 @@ def test_add_page_default_route(
     assert app._pages.keys() == {"index", "about"}
 
 
+def test_page_routes(app: App, index_page: ComponentCallable):
+    """Test that _page_routes lists registered routes without duplicates.
+
+    Args:
+        app: The app to test.
+        index_page: The index page.
+    """
+    app.add_page(index_page)
+    app.add_page(index_page, route="articles")
+    app._compile_page("index")
+    assert app._page_routes == ["index", "articles"]
+
+
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 

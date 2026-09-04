@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import stat
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from mimetypes import guess_type
@@ -72,6 +72,7 @@ class PrecompressedStaticFiles(StaticFiles):
         self,
         *args,
         encodings: Sequence[str] = (),
+        router: Callable[[str], str | None] | None = None,
         **kwargs,
     ):
         """Initialize the static file server.
@@ -79,10 +80,15 @@ class PrecompressedStaticFiles(StaticFiles):
         Args:
             *args: Passed through to ``StaticFiles``.
             encodings: Ordered list of supported precompressed formats.
+            router: Optional route matcher taking the request path (with leading
+                slash) and returning the matching app route, or ``None``. Paths
+                with no on-disk file that match a route are served the SPA
+                fallback with status 200 instead of 404.
             **kwargs: Passed through to ``StaticFiles``.
         """
         super().__init__(*args, **kwargs)
         self._encodings = tuple(_SUPPORTED_ENCODINGS[name] for name in encodings)
+        self._router = router
 
     def _select_sidecar(
         self, full_path: str | PathLike[str], scope: Scope
@@ -178,16 +184,24 @@ class PrecompressedStaticFiles(StaticFiles):
             The resolved static response for the request.
         """
         response = await super().get_response(path, scope)
-        # Starlette's get_response builds the 404.html fallback with bare FileResponse,
-        # bypassing file_response. Re-route it so the sidecar/Vary handling applies.
         if (
-            self._encodings
-            and self.html
+            self.html
             and isinstance(response, FileResponse)
             and response.status_code == 404
             and response.stat_result is not None
         ):
-            return self.file_response(
-                response.path, response.stat_result, scope, status_code=404
-            )
+            # SPA fallback: a path with no prerendered file that still matches
+            # the app's route table is a valid page, so serve it with 200 and
+            # reserve 404 for genuinely unknown paths.
+            if self._router is not None and self._router("/" + path) is not None:
+                return self.file_response(
+                    response.path, response.stat_result, scope, status_code=200
+                )
+            # Starlette's get_response builds the 404.html fallback with bare
+            # FileResponse, bypassing file_response. Re-route it so the
+            # sidecar/Vary handling applies.
+            if self._encodings:
+                return self.file_response(
+                    response.path, response.stat_result, scope, status_code=404
+                )
         return response
