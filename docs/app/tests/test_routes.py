@@ -111,7 +111,7 @@ def _doc_markdown_files():
 # Link strings handed to `rx.link(href=...)`, `rx.redirect(...)` and friends inside
 # ```python blocks are resolved by React Router, which prepends the `/docs`
 # basename. Writing `/docs/...` there produces `/docs/docs/...`, which 404s.
-_ROUTER_LINK_IN_PYTHON_BLOCK = re.compile(r"\"(/docs/[^\"]*)\"")
+_ROUTER_LINK_IN_PYTHON_BLOCK = re.compile(r"[\"'](/docs/[^\"']*)[\"']")
 _PYTHON_BLOCK = re.compile(r"^```python[^\n]*\n(.*?)^```", re.MULTILINE | re.DOTALL)
 
 
@@ -139,64 +139,48 @@ def test_python_block_links_do_not_repeat_docs_basename():
 
 
 # Router links that survive the basename check still have to name a real page.
-# Any absolute path literal counts: docs pages pass them to `href=`, to
-# `rx.redirect(...)`, and as bare entries in link tables.
-_ROUTER_LINK = re.compile(r"\"(/[^\"\s]*)\"")
+# A path reached through `href=`, `to=` or `rx.redirect(...)` is navigation and is
+# always checked. Bare path literals are checked only when their first segment is a
+# real docs section, because docs code also contains paths that are not site links
+# at all — API route decorators, stylesheet paths, dynamic-route patterns.
+_NAVIGATION_LINK = re.compile(r"""(?:href=|to=|rx\.redirect\()\s*["'](/[^"'\s]*)["']""")
+_ANY_PATH_LITERAL = re.compile(r"""["'](/[^"'\s]*)["']""")
 
 
 def test_python_block_links_resolve_to_real_routes(routes_fixture):
     """Router links inside ```python blocks must name a registered docs route.
 
-    Only links whose first segment is a real docs section are checked, so example
-    app routes (`/login`, `/dashboard`, ...) stay out of scope.
+    `test_doc_links.py` validates prose links off the markdown AST, which ignores
+    fenced code blocks by design — so links written in ```python blocks are checked
+    here instead.
     """
     known = {route.path.rstrip("/") for route in routes_fixture if route.path}
     sections = {path.split("/")[1] for path in known if path.count("/") > 1}
 
-    def is_broken(link: str) -> bool:
+    def is_broken(link: str, navigation: bool) -> bool:
         path = link.split("#")[0].rstrip("/")
         segments = path.split("/")
-        if len(segments) < 3:
+        if len(segments) < 3 or path in known:
             return False
-        return segments[1] in sections and path not in known
+        # A misspelled section (/enterprize/...) still has to fail, so navigation
+        # is validated whatever its first segment says.
+        return navigation or segments[1] in sections
 
     broken: dict[str, list[str]] = {}
     for virtual, actual in _doc_markdown_files():
         text = Path(actual).read_text(encoding="utf-8")
-        bad = [
-            link
-            for block in _PYTHON_BLOCK.findall(text)
-            for link in _ROUTER_LINK.findall(block)
-            if is_broken(link)
-        ]
+        bad = []
+        for block in _PYTHON_BLOCK.findall(text):
+            navigation = set(_NAVIGATION_LINK.findall(block))
+            bad += [
+                link
+                for link in _ANY_PATH_LITERAL.findall(block)
+                if is_broken(link, link in navigation)
+            ]
         if bad:
             broken[virtual] = sorted(set(bad))
 
     assert broken == {}, f"Router links point at routes that do not exist: {broken}"
-
-
-# Markdown links are rendered as plain anchors, so they keep the /docs prefix.
-_MARKDOWN_DOCS_LINK = re.compile(r"\]\((/docs/[^)\s#]*)")
-
-
-def test_markdown_docs_links_resolve_to_real_routes(routes_fixture):
-    """Every `](/docs/...)` link in the docs markdown must hit a registered route."""
-    known = {route.path.rstrip("/") for route in routes_fixture if route.path}
-
-    broken: dict[str, list[str]] = {}
-    for virtual, actual in _doc_markdown_files():
-        text = Path(actual).read_text(encoding="utf-8")
-        # Ignore links inside ```python blocks; those are covered by the test above.
-        prose = _PYTHON_BLOCK.sub("", text)
-        bad = [
-            link
-            for link in _MARKDOWN_DOCS_LINK.findall(prose)
-            if link.removeprefix("/docs").rstrip("/") not in known
-        ]
-        if bad:
-            broken[virtual] = sorted(set(bad))
-
-    assert broken == {}, f"Markdown links point at routes that do not exist: {broken}"
 
 
 def test_docpage_footer_issue_link_names_the_public_docs_url():
