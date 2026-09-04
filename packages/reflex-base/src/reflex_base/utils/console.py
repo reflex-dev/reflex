@@ -11,14 +11,9 @@ from __future__ import annotations
 
 import contextlib
 import datetime
-import functools
-import inspect
-import shutil
-import sys
 import time
 from collections.abc import Sequence
 from pathlib import Path
-from types import FrameType, ModuleType
 from typing import TYPE_CHECKING, overload
 
 from rich.console import Console, OverflowMethod
@@ -286,74 +281,10 @@ def warn(msg: str, *, dedupe: bool = False, **kwargs):
         print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
-@once
-def _exclude_paths_from_frame_info() -> list[Path]:
-    import importlib.util
-
-    import click
-    import granian
-    import socketio
-    import typing_extensions
-
-    import reflex_base
-
-    try:
-        import reflex as rx
-    except ImportError:
-        rx = None
-
-    # Exclude utility modules that should never be the source of deprecated reflex usage.
-    exclude_modules: list[ModuleType | None] = [
-        click,
-        rx,
-        typing_extensions,
-        socketio,
-        granian,
-        reflex_base,
-    ]
-
-    modules_paths = [file for m in exclude_modules if m and (file := m.__file__)] + [
-        spec.origin
-        for m in [*sys.builtin_module_names, *sys.stdlib_module_names]
-        if (spec := importlib.util.find_spec(m)) and spec.origin
-    ]
-    exclude_roots = [
-        p.parent.resolve() if (p := Path(file)).name == "__init__.py" else p.resolve()
-        for file in modules_paths
-    ]
-    # Specifically exclude the reflex cli module.
-    if reflex_bin := shutil.which(b"reflex"):
-        exclude_roots.append(Path(reflex_bin.decode()))
-
-    return exclude_roots
-
-
-@functools.cache
-def _is_framework_filename(filename: str) -> bool:
-    """Check if a code filename belongs to an excluded framework/stdlib root.
-
-    Cached per filename: module file locations do not move within a process,
-    but resolving a path and comparing it against every exclude root is far
-    too expensive to repeat for each frame on every deprecation check.
-
-    Args:
-        filename: The ``co_filename`` of a frame's code object.
-
-    Returns:
-        Whether the file lives under one of the excluded framework roots.
-    """
-    frame_path = Path(filename).resolve()
-    return any(
-        frame_path.is_relative_to(root) for root in _exclude_paths_from_frame_info()
-    )
-
-
-def _get_first_non_framework_frame() -> FrameType | None:
-    frame = inspect.currentframe()
-    while frame := frame and frame.f_back:
-        if not _is_framework_filename(frame.f_code.co_filename):
-            break
-    return frame
+# Frame attribution is shared with the logging pipeline: one implementation,
+# one populated cache of framework paths (building it walks every stdlib
+# module). Bound here so callers and tests can still patch it on this module.
+_get_first_non_framework_frame = _log._get_first_non_framework_frame
 
 
 def deprecate(

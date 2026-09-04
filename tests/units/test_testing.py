@@ -1,9 +1,14 @@
 """Unit tests for the included testing tools."""
 
+import socket
 import sys
+import threading
+import time
+from collections.abc import Callable
 from types import ModuleType, SimpleNamespace
 from unittest import mock
 
+import granian.server.embed
 import pytest
 import reflex_base.config
 from reflex_base.components.memo import MEMOS
@@ -187,6 +192,119 @@ def test_app_harness_initialize_reloads_existing_imported_app(
     harness._initialize_app()
 
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+
+
+def _patch_embedded_granian(
+    monkeypatch: pytest.MonkeyPatch, on_serve: Callable[[], None]
+):
+    """Replace granian's embedded server with a fake driven by `on_serve`.
+
+    Args:
+        monkeypatch: the pytest monkeypatch fixture.
+        on_serve: called once per `serve()`; raise from it to simulate a
+            failed bind.
+    """
+
+    class FakeServer:
+        def __init__(self, *args, **kwargs):
+            self.interrupt_signal = False
+            self.main_loop_interrupt = threading.Event()
+
+        # Async to match granian's Server.serve().
+        async def serve(self):
+            on_serve()
+
+    monkeypatch.setattr(granian.server.embed, "Server", FakeServer)
+
+
+def _bind_error() -> RuntimeError:
+    """A granian bind failure for an already-claimed port.
+
+    Returns:
+        The error granian raises when the port is taken.
+    """
+    return RuntimeError("Address already in use (os error 98)")
+
+
+def test_embedded_server_retries_taken_port():
+    """The embedded server rebinds to a fresh port when its probed port is taken."""
+
+    async def app(scope, receive, send):
+        if scope["type"] == "lifespan":
+            while True:
+                message = await receive()
+                if message["type"] == "lifespan.startup":
+                    await send({"type": "lifespan.startup.complete"})
+                elif message["type"] == "lifespan.shutdown":
+                    await send({"type": "lifespan.shutdown.complete"})
+                    return
+
+    server = reflex_testing._EmbeddedServer(app)
+    probed_port = server.port
+    # Steal the probed port before the server binds it. On Windows only
+    # SO_EXCLUSIVEADDRUSE makes the port unavailable to other binders.
+    blocker = socket.socket()
+    if exclusive := getattr(socket, "SO_EXCLUSIVEADDRUSE", None):
+        blocker.setsockopt(socket.SOL_SOCKET, exclusive, 1)
+    blocker.bind((server.host, probed_port))
+    blocker.listen(1)
+    thread = threading.Thread(target=server.run)
+    thread.start()
+    try:
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            if server.port != probed_port and server.is_listening():
+                break
+            time.sleep(0.05)
+        assert server.port != probed_port
+        assert server.is_listening()
+    finally:
+        blocker.close()
+        server.should_exit = True
+        thread.join(timeout=15)
+        assert not thread.is_alive()
+
+
+def test_embedded_server_stops_after_unexpected_serve_return(monkeypatch):
+    """A serve() return that was not requested stops the server without rebinding."""
+    _patch_embedded_granian(monkeypatch, lambda: None)
+    server = reflex_testing._EmbeddedServer(app=mock.Mock())
+    port_before = server.port
+    server.run()
+    assert server.port == port_before
+
+
+def test_embedded_server_raises_after_retries_exhausted(monkeypatch):
+    """Exhausted bind retries re-raise the error instead of returning silently."""
+    calls = []
+
+    def on_serve() -> None:
+        calls.append(1)
+        raise _bind_error()
+
+    _patch_embedded_granian(monkeypatch, on_serve)
+    server = reflex_testing._EmbeddedServer(app=mock.Mock())
+    with pytest.raises(RuntimeError, match="in use"):
+        server.run()
+    assert len(calls) == 10
+
+
+def test_embedded_server_shutdown_wins_over_exhausted_retries(monkeypatch):
+    """A stop requested during the last failed bind ends the server cleanly."""
+    calls = []
+    holder = {}
+
+    def on_serve() -> None:
+        calls.append(1)
+        if len(calls) == 10:
+            holder["server"].should_exit = True
+        raise _bind_error()
+
+    _patch_embedded_granian(monkeypatch, on_serve)
+    server = reflex_testing._EmbeddedServer(app=mock.Mock())
+    holder["server"] = server
+    server.run()
+    assert len(calls) == 10
 
 
 def test_app_harness_frontend_env_has_development_condition(

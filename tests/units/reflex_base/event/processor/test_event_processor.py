@@ -752,6 +752,34 @@ async def test_stream_delta_noop_handler_yields_nothing(token: str):
     assert collected == []
 
 
+async def test_stream_delta_future_does_not_claim_root_txid(token: str):
+    """Regression: a streamed event must not reuse the root context's txid.
+
+    Otherwise unrelated events forking from the root context attach to the
+    stream's future as children (#6932).
+
+    Args:
+        token: The client token.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    assert ep._root_context is not None
+    root_txid = ep._root_context.txid
+    async with ep:
+        event = Event.from_event_type(delta_event())[0]
+        root_txid_futures = []
+        parents = []
+        async for _ in ep.enqueue_stream_delta(token, event):
+            root_txid_futures.append(ep._futures.get(root_txid))
+            unrelated = await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+            parents.append(unrelated.parent)
+        assert root_txid_futures
+        assert all(f is None for f in root_txid_futures)
+        assert parents
+        assert all(parent is None for parent in parents)
+        await ep.join(timeout=5)
+
+
 async def test_stream_delta_not_configured_raises():
     """enqueue_stream_delta raises RuntimeError if processor is not configured."""
     ep = EventProcessor()

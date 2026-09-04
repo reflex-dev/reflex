@@ -711,10 +711,14 @@ def _exclude_paths_from_frame_info() -> list[Path]:
 
     import click
     import granian
-    import socketio
     import typing_extensions
 
     import reflex_base
+
+    try:
+        import socketio
+    except ImportError:
+        socketio = None
 
     try:
         import reflex as rx

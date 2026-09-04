@@ -1,5 +1,4 @@
 // State management for Reflex web apps.
-import io from "socket.io-client";
 import env from "$/env.json";
 import reflexEnvironment from "$/reflex.json";
 import Cookies from "universal-cookie";
@@ -20,6 +19,11 @@ import {
 import debounce from "$/utils/helpers/debounce";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
+import {
+  ReflexWebSocket,
+  parseJsonLenient,
+  undefinedToNull,
+} from "$/utils/helpers/websocket";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -471,25 +475,6 @@ const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
 
-// Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
-// Rewrite them outside string literals so JSON.parse accepts the payload.
-// 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal, so it is
-// swapped for a sentinel string and revived back to NaN after parsing.
-// The alternation matches whole string literals first (passed through unchanged),
-// guaranteeing bare-token matches only land in numeric positions.
-const NAN_SENTINEL = "__reflex_nan__";
-const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
-const NON_FINITE_REPLACEMENTS = {
-  Infinity: "1e999",
-  "-Infinity": "-1e999",
-  NaN: `"${NAN_SENTINEL}"`,
-};
-const rewriteBareNonFiniteFloats = (str) =>
-  str.replace(NON_FINITE_FLOAT_RE, (match) =>
-    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
-  );
-const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
-
 /**
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
@@ -577,6 +562,8 @@ export const connect = async (
   navigate,
   params,
 ) => {
+  // Connecting (again) revokes a pending unmount cancellation.
+  socket.cancelConnect = false;
   // Socket already allocated, just reconnect it if needed.
   if (socket.current) {
     if (!socket.current.connected) {
@@ -584,37 +571,52 @@ export const connect = async (
     }
     return;
   }
+  // Another connect() call may be awaiting the socket.io-client import;
+  // don't create a second transport.
+  if (socket.connecting) {
+    return;
+  }
+  socket.connecting = true;
 
   // Get backend URL object from the endpoint.
   const endpoint = getBackendURL(EVENTURL);
   const on_hydrated_queue = [];
 
   // Create the socket.
-  socket.current = io(endpoint.href, {
-    path: endpoint["pathname"],
-    transports: transports,
-    protocols: [reflexEnvironment.version],
-    autoUnref: false,
-    query: { token: getToken() },
-    reconnection: false, // Reconnection will be handled manually.
-  });
-  socket.current.wait_connect = !socket.current.connected;
-  // Ensure undefined fields in events are sent as null instead of removed
-  socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
-  socket.current.io.decoder.tryParse = (str) => {
-    try {
-      return JSON.parse(str);
-    } catch (e) {
-      try {
-        return JSON.parse(
-          rewriteBareNonFiniteFloats(str),
-          reviveNonFiniteFloats,
-        );
-      } catch (e2) {
-        return false;
+  const transport = transports[0];
+  try {
+    if (transport === "websocket") {
+      // Default transport: plain WebSocket speaking the Reflex event protocol.
+      socket.current = new ReflexWebSocket(endpoint.href, {
+        query: { token: getToken() },
+        protocols: [reflexEnvironment.version],
+      });
+    } else {
+      // Socket.IO transport ("socketio" over websocket, or "polling"); the
+      // client library is only loaded when this transport is configured.
+      const { default: io } = await import("socket.io-client");
+      if (socket.cancelConnect) {
+        // The event loop unmounted while the import was pending.
+        return;
       }
+      socket.current = io(endpoint.href, {
+        path: endpoint["pathname"],
+        transports: [transport === "socketio" ? "websocket" : transport],
+        protocols: [reflexEnvironment.version],
+        autoUnref: false,
+        query: { token: getToken() },
+        reconnection: false, // Reconnection will be handled manually.
+      });
+      // Ensure undefined fields in events are sent as null instead of removed
+      socket.current.io.encoder.replacer = undefinedToNull;
+      // The decoder API expects false (not undefined) for unparsable input.
+      socket.current.io.decoder.tryParse = (str) =>
+        parseJsonLenient(str, false);
     }
-  };
+  } finally {
+    socket.connecting = false;
+  }
+  socket.current.wait_connect = !socket.current.connected;
   // Set up a reconnect helper function
   socket.current.reconnect = () => {
     if (
@@ -789,6 +791,9 @@ export const connect = async (
     window.sessionStorage.setItem(TOKEN_KEY, new_token);
   });
 
+  // Track the handler on the ref so unmount cleanup can remove it; a
+  // surviving listener would resurrect a transport for the unmounted hook.
+  socket.visibilityHandler = checkVisibility;
   document.addEventListener("visibilitychange", checkVisibility);
 };
 
@@ -1113,6 +1118,15 @@ export const useEventLoop = (
     // Cleanup function.
     return () => {
       mounted.current = false;
+      // Abort a connect() that is still awaiting the socket.io-client import.
+      socket.cancelConnect = true;
+      if (socket.visibilityHandler) {
+        document.removeEventListener(
+          "visibilitychange",
+          socket.visibilityHandler,
+        );
+        socket.visibilityHandler = null;
+      }
       if (socket.current) {
         socket.current.disconnect();
         socket.current.off();

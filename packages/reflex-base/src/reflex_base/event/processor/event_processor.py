@@ -26,8 +26,8 @@ from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from reflex.app import EventNamespace
     from reflex.event import Event, EventSpec
+    from reflex.event_namespace import BaseEventNamespace
 
 if hasattr(asyncio, "QueueShutDown"):
 
@@ -137,7 +137,7 @@ class EventProcessor:
         self,
         *,
         state_manager: StateManager | None = None,
-        event_namespace: EventNamespace | None = None,
+        event_namespace: BaseEventNamespace | None = None,
     ) -> Self:
         """Set up the event processor.
 
@@ -490,9 +490,10 @@ class EventProcessor:
         task_future = await self.enqueue(
             token,
             event,
+            # Fork for a fresh txid: reusing the root txid would register this
+            # future under it, attaching unrelated events as children.
             ev_ctx=dataclasses.replace(
-                self._root_context,
-                token=token,
+                self._root_context.fork(token=token),
                 emit_delta_impl=_emit_delta_impl,
             ),
         )

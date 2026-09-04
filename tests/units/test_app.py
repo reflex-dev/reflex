@@ -4069,7 +4069,7 @@ def client_error_console() -> Generator[dict[str, list[str]], None, None]:
             if key is not None:
                 captured[key].append(record.getMessage())
 
-    app_logger = logging.getLogger("reflex.app")
+    app_logger = logging.getLogger("reflex.event_namespace")
     handler = _CaptureHandler(level=logging.DEBUG)
     previous_level = app_logger.level
     app_logger.addHandler(handler)
