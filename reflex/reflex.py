@@ -1183,11 +1183,13 @@ def minify_list(output_json: bool):
 )
 @click.argument("minified_path")
 def minify_lookup(output_json: bool, minified_path: str):
-    """Lookup a state by its minified path (e.g., 'a.bU').
+    """Lookup a state or event handler by its minified path (e.g., 'a.bU').
 
-    Walks the state tree from the root to resolve each segment. The root
+    Walks the state tree from the root to resolve each segment. The final
+    segment may also be an event handler id of the state resolved so far, so
+    an event name copied from the frontend resolves to its handler. The root
     state's own name is optional, so both 'a.bU' and the full name seen in
-    the frontend ('reflex___state____state.a.bU') resolve to the same state.
+    the frontend ('reflex___state____state.a.bU') resolve the same way.
     """
     from reflex.minify import collect_all_states, get_state_full_path
     from reflex.state import State
@@ -1208,10 +1210,11 @@ def minify_lookup(output_json: bool, minified_path: str):
     if parts[0] == State.get_name():
         parts = parts[1:]
 
-    result_parts = []
+    result_parts: list[dict[str, str]] = []
     current = State
+    last_index = len(parts) - 1
 
-    for part in parts:
+    for index, part in enumerate(parts):
         # Find the child of the previous match whose minified id is ``part``.
         found = next(
             (
@@ -1221,30 +1224,65 @@ def minify_lookup(output_json: bool, minified_path: str):
             ),
             None,
         )
-        if found is None:
+        # An event name copied from the frontend ends in a handler id of the
+        # state resolved so far, not in a substate id.
+        handler = None
+        current_path = get_state_full_path(current)
+        if index == last_index:
+            handler = next(
+                (
+                    name
+                    for name, event_id in config["events"].get(current_path, {}).items()
+                    if event_id == part
+                ),
+                None,
+            )
+        if found is None and handler is None:
+            kind = "state or event handler" if index == last_index else "state"
             logger.error(
-                f"No state found for minified segment '{part}' in path '{minified_path}'"
+                f"No {kind} found for minified segment '{part}' in path '{minified_path}'"
             )
             raise SystemExit(1)
 
-        state_path = get_state_full_path(found)
-        result_parts.append({
-            "minified": part,
-            "state_id": part,  # we just matched on it
-            "module": found.__module__,
-            "class": found.__name__,
-            "full_path": state_path,
-        })
-        current = found
+        if found is not None:
+            result_parts.append({
+                "kind": "state",
+                "minified": part,
+                "state_id": part,  # we just matched on it
+                "module": found.__module__,
+                "class": found.__name__,
+                "full_path": get_state_full_path(found),
+            })
+        if handler is not None:
+            # JSON readers see the ambiguity as two entries for one segment.
+            if found is not None and not output_json:
+                logger.warning(
+                    f"Segment '{part}' is both a substate id and an event handler id "
+                    f"of {current.__module__}.{current.__name__}; showing both."
+                )
+            result_parts.append({
+                "kind": "event",
+                "minified": part,
+                "event_id": part,
+                "module": current.__module__,
+                "class": current.__name__,
+                "handler": handler,
+                "full_path": f"{current_path}.{handler}",
+            })
+        if found is not None:
+            current = found
 
     if output_json:
         import json
 
         click.echo(json.dumps(result_parts, indent=2))
     else:
-        # Simple output: module.ClassName for each part
+        # Simple output: module.ClassName, plus .handler for an event handler.
         for info in result_parts:
-            click.echo(f"{info['module']}.{info['class']}")
+            line = f"{info['module']}.{info['class']}"
+            if info["kind"] == "event":
+                line += f".{info['handler']}"
+            click.echo(line)
 
 
 try:

@@ -303,7 +303,11 @@ def context_template(
     )
 
     main_state_name = State.get_name()
-    on_load_internal = format_event_handler(OnLoadInternalState.on_load_internal)
+    # ``@event(...)`` types the attribute as an EventCallback; the registry
+    # holds the EventHandler the class rewrote it into.
+    on_load_internal = format_event_handler(
+        OnLoadInternalState.event_handlers["on_load_internal"]
+    )
     update_vars_internal = format_event_handler(
         UpdateVarsInternalState.update_vars_internal
     )

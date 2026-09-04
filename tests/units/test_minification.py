@@ -1307,7 +1307,115 @@ class TestMinifyLookupCLI:
         result = cli_runner.invoke(cli, ["minify", "lookup", "b.xyz"])
 
         assert result.exit_code == 1
-        assert "No state found" in result.output
+        assert "No state or event handler found" in result.output
+
+    def test_lookup_resolves_event_handler(self, temp_minify_json, cli_runner):
+        """The final segment of a copied event name is a handler id, not a state id."""
+        from reflex.reflex import cli
+
+        class HandlerLookupState(State):
+            def increment(self):
+                pass
+
+        state_path = get_state_full_path(HandlerLookupState)
+        _install_config(
+            states={state_path: "b"},
+            events={state_path: {"increment": "cX"}},
+            include_state_root=True,
+        )
+
+        result = cli_runner.invoke(
+            cli, ["minify", "lookup", "--json", f"{State.get_name()}.b.cX"]
+        )
+
+        assert result.exit_code == 0, result.output
+        output_data = json.loads(result.output)
+        assert [entry["kind"] for entry in output_data] == ["state", "event"]
+        assert output_data[1]["class"] == "HandlerLookupState"
+        assert output_data[1]["handler"] == "increment"
+        assert output_data[1]["event_id"] == "cX"
+        assert output_data[1]["full_path"] == f"{state_path}.increment"
+
+    def test_lookup_event_handler_text_output(self, temp_minify_json, cli_runner):
+        """Text output names the handler after its owning state class."""
+        from reflex.reflex import cli
+
+        class HandlerTextState(State):
+            def increment(self):
+                pass
+
+        state_path = get_state_full_path(HandlerTextState)
+        _install_config(
+            states={state_path: "b"},
+            events={state_path: {"increment": "a"}},
+            include_state_root=True,
+        )
+
+        result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
+
+        assert result.exit_code == 0, result.output
+        assert (
+            f"{HandlerTextState.__module__}.HandlerTextState.increment" in result.output
+        )
+
+    def test_lookup_reports_ambiguous_final_segment(self, temp_minify_json, cli_runner):
+        """A final segment that is both a substate id and a handler id yields both."""
+        from reflex.reflex import cli
+
+        class AmbiguousParentState(State):
+            def increment(self):
+                pass
+
+        class AmbiguousChildState(AmbiguousParentState):
+            pass
+
+        parent_path = get_state_full_path(AmbiguousParentState)
+        _install_config(
+            states={
+                parent_path: "b",
+                get_state_full_path(AmbiguousChildState): "a",
+            },
+            events={parent_path: {"increment": "a"}},
+            include_state_root=True,
+        )
+
+        result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.a"])
+
+        assert result.exit_code == 0, result.output
+        output_data = json.loads(result.output)
+        assert [(entry["kind"], entry["class"]) for entry in output_data] == [
+            ("state", "AmbiguousParentState"),
+            ("state", "AmbiguousChildState"),
+            ("event", "AmbiguousParentState"),
+        ]
+
+        text_result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
+
+        assert text_result.exit_code == 0, text_result.output
+        assert "is both a substate id and an event handler id" in text_result.output
+        assert "AmbiguousParentState.increment" in text_result.output
+
+    def test_lookup_handler_id_only_matches_final_segment(
+        self, temp_minify_json, cli_runner
+    ):
+        """A handler id in the middle of a path is an error, not a state."""
+        from reflex.reflex import cli
+
+        class MiddleHandlerState(State):
+            def increment(self):
+                pass
+
+        state_path = get_state_full_path(MiddleHandlerState)
+        _install_config(
+            states={state_path: "b"},
+            events={state_path: {"increment": "c"}},
+            include_state_root=True,
+        )
+
+        result = cli_runner.invoke(cli, ["minify", "lookup", "b.c.d"])
+
+        assert result.exit_code == 1
+        assert "No state found for minified segment 'c'" in result.output
 
     def test_lookup_with_json_output(self, temp_minify_json, cli_runner):
         """Test that lookup with --json flag outputs valid JSON."""
