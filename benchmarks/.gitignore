@@ -1,0 +1,6 @@
+app_*/
+report_*.json
+*.log
+frames_*.txt
+event_frames_*.txt
+all_reports.json
