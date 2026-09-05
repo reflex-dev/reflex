@@ -6,7 +6,7 @@ import pytest
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
 
-from reflex.compiler.utils import compile_state, create_document_root
+from reflex.compiler.utils import compile_state, create_document_root, write_file
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import State
 from reflex.vars.base import computed_var
@@ -88,3 +88,31 @@ def test_document_root_controls_preserve_no_id_and_page_refs():
 
     assert not document_root._get_all_hooks()
     assert page_script._get_all_hooks()
+
+
+def test_write_file_creates_and_updates(tmp_path):
+    path = tmp_path / "sub" / "page.jsx"
+    write_file(path, "v1")
+    assert path.read_text() == "v1"
+    write_file(path, "v2")
+    assert path.read_text() == "v2"
+
+
+def test_write_file_atomic_leaves_no_temp_files(tmp_path):
+    path = tmp_path / "page.jsx"
+    write_file(path, "content")
+    # The temp file used for the atomic replace must not linger.
+    assert [p.name for p in tmp_path.iterdir()] == ["page.jsx"]
+
+
+def test_write_file_skips_byte_identical_write(tmp_path):
+    """An identical write must not touch the file (so vite isn't told to HMR)."""
+    path = tmp_path / "page.jsx"
+    write_file(path, "same")
+    before = path.stat().st_mtime_ns
+    import os
+
+    os.utime(path, ns=(before + 1_000_000_000, before + 1_000_000_000))
+    bumped = path.stat().st_mtime_ns
+    write_file(path, "same")  # identical -> no rewrite
+    assert path.stat().st_mtime_ns == bumped

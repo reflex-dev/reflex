@@ -199,23 +199,34 @@ def get_app(reload: bool = False) -> ModuleType:
 
         module = config.module
         sys.path.insert(0, getcwd())  # noqa: PTH109
-        app = (
-            __import__(module, fromlist=(constants.CompileVars.APP,))
-            if not config.app_module
-            else config.app_module
-        )
-        if reload:
-            from reflex.state import reload_state_module
+        if (
+            environment.REFLEX_COMPILE_CACHE.get()
+            and not environment.REFLEX_SKIP_COMPILE.get()
+        ):
+            from reflex.compiler import page_cache
 
-            # Reset rx.State subclasses to avoid conflict when reloading.
-            reload_state_module(module=module)
+            page_cache.enable_read_tracking()
+            recorder = page_cache.record_app_import()
+        else:
+            recorder = contextlib.nullcontext()
+        with recorder:
+            app = (
+                __import__(module, fromlist=(constants.CompileVars.APP,))
+                if not config.app_module
+                else config.app_module
+            )
+            if reload:
+                from reflex.state import reload_state_module
 
-            reg_ctx = RegistrationContext.ensure_context()
-            reg_ctx.decorated_pages.clear()
-            object.__setattr__(reg_ctx, "_app", None)
+                # Reset rx.State subclasses to avoid conflict when reloading.
+                reload_state_module(module=module)
 
-            # Reload the app module.
-            importlib.reload(app)
+                reg_ctx = RegistrationContext.ensure_context()
+                reg_ctx.decorated_pages.clear()
+                object.__setattr__(reg_ctx, "_app", None)
+
+                # Reload the app module.
+                importlib.reload(app)
     except Exception as ex:
         telemetry.send_error(ex, context="frontend")
         raise
