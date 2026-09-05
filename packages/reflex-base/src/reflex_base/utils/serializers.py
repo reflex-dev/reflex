@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
-import contextlib
+import base64
 import dataclasses
 import decimal
 import functools
 import inspect
+import io
 import json
 import logging
+import os
+import sys
 import uuid
 import warnings
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import suppress
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from importlib.util import find_spec
@@ -20,7 +24,7 @@ from typing import Any, Literal, TypeVar, get_type_hints, overload
 from uuid import UUID
 
 from reflex_base.constants.colors import Color
-from reflex_base.utils import types
+from reflex_base.utils import _serializer_types, types
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +38,12 @@ Serializer = Callable[[Any], SerializedType]
 
 SERIALIZERS: dict[type, Serializer] = {}
 SERIALIZER_TYPES: dict[type, type] = {}
+_OPTIONAL_SERIALIZERS: dict[str, Serializer] = {}
+_OPTIONAL_SERIALIZER_TYPES: dict[str, type] = {}
+_OPTIONAL_SERIALIZER_MODULES: dict[str, tuple[str, ...]] = {}
 
 SERIALIZED_FUNCTION = TypeVar("SERIALIZED_FUNCTION", bound=Serializer)
+_REGISTRY_VALUE = TypeVar("_REGISTRY_VALUE")
 
 
 deserializers = {
@@ -46,6 +54,25 @@ deserializers = {
     time: time.fromisoformat,
     uuid.UUID: uuid.UUID,
 }
+
+
+def _get_optional_type_name(type_: type) -> str | None:
+    """Identify an optional type by identity in an already-loaded module.
+
+    Args:
+        type_: The value type that may belong to an optional dependency.
+
+    Returns:
+        The optional type name, or None for an unrelated type.
+    """
+    name = getattr(type_, "__name__", None)
+    if not isinstance(name, str):
+        return None
+    for module_name in _OPTIONAL_SERIALIZER_MODULES.get(name, ()):
+        module = sys.modules.get(module_name)
+        if module is not None and vars(module).get(name) is type_:
+            return name
+    return None
 
 
 @overload
@@ -95,6 +122,8 @@ def serializer(
 
         # Make sure the type is not already registered.
         registered_fn = SERIALIZERS.get(type_)
+        if registered_fn is None and (name := _get_optional_type_name(type_)):
+            registered_fn = _OPTIONAL_SERIALIZERS[name]
         if registered_fn is not None and registered_fn != fn and overwrite is not True:
             message = f"Overwriting serializer for type {type_} from {registered_fn.__module__}:{registered_fn.__qualname__} to {fn.__module__}:{fn.__qualname__}."
             if overwrite is False:
@@ -117,7 +146,7 @@ def serializer(
 
         to_type = to or type_hints.get("return")
 
-        # Apply type transformation if requested
+        # Apply type transformation if requested.
         if to_type:
             SERIALIZER_TYPES[type_] = to_type
             get_serializer_type.cache_clear()
@@ -181,6 +210,51 @@ def serialize(
     return serialized
 
 
+def _find_serializer(
+    type_: type,
+    registry: dict[type, _REGISTRY_VALUE],
+    optional_defaults: dict[str, _REGISTRY_VALUE],
+) -> _REGISTRY_VALUE | None:
+    """Resolve defaults and overrides without importing or mutating the registry.
+
+    Args:
+        type_: The type to find a serializer for.
+        registry: Explicit registrations for functions or output types.
+        optional_defaults: Defaults for the corresponding optional types.
+
+    Returns:
+        The matching registration, or None if no serializer is registered.
+    """
+    if (registered := registry.get(type_)) is not None:
+        return registered
+
+    best: _REGISTRY_VALUE | None = None
+    best_priority = -1
+    for base in getattr(type_, "__mro__", ()):
+        if name := _get_optional_type_name(base):
+            value = registry.get(base, optional_defaults[name])
+            if base is type_:
+                return value
+            priority = _OPTIONAL_SERIALIZER_ORDER[name]
+            if priority > best_priority:
+                best, best_priority = value, priority
+
+    # A private copy permits concurrent/reentrant registration without a lock
+    # around user-defined hash or subclass callbacks, or destructive reordering.
+    for registered_type, value in reversed(registry.copy().items()):
+        priority = _DEFAULT_SERIALIZER_ORDER.get(id(registered_type))
+        if priority is None and (name := _get_optional_type_name(registered_type)):
+            priority = _OPTIONAL_SERIALIZER_ORDER[name]
+        if (priority is None or priority > best_priority) and issubclass(
+            type_, registered_type
+        ):
+            # User registrations follow all defaults, in reverse insertion order.
+            if priority is None:
+                return value
+            best, best_priority = value, priority
+    return best
+
+
 @functools.lru_cache
 def get_serializer(type_: type) -> Serializer | None:
     """Get the serializer for the type.
@@ -191,18 +265,7 @@ def get_serializer(type_: type) -> Serializer | None:
     Returns:
         The serializer for the type, or None if there is no serializer.
     """
-    # First, check if the type is registered.
-    serializer = SERIALIZERS.get(type_)
-    if serializer is not None:
-        return serializer
-
-    # If the type is not registered, check if it is a subclass of a registered type.
-    for registered_type, serializer in reversed(SERIALIZERS.items()):
-        if issubclass(type_, registered_type):
-            return serializer
-
-    # If there is no serializer, return None.
-    return None
+    return _find_serializer(type_, SERIALIZERS, _OPTIONAL_SERIALIZERS)
 
 
 @functools.lru_cache
@@ -215,18 +278,7 @@ def get_serializer_type(type_: type) -> type | None:
     Returns:
         The serialized type for the type, or None if there is no type conversion registered.
     """
-    # First, check if the type is registered.
-    serializer = SERIALIZER_TYPES.get(type_)
-    if serializer is not None:
-        return serializer
-
-    # If the type is not registered, check if it is a subclass of a registered type.
-    for registered_type, serializer in reversed(SERIALIZER_TYPES.items()):
-        if issubclass(type_, registered_type):
-            return serializer
-
-    # If there is no serializer, return None.
-    return None
+    return _find_serializer(type_, SERIALIZER_TYPES, _OPTIONAL_SERIALIZER_TYPES)
 
 
 def has_serializer(type_: type, into_type: type | None = None) -> bool:
@@ -408,105 +460,164 @@ def serialize_color(color: Color) -> str:
     return color.__format__("")
 
 
-with contextlib.suppress(ImportError):
-    from pandas import DataFrame
+def format_dataframe_values(df: _serializer_types.DataFrame) -> list[list[Any]]:
+    """Format dataframe values to a list of lists.
 
-    def format_dataframe_values(df: DataFrame) -> list[list[Any]]:
-        """Format dataframe values to a list of lists.
+    Args:
+        df: The dataframe to format.
 
-        Args:
-            df: The dataframe to format.
-
-        Returns:
-            The dataframe as a list of lists.
-        """
-        return [
-            [str(d) if isinstance(d, (list, tuple)) else d for d in data]
-            for data in list(df.to_numpy().tolist())
-        ]
-
-    @serializer
-    def serialize_dataframe(df: DataFrame) -> dict:
-        """Serialize a pandas dataframe.
-
-        Args:
-            df: The dataframe to serialize.
-
-        Returns:
-            The serialized dataframe.
-        """
-        return {
-            "columns": df.columns.tolist(),
-            "data": format_dataframe_values(df),
-        }
+    Returns:
+        The dataframe as a list of lists.
+    """
+    return [
+        [str(d) if isinstance(d, (list, tuple)) else d for d in data]
+        for data in list(df.to_numpy().tolist())
+    ]
 
 
-with contextlib.suppress(ImportError):
-    from plotly.graph_objects import Figure, layout
+def serialize_dataframe(df: _serializer_types.DataFrame) -> dict:
+    """Serialize a pandas dataframe.
+
+    Args:
+        df: The dataframe to serialize.
+
+    Returns:
+        The serialized dataframe.
+    """
+    return {
+        "columns": df.columns.tolist(),
+        "data": format_dataframe_values(df),
+    }
+
+
+def serialize_figure(figure: _serializer_types.Figure) -> dict:
+    """Serialize a plotly figure.
+
+    Args:
+        figure: The figure to serialize.
+
+    Returns:
+        The serialized figure.
+    """
     from plotly.io import to_json
 
-    @serializer
-    def serialize_figure(figure: Figure) -> dict:
-        """Serialize a plotly figure.
-
-        Args:
-            figure: The figure to serialize.
-
-        Returns:
-            The serialized figure.
-        """
-        return json.loads(str(to_json(figure)))
-
-    @serializer
-    def serialize_template(template: layout.Template) -> dict:
-        """Serialize a plotly template.
-
-        Args:
-            template: The template to serialize.
-
-        Returns:
-            The serialized template.
-        """
-        return {
-            "data": json.loads(str(to_json(template.data))),
-            "layout": json.loads(str(to_json(template.layout))),
-        }
+    return json.loads(str(to_json(figure)))
 
 
-with contextlib.suppress(ImportError):
-    import base64
-    import io
+def serialize_template(template: _serializer_types.Template) -> dict:
+    """Serialize a plotly template.
 
+    Args:
+        template: The template to serialize.
+
+    Returns:
+        The serialized template.
+    """
+    from plotly.io import to_json
+
+    return {
+        "data": json.loads(str(to_json(template.data))),
+        "layout": json.loads(str(to_json(template.layout))),
+    }
+
+
+def serialize_image(image: _serializer_types.Image) -> str:
+    """Serialize a Pillow image as a data URI.
+
+    Args:
+        image: The image to serialize.
+
+    Returns:
+        The serialized image.
+    """
     from PIL.Image import MIME
-    from PIL.Image import Image as Img
 
-    @serializer
-    def serialize_image(image: Img) -> str:
-        """Serialize a plotly figure.
-
-        Args:
-            image: The image to serialize.
-
-        Returns:
-            The serialized image.
-        """
-        buff = io.BytesIO()
-        image_format = getattr(image, "format", None) or "PNG"
-        image.save(buff, format=image_format)
-        image_bytes = buff.getvalue()
-        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+    buff = io.BytesIO()
+    image_format = getattr(image, "format", None) or "PNG"
+    image.save(buff, format=image_format)
+    image_bytes = buff.getvalue()
+    base64_image = base64.b64encode(image_bytes).decode("utf-8")
+    try:
+        # Newer method to get the mime type, but does not always work.
+        mime_type = image.get_format_mimetype()  # pyright: ignore [reportAttributeAccessIssue]
+    except AttributeError:
         try:
-            # Newer method to get the mime type, but does not always work.
-            mime_type = image.get_format_mimetype()  # pyright: ignore [reportAttributeAccessIssue]
-        except AttributeError:
-            try:
-                # Fallback method
-                mime_type = MIME[image_format]
-            except KeyError:
-                # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
-                warnings.warn(  # noqa: B028
-                    f"Unknown mime type for {image} {image_format}. Defaulting to image/png"
-                )
-                mime_type = "image/png"
+            # Fallback method
+            mime_type = MIME[image_format]
+        except KeyError:
+            # Unknown mime_type: warn and return image/png and hope the browser can sort it out.
+            warnings.warn(  # noqa: B028
+                f"Unknown mime type for {image} {image_format}. Defaulting to image/png"
+            )
+            mime_type = "image/png"
 
-        return f"data:{mime_type};base64,{base64_image}"
+    return f"data:{mime_type};base64,{base64_image}"
+
+
+def serialize_sqlmodel(m: _serializer_types.SQLModel) -> dict[str, Any]:
+    """Serialize a SQLModel instance, including its loaded relationships.
+
+    Args:
+        m: The SQLModel instance to serialize.
+
+    Returns:
+        The model fields and available relationships.
+    """
+    from sqlalchemy.orm.exc import DetachedInstanceError
+
+    fields = m.model_dump()
+    relationships = {}
+    for name in m.__sqlmodel_relationships__:
+        with suppress(DetachedInstanceError):
+            relationships[name] = getattr(m, name)
+    return {**fields, **relationships}
+
+
+def _prepare_serializers_for_fork() -> None:
+    """Finish Plotly JSON initialization before forking a process using it."""
+    for name in ("Figure", "Template"):
+        for module_name in _OPTIONAL_SERIALIZER_MODULES[name]:
+            module = sys.modules.get(module_name)
+            if module is not None and isinstance(vars(module).get(name), type):
+                # JSON engines can defer imports until their first invocation.
+                # Finish those imports too, without holding a serializer lock.
+                with suppress(ImportError):
+                    from plotly.io import to_json
+
+                    to_json({"data": []}, validate=False)
+
+                return
+
+
+_INITIAL_SERIALIZER_TYPES = tuple(SERIALIZERS)
+_DEFAULT_SERIALIZER_ORDER = {
+    id(type_): index for index, type_ in enumerate(_INITIAL_SERIALIZER_TYPES)
+}
+_OPTIONAL_SERIALIZERS = {
+    "DataFrame": serialize_dataframe,
+    "Figure": serialize_figure,
+    "Template": serialize_template,
+    "Image": serialize_image,
+    "SQLModel": serialize_sqlmodel,
+}
+_OPTIONAL_SERIALIZER_TYPES = {
+    "DataFrame": dict,
+    "Figure": dict,
+    "Template": dict,
+    "Image": str,
+    "SQLModel": dict[str, Any],
+}
+_OPTIONAL_SERIALIZER_MODULES = {
+    "DataFrame": ("pandas", "pandas.core.frame"),
+    "Figure": ("plotly.graph_objs._figure",),
+    "Template": ("plotly.graph_objs.layout._template",),
+    "Image": ("PIL.Image",),
+    "SQLModel": ("sqlmodel.main",),
+}
+_OPTIONAL_SERIALIZER_ORDER = {
+    name: len(_INITIAL_SERIALIZER_TYPES) + index
+    for index, name in enumerate(_OPTIONAL_SERIALIZERS)
+}
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(before=_prepare_serializers_for_fork)
