@@ -436,7 +436,10 @@ def _prepare_event(
 
 
 def _send_event(event_data: _Event) -> bool:
-    import httpx
+    try:
+        import httpx2 as httpx
+    except ModuleNotFoundError:
+        import httpx
 
     try:
         httpx.post(POSTHOG_API_URL, json=event_data)

@@ -69,7 +69,11 @@ def httpx_post(mocker: MockerFixture):
     Returns:
         The mock for ``httpx.post`` so tests can assert on the posted payload.
     """
-    return mocker.patch("httpx.post")
+    try:
+        import httpx2 as httpx
+    except ModuleNotFoundError:
+        import httpx
+    return mocker.patch.object(httpx, "post")
 
 
 def test_telemetry():
