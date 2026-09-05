@@ -4,6 +4,7 @@ import importlib
 import os
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 from reflex.compiler import page_cache
 
@@ -621,7 +622,9 @@ def test_page_dependency_files_closes_over_dynamic_imports(tmp_path, monkeypatch
             memo_contributions={},
             source_files={str(helper.resolve())},
         )
-        deps = page_cache.page_dependency_files(page_ctx, lambda: None, {}, tmp_path)
+        deps = page_cache.page_dependency_files(
+            cast(Any, page_ctx), lambda: None, {}, tmp_path
+        )
     finally:
         _forget_modules("dyn_helper_for_closure", "dyn_leaf_for_closure")
         page_cache.clear_import_graph()
