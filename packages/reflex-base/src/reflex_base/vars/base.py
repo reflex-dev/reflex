@@ -13,6 +13,7 @@ import json
 import logging
 import re
 import string
+import time
 import uuid
 import warnings
 from abc import ABCMeta
@@ -94,6 +95,7 @@ SEQUENCE_TYPE = TypeVar("SEQUENCE_TYPE", bound=Sequence)
 warnings.filterwarnings("ignore", message="fields may not start with an underscore")
 
 _PYDANTIC_VALIDATE_VALUES = "__pydantic_validate_values__"
+_MONOTONIC_CLOCK_ID = uuid.uuid4()
 
 
 def _pydantic_validator(*args, **kwargs):
@@ -2483,6 +2485,33 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         return f"__last_updated_{self._js_expr}"
 
+    @property
+    def _last_updated_monotonic_attr(self) -> str:
+        """Get the attribute used to store the last updated monotonic reading.
+
+        Returns:
+            An attribute name.
+        """
+        return f"__last_updated_monotonic_{self._js_expr}"
+
+    def _mark_updated(self, instance: BaseState) -> None:
+        """Record the time the computed var was refreshed on the instance.
+
+        Stores a wall-clock datetime under the legacy attribute so older
+        workers sharing the same state store keep working during rolling
+        deployments, plus a monotonic reading tagged with this process's
+        clock id for wall-clock-independent interval checks.
+
+        Args:
+            instance: The state instance that the computed var is attached to.
+        """
+        setattr(instance, self._last_updated_attr, datetime.datetime.now())
+        setattr(
+            instance,
+            self._last_updated_monotonic_attr,
+            (_MONOTONIC_CLOCK_ID, time.monotonic()),
+        )
+
     def needs_update(self, instance: BaseState) -> bool:
         """Check if the computed var needs to be updated.
 
@@ -2494,8 +2523,18 @@ class ComputedVar(Var[RETURN_TYPE]):
         """
         if self._update_interval is None:
             return False
+        monotonic_updated = getattr(instance, self._last_updated_monotonic_attr, None)
+        if (
+            isinstance(monotonic_updated, tuple)
+            and len(monotonic_updated) == 2
+            and monotonic_updated[0] == _MONOTONIC_CLOCK_ID
+        ):
+            elapsed = time.monotonic() - monotonic_updated[1]
+            return elapsed > self._update_interval.total_seconds()
+        # State written by another process or an older version: the monotonic
+        # reading is not comparable, so fall back to the wall clock.
         last_updated = getattr(instance, self._last_updated_attr, None)
-        if last_updated is None:
+        if not isinstance(last_updated, datetime.datetime):
             return True
         return datetime.datetime.now() - last_updated > self._update_interval
 
@@ -2601,7 +2640,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                 # Ensure the computed var gets serialized to redis.
                 instance._was_touched = True
                 # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
+                self._mark_updated(instance)
             value = getattr(instance, self._cache_attr)
 
         self._check_deprecated_return_type(instance, value)
@@ -2863,7 +2902,7 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
                 # Ensure the computed var gets serialized to redis.
                 instance._was_touched = True
                 # Set the last updated timestamp on the state instance.
-                setattr(instance, self._last_updated_attr, datetime.datetime.now())
+                self._mark_updated(instance)
             value = getattr(instance, self._cache_attr)
             self._check_deprecated_return_type(instance, value)
             return value
