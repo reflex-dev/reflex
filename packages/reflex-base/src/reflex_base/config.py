@@ -951,13 +951,20 @@ def _get_config(
                     sys.modules.pop(dep, None)
                 _config_module_deps.clear()
                 state_modules = _get_registered_state_modules(ctx)
-                for dep, module in ctx._config_module_deps.items():
-                    if dep in state_modules or any(
+                package_modules = {
+                    dep
+                    for dep in ctx._config_module_deps
+                    if any(
                         state_module.startswith(f"{dep}.")
                         for state_module in state_modules
-                    ):
+                    )
+                }
+                for dep, module in ctx._config_module_deps.items():
+                    if dep in state_modules or dep in package_modules:
                         sys.modules[dep] = module
                         _config_module_deps.add(dep)
+                for dep in sorted(package_modules, key=lambda name: name.count(".")):
+                    importlib.reload(ctx._config_module_deps[dep])
             # only import the module if it exists. If a module spec exists then
             # the module exists.
             if not find_spec(constants.Config.MODULE):

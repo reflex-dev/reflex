@@ -32,7 +32,8 @@ from reflex.environment import (
 CONFIG_MODULE = "rxconfig"
 STATE_MODULE = "config_reload_state_module"
 DEPENDENCY_MODULE = "config_reload_dependency"
-PACKAGE_STATE_MODULE = "config_reload_package.state"
+PACKAGE_NAME = "config_reload_package"
+PACKAGE_STATE_MODULE = f"{PACKAGE_NAME}.state"
 
 
 def test_requires_app_name():
@@ -1154,23 +1155,25 @@ def test_reload_config_restores_state_package(
     """
     from reflex_base.registry import RegistrationContext
 
-    package = tmp_path / "config_reload_package"
+    package = tmp_path / PACKAGE_NAME
     package.mkdir()
-    (package / "__init__.py").write_text("")
+    (package / "__init__.py").write_text("APP_NAME = 'first'\n")
     (package / "state.py").write_text(
         "import reflex as rx\n\nclass MyState(rx.State):\n    value: str = ''\n"
     )
     (tmp_path / f"{CONFIG_MODULE}.py").write_text(
         f"import {PACKAGE_STATE_MODULE}\nimport reflex as rx\n\n"
-        "config = rx.Config(app_name='package_state_reload')\n"
+        f"import {PACKAGE_NAME}\n\n"
+        f"config = rx.Config(app_name={PACKAGE_NAME}.APP_NAME)\n"
     )
     monkeypatch.chdir(tmp_path)
 
     with RegistrationContext():
-        assert reflex_base.config.get_config().app_name == "package_state_reload"
-        assert reflex_base.config.reload_config().app_name == "package_state_reload"
+        assert reflex_base.config.get_config().app_name == "first"
+        (package / "__init__.py").write_text("APP_NAME = 'second'\n")
+        assert reflex_base.config.reload_config().app_name == "second"
         assert PACKAGE_STATE_MODULE in sys.modules
-        assert "config_reload_package" in sys.modules
+        assert PACKAGE_NAME in sys.modules
 
 
 def _write_dependency_config(project: Path, app_name: str) -> None:
@@ -1229,7 +1232,7 @@ def clean_config_modules() -> Generator[None, None, None]:
         "chdir_dep_module",
         STATE_MODULE,
         DEPENDENCY_MODULE,
-        "config_reload_package",
+        PACKAGE_NAME,
         PACKAGE_STATE_MODULE,
     )
     try:
