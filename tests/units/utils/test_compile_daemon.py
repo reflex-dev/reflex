@@ -1,6 +1,7 @@
 """Tests for the warm fork-per-compile dev compile daemon."""
 
 import os
+from pathlib import Path
 
 import pytest
 
@@ -61,10 +62,10 @@ def test_external_dependency_files_includes_sibling_markdown(tmp_path, monkeypat
     manifest = {
         "pages": {
             "/g": {
-                "dep_hashes": {
-                    str(own_module): "h1",  # under the app root -> not external
-                    str(sibling_md): "h2",  # sibling dir -> must be watched
-                }
+                "deps": [
+                    str(own_module),  # under the app root -> not external
+                    str(sibling_md),  # sibling dir -> must be watched
+                ]
             }
         }
     }
@@ -91,24 +92,122 @@ def test_snapshot_detects_external_markdown_change(tmp_path, monkeypatch):
     monkeypatch.setattr(
         disk_cache,
         "load_manifest",
-        lambda: {"pages": {"/g": {"dep_hashes": {str(sibling_md): "h"}}}},
+        lambda: {"pages": {"/g": {"deps": [str(sibling_md)]}}},
     )
 
     roots = [app_root.resolve()]
-    external = compile_daemon._external_dependency_files(roots)
-    snap1 = compile_daemon._snapshot(
-        compile_daemon._watch_paths(roots, tmp_path, external)
-    )
+    state = compile_daemon._WatchState.build(roots, tmp_path.resolve())
+    snap1 = compile_daemon._snapshot(state.watch_paths())
     assert sibling_md.resolve() in snap1
     assert (app_root / "page.py").resolve() in snap1
+    # The OS watcher is pointed at the sibling directory too.
+    assert sibling_md.resolve().parent in state.targets()
 
     # Force a distinct mtime (deterministic, independent of fs mtime resolution).
     bumped = snap1[sibling_md.resolve()] + 1_000_000_000
     os.utime(sibling_md, ns=(bumped, bumped))
-    snap2 = compile_daemon._snapshot(
-        compile_daemon._watch_paths(roots, tmp_path, external)
-    )
+    snap2 = compile_daemon._snapshot(state.watch_paths())
     assert snap2[sibling_md.resolve()] != snap1[sibling_md.resolve()]
+
+
+def test_watch_state_accepts_only_compile_inputs(tmp_path, monkeypatch):
+    """Recorded data deps of any suffix count; build output never does."""
+    app_root = tmp_path / "app"
+    app_root.mkdir()
+    data = app_root / "table.json"
+    data.write_text("{}")
+    monkeypatch.setattr(
+        disk_cache, "load_manifest", lambda: {"pages": {"/t": {"deps": [str(data)]}}}
+    )
+    (tmp_path / "assets").mkdir()
+    state = compile_daemon._WatchState.build([app_root.resolve()], tmp_path.resolve())
+
+    assert state.accepts(app_root / "page.py")
+    assert state.accepts(app_root / "guide.md")
+    assert state.accepts(data)  # not a watched suffix, but a recorded dependency
+    assert state.accepts(tmp_path / "assets" / "logo.svg")
+    assert not state.accepts(app_root / "other.json")  # unrecorded data file
+    assert not state.accepts(tmp_path / ".web" / "app" / "routes" / "x.jsx")
+    assert not state.accepts(tmp_path / "elsewhere" / "page.py")  # outside roots
+
+
+def test_iter_changes_reports_an_edit(tmp_path):
+    """The OS watcher reports an edited source file (no polling involved)."""
+    import threading
+    import time
+
+    pytest.importorskip("watchfiles")
+    app_root = tmp_path / "app"
+    app_root.mkdir()
+    page = app_root / "page.py"
+    page.write_text("x = 1\n")
+    state = compile_daemon._WatchState([app_root.resolve()], tmp_path.resolve())
+    got: list[set] = []
+
+    def run() -> None:
+        for changed in compile_daemon._iter_changes(state, lambda: not got):
+            got.append(changed)
+            return
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 10
+    while not got and time.monotonic() < deadline:
+        page.write_text(f"x = {time.monotonic()}\n")
+        time.sleep(0.2)
+    thread.join(5)
+    assert got
+    assert page.resolve() in {p.resolve() for p in got[0]}
+
+
+def test_wait_for_compile_respects_lock(tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    import time
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    # No lock -> returns at once.
+    start = time.monotonic()
+    compile_daemon.wait_for_compile(timeout=1)
+    assert time.monotonic() - start < 0.2
+    # A live holder -> waits until the lock clears (or the timeout).
+    with compile_daemon._compile_lock(tmp_path):
+        start = time.monotonic()
+        compile_daemon.wait_for_compile(timeout=0.3)
+        assert time.monotonic() - start >= 0.3
+    assert not compile_daemon._lock_path().exists()
+    # A dead holder -> not waited on.
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    compile_daemon._lock_path().write_text(str(proc.pid))
+    start = time.monotonic()
+    compile_daemon.wait_for_compile(timeout=5)
+    assert time.monotonic() - start < 0.5
+
+
+def test_first_party_module_names_caches_file_classification(tmp_path, monkeypatch):
+    """Module files are classified once; a repeat pass resolves no paths."""
+    import sys
+    import types
+
+    mod = types.ModuleType("fp_cached_mod")
+    mod.__file__ = str(tmp_path / "pkg" / "cached_mod.py")
+    monkeypatch.setitem(sys.modules, "fp_cached_mod", mod)
+    roots = [tmp_path.resolve()]
+    assert "fp_cached_mod" in compile_daemon._first_party_module_names(roots)
+    assert compile_daemon._first_party_file_cache[mod.__file__] is True
+
+    calls = 0
+    original = Path.resolve
+
+    def counting_resolve(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", counting_resolve)
+    assert "fp_cached_mod" in compile_daemon._first_party_module_names(roots)
+    assert calls == 0
 
 
 def test_first_party_module_names_includes_namespace_packages(tmp_path, monkeypatch):
@@ -337,3 +436,26 @@ def test_reset_first_party_purges_modules_and_registries(tmp_path):
     os.close(read_fd)
     os.waitpid(pid, 0)
     assert out == b"1"
+
+
+def test_quiesce_parent_stops_telemetry_worker():
+    """The telemetry worker must not keep the daemon parent multi-threaded.
+
+    The initial compile sends a telemetry event, whose executor thread would
+    otherwise outlive it and make every later fork check fail silently.
+    """
+    import threading
+
+    from reflex.utils import telemetry
+
+    telemetry._get_telemetry_executor().submit(lambda: None).result()
+    assert any(t.name.startswith("reflex-telemetry") for t in threading.enumerate())
+
+    compile_daemon._quiesce_parent()
+
+    assert telemetry._executor is None
+    assert not any(t.name.startswith("reflex-telemetry") for t in threading.enumerate())
+    # A later send lazily recreates a worker, so shutdown is not one-way.
+    telemetry._get_telemetry_executor().submit(lambda: None).result()
+    telemetry.shutdown_executor()
+    assert telemetry._executor is None

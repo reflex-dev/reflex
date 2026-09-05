@@ -16,21 +16,23 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from reflex_base.environment import environment
 
 from reflex.utils import console
 
-#: Seconds between poll passes. Each pass only re-``stat``s the known file set
-#: (cheap), so this can be small for snappy detection of edits to existing files.
-_POLL_INTERVAL = 0.05
-#: After a change is seen, wait this long and re-snapshot so a burst of saves
-#: (e.g. format-on-save touching many files) collapses into a single compile.
-_DEBOUNCE = 0.05
-#: How often to re-walk the tree to discover added/removed files.
-#: Between rescans we only ``stat`` the known set; adds are rarer and tolerate a
-#: little latency, so this keeps idle CPU low while polling fast for edits.
+#: Fallback polling only (no ``watchfiles``): seconds between poll passes.
+_POLL_INTERVAL = 0.5
+#: Milliseconds a burst of saves (e.g. format-on-save touching many files) is
+#: allowed to settle before it is reported as one change set.
+_DEBOUNCE_MS = 50
+#: How long the OS watcher blocks before yielding control back, so the daemon
+#: can notice its parent died even while no file changes.
+_WATCH_TIMEOUT_MS = 1000
+#: Fallback polling only: how often to re-walk the tree for added files.
 _RESCAN_INTERVAL = 1.0
 #: Watchdog: kill a compile child that runs longer than this (a hung/deadlocked
 #: child must never wedge the daemon). Generous enough for a real full compile.
@@ -143,13 +145,26 @@ def _iter_source_files(root: Path):
                 yield path.resolve()
 
 
-def _external_dependency_files(roots: list[Path]) -> set[Path]:
-    """External content files the compiler read, taken from the disk manifest.
+def _manifest_dependency_files() -> set[Path]:
+    """Every source dependency the last compile recorded, from the disk manifest.
 
-    The manifest records each page's full dependency set (own module, markdown,
-    component/state modules). Any dependency that lives *outside* the reload
-    roots, such as a docs app's markdown in a sibling directory, is invisible to
-    ``get_reload_paths`` and must be watched explicitly so editing it rebuilds.
+    Returns:
+        Resolved dependency file paths (empty without a manifest).
+    """
+    from reflex.compiler import disk_cache
+
+    manifest = disk_cache.load_manifest()
+    if not manifest:
+        return set()
+    return {Path(dep) for dep in disk_cache.manifest_dependency_files(manifest)}
+
+
+def _external_dependency_files(roots: list[Path]) -> set[Path]:
+    """Recorded dependencies that live *outside* the reload roots.
+
+    Such files (a docs app's markdown in a sibling directory, say) are invisible
+    to ``get_reload_paths`` and must be watched explicitly so editing them
+    rebuilds.
 
     Args:
         roots: The resolved reload roots.
@@ -157,18 +172,7 @@ def _external_dependency_files(roots: list[Path]) -> set[Path]:
     Returns:
         Resolved external dependency file paths to watch.
     """
-    from reflex.compiler import disk_cache
-
-    manifest = disk_cache.load_manifest()
-    if not manifest:
-        return set()
-    out: set[Path] = set()
-    for page in manifest.get("pages", {}).values():
-        for dep in page.get("dep_hashes", {}):
-            path = Path(dep)
-            if not _under_roots(path, roots):
-                out.add(path)
-    return out
+    return {p for p in _manifest_dependency_files() if not _under_roots(p, roots)}
 
 
 def _global_files(root: Path) -> set[Path]:
@@ -204,29 +208,89 @@ def _mtime_ns(path: Path) -> int | None:
         return None
 
 
-def _watch_paths(roots: list[Path], root: Path, external_files: set[Path]) -> set[Path]:
-    """Build the full set of files to watch this tick.
+@dataclass
+class _WatchState:
+    """What the daemon watches; refreshed after every compile."""
 
-    ``external_files`` (the per-page external content deps from the manifest) is
-    passed in rather than re-read here, so the manifest is parsed once per compile
-    instead of on every poll tick.
+    roots: list[Path]
+    root: Path
+    #: Every dependency the last compile recorded (any suffix), so an edit to a
+    #: JSON/CSV/etc. file a page reads triggers a rebuild too.
+    known: set[Path] = field(default_factory=set)
+    globals_: set[Path] = field(default_factory=set)
 
-    Args:
-        roots: The resolved reload roots.
-        root: The project root.
-        external_files: External content dependency files (from the manifest).
+    @classmethod
+    def build(cls, roots: list[Path], root: Path) -> _WatchState:
+        """Snapshot the current watch inputs from the manifest and roots.
 
-    Returns:
-        The set of paths to snapshot.
-    """
-    paths: set[Path] = set(external_files)
-    for r in roots:
-        paths.update(_iter_source_files(r))
-    paths.update(_global_files(root))
-    assets = root / "assets"
-    if assets.is_dir():
-        paths.update(p.resolve() for p in assets.rglob("*") if p.is_file())
-    return paths
+        Args:
+            roots: The resolved reload roots.
+            root: The project root.
+
+        Returns:
+            The populated watch state.
+        """
+        return cls(
+            roots=roots,
+            root=root,
+            known=_manifest_dependency_files(),
+            globals_=_global_files(root),
+        )
+
+    @property
+    def assets(self) -> Path | None:
+        """The assets directory, when the project has one."""
+        assets = self.root / "assets"
+        return assets if assets.is_dir() else None
+
+    def targets(self) -> list[Path]:
+        """Directories/files handed to the OS watcher.
+
+        Returns:
+            The reload roots, the parents of recorded dependencies outside
+            them, the project root's global files and the assets directory.
+        """
+        targets: dict[Path, None] = dict.fromkeys(self.roots)
+        for dep in self.known:
+            if not _under_roots(dep, self.roots):
+                targets[dep.parent] = None
+        for path in self.globals_:
+            targets[path] = None
+        if (assets := self.assets) is not None:
+            targets[assets] = None
+        return [t for t in targets if t.exists()]
+
+    def accepts(self, path: Path) -> bool:
+        """Whether a changed path is a compile input worth reacting to.
+
+        Args:
+            path: The changed path, as reported by the watcher.
+
+        Returns:
+            True for watched-suffix sources, recorded dependencies, global
+            inputs and assets; False for build output and unrelated files.
+        """
+        if any(part in _SKIP_DIRS for part in path.parts):
+            return False
+        if path in self.globals_ or path in self.known:
+            return True
+        if (assets := self.assets) is not None and _under_roots(path, [assets]):
+            return True
+        return path.suffix in _WATCH_SUFFIXES and _under_roots(path, self.roots)
+
+    def watch_paths(self) -> set[Path]:
+        """Fallback polling only: the full file set to snapshot each tick.
+
+        Returns:
+            The set of paths to stat.
+        """
+        paths: set[Path] = set(self.known)
+        for r in self.roots:
+            paths.update(_iter_source_files(r))
+        paths.update(self.globals_)
+        if (assets := self.assets) is not None:
+            paths.update(p.resolve() for p in assets.rglob("*") if p.is_file())
+        return paths
 
 
 def _snapshot(paths: set[Path]) -> dict[Path, int]:
@@ -239,6 +303,98 @@ def _snapshot(paths: set[Path]) -> dict[Path, int]:
         A mapping of file path to its modification time (unreadable files omitted).
     """
     return {p: m for p in paths if (m := _mtime_ns(p)) is not None}
+
+
+def _poll_changes(state: _WatchState, alive: Callable[[], bool]) -> Iterator[set[Path]]:
+    """Fallback change source when ``watchfiles`` is unavailable.
+
+    Re-stats the known file set every ``_POLL_INTERVAL`` and re-walks the tree
+    every ``_RESCAN_INTERVAL`` to discover added files.
+
+    Args:
+        state: The live watch state (read on every rescan, so a refresh after a
+            compile takes effect without restarting the poller).
+        alive: Returns False when the watcher should stop.
+
+    Yields:
+        Each non-empty set of changed paths.
+    """
+    paths = state.watch_paths()
+    snapshot = _snapshot(paths)
+    last_rescan = time.monotonic()
+    while alive():
+        time.sleep(_POLL_INTERVAL)
+        if time.monotonic() - last_rescan >= _RESCAN_INTERVAL:
+            paths = state.watch_paths()
+            last_rescan = time.monotonic()
+        current = _snapshot(paths)
+        changed = {
+            p
+            for p in current.keys() | snapshot.keys()
+            if current.get(p) != snapshot.get(p)
+        }
+        if changed:
+            time.sleep(_DEBOUNCE_MS / 1000)  # absorb the rest of a burst
+            yield changed
+            paths = state.watch_paths()
+            snapshot = _snapshot(paths)
+            last_rescan = time.monotonic()
+        else:
+            snapshot = current
+
+
+def _iter_changes(state: _WatchState, alive: Callable[[], bool]) -> Iterator[set[Path]]:
+    """Yield sets of changed compile inputs as the OS reports them.
+
+    Subscribes to filesystem notifications (``watchfiles``: inotify, FSEvents,
+    ReadDirectoryChangesW) over ``state.targets()`` and filters events with
+    ``state.accepts``. Polling is only a fallback when ``watchfiles`` is not
+    importable. The watcher is re-created when the target set changes (a
+    compile recorded a new external content directory).
+
+    Args:
+        state: The live watch state; ``targets``/``accepts`` are re-read after
+            every yielded change set.
+        alive: Returns False when the watcher should stop.
+
+    Yields:
+        Each non-empty, accepted set of changed paths.
+    """
+    try:
+        import watchfiles
+    except ImportError:
+        console.warn(
+            "watchfiles is not installed; the compile daemon falls back to polling."
+        )
+        yield from _poll_changes(state, alive)
+        return
+
+    def watch_filter(_change: object, raw_path: str) -> bool:
+        return state.accepts(Path(raw_path))
+
+    while alive():
+        targets = state.targets()
+        for events in watchfiles.watch(
+            *targets,
+            watch_filter=watch_filter,
+            debounce=_DEBOUNCE_MS,
+            step=25,
+            rust_timeout=_WATCH_TIMEOUT_MS,
+            yield_on_timeout=True,
+            raise_interrupt=False,
+        ):
+            if not alive():
+                return
+            changed = {Path(raw_path) for _change, raw_path in events}
+            if changed:
+                yield changed
+                if state.targets() != targets:
+                    break  # re-create the watcher over the new target set
+
+
+#: ``__file__`` -> whether it is under the reload roots; the "" key holds the
+#: roots the cache was built for.
+_first_party_file_cache: dict[str, object] = {}
 
 
 def _first_party_module_names(roots: list[Path]) -> set[str]:
@@ -257,16 +413,26 @@ def _first_party_module_names(roots: list[Path]) -> set[str]:
     Returns:
         The set of ``sys.modules`` keys to purge.
     """
+    roots_key = tuple(str(r) for r in roots)
+    if _first_party_file_cache.get("") != roots_key:
+        _first_party_file_cache.clear()
+        _first_party_file_cache[""] = roots_key
     top_level: set[str] = set()
     for name, mod in list(sys.modules.items()):
         file = getattr(mod, "__file__", None)
         if not file:
             continue
-        try:
-            rf = Path(file).resolve()
-        except OSError:
-            continue
-        if _under_roots(rf, roots):
+        # Resolving every loaded module's file is thousands of realpath
+        # syscalls per hot reload; module files never move, so classify each
+        # ``__file__`` once. The parent warms this before forking.
+        is_first_party = _first_party_file_cache.get(file)
+        if is_first_party is None:
+            try:
+                is_first_party = _under_roots(Path(file).resolve(), roots)
+            except OSError:
+                is_first_party = False
+            _first_party_file_cache[file] = is_first_party
+        if is_first_party:
             top_level.add(name.partition(".")[0])
     if not top_level:
         return set()
@@ -370,7 +536,100 @@ def _reset_model_metadata() -> None:
         ModelRegistry._metadata = None
 
 
-def _child_compile(roots: list[Path], prerender_routes: bool) -> None:
+#: Name of the env var carrying the changed-path hint to a cold compile child.
+_CHANGED_ENV = "REFLEX_COMPILE_CHANGED"
+#: Lock file (under the backend dir) held while a compile is in progress, so a
+#: backend reload worker can wait for the fresh stateful-pages marker.
+_COMPILE_LOCK_FILE = ".compile_in_progress"
+#: Give up waiting on the lock after this long (a wedged daemon must not hang
+#: the backend forever; its own watchdog is ``_COMPILE_TIMEOUT``).
+_LOCK_WAIT_TIMEOUT = _COMPILE_TIMEOUT + 10
+
+
+def _lock_path() -> Path:
+    from reflex.utils import prerequisites
+
+    return prerequisites.get_backend_dir() / _COMPILE_LOCK_FILE
+
+
+@contextlib.contextmanager
+def _compile_lock(root: Path):
+    """Hold the compile-in-progress lock while a hot-reload compile runs.
+
+    The backend's reload worker reacts to the same file save as the daemon.
+    Without this it can restart, read the previous ``stateful_pages`` marker
+    and register the old state set before the daemon has rewritten it (see
+    :func:`wait_for_compile`).
+
+    Args:
+        root: The project root.
+
+    Yields:
+        None.
+    """
+    lock = _lock_path()
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    lock.write_text(str(os.getpid()))
+    try:
+        yield
+    finally:
+        lock.unlink(missing_ok=True)
+
+
+def _lock_holder_alive(lock: Path) -> bool:
+    try:
+        pid = int(lock.read_text().strip())
+        os.kill(pid, 0)
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def wait_for_compile(timeout: float = _LOCK_WAIT_TIMEOUT) -> None:
+    """Block while the compile daemon is rewriting ``.web`` for the same change.
+
+    Called by a backend worker that skips frontend compilation
+    (``REFLEX_SKIP_COMPILE``) before it reads the stateful-pages marker. Returns
+    immediately when no compile is in progress, when the lock holder died, or
+    after ``timeout``.
+
+    Args:
+        timeout: Maximum seconds to wait.
+    """
+    lock = _lock_path()
+    deadline = time.monotonic() + timeout
+    waited = False
+    while lock.exists() and time.monotonic() < deadline:
+        if not _lock_holder_alive(lock):
+            break
+        if not waited:
+            console.debug(
+                "Waiting for the compile daemon to finish the current compile."
+            )
+            waited = True
+        time.sleep(0.02)
+
+
+def _prepare_fork_parent(roots: list[Path]) -> None:
+    """Make the warm parent a good fork base.
+
+    Stops the framework's background threads (so ``_can_fork`` passes) and warms
+    the per-process caches every child would otherwise rebuild: the first-party
+    module classification and the compile cache's component-module lookups.
+
+    Args:
+        roots: The resolved reload roots.
+    """
+    from reflex.compiler import page_cache
+
+    _quiesce_parent()
+    _first_party_module_names(roots)
+    page_cache.warm_module_file_cache()
+
+
+def _child_compile(
+    roots: list[Path], prerender_routes: bool, changed: set[Path] | None = None
+) -> None:
     """Reset first-party state, re-import the app fresh, and compile incrementally.
 
     Runs in a forked child (POSIX) or a one-shot subprocess (Windows). Must not
@@ -379,9 +638,14 @@ def _child_compile(roots: list[Path], prerender_routes: bool) -> None:
     Args:
         roots: The resolved reload roots.
         prerender_routes: Whether to prerender routes during compile.
+        changed: The paths the watcher reported for this reload, when known.
+            Lets the incremental rebuild skip validating pages that depend on
+            none of them.
     """
+    from reflex.compiler import disk_cache
     from reflex.utils import prerequisites
 
+    disk_cache.set_changed_hint(changed)
     # Timed in three steps so every hot reload reports where it spent its time
     # (resetting state vs re-importing first-party code vs compiling).
     t0 = time.perf_counter()
@@ -422,6 +686,20 @@ def _await_child(pid: int) -> bool:
         time.sleep(0.02)
 
 
+def _quiesce_parent() -> None:
+    """Stop the framework's own background threads before forking.
+
+    The telemetry worker (a ``ThreadPoolExecutor`` thread) outlives the
+    initial compile's ``compile`` event and would otherwise make every later
+    ``_can_fork`` check fail, silently downgrading each hot reload to a cold
+    subprocess. Anything the user's app started at import time is out of our
+    hands and still forces the fallback.
+    """
+    from reflex.utils import telemetry
+
+    telemetry.shutdown_executor()
+
+
 def _can_fork() -> bool:
     """Whether forking is safe right now (POSIX and the process is single-threaded).
 
@@ -433,10 +711,24 @@ def _can_fork() -> bool:
     Returns:
         True if a per-compile ``fork()`` is safe.
     """
-    return hasattr(os, "fork") and threading.active_count() == 1
+    if not hasattr(os, "fork"):
+        return False
+    _quiesce_parent()
+    if threading.active_count() == 1:
+        return True
+    others = [
+        t.name for t in threading.enumerate() if t is not threading.current_thread()
+    ]
+    console.warn(
+        "Compile daemon: cannot fork a warm child while other threads are "
+        f"alive ({', '.join(others)}); falling back to a cold subprocess."
+    )
+    return False
 
 
-def _compile_once(roots: list[Path], prerender_routes: bool) -> bool:
+def _compile_once(
+    roots: list[Path], prerender_routes: bool, changed: set[Path] | None = None
+) -> bool:
     """Run one incremental compile in an isolated child; report success.
 
     Uses a copy-on-write ``fork()`` when safe (warm), else a fresh subprocess
@@ -445,6 +737,7 @@ def _compile_once(roots: list[Path], prerender_routes: bool) -> bool:
     Args:
         roots: The resolved reload roots.
         prerender_routes: Whether to prerender routes during compile.
+        changed: The paths the watcher reported for this reload, when known.
 
     Returns:
         True if the child compiled successfully, else False.
@@ -454,7 +747,7 @@ def _compile_once(roots: list[Path], prerender_routes: bool) -> bool:
         if pid == 0:  # child
             code = 0
             try:
-                _child_compile(roots, prerender_routes)
+                _child_compile(roots, prerender_routes, changed)
             except BaseException:  # report any failure, never crash the daemon
                 import traceback
 
@@ -465,11 +758,15 @@ def _compile_once(roots: list[Path], prerender_routes: bool) -> bool:
         return _await_child(pid)
 
     # No fork (Windows) or unsafe to fork: a fresh (cold) subprocess compiles.
+    env = {**os.environ}
+    if changed is not None:
+        env[_CHANGED_ENV] = "\n".join(sorted(str(p) for p in changed))
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "reflex.utils.compile_daemon", "--once"],
             check=False,
             timeout=_COMPILE_TIMEOUT,
+            env=env,
         )
     except subprocess.TimeoutExpired:
         console.error("Compile subprocess timed out; keeping the last good build.")
@@ -503,37 +800,16 @@ def _serve() -> None:
 
         traceback.print_exc()
         console.error("Initial compile failed; watching for a fix.")
+    _prepare_fork_parent(roots)
 
-    # External content deps (e.g. a docs app's sibling-dir markdown) come from
-    # the manifest; recompute only after a compile, not on every poll tick.
-    external = _external_dependency_files(roots)
-    global_files = _global_files(root)
-    # `paths` is the watched set, refreshed by a tree rescan; each tick only
-    # re-stats it (cheap), so the poll can be fast without burning idle CPU.
-    paths = _watch_paths(roots, root, external)
-    snapshot = _snapshot(paths)
-    last_rescan = time.monotonic()
+    state = _WatchState.build(roots, root)
     console.info("Compile daemon ready (warm); watching for changes.")
 
-    while True:
-        time.sleep(_POLL_INTERVAL)
+    def alive() -> bool:
         # Never outlive reflex-run: if our parent died we were reparented.
-        if os.getppid() != parent_pid:
-            return
-        # Cheap stat of the known set every tick; re-walk the tree occasionally
-        # to discover added/removed files.
-        if time.monotonic() - last_rescan >= _RESCAN_INTERVAL:
-            paths = _watch_paths(roots, root, external)
-            last_rescan = time.monotonic()
-        current = _snapshot(paths)
-        changed = {
-            p
-            for p in current.keys() | snapshot.keys()
-            if current.get(p) != snapshot.get(p)
-        }
-        if not changed:
-            continue
+        return os.getppid() == parent_pid
 
+    for changed in _iter_changes(state, alive):
         from reflex.compiler.disk_cache import format_path_list
 
         console.info(
@@ -543,25 +819,20 @@ def _serve() -> None:
         # A change to a genuinely-global input (rxconfig/lockfiles, or a reflex
         # upgrade) can't be applied to the warm parent (it imported the old
         # version); re-exec the daemon so the new world is actually loaded.
-        if changed & global_files:
+        if changed & state.globals_:
             console.info("Global config changed; restarting compile daemon.")
             os.execv(
                 sys.executable, [sys.executable, "-m", "reflex.utils.compile_daemon"]
             )
 
-        time.sleep(_DEBOUNCE)  # absorb the rest of a burst of saves
-        roots = _reload_roots()
-        ok = _compile_once(roots, prerender_routes)
+        state.roots = roots = _reload_roots()
+        with _compile_lock(root):
+            ok = _compile_once(roots, prerender_routes, changed)
         if not ok:
             console.error("Compile failed; keeping the last good build.")
-        # Re-snapshot AFTER compiling so writes the compile itself made are the
-        # new baseline; refresh external deps + globals from the new manifest so
-        # a newly-referenced content dir becomes watched.
-        external = _external_dependency_files(roots)
-        global_files = _global_files(root)
-        paths = _watch_paths(roots, root, external)
-        snapshot = _snapshot(paths)
-        last_rescan = time.monotonic()
+        # Refresh what is watched from the new manifest so a newly-referenced
+        # content file becomes watched.
+        state = _WatchState.build(roots, root)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -575,9 +846,17 @@ def main(argv: list[str] | None = None) -> int:
     """
     argv = sys.argv[1:] if argv is None else argv
     if "--once" in argv:
+        changed_env = os.environ.get(_CHANGED_ENV)
+        changed = (
+            {Path(line) for line in changed_env.splitlines() if line}
+            if changed_env is not None
+            else None
+        )
         try:
             _child_compile(
-                _reload_roots(), bool(os.environ.get("REFLEX_PRERENDER_ROUTES"))
+                _reload_roots(),
+                bool(os.environ.get("REFLEX_PRERENDER_ROUTES")),
+                changed,
             )
         except BaseException:  # report any failure, never crash
             import traceback
