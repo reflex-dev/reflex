@@ -3,6 +3,8 @@
 import asyncio
 import dataclasses
 import pickle
+import subprocess
+import sys
 from asyncio import CancelledError
 from contextlib import asynccontextmanager
 from typing import Any, ClassVar
@@ -19,8 +21,105 @@ from reflex.istate.proxy import (
     MutableProxy,
     ReadOnlyStateProxy,
     StateProxy,
+    is_mutable_type,
 )
 from reflex.state import BaseState
+
+
+def test_proxy_does_not_import_sqlalchemy() -> None:
+    """State mutation tracking must not load an unused database integration."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import sys
+from reflex.istate.proxy import is_mutable_type
+
+assert is_mutable_type(list)
+assert not is_mutable_type(str)
+assert "sqlalchemy" not in sys.modules
+""",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("models_first", [False, True])
+def test_mutable_models_with_either_import_order(models_first: bool) -> None:
+    """Model classification works before or after importing state tracking."""
+    pytest.importorskip("sqlalchemy")
+    pytest.importorskip("sqlmodel")
+    script = """
+from pydantic import BaseModel
+from pydantic.v1 import BaseModel as LegacyPydanticBase
+from sqlalchemy.orm import DeclarativeBase, DeclarativeBaseNoMeta, declarative_base
+from sqlmodel import SQLModel
+"""
+    proxy_import = "from reflex.istate import proxy\n"
+    script = script + proxy_import if models_first else proxy_import + script
+    script += """
+class DatabaseBase(DeclarativeBase):
+    pass
+
+class PydanticModel(BaseModel):
+    value: int = 1
+
+class SQLModelSubclass(SQLModel):
+    value: int = 1
+
+for cls in (DeclarativeBase, DatabaseBase, BaseModel, PydanticModel, SQLModel, SQLModelSubclass):
+    assert proxy.is_mutable_type(cls), cls
+    assert proxy.is_mutable_type(cls), cls  # Exercise the cached result too.
+
+for cls in (LegacyPydanticBase, DeclarativeBaseNoMeta, declarative_base()):
+    assert not proxy.is_mutable_type(cls), cls
+
+Impostor = type("DeclarativeBase", (), {"__module__": "sqlalchemy.orm.decl_api"})
+assert not proxy.is_mutable_type(Impostor)
+assert proxy.MUTABLE_TYPES == (list, dict, set, DeclarativeBase, BaseModel)
+namespace = {}
+exec("from reflex.istate.proxy import *", namespace)
+assert namespace["MUTABLE_TYPES"] == proxy.MUTABLE_TYPES
+assert namespace["MutableProxy"] is proxy.MutableProxy
+assert "MUTABLE_TYPES" in dir(proxy)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    ("type_", "expected"),
+    [
+        (list, True),
+        (dict, True),
+        (set, True),
+        (type("ListSubclass", (list,), {}), True),
+        (type("DictSubclass", (dict,), {}), True),
+        (type("SetSubclass", (set,), {}), True),
+        (dataclasses.make_dataclass("Data", []), True),
+        (dataclasses.make_dataclass("FrozenData", [], frozen=True), True),
+        (rx.Var, False),
+        (int, False),
+        (str, False),
+        (tuple, False),
+        (frozenset, False),
+        (object, False),
+    ],
+)
+def test_is_mutable_type(type_: type, expected: bool) -> None:
+    """Keep the existing container, dataclass, and Var classification rules."""
+    assert is_mutable_type(type_) is expected
 
 
 @dataclasses.dataclass

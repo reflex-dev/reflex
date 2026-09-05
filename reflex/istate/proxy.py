@@ -10,6 +10,7 @@ import inspect
 import json
 import sys
 from collections.abc import Callable, Sequence
+from importlib import import_module
 from importlib.util import find_spec
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
@@ -415,21 +416,49 @@ class ReadOnlyStateProxy(StateProxy):
         raise NotImplementedError(msg)
 
 
-MUTABLE_TYPES = (
+_MUTABLE_BUILTIN_TYPES = (
     list,
     dict,
     set,
 )
 
-if find_spec("sqlalchemy"):
-    from sqlalchemy.orm import DeclarativeBase
+_MUTABLE_MODEL_BASES = (
+    ("sqlalchemy.orm.decl_api", "DeclarativeBase"),
+    ("pydantic.main", "BaseModel"),
+)
 
-    MUTABLE_TYPES += (DeclarativeBase,)
 
-if find_spec("pydantic"):
-    from pydantic import BaseModel
+def __dir__() -> list[str]:
+    """Include the lazily resolved mutable-types tuple in module discovery.
 
-    MUTABLE_TYPES += (BaseModel,)
+    Returns:
+        The available module attribute names.
+    """
+    return sorted(globals().keys() | {"MUTABLE_TYPES"})
+
+
+def __getattr__(name: str) -> Any:
+    """Resolve the legacy mutable-types tuple only when explicitly requested.
+
+    Args:
+        name: The module attribute to resolve.
+
+    Returns:
+        The model base types, or the names exported by a wildcard import.
+
+    Raises:
+        AttributeError: If the requested attribute is unknown.
+    """
+    if name == "__all__":
+        return [export for export in __dir__() if not export.startswith("_")]
+    if name == "MUTABLE_TYPES":
+        return _MUTABLE_BUILTIN_TYPES + tuple(
+            getattr(import_module(module_name), base_name)
+            for module_name, base_name in _MUTABLE_MODEL_BASES
+            if find_spec(module_name.partition(".")[0])
+        )
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
 
 
 class MutableProxy(wrapt.ObjectProxy):
@@ -1012,6 +1041,15 @@ def is_mutable_type(type_: type) -> bool:
     Returns:
         Whether the type is mutable and should be wrapped.
     """
-    return issubclass(type_, MUTABLE_TYPES) or (
+    if issubclass(type_, _MUTABLE_BUILTIN_TYPES) or (
         dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
-    )
+    ):
+        return True
+    # A model's defining module is already loaded before its subclasses exist.
+    # Read its namespace directly so lazy module attributes cannot load packages.
+    for module_name, base_name in _MUTABLE_MODEL_BASES:
+        if (module := sys.modules.get(module_name)) is not None:
+            base = vars(module).get(base_name)
+            if base is not None and issubclass(type_, base):
+                return True
+    return False
