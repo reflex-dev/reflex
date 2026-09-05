@@ -981,11 +981,13 @@ def _get_config(
                         sys.modules[dep] = module
                         _config_module_deps.add(dep)
                 with _record_imports() as recorder:
-                    for dep in sorted(
-                        package_modules, key=lambda name: name.count(".")
-                    ):
-                        importlib.reload(ctx._config_module_deps[dep])
-                _record_project_modules(recorder.names, project_root)
+                    try:
+                        for dep in sorted(
+                            package_modules, key=lambda name: name.count(".")
+                        ):
+                            importlib.reload(ctx._config_module_deps[dep])
+                    finally:
+                        _record_project_modules(recorder.names, project_root)
             # only import the module if it exists. If a module spec exists then
             # the module exists.
             if not find_spec(constants.Config.MODULE):

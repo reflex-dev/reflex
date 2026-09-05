@@ -1210,6 +1210,47 @@ def test_reload_config_preserves_state_defined_in_package(
         assert reflex_base.config.reload_config().app_name == "package_state"
 
 
+def test_reload_config_records_package_imports_after_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A failed package reload still tracks imports for the next retry.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    package = tmp_path / PACKAGE_NAME
+    package.mkdir()
+    (package / "settings.py").write_text("APP_NAME = 'first'\n")
+    (package / "state.py").write_text(
+        "import reflex as rx\n\nclass PackageState(rx.State):\n    value: str = ''\n"
+    )
+    (package / "__init__.py").write_text(
+        "import os\n"
+        "from .settings import APP_NAME\n\n"
+        "if os.environ.get('CONFIG_RELOAD_FAIL'):\n"
+        "    raise RuntimeError('reload failed')\n"
+    )
+    (tmp_path / f"{CONFIG_MODULE}.py").write_text(
+        f"import {PACKAGE_NAME}.state\nimport {PACKAGE_NAME}\n"
+        "import reflex as rx\n\n"
+        f"config = rx.Config(app_name={PACKAGE_NAME}.APP_NAME)\n"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "first"
+        monkeypatch.setenv("CONFIG_RELOAD_FAIL", "1")
+        with pytest.raises(RuntimeError, match="reload failed"):
+            reflex_base.config.reload_config()
+        monkeypatch.delenv("CONFIG_RELOAD_FAIL")
+        (package / "settings.py").write_text("APP_NAME = 'second'\n")
+        assert reflex_base.config.reload_config().app_name == "second"
+
+
 def _write_dependency_config(project: Path, app_name: str) -> None:
     """Write a config that imports a project-local non-state dependency.
 
