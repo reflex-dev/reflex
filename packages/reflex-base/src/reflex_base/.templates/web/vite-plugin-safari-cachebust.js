@@ -225,8 +225,9 @@ function createSafariMiddleware() {
       const out = rewriter.push(decode(chunk), false);
       const cb = callback(args);
       if (out) return cb ? _write(out, cb) : _write(out);
-      // Everything was held back for the next chunk; nothing is queued.
-      cb?.();
+      // Everything was held back for the next chunk; nothing is queued. Node
+      // never invokes a write callback synchronously, so defer it likewise.
+      if (cb) process.nextTick(cb);
       return true;
     };
 
