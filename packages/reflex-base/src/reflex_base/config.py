@@ -7,7 +7,7 @@ import os
 import sys
 import threading
 import urllib.parse
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from importlib.util import find_spec
 from pathlib import Path
@@ -803,10 +803,24 @@ class Config(BaseConfig):
         self._replace_defaults(**kwargs)
 
 
-# Project-local modules first imported while loading rxconfig.py; evicted
-# before the next load so projects don't reuse each other's dependencies.
-# Only mutated under _load_config_lock.
+# Project-local modules first imported while loading rxconfig.py. Only mutated
+# under _load_config_lock.
 _config_module_deps: set[str] = set()
+
+
+def _get_registered_state_modules(ctx: RegistrationContext) -> set[str]:
+    """Return modules defining states already registered in a context.
+
+    Args:
+        ctx: The active registration context.
+
+    Returns:
+        Module names whose objects must survive a config reload.
+    """
+    state_types = set(ctx.base_states.values())
+    for substates in ctx.base_state_substates.values():
+        state_types.update(substates)
+    return {state_type.__module__ for state_type in state_types}
 
 
 class _ImportRecorder:
@@ -844,6 +858,23 @@ class _ImportRecorder:
 
 
 _import_recorder = _ImportRecorder()
+
+
+def _record_project_modules(names: Iterable[str], project_root: Path) -> None:
+    """Add project-local modules from an import attempt to the dependency set.
+
+    Args:
+        names: Module names observed by the import recorder.
+        project_root: Root used to classify project-local modules.
+    """
+    for name in names:
+        origin = getattr(sys.modules.get(name), "__file__", None)
+        if (
+            origin
+            and (path := Path(origin)).is_relative_to(project_root)
+            and "site-packages" not in path.parts
+        ):
+            _config_module_deps.add(name)
 
 
 @contextmanager
@@ -894,7 +925,9 @@ def get_state_auto_setters() -> bool:
     return False
 
 
-def _get_config(project_root: Path | None = None) -> Config:
+def _get_config(
+    project_root: Path | None = None, *, reload_dependencies: bool = True
+) -> Config:
     """Import rxconfig.py fresh from the project root and return its config.
 
     The project root is prepended to sys.path for the duration of the import so
@@ -907,10 +940,14 @@ def _get_config(project_root: Path | None = None) -> Config:
             current working directory, resolved once up front so an rxconfig.py
             that changes the cwd cannot move the root that the sys.path entry
             and the dependency classification below are based on.
+        reload_dependencies: Whether to reload project-local modules imported by
+            rxconfig.py. A config reload in an existing RegistrationContext
+            keeps only modules that define already-registered state classes.
 
     Returns:
         The app config.
     """
+    ctx = RegistrationContext.ensure_context()
     project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
         # A fresh str object, so the exact inserted entry can be removed by
@@ -919,16 +956,38 @@ def _get_config(project_root: Path | None = None) -> Config:
         cwd = str(project_root)
         sys.path.insert(0, cwd)
         try:
-            # Never cache rxconfig or its project-local dependencies — each load
-            # goes to disk so different RegistrationContexts hold independent
-            # Config instances resolved against the current project. Evict
-            # before probing: find_spec answers from sys.modules, so modules
-            # left behind by another project directory would fake the existence
-            # check below.
+            # Restore context-owned modules on reload so forked state classes are
+            # not redefined while rxconfig.py is imported again.
             sys.modules.pop(constants.Config.MODULE, None)
-            for dep in _config_module_deps:
-                sys.modules.pop(dep, None)
-            _config_module_deps.clear()
+            if reload_dependencies or ctx._config_module_deps_root != project_root:
+                for dep in _config_module_deps:
+                    sys.modules.pop(dep, None)
+                _config_module_deps.clear()
+            else:
+                for dep in _config_module_deps:
+                    sys.modules.pop(dep, None)
+                _config_module_deps.clear()
+                state_modules = _get_registered_state_modules(ctx)
+                package_modules = {
+                    dep
+                    for dep in ctx._config_module_deps
+                    if any(
+                        state_module.startswith(f"{dep}.")
+                        for state_module in state_modules
+                    )
+                }
+                for dep, module in ctx._config_module_deps.items():
+                    if dep in state_modules or dep in package_modules:
+                        sys.modules[dep] = module
+                        _config_module_deps.add(dep)
+                with _record_imports() as recorder:
+                    try:
+                        for dep in sorted(
+                            package_modules, key=lambda name: name.count(".")
+                        ):
+                            importlib.reload(ctx._config_module_deps[dep])
+                    finally:
+                        _record_project_modules(recorder.names, project_root)
             # only import the module if it exists. If a module spec exists then
             # the module exists.
             if not find_spec(constants.Config.MODULE):
@@ -940,14 +999,15 @@ def _get_config(project_root: Path | None = None) -> Config:
                     rxconfig = importlib.import_module(constants.Config.MODULE)
                 finally:
                     # Record even on failure so a retry evicts partially-imported deps.
-                    for name in recorder.names:
-                        origin = getattr(sys.modules.get(name), "__file__", None)
-                        if (
-                            origin
-                            and (path := Path(origin)).is_relative_to(project_root)
-                            and "site-packages" not in path.parts
-                        ):
-                            _config_module_deps.add(name)
+                    _record_project_modules(recorder.names, project_root)
+                    ctx._config_module_deps.clear()
+                    ctx._config_module_deps.update({
+                        name: module
+                        for name in _config_module_deps
+                        if name != constants.Config.MODULE
+                        and (module := sys.modules.get(name)) is not None
+                    })
+                    object.__setattr__(ctx, "_config_module_deps_root", project_root)
             return rxconfig.config
         finally:
             for i, entry in enumerate(sys.path):
@@ -1021,6 +1081,7 @@ def reload_config() -> Config:
         The freshly loaded app config.
     """
     ctx = RegistrationContext.ensure_context()
-    config = _get_config()
+    preserve_dependencies = bool(ctx._config_module_deps or ctx.base_states)
+    config = _get_config(reload_dependencies=not preserve_dependencies)
     ctx._set_config(config)
     return config

@@ -29,6 +29,13 @@ from reflex.environment import (
     interpret_int_env,
 )
 
+CONFIG_MODULE = "rxconfig"
+STATE_MODULE = "config_reload_state_module"
+DEPENDENCY_MODULE = "config_reload_dependency"
+PACKAGE_NAME = "config_reload_package"
+PACKAGE_STATE_MODULE = f"{PACKAGE_NAME}.state"
+PACKAGE_SETTINGS_MODULE = f"{PACKAGE_NAME}.settings"
+
 
 def test_requires_app_name():
     """Test that a config requires an app_name."""
@@ -1036,6 +1043,264 @@ def test_get_config_accepts_explicit_project_root(
     assert reflex_base.config._get_config(project).app_name == "explicit"
 
 
+def _write_state_config(project: Path, app_name: str = "state_reload") -> None:
+    """Write a config that imports a module defining a state class.
+
+    Args:
+        project: The project directory to populate.
+        app_name: The app name written to the config.
+    """
+    project.mkdir(exist_ok=True)
+    (project / f"{STATE_MODULE}.py").write_text(
+        "import reflex as rx\n\nclass MyState(rx.State):\n    value: str = ''\n"
+    )
+    (project / "rxconfig.py").write_text(
+        f"import {STATE_MODULE}\nimport reflex as rx\n\n"
+        f"config = rx.Config(app_name={app_name!r})\n"
+    )
+
+
+def test_reload_config_does_not_redefine_project_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading config does not re-import project modules that define state.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    _write_state_config(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext() as context:
+        assert reflex_base.config.get_config().app_name == "state_reload"
+        assert reflex_base.config.reload_config().app_name == "state_reload"
+
+        with context.fork():
+            assert reflex_base.config.reload_config().app_name == "state_reload"
+
+
+def test_get_config_reloads_project_state_for_each_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Initial config loads register project state in each context.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    _write_state_config(tmp_path)
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext() as first_context:
+        reflex_base.config.get_config()
+        first_state = next(
+            state
+            for state in first_context.base_states.values()
+            if state.__module__ == STATE_MODULE
+        )
+
+    with RegistrationContext() as second_context:
+        reflex_base.config.get_config()
+        second_state = next(
+            state
+            for state in second_context.base_states.values()
+            if state.__module__ == STATE_MODULE
+        )
+
+    assert second_state is not first_state
+
+
+def test_reload_config_restores_modules_for_an_older_context(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading an older context restores its project-local modules.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    first_project = tmp_path / "first"
+    second_project = tmp_path / "second"
+    _write_state_config(first_project, "first")
+    _write_state_config(second_project, "second")
+
+    first_context = RegistrationContext()
+    with first_context:
+        monkeypatch.chdir(first_project)
+        assert reflex_base.config.get_config().app_name == "first"
+        first_module = sys.modules[STATE_MODULE]
+
+    with RegistrationContext():
+        monkeypatch.chdir(second_project)
+        assert reflex_base.config.get_config().app_name == "second"
+        assert sys.modules[STATE_MODULE] is not first_module
+
+    with first_context:
+        monkeypatch.chdir(first_project)
+        assert reflex_base.config.reload_config().app_name == "first"
+        assert sys.modules[STATE_MODULE] is first_module
+
+
+def test_reload_config_restores_state_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading config preserves a package containing a registered state.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    package = tmp_path / PACKAGE_NAME
+    package.mkdir()
+    (package / "__init__.py").write_text(
+        f"from .{PACKAGE_SETTINGS_MODULE.rsplit('.', maxsplit=1)[-1]} import APP_NAME\n"
+    )
+    (package / "settings.py").write_text("APP_NAME = 'first'\n")
+    (package / "state.py").write_text(
+        "import reflex as rx\n\nclass MyState(rx.State):\n    value: str = ''\n"
+    )
+    (tmp_path / f"{CONFIG_MODULE}.py").write_text(
+        f"import {PACKAGE_STATE_MODULE}\nimport reflex as rx\n\n"
+        f"import {PACKAGE_NAME}\n\n"
+        f"config = rx.Config(app_name={PACKAGE_NAME}.APP_NAME)\n"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "first"
+        (package / "settings.py").write_text("APP_NAME = 'second'\n")
+        assert reflex_base.config.reload_config().app_name == "second"
+        (package / "settings.py").write_text("APP_NAME = 'third'\n")
+        assert reflex_base.config.reload_config().app_name == "third"
+        assert PACKAGE_STATE_MODULE in sys.modules
+        assert PACKAGE_NAME in sys.modules
+
+
+def test_reload_config_preserves_state_defined_in_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading config does not redefine a state defined in a package.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    package = tmp_path / PACKAGE_NAME
+    package.mkdir()
+    (package / "__init__.py").write_text(
+        "import reflex as rx\n\nclass PackageState(rx.State):\n    value: str = ''\n"
+    )
+    (tmp_path / f"{CONFIG_MODULE}.py").write_text(
+        f"import {PACKAGE_NAME}\nimport reflex as rx\n\n"
+        "config = rx.Config(app_name='package_state')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "package_state"
+        assert reflex_base.config.reload_config().app_name == "package_state"
+
+
+def test_reload_config_records_package_imports_after_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A failed package reload still tracks imports for the next retry.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    package = tmp_path / PACKAGE_NAME
+    package.mkdir()
+    (package / "settings.py").write_text("APP_NAME = 'first'\n")
+    (package / "state.py").write_text(
+        "import reflex as rx\n\nclass PackageState(rx.State):\n    value: str = ''\n"
+    )
+    (package / "__init__.py").write_text(
+        "import os\n"
+        "from .settings import APP_NAME\n\n"
+        "if os.environ.get('CONFIG_RELOAD_FAIL'):\n"
+        "    raise RuntimeError('reload failed')\n"
+    )
+    (tmp_path / f"{CONFIG_MODULE}.py").write_text(
+        f"import {PACKAGE_NAME}.state\nimport {PACKAGE_NAME}\n"
+        "import reflex as rx\n\n"
+        f"config = rx.Config(app_name={PACKAGE_NAME}.APP_NAME)\n"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "first"
+        monkeypatch.setenv("CONFIG_RELOAD_FAIL", "1")
+        with pytest.raises(RuntimeError, match="reload failed"):
+            reflex_base.config.reload_config()
+        monkeypatch.delenv("CONFIG_RELOAD_FAIL")
+        (package / "settings.py").write_text("APP_NAME = 'second'\n")
+        assert reflex_base.config.reload_config().app_name == "second"
+
+
+def _write_dependency_config(project: Path, app_name: str) -> None:
+    """Write a config that imports a project-local non-state dependency.
+
+    Args:
+        project: The project directory to populate.
+        app_name: The app name exposed by the dependency.
+    """
+    project.mkdir()
+    (project / f"{DEPENDENCY_MODULE}.py").write_text(f"APP_NAME = {app_name!r}\n")
+    (project / "rxconfig.py").write_text(
+        f"import {DEPENDENCY_MODULE}\nimport reflex as rx\n\n"
+        f"config = rx.Config(app_name={DEPENDENCY_MODULE}.APP_NAME)\n"
+    )
+
+
+def test_reload_config_evicts_modules_when_project_changes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading a context after changing projects imports the new modules.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    first_project = tmp_path / "first"
+    second_project = tmp_path / "second"
+    _write_dependency_config(first_project, "first")
+    _write_dependency_config(second_project, "second")
+
+    with RegistrationContext():
+        monkeypatch.chdir(first_project)
+        assert reflex_base.config.get_config().app_name == "first"
+        (first_project / f"{DEPENDENCY_MODULE}.py").write_text("APP_NAME = 'updated'\n")
+        assert reflex_base.config.reload_config().app_name == "updated"
+        monkeypatch.chdir(second_project)
+        assert reflex_base.config.reload_config().app_name == "second"
+        dependency = sys.modules[DEPENDENCY_MODULE]
+        assert Path(dependency.__file__ or "").is_relative_to(second_project)
+
+
 @pytest.fixture
 def clean_config_modules() -> Generator[None, None, None]:
     """Drop the modules and dep records a real rxconfig load leaves behind.
@@ -1043,7 +1308,16 @@ def clean_config_modules() -> Generator[None, None, None]:
     Yields:
         None, once the module table is clean.
     """
-    names = ("rxconfig", "side_module", "chdir_dep_module")
+    names = (
+        CONFIG_MODULE,
+        "side_module",
+        "chdir_dep_module",
+        STATE_MODULE,
+        DEPENDENCY_MODULE,
+        PACKAGE_NAME,
+        PACKAGE_STATE_MODULE,
+        PACKAGE_SETTINGS_MODULE,
+    )
     try:
         yield
     finally:
