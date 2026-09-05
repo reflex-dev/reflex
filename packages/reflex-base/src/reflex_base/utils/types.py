@@ -44,6 +44,9 @@ from reflex_base import constants
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    PROPERTY_CLASSES: tuple[type, ...]
+
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
@@ -570,11 +573,46 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     return type_hints.get(field_name, None)
 
 
-PROPERTY_CLASSES = (property,)
-if find_spec("sqlalchemy") and find_spec("sqlalchemy.ext"):
-    from sqlalchemy.ext.hybrid import hybrid_property
+@lru_cache
+def _get_property_classes() -> tuple[type, ...]:
+    """Resolve the legacy property-class tuple on explicit access.
 
-    PROPERTY_CLASSES += (hybrid_property,)
+    Returns:
+        Python's property class and SQLAlchemy's hybrid property class when
+        SQLAlchemy is installed.
+    """
+    if find_spec("sqlalchemy") and find_spec("sqlalchemy.ext"):
+        from sqlalchemy.ext.hybrid import hybrid_property
+
+        return property, hybrid_property
+    return (property,)
+
+
+def __getattr__(name: str) -> object:
+    """Resolve compatibility attributes without importing optional runtimes.
+
+    Args:
+        name: The module attribute being requested.
+
+    Returns:
+        The lazily resolved compatibility value.
+
+    Raises:
+        AttributeError: If the module does not define the requested attribute.
+    """
+    if name == "PROPERTY_CLASSES":
+        return _get_property_classes()
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
+
+
+def __dir__() -> list[str]:
+    """List module attributes, including lazy compatibility exports.
+
+    Returns:
+        The module's attribute names.
+    """
+    return sorted({*globals(), "PROPERTY_CLASSES"})
 
 
 def get_property_hint(attr: Any | None) -> GenericType | None:
@@ -586,9 +624,15 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     Returns:
         The type hint of the property, if it is a property, else None.
     """
-    if not isinstance(attr, PROPERTY_CLASSES) or attr.fget is None:
+    if not isinstance(attr, property):
+        sqlalchemy_hybrid = sys.modules.get("sqlalchemy.ext.hybrid")
+        if sqlalchemy_hybrid is None or not isinstance(
+            attr, sqlalchemy_hybrid.hybrid_property
+        ):
+            return None
+    if (getter := getattr(attr, "fget", None)) is None:
         return None
-    hints = get_type_hints(attr.fget)
+    hints = get_type_hints(getter)
     return hints.get("return", None)
 
 
@@ -1523,3 +1567,10 @@ def is_immutable(i: Any) -> bool:
         Whether the value is immutable.
     """
     return isinstance(i, IMMUTABLE_TYPES)
+
+
+if not TYPE_CHECKING:
+    # Keep the historical wildcard-import surface while allowing the optional
+    # SQLAlchemy descriptor class to resolve only when that export is used.
+    __all__ = [name for name in globals() if not name.startswith("_")]
+    __all__.append("PROPERTY_CLASSES")

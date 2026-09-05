@@ -12,7 +12,7 @@ import re
 import sys
 import typing
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import getcwd
 from pathlib import Path
 from types import ModuleType
@@ -32,6 +32,9 @@ from reflex.utils import net, path_ops
 from reflex.utils.misc import get_module_path
 
 logger = logging.getLogger(__name__)
+
+_LATEST_VERSION_CHECK_INTERVAL = timedelta(days=1)
+_LATEST_VERSION_CHECK_FAILURE_INTERVAL = timedelta(hours=1)
 
 if typing.TYPE_CHECKING:
     from redis import Redis as RedisSync
@@ -88,6 +91,8 @@ def check_latest_package_version(package_name: str):
     if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
         return
     try:
+        if get_or_set_last_reflex_version_check_datetime(package_name):
+            return
         logger.debug(f"Checking for the latest version of {package_name}...")
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
@@ -95,10 +100,13 @@ def check_latest_package_version(package_name: str):
         response = net.get(url, timeout=2)
         latest_version = response.json()["info"]["version"]
         logger.debug(f"Latest version of {package_name}: {latest_version}")
-        if get_or_set_last_reflex_version_check_datetime():
-            # Versions were already checked and saved in reflex.json, no need to warn again
-            return
-        if version.parse(current_version) < version.parse(latest_version):
+        current_version_parsed = version.parse(current_version)
+        latest_version_parsed = version.parse(latest_version)
+        path_ops.update_json_file(
+            get_web_dir() / constants.Reflex.JSON,
+            {_version_check_timestamp_key(package_name): str(datetime.now())},
+        )
+        if current_version_parsed < latest_version_parsed:
             # Show a warning when the host version is older than PyPI version
             logger.warning(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
@@ -107,24 +115,74 @@ def check_latest_package_version(package_name: str):
         logger.debug(f"Failed to check for the latest version of {package_name}.")
 
 
-def get_or_set_last_reflex_version_check_datetime():
-    """Get the last time a check was made for the latest reflex version.
-    This is typically useful for cases where the host reflex version is
-    less than that on Pypi.
+def _version_check_timestamp_key(package_name: str, *, attempt: bool = False) -> str:
+    """Return the per-package reflex.json key for a version-check timestamp.
+
+    Args:
+        package_name: The distribution being checked.
+        attempt: Whether to return the shorter failure-cooldown key.
 
     Returns:
-        The last version check datetime.
+        The normalized timestamp key, retaining the legacy key for Reflex.
+    """
+    normalized_name = re.sub(r"[-_.]+", "_", package_name).lower()
+    reflex_name = re.sub(r"[-_.]+", "_", constants.Reflex.MODULE_NAME).lower()
+    suffix = "" if normalized_name == reflex_name else f"_{normalized_name}"
+    key = (
+        "last_version_check_attempt_datetime"
+        if attempt
+        else "last_version_check_datetime"
+    )
+    return f"{key}{suffix}"
+
+
+def get_or_set_last_reflex_version_check_datetime(
+    package_name: str = constants.Reflex.MODULE_NAME,
+) -> str | None:
+    """Return a recent version-check timestamp or record a new attempt.
+
+    Successful checks remain fresh for a day. Failed attempts use a shorter
+    cooldown so offline commands do not repeatedly wait on the network without
+    delaying update notices for a full day.
+
+    Args:
+        package_name: The distribution being checked.
+
+    Returns:
+        A fresh existing timestamp when the check can be skipped, otherwise None.
     """
     reflex_json_file = get_web_dir() / constants.Reflex.JSON
     if not reflex_json_file.exists():
         return None
-    # Open and read the file
+
     data = json.loads(reflex_json_file.read_text())
-    last_version_check_datetime = data.get("last_version_check_datetime")
-    if not last_version_check_datetime:
-        data.update({"last_version_check_datetime": str(datetime.now())})
-        path_ops.update_json_file(reflex_json_file, data)
-    return last_version_check_datetime
+    now = datetime.now()
+    for key, interval in (
+        (
+            _version_check_timestamp_key(package_name),
+            _LATEST_VERSION_CHECK_INTERVAL,
+        ),
+        (
+            _version_check_timestamp_key(package_name, attempt=True),
+            _LATEST_VERSION_CHECK_FAILURE_INTERVAL,
+        ),
+    ):
+        timestamp = data.get(key)
+        if not isinstance(timestamp, str):
+            continue
+        try:
+            elapsed = now - datetime.fromisoformat(timestamp)
+        except (TypeError, ValueError):
+            continue
+        else:
+            if timedelta(0) <= elapsed < interval:
+                return timestamp
+
+    path_ops.update_json_file(
+        reflex_json_file,
+        {_version_check_timestamp_key(package_name, attempt=True): str(now)},
+    )
+    return None
 
 
 def set_last_reflex_run_time():

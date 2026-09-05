@@ -1,5 +1,8 @@
 """Tests for reflex_base.utils.types."""
 
+import json
+import subprocess
+import sys
 import typing
 from collections.abc import Callable
 from typing import Literal, TypeVar
@@ -22,6 +25,57 @@ Ts = TypeVarTuple("Ts")
 Handlers = TypeAliasType(
     "Handlers", tuple[Callable[P, int], Unpack[Ts]], type_params=(P, Ts)
 )
+
+
+def test_types_import_keeps_optional_orm_lazy():
+    """Importing type helpers does not import the optional SQLAlchemy stack."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import json, sys; import reflex_base.utils.types; "
+                "print(json.dumps(sorted(name for name in sys.modules "
+                "if name == 'sqlalchemy' or name.startswith('sqlalchemy.'))))"
+            ),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert json.loads(result.stdout) == []
+
+
+def test_property_classes_compatibility_export():
+    """The legacy property-class tuple remains available from both modules."""
+    import reflex_base.utils.types as base_types
+    from sqlalchemy.ext.hybrid import hybrid_property
+
+    import reflex.utils.types as reflex_types
+
+    expected_property_classes = (property, hybrid_property)
+    assert expected_property_classes == base_types.PROPERTY_CLASSES
+    assert reflex_types.PROPERTY_CLASSES == base_types.PROPERTY_CLASSES
+
+
+@pytest.mark.parametrize(
+    "module_name", ["reflex_base.utils.types", "reflex.utils.types"]
+)
+def test_property_classes_wildcard_import_compatibility(module_name: str):
+    """Wildcard imports retain the legacy property-class export."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            f"from {module_name} import *\nprint('PROPERTY_CLASSES' in locals())",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stdout.strip() == "True"
 
 
 def _type_alias_types() -> list[type]:
