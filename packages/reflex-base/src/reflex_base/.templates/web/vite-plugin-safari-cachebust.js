@@ -27,6 +27,7 @@ const pluginName = "vite-plugin-safari-cachebust";
 const tsParam = "__reflex_ts";
 const linkTagRe = /<link\s+rel="modulepreload"\s+href="([^"]+)"[^>]*>/g;
 const tsUrlRe = new RegExp(`(\\?|&)${tsParam}=\\d+`);
+const regExpSpecialsRe = /[.*+?^${}()|[\]\\]/g;
 
 /**
  * Creates a Vite plugin that adds cache-busting for Safari browsers
@@ -68,6 +69,8 @@ function isSafari(ua) {
 function createRewriter(timestamp) {
   /** @type {Map<string, string>} href -> href with the cache-bust param */
   const replacements = new Map();
+  /** @type {RegExp | null} Alternation of every known href, longest first */
+  let hrefRe = null;
   let pending = "";
 
   /**
@@ -75,32 +78,26 @@ function createRewriter(timestamp) {
    * @param {string} text - The text to scan
    */
   function discover(text) {
+    let changed = false;
     for (const [, href] of text.matchAll(linkTagRe)) {
       if (replacements.has(href) || /^(https?:)?\/\//.test(href)) continue;
       replacements.set(
         href,
         `${href}${href.includes("?") ? "&" : "?"}${tsParam}=${timestamp}`,
       );
+      changed = true;
     }
-  }
-
-  /**
-   * Checks whether a longer known href starts at the offset of a match.
-   *
-   * Such an occurrence belongs to the longer href (e.g. "/a.jsx" or
-   * "/a.js?v=1" when "/a.js" matched) and must be rewritten only once.
-   * @param {string} text - The text being rewritten
-   * @param {number} offset - The index where the shorter href matched
-   * @param {string} href - The matched href
-   * @returns {boolean} True if a longer href starts at the offset
-   */
-  function hasLongerHrefAt(text, offset, href) {
-    for (const other of replacements.keys()) {
-      if (other.length > href.length && text.startsWith(other, offset)) {
-        return true;
-      }
-    }
-    return false;
+    if (!changed) return;
+    // Longest first, so an href that prefixes or contains another ("/a.js" in
+    // "/a.jsx", "/a.js?v=1" or "/b/a.js") is matched whole and every
+    // occurrence is rewritten exactly once in a single pass.
+    hrefRe = new RegExp(
+      [...replacements.keys()]
+        .sort((a, b) => b.length - a.length)
+        .map((href) => href.replace(regExpSpecialsRe, "\\$&"))
+        .join("|"),
+      "g",
+    );
   }
 
   /**
@@ -144,12 +141,9 @@ function createRewriter(timestamp) {
       const cut = flush ? text.length : cutIndex(text);
       pending = text.slice(cut);
       text = text.slice(0, cut);
-      for (const [href, replacement] of replacements) {
-        text = text.replaceAll(href, (match, offset, whole) =>
-          hasLongerHrefAt(whole, offset, href) ? match : replacement,
-        );
-      }
-      return text;
+      return hrefRe
+        ? text.replace(hrefRe, (match) => replacements.get(match))
+        : text;
     },
     get count() {
       return replacements.size;
