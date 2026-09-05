@@ -978,14 +978,12 @@ def _get_config(
                         ):
                             _config_module_deps.add(name)
                     ctx._config_module_deps.clear()
-                    ctx._config_module_deps.update(
-                        {
-                            name: module
-                            for name in _config_module_deps
-                            if name != constants.Config.MODULE
-                            and (module := sys.modules.get(name)) is not None
-                        }
-                    )
+                    ctx._config_module_deps.update({
+                        name: module
+                        for name in _config_module_deps
+                        if name != constants.Config.MODULE
+                        and (module := sys.modules.get(name)) is not None
+                    })
                     object.__setattr__(ctx, "_config_module_deps_root", project_root)
             return rxconfig.config
         finally:
