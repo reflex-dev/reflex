@@ -36,6 +36,7 @@ def get_sidebar_items_ai_builder_overview():
                 ai_builder.features.automated_testing,
                 ai_builder.features.agent_toolkit,
                 ai_builder.features.security_scanner,
+                ai_builder.features.user_authentication,
             ],
         ),
         create_item(
