@@ -1,5 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
+import builtins
+import multiprocessing
 import os
 from pathlib import Path
 
@@ -10,6 +12,58 @@ from reflex_base.environment import environment
 from reflex.utils import exec as exec_utils
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
+
+
+def test_run_backend_skips_app_preload_for_spawn(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Spawned Granian workers cannot reuse modules imported by the supervisor."""
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    run_granian = mocker.patch.object(exec_utils, "run_granian_backend")
+    mocker.patch.object(exec_utils, "notify_backend")
+    mocker.patch.object(multiprocessing, "get_start_method", return_value="spawn")
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+
+    real_import = builtins.__import__
+
+    def import_without_app_preload(name, *args, **kwargs):
+        if name == "reflex.app":
+            msg = "reflex.app was preloaded in a spawn-based supervisor"
+            raise AssertionError(msg)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", import_without_app_preload)
+
+    exec_utils.run_backend("127.0.0.1", 8000)
+
+    run_granian.assert_called_once()
+
+
+def test_run_backend_preloads_app_for_fork(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Forked Granian workers reuse the supervisor's imported app modules."""
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    mocker.patch.object(exec_utils, "run_granian_backend")
+    mocker.patch.object(exec_utils, "notify_backend")
+    mocker.patch.object(multiprocessing, "get_start_method", return_value="fork")
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+
+    imported: list[str] = []
+    real_import = builtins.__import__
+
+    def track_app_preload(name, *args, **kwargs):
+        if name == "reflex.app":
+            imported.append(name)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", track_app_preload)
+
+    exec_utils.run_backend("127.0.0.1", 8000)
+
+    assert imported == ["reflex.app"]
 
 
 def test_run_uvicorn_backend_sets_reload_env_var_and_clears_marker(

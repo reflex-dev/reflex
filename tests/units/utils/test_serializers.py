@@ -1,6 +1,8 @@
 import datetime
 import decimal
 import json
+import subprocess
+import sys
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -15,6 +17,161 @@ from reflex.utils import serializers
 pytest.importorskip("pydantic")
 
 from pydantic import BaseModel as Base
+
+
+def test_optional_serializer_dependencies_are_lazy() -> None:
+    """Importing serializers must not import heavyweight optional libraries."""
+    script = """
+import sys
+
+from reflex_base.utils import serializers  # noqa: F401
+
+optional_modules = ("pandas", "plotly", "PIL")
+loaded = [name for name in optional_modules if name in sys.modules]
+assert not loaded, f"optional serializer dependencies imported eagerly: {loaded}"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_lazy_serializer_preserves_custom_registration() -> None:
+    """Loading an optional output type must preserve custom serializers."""
+    pytest.importorskip("pandas")
+    script = """
+from pandas import DataFrame
+from reflex_base.utils import serializers
+
+@serializers.serializer(overwrite=True)
+def custom_dataframe(value: DataFrame):
+    return "custom"
+
+assert serializers.get_serializer(DataFrame) is custom_dataframe
+assert serializers.get_serializer_type(DataFrame) is dict
+serializers.get_serializer.cache_clear()
+assert serializers.get_serializer(DataFrame) is custom_dataframe
+assert serializers.serialize(DataFrame()) == "custom"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_lazy_serializer_preserves_exact_type_precedence() -> None:
+    """A broad fallback must not mask a built-in exact-type serializer."""
+    pytest.importorskip("pandas")
+    script = """
+from pandas import DataFrame
+from reflex_base.utils import serializers
+
+class CustomFrame(DataFrame):
+    pass
+
+@serializers.serializer
+def fallback(value: object) -> str:
+    return "fallback"
+
+assert serializers.get_serializer(DataFrame) is serializers.serialize_dataframe
+assert serializers.get_serializer_type(DataFrame) is dict
+assert serializers.get_serializer(CustomFrame) is fallback
+assert serializers.get_serializer_type(CustomFrame) is str
+serializers.get_serializer.cache_clear()
+assert serializers.get_serializer(CustomFrame) is fallback
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_optional_serializer_annotations_resolve() -> None:
+    """Runtime introspection must resolve optional serializer argument types."""
+    pytest.importorskip("pandas")
+    pytest.importorskip("plotly")
+    pytest.importorskip("PIL")
+    script = """
+from typing import get_type_hints
+from reflex_base.utils import serializers
+
+for name in (
+    "format_dataframe_values", "serialize_dataframe", "serialize_figure",
+    "serialize_template", "serialize_image",
+):
+    hints = get_type_hints(getattr(serializers, name))
+    assert all(isinstance(value, type) for key, value in hints.items() if key != "return")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("lookup", ["get_serializer", "get_serializer_type"])
+def test_optional_registration_during_subclass_lookup(lookup: str) -> None:
+    """Concurrent first use must not invalidate an active registry iteration.
+
+    Args:
+        lookup: The serializer lookup to exercise.
+    """
+    pytest.importorskip("pandas")
+    script = """
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
+from pandas import DataFrame
+from reflex_base.utils import serializers
+
+entered = Event()
+registered = Event()
+
+class Target:
+    pass
+
+class BlockingMeta(type):
+    def __subclasscheck__(cls, candidate):
+        if candidate is Target:
+            entered.set()
+            assert registered.wait(5), "optional registration blocked"
+        return False
+
+class Sentinel(metaclass=BlockingMeta):
+    pass
+
+@serializers.serializer
+def sentinel(value: Sentinel) -> str:
+    return "sentinel"
+
+with ThreadPoolExecutor(max_workers=1) as pool:
+    pending = pool.submit(getattr(serializers, LOOKUP), Target)
+    assert entered.wait(5), "subclass lookup did not start"
+    try:
+        assert serializers.get_serializer(DataFrame) is serializers.serialize_dataframe
+    finally:
+        registered.set()
+    assert pending.result(timeout=5) is None
+""".replace("LOOKUP", repr(lookup))
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.parametrize(

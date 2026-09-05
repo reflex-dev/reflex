@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import logging
+import sys
 from collections.abc import Iterable, Iterator
-from importlib.util import find_spec
 from typing import TYPE_CHECKING, TypedDict
 
 from reflex_base.config import Config, get_config
@@ -18,13 +18,10 @@ from reflex.istate.storage import (
     LocalStorage,
     SessionStorage,
 )
-from reflex.model import ModelRegistry
 from reflex.route import get_route_args
 from reflex.utils import telemetry
 
 logger = logging.getLogger(__name__)
-
-_HAS_SQLALCHEMY = find_spec("sqlalchemy") is not None
 
 __all__ = ["record_compile"]
 
@@ -224,10 +221,22 @@ def _collect_features_used(
     _walk_state_features(features, user_states)
     _walk_app_features(features, app)
     features["upload_count"] = int(Upload.is_used)
-    if _HAS_SQLALCHEMY:
-        features["db_model_count"] = len(ModelRegistry.get_models())
+    features["db_model_count"] = _get_db_model_count()
     _record_config_attestations(features, config)
     return features
+
+
+def _get_db_model_count() -> int:
+    """Count models without importing the optional database stack.
+
+    Returns:
+        The number of registered database models, or zero when database support
+        has not already been loaded by the application.
+    """
+    model_module = sys.modules.get("reflex.model")
+    registry = getattr(model_module, "ModelRegistry", None)
+    get_models = getattr(registry, "get_models", None)
+    return len(get_models()) if get_models is not None else 0
 
 
 _STATE_MANAGER_FEATURE: dict[str, FeatureName] = {
