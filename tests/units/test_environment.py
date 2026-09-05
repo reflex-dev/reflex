@@ -438,6 +438,27 @@ class TestEnvVar:
         del os.environ["TEST_VAR"]
 
 
+@pytest.mark.parametrize("name", ["test_var", "Test_Var", "tEST_VAR", "reflex_use_npm"])
+def test_env_var_name_not_uppercase_raises(name):
+    """Test that a non-uppercase environment variable name is rejected.
+
+    Args:
+        name: The invalid environment variable name.
+    """
+    with pytest.raises(ValueError, match="must be uppercase"):
+        EnvVar(name, "default", str)
+
+
+@pytest.mark.parametrize("name", ["TEST_VAR", "__INTERNAL_VAR", "VAR_2"])
+def test_env_var_name_uppercase_accepted(name):
+    """Test that fully uppercase environment variable names are accepted.
+
+    Args:
+        name: The valid environment variable name.
+    """
+    assert EnvVar(name, "default", str).name == name
+
+
 class TestEnvVarDescriptor:
     """Test the env_var descriptor."""
 
