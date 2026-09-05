@@ -952,7 +952,10 @@ def _get_config(
                 _config_module_deps.clear()
                 state_modules = _get_registered_state_modules(ctx)
                 for dep, module in ctx._config_module_deps.items():
-                    if dep in state_modules:
+                    if dep in state_modules or any(
+                        state_module.startswith(f"{dep}.")
+                        for state_module in state_modules
+                    ):
                         sys.modules[dep] = module
                         _config_module_deps.add(dep)
             # only import the module if it exists. If a module spec exists then

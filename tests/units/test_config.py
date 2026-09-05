@@ -32,6 +32,7 @@ from reflex.environment import (
 CONFIG_MODULE = "rxconfig"
 STATE_MODULE = "config_reload_state_module"
 DEPENDENCY_MODULE = "config_reload_dependency"
+PACKAGE_STATE_MODULE = "config_reload_package.state"
 
 
 def test_requires_app_name():
@@ -1141,6 +1142,37 @@ def test_reload_config_restores_modules_for_an_older_context(
         assert sys.modules[STATE_MODULE] is first_module
 
 
+def test_reload_config_restores_state_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading config preserves a package containing a registered state.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    package = tmp_path / "config_reload_package"
+    package.mkdir()
+    (package / "__init__.py").write_text("")
+    (package / "state.py").write_text(
+        "import reflex as rx\n\nclass MyState(rx.State):\n    value: str = ''\n"
+    )
+    (tmp_path / f"{CONFIG_MODULE}.py").write_text(
+        f"import {PACKAGE_STATE_MODULE}\nimport reflex as rx\n\n"
+        "config = rx.Config(app_name='package_state_reload')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "package_state_reload"
+        assert reflex_base.config.reload_config().app_name == "package_state_reload"
+        assert PACKAGE_STATE_MODULE in sys.modules
+        assert "config_reload_package" in sys.modules
+
+
 def _write_dependency_config(project: Path, app_name: str) -> None:
     """Write a config that imports a project-local non-state dependency.
 
@@ -1197,6 +1229,8 @@ def clean_config_modules() -> Generator[None, None, None]:
         "chdir_dep_module",
         STATE_MODULE,
         DEPENDENCY_MODULE,
+        "config_reload_package",
+        PACKAGE_STATE_MODULE,
     )
     try:
         yield
