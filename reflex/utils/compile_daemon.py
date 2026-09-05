@@ -16,7 +16,7 @@ import subprocess
 import sys
 import threading
 import time
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -58,13 +58,16 @@ def run_compile_daemon(prerender_routes: bool = False) -> None:
     # The daemon DOES compile; ensure the cache is on and the skip flag is off.
     env.pop(environment.REFLEX_SKIP_COMPILE.name, None)
     env[environment.REFLEX_COMPILE_CACHE.name] = "1"
+    env[environment.REFLEX_COMPILE_DAEMON.name] = "1"
     if prerender_routes:
         env["REFLEX_PRERENDER_ROUTES"] = "1"
+    mark_daemon_active()
     proc = subprocess.Popen(
         [sys.executable, "-m", "reflex.utils.compile_daemon"], env=env
     )
 
     def _terminate() -> None:
+        clear_daemon_marker()
         if proc.poll() is None:
             proc.terminate()
             try:
@@ -305,19 +308,19 @@ def _snapshot(paths: set[Path]) -> dict[Path, int]:
     return {p: m for p in paths if (m := _mtime_ns(p)) is not None}
 
 
-def _poll_changes(state: _WatchState, alive: Callable[[], bool]) -> Iterator[set[Path]]:
+def _poll_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | None:
     """Fallback change source when ``watchfiles`` is unavailable.
 
     Re-stats the known file set every ``_POLL_INTERVAL`` and re-walks the tree
     every ``_RESCAN_INTERVAL`` to discover added files.
 
     Args:
-        state: The live watch state (read on every rescan, so a refresh after a
-            compile takes effect without restarting the poller).
+        state: The live watch state.
         alive: Returns False when the watcher should stop.
 
-    Yields:
-        Each non-empty set of changed paths.
+    Returns:
+        The first non-empty set of changed paths, or None once ``alive`` is
+        False.
     """
     paths = state.watch_paths()
     snapshot = _snapshot(paths)
@@ -335,30 +338,30 @@ def _poll_changes(state: _WatchState, alive: Callable[[], bool]) -> Iterator[set
         }
         if changed:
             time.sleep(_DEBOUNCE_MS / 1000)  # absorb the rest of a burst
-            yield changed
-            paths = state.watch_paths()
-            snapshot = _snapshot(paths)
-            last_rescan = time.monotonic()
-        else:
-            snapshot = current
+            return changed
+        snapshot = current
+    return None
 
 
-def _iter_changes(state: _WatchState, alive: Callable[[], bool]) -> Iterator[set[Path]]:
-    """Yield sets of changed compile inputs as the OS reports them.
+def _next_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | None:
+    """Block until compile inputs change; return the changed paths.
 
     Subscribes to filesystem notifications (``watchfiles``: inotify, FSEvents,
-    ReadDirectoryChangesW) over ``state.targets()`` and filters events with
+    ReadDirectoryChangesW) over ``state.targets()``, filtered by
     ``state.accepts``. Polling is only a fallback when ``watchfiles`` is not
-    importable. The watcher is re-created when the target set changes (a
-    compile recorded a new external content directory).
+    importable.
+
+    The watcher is torn down before returning: it runs a native thread, and
+    the compile that follows forks the (otherwise single-threaded) daemon.
+    Edits made while the watcher is down are caught up by
+    :func:`_missed_changes` after the compile.
 
     Args:
-        state: The live watch state; ``targets``/``accepts`` are re-read after
-            every yielded change set.
+        state: The live watch state.
         alive: Returns False when the watcher should stop.
 
-    Yields:
-        Each non-empty, accepted set of changed paths.
+    Returns:
+        A non-empty set of changed paths, or None once ``alive`` is False.
     """
     try:
         import watchfiles
@@ -366,30 +369,55 @@ def _iter_changes(state: _WatchState, alive: Callable[[], bool]) -> Iterator[set
         console.warn(
             "watchfiles is not installed; the compile daemon falls back to polling."
         )
-        yield from _poll_changes(state, alive)
-        return
+        return _poll_changes(state, alive)
 
     def watch_filter(_change: object, raw_path: str) -> bool:
         return state.accepts(Path(raw_path))
 
-    while alive():
-        targets = state.targets()
-        for events in watchfiles.watch(
-            *targets,
-            watch_filter=watch_filter,
-            debounce=_DEBOUNCE_MS,
-            step=25,
-            rust_timeout=_WATCH_TIMEOUT_MS,
-            yield_on_timeout=True,
-            raise_interrupt=False,
-        ):
+    events = watchfiles.watch(
+        *state.targets(),
+        watch_filter=watch_filter,
+        debounce=_DEBOUNCE_MS,
+        step=25,
+        rust_timeout=_WATCH_TIMEOUT_MS,
+        yield_on_timeout=True,
+        raise_interrupt=False,
+    )
+    try:
+        for batch in events:
             if not alive():
-                return
-            changed = {Path(raw_path) for _change, raw_path in events}
+                return None
+            changed = {Path(raw_path) for _change, raw_path in batch}
             if changed:
-                yield changed
-                if state.targets() != targets:
-                    break  # re-create the watcher over the new target set
+                return changed
+    finally:
+        events.close()  # stops the native watcher thread before any fork
+    return None
+
+
+def _dependency_snapshot(state: _WatchState) -> dict[Path, int]:
+    """Stat the recorded compile inputs (cheap: no tree walk).
+
+    Args:
+        state: The watch state whose known dependencies to stat.
+
+    Returns:
+        ``{path: mtime_ns}`` for every readable recorded input.
+    """
+    return _snapshot(state.known | state.globals_)
+
+
+def _missed_changes(before: dict[Path, int], after: dict[Path, int]) -> set[Path]:
+    """Inputs that changed between two dependency snapshots.
+
+    Args:
+        before: Snapshot taken before the watcher was torn down.
+        after: Snapshot taken once it is about to be re-armed.
+
+    Returns:
+        The paths whose mtime differs (or that appeared/disappeared).
+    """
+    return {p for p in before.keys() | after.keys() if before.get(p) != after.get(p)}
 
 
 #: ``__file__`` -> whether it is under the reload roots; the "" key holds the
@@ -481,6 +509,9 @@ def _reset_first_party(roots: list[Path]) -> None:
     ctx.base_states.clear()
     ctx.base_state_substates.clear()
     ctx.event_handlers.clear()
+    # The warm parent's App is bound to the context; the re-imported app
+    # module creates a new one, which the context refuses while bound.
+    object.__setattr__(ctx, "_app", None)
     all_base_state_classes.clear()
     for cached in (
         BaseState.get_parent_state,
@@ -545,10 +576,61 @@ _COMPILE_LOCK_FILE = ".compile_in_progress"
 _LOCK_WAIT_TIMEOUT = _COMPILE_TIMEOUT + 10
 
 
+#: Marker (under the backend dir) holding the pid of the ``reflex run`` that
+#: owns a compile daemon. Backend workers skip frontend compilation while it
+#: names a live process. A file, not an environment variable: workers may be
+#: forked from a ``forkserver`` whose environment predates ``reflex run``
+#: deciding to start the daemon.
+_DAEMON_MARKER_FILE = ".compile_daemon"
+
+
 def _lock_path() -> Path:
     from reflex.utils import prerequisites
 
     return prerequisites.get_backend_dir() / _COMPILE_LOCK_FILE
+
+
+def _daemon_marker_path() -> Path:
+    from reflex.utils import prerequisites
+
+    return prerequisites.get_backend_dir() / _DAEMON_MARKER_FILE
+
+
+def mark_daemon_active() -> None:
+    """Record that this ``reflex run`` process owns the frontend compile."""
+    marker = _daemon_marker_path()
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text(str(os.getpid()))
+
+
+def clear_daemon_marker() -> None:
+    """Remove the daemon-ownership marker (on ``reflex run`` exit)."""
+    _daemon_marker_path().unlink(missing_ok=True)
+
+
+def daemon_active() -> bool:
+    """Whether a live ``reflex run`` owns frontend compilation via the daemon.
+
+    Returns:
+        True if the marker names a process that is still alive.
+    """
+    marker = _daemon_marker_path()
+    return marker.exists() and _lock_holder_alive(marker)
+
+
+def owns_compilation() -> bool:
+    """Whether this process should produce ``.web`` itself.
+
+    False for a backend reload worker while a compile daemon owns the build;
+    the daemon (and its forked compile children) carry
+    ``REFLEX_COMPILE_DAEMON`` and always own it. Decided from the on-disk
+    marker rather than inherited environment, which a ``forkserver`` started
+    before ``reflex run`` chose the daemon would not carry.
+
+    Returns:
+        True if this process compiles the frontend.
+    """
+    return environment.REFLEX_COMPILE_DAEMON.get() or not daemon_active()
 
 
 @contextlib.contextmanager
@@ -699,6 +781,22 @@ def _quiesce_parent() -> None:
     telemetry.shutdown_executor()
 
 
+def _os_thread_count() -> int | None:
+    """Count this process's OS threads, including native ones Python cannot see.
+
+    Returns:
+        The thread count from ``/proc`` (Linux), else None.
+    """
+    try:
+        with Path("/proc/self/status").open() as status:
+            for line in status:
+                if line.startswith("Threads:"):
+                    return int(line.split()[1])
+    except (OSError, ValueError):
+        return None
+    return None
+
+
 def _can_fork() -> bool:
     """Whether forking is safe right now (POSIX and the process is single-threaded).
 
@@ -714,6 +812,17 @@ def _can_fork() -> bool:
         return False
     _quiesce_parent()
     if threading.active_count() == 1:
+        # A native thread that just finished (the file watcher's, the progress
+        # bar's) may still be winding down; give it a moment so the fork is
+        # really single-threaded.
+        deadline = time.monotonic() + 0.25
+        while (count := _os_thread_count()) is not None and count > 1:
+            if time.monotonic() > deadline:
+                console.debug(
+                    f"Compile daemon: forking with {count} OS threads still alive."
+                )
+                break
+            time.sleep(0.005)
         return True
     others = [
         t.name for t in threading.enumerate() if t is not threading.current_thread()
@@ -808,7 +917,12 @@ def _serve() -> None:
         # Never outlive reflex-run: if our parent died we were reparented.
         return os.getppid() == parent_pid
 
-    for changed in _iter_changes(state, alive):
+    pending: set[Path] = set()
+    while alive():
+        changed = pending or _next_changes(state, alive)
+        pending = set()
+        if not changed:
+            break
         from reflex.compiler.disk_cache import format_path_list
 
         console.info(
@@ -824,14 +938,17 @@ def _serve() -> None:
                 sys.executable, [sys.executable, "-m", "reflex.utils.compile_daemon"]
             )
 
+        before = _dependency_snapshot(state)
         state.roots = roots = _reload_roots()
         with _compile_lock(root):
             ok = _compile_once(roots, prerender_routes, changed)
         if not ok:
             console.error("Compile failed; keeping the last good build.")
         # Refresh what is watched from the new manifest so a newly-referenced
-        # content file becomes watched.
+        # content file becomes watched, and catch up on edits made while the
+        # watcher was down for the compile.
         state = _WatchState.build(roots, root)
+        pending = _missed_changes(before, _dependency_snapshot(state))
 
 
 def main(argv: list[str] | None = None) -> int:

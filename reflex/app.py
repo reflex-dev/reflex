@@ -1583,6 +1583,13 @@ class App(MiddlewareMixin, LifespanMixin):
         if environment.REFLEX_SKIP_COMPILE.get():
             return False
 
+        # A running compile daemon owns .web; backend workers only evaluate
+        # pages to register state.
+        from reflex.utils import compile_daemon
+
+        if not compile_daemon.owns_compilation():
+            return False
+
         nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
 
         # Check the nocompile file.

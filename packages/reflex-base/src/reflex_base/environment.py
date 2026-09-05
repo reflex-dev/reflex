@@ -657,6 +657,11 @@ class EnvironmentVariables:
     # See reflex/compiler/disk_cache.py and reflex/compiler/page_cache.py.
     REFLEX_COMPILE_CACHE: EnvVar[bool] = env_var(False)
 
+    # Set only in the compile daemon's own process (and its forked children):
+    # marks the process that owns .web while a daemon runs, so backend reload
+    # workers of the same `reflex run` skip frontend compilation.
+    REFLEX_COMPILE_DAEMON: EnvVar[bool] = env_var(False, internal=True)
+
     # Inherited by uvicorn/granian reload workers so the backend can distinguish
     # dev reload-capable worker boots from other backend starts. Never set in prod.
     REFLEX_DEV_BACKEND_RELOAD_ACTIVE: EnvVar[bool] = env_var(False, internal=True)

@@ -515,7 +515,7 @@ def globals_mismatch(
         if label != "reflex" and validator.changed(path)
     }
     stale.update(
-        path for path in manifest.get("globals_absent", ()) if Path(path).exists()
+        path for path in manifest.get("globals_absent", ()) if Path(path).is_file()
     )
     if stale:
         return f"global input(s) changed: {format_path_list(stale, root)}"

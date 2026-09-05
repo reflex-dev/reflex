@@ -199,9 +199,12 @@ def get_app(reload: bool = False) -> ModuleType:
 
         module = config.module
         sys.path.insert(0, getcwd())  # noqa: PTH109
+        from reflex.utils import compile_daemon
+
         if (
             environment.REFLEX_COMPILE_CACHE.get()
             and not environment.REFLEX_SKIP_COMPILE.get()
+            and compile_daemon.owns_compilation()
         ):
             from reflex.compiler import page_cache
 

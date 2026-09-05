@@ -145,9 +145,9 @@ def test_iter_changes_reports_an_edit(tmp_path):
     got: list[set] = []
 
     def run() -> None:
-        for changed in compile_daemon._iter_changes(state, lambda: not got):
+        changed = compile_daemon._next_changes(state, lambda: not got)
+        if changed:
             got.append(changed)
-            return
 
     thread = threading.Thread(target=run, daemon=True)
     thread.start()
@@ -158,6 +158,24 @@ def test_iter_changes_reports_an_edit(tmp_path):
     thread.join(5)
     assert got
     assert page.resolve() in {p.resolve() for p in got[0]}
+    # The native watcher thread is gone, so the daemon may fork again.
+    assert not any("watchfiles" in t.name.lower() for t in threading.enumerate())
+
+
+def test_missed_changes_catches_edits_during_compile(tmp_path):
+    a, b = tmp_path / "a.py", tmp_path / "b.py"
+    a.write_text("1")
+    b.write_text("1")
+    state = compile_daemon._WatchState([tmp_path], tmp_path, known={a, b})
+    before = compile_daemon._dependency_snapshot(state)
+    bumped = before[b] + 1_000_000_000
+    os.utime(b, ns=(bumped, bumped))
+    c = tmp_path / "c.py"
+    c.write_text("1")
+    state.known.add(c)
+    after = compile_daemon._dependency_snapshot(state)
+    assert compile_daemon._missed_changes(before, after) == {b, c}
+    assert compile_daemon._missed_changes(after, after) == set()
 
 
 def test_wait_for_compile_respects_lock(tmp_path, monkeypatch):
@@ -410,6 +428,8 @@ def test_reset_first_party_purges_modules_and_registries(tmp_path):
             reg_ctx.base_states["sentinel"] = object()  # type: ignore[assignment]
             all_base_state_classes["sentinel"] = None
             reg_ctx.decorated_pages.append((lambda: None, {}))
+            # The warm parent's App stays bound to the context across the fork.
+            object.__setattr__(reg_ctx, "_app", object())
 
             compile_daemon._reset_first_party([tmp_path.resolve()])
 
@@ -420,6 +440,7 @@ def test_reset_first_party_purges_modules_and_registries(tmp_path):
                 "sentinel" not in RegistrationContext.ensure_context().base_states
                 and "sentinel" not in all_base_state_classes
                 and not reg_ctx.decorated_pages
+                and reg_ctx._app is None
             )
             result = b"1" if (purged and cleared) else b"0"
         except Exception:
@@ -459,3 +480,33 @@ def test_quiesce_parent_stops_telemetry_worker():
     telemetry._get_telemetry_executor().submit(lambda: None).result()
     telemetry.shutdown_executor()
     assert telemetry._executor is None
+
+
+def test_owns_compilation_follows_the_daemon_marker(tmp_path, monkeypatch):
+    """Backend workers defer to a live daemon; the daemon itself always owns."""
+    from reflex_base.environment import environment
+
+    monkeypatch.setattr("reflex.utils.prerequisites.get_backend_dir", lambda: tmp_path)
+    monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name, raising=False)
+    # No marker: a plain process compiles as usual.
+    assert compile_daemon.daemon_active() is False
+    assert compile_daemon.owns_compilation() is True
+    # A live reflex-run marker: workers stand down.
+    compile_daemon.mark_daemon_active()
+    assert compile_daemon.daemon_active() is True
+    assert compile_daemon.owns_compilation() is False
+    # ...but the daemon's own processes still own the build.
+    monkeypatch.setenv(environment.REFLEX_COMPILE_DAEMON.name, "1")
+    assert compile_daemon.owns_compilation() is True
+    monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name)
+    # A marker left by a dead process is ignored.
+    import subprocess
+    import sys
+
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    compile_daemon._daemon_marker_path().write_text(str(proc.pid))
+    assert compile_daemon.daemon_active() is False
+    assert compile_daemon.owns_compilation() is True
+    compile_daemon.clear_daemon_marker()
+    assert not compile_daemon._daemon_marker_path().exists()

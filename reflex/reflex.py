@@ -243,6 +243,9 @@ def _run_dev(
             compile_daemon.run_compile_daemon,
             exec.should_prerender_routes(),
         ))
+        # Backend workers are recognised through the daemon's on-disk marker
+        # (see ``compile_daemon.owns_compilation``): environment set here is
+        # not inherited by workers a forkserver started earlier.
         environment.REFLEX_SKIP_COMPILE.set(True)
 
     # Start the frontend and backend.
