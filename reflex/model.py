@@ -411,10 +411,14 @@ if find_spec("sqlalchemy") and find_spec("alembic"):
             op: Any,
         ):
             # Carry the sqlmodel default as server_default so that newly added
-            # columns get the desired default value in existing rows.
+            # columns get the desired default value in existing rows. Only scalar
+            # defaults can be rendered as a SQL literal. Evaluate callable defaults
+            # once so non-nullable columns can be added to tables with existing rows.
             if op.column.default is not None and op.column.server_default is None:
+                default = op.column.default
+                value = default.arg(None) if default.is_callable else default.arg
                 op.column.server_default = sqlalchemy.DefaultClause(
-                    sqlalchemy.sql.expression.literal(op.column.default.arg),
+                    sqlalchemy.sql.expression.literal(value),
                 )
             return op
 
