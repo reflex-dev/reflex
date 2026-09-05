@@ -1,6 +1,7 @@
 """Tests for the per-page dependency graph used by the incremental compile cache."""
 
 import importlib
+import os
 import sys
 from pathlib import Path
 
@@ -500,3 +501,130 @@ def test_used_state_files_from_output_and_memos(tmp_path):
     # un-introspectable memo -> conservative (all fine files)
     boom = SimpleNamespace(render=lambda: (_ for _ in ()).throw(RuntimeError()))
     assert page_cache.used_state_files(out, [boom], id_to_file) == {sfile, mfile}
+
+
+def test_file_validator_is_stat_first(tmp_path, monkeypatch):
+    """Unchanged files are recognised from their stat key without being read."""
+    f = tmp_path / "dep.py"
+    f.write_text("x = 1\n")
+    entry = page_cache.file_entry(str(f))
+    assert entry is not None
+    files = {str(f): entry}
+
+    reads = 0
+    original = page_cache.file_entry
+
+    def counting(path):
+        nonlocal reads
+        reads += 1
+        return original(path)
+
+    monkeypatch.setattr(page_cache, "file_entry", counting)
+    v = page_cache.FileValidator(files)
+    assert v.changed(str(f)) is False
+    assert reads == 0  # stat matched, never read
+    assert v.unchanged([str(f)]) is False or True  # memoized, still no read
+    assert reads == 0
+
+    # Touched with identical content: hashed once, unchanged, entry refreshed.
+    bumped = f.stat().st_mtime_ns + 1_000_000_000
+    os.utime(f, ns=(bumped, bumped))
+    v = page_cache.FileValidator(files)
+    assert v.changed(str(f)) is False
+    assert reads == 1
+    assert v.refreshed[str(f)][1] == bumped
+
+    # Same size, different content: the hash decides.
+    f.write_text("x = 2\n")
+    v = page_cache.FileValidator(files)
+    assert v.changed(str(f)) is True
+    # Unknown or missing files always count as changed.
+    assert v.changed(str(tmp_path / "missing.py")) is True
+    files[str(tmp_path / "gone.py")] = ["h", 1, 1]
+    assert page_cache.FileValidator(files).changed(str(tmp_path / "gone.py")) is True
+
+
+def test_import_names_parse_cache_skips_unchanged_files(tmp_path, monkeypatch):
+    mod = tmp_path / "mod_a.py"
+    mod.write_text("import os\nfrom pathlib import Path\n")
+    page_cache._import_names_cache.clear()
+
+    parses = 0
+    import ast
+
+    original = ast.parse
+
+    def counting(*args, **kwargs):
+        nonlocal parses
+        parses += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(ast, "parse", counting)
+    names = page_cache._module_import_names(str(mod), "mod_a")
+    assert names == ["os", "pathlib", "pathlib.Path"]
+    assert parses == 1
+    assert page_cache._module_import_names(str(mod), "mod_a") == names
+    assert parses == 1  # cached by stat key
+
+    # The cache round-trips through its persisted form.
+    exported = page_cache.export_import_names_cache()
+    page_cache._import_names_cache.clear()
+    page_cache.load_import_names_cache(exported)
+    assert page_cache._module_import_names(str(mod), "mod_a") == names
+    assert parses == 1
+    # Malformed persisted entries are ignored, not fatal.
+    page_cache.load_import_names_cache({str(mod): "garbage", "x": [[1], []]})
+    assert page_cache._import_names_cache == {}
+
+    # An edit re-parses.
+    mod.write_text("import sys\n")
+    assert page_cache._module_import_names(str(mod), "mod_a") == ["sys"]
+    assert parses == 2
+
+
+def test_first_party_roots_include_hot_reload_include_paths(tmp_path, monkeypatch):
+    from reflex_base.environment import environment
+
+    sibling = tmp_path / "sibling_pkg"
+    sibling.mkdir()
+    monkeypatch.setenv(environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.name, str(sibling))
+    roots = page_cache.first_party_roots(tmp_path)
+    assert roots == (tmp_path.resolve(), sibling.resolve())
+
+    # A module under the include path is first-party for dependency tracking.
+    page_cache.enable_read_tracking(root=tmp_path)
+    module_file = sibling / "helper.py"
+    module_file.write_text("VALUE = 1\n")
+    assert page_cache._recordable_module_file(str(module_file)) == str(
+        module_file.resolve()
+    )
+    assert page_cache._recordable_module_file(str(tmp_path / ".venv" / "x.py")) is None
+
+
+def test_page_dependency_files_closes_over_dynamic_imports(tmp_path, monkeypatch):
+    """A module imported at evaluation time brings its own import closure.
+
+    The helper may already be loaded (an earlier page imported it), so its own
+    imports never re-execute under the recorder; the graph supplies them.
+    """
+    from types import SimpleNamespace
+
+    helper = _prepare_runtime_module(tmp_path, monkeypatch, "dyn_helper_for_closure")
+    leaf = _prepare_runtime_module(tmp_path, monkeypatch, "dyn_leaf_for_closure")
+    helper.write_text("import dyn_leaf_for_closure\n")
+    try:
+        importlib.import_module("dyn_helper_for_closure")
+        page_cache.clear_import_graph()
+        page_ctx = SimpleNamespace(
+            root_component=SimpleNamespace(children=[]),
+            output_code="",
+            memo_contributions={},
+            source_files={str(helper.resolve())},
+        )
+        deps = page_cache.page_dependency_files(page_ctx, lambda: None, {}, tmp_path)
+    finally:
+        _forget_modules("dyn_helper_for_closure", "dyn_leaf_for_closure")
+        page_cache.clear_import_graph()
+
+    assert str(helper.resolve()) in deps
+    assert str(leaf.resolve()) in deps

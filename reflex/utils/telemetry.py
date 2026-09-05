@@ -549,6 +549,28 @@ def _flush(timeout: float | None = None) -> bool:
     return True
 
 
+def shutdown_executor(timeout: float | None = 5.0) -> None:
+    """Drain and stop the telemetry worker thread, if one was started.
+
+    The worker outlives the events it delivered: ``ThreadPoolExecutor`` keeps
+    an idle thread alive until shutdown. A process that needs to be
+    single-threaded again (the compile daemon forks a child per hot reload,
+    which is only safe with no other threads) calls this after its last
+    telemetry send. A later send lazily creates a fresh executor.
+
+    Args:
+        timeout: Maximum seconds to wait for queued events to drain first.
+    """
+    global _executor
+    with _executor_lock:
+        executor, _executor = _executor, None
+    if executor is None:
+        return
+    with suppress(Exception):
+        executor.submit(lambda: None).result(timeout)
+    executor.shutdown(wait=True, cancel_futures=True)
+
+
 _legacy_alias_attempted = False
 
 

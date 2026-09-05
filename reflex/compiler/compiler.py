@@ -215,12 +215,19 @@ def _resolve_default_color_mode(theme: Component | None) -> str:
     return get_config().default_color_mode
 
 
-def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
+def _compile_contexts(
+    state: type[BaseState] | None,
+    theme: Component | None,
+    extra_state: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
+) -> str:
     """Compile the initial state and contexts.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        extra_state: ``(initial_state, client_storage)`` entries for states that
+            are not in this process's state tree (states only registered while
+            a page evaluates, restored from the compile cache manifest).
 
     Returns:
         The compiled context file.
@@ -229,22 +236,26 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     disable_react_owner_stacks = (
         not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
     )
-
-    return (
-        templates.context_template(
-            initial_state=utils.compile_state(state),
-            state_name=state.get_name(),
-            client_storage=utils.compile_client_storage(state),
+    if not state:
+        return templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
         )
-        if state
-        else templates.context_template(
-            is_dev_mode=not is_prod_mode(),
-            default_color_mode=default_color_mode,
-            disable_react_owner_stacks=disable_react_owner_stacks,
-        )
+    initial_state = utils.compile_state(state)
+    client_storage = utils.compile_client_storage(state)
+    if extra_state is not None:
+        extra_initial, extra_storage = extra_state
+        initial_state = dict(sorted({**initial_state, **extra_initial}.items()))
+        for kind, entries in extra_storage.items():
+            client_storage.setdefault(kind, {}).update(entries)
+    return templates.context_template(
+        initial_state=initial_state,
+        state_name=state.get_name(),
+        client_storage=client_storage,
+        is_dev_mode=not is_prod_mode(),
+        default_color_mode=default_color_mode,
+        disable_react_owner_stacks=disable_react_owner_stacks,
     )
 
 
@@ -728,12 +739,14 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
+    extra_state: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        extra_state: See :func:`_compile_contexts`.
 
     Returns:
         The path and code of the compiled context.
@@ -741,7 +754,7 @@ def compile_contexts(
     # Get the path for the output file.
     output_path = utils.get_context_path()
 
-    return output_path, _compile_contexts(state, theme)
+    return output_path, _compile_contexts(state, theme, extra_state)
 
 
 def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
@@ -1190,6 +1203,12 @@ def compile_app(
     should_compile = app._should_compile()
     backend_dir = prerequisites.get_backend_dir()
     if not dry_run and not should_compile and backend_dir.exists():
+        if environment.REFLEX_COMPILE_CACHE.get():
+            # The compile daemon reacts to the same save; read its marker only
+            # once it has finished rewriting .web for this change.
+            from reflex.utils import compile_daemon
+
+            compile_daemon.wait_for_compile()
         stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
         if stateful_pages_marker.exists():
             with stateful_pages_marker.open("r") as file:

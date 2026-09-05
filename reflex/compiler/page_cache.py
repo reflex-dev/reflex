@@ -13,24 +13,37 @@ import contextlib
 import hashlib
 import importlib
 import importlib.util
+import os
 import re
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextvars import ContextVar
 from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from reflex_base.environment import environment
+
 if TYPE_CHECKING:
     from reflex_base.components.component import BaseComponent
     from reflex_base.plugins import PageContext
+
+#: A manifest file-table entry: ``[content sha256, st_mtime_ns, st_size]``.
+FileEntry = list
 
 #: Directories never worth hashing (build artifacts, deps, caches).
 _SKIP_DIRS = {".web", ".venv", "venv", "node_modules", "__pycache__", ".git", "assets"}
 
 #: Genuinely-global files: a change here can affect every page's output, so it
 #: bumps ``global_epoch`` rather than any single page's dependency set.
-_GLOBAL_FILES = ("rxconfig.py", "reflex.lock", "uv.lock", "package.json")
+_GLOBAL_FILES = (
+    "rxconfig.py",
+    "reflex.lock",
+    "uv.lock",
+    "pyproject.toml",
+    "requirements.txt",
+    "package.json",
+)
 
 #: Matches a JS state-context identifier in compiled page output.
 STATE_CONTEXT_RE = re.compile(r"reflex___state[A-Za-z0-9_]+")
@@ -49,6 +62,40 @@ def _reflex_version() -> str:
         return metadata.version("reflex")
     except Exception:
         return "unknown"
+
+
+def first_party_roots(root: Path | None = None) -> tuple[Path, ...]:
+    """The directories whose Python files count as the app's own source.
+
+    The project root plus ``REFLEX_HOT_RELOAD_INCLUDE_PATHS`` (a sibling local
+    package the backend reloader also watches). Files under any of these are
+    hashed into page dependency sets; everything else is an installed
+    dependency whose change flows through the version/epoch instead.
+
+    Args:
+        root: Project root. Defaults to cwd.
+
+    Returns:
+        The resolved roots, project root first.
+    """
+    root = (root or Path.cwd()).resolve()
+    include = tuple(
+        Path(p).resolve() for p in environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.get()
+    )
+    return (root, *(p for p in include if p != root))
+
+
+def _under_any(path: Path, roots: Iterable[Path]) -> bool:
+    """Whether ``path`` is nested below (or is) one of ``roots``.
+
+    Args:
+        path: Absolute path to test.
+        roots: Absolute root paths.
+
+    Returns:
+        True when some root contains ``path``.
+    """
+    return any(root == path or root in path.parents for root in roots)
 
 
 # A page's markdown/data dependencies are read lazily while the page is
@@ -118,7 +165,7 @@ def _record_read(path: object) -> None:
         if any(part in _EXCLUDE_PARTS for part in resolved.parts):
             return
         root = _recorder_root
-        under_root = root is not None and root in resolved.parents
+        under_root = root is not None and _under_any(resolved, first_party_roots(root))
         if not under_root and resolved.suffix.lower() not in _CONTENT_SUFFIXES:
             return
         target.add(str(resolved))
@@ -179,9 +226,10 @@ def _recordable_module_file(file: object) -> str | None:
         except (OSError, TypeError, ValueError):
             return None
 
+        roots = first_party_roots(root)
         resolved_str = None
         if not any(part in _EXCLUDE_PARTS for part in path.parts) and (
-            _is_inside(path, root) or not _is_python_install_file(path)
+            _under_any(path, roots) or not _is_python_install_file(path)
         ):
             try:
                 resolved = path.resolve()
@@ -189,7 +237,9 @@ def _recordable_module_file(file: object) -> str | None:
                 pass
             else:
                 if not any(part in _EXCLUDE_PARTS for part in resolved.parts):
-                    resolved_str = str(resolved) if _is_inside(resolved, root) else None
+                    resolved_str = (
+                        str(resolved) if _under_any(resolved, roots) else None
+                    )
         _module_file_cache[file] = resolved_str
         return resolved_str
 
@@ -465,6 +515,27 @@ def global_epoch_inputs(
     return inputs
 
 
+def global_input_paths(
+    root: Path | None = None, *, pages: Sequence[object] | None = None
+) -> dict[str, str]:
+    """Map each file-backed global input label to its path.
+
+    The manifest stores these labels with their paths and keeps the content
+    entries in its file table, so validation is stat-first like page deps.
+
+    Args:
+        root: Project root. Defaults to cwd.
+        pages: The current page definitions (see :func:`global_epoch_inputs`).
+
+    Returns:
+        ``{label: path}`` for every global input except the Reflex version.
+    """
+    root = (root or Path.cwd()).resolve()
+    paths = {name: str(root / name) for name in _GLOBAL_FILES}
+    paths.update({f"app:{p}": p for p in app_dependency_files(pages, root)})
+    return paths
+
+
 def global_epoch(
     root: Path | None = None, *, pages: Sequence[object] | None = None
 ) -> str:
@@ -483,50 +554,57 @@ def global_epoch(
     )
 
 
-def changed_epoch_inputs(stored: dict[str, str], root: Path | None = None) -> set[str]:
-    """Return the labels of stored global inputs whose current content differs.
-
-    Validates against the *stored* input set (like :func:`deps_unchanged` does
-    for page deps): membership is decided once, when the manifest is written by
-    a full compile; checking only re-hashes those inputs. Recomputing the set
-    via :func:`global_epoch_inputs` at check time is wrong — it depends on what
-    the current process happened to read/import during app import, which
-    differs between a cold compile and a warm forked reload (unpurged module
-    caches skip re-reads), spuriously invalidating every hot reload.
-
-    Args:
-        stored: The manifest's ``{label: digest}`` global-input map
-            (see :func:`global_epoch_inputs` for the label forms).
-        root: Project root the plain-filename labels resolve against.
-            Defaults to cwd.
-
-    Returns:
-        The labels whose content digest no longer matches.
-    """
-    root = (root or Path.cwd()).resolve()
-    changed: set[str] = set()
-    for label, digest in stored.items():
-        if label == "reflex":
-            current = _reflex_version()
-        else:
-            path = (
-                Path(label.removeprefix("app:"))
-                if label.startswith("app:")
-                else root / label
-            )
-            try:
-                current = hashlib.sha256(path.read_bytes()).hexdigest()
-            except OSError:
-                current = "<absent>"
-        if current != digest:
-            changed.add(label)
-    return changed
-
-
 def _module_file(component: object) -> Path | None:
     mod = sys.modules.get(getattr(component, "__module__", "") or "")
     file = getattr(mod, "__file__", None)
     return Path(file) if file else None
+
+
+#: Component/state class -> its resolved first-party module file (or None).
+#: A rendered tree has tens of thousands of nodes but few distinct classes,
+#: and a class's module never moves; resolving per node dominated the
+#: dependency walk. Warmed in the daemon parent so forked children inherit it.
+_class_file_cache: dict[type, Path | None] = {}
+
+
+def _class_module_file(cls: type, roots: tuple[Path, ...]) -> Path | None:
+    """Resolve a class's module file when it is first-party.
+
+    Args:
+        cls: The component or state class.
+        roots: The first-party roots.
+
+    Returns:
+        The resolved module file under one of ``roots``, else None.
+    """
+    try:
+        return _class_file_cache[cls]
+    except KeyError:
+        pass
+    f = _module_file(cls)
+    resolved = None
+    if f is not None:
+        rf = f.resolve()
+        if _under_any(rf, roots):
+            resolved = rf
+    _class_file_cache[cls] = resolved
+    return resolved
+
+
+def warm_module_file_cache(root: Path | None = None) -> None:
+    """Pre-resolve the module file of every loaded component and state class.
+
+    Args:
+        root: Project root. Defaults to cwd.
+    """
+    from reflex_base.components.component import Component
+
+    from reflex.state import BaseState
+
+    roots = first_party_roots(root)
+    for base in (Component, BaseState):
+        for cls in _subclasses(base):
+            _class_module_file(cls, roots)
 
 
 def component_module_files(
@@ -545,7 +623,7 @@ def component_module_files(
     Returns:
         The set of resolved first-party module files the tree depends on.
     """
-    root = (root or Path.cwd()).resolve()
+    roots = first_party_roots(root)
     files: set[Path] = set()
     seen: set[int] = set()
     stack: list[object] = [root_component]
@@ -554,11 +632,8 @@ def component_module_files(
         if id(comp) in seen:
             continue
         seen.add(id(comp))
-        f = _module_file(type(comp))
-        if f is not None:
-            rf = f.resolve()
-            if root in rf.parents:
-                files.add(rf)
+        if (rf := _class_module_file(type(comp), roots)) is not None:
+            files.add(rf)
         children = getattr(comp, "children", None)
         if children:
             stack.extend(children)
@@ -585,13 +660,14 @@ def _loaded_first_party_modules(root: Path) -> dict[str, str]:
         A mapping of resolved file path -> module name for loaded modules under
         ``root``.
     """
+    roots = first_party_roots(root)
     file_to_mod: dict[str, str] = {}
     for name, mod in list(sys.modules.items()):
         file = getattr(mod, "__file__", None)
         if not file:
             continue
         rf = Path(file).resolve()
-        if root in rf.parents:
+        if _under_any(rf, roots):
             file_to_mod[str(rf)] = name
     return file_to_mod
 
@@ -625,6 +701,93 @@ def _import_from_targets(node: object, modname: str) -> list[str]:
     return [base, *(f"{base}.{a.name}" for a in node.names)]
 
 
+#: file -> ((st_mtime_ns, st_size), imported dotted names). Parsing every
+#: first-party module on every hot reload is the cost this avoids; the daemon
+#: persists it in the manifest so a fresh process only parses changed files.
+_import_names_cache: dict[str, tuple[tuple[int, int], list[str]]] = {}
+
+
+def _stat_key(path: str) -> tuple[int, int] | None:
+    """Return ``(st_mtime_ns, st_size)`` for ``path``, or None if unreadable.
+
+    Args:
+        path: The file path.
+
+    Returns:
+        The stat key, or None.
+    """
+    try:
+        st = Path(path).stat()
+    except OSError:
+        return None
+    return (st.st_mtime_ns, st.st_size)
+
+
+def load_import_names_cache(data: Mapping[str, Sequence[object]]) -> None:
+    """Seed the import-name parse cache from its persisted form.
+
+    Args:
+        data: ``{path: [[mtime_ns, size], [names...]]}`` as written by
+            :func:`export_import_names_cache`.
+    """
+    _import_names_cache.clear()
+    for path, entry in data.items():
+        if (
+            isinstance(entry, Sequence)
+            and len(entry) == 2
+            and isinstance(entry[0], Sequence)
+            and len(entry[0]) == 2
+            and all(isinstance(n, int) for n in entry[0])
+            and isinstance(entry[1], Sequence)
+        ):
+            key = (int(entry[0][0]), int(entry[0][1]))  # type: ignore[index]
+            _import_names_cache[path] = (key, [str(n) for n in entry[1]])
+
+
+def export_import_names_cache() -> dict[str, list[object]]:
+    """Return the import-name parse cache in its persisted form.
+
+    Returns:
+        ``{path: [[mtime_ns, size], [names...]]}``.
+    """
+    return {
+        path: [list(key), names] for path, (key, names) in _import_names_cache.items()
+    }
+
+
+def _module_import_names(file: str, modname: str) -> list[str]:
+    """Return the dotted names one module imports (statically).
+
+    Cached by the file's stat key, so an unchanged file is never re-parsed.
+
+    Args:
+        file: The resolved module file path.
+        modname: The module's dotted name.
+
+    Returns:
+        The imported dotted-name candidates (see :func:`_import_from_targets`).
+    """
+    import ast
+
+    key = _stat_key(file)
+    cached = _import_names_cache.get(file)
+    if cached is not None and key is not None and cached[0] == key:
+        return cached[1]
+    names: list[str] = []
+    try:
+        tree = ast.parse(Path(file).read_bytes())
+    except (OSError, SyntaxError, ValueError):
+        return names
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.extend(a.name for a in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            names.extend(_import_from_targets(node, modname))
+    if key is not None:
+        _import_names_cache[file] = (key, names)
+    return names
+
+
 def _module_import_edges(
     file: str, modname: str, file_to_mod: dict[str, str]
 ) -> set[str]:
@@ -638,23 +801,11 @@ def _module_import_edges(
     Returns:
         The resolved first-party files imported by ``file``.
     """
-    import ast
-
     deps: set[str] = set()
-    try:
-        tree = ast.parse(Path(file).read_bytes())
-    except (OSError, SyntaxError, ValueError):
-        return deps
-    for node in ast.walk(tree):
-        names: list[str] = []
-        if isinstance(node, ast.Import):
-            names = [a.name for a in node.names]
-        elif isinstance(node, ast.ImportFrom):
-            names = _import_from_targets(node, modname)
-        for name in names:
-            target = _resolve_module_file(name)
-            if target is not None and target in file_to_mod:
-                deps.add(target)
+    for name in _module_import_names(file, modname):
+        target = _resolve_module_file(name)
+        if target is not None and target in file_to_mod:
+            deps.add(target)
     return deps
 
 
@@ -734,13 +885,14 @@ def _component_source_files(component: object, root: Path) -> set[str]:
         The set of resolved defining file path strings under ``root``.
     """
     out: set[str] = set()
+    roots = first_party_roots(root)
     code = getattr(component, "__code__", None)
     filename = getattr(code, "co_filename", None)
     own = _module_file(component)
     for path in (filename, own):
         if path:
             rf = Path(path).resolve()
-            if root in rf.parents:
+            if _under_any(rf, roots):
                 out.add(str(rf))
     return out
 
@@ -811,26 +963,98 @@ def app_dependency_files(
     return static_deps | dynamic_deps
 
 
-def make_hasher() -> Callable[[str], str | None]:
-    """Return a content-hasher that memoizes each path within one compile.
+def file_entry(path: str) -> FileEntry | None:
+    """Read a file once and describe it for the manifest file table.
 
-    Shared component files appear in many pages' dependency sets; hashing each
-    file at most once keeps per-page validation cheap.
+    Args:
+        path: The file path.
 
     Returns:
-        A function mapping a path string to its content hash (None if unreadable).
+        ``[sha256, st_mtime_ns, st_size]``, or None if unreadable.
     """
-    cache: dict[str, str | None] = {}
+    try:
+        with Path(path).open("rb") as fh:
+            st = os.fstat(fh.fileno())
+            digest = hashlib.sha256(fh.read()).hexdigest()
+    except OSError:
+        return None
+    return [digest, st.st_mtime_ns, st.st_size]
 
-    def hasher(path: str) -> str | None:
+
+def make_hasher() -> Callable[[str], FileEntry | None]:
+    """Return a file-table entry builder that memoizes each path within one compile.
+
+    Shared component files appear in many pages' dependency sets; reading each
+    file at most once keeps manifest writes cheap.
+
+    Returns:
+        A function mapping a path string to its :func:`file_entry` (None if
+        unreadable).
+    """
+    cache: dict[str, FileEntry | None] = {}
+
+    def hasher(path: str) -> FileEntry | None:
         if path not in cache:
-            try:
-                cache[path] = hashlib.sha256(Path(path).read_bytes()).hexdigest()
-            except OSError:
-                cache[path] = None
+            cache[path] = file_entry(path)
         return cache[path]
 
     return hasher
+
+
+class FileValidator:
+    """Decide whether recorded files still match their manifest entries.
+
+    Validation is stat-first: a file whose ``(mtime_ns, size)`` still matches
+    its entry is unchanged without being read. Only a file whose stat moved is
+    hashed, and a touch that left the content identical counts as unchanged
+    (its refreshed entry is exposed in ``refreshed`` so the manifest can stop
+    re-hashing it). Each path is examined at most once per compile.
+    """
+
+    def __init__(self, files: Mapping[str, Sequence[object]]) -> None:
+        """Bind the validator to a manifest file table.
+
+        Args:
+            files: ``{path: [sha256, mtime_ns, size]}``.
+        """
+        self._files = files
+        self._changed: dict[str, bool] = {}
+        self.refreshed: dict[str, FileEntry] = {}
+
+    def changed(self, path: str) -> bool:
+        """Whether ``path`` differs from its recorded entry (or has none).
+
+        Args:
+            path: The file path.
+
+        Returns:
+            True if the file changed, is unreadable, or is not in the table.
+        """
+        cached = self._changed.get(path)
+        if cached is not None:
+            return cached
+        entry = self._files.get(path)
+        result = True
+        if entry is not None and len(entry) == 3:
+            key = _stat_key(path)
+            if key is not None and (key[0], key[1]) == (entry[1], entry[2]):
+                result = False
+            elif (fresh := file_entry(path)) is not None and fresh[0] == entry[0]:
+                self.refreshed[path] = fresh
+                result = False
+        self._changed[path] = result
+        return result
+
+    def unchanged(self, paths: Iterable[str]) -> bool:
+        """Whether every file in ``paths`` is unchanged.
+
+        Args:
+            paths: The recorded dependency paths of one page.
+
+        Returns:
+            True if no file changed.
+        """
+        return not any(self.changed(path) for path in paths)
 
 
 def _subclasses(root_cls: type) -> list[type]:
@@ -865,24 +1089,19 @@ def state_dependency_index(
     Returns:
         ``(identifier_to_file, fine_state_files)``.
     """
-    root = (root or Path.cwd()).resolve()
+    roots = first_party_roots(root)
     from reflex_base.components.component import Component
     from reflex_base.utils import format as fmt
 
     from reflex.state import BaseState
 
-    def under_root(comp: object) -> Path | None:
-        f = _module_file(comp)
-        if f is None:
-            return None
-        rf = f.resolve()
-        return rf if root in rf.parents else None
-
-    component_files = {rf for cls in _subclasses(Component) if (rf := under_root(cls))}
+    component_files = {
+        rf for cls in _subclasses(Component) if (rf := _class_module_file(cls, roots))
+    }
     id_to_file: dict[str, Path] = {}
     state_files: set[Path] = set()
     for cls in _subclasses(BaseState):
-        rf = under_root(cls)
+        rf = _class_module_file(cls, roots)
         if rf is None:
             continue
         with contextlib.suppress(Exception):
@@ -964,48 +1183,42 @@ def page_dependency_files(
     # Transitive first-party .py imports (captures function-based views/helpers
     # that never appear as nodes in the rendered tree).
     deps |= page_py_dependencies(component, root)
-    # Files read while evaluating the page (markdown/data).
+    # Files read while evaluating the page (markdown/data), plus the import
+    # closure of any module the page imported at evaluation time: a helper
+    # already loaded by an earlier page does not re-execute its own imports
+    # under the recorder, so its dependencies come from the graph instead.
     deps |= set(page_ctx.source_files)
+    dynamic_py = {f for f in page_ctx.source_files if f.endswith(".py")}
+    if dynamic_py:
+        deps |= _walk_import_closure(build_import_graph(root), dynamic_py)
     return deps
 
 
-def page_dependency_hashes(
+def page_dependency_entries(
     page_ctx: PageContext,
     component: BaseComponent | object,
     state_index: dict[str, Path],
-    hasher: Callable[[str], str | None],
+    hasher: Callable[[str], FileEntry | None],
+    files: dict[str, FileEntry],
     root: Path | None = None,
-) -> dict[str, str]:
-    """Hash a page's dependency set into a ``{path: hash}`` map.
+) -> list[str]:
+    """Record a page's dependency set into the manifest file table.
 
     Args:
         page_ctx: The compiled page context.
         component: The page's component/callable.
         state_index: The state-context identifier -> file index.
-        hasher: A memoized path -> content-hash function (see :func:`make_hasher`).
+        hasher: A memoized path -> :func:`file_entry` function.
+        files: The manifest file table, extended in place.
         root: Project root. Defaults to cwd.
 
     Returns:
-        ``{path: content_hash}`` for every readable dependency file.
+        The sorted dependency paths that were readable (the page's ``deps``).
     """
-    out: dict[str, str] = {}
-    for path in page_dependency_files(page_ctx, component, state_index, root):
-        digest = hasher(path)
-        if digest is not None:
-            out[path] = digest
-    return out
-
-
-def deps_unchanged(
-    dep_hashes: dict[str, str], hasher: Callable[[str], str | None]
-) -> bool:
-    """Whether every file in a stored dependency set still has the same content.
-
-    Args:
-        dep_hashes: A page's stored ``{path: hash}`` dependency map.
-        hasher: A memoized path -> content-hash function.
-
-    Returns:
-        True if every dependency file is byte-unchanged.
-    """
-    return all(hasher(path) == digest for path, digest in dep_hashes.items())
+    deps: list[str] = []
+    for path in sorted(page_dependency_files(page_ctx, component, state_index, root)):
+        entry = hasher(path)
+        if entry is not None:
+            files[path] = entry
+            deps.append(path)
+    return deps

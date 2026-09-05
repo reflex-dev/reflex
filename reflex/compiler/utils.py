@@ -883,7 +883,8 @@ def write_file(path: str | Path, code: str):
     if path.exists() and path.read_text(encoding="utf-8") == code:
         return
     # Write atomically so readers never observe a half-written file.
-    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    # Dot-prefixed so route discovery and file watchers over .web ignore it.
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
         tmp.write_text(code, encoding="utf-8")
         tmp.replace(path)
