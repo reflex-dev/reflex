@@ -2,11 +2,38 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import click
 import click.testing
 import pytest
 
 from reflex import reflex
+
+
+def test_backend_launcher_does_not_import_compiler_or_state() -> None:
+    """The backend supervisor must not load the worker's compiler and state."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import sys
+from reflex import reflex
+from reflex.istate.manager import reset_disk_state_manager
+from reflex.utils import build, exec, telemetry
+
+unexpected = {"reflex.state", "reflex.compiler.utils", "sqlalchemy"} & sys.modules.keys()
+assert not unexpected, unexpected
+""",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_cloud_commands_registered():

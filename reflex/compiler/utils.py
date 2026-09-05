@@ -44,6 +44,7 @@ from reflex.utils.prerequisites import get_web_dir
 
 # To re-export this function.
 merge_imports = imports.merge_imports
+write_file = path_ops.write_file
 
 
 def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
@@ -867,20 +868,6 @@ def resolve_path_of_web_dir(path: str | Path) -> Path:
     if path.is_relative_to(web_dir):
         return path.absolute()
     return (web_dir / path).absolute()
-
-
-def write_file(path: str | Path, code: str):
-    """Write the given code to the given path.
-
-    Args:
-        path: The path to write the code to.
-        code: The code to write.
-    """
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.read_text(encoding="utf-8") == code:
-        return
-    path.write_text(code, encoding="utf-8")
 
 
 _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"
