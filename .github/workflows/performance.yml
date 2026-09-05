@@ -21,8 +21,8 @@ env:
   PYTHONHASHSEED: 0
 
 jobs:
-  benchmark_instrumentation:
-    name: Run benchmark instrumentation
+  benchmarks:
+    name: Run benchmarks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -43,53 +43,11 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@3194d9a39c4d46684cb44bf7207fc56626aad8fd # v4.15.1
+        uses: CodSpeedHQ/action@373d6868929f444bc08d901fd0eb0ad52a8875ea # v5.2.1
         with:
-          mode: instrumentation
-          run: uv run pytest -v tests/benchmarks --ignore=tests/benchmarks/test_cli.py --codspeed
-
-  cli_startup:
-    name: Run CLI startup benchmarks
-    runs-on: codspeed-macro
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-tags: true
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.14"
-
-      - name: Install dependencies
-        run: uv sync --all-extras --dev
-
-      - name: Run CLI startup benchmarks
-        uses: CodSpeedHQ/action@3194d9a39c4d46684cb44bf7207fc56626aad8fd # v4.15.1
-        with:
-          mode: walltime
-          run: uv run pytest -v tests/benchmarks/test_cli.py --codspeed --codspeed-max-rounds=10
-
-  benchmarks:
-    name: Run benchmarks
-    if: always()
-    needs:
-      - benchmark_instrumentation
-      - cli_startup
-    runs-on: ubuntu-latest
-    steps:
-      - name: Verify benchmark jobs
-        env:
-          INSTRUMENTATION_RESULT: ${{ needs.benchmark_instrumentation.result }}
-          CLI_STARTUP_RESULT: ${{ needs.cli_startup.result }}
-        run: |
-          test "$INSTRUMENTATION_RESULT" = "success"
-          test "$CLI_STARTUP_RESULT" = "success"
+          mode: simulation
+          simulation-track-subprocess: true
+          run: uv run pytest -v tests/benchmarks --codspeed
 
   lighthouse:
     name: Run Lighthouse benchmark

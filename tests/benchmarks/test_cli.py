@@ -1,4 +1,4 @@
-"""Wall-time benchmarks for fresh Reflex CLI processes."""
+"""Benchmarks for fresh Reflex CLI processes."""
 
 from __future__ import annotations
 

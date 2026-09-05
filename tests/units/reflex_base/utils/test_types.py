@@ -50,11 +50,12 @@ def test_types_import_keeps_optional_orm_lazy():
 def test_property_classes_compatibility_export():
     """The legacy property-class tuple remains available from both modules."""
     import reflex_base.utils.types as base_types
-    from sqlalchemy.ext.hybrid import hybrid_property
+
+    hybrid_module = pytest.importorskip("sqlalchemy.ext.hybrid")
 
     import reflex.utils.types as reflex_types
 
-    expected_property_classes = (property, hybrid_property)
+    expected_property_classes = (property, hybrid_module.hybrid_property)
     assert expected_property_classes == base_types.PROPERTY_CLASSES
     assert reflex_types.PROPERTY_CLASSES == base_types.PROPERTY_CLASSES
 
