@@ -463,14 +463,6 @@ class LiteralObjectVar(
             keys_and_values.append(f"{key.json()}:{value.json()}")
         return "{" + ", ".join(keys_and_values) + "}"
 
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((type(self).__name__, self._js_expr))
-
     @classmethod
     def _get_all_var_data_without_creating_var(
         cls,

@@ -59,6 +59,12 @@ def raise_unsupported_operand_types(
 class NumberVar(Var[NUMBER_T], python_types=(int, float, decimal.Decimal)):
     """Base class for immutable number vars."""
 
+    # Load-bearing: defining __eq__ below drops the inherited hash, which would
+    # leave every numeric var unhashable, including LiteralNumberVar. Var.__format__
+    # hashes, so removing this breaks interpolating any numeric literal into a
+    # string. test_numeric_literal_var_hashability_is_load_bearing pins it.
+    __hash__ = Var.__hash__
+
     def __add__(self, other: number_types) -> NumberVar:
         """Add two numbers.
 
@@ -964,14 +970,6 @@ class LiteralNumberVar(LiteralVar[NUMBER_T], NumberVar[NUMBER_T]):
             raise PrimitiveUnserializableToJSONError(msg)
         return json.dumps(self._var_value)
 
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((type(self).__name__, self._var_value))
-
     @classmethod
     def _get_all_var_data_without_creating_var(
         cls, value: float | int | decimal.Decimal
@@ -1031,14 +1029,6 @@ class LiteralBooleanVar(LiteralVar[bool], BooleanVar):
             The JSON representation of the var.
         """
         return "true" if self._var_value else "false"
-
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
-
-        Returns:
-            int: The hash value of the object.
-        """
-        return hash((type(self).__name__, self._var_value))
 
     @classmethod
     def _get_all_var_data_without_creating_var(cls, value: bool) -> VarData | None:

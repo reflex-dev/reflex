@@ -380,7 +380,13 @@ class VarData:
             *(var_data.imports for var_data in all_var_datas)
         )
 
-        deps = [dep for var_data in all_var_datas for dep in var_data.deps]
+        deps = list(
+            {
+                dep._hash_key(): dep
+                for var_data in all_var_datas
+                for dep in var_data.deps
+            }.values()
+        )
 
         positions = list(
             dict.fromkeys(
@@ -435,16 +441,20 @@ class VarData:
             or self.app_wraps
         )
 
+    @functools.cached_property
     def _identity_key(self) -> tuple:
-        """Return a hashable key for ``__eq__`` and ``__hash__``.
+        """A hashable key for ``__eq__`` and ``__hash__``.
 
-        ``components`` and ``app_wraps`` hold ``BaseComponent`` instances whose
-        ``__eq__`` override drops the default hash. Use component identity for
-        embedded components because they can contribute hooks/imports, and use
-        the compiler's app-wrap registry key for wrappers so fresh provider
-        instances with the same role still compare equal. App wraps are a set
-        of required roles, so a ``frozenset`` keeps identity insensitive to the
-        order vars happened to merge in (``a + b`` and ``b + a`` stay equal).
+        ``deps`` holds Vars, which a container can never compare because
+        ``Var.__eq__`` builds a ``BooleanVar``, so they are reduced to their
+        ``_hash_key()``. ``components`` and ``app_wraps`` hold ``BaseComponent``
+        instances whose ``__eq__`` override drops the default hash. Use
+        component identity for embedded components because they can contribute
+        hooks/imports, and use the compiler's app-wrap registry key for
+        wrappers so fresh provider instances with the same role still compare
+        equal. App wraps are a set of required roles, so a ``frozenset`` keeps
+        identity insensitive to the order vars happened to merge in
+        (``a + b`` and ``b + a`` stay equal).
 
         Returns:
             A hashable tuple uniquely identifying this VarData.
@@ -454,7 +464,7 @@ class VarData:
             self.field_name,
             self.imports,
             self.hooks,
-            self.deps,
+            tuple(dep._hash_key() for dep in self.deps),
             self.position,
             tuple(id(component) for component in self.components),
             frozenset(
@@ -474,7 +484,7 @@ class VarData:
         """
         if not isinstance(other, VarData):
             return NotImplemented
-        return self._identity_key() == other._identity_key()
+        return self._identity_key == other._identity_key
 
     def __hash__(self) -> int:
         """Hash consistent with ``__eq__``.
@@ -482,7 +492,16 @@ class VarData:
         Returns:
             A hash over render-time fields and hashable component metadata.
         """
-        return hash(self._identity_key())
+        return self._cached_hash
+
+    @functools.cached_property
+    def _cached_hash(self) -> int:
+        """The hash, cached because every Var interpolation recomputes it.
+
+        Returns:
+            A hash over render-time fields and hashable component metadata.
+        """
+        return hash(self._identity_key)
 
     @classmethod
     def from_state(cls, state: type[BaseState] | str, field_name: str = "") -> VarData:
@@ -704,13 +723,28 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                 _var_data=VarData.merge(self._var_data, var_data_),
             )
 
+    def _hash_key(self) -> tuple[Any, ...]:
+        """Return the canonical identity of this var.
+
+        ``__eq__`` builds a ``BooleanVar`` rather than returning a bool, and
+        bool-ifying a Var raises, so a Var can never be compared by a container.
+        Every structural comparison goes through this key instead, which holds
+        no Var objects and is therefore safe to nest in tuples, dicts and sets.
+        Subclasses that need a different identity override this rather than
+        ``__hash__``, so hashing and ``equals`` can never drift apart.
+
+        Returns:
+            A hashable tuple uniquely identifying this var.
+        """
+        return (self._js_expr, self._var_type, self._get_all_var_data())
+
     def __hash__(self) -> int:
         """Define a hash function for the var.
 
         Returns:
             The hash of the var.
         """
-        return hash((self._js_expr, self._var_type, self._var_data))
+        return hash(self._hash_key())
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
@@ -740,11 +774,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             Whether the vars are equal.
         """
-        return (
-            self._js_expr == other._js_expr
-            and self._var_type == other._var_type
-            and self._get_all_var_data() == other._get_all_var_data()
-        )
+        return self._hash_key() == other._hash_key()
 
     @overload
     def _replace(
@@ -1553,13 +1583,17 @@ class ToOperation:
         """Post initialization."""
         object.__delattr__(self, "_js_expr")
 
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
+    def _hash_key(self) -> tuple[Any, ...]:
+        """Return the canonical identity of this var.
+
+        Identical to ``Var._hash_key``, but reads the expression straight off
+        ``_original``: ``__post_init__`` deletes ``_js_expr``, so the inherited
+        version would pay a ``__getattr__`` round trip on every hash.
 
         Returns:
-            int: The hash value of the object.
+            A hashable tuple uniquely identifying this var.
         """
-        return hash(self._original)
+        return (self._original._js_expr, self._var_type, self._get_all_var_data())
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all the var data.
@@ -2143,21 +2177,6 @@ class CachedVarOperation:
             ),
             self._var_data,
         )
-
-    def __hash__(self: DataclassInstance) -> int:
-        """Calculate the hash of the object.
-
-        Returns:
-            The hash of the object.
-        """
-        return hash((
-            type(self).__name__,
-            *[
-                getattr(self, field.name)
-                for field in dataclasses.fields(self)
-                if field.name not in ["_js_expr", "_var_data", "_var_type"]
-            ],
-        ))
 
 
 _PY_AND_IMPORT: ImportDict = {
