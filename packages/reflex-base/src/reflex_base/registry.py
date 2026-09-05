@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
+from pathlib import Path
+from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
@@ -60,6 +62,10 @@ class RegistrationContext(BaseContext):
         repr=False,
     )
     _config: Config | None = dataclasses.field(default=None, repr=False)
+    _config_module_deps: dict[str, ModuleType] = dataclasses.field(
+        default_factory=dict, repr=False
+    )
+    _config_module_deps_root: Path | None = dataclasses.field(default=None, repr=False)
     decorated_pages: list[tuple[Callable, dict[str, Any]]] = dataclasses.field(
         default_factory=list,
         repr=False,
@@ -138,6 +144,8 @@ class RegistrationContext(BaseContext):
             base_state_substates={
                 k: set(v) for k, v in self.base_state_substates.items()
             },
+            _config_module_deps=dict(self._config_module_deps),
+            _config_module_deps_root=self._config_module_deps_root,
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
         )
