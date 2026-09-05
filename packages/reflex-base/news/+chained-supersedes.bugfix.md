@@ -1,0 +1,1 @@
+Event handlers marked `@rx.event(supersedes=True)` now use latest-wins semantics when chained from another handler too, not only when triggered directly: returning or yielding the same superseding event from different handlers cancels the earlier unfinished run. A superseding handler that re-enqueues itself extends its own chain instead of cancelling it.

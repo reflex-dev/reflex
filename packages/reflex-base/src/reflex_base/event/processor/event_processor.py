@@ -124,7 +124,7 @@ class EventProcessor:
         default_factory=dict, init=False
     )
     # Latest-wins tracking for superseding handlers: (event name, token) -> the
-    # currently active chain root future.
+    # future of the currently active invocation, wherever it sits in a chain.
     _superseded: dict[tuple[str, str], EventFuture] = dataclasses.field(
         default_factory=dict, init=False
     )
@@ -426,8 +426,7 @@ class EventProcessor:
             # event) so the child runs instead of crashing.
             if not parent_future.done():
                 parent_future.add_child(tracked)
-        if parent_future is None:
-            self._supersede_previous(token=token, event=event, tracked=tracked)
+        self._supersede_previous(token=token, event=event, tracked=tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
 
@@ -548,9 +547,12 @@ class EventProcessor:
     ) -> None:
         """Cancel the previous unfinished chain of a superseding event handler.
 
-        Root handlers marked with ``supersedes`` (e.g. ``on_load_internal``)
-        use latest-wins semantics: enqueuing a new invocation cancels the
-        previous unfinished event chain for the same handler and client token.
+        Handlers marked with ``supersedes`` (e.g. ``on_load_internal``) use
+        latest-wins semantics: enqueuing a new invocation, directly or chained
+        from another handler, cancels the previous unfinished event chain for
+        the same handler and client token. An invocation chained from within
+        that previous chain (a handler re-enqueuing itself) extends the chain
+        instead of cancelling it, and the chain stays the tracked one.
 
         Args:
             token: The client token associated with the event.
@@ -566,6 +568,12 @@ class EventProcessor:
         key = (event.name, token)
         previous = self._superseded.get(key)
         if previous is not None and not previous.all_done():
+            ancestor = tracked.parent
+            while ancestor is not None:
+                if ancestor is previous:
+                    # Cancelling the chain would cancel this invocation too.
+                    return
+                ancestor = ancestor.parent
             logger.debug(
                 f"Cancelling the previous unfinished {event.name} chain for token "
                 f"{token}, superseded by a newer invocation."

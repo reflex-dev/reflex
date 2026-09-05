@@ -197,6 +197,44 @@ async def _superseding_root_handler(value: str = "default", child: str = "load")
 _superseding_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
 
 
+async def _superseding_worker_handler(value: str = "default", rechain: bool = False):
+    """A superseding background worker; signals the gate named ``value`` and blocks.
+
+    Args:
+        value: The value to log; also names the gate to signal.
+        rechain: Whether to re-enqueue this handler (with ``value`` suffixed by
+            ``_rechained``) before blocking, extending its own chain.
+    """
+    if rechain:
+        ctx = EventContext.get()
+        await ctx.enqueue(
+            Event.from_event_type(superseding_worker_event(f"{value}_rechained"))[0]
+        )
+    gate = _GATES.get(value)
+    if gate is not None:
+        gate.set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            _CALL_LOG.append({"value": f"{value}_cancelled"})
+            raise
+    _CALL_LOG.append({"value": value})
+
+
+_superseding_worker_handler._reflex_background_task = True  # type: ignore[attr-defined]
+_superseding_worker_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
+async def _worker_chaining_handler(value: str = "default"):
+    """A plain (non-superseding) handler that chains the superseding worker.
+
+    Args:
+        value: Label forwarded to the chained worker.
+    """
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(superseding_worker_event(value))[0])
+
+
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
 error_event = EventHandler(fn=_error_handler)
@@ -214,6 +252,8 @@ gated_logging_event = EventHandler(fn=_gated_logging_handler)
 cancellable_load_event = EventHandler(fn=_cancellable_load_handler)
 resurrecting_load_event = EventHandler(fn=_resurrecting_load_handler)
 superseding_root_event = EventHandler(fn=_superseding_root_handler)
+superseding_worker_event = EventHandler(fn=_superseding_worker_handler)
+worker_chaining_event = EventHandler(fn=_worker_chaining_handler)
 
 
 @pytest.fixture(autouse=True)
@@ -243,6 +283,8 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         cancellable_load_event,
         resurrecting_load_event,
         superseding_root_event,
+        superseding_worker_event,
+        worker_chaining_event,
     ):
         RegistrationContext.register_event_handler(handler)
 
@@ -1081,3 +1123,89 @@ async def test_superseded_chain_cannot_chain_new_events(
 
     assert {"value": "resurrected"} not in _CALL_LOG
     assert {"value": "fresh"} in _CALL_LOG
+
+
+async def test_chained_superseding_event_cancels_previous_chain(
+    processor: EventProcessor,
+    token: str,
+):
+    """A superseding handler chained from another handler still supersedes (#7041).
+
+    Two invocations of a plain root handler each chain the same superseding
+    background worker. The worker chained second cancels the one still running
+    from the first root, even though neither worker was enqueued as a chain root.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["stale"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        stale = await ep.enqueue(
+            token, Event.from_event_type(worker_chaining_event("stale"))[0]
+        )
+        await asyncio.wait_for(_GATES["stale"].wait(), timeout=1)
+        # The root handler returned after chaining, but the worker is live.
+        assert stale.done()
+        assert not stale.all_done()
+
+        current = await ep.enqueue(
+            token, Event.from_event_type(worker_chaining_event("fresh"))[0]
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+        # The fresh worker cancelled the stale one when the root chained it.
+        assert stale.all_done()
+        await _drain_superseded(ep)
+        assert ep._superseded == {}
+
+    # The cancelled worker unwinds cooperatively, so its log entry may land
+    # before or after the fresh worker's depending on task start timing.
+    assert sorted(entry["value"] for entry in _CALL_LOG) == [
+        "fresh",
+        "stale_cancelled",
+    ]
+
+
+async def test_self_chaining_superseding_event_extends_its_chain(
+    processor: EventProcessor,
+    token: str,
+):
+    """A superseding handler that re-enqueues itself extends its chain.
+
+    The re-enqueued invocation descends from the tracked one, so cancelling
+    the tracked chain would cancel the new invocation too. Both links keep
+    running, and a later root invocation cancels the whole chain at once.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["first"] = asyncio.Event()
+    _GATES["first_rechained"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(
+            token,
+            Event.from_event_type(superseding_worker_event("first", rechain=True))[0],
+        )
+        await asyncio.wait_for(_GATES["first"].wait(), timeout=1)
+        await asyncio.wait_for(_GATES["first_rechained"].wait(), timeout=1)
+        # Both links are running, nothing was cancelled, and the chain root
+        # is still the tracked invocation.
+        assert not first.done()
+        assert _CALL_LOG == []
+        assert list(ep._superseded.values()) == [first]
+
+        fresh = await ep.enqueue(
+            token, Event.from_event_type(superseding_worker_event("fresh"))[0]
+        )
+        assert first.all_done()
+        await asyncio.wait_for(fresh.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert sorted(entry["value"] for entry in _CALL_LOG) == [
+        "first_cancelled",
+        "first_rechained_cancelled",
+        "fresh",
+    ]
