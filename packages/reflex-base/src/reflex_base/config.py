@@ -9,6 +9,7 @@ import threading
 import urllib.parse
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
+from contextvars import ContextVar
 from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
@@ -183,6 +184,7 @@ class BaseConfig:
         redis_token_expiration: Token expiration time for redis state manager.
         env_file: Path to file containing key-values pairs to load into the environment; Dotenv format. Multiple files may be separated by os.pathsep. Requires the python-dotenv package.
         state_auto_setters: Whether to automatically create setters for state base vars.
+        state_explicit_event_handlers: Whether only methods decorated with `@rx.event` become event handlers. By default every public method of a user-defined state is an event handler.
         default_color_mode: The default color mode for the app: "system" (follow the OS preference), "light", or "dark". Applies to the built-in color mode switcher and `color_mode_cond` without requiring a radix theme.
         show_built_with_reflex: Whether to display the sticky "Built with Reflex" badge on all pages.
         is_reflex_cloud: Whether the app is running in the reflex cloud environment.
@@ -259,6 +261,8 @@ class BaseConfig:
     env_file: str | None = None
 
     state_auto_setters: bool = False
+
+    state_explicit_event_handlers: bool = False
 
     default_color_mode: LiteralColorMode = "system"
 
@@ -403,10 +407,10 @@ class Config(BaseConfig):
         self._non_default_attributes = set(kwargs.keys())
         self._replace_defaults(**kwargs)
 
-        # Publish for State-class creation so it never re-enters get_config()
-        # (which AttributeErrors if a State is defined while rxconfig.py is mid-import).
-        global _state_auto_setters
-        _state_auto_setters = self.state_auto_setters
+        # Publish to the in-progress rxconfig.py import, if any, so States defined
+        # after this Config in rxconfig.py resolve their flags from it.
+        if (load := _config_load.get()) is not None:
+            load.config = self
 
         if (
             self.state_manager_mode == constants.StateManagerMode.REDIS
@@ -871,27 +875,64 @@ def _record_imports() -> Iterator[_ImportRecorder]:
 # Protect sys.path from concurrent modification during config loading.
 _load_config_lock = threading.RLock()
 
-# Cached state_auto_setters so State-class creation never re-enters get_config().
-_state_auto_setters: bool | None = None
+
+@dataclasses.dataclass
+class _ConfigLoad:
+    """An in-progress rxconfig.py import, holding its Config once constructed."""
+
+    config: Config | None = None
+
+
+# Set for the duration of _get_config() so States defined inside rxconfig.py see
+# the Config being loaded (or env/default before it exists), never a stale one.
+_config_load: ContextVar[_ConfigLoad | None] = ContextVar("_config_load", default=None)
+
+
+def _get_state_flag(name: str) -> bool:
+    """Resolve a boolean State-class creation flag without loading rxconfig.
+
+    Uses the Config of the in-progress rxconfig.py import if there is one, else
+    the Config loaded on the active RegistrationContext. Before either exists
+    (e.g. a State defined in rxconfig.py ahead of its Config), falls back to the
+    REFLEX_<NAME> env var, then the default (False). This never calls
+    get_config() or imports rxconfig, so it cannot re-enter config loading.
+
+    Args:
+        name: The config field name.
+
+    Returns:
+        The resolved flag value.
+    """
+    load = _config_load.get()
+    config = (
+        load.config
+        if load is not None
+        else RegistrationContext.ensure_context()._config
+    )
+    if config is not None:
+        return getattr(config, name)
+    env_val = os.environ.get(Config._prefixes[0] + name.upper())
+    if env_val and env_val.strip():
+        return interpret_env_var_value(env_val, bool, name)
+    return False
 
 
 def get_state_auto_setters() -> bool:
     """Return whether state auto-setters are enabled, without importing rxconfig.
 
-    Reads the value cached when the Config was built. Before any Config exists
-    (e.g. a State defined inside rxconfig.py during its import), falls back to the
-    REFLEX_STATE_AUTO_SETTERS env var, then the default (False). This never calls
-    get_config() or imports rxconfig, so it cannot re-enter config loading.
-
     Returns:
         Whether state auto-setters are enabled.
     """
-    if _state_auto_setters is not None:
-        return _state_auto_setters
-    env_val = os.environ.get(Config._prefixes[0] + "STATE_AUTO_SETTERS")
-    if env_val and env_val.strip():
-        return interpret_env_var_value(env_val, bool, "state_auto_setters")
-    return False
+    return _get_state_flag("state_auto_setters")
+
+
+def get_state_explicit_event_handlers() -> bool:
+    """Return whether only `@rx.event` methods become event handlers, without importing rxconfig.
+
+    Returns:
+        Whether explicit event handlers are required.
+    """
+    return _get_state_flag("state_explicit_event_handlers")
 
 
 def _get_config(project_root: Path | None = None) -> Config:
@@ -918,6 +959,7 @@ def _get_config(project_root: Path | None = None) -> Config:
         # which removal by value could confuse with caller-owned ones.
         cwd = str(project_root)
         sys.path.insert(0, cwd)
+        load_token = _config_load.set(_ConfigLoad())
         try:
             # Never cache rxconfig or its project-local dependencies — each load
             # goes to disk so different RegistrationContexts hold independent
@@ -950,6 +992,7 @@ def _get_config(project_root: Path | None = None) -> Config:
                             _config_module_deps.add(name)
             return rxconfig.config
         finally:
+            _config_load.reset(load_token)
             for i, entry in enumerate(sys.path):
                 if entry is cwd:
                     del sys.path[i]
@@ -1014,13 +1057,16 @@ def get_config(reload: bool = False) -> Config:
 def reload_config() -> Config:
     """Force a fresh load of the config into the current RegistrationContext.
 
-    Clears any cached config on the current context and reloads rxconfig.py
-    from disk.
+    Reloads rxconfig.py from disk and replaces any cached config on the current
+    context. If the load fails, the context keeps its previous config.
 
     Returns:
         The freshly loaded app config.
     """
     ctx = RegistrationContext.ensure_context()
-    config = _get_config()
-    ctx._set_config(config)
+    # Load and publish under one lock so concurrent reloads of a shared context
+    # cannot publish an older load over a newer one.
+    with _load_config_lock:
+        config = _get_config()
+        ctx._set_config(config)
     return config

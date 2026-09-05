@@ -295,6 +295,7 @@ def _scan_detach(value: Any, memo: dict[int, Any], active: set[int]) -> Any:
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 SUPERSEDES_MARKER = "_reflex_supersedes"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+EVENT_MARKER = "_rx_event"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 # Payload key listing the names of the extra bound handler args in an upload
@@ -2932,6 +2933,7 @@ class EventNamespace:
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
     SUPERSEDES_MARKER = SUPERSEDES_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
+    EVENT_MARKER = EVENT_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
@@ -3057,6 +3059,9 @@ class EventNamespace:
             if getattr(func, "__name__", "").startswith("_"):
                 msg = "Event handlers cannot be private."
                 raise ValueError(msg)
+            # Lets State tell decorated methods apart when
+            # state_explicit_event_handlers is enabled.
+            setattr(func, EVENT_MARKER, True)
 
             qualname: str | None = getattr(func, "__qualname__", None)
 
