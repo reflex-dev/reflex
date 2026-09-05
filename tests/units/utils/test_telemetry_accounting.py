@@ -1,5 +1,7 @@
 """Tests for ``reflex.utils.telemetry_accounting``."""
 
+import subprocess
+import sys
 from types import SimpleNamespace
 from typing import cast
 from unittest.mock import MagicMock
@@ -19,6 +21,25 @@ from reflex.state import (
     UpdateVarsInternalState,
 )
 from reflex.utils import telemetry_accounting
+
+
+def test_import_does_not_load_database_model() -> None:
+    """Compile accounting must not import database support just to report zero."""
+    script = """
+import sys
+
+from reflex.utils import telemetry_accounting  # noqa: F401
+
+assert "reflex.model" not in sys.modules, "database model imported eagerly"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def _fake_config(**overrides) -> Config:
@@ -374,11 +395,11 @@ def test_collect_features_used_counts_user_lifespan_tasks():
 
 def test_collect_features_used_counts_registered_db_models(mocker: MockerFixture):
     """A non-empty ``ModelRegistry`` reads into ``db_model_count``."""
-    mocker.patch.object(telemetry_accounting, "_HAS_SQLALCHEMY", True)
-    # Replace ModelRegistry wholesale so the test works whether sqlalchemy is
-    # installed (real ModelRegistry) or not (the _ClassThatErrorsOnInit stub).
     fake_registry = SimpleNamespace(get_models=lambda: {object(), object()})
-    mocker.patch.object(telemetry_accounting, "ModelRegistry", fake_registry)
+    mocker.patch.dict(
+        sys.modules,
+        {"reflex.model": SimpleNamespace(ModelRegistry=fake_registry)},
+    )
 
     features = telemetry_accounting._collect_features_used(
         _fake_app(),  # pyright: ignore[reportArgumentType]

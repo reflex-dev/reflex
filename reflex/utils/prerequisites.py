@@ -27,7 +27,6 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.utils.decorator import once
 from rich.markup import escape
 
-from reflex import model
 from reflex.utils import net, path_ops
 from reflex.utils.misc import get_module_path
 
@@ -728,6 +727,8 @@ def check_schema_up_to_date():
     """Check if the sqlmodel metadata matches the current database schema."""
     if get_config().db_url is None or not environment.ALEMBIC_CONFIG.get().exists():
         return
+    from reflex import model
+
     with model.get_engine().connect() as connection:
         from alembic.util.exc import CommandError
 

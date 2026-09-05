@@ -1419,6 +1419,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
+        admin_dash = self.admin_dash
+        if not admin_dash or not admin_dash.models:
+            return
+
         try:
             from starlette_admin.contrib.sqla.admin import Admin
             from starlette_admin.contrib.sqla.view import ModelView
@@ -1431,24 +1435,21 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self._api:
             return
 
-        admin_dash = self.admin_dash
+        # Build the admin dashboard
+        # The first positional argument is `engine` before starlette-admin
+        # 1.0 and `session_provider` (which still accepts an Engine) after,
+        # so pass it positionally to support both.
+        admin = admin_dash.admin or Admin(
+            get_engine(),
+            title="Reflex Admin Dashboard",
+            logo_url="https://reflex.dev/Reflex.svg",
+        )
 
-        if admin_dash and admin_dash.models:
-            # Build the admin dashboard
-            # The first positional argument is `engine` before starlette-admin
-            # 1.0 and `session_provider` (which still accepts an Engine) after,
-            # so pass it positionally to support both.
-            admin = admin_dash.admin or Admin(
-                get_engine(),
-                title="Reflex Admin Dashboard",
-                logo_url="https://reflex.dev/Reflex.svg",
-            )
+        for model in admin_dash.models:
+            view = admin_dash.view_overrides.get(model, ModelView)
+            admin.add_view(view(model))
 
-            for model in admin_dash.models:
-                view = admin_dash.view_overrides.get(model, ModelView)
-                admin.add_view(view(model))
-
-            admin.mount_to(self._api)
+        admin.mount_to(self._api)
 
     def _get_frontend_packages(
         self,

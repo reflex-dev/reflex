@@ -1,5 +1,7 @@
 """Tests for reflex_base.utils.types."""
 
+import subprocess
+import sys
 import typing
 from collections.abc import Callable
 from typing import Literal, TypeVar
@@ -22,6 +24,25 @@ Ts = TypeVarTuple("Ts")
 Handlers = TypeAliasType(
     "Handlers", tuple[Callable[P, int], Unpack[Ts]], type_params=(P, Ts)
 )
+
+
+def test_import_does_not_load_sqlalchemy() -> None:
+    """Generic type helpers must not import optional database support."""
+    script = """
+import sys
+
+from reflex_base.utils import types  # noqa: F401
+
+assert "sqlalchemy" not in sys.modules, "SQLAlchemy imported eagerly"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def _type_alias_types() -> list[type]:
