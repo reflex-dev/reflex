@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 9
+_SCHEMA = 10
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -382,7 +382,7 @@ def _write(manifest: dict[str, Any]) -> None:
     manifest["import_names"] = page_cache.export_import_names_cache()
     path = _manifest_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(manifest), encoding="utf-8")
+    path.write_text(json_dumps(manifest), encoding="utf-8")
 
 
 def write_manifest(
@@ -422,6 +422,10 @@ def write_manifest(
                 or page_ctx.output_code is None
                 or page_ctx.output_path is None
             ):
+                console.warn(
+                    f"Compile cache: cannot save manifest because page {page.route!r} "
+                    "has incomplete output. The next reload will need a full compile."
+                )
                 return  # incomplete compile -> do not write a partial manifest
             defined_states = compile_ctx.stateful_routes.get(page.route)
             pages_data[page.route] = _manifest_page_entry(
@@ -445,7 +449,11 @@ def write_manifest(
 
         globals_: dict[str, str] = {"reflex": page_cache._reflex_version()}
         absent: list[str] = []
-        for label, path in page_cache.global_input_paths(root, pages=pages).items():
+        global_paths = page_cache.global_input_paths(root, pages=pages)
+        global_paths.update({
+            f"state:{path}": path for path in _imported_state_files(compile_ctx, root)
+        })
+        for label, path in global_paths.items():
             entry = hasher(path)
             if entry is None:
                 absent.append(path)
@@ -467,7 +475,38 @@ def write_manifest(
         }
         _write(manifest)
     except Exception as exc:  # best-effort: never break the build
-        console.debug(f"disk compile cache: manifest write skipped ({exc!r})")
+        console.warn(
+            f"Compile cache: could not save manifest ({exc!r}). "
+            "The next reload may need a full compile."
+        )
+
+
+def _imported_state_files(compile_ctx: CompileContext, root: Path | None) -> set[str]:
+    """Find source dependencies of states not owned by page evaluation.
+
+    These states have no per-page context slice. Changing their definitions
+    requires a full compile to refresh the shared frontend contexts.
+
+    Args:
+        compile_ctx: The completed full compile.
+        root: Project root for dependency discovery.
+
+    Returns:
+        First-party source files affecting import-time state definitions.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    page_states = {
+        name for names in compile_ctx.stateful_routes.values() for name in names
+    }
+    roots = page_cache.first_party_roots(root)
+    sources = {
+        str(path)
+        for name, cls in RegistrationContext.ensure_context().base_states.items()
+        if name not in page_states
+        and (path := page_cache._class_module_file(cls, roots)) is not None
+    }
+    return page_cache._walk_import_closure(page_cache.build_import_graph(root), sources)
 
 
 def globals_mismatch(
@@ -1281,4 +1320,4 @@ def _update_manifest_for_misses(
         if dirty:
             _write(manifest)
     except Exception as exc:  # best-effort
-        console.debug(f"disk compile cache: manifest refresh skipped ({exc!r})")
+        console.warn(f"Compile cache: could not refresh manifest ({exc!r}).")

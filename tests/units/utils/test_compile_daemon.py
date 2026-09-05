@@ -16,6 +16,51 @@ class _SurvivingModuleState(rx.State):
     b: int = 0
 
 
+def test_can_fork_rejects_remaining_native_threads(monkeypatch):
+    """Native threads must force the subprocess fallback after the grace period."""
+    monkeypatch.setattr(compile_daemon, "_quiesce_parent", lambda: None)
+    monkeypatch.setattr(compile_daemon.threading, "active_count", lambda: 1)
+    monkeypatch.setattr(compile_daemon, "_os_thread_count", lambda: 8)
+    ticks = iter([0.0, 1.0])
+    monkeypatch.setattr(compile_daemon.time, "monotonic", lambda: next(ticks))
+    assert not compile_daemon._can_fork()
+
+
+def test_missed_changes_includes_new_sources_and_assets(tmp_path):
+    """Catch sources and assets created while the OS watcher is stopped."""
+    state = compile_daemon._WatchState(roots=[tmp_path], root=tmp_path)
+    before = compile_daemon._dependency_snapshot(state)
+    source = tmp_path / "new_page.py"
+    source.write_text("VALUE = 1\n")
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    asset = assets / "image.txt"
+    asset.write_text("new asset")
+    after = compile_daemon._dependency_snapshot(state)
+    assert {source, asset} <= compile_daemon._missed_changes(before, after)
+
+
+def test_next_changes_catches_edit_before_watcher_starts(tmp_path, monkeypatch):
+    """Reconcile the previous snapshot after the watcher has subscribed."""
+    import watchfiles
+
+    state = compile_daemon._WatchState(roots=[tmp_path], root=tmp_path)
+    state.checkpoint = compile_daemon._dependency_snapshot(state)
+    source = tmp_path / "new_page.py"
+    source.write_text("VALUE = 1\n")
+
+    def watch(*args, **kwargs):
+        """Simulate a watcher timeout with no event for the earlier edit.
+
+        Yields:
+            An empty event batch.
+        """
+        yield set()
+
+    monkeypatch.setattr(watchfiles, "watch", watch)
+    assert compile_daemon._next_changes(state, lambda: True) == {source}
+
+
 def test_iter_source_files_picks_content_skips_build_dirs(tmp_path):
     (tmp_path / "page.py").write_text("x = 1\n")
     (tmp_path / "doc.md").write_text("# doc\n")

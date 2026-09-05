@@ -221,6 +221,8 @@ class _WatchState:
     #: JSON/CSV/etc. file a page reads triggers a rebuild too.
     known: set[Path] = field(default_factory=set)
     globals_: set[Path] = field(default_factory=set)
+    #: Last post-compile snapshot, reconciled once the watcher subscribes again.
+    checkpoint: dict[Path, int] | None = None
 
     @classmethod
     def build(cls, roots: list[Path], root: Path) -> _WatchState:
@@ -282,7 +284,7 @@ class _WatchState:
         return path.suffix in _WATCH_SUFFIXES and _under_roots(path, self.roots)
 
     def watch_paths(self) -> set[Path]:
-        """Fallback polling only: the full file set to snapshot each tick.
+        """Collect inputs for polling and watch-subscription catch-up snapshots.
 
         Returns:
             The set of paths to stat.
@@ -324,6 +326,10 @@ def _poll_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | 
     """
     paths = state.watch_paths()
     snapshot = _snapshot(paths)
+    if state.checkpoint is not None and (
+        changed := _missed_changes(state.checkpoint, snapshot)
+    ):
+        return changed
     last_rescan = time.monotonic()
     while alive():
         time.sleep(_POLL_INTERVAL)
@@ -383,11 +389,15 @@ def _next_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | 
         yield_on_timeout=True,
         raise_interrupt=False,
     )
+    checkpoint = state.checkpoint
     try:
         for batch in events:
             if not alive():
                 return None
             changed = {Path(raw_path) for _change, raw_path in batch}
+            if checkpoint is not None:
+                changed.update(_missed_changes(checkpoint, _dependency_snapshot(state)))
+                checkpoint = None
             if changed:
                 return changed
     finally:
@@ -396,15 +406,15 @@ def _next_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | 
 
 
 def _dependency_snapshot(state: _WatchState) -> dict[Path, int]:
-    """Stat the recorded compile inputs (cheap: no tree walk).
+    """Snapshot all watchable inputs while the OS watcher is stopped.
 
     Args:
         state: The watch state whose known dependencies to stat.
 
     Returns:
-        ``{path: mtime_ns}`` for every readable recorded input.
+        ``{path: mtime_ns}`` for every readable watched input.
     """
-    return _snapshot(state.known | state.globals_)
+    return _snapshot(state.watch_paths())
 
 
 def _missed_changes(before: dict[Path, int], after: dict[Path, int]) -> set[Path]:
@@ -844,10 +854,11 @@ def _can_fork() -> bool:
         deadline = time.monotonic() + 0.25
         while (count := _os_thread_count()) is not None and count > 1:
             if time.monotonic() > deadline:
-                console.debug(
-                    f"Compile daemon: forking with {count} OS threads still alive."
+                console.warn(
+                    f"Compile daemon: {count} OS threads still alive; "
+                    "falling back to a cold subprocess."
                 )
-                break
+                return False
             time.sleep(0.005)
         return True
     others = [
@@ -937,6 +948,7 @@ def _serve() -> None:
     _prepare_fork_parent(roots)
 
     state = _WatchState.build(roots, root)
+    state.checkpoint = _dependency_snapshot(state)
     console.info("Compile daemon ready (warm); watching for changes.")
 
     def alive() -> bool:
@@ -974,7 +986,8 @@ def _serve() -> None:
         # content file becomes watched, and catch up on edits made while the
         # watcher was down for the compile.
         state = _WatchState.build(roots, root)
-        pending = _missed_changes(before, _dependency_snapshot(state))
+        state.checkpoint = _dependency_snapshot(state)
+        pending = _missed_changes(before, state.checkpoint)
 
 
 def main(argv: list[str] | None = None) -> int:

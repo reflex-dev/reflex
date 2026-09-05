@@ -18,6 +18,7 @@ import re
 import sys
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextvars import ContextVar
+from functools import lru_cache
 from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -563,11 +564,11 @@ def _module_file(component: object) -> Path | None:
     return Path(file) if file else None
 
 
-#: Component/state class -> its resolved first-party module file (or None).
+#: Component/state class and roots -> its first-party module file (or None).
 #: A rendered tree has tens of thousands of nodes but few distinct classes,
 #: and a class's module never moves; resolving per node dominated the
 #: dependency walk. Warmed in the daemon parent so forked children inherit it.
-_class_file_cache: dict[type, Path | None] = {}
+_class_file_cache: dict[tuple[type, tuple[Path, ...]], Path | None] = {}
 
 
 def _class_module_file(cls: type, roots: tuple[Path, ...]) -> Path | None:
@@ -580,8 +581,9 @@ def _class_module_file(cls: type, roots: tuple[Path, ...]) -> Path | None:
     Returns:
         The resolved module file under one of ``roots``, else None.
     """
+    key = (cls, roots)
     try:
-        return _class_file_cache[cls]
+        return _class_file_cache[key]
     except KeyError:
         pass
     f = _module_file(cls)
@@ -590,7 +592,7 @@ def _class_module_file(cls: type, roots: tuple[Path, ...]) -> Path | None:
         rf = f.resolve()
         if _under_any(rf, roots):
             resolved = rf
-    _class_file_cache[cls] = resolved
+    _class_file_cache[key] = resolved
     return resolved
 
 
@@ -608,6 +610,7 @@ def warm_module_file_cache(root: Path | None = None) -> None:
     for base in (Component, BaseState):
         for cls in _subclasses(base):
             _class_module_file(cls, roots)
+    _loaded_first_party_modules(roots[0])
 
 
 def component_module_files(
@@ -669,10 +672,24 @@ def _loaded_first_party_modules(root: Path) -> dict[str, str]:
         file = getattr(mod, "__file__", None)
         if not file:
             continue
-        rf = Path(file).resolve()
-        if _under_any(rf, roots):
-            file_to_mod[str(rf)] = name
+        if (resolved := _first_party_module_file(file, roots)) is not None:
+            file_to_mod[resolved] = name
     return file_to_mod
+
+
+@lru_cache(maxsize=8192)
+def _first_party_module_file(file: str, roots: tuple[Path, ...]) -> str | None:
+    """Resolve a stable module filename once per set of reload roots.
+
+    Args:
+        file: The module's source filename.
+        roots: Resolved first-party roots.
+
+    Returns:
+        The resolved filename if it belongs to a first-party root, else None.
+    """
+    resolved = Path(file).resolve()
+    return str(resolved) if _under_any(resolved, roots) else None
 
 
 def _import_from_targets(node: object, modname: str) -> list[str]:

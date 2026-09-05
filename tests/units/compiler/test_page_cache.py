@@ -4,9 +4,52 @@ import importlib
 import os
 import sys
 from pathlib import Path
+from types import ModuleType
 from typing import Any, cast
 
 from reflex.compiler import page_cache
+
+
+def test_class_module_file_respects_each_project_root(tmp_path, monkeypatch):
+    """A class excluded in one project can be a dependency in another."""
+    module = ModuleType("review_class_roots")
+    module.__file__ = str(tmp_path / "component.py")
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    cls = type("RootScoped", (), {"__module__": module.__name__})
+    assert page_cache._class_module_file(cls, (tmp_path / "other",)) is None
+    assert page_cache._class_module_file(cls, (tmp_path,)) == Path(module.__file__)
+
+
+def test_loaded_modules_reuse_resolution_and_discover_new_modules(
+    tmp_path, monkeypatch
+):
+    """Cache stable module paths without missing imports or changes to roots."""
+    source = tmp_path / "cached_module.py"
+    source.write_text("VALUE = 1\n")
+    module = ModuleType("cached_review_module")
+    module.__file__ = str(source)
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    original = Path.resolve
+    resolutions = []
+
+    def resolve(path, *args, **kwargs):
+        """Count resolutions of the test module's source file.
+
+        Returns:
+            The resolved path.
+        """
+        if path == source:
+            resolutions.append(path)
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", resolve)
+    assert str(source) in page_cache._loaded_first_party_modules(tmp_path)
+    added = ModuleType("new_review_module")
+    added.__file__ = str(tmp_path / "added.py")
+    monkeypatch.setitem(sys.modules, added.__name__, added)
+    assert added.__file__ in page_cache._loaded_first_party_modules(tmp_path)
+    assert len(resolutions) == 1
+    assert str(source) not in page_cache._loaded_first_party_modules(tmp_path / "other")
 
 
 def _prepare_runtime_module(root, monkeypatch, module_name, *, import_root=None):

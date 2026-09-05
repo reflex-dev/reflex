@@ -1,14 +1,16 @@
 """Tests for the experimental disk-persisted incremental compile cache."""
 
 import dataclasses
+import datetime
 import itertools
 import json
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any, cast
 
+import pytest
 from reflex_base.components.component import Component
 from reflex_base.plugins import CompileContext, CompilerHooks
 from reflex_base.utils.imports import ImportVar
@@ -99,6 +101,49 @@ def _unregister_state(cls: type[rx.State]) -> None:
     all_base_state_classes.pop(full_name, None)
 
 
+@pytest.mark.parametrize("edited_module", ["state", "helper"])
+def test_imported_state_edit_invalidates_contexts(tmp_path, monkeypatch, edited_module):
+    """Module-level state edits need a full compile to refresh shared contexts."""
+    _use_tmp_web_dir(tmp_path, monkeypatch)
+    source = tmp_path / "state_view.py"
+    helper_source = tmp_path / "state_helper.py"
+    helper_source.write_text("DEFAULT = 'old'\n")
+    helper = ModuleType("cache_review_state_helper")
+    helper.__file__ = str(helper_source)
+    helper.__dict__["DEFAULT"] = "old"
+    monkeypatch.setitem(sys.modules, helper.__name__, helper)
+    code = (
+        "import reflex as rx\n"
+        "from cache_review_state_helper import DEFAULT\n"
+        "class ImportedState(rx.State):\n"
+        "    value: str = DEFAULT\n"
+        "def index():\n"
+        "    return rx.el.div(ImportedState.value)\n"
+    )
+    source.write_text(code)
+    module = ModuleType("cache_review_state_view")
+    module.__file__ = str(source)
+    monkeypatch.setitem(sys.modules, module.__name__, module)
+    exec(compile(code, str(source), "exec"), module.__dict__)
+    try:
+        app = rx.App()
+        app.add_page(module.index, route="/state")
+        pages = list(app._unevaluated_pages.values())
+        ctx = _compile(pages, app)
+        assert not ctx.stateful_routes
+        disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+        if edited_module == "state":
+            source.write_text(code.replace("= DEFAULT", "= 'new default'"))
+        else:
+            helper_source.write_text("DEFAULT = 'new default'\n")
+        _stub_externals(app, monkeypatch)
+        assert not disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+    finally:
+        _unregister_state(module.ImportedState)
+
+
 def test_imports_round_trip():
     imports = {
         "react": [ImportVar("useEffect"), ImportVar("Fragment", is_default=False)],
@@ -106,6 +151,54 @@ def test_imports_round_trip():
     }
     restored = disk_cache._deserialize_imports(disk_cache._serialize_imports(imports))
     assert restored == imports
+
+
+@pytest.mark.parametrize("kind", ["date", "pydantic"])
+def test_manifest_serializes_state_defaults_like_contexts(tmp_path, monkeypatch, kind):
+    """Persist state defaults that require Reflex's frontend serializer."""
+    from reflex_base.utils.format import json_dumps
+
+    _use_tmp_web_dir(tmp_path, monkeypatch)
+    value = (
+        datetime.date(2026, 9, 5)
+        if kind == "date"
+        else pytest.importorskip("pydantic").create_model(
+            "AppSettings", theme=(str, "light")
+        )()
+    )
+    state_slice = {
+        "initial_state": {"state": {"value": value}},
+        "client_storage": {},
+    }
+    manifest = _manifest({"/date": {"state_slice": state_slice}})
+    disk_cache._write(manifest)
+    loaded = disk_cache.load_manifest()
+    assert loaded is not None
+    assert loaded["pages"]["/date"]["state_slice"] == json.loads(
+        json_dumps(state_slice)
+    )
+
+
+def test_manifest_write_failure_is_visible(tmp_path, monkeypatch):
+    """A failed cache write must explain why subsequent reloads compile everything."""
+    _use_tmp_web_dir(tmp_path, monkeypatch)
+    pages = [_FakePage(route="/a", component=_page_a)]
+    ctx = _compile(pages)
+    warnings = []
+
+    def fail_write(manifest):
+        """Simulate a failure writing the cache manifest.
+
+        Raises:
+            OSError: The cache cannot be persisted.
+        """
+        msg = "disk full"
+        raise OSError(msg)
+
+    monkeypatch.setattr(disk_cache, "_write", fail_write)
+    monkeypatch.setattr(disk_cache.console, "warn", warnings.append)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    assert any("disk full" in warning for warning in warnings)
 
 
 def test_serialize_imports_collapses_duplicates():
