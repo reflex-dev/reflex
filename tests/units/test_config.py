@@ -34,6 +34,7 @@ STATE_MODULE = "config_reload_state_module"
 DEPENDENCY_MODULE = "config_reload_dependency"
 PACKAGE_NAME = "config_reload_package"
 PACKAGE_STATE_MODULE = f"{PACKAGE_NAME}.state"
+PACKAGE_SETTINGS_MODULE = f"{PACKAGE_NAME}.settings"
 
 
 def test_requires_app_name():
@@ -1157,7 +1158,10 @@ def test_reload_config_restores_state_package(
 
     package = tmp_path / PACKAGE_NAME
     package.mkdir()
-    (package / "__init__.py").write_text("APP_NAME = 'first'\n")
+    (package / "__init__.py").write_text(
+        f"from .{PACKAGE_SETTINGS_MODULE.rsplit('.', maxsplit=1)[-1]} import APP_NAME\n"
+    )
+    (package / "settings.py").write_text("APP_NAME = 'first'\n")
     (package / "state.py").write_text(
         "import reflex as rx\n\nclass MyState(rx.State):\n    value: str = ''\n"
     )
@@ -1170,10 +1174,40 @@ def test_reload_config_restores_state_package(
 
     with RegistrationContext():
         assert reflex_base.config.get_config().app_name == "first"
-        (package / "__init__.py").write_text("APP_NAME = 'second'\n")
+        (package / "settings.py").write_text("APP_NAME = 'second'\n")
         assert reflex_base.config.reload_config().app_name == "second"
+        (package / "settings.py").write_text("APP_NAME = 'third'\n")
+        assert reflex_base.config.reload_config().app_name == "third"
         assert PACKAGE_STATE_MODULE in sys.modules
         assert PACKAGE_NAME in sys.modules
+
+
+def test_reload_config_preserves_state_defined_in_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading config does not redefine a state defined in a package.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    package = tmp_path / PACKAGE_NAME
+    package.mkdir()
+    (package / "__init__.py").write_text(
+        "import reflex as rx\n\nclass PackageState(rx.State):\n    value: str = ''\n"
+    )
+    (tmp_path / f"{CONFIG_MODULE}.py").write_text(
+        f"import {PACKAGE_NAME}\nimport reflex as rx\n\n"
+        "config = rx.Config(app_name='package_state')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "package_state"
+        assert reflex_base.config.reload_config().app_name == "package_state"
 
 
 def _write_dependency_config(project: Path, app_name: str) -> None:
@@ -1234,6 +1268,7 @@ def clean_config_modules() -> Generator[None, None, None]:
         DEPENDENCY_MODULE,
         PACKAGE_NAME,
         PACKAGE_STATE_MODULE,
+        PACKAGE_SETTINGS_MODULE,
     )
     try:
         yield

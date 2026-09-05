@@ -7,7 +7,7 @@ import os
 import sys
 import threading
 import urllib.parse
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from importlib.util import find_spec
 from pathlib import Path
@@ -860,6 +860,23 @@ class _ImportRecorder:
 _import_recorder = _ImportRecorder()
 
 
+def _record_project_modules(names: Iterable[str], project_root: Path) -> None:
+    """Add project-local modules from an import attempt to the dependency set.
+
+    Args:
+        names: Module names observed by the import recorder.
+        project_root: Root used to classify project-local modules.
+    """
+    for name in names:
+        origin = getattr(sys.modules.get(name), "__file__", None)
+        if (
+            origin
+            and (path := Path(origin)).is_relative_to(project_root)
+            and "site-packages" not in path.parts
+        ):
+            _config_module_deps.add(name)
+
+
 @contextmanager
 def _record_imports() -> Iterator[_ImportRecorder]:
     """Record imports made on the current thread while rxconfig loads.
@@ -963,8 +980,12 @@ def _get_config(
                     if dep in state_modules or dep in package_modules:
                         sys.modules[dep] = module
                         _config_module_deps.add(dep)
-                for dep in sorted(package_modules, key=lambda name: name.count(".")):
-                    importlib.reload(ctx._config_module_deps[dep])
+                with _record_imports() as recorder:
+                    for dep in sorted(
+                        package_modules, key=lambda name: name.count(".")
+                    ):
+                        importlib.reload(ctx._config_module_deps[dep])
+                _record_project_modules(recorder.names, project_root)
             # only import the module if it exists. If a module spec exists then
             # the module exists.
             if not find_spec(constants.Config.MODULE):
@@ -976,14 +997,7 @@ def _get_config(
                     rxconfig = importlib.import_module(constants.Config.MODULE)
                 finally:
                     # Record even on failure so a retry evicts partially-imported deps.
-                    for name in recorder.names:
-                        origin = getattr(sys.modules.get(name), "__file__", None)
-                        if (
-                            origin
-                            and (path := Path(origin)).is_relative_to(project_root)
-                            and "site-packages" not in path.parts
-                        ):
-                            _config_module_deps.add(name)
+                    _record_project_modules(recorder.names, project_root)
                     ctx._config_module_deps.clear()
                     ctx._config_module_deps.update({
                         name: module
