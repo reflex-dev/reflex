@@ -954,3 +954,39 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
 
     written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
     assert disk_cache._deserialize_imports(written["all_imports"]) == complete_imports
+
+
+def _page_loop_a() -> Component:
+    return rx.el.ul(rx.foreach(["a", "b"], lambda item: rx.el.li(item)))
+
+
+def _page_loop_b() -> Component:
+    return rx.el.ul(rx.foreach(["c", "d"], lambda item: rx.el.li(item)))
+
+
+def _page_loop_c() -> Component:
+    return rx.el.ul(rx.foreach(["e", "f"], lambda item: rx.el.li(item)))
+
+
+def test_generated_names_do_not_depend_on_other_pages():
+    """A page compiled alone gets the same generated names as in a full compile.
+
+    ``rx.foreach`` draws its loop variable from the unique-name generator. If
+    that sequence were process-wide, an incremental compile of one page would
+    hand it the names the cached pages already use.
+    """
+    full = _compile([
+        _FakePage(route="/la", component=_page_loop_a),
+        _FakePage(route="/lb", component=_page_loop_b),
+        _FakePage(route="/lc", component=_page_loop_c),
+    ])
+    alone = _compile([_FakePage(route="/lc", component=_page_loop_c)])
+    assert (
+        full.compiled_pages["/lc"].output_code
+        == alone.compiled_pages["/lc"].output_code
+    )
+    # Different pages still draw different names.
+    la, lb = full.compiled_pages["/la"], full.compiled_pages["/lb"]
+    assert la.output_code is not None
+    assert lb.output_code is not None
+    assert la.output_code != lb.output_code

@@ -3315,6 +3315,43 @@ def reset_unique_variable_names() -> None:
     _UNIQUE_NAME_RNG.seed(42)
 
 
+def seed_unique_variable_names(seed: str) -> None:
+    """Start a fresh, seed-determined name sequence (one per compiled page).
+
+    Generated names are order-dependent, so a process-wide sequence gives a
+    page different names depending on which pages compiled before it. An
+    incremental compile of a subset of pages would then reuse names that
+    other, cached pages already hold. Seeding per page from its route makes
+    each page's names a function of the page alone.
+
+    Args:
+        seed: The page route (or another stable label).
+    """
+    USED_VARIABLES.clear()
+    _UNIQUE_NAME_RNG.seed(f"reflex-unique-names:{seed}")
+
+
+def unique_variable_name_state() -> tuple[Any, frozenset[str]]:
+    """Capture the generator state so a page's sequence can resume later.
+
+    Returns:
+        An opaque state for :func:`restore_unique_variable_name_state`.
+    """
+    return _UNIQUE_NAME_RNG.getstate(), frozenset(USED_VARIABLES)
+
+
+def restore_unique_variable_name_state(state: tuple[Any, frozenset[str]]) -> None:
+    """Resume a page's name sequence captured by :func:`unique_variable_name_state`.
+
+    Args:
+        state: The captured state.
+    """
+    rng_state, used = state
+    _UNIQUE_NAME_RNG.setstate(rng_state)
+    USED_VARIABLES.clear()
+    USED_VARIABLES.update(used)
+
+
 def get_unique_variable_name() -> str:
     """Get a unique variable name.
 

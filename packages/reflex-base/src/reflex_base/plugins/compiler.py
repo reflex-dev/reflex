@@ -697,6 +697,9 @@ class PageContext(BaseContext):
     source_module: str | None = None
     # Source files read while evaluating this page, when a recorder is installed.
     source_files: set[str] = dataclasses.field(default_factory=set)
+    # The page's unique-name generator state after evaluation, resumed for its
+    # render so its generated names never depend on other pages.
+    unique_name_state: Any = None
     # Auto-memo components first registered while compiling this page.
     memo_contributions: dict[tuple[str, str | None], Any] = dataclasses.field(
         default_factory=dict
@@ -807,7 +810,12 @@ class CompileContext(BaseContext):
         """
         from reflex.compiler import compiler
         from reflex.state import all_base_state_classes
-        from reflex_base.vars.base import reset_unique_variable_names
+        from reflex_base.vars.base import (
+            reset_unique_variable_names,
+            restore_unique_variable_name_state,
+            seed_unique_variable_names,
+            unique_variable_name_state,
+        )
 
         self.ensure_context_attached()
         self.compiled_pages.clear()
@@ -817,13 +825,14 @@ class CompileContext(BaseContext):
         self.memoize_wrappers.clear()
         self.auto_memo_components.clear()
 
-        # Keep generated ref names stable across in-process compiles.
-        reset_unique_variable_names()
-
         recorder = page_source_recorder
         for page in self.pages:
             page_fn = page.component
             n_states_before = len(all_base_state_classes)
+            # Names generated for a page are a function of the page alone, so
+            # recompiling any subset of pages reproduces them (see
+            # ``seed_unique_variable_names``).
+            seed_unique_variable_names(page.route)
             if recorder is not None:
                 with recorder() as read_set:
                     page_ctx = self.hooks.eval_page(
@@ -860,6 +869,7 @@ class CompileContext(BaseContext):
                     n_states_before:
                 ]
 
+            page_ctx.unique_name_state = unique_variable_name_state()
             self.compiled_pages[page_ctx.route] = page_ctx
 
             if evaluate_progress is not None:
@@ -871,6 +881,7 @@ class CompileContext(BaseContext):
             strict=True,
         ):
             memo_before = set(self.auto_memo_components)
+            restore_unique_variable_name_state(page_ctx.unique_name_state)
             with page_ctx:
                 page_ctx.root_component = self.hooks.compile_component(
                     page_ctx.root_component,
@@ -902,6 +913,9 @@ class CompileContext(BaseContext):
             if render_progress is not None:
                 render_progress()
 
+        # Whatever compiles after the pages (app root, memo modules) starts
+        # from the same state on every compile.
+        reset_unique_variable_names()
         return self.compiled_pages
 
 
