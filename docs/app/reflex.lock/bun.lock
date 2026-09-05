@@ -50,7 +50,7 @@
         "react-helmet": "6.1.0",
         "react-leaflet": "5.0.0",
         "react-markdown": "10.1.0",
-        "react-moment": "1.2.2",
+        "react-moment": "2.0.2",
         "react-player": "3.4.0",
         "react-plotly.js": "4.1.0",
         "react-responsive-carousel": "3.2.23",
@@ -1501,7 +1501,7 @@
 
     "react-merge-refs": ["react-merge-refs@2.1.1", "", {}, "sha512-jLQXJ/URln51zskhgppGJ2ub7b2WFKGq3cl3NYKtlHoTG+dN2q7EzWrn3hN3EgPsTMvpR9tpq5ijdp7YwFZkag=="],
 
-    "react-moment": ["react-moment@1.2.2", "", { "peerDependencies": { "moment": "^2.29.0", "prop-types": "^15.7.0", "react": "^16.0 || ^17.0.0 || ^18.0.0" } }, "sha512-F5/YLsygduvR5+mpYdHMD9HzyljQFudcoAfL5XmJhGBkZVzJANIx/5PN+kvWO5KELifXXtndXeMCUxH4eB+E9Q=="],
+    "react-moment": ["react-moment@2.0.2", "", { "peerDependencies": { "moment": "^2.29.0", "moment-duration-format": "^2.2.2", "react": "^18.0.0 || ^19.0.0" }, "optionalPeers": ["moment-duration-format"] }, "sha512-aogeei/erGX9iL7kAwQceaxdW2JR0/XbITYBEN1mFHG0Z02y8G0Wrl2PgbfIPs5EbVFhUB2F2+FopW9UPuP1qg=="],
 
     "react-number-format": ["react-number-format@5.4.5", "", { "peerDependencies": { "react": "^0.14 || ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^0.14 || ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-y8O2yHHj3w0aE9XO8d2BCcUOOdQTRSVq+WIuMlLVucAm5XNjJAy+BoOJiuQMldVYVOKTMyvVNfnbl2Oqp+YxGw=="],
 
