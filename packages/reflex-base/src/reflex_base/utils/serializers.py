@@ -8,6 +8,7 @@ import functools
 import inspect
 import json
 import logging
+import os
 import uuid
 import warnings
 from collections.abc import Callable, Mapping, Sequence
@@ -37,6 +38,15 @@ SERIALIZER_TYPES: dict[type, type] = {}
 _SERIALIZER_LOCK = RLock()
 _OPTIONAL_SERIALIZER_LOADERS: dict[str, Callable[[], None]] = {}
 
+if hasattr(os, "register_at_fork"):
+    # Wait for other threads to finish registry operations before forking.
+    # The surviving thread owns the lock, so both processes can release it.
+    os.register_at_fork(
+        before=_SERIALIZER_LOCK.acquire,
+        after_in_parent=_SERIALIZER_LOCK.release,
+        after_in_child=_SERIALIZER_LOCK.release,
+    )
+
 SERIALIZED_FUNCTION = TypeVar("SERIALIZED_FUNCTION", bound=Serializer)
 _REGISTRY_VALUE = TypeVar("_REGISTRY_VALUE")
 
@@ -58,10 +68,12 @@ def _load_optional_serializer(type_: type) -> None:
         type_: The value type that may belong to an optional dependency.
     """
     for value_type in getattr(type_, "__mro__", ()):
-        module = value_type.__module__.partition(".")[0]
+        module_name = value_type.__module__
+        if not isinstance(module_name, str):
+            continue
+        module = module_name.partition(".")[0]
         if loader := _OPTIONAL_SERIALIZER_LOADERS.get(module):
             loader()
-            return
 
 
 @overload
