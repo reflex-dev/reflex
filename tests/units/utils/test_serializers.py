@@ -196,7 +196,7 @@ import sys
 
 from reflex_base.utils import serializers  # noqa: F401
 
-optional_modules = ("pandas", "plotly", "PIL")
+optional_modules = ("pandas", "plotly", "PIL", "sqlmodel", "sqlalchemy")
 loaded = [name for name in optional_modules if name in sys.modules]
 assert not loaded, f"optional serializer dependencies imported eagerly: {loaded}"
 """
@@ -205,6 +205,7 @@ assert not loaded, f"optional serializer dependencies imported eagerly: {loaded}
         capture_output=True,
         text=True,
         check=False,
+        timeout=15,
     )
 
     assert result.returncode == 0, result.stderr
@@ -232,6 +233,7 @@ assert serializers.serialize(DataFrame()) == "custom"
         capture_output=True,
         text=True,
         check=False,
+        timeout=15,
     )
     assert result.returncode == 0, result.stderr
 
@@ -262,6 +264,7 @@ assert serializers.get_serializer(CustomFrame) is fallback
         capture_output=True,
         text=True,
         check=False,
+        timeout=15,
     )
     assert result.returncode == 0, result.stderr
 
@@ -287,6 +290,7 @@ for name in (
         capture_output=True,
         text=True,
         check=False,
+        timeout=15,
     )
     assert result.returncode == 0, result.stderr
 

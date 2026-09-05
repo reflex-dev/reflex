@@ -5,14 +5,12 @@ from __future__ import annotations
 import logging
 import re
 from collections import defaultdict
-from contextlib import suppress
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils import console
-from reflex_base.utils.serializers import serializer
 
 logger = logging.getLogger(__name__)
 
@@ -511,6 +509,7 @@ else:
 
 if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     import sqlmodel
+    from reflex_base.utils.serializers import serialize_sqlmodel as serialize_sqlmodel
     from sqlmodel.ext.asyncio.session import AsyncSession
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
@@ -536,29 +535,6 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
             )
 
         return {"db": status}
-
-    @serializer
-    def serialize_sqlmodel(m: sqlmodel.SQLModel) -> dict[str, Any]:
-        """Serialize a SQLModel object to a dictionary.
-
-        Args:
-            m: The SQLModel object to serialize.
-
-        Returns:
-            The serialized object as a dictionary.
-        """
-        base_fields = m.model_dump()
-        relationships = {}
-        # SQLModel relationships do not appear in __fields__, but should be included if present.
-        for name in m.__sqlmodel_relationships__:
-            with suppress(
-                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
-            ):
-                relationships[name] = getattr(m, name)
-        return {
-            **base_fields,
-            **relationships,
-        }
 
     def _warn_about_model_deprecation():
         console.deprecate(

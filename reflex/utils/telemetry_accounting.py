@@ -227,16 +227,24 @@ def _collect_features_used(
 
 
 def _get_db_model_count() -> int:
-    """Count models without importing the optional database stack.
+    """Count nonempty model bases without importing the optional database stack.
 
     Returns:
-        The number of registered database models, or zero when database support
-        has not already been loaded by the application.
+        The number of nonempty registered model bases, including the shared
+        SQLModel base for apps that have not loaded Reflex's model integration.
     """
     model_module = sys.modules.get("reflex.model")
     registry = getattr(model_module, "ModelRegistry", None)
     get_models = getattr(registry, "get_models", None)
-    return len(get_models()) if get_models is not None else 0
+    if get_models is not None:
+        return len(get_models())
+
+    # Reflex's default model shares SQLModel's metadata, counting as one base
+    # regardless of how many tables an app has defined directly with SQLModel.
+    sqlmodel_module = sys.modules.get("sqlmodel")
+    sqlmodel_base = getattr(sqlmodel_module, "SQLModel", None)
+    metadata = getattr(sqlmodel_base, "metadata", None)
+    return int(metadata is not None and bool(metadata.tables))
 
 
 _STATE_MANAGER_FEATURE: dict[str, FeatureName] = {
