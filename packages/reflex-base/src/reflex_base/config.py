@@ -808,6 +808,21 @@ class Config(BaseConfig):
 _config_module_deps: set[str] = set()
 
 
+def _get_registered_state_modules(ctx: RegistrationContext) -> set[str]:
+    """Return modules defining states already registered in a context.
+
+    Args:
+        ctx: The active registration context.
+
+    Returns:
+        Module names whose objects must survive a config reload.
+    """
+    state_types = set(ctx.base_states.values())
+    for substates in ctx.base_state_substates.values():
+        state_types.update(substates)
+    return {state_type.__module__ for state_type in state_types}
+
+
 class _ImportRecorder:
     """Meta-path finder that records import attempts made on one thread.
 
@@ -910,7 +925,7 @@ def _get_config(
             and the dependency classification below are based on.
         reload_dependencies: Whether to reload project-local modules imported by
             rxconfig.py. A config reload in an existing RegistrationContext
-            keeps them so state classes are not redefined.
+            keeps only modules that define already-registered state classes.
 
     Returns:
         The app config.
@@ -935,9 +950,11 @@ def _get_config(
                 for dep in _config_module_deps:
                     sys.modules.pop(dep, None)
                 _config_module_deps.clear()
+                state_modules = _get_registered_state_modules(ctx)
                 for dep, module in ctx._config_module_deps.items():
-                    sys.modules[dep] = module
-                _config_module_deps.update(ctx._config_module_deps)
+                    if dep in state_modules:
+                        sys.modules[dep] = module
+                        _config_module_deps.add(dep)
             # only import the module if it exists. If a module spec exists then
             # the module exists.
             if not find_spec(constants.Config.MODULE):

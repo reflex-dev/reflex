@@ -29,6 +29,10 @@ from reflex.environment import (
     interpret_int_env,
 )
 
+CONFIG_MODULE = "rxconfig"
+STATE_MODULE = "config_reload_state_module"
+DEPENDENCY_MODULE = "config_reload_dependency"
+
 
 def test_requires_app_name():
     """Test that a config requires an app_name."""
@@ -1037,11 +1041,11 @@ def _write_state_config(project: Path, app_name: str = "state_reload") -> None:
         app_name: The app name written to the config.
     """
     project.mkdir(exist_ok=True)
-    (project / "config_reload_state_module.py").write_text(
+    (project / f"{STATE_MODULE}.py").write_text(
         "import reflex as rx\n\nclass MyState(rx.State):\n    value: str = ''\n"
     )
     (project / "rxconfig.py").write_text(
-        "import config_reload_state_module\nimport reflex as rx\n\n"
+        f"import {STATE_MODULE}\nimport reflex as rx\n\n"
         f"config = rx.Config(app_name={app_name!r})\n"
     )
 
@@ -1089,7 +1093,7 @@ def test_get_config_reloads_project_state_for_each_context(
         first_state = next(
             state
             for state in first_context.base_states.values()
-            if state.__module__ == "config_reload_state_module"
+            if state.__module__ == STATE_MODULE
         )
 
     with RegistrationContext() as second_context:
@@ -1097,7 +1101,7 @@ def test_get_config_reloads_project_state_for_each_context(
         second_state = next(
             state
             for state in second_context.base_states.values()
-            if state.__module__ == "config_reload_state_module"
+            if state.__module__ == STATE_MODULE
         )
 
     assert second_state is not first_state
@@ -1124,17 +1128,17 @@ def test_reload_config_restores_modules_for_an_older_context(
     with first_context:
         monkeypatch.chdir(first_project)
         assert reflex_base.config.get_config().app_name == "first"
-        first_module = sys.modules["config_reload_state_module"]
+        first_module = sys.modules[STATE_MODULE]
 
     with RegistrationContext():
         monkeypatch.chdir(second_project)
         assert reflex_base.config.get_config().app_name == "second"
-        assert sys.modules["config_reload_state_module"] is not first_module
+        assert sys.modules[STATE_MODULE] is not first_module
 
     with first_context:
         monkeypatch.chdir(first_project)
         assert reflex_base.config.reload_config().app_name == "first"
-        assert sys.modules["config_reload_state_module"] is first_module
+        assert sys.modules[STATE_MODULE] is first_module
 
 
 def _write_dependency_config(project: Path, app_name: str) -> None:
@@ -1145,10 +1149,10 @@ def _write_dependency_config(project: Path, app_name: str) -> None:
         app_name: The app name exposed by the dependency.
     """
     project.mkdir()
-    (project / "config_reload_dependency.py").write_text(f"APP_NAME = {app_name!r}\n")
+    (project / f"{DEPENDENCY_MODULE}.py").write_text(f"APP_NAME = {app_name!r}\n")
     (project / "rxconfig.py").write_text(
-        "import config_reload_dependency\nimport reflex as rx\n\n"
-        "config = rx.Config(app_name=config_reload_dependency.APP_NAME)\n"
+        f"import {DEPENDENCY_MODULE}\nimport reflex as rx\n\n"
+        f"config = rx.Config(app_name={DEPENDENCY_MODULE}.APP_NAME)\n"
     )
 
 
@@ -1172,9 +1176,11 @@ def test_reload_config_evicts_modules_when_project_changes(
     with RegistrationContext():
         monkeypatch.chdir(first_project)
         assert reflex_base.config.get_config().app_name == "first"
+        (first_project / f"{DEPENDENCY_MODULE}.py").write_text("APP_NAME = 'updated'\n")
+        assert reflex_base.config.reload_config().app_name == "updated"
         monkeypatch.chdir(second_project)
         assert reflex_base.config.reload_config().app_name == "second"
-        dependency = sys.modules["config_reload_dependency"]
+        dependency = sys.modules[DEPENDENCY_MODULE]
         assert Path(dependency.__file__ or "").is_relative_to(second_project)
 
 
@@ -1186,11 +1192,11 @@ def clean_config_modules() -> Generator[None, None, None]:
         None, once the module table is clean.
     """
     names = (
-        "rxconfig",
+        CONFIG_MODULE,
         "side_module",
         "chdir_dep_module",
-        "config_reload_state_module",
-        "config_reload_dependency",
+        STATE_MODULE,
+        DEPENDENCY_MODULE,
     )
     try:
         yield
