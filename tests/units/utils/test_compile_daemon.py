@@ -507,3 +507,13 @@ def test_owns_compilation_follows_the_daemon_marker(tmp_path, monkeypatch):
     assert compile_daemon.owns_compilation() is True
     compile_daemon.clear_daemon_marker()
     assert not compile_daemon._daemon_marker_path().exists()
+
+
+def test_pid_alive_distinguishes_live_and_exited_processes():
+    import subprocess
+    import sys
+
+    assert compile_daemon._pid_alive(os.getpid()) is True
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    assert compile_daemon._pid_alive(proc.pid) is False

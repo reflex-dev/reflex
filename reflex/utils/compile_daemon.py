@@ -655,13 +655,41 @@ def _compile_lock(root: Path):
         lock.unlink(missing_ok=True)
 
 
+def _pid_alive(pid: int) -> bool:
+    """Whether a process with ``pid`` exists.
+
+    Args:
+        pid: The process id.
+
+    Returns:
+        True if the process is alive (or exists but is not ours to signal).
+    """
+    if os.name == "nt":
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+        # PROCESS_QUERY_LIMITED_INFORMATION; os.kill(pid, 0) would *terminate*
+        # the process on Windows.
+        handle = kernel32.OpenProcess(0x1000, False, pid)
+        if not handle:
+            return False
+        kernel32.CloseHandle(handle)
+        return True
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
 def _lock_holder_alive(lock: Path) -> bool:
     try:
         pid = int(lock.read_text().strip())
-        os.kill(pid, 0)
     except (OSError, ValueError):
         return False
-    return True
+    return _pid_alive(pid)
 
 
 def wait_for_compile(timeout: float = _LOCK_WAIT_TIMEOUT) -> None:
