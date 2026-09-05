@@ -4,6 +4,7 @@ import tempfile
 import uuid
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Protocol
 
@@ -11,6 +12,7 @@ import pytest
 from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
+from reflex_base.environment import environment
 from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
 
@@ -25,6 +27,266 @@ from reflex.utils.rename import rename_imports_and_app_name
 from reflex.utils.telemetry import CpuInfo, get_cpu_info
 
 runner = CliRunner()
+
+
+@pytest.fixture
+def version_check_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Create an isolated reflex.json for latest-version checks.
+
+    Args:
+        tmp_path: Temporary test directory.
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        The path to the isolated reflex.json file.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    reflex_json_file = web_dir / constants.Reflex.JSON
+    reflex_json_file.write_text("{}")
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: web_dir)
+    monkeypatch.delenv(environment.REFLEX_CHECK_LATEST_VERSION.name, raising=False)
+    return reflex_json_file
+
+
+def _mock_pypi_versions(
+    mocker,
+    current_version: str = "1.0.0",
+    latest_version: str = "2.0.0",
+):
+    """Mock installed and latest package versions.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        current_version: Installed package version.
+        latest_version: Latest package version returned by PyPI.
+
+    Returns:
+        The installed-version and network request mocks.
+    """
+    installed_version = mocker.patch.object(
+        prerequisites.importlib.metadata,
+        "version",
+        return_value=current_version,
+    )
+    response = mocker.Mock()
+    response.json.return_value = {"info": {"version": latest_version}}
+    request = mocker.patch.object(prerequisites.net, "get", return_value=response)
+    return installed_version, request
+
+
+def test_check_latest_package_version_skips_fresh_check(
+    version_check_file: Path,
+    mocker,
+):
+    """A fresh timestamp avoids package metadata and network work."""
+    last_check = datetime.now() - timedelta(hours=12)
+    version_check_file.write_text(
+        json.dumps({"last_version_check_datetime": str(last_check)})
+    )
+    installed_version, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex")
+
+    installed_version.assert_not_called()
+    request.assert_not_called()
+    assert json.loads(version_check_file.read_text())[
+        "last_version_check_datetime"
+    ] == str(last_check)
+
+
+def test_check_latest_package_version_tracks_packages_independently(
+    version_check_file: Path,
+    mocker,
+):
+    """A Reflex check does not suppress a hosting CLI version check."""
+    version_check_file.write_text(
+        json.dumps({"last_version_check_datetime": str(datetime.now())})
+    )
+    installed_version, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex-hosting-cli")
+
+    installed_version.assert_called_once_with("reflex-hosting-cli")
+    request.assert_called_once_with(
+        "https://pypi.org/pypi/reflex-hosting-cli/json", timeout=2
+    )
+    stored = json.loads(version_check_file.read_text())
+    assert "last_version_check_datetime_reflex_hosting_cli" in stored
+
+
+def test_check_latest_package_version_refreshes_expired_check(
+    version_check_file: Path,
+    mocker,
+    caplog: pytest.LogCaptureFixture,
+):
+    """An expired timestamp triggers a request, refresh, and update warning."""
+    version_check_file.write_text(
+        json.dumps({
+            "last_version_check_datetime": str(
+                datetime.now() - timedelta(days=1, seconds=1)
+            )
+        })
+    )
+    installed_version, request = _mock_pypi_versions(mocker)
+    before_check = datetime.now()
+
+    with caplog.at_level("WARNING"):
+        prerequisites.check_latest_package_version("reflex")
+
+    checked_at = datetime.fromisoformat(
+        json.loads(version_check_file.read_text())["last_version_check_datetime"]
+    )
+    installed_version.assert_called_once_with("reflex")
+    request.assert_called_once_with("https://pypi.org/pypi/reflex/json", timeout=2)
+    assert before_check <= checked_at <= datetime.now()
+    assert caplog.messages == [
+        (
+            "Your version (1.0.0) of reflex is out of date. Upgrade to 2.0.0 "
+            "with 'pip install reflex --upgrade'"
+        )
+    ]
+
+
+def test_check_latest_package_version_records_current_version(
+    version_check_file: Path,
+    mocker,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A successful first check is recorded without an unnecessary warning."""
+    installed_version, request = _mock_pypi_versions(
+        mocker,
+        current_version="2.0.0",
+        latest_version="2.0.0",
+    )
+
+    with caplog.at_level("WARNING"):
+        prerequisites.check_latest_package_version("reflex")
+
+    installed_version.assert_called_once_with("reflex")
+    request.assert_called_once()
+    assert datetime.fromisoformat(
+        json.loads(version_check_file.read_text())["last_version_check_datetime"]
+    )
+    assert caplog.messages == []
+
+
+@pytest.mark.parametrize(
+    "stored_timestamp",
+    [
+        "not-a-datetime",
+        str(datetime.now() + timedelta(days=1)),
+    ],
+)
+def test_check_latest_package_version_repairs_invalid_timestamp(
+    version_check_file: Path,
+    mocker,
+    stored_timestamp: str,
+):
+    """Malformed and future timestamps do not suppress version checks."""
+    version_check_file.write_text(
+        json.dumps({"last_version_check_datetime": stored_timestamp})
+    )
+    _, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex")
+
+    request.assert_called_once()
+    refreshed_timestamp = json.loads(version_check_file.read_text())[
+        "last_version_check_datetime"
+    ]
+    assert refreshed_timestamp != stored_timestamp
+    assert datetime.fromisoformat(refreshed_timestamp) <= datetime.now()
+
+
+def test_check_latest_package_version_throttles_failed_request(
+    version_check_file: Path,
+    mocker,
+):
+    """A failed request is not retried by every command within the TTL."""
+    mocker.patch.object(
+        prerequisites.importlib.metadata,
+        "version",
+        return_value="1.0.0",
+    )
+    request = mocker.patch.object(
+        prerequisites.net,
+        "get",
+        side_effect=RuntimeError("offline"),
+    )
+
+    prerequisites.check_latest_package_version("reflex")
+    prerequisites.check_latest_package_version("reflex")
+
+    request.assert_called_once()
+    stored = json.loads(version_check_file.read_text())
+    assert "last_version_check_datetime" not in stored
+    assert datetime.fromisoformat(stored["last_version_check_attempt_datetime"])
+
+
+def test_check_latest_package_version_retries_after_failure_cooldown(
+    version_check_file: Path,
+    mocker,
+):
+    """A failed check retries sooner than the successful-check TTL."""
+    last_attempt = (
+        datetime.now()
+        - prerequisites._LATEST_VERSION_CHECK_FAILURE_INTERVAL
+        - timedelta(seconds=1)
+    )
+    version_check_file.write_text(
+        json.dumps({"last_version_check_attempt_datetime": str(last_attempt)})
+    )
+    _, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex")
+
+    request.assert_called_once()
+    stored = json.loads(version_check_file.read_text())
+    assert datetime.fromisoformat(stored["last_version_check_datetime"])
+
+
+def test_check_latest_package_version_preserves_concurrent_json_updates(
+    version_check_file: Path,
+    mocker,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Recording a check does not write back a stale reflex.json snapshot."""
+    version_check_file.write_text(json.dumps({"last_reflex_run_datetime": "old"}))
+    _mock_pypi_versions(mocker, current_version="2.0.0", latest_version="2.0.0")
+    update_json_file = prerequisites.path_ops.update_json_file
+
+    def update_after_concurrent_write(file_path: Path, update: dict[str, object]):
+        update_json_file(file_path, {"last_reflex_run_datetime": "new"})
+        update_json_file(file_path, update)
+
+    monkeypatch.setattr(
+        prerequisites.path_ops,
+        "update_json_file",
+        update_after_concurrent_write,
+    )
+
+    prerequisites.check_latest_package_version("reflex")
+
+    assert (
+        json.loads(version_check_file.read_text())["last_reflex_run_datetime"] == "new"
+    )
+
+
+def test_check_latest_package_version_can_be_disabled(
+    version_check_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker,
+):
+    """Disabling latest-version checks avoids both I/O and timestamp updates."""
+    monkeypatch.setenv(environment.REFLEX_CHECK_LATEST_VERSION.name, "false")
+    installed_version, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex")
+
+    installed_version.assert_not_called()
+    request.assert_not_called()
+    assert json.loads(version_check_file.read_text()) == {}
 
 
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
@@ -484,6 +746,55 @@ def test_install_frontend_packages_cache_hit_refreshes_web_bun_lock(
 
     assert call_count == 1
     assert env.web_lock.read_text() == "root-lock"
+
+
+def test_install_frontend_packages_cache_ignores_backend_config(
+    install_packages_env: InstallPackagesEnv,
+):
+    """Backend-only config changes do not invalidate frontend dependencies."""
+    env = install_packages_env
+    calls = _record_calls(env)
+
+    env.install({"some-pkg@1.0.0"})
+    first_run_calls = len(calls)
+    env.config.backend_port = 8123
+    env.config.db_url = "sqlite:///changed.db"
+    env.install({"some-pkg@1.0.0"})
+
+    assert len(calls) == first_run_calls
+
+
+def test_install_frontend_packages_cache_tracks_plugin_dependencies(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Changing resolved plugin dependencies invalidates the install cache."""
+    env = install_packages_env
+    dependency_calls = 0
+
+    @dataclass
+    class FakePlugin:
+        package: str
+
+        def get_frontend_dependencies(self):
+            nonlocal dependency_calls
+            dependency_calls += 1
+            return {self.package}
+
+        def get_frontend_development_dependencies(self):
+            return set()
+
+    plugin = FakePlugin("plugin-pkg@1")
+    monkeypatch.setattr(env.config, "plugins", [plugin])
+    calls = _record_calls(env)
+
+    env.install()
+    plugin.package = "plugin-pkg@2"
+    env.install()
+
+    assert dependency_calls == 2
+    assert any("plugin-pkg@1" in call for call in calls)
+    assert any("plugin-pkg@2" in call for call in calls)
 
 
 def _record_calls(env: InstallPackagesEnv) -> list[list[str]]:

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import logging
+from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, NoReturn, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import click
 from reflex_base import constants
@@ -13,7 +14,6 @@ from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.utils import console, log
 
-from reflex.custom_components.custom_components import custom_components_cli
 from reflex.utils.cli_options import log_options
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from typing import Literal
 
+    from click.shell_completion import CompletionItem
     from reflex_base.constants.base import LITERAL_ENV
 
 
@@ -76,6 +77,183 @@ def _missing_command(name: str) -> click.Command:
     return placeholder
 
 
+def _as_click_command(command: object) -> click.Command:
+    """Convert an optional Typer command tree to a Click command.
+
+    Args:
+        command: The command object exported by the hosting CLI.
+
+    Returns:
+        A Click-compatible command.
+    """
+    if find_spec("typer") and find_spec("typer.main"):
+        import typer  # pyright: ignore[reportMissingImports]
+
+        if isinstance(command, typer.Typer):
+            # typer >=0.27 vendors click, so its commands are structurally but
+            # not nominally click commands.
+            return cast("click.Command", typer.main.get_command(command))
+    return cast("click.Command", command)
+
+
+class _LazyCommand(click.Command):
+    """A lightweight command placeholder that imports its implementation on use."""
+
+    def __getattribute__(self, name: str) -> Any:
+        """Resolve public command metadata when it is read directly.
+
+        Returns:
+            The requested proxy or resolved-command attribute.
+        """
+        if name in ("callback", "no_args_is_help", "params"):
+            attributes = object.__getattribute__(self, "__dict__")
+            if "_import_path" in attributes:
+                command = object.__getattribute__(self, "_resolve")()
+                return getattr(command, name)
+        return super().__getattribute__(name)
+
+    def __init__(
+        self,
+        name: str,
+        import_path: str,
+        *,
+        help: str,
+        optional: bool = False,
+        convert_typer: bool = False,
+    ) -> None:
+        """Initialize a lazy command.
+
+        Args:
+            name: The command name exposed by the parent group.
+            import_path: The ``module:attribute`` containing the real command.
+            help: The short help rendered by the parent without importing it.
+            optional: Whether an import failure should produce an install hint.
+            convert_typer: Whether to adapt a Typer command tree to Click.
+        """
+        if optional:
+            module_name = import_path.split(":", 1)[0]
+            try:
+                module_available = find_spec(module_name) is not None
+            except (AttributeError, ImportError, ValueError):
+                module_available = False
+            if not module_available:
+                help = f"Requires the {constants.ReflexHostingCLI.MODULE_NAME} package."
+        super().__init__(name=name, help=help)
+        self._import_path = import_path
+        self._optional = optional
+        self._convert_typer = convert_typer
+        self._resolved_command: click.Command | None = None
+
+    def _resolve(self) -> click.Command:
+        """Import and cache the real command implementation.
+
+        Returns:
+            The resolved command.
+        """
+        if self._resolved_command is not None:
+            return self._resolved_command
+
+        module_name, attribute = self._import_path.split(":", 1)
+        try:
+            module = import_module(module_name)
+        except ImportError:
+            if not self._optional:
+                raise
+            command = _missing_command(self.name or attribute)
+        else:
+            try:
+                command = getattr(module, attribute)
+            except AttributeError:
+                if not self._optional:
+                    raise
+                command = _missing_command(self.name or attribute)
+
+        if self._convert_typer:
+            command = _as_click_command(command)
+        self._resolved_command = cast("click.Command", command)
+        return self._resolved_command
+
+    def main(self, *args, **kwargs):
+        """Resolve the command before a direct standalone invocation.
+
+        Returns:
+            The result of the resolved command.
+        """
+        return self._resolve().main(*args, **kwargs)
+
+    def get_help(self, ctx: click.Context) -> str:
+        """Return help from the resolved command.
+
+        Returns:
+            The resolved command's formatted help.
+        """
+        return self._resolve().get_help(ctx)
+
+    def format_help(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        """Write help from the resolved command to a formatter."""
+        self._resolve().format_help(ctx, formatter)
+
+    def get_usage(self, ctx: click.Context) -> str:
+        """Return usage from the resolved command.
+
+        Returns:
+            The resolved command's formatted usage.
+        """
+        return self._resolve().get_usage(ctx)
+
+    def format_usage(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        """Write usage from the resolved command to a formatter."""
+        self._resolve().format_usage(ctx, formatter)
+
+    def get_params(self, ctx: click.Context) -> list[click.Parameter]:
+        """Return parameters from the resolved command.
+
+        Returns:
+            The resolved command's parameters.
+        """
+        return self._resolve().get_params(ctx)
+
+    def invoke(self, ctx: click.Context):
+        """Invoke the resolved command through Click's public API.
+
+        Returns:
+            The resolved command's callback result.
+        """
+        return self._resolve().invoke(ctx)
+
+    def make_context(
+        self,
+        info_name: str | None,
+        args: list[str],
+        parent: click.Context | None = None,
+        **extra,
+    ) -> click.Context:
+        """Resolve the command before Click parses its arguments.
+
+        Returns:
+            The context created by the resolved command.
+        """
+        return self._resolve().make_context(info_name, args, parent=parent, **extra)
+
+    def shell_complete(
+        self, ctx: click.Context, incomplete: str
+    ) -> list[CompletionItem]:
+        """Resolve the command before completing its arguments.
+
+        Returns:
+            Completion items from the resolved command.
+        """
+        return self._resolve().shell_complete(ctx, incomplete)
+
+    def to_info_dict(self, ctx: click.Context) -> dict[str, object]:
+        """Resolve the command before exporting its metadata.
+
+        Returns:
+            Metadata from the resolved command.
+        """
+        return self._resolve().to_info_dict(ctx)
+
+
 def _init(
     name: str,
     template: str | None = None,
@@ -99,12 +277,12 @@ def _init(
     console.rule(f"[bold]Initializing {app_name}")
 
     # Check prerequisites.
-    prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
     prerequisites.initialize_reflex_user_directory()
     prerequisites.ensure_reflex_installation_id()
 
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
+    prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     # Initialize the app.
     template = templates.initialize_app(app_name, template)
@@ -872,35 +1050,33 @@ def rename(new_name: str):
     rename_app(new_name, get_config().loglevel)
 
 
-try:
-    from reflex_cli.v2.deploy import deploy
-    from reflex_cli.v2.deployments import hosting_cli
-except ImportError:
-    # The cloud commands still answer, so the failure names the package to
-    # install instead of looking like a typo in the command name.
-    cli.add_command(_missing_command("deploy"), name="deploy")
-    cli.add_command(_missing_command("cloud"), name="cloud")
-else:
-    if find_spec("typer") and find_spec("typer.main"):
-        import typer  # pyright: ignore[reportMissingImports]
-
-        if isinstance(hosting_cli, typer.Typer):
-            # typer >=0.27 vendors click, so its commands are structurally but
-            # not nominally click commands.
-            hosting_cli_command = cast(
-                "click.Command", typer.main.get_command(hosting_cli)
-            )
-        else:
-            hosting_cli_command = hosting_cli
-    else:
-        hosting_cli_command = hosting_cli
-
-    cli.add_command(deploy, name="deploy")
-    cli.add_command(hosting_cli_command, name="cloud")
+cli.add_command(
+    _LazyCommand(
+        "deploy",
+        "reflex_cli.v2.deploy:deploy",
+        help="Deploy the app to the Reflex hosting service.",
+        optional=True,
+    )
+)
+cli.add_command(
+    _LazyCommand(
+        "cloud",
+        "reflex_cli.v2.deployments:hosting_cli",
+        help="The Hosting CLI.",
+        optional=True,
+        convert_typer=True,
+    )
+)
 
 cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
-cli.add_command(custom_components_cli, name="component")
+cli.add_command(
+    _LazyCommand(
+        "component",
+        "reflex.custom_components.custom_components:custom_components_cli",
+        help="CLI for creating custom components.",
+    )
+)
 
 if __name__ == "__main__":
     cli()
