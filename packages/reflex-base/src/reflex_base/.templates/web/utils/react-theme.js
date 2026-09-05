@@ -6,6 +6,7 @@ import {
   createElement,
   useRef,
   useMemo,
+  useCallback,
 } from "react";
 
 import { isDevMode, defaultColorMode, ColorModeContext } from "$/utils/context";
@@ -26,7 +27,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
   );
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const setColorMode = (mode) => {
+  const setColorMode = useCallback((mode) => {
     if (!allowedModes.includes(mode)) {
       console.error(
         `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
@@ -34,16 +35,16 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
       mode = defaultColorMode;
     }
     setTheme(mode);
-  };
+  }, []);
 
   const resolvedTheme = useMemo(
     () => (theme === "system" ? systemTheme : theme),
     [theme, systemTheme],
   );
 
-  const toggleColorMode = () => {
+  const toggleColorMode = useCallback(() => {
     setColorMode(resolvedTheme === "light" ? "dark" : "light");
-  };
+  }, [setColorMode, resolvedTheme]);
 
   const firstRender = useRef(true);
 
@@ -88,7 +89,7 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     return () => {
       mediaQuery.removeEventListener("change", handleChange);
     };
-  });
+  }, []);
 
   // Save theme to localStorage whenever it changes
   // Skip saving only if theme key already exists and we haven't initialized yet
@@ -106,21 +107,33 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     root.style.colorScheme = resolvedTheme;
   }, [resolvedTheme, isInitialized]);
 
-  return createElement(
-    ThemeContext.Provider,
-    { value: { theme, resolvedTheme, setTheme } },
-    createElement(
-      ColorModeContext.Provider,
-      {
-        value: {
-          rawColorMode: theme,
-          resolvedColorMode: resolvedTheme,
-          toggleColorMode,
-          setColorMode,
-        },
-      },
-      children,
-    ),
+  const themeContextValue = useMemo(
+    () => ({ theme, resolvedTheme, setTheme }),
+    [theme, resolvedTheme],
+  );
+
+  const colorModeContextValue = useMemo(
+    () => ({
+      rawColorMode: theme,
+      resolvedColorMode: resolvedTheme,
+      toggleColorMode,
+      setColorMode,
+    }),
+    [theme, resolvedTheme, toggleColorMode, setColorMode],
+  );
+
+  return useMemo(
+    () =>
+      createElement(
+        ThemeContext.Provider,
+        { value: themeContextValue },
+        createElement(
+          ColorModeContext.Provider,
+          { value: colorModeContextValue },
+          children,
+        ),
+      ),
+    [themeContextValue, colorModeContextValue, children],
   );
 }
 

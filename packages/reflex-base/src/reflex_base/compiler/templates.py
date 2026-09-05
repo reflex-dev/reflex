@@ -490,10 +490,14 @@ export function EventLoopProvider({{ children }}) {{
   // ``addEvents`` without needing the events hook hoisted in their scope.
   _addEventsImpl = addEventsLocal;
   _connectErrorsImpl = connectErrors;
-  return createElement(
-    EventLoopContext.Provider,
-    {{ value: [addEventsLocal, connectErrors] }},
-    children
+  return useMemo(
+    () =>
+      createElement(
+        EventLoopContext.Provider,
+        {{ value: [addEventsLocal, connectErrors] }},
+        children
+      ),
+    [addEventsLocal, connectErrors, children],
   );
 }}
 
