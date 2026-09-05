@@ -1194,11 +1194,11 @@ def compile_app(
     should_compile = app._should_compile()
     backend_dir = prerequisites.get_backend_dir()
     if not dry_run and not should_compile and backend_dir.exists():
-        if environment.REFLEX_COMPILE_CACHE.get():
+        from reflex.utils import compile_daemon
+
+        if compile_daemon.daemon_active():
             # The compile daemon reacts to the same save; read its marker only
             # once it has finished rewriting .web for this change.
-            from reflex.utils import compile_daemon
-
             compile_daemon.wait_for_compile()
         stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
         if stateful_pages_marker.exists():

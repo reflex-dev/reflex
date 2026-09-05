@@ -36,9 +36,12 @@ _SKIP_DIRS = {".web", ".venv", "venv", "node_modules", "__pycache__", ".git", "a
 
 #: Genuinely-global files: a change here can affect every page's output, so it
 #: bumps ``global_epoch`` rather than any single page's dependency set.
+#: ``reflex.lock/`` is deliberately absent: its lockfiles are derived from
+#: inputs tracked elsewhere (``rxconfig.py`` frontend packages, page imports,
+#: the Reflex version) and are rewritten by every install, so treating them as
+#: inputs made every reload fall back to a full compile.
 _GLOBAL_FILES = (
     "rxconfig.py",
-    "reflex.lock",
     "uv.lock",
     "pyproject.toml",
     "requirements.txt",
