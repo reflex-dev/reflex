@@ -196,6 +196,31 @@ def test_hrefs_that_prefix_each_other(tmp_path: Path):
     )
 
 
+def test_hrefs_that_contain_each_other(tmp_path: Path):
+    """An href occurring inside a longer one is rewritten once, as the longer href.
+
+    ``/a.js`` is a substring, but not a prefix, of ``/b/a.js``; neither URL may
+    end up with two cache-bust params, whichever is discovered first.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    html = (
+        '<link rel="modulepreload" href="/a.js">'
+        '<link rel="modulepreload" href="/b/a.js">'
+        '<script>import("/a.js"); import("/b/a.js");</script>'
+    )
+    body = _body(_run_plugin([("string", html)], tmp_path))
+    ts = re.search(r"__reflex_ts=(\d+)", body)
+    assert ts is not None
+    ts = ts.group(1)
+    assert body == (
+        f'<link rel="modulepreload" href="/a.js?__reflex_ts={ts}">'
+        f'<link rel="modulepreload" href="/b/a.js?__reflex_ts={ts}">'
+        f'<script>import("/a.js?__reflex_ts={ts}"); import("/b/a.js?__reflex_ts={ts}");</script>'
+    )
+
+
 def test_href_with_query_and_external_links(tmp_path: Path):
     """Existing query strings get ``&`` and external hrefs are left alone.
 
