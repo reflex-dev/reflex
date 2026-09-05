@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from typing import cast
 from unittest.mock import MagicMock
 
+import pytest
 from pytest_mock import MockerFixture
 from reflex_base.config import Config
 from reflex_base.plugins.sitemap import SitemapPlugin
@@ -23,23 +24,94 @@ from reflex.state import (
 from reflex.utils import telemetry_accounting
 
 
-def test_import_does_not_load_database_model() -> None:
-    """Compile accounting must not import database support just to report zero."""
-    script = """
-import sys
+def _run_in_subprocess(script: str) -> None:
+    """Run import-sensitive assertions in a fresh interpreter.
 
-from reflex.utils import telemetry_accounting  # noqa: F401
-
-assert "reflex.model" not in sys.modules, "database model imported eagerly"
-"""
+    Args:
+        script: Python source containing the assertions to run.
+    """
     result = subprocess.run(
         [sys.executable, "-c", script],
         capture_output=True,
         text=True,
         check=False,
+        timeout=30,
     )
-
     assert result.returncode == 0, result.stderr
+
+
+def test_import_does_not_load_database_model() -> None:
+    """Compile accounting must not import database support just to report zero."""
+    script = """
+import sys
+
+from reflex.utils import telemetry_accounting
+
+assert telemetry_accounting._get_db_model_count() == 0
+for module in ("reflex.model", "sqlmodel", "sqlalchemy"):
+    assert module not in sys.modules, f"{module} imported eagerly"
+"""
+    _run_in_subprocess(script)
+
+
+def test_get_db_model_count_for_direct_sqlmodel_tables() -> None:
+    """Direct SQLModel tables count as one base without loading reflex.model."""
+    pytest.importorskip("sqlmodel")
+    script = """
+import sys
+
+from reflex.utils import telemetry_accounting
+from sqlmodel import Field, SQLModel
+
+assert telemetry_accounting._get_db_model_count() == 0
+
+class User(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+
+assert telemetry_accounting._get_db_model_count() == 1
+
+class Post(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+
+assert telemetry_accounting._get_db_model_count() == 1
+assert "reflex.model" not in sys.modules, "database model imported eagerly"
+"""
+    _run_in_subprocess(script)
+
+
+def test_get_db_model_count_preserves_registered_bases() -> None:
+    """Count nonempty registered bases without double counting SQLModel."""
+    pytest.importorskip("sqlmodel")
+    script = """
+from reflex.model import ModelRegistry
+from reflex.utils import telemetry_accounting
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlmodel import Field, SQLModel
+
+class User(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+
+class Post(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+
+@ModelRegistry.register
+class CustomBase(DeclarativeBase):
+    pass
+
+class CustomTable(CustomBase):
+    __tablename__ = "custom_table"
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+@ModelRegistry.register
+class EmptyBase(DeclarativeBase):
+    pass
+
+assert telemetry_accounting._get_db_model_count() == len(ModelRegistry.get_models()) == 2
+
+ModelRegistry.models.clear()
+assert telemetry_accounting._get_db_model_count() == 0
+"""
+    _run_in_subprocess(script)
 
 
 def _fake_config(**overrides) -> Config:

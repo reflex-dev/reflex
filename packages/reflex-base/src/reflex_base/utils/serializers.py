@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
+import base64
 import dataclasses
 import decimal
 import functools
 import inspect
+import io
 import json
 import logging
 import os
+import sys
 import uuid
 import warnings
 from collections.abc import Callable, Mapping, Sequence
+from contextlib import suppress
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from importlib.util import find_spec
 from pathlib import Path
-from threading import RLock
 from typing import Any, Literal, TypeVar, get_type_hints, overload
 from uuid import UUID
 
@@ -35,17 +38,9 @@ Serializer = Callable[[Any], SerializedType]
 
 SERIALIZERS: dict[type, Serializer] = {}
 SERIALIZER_TYPES: dict[type, type] = {}
-_SERIALIZER_LOCK = RLock()
-_OPTIONAL_SERIALIZER_LOADERS: dict[str, Callable[[], None]] = {}
-
-if hasattr(os, "register_at_fork"):
-    # Wait for other threads to finish registry operations before forking.
-    # The surviving thread owns the lock, so both processes can release it.
-    os.register_at_fork(
-        before=_SERIALIZER_LOCK.acquire,
-        after_in_parent=_SERIALIZER_LOCK.release,
-        after_in_child=_SERIALIZER_LOCK.release,
-    )
+_OPTIONAL_SERIALIZERS: dict[str, Serializer] = {}
+_OPTIONAL_SERIALIZER_TYPES: dict[str, type] = {}
+_OPTIONAL_SERIALIZER_MODULES: dict[str, tuple[str, ...]] = {}
 
 SERIALIZED_FUNCTION = TypeVar("SERIALIZED_FUNCTION", bound=Serializer)
 _REGISTRY_VALUE = TypeVar("_REGISTRY_VALUE")
@@ -61,19 +56,23 @@ deserializers = {
 }
 
 
-def _load_optional_serializer(type_: type) -> None:
-    """Load the optional serializer associated with a value type.
+def _get_optional_type_name(type_: type) -> str | None:
+    """Identify an optional type by identity in an already-loaded module.
 
     Args:
         type_: The value type that may belong to an optional dependency.
+
+    Returns:
+        The optional type name, or None for an unrelated type.
     """
-    for value_type in getattr(type_, "__mro__", ()):
-        module_name = value_type.__module__
-        if not isinstance(module_name, str):
-            continue
-        module = module_name.partition(".")[0]
-        if loader := _OPTIONAL_SERIALIZER_LOADERS.get(module):
-            loader()
+    name = getattr(type_, "__name__", None)
+    if not isinstance(name, str):
+        return None
+    for module_name in _OPTIONAL_SERIALIZER_MODULES.get(name, ()):
+        module = sys.modules.get(module_name)
+        if module is not None and vars(module).get(name) is type_:
+            return name
+    return None
 
 
 @overload
@@ -121,11 +120,10 @@ def serializer(
         # Get the type of the argument.
         type_ = type_hints[args[0]]
 
-        _load_optional_serializer(type_)
-
         # Make sure the type is not already registered.
-        with _SERIALIZER_LOCK:
-            registered_fn = SERIALIZERS.get(type_)
+        registered_fn = SERIALIZERS.get(type_)
+        if registered_fn is None and (name := _get_optional_type_name(type_)):
+            registered_fn = _OPTIONAL_SERIALIZERS[name]
         if registered_fn is not None and registered_fn != fn and overwrite is not True:
             message = f"Overwriting serializer for type {type_} from {registered_fn.__module__}:{registered_fn.__qualname__} to {fn.__module__}:{fn.__qualname__}."
             if overwrite is False:
@@ -148,15 +146,14 @@ def serializer(
 
         to_type = to or type_hints.get("return")
 
-        with _SERIALIZER_LOCK:
-            # Apply type transformation if requested
-            if to_type:
-                SERIALIZER_TYPES[type_] = to_type
-                get_serializer_type.cache_clear()
+        # Apply type transformation if requested.
+        if to_type:
+            SERIALIZER_TYPES[type_] = to_type
+            get_serializer_type.cache_clear()
 
-            # Register the serializer.
-            SERIALIZERS[type_] = fn
-            get_serializer.cache_clear()
+        # Register the serializer.
+        SERIALIZERS[type_] = fn
+        get_serializer.cache_clear()
 
         # Return the function.
         return fn
@@ -213,50 +210,49 @@ def serialize(
     return serialized
 
 
-def _find_registered_serializer(type_: type) -> Serializer | None:
-    """Find a serializer already registered for a type.
+def _find_serializer(
+    type_: type,
+    registry: dict[type, _REGISTRY_VALUE],
+    optional_defaults: dict[str, _REGISTRY_VALUE],
+) -> _REGISTRY_VALUE | None:
+    """Resolve defaults and overrides without importing or mutating the registry.
 
     Args:
         type_: The type to find a serializer for.
+        registry: Explicit registrations for functions or output types.
+        optional_defaults: Defaults for the corresponding optional types.
 
     Returns:
-        The matching serializer, or None if no serializer is registered.
+        The matching registration, or None if no serializer is registered.
     """
-    with _SERIALIZER_LOCK:
-        if (registered := SERIALIZERS.get(type_)) is not None:
-            return registered
-        registered_serializers = tuple(SERIALIZERS.items())
-    return next(
-        (
-            serializer
-            for registered_type, serializer in reversed(registered_serializers)
-            if issubclass(type_, registered_type)
-        ),
-        None,
-    )
+    if (registered := registry.get(type_)) is not None:
+        return registered
 
+    best: _REGISTRY_VALUE | None = None
+    best_priority = -1
+    for base in getattr(type_, "__mro__", ()):
+        if name := _get_optional_type_name(base):
+            value = registry.get(base, optional_defaults[name])
+            if base is type_:
+                return value
+            priority = _OPTIONAL_SERIALIZER_ORDER[name]
+            if priority > best_priority:
+                best, best_priority = value, priority
 
-def _find_registered_serializer_type(type_: type) -> type | None:
-    """Find an output type already registered for a type.
-
-    Args:
-        type_: The type to find a serializer output type for.
-
-    Returns:
-        The matching output type, or None if no output type is registered.
-    """
-    with _SERIALIZER_LOCK:
-        if (registered := SERIALIZER_TYPES.get(type_)) is not None:
-            return registered
-        registered_types = tuple(SERIALIZER_TYPES.items())
-    return next(
-        (
-            serializer_type
-            for registered_type, serializer_type in reversed(registered_types)
-            if issubclass(type_, registered_type)
-        ),
-        None,
-    )
+    # A private copy permits concurrent/reentrant registration without a lock
+    # around user-defined hash or subclass callbacks, or destructive reordering.
+    for registered_type, value in reversed(registry.copy().items()):
+        priority = _DEFAULT_SERIALIZER_ORDER.get(id(registered_type))
+        if priority is None and (name := _get_optional_type_name(registered_type)):
+            priority = _OPTIONAL_SERIALIZER_ORDER[name]
+        if (priority is None or priority > best_priority) and issubclass(
+            type_, registered_type
+        ):
+            # User registrations follow all defaults, in reverse insertion order.
+            if priority is None:
+                return value
+            best, best_priority = value, priority
+    return best
 
 
 @functools.lru_cache
@@ -269,12 +265,7 @@ def get_serializer(type_: type) -> Serializer | None:
     Returns:
         The serializer for the type, or None if there is no serializer.
     """
-    with _SERIALIZER_LOCK:
-        if (registered := SERIALIZERS.get(type_)) is not None:
-            return registered
-
-    _load_optional_serializer(type_)
-    return _find_registered_serializer(type_)
+    return _find_serializer(type_, SERIALIZERS, _OPTIONAL_SERIALIZERS)
 
 
 @functools.lru_cache
@@ -287,12 +278,7 @@ def get_serializer_type(type_: type) -> type | None:
     Returns:
         The serialized type for the type, or None if there is no type conversion registered.
     """
-    with _SERIALIZER_LOCK:
-        if (registered := SERIALIZER_TYPES.get(type_)) is not None:
-            return registered
-
-    _load_optional_serializer(type_)
-    return _find_registered_serializer_type(type_)
+    return _find_serializer(type_, SERIALIZER_TYPES, _OPTIONAL_SERIALIZER_TYPES)
 
 
 def has_serializer(type_: type, into_type: type | None = None) -> bool:
@@ -544,9 +530,6 @@ def serialize_image(image: _serializer_types.Image) -> str:
     Returns:
         The serialized image.
     """
-    import base64
-    import io
-
     from PIL.Image import MIME
 
     buff = io.BytesIO()
@@ -571,85 +554,70 @@ def serialize_image(image: _serializer_types.Image) -> str:
     return f"data:{mime_type};base64,{base64_image}"
 
 
-def _order_serializer_registry(registry: dict[type, _REGISTRY_VALUE]) -> None:
-    """Keep lazy defaults in their original position before user registrations.
+def serialize_sqlmodel(m: _serializer_types.SQLModel) -> dict[str, Any]:
+    """Serialize a SQLModel instance, including its loaded relationships.
 
     Args:
-        registry: A serializer registry, accessed with the serializer lock held.
+        m: The SQLModel instance to serialize.
+
+    Returns:
+        The model fields and available relationships.
     """
-    ordered = sorted(
-        registry.items(),
-        key=lambda item: _DEFAULT_SERIALIZER_ORDER.get(item[0], float("inf")),
-    )
-    registry.clear()
-    registry.update(ordered)
+    from sqlalchemy.orm.exc import DetachedInstanceError
+
+    fields = m.model_dump()
+    relationships = {}
+    for name in m.__sqlmodel_relationships__:
+        with suppress(DetachedInstanceError):
+            relationships[name] = getattr(m, name)
+    return {**fields, **relationships}
 
 
-def _register_optional_serializer(
-    value_type: type,
-    serializer_fn: Serializer,
-    serialized_type: type,
-) -> None:
-    """Register a serializer whose dependency is loaded on demand.
+def _prepare_serializers_for_fork() -> None:
+    """Finish Plotly JSON initialization before forking a process using it."""
+    for name in ("Figure", "Template"):
+        for module_name in _OPTIONAL_SERIALIZER_MODULES[name]:
+            module = sys.modules.get(module_name)
+            if module is not None and isinstance(vars(module).get(name), type):
+                # JSON engines can defer imports until their first invocation.
+                # Finish those imports too, without holding a serializer lock.
+                with suppress(ImportError):
+                    from plotly.io import to_json
 
-    Args:
-        value_type: The concrete optional-library type to serialize.
-        serializer_fn: The serializer for the optional type.
-        serialized_type: The serializer's output type.
-    """
-    with _SERIALIZER_LOCK:
-        # Keep built-in defaults ahead of user registrations in insertion order,
-        # so reverse subclass lookup retains its eager-registration precedence.
-        _DEFAULT_SERIALIZER_ORDER[value_type] = len(_INITIAL_SERIALIZER_TYPES) + (
-            _OPTIONAL_SERIALIZER_FUNCTIONS.index(serializer_fn)
-        )
-        SERIALIZERS.setdefault(value_type, serializer_fn)
-        SERIALIZER_TYPES.setdefault(value_type, serialized_type)
-        _order_serializer_registry(SERIALIZERS)
-        _order_serializer_registry(SERIALIZER_TYPES)
-        get_serializer.cache_clear()
-        get_serializer_type.cache_clear()
+                    to_json({"data": []}, validate=False)
 
+                return
 
-@functools.cache
-def _register_pandas_serializer() -> None:
-    """Register the pandas serializer on first use."""
-    from pandas import DataFrame
-
-    _register_optional_serializer(DataFrame, serialize_dataframe, dict)
-
-
-@functools.cache
-def _register_plotly_serializers() -> None:
-    """Register Plotly serializers on first use."""
-    from plotly.graph_objects import Figure
-    from plotly.graph_objs.layout import Template
-
-    _register_optional_serializer(Figure, serialize_figure, dict)
-    _register_optional_serializer(Template, serialize_template, dict)
-
-
-@functools.cache
-def _register_pillow_serializer() -> None:
-    """Register the Pillow serializer on first use."""
-    from PIL.Image import Image
-
-    _register_optional_serializer(Image, serialize_image, str)
-
-
-_OPTIONAL_SERIALIZER_LOADERS = {
-    "pandas": _register_pandas_serializer,
-    "PIL": _register_pillow_serializer,
-    "plotly": _register_plotly_serializers,
-}
 
 _INITIAL_SERIALIZER_TYPES = tuple(SERIALIZERS)
 _DEFAULT_SERIALIZER_ORDER = {
-    type_: index for index, type_ in enumerate(_INITIAL_SERIALIZER_TYPES)
+    id(type_): index for index, type_ in enumerate(_INITIAL_SERIALIZER_TYPES)
 }
-_OPTIONAL_SERIALIZER_FUNCTIONS = (
-    serialize_dataframe,
-    serialize_figure,
-    serialize_template,
-    serialize_image,
-)
+_OPTIONAL_SERIALIZERS = {
+    "DataFrame": serialize_dataframe,
+    "Figure": serialize_figure,
+    "Template": serialize_template,
+    "Image": serialize_image,
+    "SQLModel": serialize_sqlmodel,
+}
+_OPTIONAL_SERIALIZER_TYPES = {
+    "DataFrame": dict,
+    "Figure": dict,
+    "Template": dict,
+    "Image": str,
+    "SQLModel": dict[str, Any],
+}
+_OPTIONAL_SERIALIZER_MODULES = {
+    "DataFrame": ("pandas", "pandas.core.frame"),
+    "Figure": ("plotly.graph_objs._figure",),
+    "Template": ("plotly.graph_objs.layout._template",),
+    "Image": ("PIL.Image",),
+    "SQLModel": ("sqlmodel.main",),
+}
+_OPTIONAL_SERIALIZER_ORDER = {
+    name: len(_INITIAL_SERIALIZER_TYPES) + index
+    for index, name in enumerate(_OPTIONAL_SERIALIZERS)
+}
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(before=_prepare_serializers_for_fork)
