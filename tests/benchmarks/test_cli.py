@@ -12,7 +12,7 @@ import pytest
 from pytest_codspeed import BenchmarkFixture
 
 _SUBPROCESS_TIMEOUT_SECONDS = 15
-_SIMULATION_SUBPROCESS_TIMEOUT_SECONDS = 120
+_SUBPROCESS_TIMEOUT_ENV_VAR = "REFLEX_CLI_BENCHMARK_TIMEOUT_SECONDS"
 
 
 @pytest.fixture(scope="module")
@@ -64,10 +64,11 @@ def _run_command(
     Returns:
         The completed subprocess.
     """
-    timeout = (
-        _SIMULATION_SUBPROCESS_TIMEOUT_SECONDS
-        if os.environ.get("CODSPEED_RUNNER_MODE") == "simulation"
-        else _SUBPROCESS_TIMEOUT_SECONDS
+    timeout = int(
+        os.environ.get(
+            _SUBPROCESS_TIMEOUT_ENV_VAR,
+            str(_SUBPROCESS_TIMEOUT_SECONDS),
+        )
     )
     result = subprocess.run(
         command,
