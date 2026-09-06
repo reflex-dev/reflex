@@ -585,21 +585,24 @@ def _pinned_args_from_constants(deps: dict[str, str]) -> set[str]:
 
 def _frontend_packages_cache_payload(
     packages: set[str],
-    config: Config,
+    development_deps: set[str],
+    frozen_lockfile: bool,
     install_package_managers: Sequence[str],
 ) -> str:
     """Cache fingerprint for frontend package installs.
 
     Args:
         packages: Custom packages requested by the caller.
-        config: The active Reflex config.
+        development_deps: Development packages contributed by plugins.
+        frozen_lockfile: Whether installs must enforce the existing lockfile.
         install_package_managers: The package manager paths in priority order.
 
     Returns:
         Stable fingerprint string for the cached procedure.
     """
     return (
-        f"{sorted(packages)!r},{config.json()},{list(install_package_managers)!r},"
+        f"{sorted(packages)!r},{sorted(development_deps)!r},{frozen_lockfile!r},"
+        f"{list(install_package_managers)!r},"
         f"{sorted(constants.PackageJson.DEPENDENCIES.items())!r},"
         f"{sorted(constants.PackageJson.DEV_DEPENDENCIES.items())!r},"
         f"{sorted(constants.PackageJson.OVERRIDES.items())!r}"
@@ -612,7 +615,8 @@ def _frontend_packages_cache_payload(
 )
 def _install_frontend_packages(
     packages: set[str],
-    config: Config,
+    development_deps: set[str],
+    frozen_lockfile: bool,
     install_package_managers: Sequence[str],
 ):
     """Installs the base and custom frontend packages.
@@ -637,12 +641,15 @@ def _install_frontend_packages(
     Args:
         packages: Custom packages requested by the caller (from
             ``Config.frontend_packages`` and inferred component imports).
-        config: The active Reflex config.
+        development_deps: Development packages contributed by plugins.
+        frozen_lockfile: Whether installs must enforce the existing lockfile.
         install_package_managers: The package manager paths in priority
             order (primary plus fallbacks).
 
     Example:
-        >>> install_frontend_packages({"react", "react-dom"}, get_config())
+        >>> _install_frontend_packages(
+        ...     {"react", "react-dom"}, set(), True, ("bun",)
+        ... )
     """
     env = (
         {
@@ -666,13 +673,6 @@ def _install_frontend_packages(
         shell=constants.IS_WINDOWS,
         env=env,
     )
-
-    # Resolve plugin-contributed deps up front so we know the full needed
-    # set before deciding which entries in package.json are stale.
-    development_deps: set[str] = set()
-    for plugin in config.plugins:
-        development_deps.update(plugin.get_frontend_development_dependencies())
-        packages.update(plugin.get_frontend_dependencies())
 
     wanted_dep_names = set(constants.PackageJson.DEPENDENCIES.keys()) | {
         _extract_package_name(p) for p in packages
@@ -717,7 +717,7 @@ def _install_frontend_packages(
         frontend_skeleton.get_web_lockfile_path(name).exists()
         for name in frontend_skeleton.LOCKFILE_NAMES
     ):
-        _run_initial_install(primary_package_manager, env, config.frozen_lockfile)
+        _run_initial_install(primary_package_manager, env, frozen_lockfile)
 
     # Framework overrides are withheld while the persisted package.json is
     # restored so the frozen install above sees exactly the file that produced
@@ -790,5 +790,15 @@ def install_frontend_packages(packages: set[str], config: Config):
             get_nodejs_compatible_package_managers(raise_on_none=True)
         )
         _sync_root_lockfiles_for_frontend_install()
-        _install_frontend_packages(set(packages), config, install_package_managers)
+        resolved_packages = set(packages)
+        development_deps: set[str] = set()
+        for plugin in config.plugins:
+            development_deps.update(plugin.get_frontend_development_dependencies())
+            resolved_packages.update(plugin.get_frontend_dependencies())
+        _install_frontend_packages(
+            resolved_packages,
+            development_deps,
+            config.frozen_lockfile,
+            install_package_managers,
+        )
         frontend_skeleton.sync_web_lockfiles_to_root()

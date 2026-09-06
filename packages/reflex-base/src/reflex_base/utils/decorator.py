@@ -110,7 +110,17 @@ def _read_cached_procedure_file(cache_file: Path) -> tuple[str | None, object]:
                 payload, value = pickle.loads(f.read())
             if not isinstance(payload, str):
                 return None, None
-        except (pickle.UnpicklingError, EOFError, TypeError, ValueError) as err:
+        except OSError:
+            # Permission and filesystem failures are operational errors, not
+            # evidence that the cache payload itself is corrupt.
+            raise
+        except MemoryError:
+            # Do not turn process resource exhaustion into an expensive retry.
+            raise
+        except Exception as err:
+            # Besides UnpicklingError, pickle may raise AttributeError,
+            # EOFError, ImportError, IndexError, or validation errors for
+            # malformed data. All mean the cache must be recomputed.
             logger.debug(f"Ignoring invalid procedure cache {cache_file}: {err}")
         else:
             return payload, value

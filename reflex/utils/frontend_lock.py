@@ -16,7 +16,29 @@ from reflex_base import constants
 _project_locks_guard = threading.Lock()
 _project_locks: dict[Path, threading.RLock] = {}
 _project_locks_held = threading.local()
+# 50 milliseconds between contended Windows lock attempts.
 _WINDOWS_LOCK_RETRY_DELAY = 0.05
+_open_project_lock_files: set[BinaryIO] = set()
+
+
+def _reset_project_locks_after_fork() -> None:
+    """Discard inherited lock ownership in a forked child process."""
+    global _project_locks_guard, _project_locks_held
+
+    # ``flock`` ownership follows the inherited open file description. Close
+    # the child's duplicate so a fresh open below blocks on the parent rather
+    # than inheriting or deadlocking against its own copy of the lock.
+    for lock_file in _open_project_lock_files:
+        with contextlib.suppress(OSError):
+            lock_file.close()
+    _open_project_lock_files.clear()
+    _project_locks.clear()
+    _project_locks_guard = threading.Lock()
+    _project_locks_held = threading.local()
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_project_locks_after_fork)
 
 
 def _acquire_project_file_lock(lock_file: BinaryIO) -> None:
@@ -94,7 +116,9 @@ def frontend_project_lock() -> Iterator[None]:
         if thread_lock is None:
             thread_lock = _project_locks[lock_path] = threading.RLock()
 
-    with thread_lock:
+    owner_pid = os.getpid()
+    thread_lock.acquire()
+    try:
         held_paths = getattr(_project_locks_held, "paths", None)
         if held_paths is None:
             held_paths = _project_locks_held.paths = set()
@@ -104,10 +128,23 @@ def frontend_project_lock() -> Iterator[None]:
 
         lock_path.parent.mkdir(parents=True, exist_ok=True)
         with lock_path.open("a+b") as lock_file:
-            _acquire_project_file_lock(lock_file)
-            held_paths.add(lock_path)
+            with _project_locks_guard:
+                _open_project_lock_files.add(lock_file)
             try:
-                yield
+                _acquire_project_file_lock(lock_file)
+                held_paths.add(lock_path)
+                try:
+                    yield
+                finally:
+                    if os.getpid() == owner_pid:
+                        held_paths.remove(lock_path)
+                        _release_project_file_lock(lock_file)
             finally:
-                held_paths.remove(lock_path)
-                _release_project_file_lock(lock_file)
+                if os.getpid() == owner_pid:
+                    with _project_locks_guard:
+                        _open_project_lock_files.discard(lock_file)
+    finally:
+        # A child forked inside the yielded transaction has fresh process-local
+        # state and must not release the inherited parent-side RLock.
+        if os.getpid() == owner_pid:
+            thread_lock.release()

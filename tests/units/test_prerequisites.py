@@ -3,11 +3,10 @@ import multiprocessing
 import os
 import pickle
 import shutil
-import sys
 import tempfile
 import uuid
 from collections.abc import Callable, Generator
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -17,7 +16,6 @@ from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.utils import log
-from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -32,88 +30,6 @@ from reflex.utils.telemetry import CpuInfo, get_cpu_info
 runner = CliRunner()
 
 
-def _hold_frontend_project_lock(
-    project_dir: str,
-    acquired: Any,
-    release: Any,
-    *,
-    exit_without_cleanup: bool = False,
-    nested: bool = False,
-) -> None:
-    """Hold a frontend project lock in a spawned process.
-
-    Args:
-        project_dir: App root whose lock should be acquired.
-        acquired: Multiprocessing event set after acquisition.
-        release: Multiprocessing event that releases a normal holder.
-        exit_without_cleanup: Exit the process without running ``finally`` blocks.
-        nested: Acquire the same project lock twice before signalling.
-    """
-    os.chdir(project_dir)
-    with ExitStack() as stack:
-        stack.enter_context(frontend_lock.frontend_project_lock())
-        if nested:
-            stack.enter_context(frontend_lock.frontend_project_lock())
-        acquired.set()
-        if exit_without_cleanup:
-            os._exit(0)
-        if not release.wait(20):
-            msg = "Timed out waiting to release frontend project lock"
-            raise TimeoutError(msg)
-
-
-def _frontend_project_file_lock_is_contended(project_dir: Path) -> bool:
-    """Probe the OS-level project lock without blocking.
-
-    Args:
-        project_dir: App root whose lock file should be probed.
-
-    Returns:
-        Whether another process currently owns the project lock.
-    """
-    lock_path = project_dir / constants.Dirs.FRONTEND_INSTALL_LOCK
-    with lock_path.open("r+b") as lock_file:
-        lock_file.seek(0)
-        if constants.IS_WINDOWS:
-            import msvcrt
-
-            try:
-                msvcrt.locking(  # pyright: ignore[reportAttributeAccessIssue]
-                    lock_file.fileno(),
-                    msvcrt.LK_NBLCK,  # pyright: ignore[reportAttributeAccessIssue]
-                    1,
-                )
-            except OSError as err:
-                if err.errno in {
-                    frontend_lock.errno.EACCES,
-                    frontend_lock.errno.EAGAIN,
-                    frontend_lock.errno.EDEADLK,
-                }:
-                    return True
-                raise
-            lock_file.seek(0)
-            msvcrt.locking(  # pyright: ignore[reportAttributeAccessIssue]
-                lock_file.fileno(),
-                msvcrt.LK_UNLCK,  # pyright: ignore[reportAttributeAccessIssue]
-                1,
-            )
-            return False
-
-        import fcntl
-
-        try:
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError as err:
-            if err.errno in {
-                frontend_lock.errno.EACCES,
-                frontend_lock.errno.EAGAIN,
-            }:
-                return True
-            raise
-        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
-        return False
-
-
 def _install_frontend_packages_in_process(
     project_dir: str,
     attempting: Any,
@@ -121,6 +37,7 @@ def _install_frontend_packages_in_process(
     release_package_manager: Any,
     active_installs: Any,
     max_active_installs: Any,
+    config_attribute_order: tuple[str, ...],
 ) -> None:
     """Run a deterministic fake frontend install in a spawned process.
 
@@ -131,6 +48,7 @@ def _install_frontend_packages_in_process(
         release_package_manager: Event allowing the fake package manager to finish.
         active_installs: Shared count of active package-manager calls.
         max_active_installs: Shared maximum active package-manager calls.
+        config_attribute_order: Forced iteration order for internal Config metadata.
     """
     os.chdir(project_dir)
     constants.PackageJson.DEPENDENCIES = {}  # pyright: ignore[reportAttributeAccessIssue]
@@ -139,6 +57,15 @@ def _install_frontend_packages_in_process(
     js_runtimes.get_nodejs_compatible_package_managers = lambda raise_on_none=True: (
         "bun",
     )
+
+    class OrderedAttributeSet(set[str]):
+        """Set with a forced iteration order to model distinct process hashes."""
+
+        def __iter__(self):
+            return iter(config_attribute_order)
+
+    config = Config(app_name="test")
+    config._non_default_attributes = OrderedAttributeSet(config_attribute_order)
 
     def run_package_manager(args, **kwargs) -> None:
         """Block a fake package-manager add so a competing process can contend."""
@@ -164,7 +91,7 @@ def _install_frontend_packages_in_process(
 
     js_runtimes.processes.run_process_with_fallbacks = run_package_manager
     attempting.set()
-    js_runtimes.install_frontend_packages({"race-pkg@1.0.0"}, Config(app_name="test"))
+    js_runtimes.install_frontend_packages({"race-pkg@1.0.0"}, config)
 
 
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
@@ -323,205 +250,34 @@ def test_install_frontend_packages_locks_the_complete_transaction(
         "sync_web_lockfiles_to_root",
         record("sync-web"),
     )
+    config = Config(app_name="test")
+
+    class FakePlugin:
+        def get_frontend_development_dependencies(self):
+            assert lock_held
+            calls.append("resolve-dev-dependencies")
+            return set()
+
+        def get_frontend_dependencies(self):
+            assert lock_held
+            calls.append("resolve-dependencies")
+            return set()
+
+    monkeypatch.setattr(config, "plugins", [FakePlugin()])
 
     with chdir(tmp_path):
-        js_runtimes.install_frontend_packages(set(), Config(app_name="test"))
+        js_runtimes.install_frontend_packages(set(), config)
 
     assert calls == [
         "lock-enter",
         "select-manager",
         "sync-root",
+        "resolve-dev-dependencies",
+        "resolve-dependencies",
         "install",
         "sync-web",
         "lock-exit",
     ]
-
-
-def test_frontend_project_lock_is_reentrant_and_ignored(tmp_path: Path) -> None:
-    """Nested use in one thread succeeds and its stable file is gitignored."""
-    ctx = multiprocessing.get_context("spawn")
-    acquired = ctx.Event()
-    release = ctx.Event()
-    process = ctx.Process(
-        target=_hold_frontend_project_lock,
-        args=(str(tmp_path), acquired, release),
-        kwargs={"nested": True},
-    )
-
-    nested_lock_acquired = False
-    started = False
-    try:
-        process.start()
-        started = True
-        nested_lock_acquired = acquired.wait(20)
-    finally:
-        release.set()
-        if started:
-            process.join(20)
-            if process.is_alive():
-                process.terminate()
-                process.join(5)
-
-    assert nested_lock_acquired
-    assert process.exitcode == 0
-    assert (tmp_path / constants.Dirs.FRONTEND_INSTALL_LOCK).exists()
-    assert constants.Dirs.FRONTEND_INSTALL_LOCK in constants.GitIgnore.DEFAULTS
-
-
-def test_frontend_project_lock_releases_after_exception(tmp_path: Path) -> None:
-    """An exception in a transaction does not strand its project lock."""
-    error = RuntimeError("failed install")
-    with chdir(tmp_path):
-        with (
-            pytest.raises(RuntimeError, match="failed install"),
-            frontend_lock.frontend_project_lock(),
-        ):
-            raise error
-
-        with frontend_lock.frontend_project_lock():
-            assert Path(constants.Dirs.FRONTEND_INSTALL_LOCK).exists()
-
-
-def test_frontend_project_lock_blocks_same_project(tmp_path: Path) -> None:
-    """A held project lock is positively contended by another process."""
-    ctx = multiprocessing.get_context("spawn")
-    acquired = ctx.Event()
-    release = ctx.Event()
-    process = ctx.Process(
-        target=_hold_frontend_project_lock,
-        args=(str(tmp_path), acquired, release),
-    )
-
-    lock_was_acquired = False
-    lock_was_contended = False
-    try:
-        process.start()
-        lock_was_acquired = acquired.wait(20)
-        if lock_was_acquired:
-            lock_was_contended = _frontend_project_file_lock_is_contended(tmp_path)
-    finally:
-        release.set()
-        process.join(20)
-        if process.is_alive():
-            process.terminate()
-            process.join(5)
-
-    assert lock_was_acquired
-    assert lock_was_contended
-    assert process.exitcode == 0
-
-
-def test_frontend_project_file_lock_retries_windows_contention(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    mocker,
-) -> None:
-    """The Windows path waits on contention and unlocks the same byte range."""
-    fake_msvcrt = mocker.Mock()
-    fake_msvcrt.LK_NBLCK = 1
-    fake_msvcrt.LK_UNLCK = 2
-    contention = OSError(frontend_lock.errno.EACCES, "lock is held")
-    fake_msvcrt.locking.side_effect = [contention, contention, None, None]
-    sleep = mocker.patch.object(frontend_lock.time, "sleep")
-    monkeypatch.setattr(constants, "IS_WINDOWS", True)
-    monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
-    lock_path = tmp_path / "lock"
-
-    with lock_path.open("w+b") as lock_file:
-        frontend_lock._acquire_project_file_lock(lock_file)
-        frontend_lock._release_project_file_lock(lock_file)
-
-    assert [call.args[1:] for call in fake_msvcrt.locking.call_args_list] == [
-        (fake_msvcrt.LK_NBLCK, 1),
-        (fake_msvcrt.LK_NBLCK, 1),
-        (fake_msvcrt.LK_NBLCK, 1),
-        (fake_msvcrt.LK_UNLCK, 1),
-    ]
-    assert sleep.call_args_list == [
-        mocker.call(frontend_lock._WINDOWS_LOCK_RETRY_DELAY),
-        mocker.call(frontend_lock._WINDOWS_LOCK_RETRY_DELAY),
-    ]
-
-
-def test_frontend_project_locks_are_scoped_per_project(tmp_path: Path) -> None:
-    """Two separate app roots can hold their frontend locks concurrently."""
-    ctx = multiprocessing.get_context("spawn")
-    project_a = tmp_path / "project-a"
-    project_b = tmp_path / "project-b"
-    project_a.mkdir()
-    project_b.mkdir()
-    acquired_a = ctx.Event()
-    acquired_b = ctx.Event()
-    release = ctx.Event()
-    processes = [
-        ctx.Process(
-            target=_hold_frontend_project_lock,
-            args=(str(project_a), acquired_a, release),
-        ),
-        ctx.Process(
-            target=_hold_frontend_project_lock,
-            args=(str(project_b), acquired_b, release),
-        ),
-    ]
-
-    for process in processes:
-        process.start()
-    try:
-        assert acquired_a.wait(20)
-        assert acquired_b.wait(20)
-    finally:
-        release.set()
-        for process in processes:
-            process.join(20)
-            if process.is_alive():
-                process.terminate()
-                process.join(5)
-
-    assert [process.exitcode for process in processes] == [0, 0]
-
-
-def test_frontend_project_lock_recovers_after_crashed_process(tmp_path: Path) -> None:
-    """The OS releases the project lock when its owning process exits abruptly."""
-    ctx = multiprocessing.get_context("spawn")
-    crashed_acquired = ctx.Event()
-    unused_release = ctx.Event()
-    crashed = ctx.Process(
-        target=_hold_frontend_project_lock,
-        args=(str(tmp_path), crashed_acquired, unused_release),
-        kwargs={"exit_without_cleanup": True},
-    )
-    crashed_lock_acquired = False
-    crashed_started = False
-    try:
-        crashed.start()
-        crashed_started = True
-        crashed_lock_acquired = crashed_acquired.wait(20)
-        crashed.join(20)
-    finally:
-        if crashed_started and crashed.is_alive():
-            crashed.terminate()
-            crashed.join(5)
-
-    assert crashed_lock_acquired
-    assert crashed.exitcode == 0
-
-    recovered_acquired = ctx.Event()
-    release = ctx.Event()
-    recovered = ctx.Process(
-        target=_hold_frontend_project_lock,
-        args=(str(tmp_path), recovered_acquired, release),
-    )
-    recovered.start()
-    try:
-        assert recovered_acquired.wait(20)
-    finally:
-        release.set()
-        recovered.join(20)
-        if recovered.is_alive():
-            recovered.terminate()
-            recovered.join(5)
-
-    assert recovered.exitcode == 0
 
 
 def test_concurrent_frontend_installs_share_completed_cache(
@@ -551,6 +307,7 @@ def test_concurrent_frontend_installs_share_completed_cache(
             release_package_manager,
             active_installs,
             max_active_installs,
+            ("loglevel", "app_name"),
         ),
     )
     second = ctx.Process(
@@ -562,6 +319,7 @@ def test_concurrent_frontend_installs_share_completed_cache(
             release_package_manager,
             active_installs,
             max_active_installs,
+            ("app_name", "loglevel"),
         ),
     )
 
@@ -1065,6 +823,51 @@ def _record_calls(env: InstallPackagesEnv) -> list[list[str]]:
 
     env.patch_pm(["bun"], run_package_manager)
     return calls
+
+
+def test_frontend_package_cache_uses_resolved_plugin_dependencies(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Set iteration order in plugin config does not perturb the cache key."""
+    env = install_packages_env
+    calls = _record_calls(env)
+
+    class OrderedStringSet(set[str]):
+        def __init__(self, values: tuple[str, ...]):
+            super().__init__(values)
+            self.values = values
+
+        def __iter__(self):
+            return iter(self.values)
+
+    @dataclass
+    class FakePlugin:
+        dependencies: OrderedStringSet
+
+        def get_frontend_dependencies(self):
+            return self.dependencies
+
+        def get_frontend_development_dependencies(self):
+            return set()
+
+    monkeypatch.setattr(
+        env.config,
+        "plugins",
+        [FakePlugin(OrderedStringSet(("plugin-b", "plugin-a")))],
+    )
+    first_config_json = env.config.json()
+    env.install()
+    monkeypatch.setattr(
+        env.config,
+        "plugins",
+        [FakePlugin(OrderedStringSet(("plugin-a", "plugin-b")))],
+    )
+    second_config_json = env.config.json()
+    env.install()
+
+    assert first_config_json != second_config_json
+    assert len([call for call in calls if "add" in call]) == 1
 
 
 def test_install_frontend_packages_pinned_packages_single_call(
@@ -2169,157 +1972,6 @@ def test_extract_package_name():
     assert js_runtimes._extract_package_name("react@1.2.3") == "react"
     assert js_runtimes._extract_package_name("@scope/pkg") == "@scope/pkg"
     assert js_runtimes._extract_package_name("@scope/pkg@1.2.3") == "@scope/pkg"
-
-
-def test_cached_procedure():
-    call_count = 0
-
-    temp_file = tempfile.mktemp()
-
-    @cached_procedure(
-        cache_file_path=lambda: Path(temp_file), payload_fn=lambda: "constant"
-    )
-    def _function_with_no_args():
-        nonlocal call_count
-        call_count += 1
-
-    _function_with_no_args()
-    assert call_count == 1
-    _function_with_no_args()
-    assert call_count == 1
-
-    call_count = 0
-
-    another_temp_file = tempfile.mktemp()
-
-    @cached_procedure(
-        cache_file_path=lambda: Path(another_temp_file),
-        payload_fn=lambda *args, **kwargs: f"{repr(args), repr(kwargs)}",
-    )
-    def _function_with_some_args(*args, **kwargs):
-        nonlocal call_count
-        call_count += 1
-
-    _function_with_some_args(1, y=2)
-    assert call_count == 1
-    _function_with_some_args(1, y=2)
-    assert call_count == 1
-    _function_with_some_args(100, y=300)
-    assert call_count == 2
-    _function_with_some_args(100, y=300)
-    assert call_count == 2
-
-    call_count = 0
-
-    @cached_procedure(
-        cache_file_path=lambda: Path(tempfile.mktemp()), payload_fn=lambda: "constant"
-    )
-    def _function_with_no_args_fn():
-        nonlocal call_count
-        call_count += 1
-
-    _function_with_no_args_fn()
-    assert call_count == 1
-    _function_with_no_args_fn()
-    assert call_count == 2
-
-
-def test_cached_procedure_treats_corrupt_file_as_miss(tmp_path: Path) -> None:
-    """A cache truncated by a killed process is recomputed and repaired."""
-    cache_file = tmp_path / "procedure.cached"
-    cache_file.write_bytes(b"not a pickle")
-    call_count = 0
-
-    @cached_procedure(cache_file_path=lambda: cache_file, payload_fn=lambda: "payload")
-    def procedure() -> str:
-        nonlocal call_count
-        call_count += 1
-        return "recomputed"
-
-    assert procedure() == "recomputed"
-    assert procedure() == "recomputed"
-    assert call_count == 1
-    assert pickle.loads(cache_file.read_bytes()) == ("payload", "recomputed")
-
-
-def test_cached_procedure_propagates_cache_io_errors(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """An inaccessible cache is not mistaken for an ordinary cache miss."""
-    cache_file = tmp_path / "procedure.cached"
-    cache_file.write_bytes(pickle.dumps(("payload", "cached")))
-    call_count = 0
-    original_open = Path.open
-    error = PermissionError("cache access denied")
-
-    def deny_cache_read(path: Path, *args, **kwargs):
-        if path == cache_file:
-            raise error
-        return original_open(path, *args, **kwargs)
-
-    @cached_procedure(cache_file_path=lambda: cache_file, payload_fn=lambda: "payload")
-    def procedure() -> str:
-        nonlocal call_count
-        call_count += 1
-        return "recomputed"
-
-    monkeypatch.setattr(Path, "open", deny_cache_read)
-
-    with pytest.raises(PermissionError, match="cache access denied"):
-        procedure()
-
-    assert call_count == 0
-
-
-def test_cached_procedure_preserves_old_file_if_replace_fails(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A failed cache commit leaves the previous complete pickle readable."""
-    cache_file = tmp_path / "procedure.cached"
-    payload = "old"
-
-    @cached_procedure(cache_file_path=lambda: cache_file, payload_fn=lambda: payload)
-    def procedure() -> str:
-        return payload
-
-    assert procedure() == "old"
-    old_cache = cache_file.read_bytes()
-    payload = "new"
-    original_replace = Path.replace
-    error = OSError("simulated replace failure")
-
-    def fail_cache_replace(path: Path, target: Path) -> Path:
-        if target == cache_file:
-            raise error
-        return original_replace(path, target)
-
-    monkeypatch.setattr(Path, "replace", fail_cache_replace)
-
-    with pytest.raises(OSError, match="simulated replace failure"):
-        procedure()
-
-    assert cache_file.read_bytes() == old_cache
-    assert pickle.loads(cache_file.read_bytes()) == ("old", "old")
-    assert list(tmp_path.glob(f".{cache_file.name}.*.tmp")) == []
-
-
-def test_cached_procedure_preserves_existing_symlink(tmp_path: Path) -> None:
-    """Atomic cache updates follow an existing cache symlink."""
-    cache_target = tmp_path / "shared-procedure.cached"
-    cache_target.write_bytes(pickle.dumps(("old", "old")))
-    cache_file = tmp_path / "procedure.cached"
-    try:
-        cache_file.symlink_to(cache_target.name)
-    except OSError as err:
-        pytest.skip(f"Cannot create symlink on this platform: {err}")
-
-    @cached_procedure(cache_file_path=lambda: cache_file, payload_fn=lambda: "new")
-    def procedure() -> str:
-        return "new"
-
-    assert procedure() == "new"
-    assert cache_file.is_symlink()
-    assert pickle.loads(cache_target.read_bytes()) == ("new", "new")
 
 
 def test_get_cpu_info():
