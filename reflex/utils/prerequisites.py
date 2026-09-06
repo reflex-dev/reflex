@@ -122,8 +122,10 @@ def get_or_set_last_reflex_version_check_datetime():
     data = json.loads(reflex_json_file.read_text())
     last_version_check_datetime = data.get("last_version_check_datetime")
     if not last_version_check_datetime:
-        data.update({"last_version_check_datetime": str(datetime.now())})
-        path_ops.update_json_file(reflex_json_file, data)
+        path_ops.update_json_file(
+            reflex_json_file,
+            {"last_version_check_datetime": str(datetime.now())},
+        )
     return last_version_check_datetime
 
 

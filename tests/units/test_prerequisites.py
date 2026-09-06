@@ -27,6 +27,40 @@ from reflex.utils.telemetry import CpuInfo, get_cpu_info
 runner = CliRunner()
 
 
+def test_version_check_timestamp_update_does_not_replay_stale_json(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Recording a version check preserves a concurrent metadata update."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    reflex_json_file = web_dir / constants.Reflex.JSON
+    reflex_json_file.write_text(
+        json.dumps({"last_reflex_run_datetime": "old"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: web_dir)
+    update_json_file = prerequisites.path_ops.update_json_file
+
+    def update_after_concurrent_write(
+        file_path: Path,
+        update: dict[str, object],
+    ) -> None:
+        update_json_file(file_path, {"last_reflex_run_datetime": "new"})
+        update_json_file(file_path, update)
+
+    monkeypatch.setattr(
+        prerequisites.path_ops,
+        "update_json_file",
+        update_after_concurrent_write,
+    )
+
+    assert prerequisites.get_or_set_last_reflex_version_check_datetime() is None
+    data = json.loads(reflex_json_file.read_text(encoding="utf-8"))
+    assert data["last_reflex_run_datetime"] == "new"
+    assert data["last_version_check_datetime"]
+
+
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
     monkeypatch.setattr(frontend_skeleton, "get_web_dir", lambda: web_dir)
     monkeypatch.setattr(js_runtimes, "get_web_dir", lambda: web_dir)

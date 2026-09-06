@@ -21,6 +21,7 @@ keywords = ["web", "framework"]
 requires-python = ">=3.10,<4.0"
 dependencies = [
   "click >=8.2",
+  "filelock >=3.32.3,<4.0",
   "granian[reload] >=2.7.4",
   "httpx >=0.26,<1.0",
   "packaging >=24.2,<27",
