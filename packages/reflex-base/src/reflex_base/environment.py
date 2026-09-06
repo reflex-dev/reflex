@@ -571,6 +571,10 @@ class EnvironmentVariables:
     # Whether to use npm over bun to install and run the frontend.
     REFLEX_USE_NPM: EnvVar[bool] = env_var(False)
 
+    # Opt in to local reuse of deterministic production frontend builds.
+    # External/time-dependent build inputs require a forced fresh build.
+    REFLEX_FRONTEND_BUILD_CACHE: EnvVar[bool] = env_var(False)
+
     # The npm registry to use.
     NPM_CONFIG_REGISTRY: EnvVar[str | None] = env_var(None)
 

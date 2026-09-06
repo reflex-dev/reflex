@@ -91,6 +91,44 @@ this, use the `--no-zip` parameter. This provides the frontend in the
 `.web/build/client/` directory and the backend can be found in the root directory of
 the project.
 
+## Reusing a Production Frontend Build
+
+For repeated deployments with deterministic frontend builds, you can opt in to a
+local build cache:
+
+```bash
+REFLEX_FRONTEND_BUILD_CACHE=true reflex deploy
+```
+
+The same option works with `reflex export` and production-mode `reflex run`.
+It is disabled by default. On a cache hit, Reflex restores the pristine JavaScript
+build, then runs post-build plugins, fallback generation, compression, and frontend
+path processing again. Python compilation and the normal dependency checks still run.
+
+Enable this option only when build output is determined by the tracked local inputs.
+Prerendering, Vite plugins, and custom export scripts can read remote data, the clock,
+or files outside `.web`; changes to those inputs require a fresh build. Run with
+`REFLEX_FRONTEND_BUILD_CACHE=false` to force one and discard the previous snapshot,
+or remove `.web/reflex.build-cache`. Re-enabling the option then populates a new cache.
+
+The cache checks generated frontend source, assets and configuration within `.web`,
+the build environment, runtime identity, and installed dependency file metadata.
+It also verifies snapshot file contents before restoring them. Use it on a local
+macOS or Linux filesystem that reports file modification and change timestamps
+reliably; the cache is bypassed on Windows and when links lead outside tracked inputs.
+
+Generated build output, `.react-router`, the dependency-install cache marker, and
+the top-level `node_modules/.vite`, `.vite-temp`, and `.cache` directories are
+excluded from the input fingerprint. The private `last_reflex_run_datetime` and
+`last_version_check_datetime` fields in `reflex.json` are also excluded. Custom code
+that uses these excluded values or files to determine build output should keep the
+cache disabled. Cache hits can retain the earlier private timestamps embedded in
+bundles; the client framework uses the separately checked Reflex version value.
+
+Cache misses perform a normal build and have extra fingerprinting and snapshot-copy
+work, so this option is most useful when the same frontend is deployed repeatedly.
+Deleting `.web` also deletes its cached build.
+
 ## Reflex Container Service
 
 Another option is to run your Reflex service in a container. For this

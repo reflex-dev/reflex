@@ -4,6 +4,7 @@ import functools
 import json
 import logging
 import os
+import re
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
@@ -14,6 +15,7 @@ from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import cached_procedure, once
 from reflex_base.utils.exceptions import SystemPackageMissingError
+from reflex_base.utils.serializers import get_serializer, serialize_set
 from rich.markup import escape
 
 from reflex.utils import console, frontend_skeleton, net, path_ops, processes
@@ -422,7 +424,7 @@ def _extract_package_name(package_spec: str) -> str:
     return package_spec.split("@", 1)[0]
 
 
-def _existing_web_package_sections() -> tuple[set[str], set[str]]:
+def _existing_web_package_sections() -> tuple[dict[str, str], dict[str, str]]:
     """Return packages currently declared in .web/package.json by section.
 
     Reads ``.web/package.json``'s ``dependencies`` and ``devDependencies``
@@ -431,24 +433,24 @@ def _existing_web_package_sections() -> tuple[set[str], set[str]]:
     deps.
 
     Returns:
-        A tuple ``(deps, dev_deps)`` of bare package names. Both empty if
+        A tuple ``(deps, dev_deps)`` mapping package names to versions. Both empty if
         the file is missing or unreadable.
     """
     web_pkg_json_path = frontend_skeleton.get_web_lockfile_path(
         constants.PackageJson.PATH
     )
     if not web_pkg_json_path.exists():
-        return set(), set()
+        return {}, {}
     try:
         data = json.loads(web_pkg_json_path.read_text())
     except (json.JSONDecodeError, OSError) as e:
         logger.warning(
             f"Failed to read {web_pkg_json_path}: {e}; skipping existing package check."
         )
-        return set(), set()
+        return {}, {}
     return (
-        set(data.get("dependencies") or {}),
-        set(data.get("devDependencies") or {}),
+        data.get("dependencies") or {},
+        data.get("devDependencies") or {},
     )
 
 
@@ -466,6 +468,81 @@ def _is_bun_package_manager(package_manager: str) -> bool:
         Whether the executable is bun.
     """
     return Path(package_manager).stem.lower() == "bun"
+
+
+def _npm_installed_package_sections(
+    declared_deps: dict[str, str], declared_dev_deps: dict[str, str]
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Verify npm's saved caret declarations against its lockfile and installed packages.
+
+    Args:
+        declared_deps: Regular dependency declarations used for the install.
+        declared_dev_deps: Development dependency declarations used for the install.
+
+    Returns:
+        Dependency sections with verified caret declarations replaced by their
+        exact installed versions. Unverified declarations remain unchanged.
+    """
+    try:
+        lock = json.loads(
+            frontend_skeleton.get_web_lockfile_path(
+                constants.Node.LOCKFILE_PATH
+            ).read_text()
+        )
+    except (OSError, ValueError):
+        return declared_deps, declared_dev_deps
+    if not isinstance(lock, dict) or lock.get("lockfileVersion") not in (2, 3):
+        return declared_deps, declared_dev_deps
+    packages = lock.get("packages")
+    if not isinstance(packages, dict) or not isinstance(root := packages.get(""), dict):
+        return declared_deps, declared_dev_deps
+
+    installed_deps, installed_dev_deps = dict(declared_deps), dict(declared_dev_deps)
+    for section, declared, installed in (
+        ("dependencies", declared_deps, installed_deps),
+        ("devDependencies", declared_dev_deps, installed_dev_deps),
+    ):
+        root_declarations = root.get(section, {})
+        if not isinstance(root_declarations, dict):
+            continue
+        for name, declaration in declared.items():
+            entry = packages.get(f"node_modules/{name}")
+            if (
+                not isinstance(entry, dict)
+                or entry.get("link")
+                or entry.get("name", name) != name
+                or root_declarations.get(name) != declaration
+            ):
+                continue
+            installed_version = entry.get("version")
+            if (
+                not isinstance(installed_version, str)
+                or declaration != f"^{installed_version}"
+            ):
+                continue
+            resolved = entry.get("resolved")
+            if isinstance(resolved, str) and resolved.startswith((
+                "file:",
+                "link:",
+                "workspace:",
+            )):
+                continue
+            package_dir = get_web_dir() / "node_modules" / name
+            if package_dir.is_symlink():
+                continue
+            # npm can ignore package-lock.json (package-lock=false or shrinkwrap).
+            # Check the installed package too so a stale lock cannot hide an upgrade.
+            try:
+                package = json.loads((package_dir / "package.json").read_text())
+            except (OSError, ValueError):
+                continue
+            if (
+                isinstance(package, dict)
+                and package.get("name") == name
+                and package.get("version") == installed_version
+            ):
+                installed[name] = installed_version
+    return installed_deps, installed_dev_deps
 
 
 def _run_initial_install(
@@ -494,6 +571,8 @@ def _run_initial_install(
         "install",
         "--legacy-peer-deps",
     ]
+    if not _is_bun_package_manager(primary_package_manager):
+        install_args.append("--include=dev")
     if frozen_lockfile and _is_bun_package_manager(primary_package_manager):
         # ``--frozen-lockfile`` is bun-only; npm ignores it today and the
         # next major rejects unknown flags outright.
@@ -571,16 +650,32 @@ def _split_by_version_specifier(
     return pinned, unpinned
 
 
-def _pinned_args_from_constants(deps: dict[str, str]) -> set[str]:
+def _pinned_args_from_constants(
+    deps: dict[str, str],
+    installed: dict[str, str] | None = None,
+    explicitly_requested: set[str] | None = None,
+) -> set[str]:
     """Render constants-style dep dicts as ``name@version`` add args.
 
     Args:
         deps: Mapping of package name to version string.
+        installed: Dependencies already installed from a restored lockfile.
+        explicitly_requested: Package names with component or plugin pins whose
+            existing resolution behavior must be preserved.
 
     Returns:
         Set of ``name@version`` specs.
     """
-    return {f"{name}@{version}" for name, version in deps.items()}
+    return {
+        f"{name}@{version}"
+        for name, version in deps.items()
+        if installed is None
+        or installed.get(name) != version
+        or (explicitly_requested is not None and name in explicitly_requested)
+        or not re.fullmatch(
+            r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?", version
+        )
+    }
 
 
 def _frontend_packages_cache_payload(
@@ -624,8 +719,8 @@ def _install_frontend_packages(
     Resolution rules:
       * Framework deps in :attr:`constants.PackageJson.DEPENDENCIES` and
         :attr:`constants.PackageJson.DEV_DEPENDENCIES` always carry version
-        specifiers and are added with strict pins so they overwrite any
-        existing entry in package.json.
+        specifiers and are added with strict pins. Matching entries in the
+        correct section are reused after a successful lockfile install.
       * Plugin/custom packages with explicit version specifiers are also
         added with strict pins.
       * Plugin/custom packages without version specifiers are skipped
@@ -658,6 +753,8 @@ def _install_frontend_packages(
     )
 
     primary_package_manager = install_package_managers[0]
+    is_bun = _is_bun_package_manager(primary_package_manager)
+    include_dev_args = [] if is_bun else ["--include=dev"]
 
     # No fallback to a different package manager: switching mid-flow could
     # bypass the persisted lockfile (e.g. on a package-integrity failure
@@ -686,7 +783,8 @@ def _install_frontend_packages(
     ) - wanted_dep_names
     needed_names = wanted_dep_names | wanted_dev_dep_names
 
-    existing_deps, existing_dev_deps = _existing_web_package_sections()
+    declared_deps, declared_dev_deps = _existing_web_package_sections()
+    existing_deps, existing_dev_deps = set(declared_deps), set(declared_dev_deps)
     existing_names = existing_deps | existing_dev_deps
 
     # Drop deps lingering in package.json that no component, plugin, or
@@ -704,6 +802,7 @@ def _install_frontend_packages(
                 primary_package_manager,
                 "remove",
                 "--legacy-peer-deps",
+                *include_dev_args,
                 *sorted(to_remove),
             ],
             show_status_message="Removing unused frontend packages",
@@ -711,16 +810,22 @@ def _install_frontend_packages(
 
     # Install against the recovered lockfile so its pins are honored
     # before any further mutation.
-    if any(
+    has_lockfile = any(
         frontend_skeleton.get_web_lockfile_path(name).exists()
         for name in frontend_skeleton.LOCKFILE_NAMES
-    ):
+    )
+    if has_lockfile:
         _run_initial_install(primary_package_manager, env, frozen_lockfile)
 
     # Framework overrides are withheld while the persisted package.json is
     # restored so the frozen install above sees exactly the file that produced
     # the persisted lockfile. Merge them now, before any resolution happens.
     overrides_changed = frontend_skeleton.update_package_json_overrides()
+    installed_deps, installed_dev_deps = declared_deps, declared_dev_deps
+    if has_lockfile and not is_bun and not overrides_changed:
+        installed_deps, installed_dev_deps = _npm_installed_package_sections(
+            declared_deps, declared_dev_deps
+        )
 
     pinned_packages, unpinned_packages = _split_by_version_specifier(packages)
     pinned_dev_deps, unpinned_dev_deps = _split_by_version_specifier(
@@ -737,19 +842,28 @@ def _install_frontend_packages(
     new_unpinned_dev_deps = unpinned_dev_deps - existing_dev_deps
 
     deps_to_add = (
-        _pinned_args_from_constants(constants.PackageJson.DEPENDENCIES)
+        _pinned_args_from_constants(
+            constants.PackageJson.DEPENDENCIES,
+            installed_deps if has_lockfile else None,
+            explicitly_requested={_extract_package_name(p) for p in pinned_packages},
+        )
         | pinned_packages
         | new_unpinned_packages
     )
-    deps_names_to_add = {_extract_package_name(p) for p in deps_to_add}
     dev_deps_to_add = {
         spec
         for spec in (
-            _pinned_args_from_constants(constants.PackageJson.DEV_DEPENDENCIES)
+            _pinned_args_from_constants(
+                constants.PackageJson.DEV_DEPENDENCIES,
+                installed_dev_deps if has_lockfile else None,
+                explicitly_requested={
+                    _extract_package_name(p) for p in pinned_dev_deps
+                },
+            )
             | pinned_dev_deps
             | new_unpinned_dev_deps
         )
-        if _extract_package_name(spec) not in deps_names_to_add
+        if _extract_package_name(spec) not in wanted_dep_names
     }
 
     # Add dev dependencies first so that any subsequent regular-dep add
@@ -761,14 +875,21 @@ def _install_frontend_packages(
                 primary_package_manager,
                 "add",
                 "--legacy-peer-deps",
-                "-d",
+                *include_dev_args,
+                "-d" if is_bun else "--save-dev",
                 *dev_deps_to_add,
             ],
             show_status_message="Installing frontend development dependencies",
         )
     if deps_to_add:
         run_package_manager(
-            [primary_package_manager, "add", "--legacy-peer-deps", *deps_to_add],
+            [
+                primary_package_manager,
+                "add",
+                "--legacy-peer-deps",
+                *include_dev_args,
+                *deps_to_add,
+            ],
             show_status_message="Installing frontend packages",
         )
 
@@ -776,7 +897,12 @@ def _install_frontend_packages(
         # Newly merged overrides with no add to carry them into the lockfile:
         # resolve them now so the persisted pair stays frozen-install ready.
         run_package_manager(
-            [primary_package_manager, "install", "--legacy-peer-deps"],
+            [
+                primary_package_manager,
+                "install",
+                "--legacy-peer-deps",
+                *include_dev_args,
+            ],
             show_status_message="Applying frontend package overrides",
         )
 
