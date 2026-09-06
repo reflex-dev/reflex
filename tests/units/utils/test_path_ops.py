@@ -15,7 +15,8 @@ from pathlib import Path
 import pytest
 from filelock import Timeout
 
-from reflex.utils import path_ops
+from reflex import constants
+from reflex.utils import frontend_skeleton, path_ops
 
 
 @pytest.fixture(autouse=True)
@@ -219,6 +220,108 @@ def test_update_json_file_never_exposes_partial_json(
         **original,
         "payload": ["value"] * 100,
     }
+
+
+def test_web_directory_cleanup_waits_for_staged_json_update(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Frontend cleanup cannot delete an active JSON staging file."""
+    web_dir = tmp_path / ".web"
+    web_dir.mkdir()
+    target = web_dir / "reflex.json"
+    target.write_text(json.dumps({"base": True}), encoding="utf-8")
+    stage_written = threading.Event()
+    release_writer = threading.Event()
+    cleanup_lock_blocked = threading.Event()
+    cleanup_reached = threading.Event()
+    allow_cleanup = threading.Event()
+    original_dump = path_ops.json.dump
+    original_json_file_lock = path_ops._json_file_lock
+
+    def pausing_dump(value, file, *, ensure_ascii):
+        file.write("{")
+        file.flush()
+        stage_written.set()
+        assert release_writer.wait(timeout=5)
+        file.seek(0)
+        file.truncate()
+        original_dump(value, file, ensure_ascii=ensure_ascii)
+
+    class ProbedLock:
+        """Report that frontend cleanup encounters the writer's lock."""
+
+        def __init__(self, lock) -> None:
+            self.lock = lock
+
+        def __enter__(self):
+            try:
+                self.lock.acquire(timeout=0)
+            except Timeout:
+                cleanup_lock_blocked.set()
+            else:
+                self.lock.release()
+                msg = "frontend cleanup unexpectedly acquired the writer lock"
+                raise AssertionError(msg)
+            return self.lock.acquire()
+
+        def __exit__(self, exception_type, exception, traceback):
+            self.lock.release()
+
+    def probed_json_file_lock(file_path: Path):
+        lock = original_json_file_lock(file_path)
+        if file_path == target.resolve():
+            return ProbedLock(lock)
+        return lock
+
+    def destructive_copy(_source, _destination):
+        cleanup_reached.set()
+        assert allow_cleanup.wait(timeout=5)
+        shutil.rmtree(web_dir)
+        web_dir.mkdir()
+
+    monkeypatch.setattr(path_ops.json, "dump", pausing_dump)
+    monkeypatch.setattr(frontend_skeleton, "get_web_dir", lambda: web_dir)
+    monkeypatch.setattr(frontend_skeleton, "get_project_hash", lambda: None)
+    for function_name in (
+        "sync_root_lockfiles_to_web",
+        "initialize_package_json",
+        "sync_web_lockfiles_to_root",
+        "initialize_bun_config",
+        "initialize_npmrc",
+        "update_react_router_config",
+        "initialize_vite_config",
+        "init_reflex_json",
+    ):
+        monkeypatch.setattr(
+            frontend_skeleton,
+            function_name,
+            lambda *args, **kwargs: None,
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        writer = executor.submit(path_ops.update_json_file, target, {"writer": True})
+        assert stage_written.wait(timeout=5)
+        staged_files = list(web_dir.glob(".reflex.json.*.tmp"))
+        assert len(staged_files) == 1
+        monkeypatch.setattr(path_ops, "_json_file_lock", probed_json_file_lock)
+        monkeypatch.setattr(path_ops, "copy_tree", destructive_copy)
+        cleanup = executor.submit(frontend_skeleton.initialize_web_directory)
+        try:
+            assert cleanup_lock_blocked.wait(timeout=5)
+            assert not cleanup_reached.is_set()
+            assert staged_files[0].exists()
+            release_writer.set()
+            assert cleanup_reached.wait(timeout=5)
+            writer.result(timeout=5)
+            assert json.loads(target.read_text(encoding="utf-8")) == {
+                "base": True,
+                "writer": True,
+            }
+        finally:
+            release_writer.set()
+            allow_cleanup.set()
+        cleanup.result(timeout=5)
 
 
 def test_update_json_file_dump_failure_preserves_original(
@@ -544,6 +647,18 @@ def test_update_json_file_normalizes_symlink_alias(tmp_path: Path):
     assert alias.is_symlink()
     assert json.loads(target.read_text(encoding="utf-8")) == {"updated": True}
     assert path_ops._json_file_lock_path(target).is_file()
+    assert path_ops._json_file_lock_path(target) == path_ops._json_file_lock_path(alias)
+
+
+@pytest.mark.skipif(not constants.IS_MACOS, reason="macOS path normalization")
+def test_json_file_lock_normalizes_macos_case_alias(tmp_path: Path):
+    """Case aliases on case-insensitive macOS volumes share one lock."""
+    target = tmp_path / "MixedCase.json"
+    target.write_text("{}", encoding="utf-8")
+    alias = tmp_path / "mixedcase.json"
+    if not alias.exists() or not alias.samefile(target):
+        pytest.skip("test volume is case-sensitive")
+
     assert path_ops._json_file_lock_path(target) == path_ops._json_file_lock_path(alias)
 
 

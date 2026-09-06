@@ -239,9 +239,19 @@ def _json_file_lock_path(file_path: Path) -> Path:
     """
     import hashlib
 
+    from reflex import constants
+
     normalized_path = os.path.normcase(os.fspath(file_path.resolve()))
+    if constants.IS_MACOS:
+        import unicodedata
+
+        # posixpath.normcase is a no-op on macOS, even when the underlying APFS
+        # volume is case-insensitive and Unicode-normalizing.
+        normalized_path = unicodedata.normalize("NFC", normalized_path).casefold()
     target_digest = hashlib.sha256(os.fsencode(normalized_path)).hexdigest()
-    lock_directory = environment.REFLEX_DIR.get().expanduser().resolve() / "locks/json"
+    lock_directory = (
+        environment.REFLEX_DIR.get().expanduser().resolve() / constants.JSON_LOCKS_DIR
+    )
     lock_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     return lock_directory / f"{target_digest}.lock"
 
