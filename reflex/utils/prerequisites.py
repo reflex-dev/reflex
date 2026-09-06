@@ -35,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 _LATEST_VERSION_CHECK_INTERVAL = timedelta(days=1)
 _LATEST_VERSION_CHECK_FAILURE_INTERVAL = timedelta(hours=1)
+_LATEST_VERSION_CHECK_DATETIME_KEY = "last_version_check_datetime"
+_LATEST_VERSION_CHECK_ATTEMPT_DATETIME_KEY = "last_version_check_attempt_datetime"
 
 if typing.TYPE_CHECKING:
     from redis import Redis as RedisSync
@@ -129,9 +131,9 @@ def _version_check_timestamp_key(package_name: str, *, attempt: bool = False) ->
     reflex_name = re.sub(r"[-_.]+", "_", constants.Reflex.MODULE_NAME).lower()
     suffix = "" if normalized_name == reflex_name else f"_{normalized_name}"
     key = (
-        "last_version_check_attempt_datetime"
+        _LATEST_VERSION_CHECK_ATTEMPT_DATETIME_KEY
         if attempt
-        else "last_version_check_datetime"
+        else _LATEST_VERSION_CHECK_DATETIME_KEY
     )
     return f"{key}{suffix}"
 

@@ -11,6 +11,9 @@ from pathlib import Path
 import pytest
 from pytest_codspeed import BenchmarkFixture
 
+_SUBPROCESS_TIMEOUT_SECONDS = 15
+_SIMULATION_SUBPROCESS_TIMEOUT_SECONDS = 120
+
 
 @pytest.fixture(scope="module")
 def reflex_executable() -> str:
@@ -61,13 +64,18 @@ def _run_command(
     Returns:
         The completed subprocess.
     """
+    timeout = (
+        _SIMULATION_SUBPROCESS_TIMEOUT_SECONDS
+        if os.environ.get("CODSPEED_RUNNER_MODE") == "simulation"
+        else _SUBPROCESS_TIMEOUT_SECONDS
+    )
     result = subprocess.run(
         command,
         cwd=cwd,
         env=env,
         capture_output=True,
         check=True,
-        timeout=15,
+        timeout=timeout,
     )
     if require_stdout and not result.stdout:
         msg = f"Command produced no output: {command!r}"
