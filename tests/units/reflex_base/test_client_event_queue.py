@@ -16,7 +16,12 @@ def test_client_event_queue() -> None:
         / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
     )
     result = subprocess.run(
-        ["node", str(tests / "client_event_queue.mjs"), str(source)],
+        [
+            "node",
+            "--experimental-vm-modules",
+            str(tests / "client_event_queue.mjs"),
+            str(source),
+        ],
         capture_output=True,
         text=True,
         check=False,

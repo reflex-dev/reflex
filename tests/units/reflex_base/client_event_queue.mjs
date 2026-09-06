@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "node:test";
-import { queueRuntimeSource } from "./client_event_queue_runtime.mjs";
+import { createQueueRuntime } from "./client_event_queue_runtime.mjs";
 
 const source = fs.readFileSync(process.argv[2], "utf8");
-const createRuntime = new Function(
-  `${queueRuntimeSource(source)}; return createQueueRuntime;`,
-)();
+const createRuntime = (options) => createQueueRuntime(source, options);
 const params = { current: {} };
 const stateful = (id) => ({
   name: "reflex___state.test.event",
@@ -28,9 +26,69 @@ const deferred = () => {
   return { promise, resolve };
 };
 
+const loaderFixture = `
+const event_queue = [];
+let backend_state_mismatch = false;
+export const isStateful = () => {
+  return false;
+};
+export const queueEventIfSocketExists = async () => {
+};
+export const applyEvent = async () => {
+};
+export const applyRestEvent = async () => {
+};
+const resolveSocket = (socket) => {
+  return socket;
+};
+export const processEvent = async () => {
+};
+function urlFrom(string) {
+  return new URL(string);
+}
+`;
+
+for (const [name, declaration] of [
+  [
+    "normally formatted declarations",
+    `export const queueEvents = async (events) => {
+  event_queue.push(...events);
+  return event_queue.length;
+};`,
+  ],
+  [
+    "compact declarations",
+    "export const queueEvents=async(events)=>{event_queue.push(...events);return event_queue.length};",
+  ],
+  [
+    "function declarations",
+    `export async function queueEvents(events) {
+  event_queue.push(...events);
+  return event_queue.length;
+}`,
+  ],
+  [
+    "nested closures with unindented braces",
+    `export const queueEvents = async (events) => {
+const enqueue = (event) => {
+event_queue.push(event);
+};
+events.forEach(enqueue);
+return event_queue.length;
+};`,
+  ],
+]) {
+  test(`runtime loads ${name} without rewriting functions`, async () => {
+    const runtime = await createQueueRuntime(loaderFixture + declaration);
+    const event = { name: "test.event" };
+    assert.equal(await runtime.queueEvents([event]), 1);
+    assert.equal(runtime.event_queue[0], event);
+  });
+}
+
 test("FIFO filtering and both raw and reference sockets", async () => {
   for (const ref of [false, true]) {
-    const runtime = createRuntime(),
+    const runtime = await createRuntime(),
       output = [],
       socket = socketFor(output);
     await runtime.queueEvents(
@@ -47,7 +105,7 @@ test("FIFO filtering and both raw and reference sockets", async () => {
 });
 
 test("offline stateful events hold the entire queue until reconnect", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output, false);
   await runtime.queueEvents(
@@ -67,7 +125,7 @@ test("offline stateful events hold the entire queue until reconnect", async () =
 });
 
 test("local events run without a socket, including an empty queue", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [];
   await runtime.queueEvents([], null, false, () => {}, params);
   await runtime.queueEvents(
@@ -81,7 +139,7 @@ test("local events run without a socket, including an empty queue", async () => 
 });
 
 test("prepend preserves new and pending order and does not mutate the input", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output, false);
   await runtime.queueEvents(
@@ -102,7 +160,7 @@ test("prepend preserves new and pending order and does not mutate the input", as
 });
 
 test("disconnect during an event pauses remaining stateful events", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output);
   const disconnect = {
@@ -129,7 +187,7 @@ test("disconnect during an event pauses remaining stateful events", async () => 
 });
 
 test("reentrant enqueue and prepend retain FIFO semantics", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output);
   let nested;
@@ -161,7 +219,7 @@ test("reentrant enqueue and prepend retain FIFO semantics", async () => {
 });
 
 test("overlapping calls and promise settling preserve async handler behavior", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output),
     wait = deferred();
@@ -204,7 +262,7 @@ test("overlapping calls and promise settling preserve async handler behavior", a
 });
 
 test("fatal mismatch clears pending events and lets drain promises settle", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output, false);
   await runtime.queueEvents(
@@ -223,7 +281,9 @@ test("fatal mismatch clears pending events and lets drain promises settle", asyn
 
 test("redirect and REST events retain the ordering of pending work", async () => {
   const output = [];
-  const runtime = createRuntime({ uploadFiles: () => output.push("upload") }),
+  const runtime = await createRuntime({
+      uploadFiles: () => output.push("upload"),
+    }),
     socket = socketFor(output);
   await runtime.queueEvents(
     [
@@ -245,7 +305,7 @@ test("redirect and REST events retain the ordering of pending work", async () =>
 });
 
 test("prepend shifts pending events only when they are dispatched", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output, false);
   await runtime.queueEvents(
@@ -267,7 +327,7 @@ test("prepend shifts pending events only when they are dispatched", async () => 
 });
 
 test("dispatch rejection leaves pending work available to a later drain", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output);
   socket.emit = () => {
@@ -291,7 +351,7 @@ test("dispatch rejection leaves pending work available to a later drain", async 
 });
 
 test("stateful arrival during an offline local await pauses the later drain", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output, false),
     wait = deferred();
@@ -324,7 +384,7 @@ test("stateful arrival during an offline local await pauses the later drain", as
 });
 
 test("mismatch retains the existing offline stateful guard until reconnect", async () => {
-  const runtime = createRuntime(),
+  const runtime = await createRuntime(),
     output = [],
     socket = socketFor(output, false);
   runtime.setMismatch(true);
@@ -339,7 +399,7 @@ test("mismatch retains the existing offline stateful guard until reconnect", asy
 
 test("one-event queues drain exactly once for both local and stateful handlers", async () => {
   for (const makeEvent of [local, (id) => stateful(id)]) {
-    const runtime = createRuntime(),
+    const runtime = await createRuntime(),
       output = [],
       socket = socketFor(output);
     await runtime.queueEvents(

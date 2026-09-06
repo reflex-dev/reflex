@@ -1,40 +1,79 @@
-/** Extract the actual queue and handler functions without loading React or sockets. */
-export function queueRuntimeSource(source) {
-  const names = [
-    "isStateful",
-    "queueEventIfSocketExists",
-    "applyEvent",
-    "applyRestEvent",
-    "resolveSocket",
-    "queueEvents",
-    "processEvent",
-  ];
-  const declarations = names.map((name) => {
-    const match = source.match(
-      new RegExp(`(?:export )?const ${name} = [\\s\\S]*?\\n\\};`),
-    );
-    if (!match) throw new Error(`Cannot extract ${name}`);
-    return match[0].replace(/^export /, "");
+import { SourceTextModule, SyntheticModule } from "node:vm";
+
+/** Evaluate the complete frontend module with isolated dependency stubs. */
+export async function createQueueRuntime(source, options = {}) {
+  const unused = () => {
+    throw new Error("Unexpected frontend dependency in queue test");
+  };
+  const dependencies = {
+    "test:browser": {
+      window: options.window ?? {
+        location: { host: "localhost", pathname: "/", search: "", hash: "" },
+      },
+      document: options.document ?? {},
+      localStorage: options.localStorage ?? { clear() {}, removeItem() {} },
+      sessionStorage: options.sessionStorage ?? { clear() {}, removeItem() {} },
+    },
+    "socket.io-client": { default: unused },
+    "$/env.json": { default: {} },
+    "$/reflex.json": { default: {} },
+    "universal-cookie": {
+      default: class {
+        constructor() {
+          return options.cookies ?? { remove() {} };
+        }
+      },
+    },
+    react: {
+      useCallback: unused,
+      useEffect: unused,
+      useRef: unused,
+      useState: unused,
+    },
+    "react-router": {
+      useLocation: unused,
+      useNavigate: unused,
+      useSearchParams: unused,
+      useParams: unused,
+    },
+    "$/utils/context": {
+      initialEvents: options.initialEvents ?? (() => []),
+      initialState: {},
+      onLoadInternalEvent: unused,
+      state_name: "test_state",
+      exception_state_name: "test_exception_state",
+    },
+    "$/utils/helpers/debounce": { default: unused },
+    "$/utils/helpers/throttle": { default: unused },
+    "$/utils/helpers/upload": {
+      uploadFiles: options.uploadFiles ?? unused,
+    },
+  };
+  // Let Node parse the unchanged module; only expose private state to tests.
+  const module = new SourceTextModule(
+    `import { window, document, localStorage, sessionStorage } from "test:browser";
+${source}
+export { event_queue };
+export function setMismatch(value) { backend_state_mismatch = value; }
+`,
+  );
+  const linked = new Map();
+  await module.link((specifier) => {
+    if (!linked.has(specifier)) {
+      const exports = dependencies[specifier];
+      if (!exports)
+        throw new Error(`Unexpected import in queue test: ${specifier}`);
+      linked.set(
+        specifier,
+        new SyntheticModule(Object.keys(exports), function () {
+          for (const [name, value] of Object.entries(exports)) {
+            this.setExport(name, value);
+          }
+        }),
+      );
+    }
+    return linked.get(specifier);
   });
-  const urlFrom = source.match(/function urlFrom\(string\) \{[\s\S]*?\n\}/);
-  if (!urlFrom) throw new Error("Cannot extract urlFrom");
-  return `function createQueueRuntime(options = {}) {
-    const event_queue = [];
-    let backend_state_mismatch = false;
-    const env = {};
-    const refs = {};
-    const locationRef = {current: null};
-    const window = options.window ?? {location: {host: 'localhost', pathname: '/', search: '', hash: ''}};
-    const initialEvents = options.initialEvents ?? (() => []);
-    const uploadFiles = options.uploadFiles ?? (() => {});
-    const getBackendURL = () => new URL('http://localhost');
-    const getToken = () => 'test-token';
-    const cookies = options.cookies ?? {remove() {}};
-    const localStorage = options.localStorage ?? {clear() {}, removeItem() {}};
-    const sessionStorage = options.sessionStorage ?? {clear() {}, removeItem() {}};
-    ${urlFrom[0]}
-    ${declarations.join("\n")}
-    return {event_queue, queueEvents, processEvent, isStateful, applyEvent,
-      setMismatch(value) {backend_state_mismatch = value;}};
-  }`;
+  await module.evaluate();
+  return module.namespace;
 }
