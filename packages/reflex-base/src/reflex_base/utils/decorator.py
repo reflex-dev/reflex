@@ -77,18 +77,43 @@ def debug(f: Callable[P, T]) -> Callable[P, T]:
 
 
 def _write_cached_procedure_file(payload: str, cache_file: Path, value: object):
+    import contextlib
     import pickle
+    import uuid
 
+    if cache_file.is_symlink():
+        cache_file = cache_file.resolve()
     cache_file.parent.mkdir(parents=True, exist_ok=True)
-    cache_file.write_bytes(pickle.dumps((payload, value)))
+    mode = cache_file.stat().st_mode if cache_file.exists() else None
+    temporary_path = cache_file.with_name(f".{cache_file.name}.{uuid.uuid4().hex}.tmp")
+    created = False
+    try:
+        with temporary_path.open("xb") as temporary_file:
+            created = True
+            temporary_file.write(pickle.dumps((payload, value)))
+        if mode is not None:
+            temporary_path.chmod(mode & 0o7777)
+        temporary_path.replace(cache_file)
+    except BaseException:
+        if created:
+            with contextlib.suppress(OSError):
+                temporary_path.unlink(missing_ok=True)
+        raise
 
 
 def _read_cached_procedure_file(cache_file: Path) -> tuple[str | None, object]:
     import pickle
 
     if cache_file.exists():
-        with cache_file.open("rb") as f:
-            return pickle.loads(f.read())
+        try:
+            with cache_file.open("rb") as f:
+                payload, value = pickle.loads(f.read())
+            if not isinstance(payload, str):
+                return None, None
+        except (pickle.UnpicklingError, EOFError, TypeError, ValueError) as err:
+            logger.debug(f"Ignoring invalid procedure cache {cache_file}: {err}")
+        else:
+            return payload, value
 
     return None, None
 

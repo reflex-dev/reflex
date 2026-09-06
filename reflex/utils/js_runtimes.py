@@ -783,9 +783,12 @@ def _install_frontend_packages(
 
 def install_frontend_packages(packages: set[str], config: Config):
     """Install frontend packages while respecting the canonical root bun.lock."""
-    install_package_managers = tuple(
-        get_nodejs_compatible_package_managers(raise_on_none=True)
-    )
-    _sync_root_lockfiles_for_frontend_install()
-    _install_frontend_packages(set(packages), config, install_package_managers)
-    frontend_skeleton.sync_web_lockfiles_to_root()
+    from reflex.utils.frontend_lock import frontend_project_lock
+
+    with frontend_project_lock():
+        install_package_managers = tuple(
+            get_nodejs_compatible_package_managers(raise_on_none=True)
+        )
+        _sync_root_lockfiles_for_frontend_install()
+        _install_frontend_packages(set(packages), config, install_package_managers)
+        frontend_skeleton.sync_web_lockfiles_to_root()

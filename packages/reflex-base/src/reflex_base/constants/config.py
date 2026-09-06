@@ -40,6 +40,7 @@ class GitIgnore(SimpleNamespace):
     FILE = Path(".gitignore")
     # Files to gitignore.
     DEFAULTS = {
+        Dirs.FRONTEND_INSTALL_LOCK,
         Dirs.WEB,
         Dirs.STATES,
         "*.db",

@@ -320,14 +320,48 @@ def _copy_if_exists(src: Path, dest: Path, prune: bool = True) -> bool:
             return True
         return False
 
-    if dest.exists() and dest.read_bytes() == src.read_bytes():
+    contents = src.read_bytes()
+    if dest.exists() and dest.read_bytes() == contents:
         return False
 
     changed = dest.exists()
-    path_ops.mkdir(dest.parent)
+    mode = dest.stat().st_mode if changed else src.stat().st_mode
     logger.debug(f"Copying {src} to {dest}")
-    path_ops.cp(src, dest)
+    _write_bytes_atomic(dest, contents, mode=mode)
     return changed
+
+
+def _write_bytes_atomic(path: Path, contents: bytes, mode: int | None = None) -> None:
+    """Atomically replace a file with complete new contents.
+
+    Args:
+        path: Destination path to replace. Existing symlinks are followed so
+            their link objects remain intact.
+        contents: Bytes to write before committing the replacement.
+        mode: File mode to apply. Existing target permissions are preserved by
+            default; a new generated file uses the process umask.
+    """
+    import contextlib
+
+    if path.is_symlink():
+        path = path.resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if mode is None and path.exists():
+        mode = path.stat().st_mode
+    temporary_path = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+    created = False
+    try:
+        with temporary_path.open("xb") as temporary_file:
+            created = True
+            temporary_file.write(contents)
+        if mode is not None:
+            temporary_path.chmod(mode & 0o7777)
+        temporary_path.replace(path)
+    except BaseException:
+        if created:
+            with contextlib.suppress(OSError):
+                temporary_path.unlink(missing_ok=True)
+        raise
 
 
 def sync_root_lockfile_to_web(filename: str, prune: bool = True) -> bool:
@@ -372,7 +406,7 @@ def sync_root_package_json_to_web() -> bool:
 
     changed = output_path.exists()
     path_ops.mkdir(output_path.parent)
-    output_path.write_text(rendered)
+    _write_bytes_atomic(output_path, rendered.encode())
     return changed
 
 
@@ -398,10 +432,7 @@ def sync_web_lockfile_to_root(filename: str):
     web = get_web_lockfile_path(filename)
     if not web.exists():
         return
-    root = get_root_lockfile_path(filename)
-    path_ops.mkdir(root.parent)
-    logger.debug(f"Copying {web} to {root}")
-    path_ops.cp(web, root)
+    _copy_if_exists(web, get_root_lockfile_path(filename), prune=False)
 
 
 def sync_web_lockfiles_to_root():
@@ -450,6 +481,14 @@ def _read_persisted_package_json() -> dict:
 
 def initialize_web_directory():
     """Initialize the web directory on reflex init."""
+    from reflex.utils.frontend_lock import frontend_project_lock
+
+    with frontend_project_lock():
+        _initialize_web_directory()
+
+
+def _initialize_web_directory():
+    """Initialize the web directory while its project lock is held."""
     logger.info("Initializing the web directory.")
 
     # Reuse the hash if one is already created, so we don't over-write it when running reflex init
@@ -598,14 +637,14 @@ def update_package_json_overrides() -> bool:
 
     package_json["overrides"] = {**overrides, **constants.PackageJson.OVERRIDES}
     logger.debug(f"Applying framework overrides to {package_json_path}")
-    package_json_path.write_text(json.dumps(package_json))
+    _write_bytes_atomic(package_json_path, json.dumps(package_json).encode())
     return True
 
 
 def initialize_package_json():
     """Render and write in .web the package.json file."""
     output_path = get_web_dir() / constants.PackageJson.PATH
-    output_path.write_text(_compile_package_json())
+    _write_bytes_atomic(output_path, _compile_package_json().encode())
 
 
 def _compile_vite_config(config: Config):

@@ -1,11 +1,16 @@
 import json
+import multiprocessing
+import os
+import pickle
 import shutil
+import sys
 import tempfile
 import uuid
 from collections.abc import Callable, Generator
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 import pytest
 from click.testing import CliRunner
@@ -16,7 +21,7 @@ from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils import frontend_skeleton, js_runtimes, prerequisites
+from reflex.utils import frontend_lock, frontend_skeleton, js_runtimes, prerequisites
 from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
@@ -25,6 +30,141 @@ from reflex.utils.rename import rename_imports_and_app_name
 from reflex.utils.telemetry import CpuInfo, get_cpu_info
 
 runner = CliRunner()
+
+
+def _hold_frontend_project_lock(
+    project_dir: str,
+    acquired: Any,
+    release: Any,
+    *,
+    exit_without_cleanup: bool = False,
+    nested: bool = False,
+) -> None:
+    """Hold a frontend project lock in a spawned process.
+
+    Args:
+        project_dir: App root whose lock should be acquired.
+        acquired: Multiprocessing event set after acquisition.
+        release: Multiprocessing event that releases a normal holder.
+        exit_without_cleanup: Exit the process without running ``finally`` blocks.
+        nested: Acquire the same project lock twice before signalling.
+    """
+    os.chdir(project_dir)
+    with ExitStack() as stack:
+        stack.enter_context(frontend_lock.frontend_project_lock())
+        if nested:
+            stack.enter_context(frontend_lock.frontend_project_lock())
+        acquired.set()
+        if exit_without_cleanup:
+            os._exit(0)
+        if not release.wait(20):
+            msg = "Timed out waiting to release frontend project lock"
+            raise TimeoutError(msg)
+
+
+def _frontend_project_file_lock_is_contended(project_dir: Path) -> bool:
+    """Probe the OS-level project lock without blocking.
+
+    Args:
+        project_dir: App root whose lock file should be probed.
+
+    Returns:
+        Whether another process currently owns the project lock.
+    """
+    lock_path = project_dir / constants.Dirs.FRONTEND_INSTALL_LOCK
+    with lock_path.open("r+b") as lock_file:
+        lock_file.seek(0)
+        if constants.IS_WINDOWS:
+            import msvcrt
+
+            try:
+                msvcrt.locking(  # pyright: ignore[reportAttributeAccessIssue]
+                    lock_file.fileno(),
+                    msvcrt.LK_NBLCK,  # pyright: ignore[reportAttributeAccessIssue]
+                    1,
+                )
+            except OSError as err:
+                if err.errno in {
+                    frontend_lock.errno.EACCES,
+                    frontend_lock.errno.EAGAIN,
+                    frontend_lock.errno.EDEADLK,
+                }:
+                    return True
+                raise
+            lock_file.seek(0)
+            msvcrt.locking(  # pyright: ignore[reportAttributeAccessIssue]
+                lock_file.fileno(),
+                msvcrt.LK_UNLCK,  # pyright: ignore[reportAttributeAccessIssue]
+                1,
+            )
+            return False
+
+        import fcntl
+
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as err:
+            if err.errno in {
+                frontend_lock.errno.EACCES,
+                frontend_lock.errno.EAGAIN,
+            }:
+                return True
+            raise
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+        return False
+
+
+def _install_frontend_packages_in_process(
+    project_dir: str,
+    attempting: Any,
+    package_manager_entered: Any,
+    release_package_manager: Any,
+    active_installs: Any,
+    max_active_installs: Any,
+) -> None:
+    """Run a deterministic fake frontend install in a spawned process.
+
+    Args:
+        project_dir: App root containing the shared ``.web`` directory.
+        attempting: Event set immediately before the public install call.
+        package_manager_entered: Event set if this process invokes the package manager.
+        release_package_manager: Event allowing the fake package manager to finish.
+        active_installs: Shared count of active package-manager calls.
+        max_active_installs: Shared maximum active package-manager calls.
+    """
+    os.chdir(project_dir)
+    constants.PackageJson.DEPENDENCIES = {}  # pyright: ignore[reportAttributeAccessIssue]
+    constants.PackageJson.DEV_DEPENDENCIES = {}  # pyright: ignore[reportAttributeAccessIssue]
+    constants.PackageJson.OVERRIDES = {}  # pyright: ignore[reportAttributeAccessIssue]
+    js_runtimes.get_nodejs_compatible_package_managers = lambda raise_on_none=True: (
+        "bun",
+    )
+
+    def run_package_manager(args, **kwargs) -> None:
+        """Block a fake package-manager add so a competing process can contend."""
+        if "add" not in args:
+            return
+        with active_installs.get_lock():
+            active_installs.value += 1
+            max_active_installs.value = max(
+                max_active_installs.value, active_installs.value
+            )
+        package_manager_entered.set()
+        try:
+            if not release_package_manager.wait(20):
+                msg = "Timed out waiting to finish fake frontend install"
+                raise TimeoutError(msg)
+            package_json_path = Path(constants.Dirs.WEB) / constants.PackageJson.PATH
+            package_json = json.loads(package_json_path.read_text())
+            package_json.setdefault("dependencies", {})["race-pkg"] = "1.0.0"
+            package_json_path.write_text(json.dumps(package_json))
+        finally:
+            with active_installs.get_lock():
+                active_installs.value -= 1
+
+    js_runtimes.processes.run_process_with_fallbacks = run_package_manager
+    attempting.set()
+    js_runtimes.install_frontend_packages({"race-pkg@1.0.0"}, Config(app_name="test"))
 
 
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
@@ -134,6 +274,344 @@ def install_packages_env(
         yield env
 
 
+def test_install_frontend_packages_locks_the_complete_transaction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The project lock covers manager selection, cache work, and persistence."""
+    calls: list[str] = []
+    lock_held = False
+
+    @contextmanager
+    def project_lock():
+        nonlocal lock_held
+        calls.append("lock-enter")
+        lock_held = True
+        try:
+            yield
+        finally:
+            lock_held = False
+            calls.append("lock-exit")
+
+    def record(name: str, result=None):
+        """Return a stub that records a call made while the lock is held."""
+
+        def stub(*args, **kwargs):
+            assert lock_held
+            calls.append(name)
+            return result
+
+        return stub
+
+    monkeypatch.setattr(frontend_lock, "frontend_project_lock", project_lock)
+    monkeypatch.setattr(
+        js_runtimes,
+        "get_nodejs_compatible_package_managers",
+        record("select-manager", ("bun",)),
+    )
+    monkeypatch.setattr(
+        js_runtimes,
+        "_sync_root_lockfiles_for_frontend_install",
+        record("sync-root"),
+    )
+    monkeypatch.setattr(
+        js_runtimes,
+        "_install_frontend_packages",
+        record("install"),
+    )
+    monkeypatch.setattr(
+        frontend_skeleton,
+        "sync_web_lockfiles_to_root",
+        record("sync-web"),
+    )
+
+    with chdir(tmp_path):
+        js_runtimes.install_frontend_packages(set(), Config(app_name="test"))
+
+    assert calls == [
+        "lock-enter",
+        "select-manager",
+        "sync-root",
+        "install",
+        "sync-web",
+        "lock-exit",
+    ]
+
+
+def test_frontend_project_lock_is_reentrant_and_ignored(tmp_path: Path) -> None:
+    """Nested use in one thread succeeds and its stable file is gitignored."""
+    ctx = multiprocessing.get_context("spawn")
+    acquired = ctx.Event()
+    release = ctx.Event()
+    process = ctx.Process(
+        target=_hold_frontend_project_lock,
+        args=(str(tmp_path), acquired, release),
+        kwargs={"nested": True},
+    )
+
+    nested_lock_acquired = False
+    started = False
+    try:
+        process.start()
+        started = True
+        nested_lock_acquired = acquired.wait(20)
+    finally:
+        release.set()
+        if started:
+            process.join(20)
+            if process.is_alive():
+                process.terminate()
+                process.join(5)
+
+    assert nested_lock_acquired
+    assert process.exitcode == 0
+    assert (tmp_path / constants.Dirs.FRONTEND_INSTALL_LOCK).exists()
+    assert constants.Dirs.FRONTEND_INSTALL_LOCK in constants.GitIgnore.DEFAULTS
+
+
+def test_frontend_project_lock_releases_after_exception(tmp_path: Path) -> None:
+    """An exception in a transaction does not strand its project lock."""
+    error = RuntimeError("failed install")
+    with chdir(tmp_path):
+        with (
+            pytest.raises(RuntimeError, match="failed install"),
+            frontend_lock.frontend_project_lock(),
+        ):
+            raise error
+
+        with frontend_lock.frontend_project_lock():
+            assert Path(constants.Dirs.FRONTEND_INSTALL_LOCK).exists()
+
+
+def test_frontend_project_lock_blocks_same_project(tmp_path: Path) -> None:
+    """A held project lock is positively contended by another process."""
+    ctx = multiprocessing.get_context("spawn")
+    acquired = ctx.Event()
+    release = ctx.Event()
+    process = ctx.Process(
+        target=_hold_frontend_project_lock,
+        args=(str(tmp_path), acquired, release),
+    )
+
+    lock_was_acquired = False
+    lock_was_contended = False
+    try:
+        process.start()
+        lock_was_acquired = acquired.wait(20)
+        if lock_was_acquired:
+            lock_was_contended = _frontend_project_file_lock_is_contended(tmp_path)
+    finally:
+        release.set()
+        process.join(20)
+        if process.is_alive():
+            process.terminate()
+            process.join(5)
+
+    assert lock_was_acquired
+    assert lock_was_contended
+    assert process.exitcode == 0
+
+
+def test_frontend_project_file_lock_retries_windows_contention(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker,
+) -> None:
+    """The Windows path waits on contention and unlocks the same byte range."""
+    fake_msvcrt = mocker.Mock()
+    fake_msvcrt.LK_NBLCK = 1
+    fake_msvcrt.LK_UNLCK = 2
+    contention = OSError(frontend_lock.errno.EACCES, "lock is held")
+    fake_msvcrt.locking.side_effect = [contention, contention, None, None]
+    sleep = mocker.patch.object(frontend_lock.time, "sleep")
+    monkeypatch.setattr(constants, "IS_WINDOWS", True)
+    monkeypatch.setitem(sys.modules, "msvcrt", fake_msvcrt)
+    lock_path = tmp_path / "lock"
+
+    with lock_path.open("w+b") as lock_file:
+        frontend_lock._acquire_project_file_lock(lock_file)
+        frontend_lock._release_project_file_lock(lock_file)
+
+    assert [call.args[1:] for call in fake_msvcrt.locking.call_args_list] == [
+        (fake_msvcrt.LK_NBLCK, 1),
+        (fake_msvcrt.LK_NBLCK, 1),
+        (fake_msvcrt.LK_NBLCK, 1),
+        (fake_msvcrt.LK_UNLCK, 1),
+    ]
+    assert sleep.call_args_list == [
+        mocker.call(frontend_lock._WINDOWS_LOCK_RETRY_DELAY),
+        mocker.call(frontend_lock._WINDOWS_LOCK_RETRY_DELAY),
+    ]
+
+
+def test_frontend_project_locks_are_scoped_per_project(tmp_path: Path) -> None:
+    """Two separate app roots can hold their frontend locks concurrently."""
+    ctx = multiprocessing.get_context("spawn")
+    project_a = tmp_path / "project-a"
+    project_b = tmp_path / "project-b"
+    project_a.mkdir()
+    project_b.mkdir()
+    acquired_a = ctx.Event()
+    acquired_b = ctx.Event()
+    release = ctx.Event()
+    processes = [
+        ctx.Process(
+            target=_hold_frontend_project_lock,
+            args=(str(project_a), acquired_a, release),
+        ),
+        ctx.Process(
+            target=_hold_frontend_project_lock,
+            args=(str(project_b), acquired_b, release),
+        ),
+    ]
+
+    for process in processes:
+        process.start()
+    try:
+        assert acquired_a.wait(20)
+        assert acquired_b.wait(20)
+    finally:
+        release.set()
+        for process in processes:
+            process.join(20)
+            if process.is_alive():
+                process.terminate()
+                process.join(5)
+
+    assert [process.exitcode for process in processes] == [0, 0]
+
+
+def test_frontend_project_lock_recovers_after_crashed_process(tmp_path: Path) -> None:
+    """The OS releases the project lock when its owning process exits abruptly."""
+    ctx = multiprocessing.get_context("spawn")
+    crashed_acquired = ctx.Event()
+    unused_release = ctx.Event()
+    crashed = ctx.Process(
+        target=_hold_frontend_project_lock,
+        args=(str(tmp_path), crashed_acquired, unused_release),
+        kwargs={"exit_without_cleanup": True},
+    )
+    crashed_lock_acquired = False
+    crashed_started = False
+    try:
+        crashed.start()
+        crashed_started = True
+        crashed_lock_acquired = crashed_acquired.wait(20)
+        crashed.join(20)
+    finally:
+        if crashed_started and crashed.is_alive():
+            crashed.terminate()
+            crashed.join(5)
+
+    assert crashed_lock_acquired
+    assert crashed.exitcode == 0
+
+    recovered_acquired = ctx.Event()
+    release = ctx.Event()
+    recovered = ctx.Process(
+        target=_hold_frontend_project_lock,
+        args=(str(tmp_path), recovered_acquired, release),
+    )
+    recovered.start()
+    try:
+        assert recovered_acquired.wait(20)
+    finally:
+        release.set()
+        recovered.join(20)
+        if recovered.is_alive():
+            recovered.terminate()
+            recovered.join(5)
+
+    assert recovered.exitcode == 0
+
+
+def test_concurrent_frontend_installs_share_completed_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A second process waits, then observes the first process's install cache."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _stub_framework_packages(monkeypatch)
+    with chdir(tmp_path):
+        frontend_skeleton.initialize_package_json()
+
+    ctx = multiprocessing.get_context("spawn")
+    first_attempting = ctx.Event()
+    second_attempting = ctx.Event()
+    first_entered = ctx.Event()
+    second_entered = ctx.Event()
+    release_package_manager = ctx.Event()
+    active_installs = ctx.Value("i", 0)
+    max_active_installs = ctx.Value("i", 0)
+    first = ctx.Process(
+        target=_install_frontend_packages_in_process,
+        args=(
+            str(tmp_path),
+            first_attempting,
+            first_entered,
+            release_package_manager,
+            active_installs,
+            max_active_installs,
+        ),
+    )
+    second = ctx.Process(
+        target=_install_frontend_packages_in_process,
+        args=(
+            str(tmp_path),
+            second_attempting,
+            second_entered,
+            release_package_manager,
+            active_installs,
+            max_active_installs,
+        ),
+    )
+
+    started_processes = []
+    first_attempted_install = False
+    first_called_package_manager = False
+    second_attempted_install = False
+    second_called_package_manager_while_first_active = False
+    try:
+        first.start()
+        started_processes.append(first)
+        first_attempted_install = first_attempting.wait(20)
+        if first_attempted_install:
+            first_called_package_manager = first_entered.wait(20)
+        if first_called_package_manager:
+            second.start()
+            started_processes.append(second)
+            second_attempted_install = second_attempting.wait(20)
+        if second_attempted_install:
+            second_called_package_manager_while_first_active = second_entered.wait(1)
+    finally:
+        release_package_manager.set()
+        for process in started_processes:
+            process.join(20)
+            if process.is_alive():
+                process.terminate()
+                process.join(5)
+
+    assert first_attempted_install
+    assert first_called_package_manager
+    assert second_attempted_install
+    assert not second_called_package_manager_while_first_active
+    assert not second_entered.is_set()
+    assert first.exitcode == 0
+    assert second.exitcode == 0
+    assert max_active_installs.value == 1
+    assert active_installs.value == 0
+
+    cache_file = web_dir / "reflex.install_frontend_packages.cached"
+    cache_payload, cache_value = pickle.loads(cache_file.read_bytes())
+    assert isinstance(cache_payload, str)
+    assert cache_value is None
+    root_package_json = (
+        tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    )
+    assert json.loads(root_package_json.read_text()) == json.loads(
+        (web_dir / constants.PackageJson.PATH).read_text()
+    )
+
+
 _SKELETON_INITIALIZERS = (
     "initialize_package_json",
     "initialize_bun_config",
@@ -165,6 +643,31 @@ def _stub_skeleton_initializers_except(
 def _stub_skeleton_initializers(monkeypatch):
     """Stub the frontend_skeleton initialize_* helpers to no-ops."""
     _stub_skeleton_initializers_except(monkeypatch)
+
+
+def test_initialize_web_directory_holds_frontend_project_lock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Reinitialization cannot replace ``.web`` during an install transaction."""
+    lock_held = False
+
+    @contextmanager
+    def project_lock():
+        nonlocal lock_held
+        lock_held = True
+        try:
+            yield
+        finally:
+            lock_held = False
+
+    def initialize() -> None:
+        assert lock_held
+
+    monkeypatch.setattr(frontend_lock, "frontend_project_lock", project_lock)
+    monkeypatch.setattr(frontend_skeleton, "_initialize_web_directory", initialize)
+
+    frontend_skeleton.initialize_web_directory()
+    assert not lock_held
 
 
 @pytest.mark.parametrize(
@@ -353,6 +856,66 @@ def test_sync_root_lockfiles_to_web_processes_package_json(tmp_path, monkeypatch
     assert web_pkg["dependencies"] == {"react": "19.2.5"}
     assert web_pkg["scripts"]["dev"] == constants.PackageJson.Commands.DEV
     assert web_pkg["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
+
+
+def test_sync_web_lockfile_to_root_preserves_old_file_if_replace_fails(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed atomic commit leaves the previous persisted lockfile valid."""
+    env = install_packages_env
+    env.web_lock.write_text("new-lock")
+    env.root_lock.write_text("old-lock")
+    original_replace = Path.replace
+    error = OSError("simulated replace failure")
+
+    def fail_root_replace(path: Path, target: Path) -> Path:
+        if target == env.root_lock:
+            raise error
+        return original_replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", fail_root_replace)
+
+    with pytest.raises(OSError, match="simulated replace failure"):
+        frontend_skeleton.sync_web_lockfile_to_root(constants.Bun.LOCKFILE_PATH)
+
+    assert env.root_lock.read_text() == "old-lock"
+    assert list(env.root_lock.parent.glob(f".{env.root_lock.name}.*.tmp")) == []
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Windows exposes limited chmod modes")
+def test_sync_web_lockfile_to_root_preserves_existing_mode(
+    install_packages_env: InstallPackagesEnv,
+) -> None:
+    """Atomic replacement does not make a shared persisted lockfile private."""
+    env = install_packages_env
+    env.web_lock.write_text("new-lock")
+    env.root_lock.write_text("old-lock")
+    env.root_lock.chmod(0o644)
+
+    frontend_skeleton.sync_web_lockfile_to_root(constants.Bun.LOCKFILE_PATH)
+
+    assert env.root_lock.read_text() == "new-lock"
+    assert env.root_lock.stat().st_mode & 0o777 == 0o644
+
+
+def test_sync_web_lockfile_to_root_preserves_existing_symlink(
+    install_packages_env: InstallPackagesEnv,
+) -> None:
+    """Atomic replacement follows an existing persisted lockfile symlink."""
+    env = install_packages_env
+    env.web_lock.write_text("new-lock")
+    shared_lock = env.tmp_path / "shared-bun.lock"
+    shared_lock.write_text("old-lock")
+    try:
+        env.root_lock.symlink_to(shared_lock)
+    except OSError as err:
+        pytest.skip(f"Cannot create symlink on this platform: {err}")
+
+    frontend_skeleton.sync_web_lockfile_to_root(constants.Bun.LOCKFILE_PATH)
+
+    assert env.root_lock.is_symlink()
+    assert shared_lock.read_text() == "new-lock"
 
 
 def test_install_frontend_packages_syncs_root_bun_lock(
@@ -1659,6 +2222,104 @@ def test_cached_procedure():
     assert call_count == 1
     _function_with_no_args_fn()
     assert call_count == 2
+
+
+def test_cached_procedure_treats_corrupt_file_as_miss(tmp_path: Path) -> None:
+    """A cache truncated by a killed process is recomputed and repaired."""
+    cache_file = tmp_path / "procedure.cached"
+    cache_file.write_bytes(b"not a pickle")
+    call_count = 0
+
+    @cached_procedure(cache_file_path=lambda: cache_file, payload_fn=lambda: "payload")
+    def procedure() -> str:
+        nonlocal call_count
+        call_count += 1
+        return "recomputed"
+
+    assert procedure() == "recomputed"
+    assert procedure() == "recomputed"
+    assert call_count == 1
+    assert pickle.loads(cache_file.read_bytes()) == ("payload", "recomputed")
+
+
+def test_cached_procedure_propagates_cache_io_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An inaccessible cache is not mistaken for an ordinary cache miss."""
+    cache_file = tmp_path / "procedure.cached"
+    cache_file.write_bytes(pickle.dumps(("payload", "cached")))
+    call_count = 0
+    original_open = Path.open
+    error = PermissionError("cache access denied")
+
+    def deny_cache_read(path: Path, *args, **kwargs):
+        if path == cache_file:
+            raise error
+        return original_open(path, *args, **kwargs)
+
+    @cached_procedure(cache_file_path=lambda: cache_file, payload_fn=lambda: "payload")
+    def procedure() -> str:
+        nonlocal call_count
+        call_count += 1
+        return "recomputed"
+
+    monkeypatch.setattr(Path, "open", deny_cache_read)
+
+    with pytest.raises(PermissionError, match="cache access denied"):
+        procedure()
+
+    assert call_count == 0
+
+
+def test_cached_procedure_preserves_old_file_if_replace_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed cache commit leaves the previous complete pickle readable."""
+    cache_file = tmp_path / "procedure.cached"
+    payload = "old"
+
+    @cached_procedure(cache_file_path=lambda: cache_file, payload_fn=lambda: payload)
+    def procedure() -> str:
+        return payload
+
+    assert procedure() == "old"
+    old_cache = cache_file.read_bytes()
+    payload = "new"
+    original_replace = Path.replace
+    error = OSError("simulated replace failure")
+
+    def fail_cache_replace(path: Path, target: Path) -> Path:
+        if target == cache_file:
+            raise error
+        return original_replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", fail_cache_replace)
+
+    with pytest.raises(OSError, match="simulated replace failure"):
+        procedure()
+
+    assert cache_file.read_bytes() == old_cache
+    assert pickle.loads(cache_file.read_bytes()) == ("old", "old")
+    assert list(tmp_path.glob(f".{cache_file.name}.*.tmp")) == []
+
+
+def test_cached_procedure_preserves_existing_symlink(tmp_path: Path) -> None:
+    """Atomic cache updates follow an existing cache symlink."""
+    cache_target = tmp_path / "shared-procedure.cached"
+    cache_target.write_bytes(pickle.dumps(("old", "old")))
+    cache_file = tmp_path / "procedure.cached"
+    try:
+        cache_file.symlink_to(cache_target.name)
+    except OSError as err:
+        pytest.skip(f"Cannot create symlink on this platform: {err}")
+
+    @cached_procedure(cache_file_path=lambda: cache_file, payload_fn=lambda: "new")
+    def procedure() -> str:
+        return "new"
+
+    assert procedure() == "new"
+    assert cache_file.is_symlink()
+    assert pickle.loads(cache_target.read_bytes()) == ("new", "new")
 
 
 def test_get_cpu_info():
