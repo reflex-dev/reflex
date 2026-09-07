@@ -2544,8 +2544,9 @@ def state_snapshot_hashes(snapshot: Delta) -> list[str]:
     ]
 
 
-# Per root state class: the resolved default snapshot and its per-state hashes.
-_initial_snapshot_cache: dict[type[BaseState], tuple[Delta, dict[str, str]]] = {}
+# Per root state class: the number of state classes the snapshot was built
+# for, the resolved default snapshot and its per-state hashes.
+_initial_snapshot_cache: dict[type[BaseState], tuple[int, Delta, dict[str, str]]] = {}
 
 
 async def _diff_against_initial_state(
@@ -2564,25 +2565,30 @@ async def _diff_against_initial_state(
         defaults match the backend's, and left untouched for the others.
     """
     cached = _initial_snapshot_cache.get(root_cls)
-    if cached is None:
+    n_state_classes = len(all_base_state_classes)
+    if cached is None or cached[0] != n_state_classes:
+        # Rebuilt when state classes were defined after the last snapshot.
         snapshot = await _resolve_delta(
             root_cls(_reflex_internal_init=True).dict(initial=True)
         )
         cached = _initial_snapshot_cache[root_cls] = (
+            n_state_classes,
             snapshot,
             dict(zip(sorted(snapshot), state_snapshot_hashes(snapshot), strict=True)),
         )
-    defaults, default_hashes = cached
+    _, defaults, default_hashes = cached
     if len(hashes) != len(default_hashes):
         # The frontend was compiled against a different set of states.
         return delta
     frontend_hashes = dict(zip(sorted(default_hashes), hashes, strict=True))
     diff: Delta = {}
     for state_name, state_vars in delta.items():
-        if frontend_hashes.get(state_name) != default_hashes.get(state_name):
+        default_vars = defaults.get(state_name)
+        if default_vars is None or frontend_hashes.get(
+            state_name
+        ) != default_hashes.get(state_name):
             diff[state_name] = state_vars
             continue
-        default_vars = defaults[state_name]
         changed = {
             name: value
             for name, value in state_vars.items()
@@ -2610,7 +2616,7 @@ async def _apply_client_storage_vars(state: BaseState, vars: dict[str, Any]) -> 
 
 
 def _load_events_for_page(
-    state: BaseState,
+    state: State,
 ) -> list[Event | EventSpec | event.EventCallback] | None:
     """Queue the on_load handlers for the page the client is on.
 

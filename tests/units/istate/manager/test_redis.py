@@ -769,8 +769,8 @@ async def test_set_state_checks_lock_once_per_tree(
         assert len(state.substates) == 2
         state.count = 1
         lock_id = await real_get(lock_key)
-        redis.get = counting_get
-        redis.pttl = counting_pttl
+        redis.get = counting_get  # pyright: ignore[reportAttributeAccessIssue]
+        redis.pttl = counting_pttl  # pyright: ignore[reportAttributeAccessIssue]
         try:
             await state_manager_redis.set_state(token, state, lock_id=lock_id)
         finally:
@@ -781,4 +781,5 @@ async def test_set_state_checks_lock_once_per_tree(
     assert len(lock_gets) == 1
     assert len(pttls) == 1
     saved = await state_manager_redis.get_state(token)
+    assert isinstance(saved, root_state)
     assert saved.count == 1

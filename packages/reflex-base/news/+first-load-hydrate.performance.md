@@ -1,0 +1,1 @@
+The compiled frontend hydrates with one `hydrate_and_load` event carried in the socket.io connect packet, sending per-state hashes of its compiled `initialState` so the backend can skip vars still at their default; client-side navigation keeps using `on_load_internal` as before.
