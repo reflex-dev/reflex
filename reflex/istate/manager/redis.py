@@ -463,6 +463,8 @@ class StateManagerRedis(StateManager):
             isinstance(token, BaseStateToken)
             and token.lock_key not in self._local_leases
         ):
+            # lock_expiration, the PTTL and the threshold are milliseconds; the
+            # warning reports the time held in seconds.
             time_taken = (self.lock_expiration - pttl) / 1000
             if time_taken > self.lock_warning_threshold / 1000:
                 logger.warning(
