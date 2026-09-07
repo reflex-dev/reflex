@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
+from reflex_base import style as style_module
 from reflex_base.components.component import (
     BaseComponent,
     Component,
@@ -22,6 +23,7 @@ from reflex_base.plugins import (
     Plugin,
 )
 from reflex_base.plugins.base import HookOrder
+from reflex_base.style import Style
 from reflex_base.utils import format as format_utils
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.imports import ImportVar, collapse_imports, merge_imports
@@ -1255,3 +1257,113 @@ def test_compile_context_applies_style_before_shared_stateful_render() -> None:
 
     assert '["color"] : "red"' in (compile_ctx.compiled_pages["/a"].output_code or "")
     assert '["color"] : "red"' in (compile_ctx.compiled_pages["/b"].output_code or "")
+
+
+def test_apply_style_plugin_reuses_literal_style_normalization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Normalize an unchanged shared literal rule once within a page walk."""
+    rule = {"color": "red", "_hover": {"color": "blue"}, "padding": ["1px", "2px"]}
+    component = Fragment.create(*(ChildComponent.create() for _ in range(4)))
+    original_convert = style_module.convert
+    normalized_rules = []
+
+    def track_convert(style_dict):
+        if style_dict is rule:
+            normalized_rules.append(style_dict)
+        return original_convert(style_dict)
+
+    monkeypatch.setattr(style_module, "convert", track_convert)
+    hooks = CompilerHooks(plugins=(ApplyStylePlugin(style={ChildComponent: rule}),))
+    page_ctx = PageContext(name="page", route="/page", root_component=component)
+    compile_ctx = create_compile_context(hooks)
+    with compile_ctx, page_ctx:
+        compiled = hooks.compile_component(
+            component, page_context=page_ctx, compile_context=compile_ctx
+        )
+
+    assert len(normalized_rules) == 1
+    first, second = compiled.children[:2]
+    assert isinstance(first, Component)
+    assert isinstance(second, Component)
+    first.style["_hover"]["color"] = "pink"
+    first.style["padding"][0] = "5px"
+    assert str(second.style["_hover"]["color"]) == '"blue"'
+    assert str(second.style["padding"][0]) == '"1px"'
+    assert rule["_hover"] == {"color": "blue"}
+    assert rule["padding"] == ["1px", "2px"]
+
+
+def test_apply_style_plugin_observes_rule_and_factory_changes() -> None:
+    """A bound walk sees replaced rules and factory rules still take precedence."""
+
+    class StyledComponent(Component):
+        tag = "Styled"
+
+    class_rule = {"color": "red"}
+    factory_rule = {"color": "blue"}
+    styles = {StyledComponent: class_rule, StyledComponent.create: factory_rule}
+    plugin = ApplyStylePlugin(style=styles)
+    page_ctx = PageContext(name="page", route="/page", root_component=Fragment.create())
+    compile_ctx = create_compile_context(CompilerHooks(plugins=(plugin,)))
+    with compile_ctx, page_ctx:
+        enter = plugin._compiler_bind_enter_component(page_ctx, compile_ctx)
+        first = enter(StyledComponent.create(), False)
+        factory_rule["color"] = "green"
+        second = enter(StyledComponent.create(), False)
+        styles[StyledComponent.create] = {"color": "purple"}
+        third = enter(StyledComponent.create(), False)
+        del styles[StyledComponent.create]
+        fourth = enter(StyledComponent.create(), False)
+
+    assert first is not None
+    assert second is not None
+    assert third is not None
+    assert fourth is not None
+    assert [
+        normalize_style(comp)["color"] for comp in (first, second, third, fourth)
+    ] == ['"blue"', '"green"', '"purple"', '"red"']
+
+
+def test_apply_style_plugin_preserves_style_lookup_overrides() -> None:
+    """Component overrides remain free to choose styles per instance."""
+
+    class StyledComponent(Component):
+        tag = "Styled"
+
+        def _get_component_style(self, styles):
+            return Style({"color": self.id})
+
+    plugin = ApplyStylePlugin(style={})
+    page_ctx = PageContext(name="page", route="/page", root_component=Fragment.create())
+    compile_ctx = create_compile_context(CompilerHooks(plugins=(plugin,)))
+    with compile_ctx, page_ctx:
+        enter = plugin._compiler_bind_enter_component(page_ctx, compile_ctx)
+        first = enter(StyledComponent.create(id="red"), False)
+        second = enter(StyledComponent.create(id="blue"), False)
+
+    assert first is not None
+    assert second is not None
+    assert normalize_style(first)["color"] == '"red"'
+    assert normalize_style(second)["color"] == '"blue"'
+
+
+def test_apply_style_plugin_preserves_apply_overrides() -> None:
+    """A plugin override keeps the original three-argument callback contract."""
+
+    class CustomApplyStylePlugin(ApplyStylePlugin):
+        @staticmethod
+        def _apply_style(comp, style, page_context):
+            owned = page_context.own(comp)
+            owned.style = Style({"color": "purple"})
+            return owned
+
+    plugin = CustomApplyStylePlugin(style={})
+    page_ctx = PageContext(name="page", route="/page", root_component=Fragment.create())
+    compile_ctx = create_compile_context(CompilerHooks(plugins=(plugin,)))
+    with compile_ctx, page_ctx:
+        enter = plugin._compiler_bind_enter_component(page_ctx, compile_ctx)
+        component = enter(ChildComponent.create(), False)
+
+    assert component is not None
+    assert normalize_style(component)["color"] == '"purple"'

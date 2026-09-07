@@ -1,9 +1,10 @@
 import copy
 
 from pytest_codspeed import BenchmarkFixture
-from reflex_base.components.component import Component
+from reflex_base.components.component import Component, evaluate_style_namespaces
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 
+import reflex as rx
 from reflex.app import UnevaluatedPage
 from reflex.compiler import compiler
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
@@ -73,11 +74,11 @@ def _compile_page(component: Component) -> str:
     return compiler.compile_page_from_context(page_ctx)[1]
 
 
-def _compile_page_full_context(unevaluated_page) -> str:
+def _compile_page_full_context(unevaluated_page, style=None) -> str:
     page = UnevaluatedPage(route="/benchmark", component=unevaluated_page)
     compile_ctx = CompileContext(
         pages=[page],
-        hooks=CompilerHooks(plugins=default_page_plugins()),
+        hooks=CompilerHooks(plugins=default_page_plugins(style=style)),
     )
 
     with compile_ctx:
@@ -131,3 +132,39 @@ def test_compile_all_artifacts(
     benchmark(
         lambda: _compile_page_context(evaluated_page).merged_imports(collapse=True)
     )
+
+
+def test_compile_shared_app_styles(benchmark: BenchmarkFixture):
+    """Compile a card grid with repeated nested and responsive app styles."""
+    style = evaluate_style_namespaces({
+        rx.card: {
+            "padding": ["12px", "20px", "24px"],
+            "border": "1px solid #ddd",
+            "border_radius": "12px",
+            "box_shadow": "0 2px 10px #0001",
+            "transition": "all 0.15s ease",
+            "_hover": {"background": "#f4f4f4", "box_shadow": "0 4px 12px #0002"},
+        },
+        rx.text: {
+            "font_family": "Inter, sans-serif",
+            "font_size": ["12px", "14px"],
+            "line_height": "1.5",
+            "_selection": {"background": "#cdf"},
+        },
+    })
+
+    def page():
+        """Create a fresh component tree for every measured compile.
+
+        Returns:
+            A grid whose cards share app-level style rules.
+        """
+        return rx.grid(
+            *[
+                rx.card(rx.heading(f"Service {index}"), rx.text("Requests per hour"))
+                for index in range(100)
+            ],
+            columns="4",
+        )
+
+    benchmark(lambda: _compile_page_full_context(page, style))

@@ -1344,20 +1344,26 @@ class Component(BaseComponent, ABC):
             style_.update(s)
         return style_
 
-    def _get_component_style(self, styles: ComponentStyle | Style) -> Style | None:
+    def _get_component_style(
+        self,
+        styles: ComponentStyle | Style,
+        *,
+        _style_factory: Callable[[dict[str, Any]], Style] = Style,
+    ) -> Style | None:
         """Get the style to the component from `App.style`.
 
         Args:
             styles: The style to apply.
+            _style_factory: Internal compiler factory for normalizing each rule.
 
         Returns:
             The style of the component.
         """
         component_style = None
         if (style := styles.get(type(self))) is not None:  # pyright: ignore [reportArgumentType]
-            component_style = Style(style)
+            component_style = _style_factory(style)
         if (style := styles.get(self.create)) is not None:  # pyright: ignore [reportArgumentType]
-            component_style = Style(style)
+            component_style = _style_factory(style)
         return component_style
 
     def _add_style_recursive(
