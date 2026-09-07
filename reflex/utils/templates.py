@@ -122,10 +122,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         SystemExit: If any download, file operations fail or unexpected zip file format.
 
     """
-    try:
-        import httpx2 as httpx
-    except ModuleNotFoundError:
-        import httpx
+    import httpx2
 
     # Create a temp directory for the zip download.
     try:
@@ -141,7 +138,7 @@ def create_config_init_app_from_remote_template(app_name: str, template_url: str
         response = net.get(template_url, follow_redirects=True)
         logger.debug(f"Server responded download request: {response}")
         response.raise_for_status()
-    except httpx.HTTPError as he:
+    except httpx2.HTTPError as he:
         logger.error(f"Failed to download the template: {he}")
         raise SystemExit(1) from None
     try:

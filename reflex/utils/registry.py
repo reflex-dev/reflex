@@ -20,14 +20,11 @@ def latency(registry: str) -> int:
     Returns:
         int: The latency of the registry in microseconds.
     """
-    try:
-        import httpx2 as httpx
-    except ModuleNotFoundError:
-        import httpx
+    import httpx2
 
     try:
         time_to_respond = net.get(registry, timeout=2).elapsed.microseconds
-    except httpx.HTTPError:
+    except httpx2.HTTPError:
         logger.info(f"Failed to connect to {registry}.")
         return 10_000_000
     else:

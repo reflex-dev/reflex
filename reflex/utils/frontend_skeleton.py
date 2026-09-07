@@ -141,16 +141,13 @@ def initialize_agents_md(
     """
     plan = _plan_agents_md(agents_file, claude_file)
 
-    try:
-        import httpx2 as httpx
-    except ModuleNotFoundError:
-        import httpx
+    import httpx2
 
     logger.debug(f"Fetching {url}")
     try:
         response = net.get(url, timeout=5)
         response.raise_for_status()
-    except httpx.HTTPError as e:
+    except httpx2.HTTPError as e:
         logger.warning(f"Failed to fetch AGENTS.md from {url} due to {e}. Skipping.")
         return
 

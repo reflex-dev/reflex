@@ -41,17 +41,14 @@ def _wrap_https_func(
 
     @functools.wraps(func)
     def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
-        try:
-            import httpx2 as httpx
-        except ModuleNotFoundError:
-            import httpx
+        import httpx2
 
         url = args[0]
         logger.debug(f"Sending HTTPS request to {args[0]}")
         initial_time = time.time()
         try:
             response = func(*args, **kwargs)
-        except httpx.ConnectError as err:
+        except httpx2.ConnectError as err:
             if "CERTIFICATE_VERIFY_FAILED" in str(err):
                 # If the error is a certificate verification error, recommend mitigating steps.
                 logger.error(
@@ -98,14 +95,11 @@ def _is_ipv4_supported() -> bool:
     Returns:
         True if the system supports IPv4, False otherwise.
     """
-    try:
-        import httpx2 as httpx
-    except ModuleNotFoundError:
-        import httpx
+    import httpx2
 
     try:
-        httpx.head("http://1.1.1.1", timeout=3)
-    except httpx.RequestError:
+        httpx2.head("http://1.1.1.1", timeout=3)
+    except httpx2.RequestError:
         return False
     else:
         return True
@@ -117,14 +111,11 @@ def _is_ipv6_supported() -> bool:
     Returns:
         True if the system supports IPv6, False otherwise.
     """
-    try:
-        import httpx2 as httpx
-    except ModuleNotFoundError:
-        import httpx
+    import httpx2
 
     try:
-        httpx.head("http://[2606:4700:4700::1111]", timeout=3)
-    except httpx.RequestError:
+        httpx2.head("http://[2606:4700:4700::1111]", timeout=3)
+    except httpx2.RequestError:
         return False
     else:
         return True
@@ -162,15 +153,11 @@ def _httpx_client():
     # Resolve the active HTTP library at call time. Prefer httpx2 when
     # available, fall back to real httpx on Python 3.8/3.9 (which httpx2
     # cannot run on). Bind the classes to local names so pyright does not
-    # infer a union of `httpx2.HTTPTransport | httpx.HTTPTransport` —
+    # infer a union of `httpx2.HTTPTransport | httpx2.HTTPTransport` —
     # that union is not assignable to `Client(mounts=...)` because the
     # two transport classes are unrelated.
-    try:
-        import httpx2
-        from httpx2._utils import get_environment_proxies
-    except ModuleNotFoundError:
-        import httpx as httpx2  # noqa: F401 — local name `httpx2` bound to the real httpx
-        from httpx._utils import get_environment_proxies  # noqa: F811
+    import httpx2
+    from httpx2._utils import get_environment_proxies
 
     verify_setting = _httpx_verify_kwarg()
     # `httpx2` is a union of the two modules here (httpx2 in the try
