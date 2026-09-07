@@ -14,6 +14,7 @@ from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
+from redis.exceptions import WatchError
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils.exceptions import (
@@ -406,53 +407,64 @@ class StateManagerRedis(StateManager):
             pickle_state = token.serialize(state)
             writes = [(str(token), pickle_state)] if pickle_state else []
 
-        # Check that we're holding the lock.
-        if (
-            lock_id is not None
-            and (existing_lock_id := await self.redis.get(self._lock_key(token)))
-            != lock_id
-        ):
-            msg = (
-                f"Lock expired for token {token} while processing. Consider increasing "
-                f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                "or use `@rx.event(background=True)` decorator for long-running tasks. "
-                f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
-                + (
-                    f" Happened in event: {event.name}"
-                    if (event := context.get("event")) is not None
-                    else ""
-                )
-            )
-            raise LockExpiredError(msg)
-
-        if (
-            isinstance(token, BaseStateToken)
-            and lock_id is not None
-            and token.lock_key not in self._local_leases
-        ):
-            time_taken = (
-                self.lock_expiration - (await self.redis.pttl(self._lock_key(token)))
-            ) / 1000
-            if time_taken > self.lock_warning_threshold / 1000:
-                event_suffix = (
-                    f" Happened in event: {event.name}"
-                    if (event := context.get("event")) is not None
-                    else ""
-                )
-                logger.warning(
-                    f"Lock for token {token} was held too long {time_taken=}s, "
-                    "use `@rx.event(background=True)` decorator for long-running "
-                    f"tasks.{event_suffix}",
-                    extra={"dedupe": True},
-                )
-
-        if len(writes) == 1:
-            await self.redis.set(writes[0][0], writes[0][1], ex=self.token_expiration)
-        elif writes:
-            pipeline = self.redis.pipeline()
+        if lock_id is None:
+            pipeline = self.redis.pipeline(transaction=False)
             for key, pickle_state in writes:
                 pipeline.set(key, pickle_state, ex=self.token_expiration)
-            await pipeline.execute()
+            if writes:
+                await pipeline.execute()
+            return
+
+        event_suffix = (
+            f" Happened in event: {event.name}"
+            if (event := context.get("event")) is not None
+            else ""
+        )
+        lock_key = self._lock_key(token)
+        # Fence the write on the lock: WATCH makes EXEC fail if the lock key
+        # changed hands or expired between the ownership check and the write.
+        async with self.redis.pipeline(transaction=True) as pipeline:
+            await pipeline.watch(lock_key)
+            existing_lock_id = await pipeline.get(lock_key)
+            if existing_lock_id != lock_id:
+                msg = (
+                    f"Lock expired for token {token} while processing. Consider increasing "
+                    f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
+                    "or use `@rx.event(background=True)` decorator for long-running tasks. "
+                    f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
+                    + event_suffix
+                )
+                raise LockExpiredError(msg)
+            if (
+                isinstance(token, BaseStateToken)
+                and token.lock_key not in self._local_leases
+            ):
+                time_taken = (
+                    self.lock_expiration - (await self.redis.pttl(lock_key))
+                ) / 1000
+                if time_taken > self.lock_warning_threshold / 1000:
+                    logger.warning(
+                        f"Lock for token {token} was held too long {time_taken=}s, "
+                        "use `@rx.event(background=True)` decorator for long-running "
+                        f"tasks.{event_suffix}",
+                        extra={"dedupe": True},
+                    )
+            if not writes:
+                return
+            pipeline.multi()
+            for key, pickle_state in writes:
+                pipeline.set(key, pickle_state, ex=self.token_expiration)
+            try:
+                await pipeline.execute()
+            except WatchError:
+                msg = (
+                    f"Lock for token {token} changed while its state was being "
+                    "saved, so the save was discarded. Consider increasing "
+                    f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
+                    "or use `@rx.event(background=True)` decorator for long-running tasks."
+                    + event_suffix
+                )
+                raise LockExpiredError(msg) from None
 
     def _collect_state_writes(
         self, token: BaseStateToken, base_state: BaseState

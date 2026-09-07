@@ -9,6 +9,7 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 from redis.asyncio import Redis
+from redis.exceptions import WatchError
 from redis.typing import EncodableT, KeyT
 
 from reflex.utils import prerequisites
@@ -142,39 +143,77 @@ def mock_redis() -> Redis:
             return True
         return False
 
-    def pipeline():
-        pipeline_mock = Mock()
-        results = []
+    class _Pipeline:
+        """A pipeline that also models WATCH/MULTI/EXEC on the mocked keys."""
 
-        def get_pipeline(key: KeyT):
-            results.append(redis_mock.get(key=key))
+        def __init__(self):
+            self.results = []
+            self.watched: bytes | None = None
+            self.watched_value: Any = None
+            self.in_multi = False
 
-        def set_pipeline(
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc_info):
+            await self.reset()
+
+        async def reset(self):
+            self.results = []
+            self.watched = None
+            self.watched_value = None
+            self.in_multi = False
+
+        async def watch(self, key: KeyT):
+            _expire_keys()
+            self.watched = _key_bytes(key)
+            self.watched_value = keys.get(self.watched)
+
+        def multi(self):
+            self.in_multi = True
+
+        def get(self, key: KeyT):
+            if self.watched is not None and not self.in_multi:
+                # Immediate mode while watching, before MULTI.
+                return redis_mock.get(key=key)
+            self.results.append(redis_mock.get(key=key))
+            return None
+
+        def set(
+            self,
             key: KeyT,
             value: EncodableT,
             ex: int | None = None,
             px: int | None = None,
             nx: bool = False,
         ):
-            results.append(redis_mock.set(key=key, value=value, ex=ex, px=px, nx=nx))
+            self.results.append(
+                redis_mock.set(key=key, value=value, ex=ex, px=px, nx=nx)
+            )
 
-        def sadd_pipeline(key: KeyT, value: EncodableT):
-            results.append(redis_mock.sadd(key=key, value=value))
+        def sadd(self, key: KeyT, value: EncodableT):
+            self.results.append(redis_mock.sadd(key=key, value=value))
 
-        def pexpire_pipeline(key: KeyT, px: int, xx: bool = False):
-            results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
+        def pexpire(self, key: KeyT, px: int, xx: bool = False):
+            self.results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
 
-        async def execute():
+        async def execute(self):
             _expire_keys()
-            return await asyncio.gather(*results)
+            if (
+                self.watched is not None
+                and keys.get(self.watched) != self.watched_value
+            ):
+                for pending in self.results:
+                    pending.close()
+                self.results = []
+                msg = "Watched variable changed."
+                raise WatchError(msg)
+            results = await asyncio.gather(*self.results)
+            self.results = []
+            return results
 
-        pipeline_mock.get = get_pipeline
-        pipeline_mock.set = set_pipeline
-        pipeline_mock.sadd = sadd_pipeline
-        pipeline_mock.pexpire = pexpire_pipeline
-        pipeline_mock.execute = execute
-
-        return pipeline_mock
+    def pipeline(transaction: bool = True):
+        return _Pipeline()
 
     async def pttl(key: KeyT) -> int:  # noqa: RUF029
         _expire_keys()

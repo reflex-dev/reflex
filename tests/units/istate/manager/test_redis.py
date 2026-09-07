@@ -742,7 +742,7 @@ async def test_set_state_checks_lock_once_per_tree(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],
 ):
-    """Saving a state tree verifies the lock and reads its TTL once, not per substate.
+    """Saving a state tree reads the lock TTL once, not once per substate.
 
     Args:
         state_manager_redis: The StateManagerRedis to test.
@@ -751,15 +751,8 @@ async def test_set_state_checks_lock_once_per_tree(
     state_manager_redis._oplock_enabled = False
     token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
     redis = state_manager_redis.redis
-    lock_key = state_manager_redis._lock_key(token)
-    real_get, real_pttl = redis.get, redis.pttl
-    lock_gets: list[Any] = []
+    real_pttl = redis.pttl
     pttls: list[Any] = []
-
-    async def counting_get(key):
-        if key == lock_key:
-            lock_gets.append(key)
-        return await real_get(key)
 
     async def counting_pttl(key):
         pttls.append(key)
@@ -768,18 +761,44 @@ async def test_set_state_checks_lock_once_per_tree(
     async with state_manager_redis.modify_state(token) as state:
         assert len(state.substates) == 2
         state.count = 1
-        lock_id = await real_get(lock_key)
-        redis.get = counting_get  # pyright: ignore[reportAttributeAccessIssue]
         redis.pttl = counting_pttl  # pyright: ignore[reportAttributeAccessIssue]
         try:
-            await state_manager_redis.set_state(token, state, lock_id=lock_id)
+            await state_manager_redis.set_state(
+                token,
+                state,
+                lock_id=await redis.get(state_manager_redis._lock_key(token)),
+            )
         finally:
-            redis.get = real_get
-            redis.pttl = real_pttl
+            redis.pttl = real_pttl  # pyright: ignore[reportAttributeAccessIssue]
 
-    # One lock check and one TTL read for a tree of three states.
-    assert len(lock_gets) == 1
+    # One TTL read for a tree of three states.
     assert len(pttls) == 1
     saved = await state_manager_redis.get_state(token)
     assert isinstance(saved, root_state)
     assert saved.count == 1
+
+
+async def test_set_state_discards_writes_when_lock_changes_hands(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """A save whose lock expired or was re-acquired between the check and the write is discarded.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    from reflex_base.utils.exceptions import LockExpiredError
+
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    lock_key = state_manager_redis._lock_key(token)
+
+    with pytest.raises(LockExpiredError):
+        async with state_manager_redis.modify_state(token) as state:
+            state.count = 5
+            # Another worker takes over the lock before this save lands.
+            await state_manager_redis.redis.set(lock_key, b"someone-else")
+    saved = await state_manager_redis.get_state(token)
+    assert isinstance(saved, root_state)
+    assert saved.count == 0
