@@ -9,7 +9,7 @@ import os
 import sys
 import time
 import uuid
-from collections.abc import AsyncIterator, Awaitable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, TypedDict, cast
 
 from redis import ResponseError
@@ -437,17 +437,17 @@ class StateManagerRedis(StateManager):
         # One round trip: the script checks the lock and writes atomically on
         # the server, so an expired or re-acquired lock discards every write,
         # and a retried command re-checks the lock instead of bypassing it.
-        pttl = await cast(
-            "Awaitable[int | None]",
-            self.redis.eval(
-                _FENCED_SAVE_SCRIPT,
-                1 + len(writes),
-                lock_key,
-                *(key for key, _ in writes),
-                lock_id,
-                self.token_expiration,
-                *(pickle_state for _, pickle_state in writes),
-            ),
+        # redis-py types EVAL arguments as str and its reply as str; both keys
+        # and payloads are bytes here and the script replies with an int or nil.
+        fenced_save = cast("Callable[..., Awaitable[int | None]]", self.redis.eval)
+        pttl = await fenced_save(
+            _FENCED_SAVE_SCRIPT,
+            1 + len(writes),
+            lock_key,
+            *(key for key, _ in writes),
+            lock_id,
+            self.token_expiration,
+            *(pickle_state for _, pickle_state in writes),
         )
         if pttl is None:
             existing_lock_id = await self.redis.get(lock_key)
