@@ -3389,15 +3389,14 @@ async def test_preprocess(
         )
         await on_load_future.wait_all()
 
-    # The processor chains all events: hydrate leaves is_hydrated=False, then
-    # the on_load handler runs, then set_is_hydrated(True) runs.
-    # First delta: router only. on_load_internal does not re-send the
-    # is_hydrated=False the hydrate snapshot already carried.
+    # The processor chains all events: on_load_internal sets is_hydrated=False,
+    # then the on_load handler runs, then set_is_hydrated(True) runs.
+    # First delta: router + is_hydrated=False
     assert len(emitted_deltas) == 1 + len(expected)
     first_token, first_delta = emitted_deltas[0]
     assert first_token == token
     assert first_delta[State.get_full_name()].pop("router" + FIELD_MARKER) is not None
-    assert first_delta == {State.get_full_name(): {}}
+    assert first_delta == exp_is_hydrated(State, False)
 
     # Find the deltas containing the test handler's state change
     for (delta_token, actual_delta), expected_delta in zip(
@@ -3453,11 +3452,11 @@ async def test_preprocess_multiple_load_events(
         )
         await processor.join()
 
-    # First delta: router only (is_hydrated=False was already in the hydrate snapshot)
+    # First delta: router + is_hydrated=False
     assert len(emitted_deltas) >= 2
     first_delta = emitted_deltas[0][1]
     assert first_delta[State.get_full_name()].pop("router" + FIELD_MARKER) is not None
-    assert first_delta == {State.get_full_name(): {}}
+    assert first_delta == exp_is_hydrated(State, False)
 
     # Find deltas containing the test handler's state change (num incremented twice)
     handler_deltas = [

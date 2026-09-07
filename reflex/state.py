@@ -2633,8 +2633,7 @@ def _load_events_for_page(
     if not load_events:
         state.is_hydrated = True
         return None
-    if state.is_hydrated:
-        state.is_hydrated = False
+    state.is_hydrated = False
     return [
         *Event.from_event_type(load_events, router_data=state.router_data),
         OnLoadInternalState.set_is_hydrated(True),

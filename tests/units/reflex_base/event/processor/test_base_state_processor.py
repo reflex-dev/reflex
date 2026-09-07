@@ -802,6 +802,7 @@ async def test_hydrate_and_load_single_lock_cycle(
     assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "chocolate"
     assert snapshot[CookieState.get_full_name()]["loads" + FIELD_MARKER] == 0
     assert [d for _, d in emitted_deltas[1:]] == [
+        {state_name: {hydrated_key: False}},
         {CookieState.get_full_name(): {"loads" + FIELD_MARKER: 1}},
         {state_name: {hydrated_key: True}},
     ]
@@ -814,7 +815,7 @@ async def test_hydrate_and_load_single_lock_cycle(
         await future.wait_all()
     snapshot = emitted_deltas[0][1]
     assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "plain"
-    assert emitted_deltas[1][1] == {
+    assert emitted_deltas[2][1] == {
         CookieState.get_full_name(): {"loads" + FIELD_MARKER: 2}
     }
 
