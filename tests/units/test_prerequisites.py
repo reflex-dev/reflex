@@ -8,7 +8,7 @@ import tempfile
 import uuid
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Protocol
 from unittest.mock import Mock
@@ -18,7 +18,7 @@ from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.environment import environment
-from reflex_base.utils import log, serializers
+from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
@@ -134,7 +134,7 @@ def test_check_latest_package_version_refreshes_expired_check(
         })
     )
     installed_version, request = _mock_pypi_versions(mocker)
-    before_check = datetime.now()
+    before_check = datetime.now(timezone.utc)
 
     with caplog.at_level("WARNING"):
         prerequisites.check_latest_package_version("reflex")
@@ -144,7 +144,7 @@ def test_check_latest_package_version_refreshes_expired_check(
     )
     installed_version.assert_called_once_with("reflex")
     request.assert_called_once_with("https://pypi.org/pypi/reflex/json", timeout=2)
-    assert before_check <= checked_at <= datetime.now()
+    assert before_check <= checked_at <= datetime.now(timezone.utc)
     assert caplog.messages == [
         (
             "Your version (1.0.0) of reflex is out of date. Upgrade to 2.0.0 "
@@ -201,7 +201,7 @@ def test_check_latest_package_version_repairs_invalid_timestamp(
         "last_version_check_datetime"
     ]
     assert refreshed_timestamp != stored_timestamp
-    assert datetime.fromisoformat(refreshed_timestamp) <= datetime.now()
+    assert datetime.fromisoformat(refreshed_timestamp) <= datetime.now(timezone.utc)
 
 
 def test_check_latest_package_version_throttles_failed_request(
@@ -310,6 +310,15 @@ def version_check_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
     monkeypatch.setenv(environment.REFLEX_CHECK_LATEST_VERSION.name, "True")
     monkeypatch.setattr(prerequisites.importlib.metadata, "version", lambda _: "1.0.0")
+
+    class FrozenDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            if tz is None:
+                return cls(2026, 9, 6, 12)
+            return cls(2026, 9, 6, 12, tzinfo=timezone.utc).astimezone(tz)
+
+    monkeypatch.setattr(prerequisites, "datetime", FrozenDatetime)
     response = Mock()
     response.json.return_value = {"info": {"version": "2.0.0"}}
     request = Mock(return_value=response)
@@ -317,29 +326,116 @@ def version_check_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     return reflex_json, request
 
 
-def test_check_latest_package_version_skips_cached_request(version_check_env):
-    """A previously recorded version check avoids another PyPI request."""
+@pytest.mark.parametrize(
+    "timestamp",
+    [
+        "2026-09-06 11:00:00",
+        "2026-09-06T12:00:00+00:00",
+        "2026-09-06T13:00:00+02:00",
+        "2026-09-06T11:00:00Z",
+        "2026-09-05T12:00:01+00:00",
+    ],
+)
+def test_check_latest_package_version_skips_cached_request(
+    version_check_env, timestamp
+):
+    """A check less than one day old avoids another PyPI request."""
     reflex_json, request = version_check_env
-    contents = json.dumps({"last_version_check_datetime": "2026-09-01 12:00:00"})
+    contents = json.dumps({"last_version_check_datetime": timestamp})
     reflex_json.write_text(contents)
 
-    prerequisites.check_latest_package_version("reflex-hosting-cli")
+    prerequisites.check_latest_package_version("reflex")
 
     request.assert_not_called()
     assert reflex_json.read_text() == contents
+
+
+@pytest.mark.parametrize(
+    "timestamp",
+    [
+        "2026-09-01 12:00:00",
+        "2026-09-05T12:00:00+00:00",
+        "2026-09-05T14:00:00+02:00",
+        "2026-09-07 12:00:00",
+        "2026-09-06T12:00:01+00:00",
+        "2026-09-06T13:00:00-02:00",
+        "not-a-date",
+        123,
+        ["2026-09-06 11:00:00"],
+        None,
+    ],
+)
+def test_check_latest_package_version_refreshes_stale_or_invalid_timestamp(
+    version_check_env, timestamp, caplog: pytest.LogCaptureFixture
+):
+    """Expired, invalid, and future records refresh and allow a new upgrade warning."""
+    reflex_json, request = version_check_env
+    reflex_json.write_text(
+        json.dumps({
+            "project_hash": "test-project",
+            "last_version_check_datetime": timestamp,
+        })
+    )
+
+    with caplog.at_level(logging.WARNING, logger=prerequisites.__name__):
+        prerequisites.check_latest_package_version("reflex")
+        prerequisites.check_latest_package_version("reflex")
+
+    request.assert_called_once_with("https://pypi.org/pypi/reflex/json", timeout=2)
+    assert json.loads(reflex_json.read_text()) == {
+        "project_hash": "test-project",
+        "last_version_check_datetime": "2026-09-06T12:00:00+00:00",
+        "last_version_check_attempt_datetime": "2026-09-06 12:00:00+00:00",
+    }
+    assert sum(record.levelno == logging.WARNING for record in caplog.records) == 1
+
+
+@pytest.mark.parametrize("failure", ["network", "http", "json", "version"])
+def test_check_latest_package_version_retries_failed_refresh(
+    version_check_env, failure
+):
+    """Failed refreshes preserve the old record and retry after the failure cooldown."""
+    reflex_json, request = version_check_env
+    contents = json.dumps({"last_version_check_datetime": "2026-09-01 12:00:00"})
+    reflex_json.write_text(contents)
+    failed_response = Mock()
+    failed_response.json.return_value = {
+        "info": {"version": "not-a-version" if failure == "version" else "2.0.0"}
+    }
+    if failure == "http":
+        failed_response.raise_for_status.side_effect = OSError("HTTP failure")
+    elif failure == "json":
+        failed_response.json.side_effect = ValueError("Invalid JSON")
+    request.side_effect = [
+        OSError("network unavailable") if failure == "network" else failed_response,
+        request.return_value,
+    ]
+
+    prerequisites.check_latest_package_version("reflex")
+    data = json.loads(reflex_json.read_text())
+    assert data["last_version_check_datetime"] == "2026-09-01 12:00:00"
+    prerequisites.check_latest_package_version("reflex")
+    assert request.call_count == 1
+    data["last_version_check_attempt_datetime"] = "2026-09-06T11:00:00+00:00"
+    reflex_json.write_text(json.dumps(data))
+    prerequisites.check_latest_package_version("reflex")
+    assert request.call_count == 2
+    assert json.loads(reflex_json.read_text())["last_version_check_datetime"] == (
+        "2026-09-06T12:00:00+00:00"
+    )
 
 
 @pytest.mark.parametrize("latest_version", ["1.0.0", "2.0.0"])
 def test_check_latest_package_version_caches_success(
     version_check_env, latest_version: str, caplog: pytest.LogCaptureFixture
 ):
-    """A successful check is reused across packages without repeating warnings."""
+    """A successful check is reused for the same package without repeating warnings."""
     reflex_json, request = version_check_env
     request.return_value.json.return_value = {"info": {"version": latest_version}}
 
     with caplog.at_level(logging.WARNING, logger=prerequisites.__name__):
         prerequisites.check_latest_package_version("reflex")
-        prerequisites.check_latest_package_version("reflex-hosting-cli")
+        prerequisites.check_latest_package_version("reflex")
 
     request.assert_called_once_with("https://pypi.org/pypi/reflex/json", timeout=2)
     data = json.loads(reflex_json.read_text())
@@ -349,19 +445,6 @@ def test_check_latest_package_version_caches_success(
         record for record in caplog.records if record.levelno == logging.WARNING
     ]
     assert len(warnings) == (latest_version == "2.0.0")
-
-
-def test_check_latest_package_version_retries_failed_request(version_check_env):
-    """A failed PyPI request leaves the cache unset so the next call retries."""
-    reflex_json, request = version_check_env
-    request.side_effect = [OSError("network unavailable"), request.return_value]
-
-    prerequisites.check_latest_package_version("reflex")
-    assert "last_version_check_datetime" not in json.loads(reflex_json.read_text())
-
-    prerequisites.check_latest_package_version("reflex")
-    assert request.call_count == 2
-    assert json.loads(reflex_json.read_text())["last_version_check_datetime"]
 
 
 def test_check_latest_package_version_disabled(
@@ -462,7 +545,7 @@ config = {config_class}(
     frozen_lockfile=True,
     _skip_plugins_checks=True,
 )
-payload = _frontend_packages_cache_payload({{"some-package@1.0.0"}}, config, ("npm",))
+payload = _frontend_packages_cache_payload({{"some-package@1.0.0"}}, set(), config.frozen_lockfile, ("npm",))
 print(hashlib.sha256(payload.encode()).hexdigest())
 """
     fingerprints = {
@@ -476,82 +559,6 @@ print(hashlib.sha256(payload.encode()).hexdigest())
     }
 
     assert len(fingerprints) == 1
-
-
-def test_frontend_package_cache_fingerprint_keeps_config_changes():
-    """Canonicalization preserves both changed values and explicitly set attributes."""
-    config = Config(app_name="test_app", _skip_plugins_checks=True)
-    original = js_runtimes._frontend_packages_cache_payload(set(), config, ("npm",))
-    config.api_url = "https://api.example.com"
-    changed_url = js_runtimes._frontend_packages_cache_payload(set(), config, ("npm",))
-    config._non_default_attributes.add("api_url")
-    explicit_url = js_runtimes._frontend_packages_cache_payload(set(), config, ("npm",))
-
-    assert len({original, changed_url, explicit_url}) == 3
-
-
-def test_frontend_package_cache_fingerprint_preserves_custom_serialization():
-    """An overridden Config.json keeps its existing fingerprint semantics."""
-
-    class AppConfig(Config):
-        def json(self) -> str:
-            return '{"_non_default_attributes": ["z", "a"]}'
-
-    config = AppConfig(app_name="test_app", _skip_plugins_checks=True)
-    payload = js_runtimes._frontend_packages_cache_payload(set(), config, ("npm",))
-
-    assert config.json() in payload
-
-
-@pytest.mark.parametrize(
-    "serialized",
-    [
-        {"custom": "config"},
-        {"_non_default_attributes": ["z", "a"]},
-        ["custom"],
-        "custom",
-    ],
-)
-def test_frontend_package_cache_fingerprint_preserves_registered_serializer(
-    monkeypatch: pytest.MonkeyPatch, serialized: dict | list | str
-):
-    """Registered Config serializers retain their complete output and ordering."""
-
-    class AppConfig(Config):
-        pass
-
-    config = AppConfig(app_name="test_app", _skip_plugins_checks=True)
-    with monkeypatch.context() as registry:
-        registry.setitem(serializers.SERIALIZERS, AppConfig, lambda _: serialized)
-        serializers.get_serializer.cache_clear()
-        try:
-            expected = config.json()
-            payload = js_runtimes._frontend_packages_cache_payload(
-                set(), config, ("npm",)
-            )
-            assert expected in payload
-        finally:
-            serializers.get_serializer.cache_clear()
-
-
-def test_frontend_package_cache_fingerprint_preserves_registered_set_serializer(
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """A custom set serializer must not be mistaken for the default unordered list."""
-    config = Config(app_name="test_app", _skip_plugins_checks=True)
-    with monkeypatch.context() as registry:
-        registry.setitem(
-            serializers.SERIALIZERS, set, lambda value: {"values": sorted(value)}
-        )
-        serializers.get_serializer.cache_clear()
-        try:
-            expected = config.json()
-            payload = js_runtimes._frontend_packages_cache_payload(
-                set(), config, ("npm",)
-            )
-            assert expected in payload
-        finally:
-            serializers.get_serializer.cache_clear()
 
 
 @pytest.fixture

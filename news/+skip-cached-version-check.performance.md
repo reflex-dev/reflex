@@ -1,1 +1,1 @@
-Avoid redundant package version requests during deploy and startup when the app has already recorded a successful version check.
+Handle timezone-aware version-check timestamps while preserving per-package caching and failure cooldowns. Failed HTTP responses are not recorded as successful checks.

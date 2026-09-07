@@ -2,15 +2,104 @@
 
 from __future__ import annotations
 
+import errno
 import json
+import multiprocessing
 import os
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from pytest_mock import MockerFixture
 
 from reflex.plugins import Plugin
-from reflex.utils import build
+from reflex.utils import build, build_cache
+from reflex.utils import export as export_utils
+
+
+def _acquire_spawned_build_lock(web_dir, attempted, entered):
+    """Acquire a workspace lock from an independent interpreter.
+
+    Args:
+        web_dir: Shared workspace path.
+        attempted: Event set before attempting acquisition.
+        entered: Event set after acquisition.
+    """
+    attempted.set()
+    with build_cache.frontend_build_lock(web_dir):
+        entered.set()
+
+
+@pytest.mark.parametrize("cache_enabled", ["true", "false"])
+def test_spawned_build_lock_serializes_with_or_without_cache(
+    tmp_path, monkeypatch, cache_enabled
+):
+    """Independent processes serialize on every platform, even without caching."""
+    monkeypatch.setenv("REFLEX_FRONTEND_BUILD_CACHE", cache_enabled)
+    context = multiprocessing.get_context("spawn")
+    attempted, entered = context.Event(), context.Event()
+    child = context.Process(
+        target=_acquire_spawned_build_lock, args=(tmp_path, attempted, entered)
+    )
+    try:
+        with (
+            build_cache.frontend_build_lock(tmp_path),
+            build_cache.frontend_build_lock(tmp_path / "."),
+        ):
+            child.start()
+            assert attempted.wait(15)
+            assert not entered.wait(0.3)
+        assert entered.wait(15)
+    finally:
+        if child.pid is not None:
+            child.join(15)
+            if child.is_alive():
+                child.terminate()
+                child.join(5)
+    assert child.exitcode == 0
+
+
+def test_windows_lock_waits_for_contention_and_releases(tmp_path, monkeypatch, mocker):
+    """Windows retries contention beyond ten attempts and releases after errors."""
+    locking = mocker.Mock(
+        side_effect=[*[OSError(errno.EACCES, "busy")] * 11, None, None]
+    )
+    sleep = mocker.patch("time.sleep")
+    with (
+        monkeypatch.context() as patch,
+        pytest.raises(RuntimeError, match="build failed"),
+    ):
+        patch.setattr(build_cache.sys, "platform", "win32")
+        patch.setitem(
+            sys.modules,
+            "msvcrt",
+            SimpleNamespace(locking=locking, LK_NBLCK=2, LK_UNLCK=0),
+        )
+        with build_cache.frontend_build_lock(tmp_path):
+            assert locking.call_count == 12
+            message = "build failed"
+            raise RuntimeError(message)
+    assert locking.call_count == 13
+    assert locking.call_args.args[1:] == (0, 1)
+    assert sleep.call_count == 11
+
+
+def test_windows_lock_failure_stops_workspace_access(tmp_path, monkeypatch, mocker):
+    """Unexpected Windows lock failures propagate without entering the workspace."""
+    locking = mocker.Mock(side_effect=OSError(errno.EBADF, "invalid descriptor"))
+    with (
+        monkeypatch.context() as patch,
+        pytest.raises(OSError, match="invalid descriptor"),
+    ):
+        patch.setattr(build_cache.sys, "platform", "win32")
+        patch.setitem(
+            sys.modules,
+            "msvcrt",
+            SimpleNamespace(locking=locking, LK_NBLCK=2, LK_UNLCK=0),
+        )
+        with build_cache.frontend_build_lock(tmp_path):
+            pytest.fail("Entered workspace without its lock")
 
 
 @pytest.fixture
@@ -92,12 +181,18 @@ def test_unchanged_build_reuses_pristine_output(cached_build, mocker: MockerFixt
 
 @pytest.mark.skipif(os.name == "nt", reason="Cache uses POSIX change timestamps")
 def test_telemetry_timestamps_do_not_invalidate_build(cached_build):
-    """Only the two private telemetry timestamps may be ignored."""
+    """Private run and per-package version timestamps do not affect build output."""
     web, _, process = cached_build
     build.build()
     metadata = web / "reflex.json"
     data = json.loads(metadata.read_text())
-    data.update(last_reflex_run_datetime="later", last_version_check_datetime="later")
+    data.update(
+        last_reflex_run_datetime="later",
+        last_version_check_datetime="later",
+        last_version_check_attempt_datetime="later",
+        last_version_check_datetime_reflex_hosting_cli="later",
+        last_version_check_attempt_datetime_reflex_hosting_cli="later",
+    )
     metadata.write_text(json.dumps(data))
     build.build()
     assert process.call_count == 1
@@ -357,3 +452,223 @@ def test_cache_symlink_never_changes_external_target(
     build.build()
     assert external.stat().st_mode == previous_mode
     assert (external / "keep").read_text() == "keep"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Cache and flock require POSIX")
+@pytest.mark.parametrize("cache_modes", [(True, True), (True, False), (False, True)])
+def test_overlapping_builds_serialize(cached_build, cache_modes, mocker):
+    """Another process cannot replace Vite output before capture and publication."""
+    web, _, process = cached_build
+    context = multiprocessing.get_context("fork")
+    first_ready = context.Event()
+    release_first = context.Event()
+    second_attempted = context.Event()
+    second_built = context.Event()
+    executor = build.js_runtimes.get_js_package_executor(raise_on_none=True)[0]
+    package_executor = mocker.patch.object(
+        build.js_runtimes, "get_js_package_executor", return_value=(executor, None)
+    )
+    compile_frontend = process.side_effect
+
+    def run_build(label, enabled):
+        os.environ["REFLEX_FRONTEND_BUILD_CACHE"] = str(enabled).lower()
+        package_executor.return_value = (
+            [*executor, label],
+            None,
+        )
+
+        def compile_labeled_frontend(*args, **kwargs):
+            result = compile_frontend(*args, **kwargs)
+            (web / "build/client/index.html").write_text(label)
+            if label == "first":
+                first_ready.set()
+                assert release_first.wait(10)
+            else:
+                second_built.set()
+            return result
+
+        process.side_effect = compile_labeled_frontend
+        if label == "second":
+            second_attempted.set()
+        build.build()
+
+    first = context.Process(target=run_build, args=("first", cache_modes[0]))
+    second = context.Process(target=run_build, args=("second", cache_modes[1]))
+    first.start()
+    try:
+        assert first_ready.wait(10)
+        second.start()
+        assert second_attempted.wait(10)
+        assert not second_built.wait(0.3), "Second Vite replaced an active build"
+    finally:
+        release_first.set()
+        for worker in (first, second):
+            if worker.pid is not None:
+                worker.join(10)
+                if worker.is_alive():
+                    worker.terminate()
+                    worker.join(5)
+    assert first.exitcode == second.exitcode == 0
+    assert second_built.is_set()
+    assert (web / "build/client/index.html").read_text() == "second"
+    if cache_modes[1]:
+        package_executor.return_value = (
+            [*executor, "second"],
+            None,
+        )
+        build.build()
+        assert process.call_count == 0
+        assert (web / "build/client/index.html").read_text() == "second"
+    else:
+        assert not (web / "reflex.build-cache/current").exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Requires fork and flock")
+def test_forked_child_does_not_inherit_lock_ownership(tmp_path):
+    """Nested calls are reentrant, but a forked child must wait for its parent."""
+    context = multiprocessing.get_context("fork")
+    attempted = context.Event()
+    entered = context.Event()
+
+    def acquire_in_child():
+        attempted.set()
+        with build_cache.frontend_build_lock(tmp_path):
+            entered.set()
+
+    child = context.Process(target=acquire_in_child)
+    try:
+        with (
+            build_cache.frontend_build_lock(tmp_path),
+            build_cache.frontend_build_lock(tmp_path / "."),
+        ):
+            child.start()
+            assert attempted.wait(10)
+            assert not entered.wait(0.3)
+        assert entered.wait(10)
+    finally:
+        if child.pid is not None:
+            child.join(10)
+            if child.is_alive():
+                child.terminate()
+                child.join(5)
+    assert child.exitcode == 0
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Cache and flock require POSIX")
+@pytest.mark.parametrize("second_cache_enabled", [True, False])
+def test_overlapping_exports_preserve_inputs_through_zip(
+    cached_build, tmp_path, mocker, second_cache_enabled
+):
+    """An export waiting to archive cannot lose its inputs/output to another export."""
+    web, config, _ = cached_build
+    context = multiprocessing.get_context("fork")
+    first_zipping = context.Event()
+    release_zip = context.Event()
+    second_attempted = context.Event()
+    second_compiled = context.Event()
+    first_url = "https://first.example"
+    second_url = "https://second.example"
+    mocker.patch.object(export_utils, "get_config", return_value=config)
+    mocker.patch.object(export_utils.exec, "output_system_info")
+    mocker.patch.object(export_utils.telemetry, "send")
+
+    def set_config(**values):
+        for key, value in values.items():
+            setattr(config, key, value)
+
+    config._set_persistent.side_effect = set_config
+
+    def compile_app(**kwargs):
+        if config.api_url == second_url:
+            second_compiled.set()
+        (web / "app/page.js").write_text(config.api_url)
+
+    def setup_frontend(root):
+        (web / "env.json").write_text(json.dumps({"API_URL": config.api_url}))
+
+    def zip_app(**kwargs):
+        if config.api_url == first_url:
+            first_zipping.set()
+            assert release_zip.wait(10)
+        destination = Path(kwargs["zip_dest_dir"])
+        destination.mkdir()
+        (destination / "frontend.txt").write_text(
+            (web / "build/client/index.html").read_text()
+        )
+
+    mocker.patch.object(export_utils.prerequisites, "get_compiled_app", compile_app)
+    mocker.patch.object(build, "setup_frontend", setup_frontend)
+    mocker.patch.object(build, "zip_app", zip_app)
+
+    def run_export(name, url, cache_enabled):
+        os.environ["REFLEX_FRONTEND_BUILD_CACHE"] = str(cache_enabled).lower()
+        if name == "second":
+            second_attempted.set()
+        export_utils.export(api_url=url, zip_dest_dir=str(tmp_path / name))
+
+    first = context.Process(target=run_export, args=("first", first_url, True))
+    second = context.Process(
+        target=run_export, args=("second", second_url, second_cache_enabled)
+    )
+    first.start()
+    try:
+        assert first_zipping.wait(10)
+        second.start()
+        assert second_attempted.wait(10)
+        assert not second_compiled.wait(0.3), "Another export changed active inputs"
+    finally:
+        release_zip.set()
+        for worker in (first, second):
+            if worker.pid is not None:
+                worker.join(10)
+                if worker.is_alive():
+                    worker.terminate()
+                    worker.join(5)
+    assert first.exitcode == second.exitcode == 0
+    assert (tmp_path / "first/frontend.txt").read_text() == first_url
+    assert (tmp_path / "second/frontend.txt").read_text() == second_url
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Requires POSIX symlinks")
+def test_lock_symlink_cannot_bypass_serialization(cached_build, tmp_path):
+    """An unsafe lock path stops the build instead of proceeding without exclusion."""
+    web, _, process = cached_build
+    external = tmp_path / "external-lock"
+    external.write_text("keep")
+    previous_mode = external.stat().st_mode
+    (web / ".reflex-build.lock").symlink_to(external)
+    with pytest.raises(OSError):
+        build.build()
+    assert process.call_count == 0
+    assert external.read_text() == "keep"
+    assert external.stat().st_mode == previous_mode
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Requires flock")
+def test_lock_failure_does_not_run_an_unlocked_build(cached_build, mocker):
+    """Lock acquisition failure must propagate before touching another build's output."""
+    _, _, process = cached_build
+    mocker.patch("fcntl.flock", side_effect=OSError("lock unavailable"))
+    with pytest.raises(OSError, match="lock unavailable"):
+        build.build()
+    assert process.call_count == 0
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Requires raw fork")
+def test_forked_child_can_leave_inherited_lock_context(tmp_path):
+    """A child leaving its parent's context must not operate on closed descriptors."""
+    pid = None
+    child_status = 0
+    try:
+        with build_cache.frontend_build_lock(tmp_path):
+            pid = os.fork()
+    except OSError:
+        if pid != 0:
+            raise
+        child_status = 1
+    finally:
+        if pid == 0:
+            os._exit(child_status)
+    assert pid is not None
+    _, status = os.waitpid(pid, 0)
+    assert os.waitstatus_to_exitcode(status) == 0

@@ -15,7 +15,6 @@ from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
 from reflex_base.utils.decorator import cached_procedure, once
 from reflex_base.utils.exceptions import SystemPackageMissingError
-from reflex_base.utils.serializers import get_serializer, serialize_set
 from rich.markup import escape
 
 from reflex.utils import console, frontend_skeleton, net, path_ops, processes
