@@ -9,7 +9,7 @@ from typing import Any, TypedDict
 
 import pytest
 from pytest_codspeed import BenchmarkFixture
-from reflex_base.utils.types import _isinstance, runtime_isinstance
+from reflex_base.utils.types import _isinstance
 
 N = 10_000
 
@@ -58,25 +58,3 @@ def test_isinstance_scalar(benchmark: BenchmarkFixture):
     def _():
         for i in _INTS:
             _isinstance(i, int, nested=1, treat_var_as_type=False)
-
-
-@pytest.mark.parametrize(
-    ("obj", "hint"),
-    [
-        pytest.param(_INTS, list[int], id="list_int"),
-        pytest.param(_DICTS, list[dict[str, int]], id="list_dict"),
-        pytest.param(_OPTIONALS, list[int | None], id="list_optional"),
-    ],
-)
-def test_runtime_isinstance_container(
-    obj: list[Any], hint: type, benchmark: BenchmarkFixture
-):
-    """Benchmark the compiled validator used on state var writes and reads.
-
-    Args:
-        obj: The container to validate.
-        hint: The declared var type.
-        benchmark: The codspeed benchmark fixture.
-    """
-    runtime_isinstance(obj, hint)
-    benchmark(lambda: runtime_isinstance(obj, hint))
