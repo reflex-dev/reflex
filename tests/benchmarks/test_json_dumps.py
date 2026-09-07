@@ -39,10 +39,15 @@ def test_json_dumps_compact(payload: list, benchmark: BenchmarkFixture):
     benchmark(lambda: json_dumps_compact({"state": {"rows": payload}}))
 
 
-def test_json_dumps_reference(benchmark: BenchmarkFixture):
+@pytest.mark.parametrize(
+    "payload",
+    [pytest.param(_ROWS, id="dataclasses"), pytest.param(_DICTS, id="dicts")],
+)
+def test_json_dumps_reference(payload: list, benchmark: BenchmarkFixture):
     """Benchmark the stdlib-backed encoder on the same delta for comparison.
 
     Args:
+        payload: The delta value to encode.
         benchmark: The codspeed benchmark fixture.
     """
-    benchmark(lambda: json_dumps({"state": {"rows": _ROWS}}))
+    benchmark(lambda: json_dumps({"state": {"rows": payload}}))

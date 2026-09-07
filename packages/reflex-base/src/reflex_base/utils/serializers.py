@@ -188,7 +188,7 @@ def serialize(
     return serialized
 
 
-@functools.lru_cache
+@functools.cache
 def _dataclass_field_names(cls: type) -> tuple[str, ...]:
     """Get the field names of a dataclass, memoized per class.
 
