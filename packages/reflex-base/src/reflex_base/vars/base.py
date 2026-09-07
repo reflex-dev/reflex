@@ -116,6 +116,66 @@ _var_subclasses: list[VarSubclassEntry] = []
 _var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
 
 
+_BUILTIN_LITERAL_TYPES = frozenset((
+    type(None),
+    bool,
+    int,
+    float,
+    str,
+    list,
+    tuple,
+    dict,
+    set,
+    range,
+))
+
+
+@functools.cache
+def _builtin_literal_dispatch(
+    value_type: type,
+) -> tuple[tuple[type[LiteralVar], tuple[GenericType, ...] | None], ...]:
+    """Skip stable type checks while retaining dynamic checks in registry order.
+
+    Args:
+        value_type: An exact builtin type without custom instance attributes.
+
+    Returns:
+        Candidate literal classes and their remaining checks. None marks a
+        guaranteed match, after any higher-priority dynamic checks.
+    """
+    candidates = []
+    for literal, entry in _var_literal_subclasses[::-1]:
+        if all(type(python_type) is type for python_type in entry.python_types):
+            if issubclass(value_type, entry.python_types):
+                candidates.append((literal, None))
+                break
+        else:
+            # ABC virtual registration and custom __instancecheck__ remain live.
+            candidates.append((literal, entry.python_types))
+    return tuple(candidates)
+
+
+def _literal_var_subclass(value: Any) -> type[LiteralVar] | None:
+    """Resolve a literal class without caching value-sensitive instance checks.
+
+    Args:
+        value: The value to dispatch.
+
+    Returns:
+        The highest-priority matching literal class, if any.
+    """
+    value_type = type(value)
+    if type(value_type) is type and value_type in _BUILTIN_LITERAL_TYPES:
+        for literal, python_types in _builtin_literal_dispatch(value_type):
+            if python_types is None or isinstance(value, python_types):
+                return literal
+    else:
+        for literal, entry in _var_literal_subclasses[::-1]:
+            if isinstance(value, entry.python_types):
+                return literal
+    return None
+
+
 @functools.cache
 def _var_subclass_for_conversion(python_type: GenericType) -> VarSubclassEntry | None:
     """Find the registry entry ``Var.to`` maps a python type to.
@@ -186,6 +246,7 @@ def _clear_var_subclass_lookup_caches() -> None:
     _var_subclass_for_conversion.cache_clear()
     _var_subclass_matching_python_types.cache_clear()
     _var_subclass_for_var_output.cache_clear()
+    _builtin_literal_dispatch.cache_clear()
 
 
 def _register_var_subclass_entry(entry: VarSubclassEntry) -> None:
@@ -1650,6 +1711,7 @@ class LiteralVar(Var[VAR_TYPE]):
                 _var_literal_subclasses.remove(var_literal_subclass)
 
         _var_literal_subclasses.append((cls, var_subclass))
+        _builtin_literal_dispatch.cache_clear()
 
     @classmethod
     def _create_literal_var(
@@ -1677,9 +1739,8 @@ class LiteralVar(Var[VAR_TYPE]):
                 return value
             return value._replace(merge_var_data=_var_data)
 
-        for literal_subclass, var_subclass in _var_literal_subclasses[::-1]:
-            if isinstance(value, var_subclass.python_types):
-                return literal_subclass.create(value, _var_data=_var_data)
+        if (literal_subclass := _literal_var_subclass(value)) is not None:
+            return literal_subclass.create(value, _var_data=_var_data)
 
         if (
             (as_var_method := getattr(value, "_as_var", None)) is not None
@@ -1759,9 +1820,8 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, Var):
             return value._get_all_var_data()
 
-        for literal_subclass, var_subclass in _var_literal_subclasses[::-1]:
-            if isinstance(value, var_subclass.python_types):
-                return literal_subclass._get_all_var_data_without_creating_var(value)
+        if (literal_subclass := _literal_var_subclass(value)) is not None:
+            return literal_subclass._get_all_var_data_without_creating_var(value)
 
         if (
             (as_var_method := getattr(value, "_as_var", None)) is not None
