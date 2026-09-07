@@ -272,6 +272,76 @@ class ImportOnlyCollectorPlugin(DefaultCollectorPlugin):
         return enter_component
 
 
+@dataclass
+class Order:
+    """A row of the table state used by the holistic event benchmark."""
+
+    name: str
+    customer: str
+    amount: float
+    status: str
+
+
+class TableState(rx.State):
+    """A state with a 1000-row table, a filter, and derived views of the rows.
+
+    One event on it drives the whole per-event runtime path: a base var
+    assignment, iterating proxied dataclass rows, sorting them, re-running
+    the computed vars with their return-type checks, and a delta carrying
+    hundreds of rows.
+    """
+
+    orders: rx.Field[list[Order]] = rx.field(
+        default_factory=lambda: [
+            Order(
+                name=f"order {i}",
+                customer=f"customer {i % 50}",
+                amount=i * 1.5,
+                status=("open", "paid", "shipped")[i % 3],
+            )
+            for i in range(1000)
+        ]
+    )
+    status: rx.Field[str] = rx.field("")
+    sort_key: rx.Field[str] = rx.field("amount")
+    sort_reverse: rx.Field[bool] = rx.field(False)
+
+    @rx.event
+    def set_status(self, status: str):
+        """Filter the table by status, flipping the sort direction.
+
+        Args:
+            status: The status to keep, or an empty string for all rows.
+        """
+        self.status = status
+        self.sort_reverse = not self.sort_reverse
+
+    @rx.var
+    def filtered_orders(self) -> list[Order]:
+        """The rows matching the filter, sorted.
+
+        Returns:
+            The filtered, sorted rows.
+        """
+        orders = self.orders
+        if self.status:
+            orders = [order for order in orders if order.status == self.status]
+        return sorted(
+            orders,
+            key=lambda order: getattr(order, self.sort_key),
+            reverse=self.sort_reverse,
+        )
+
+    @rx.var
+    def total_amount(self) -> float:
+        """The amount summed over the filtered rows.
+
+        Returns:
+            The total amount.
+        """
+        return sum(order.amount for order in self.filtered_orders)
+
+
 class BenchmarkState(rx.State):
     """State for the benchmark."""
 
