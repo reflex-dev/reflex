@@ -432,6 +432,50 @@ if find_spec("pydantic"):
     MUTABLE_TYPES += (BaseModel,)
 
 
+# The base proxy slots, called directly on the per-element hot path to skip
+# the Python-level __new__/__init__ dispatch of the subclass. wrapt 2 wraps
+# the C allocator in a Python ``ObjectProxy.__new__``; BaseObjectProxy is it.
+_proxy_new = getattr(wrapt, "BaseObjectProxy", wrapt.ObjectProxy).__new__
+_proxy_init = wrapt.ObjectProxy.__init__
+_proxy_setattr = wrapt.ObjectProxy.__setattr__
+
+# Values of these types are never wrapped; checked first on every read.
+_IMMUTABLE_SCALARS = frozenset({str, int, float, bool, type(None)})
+
+
+def _new_proxy(
+    base_cls: type[MutableProxy],
+    value: Any,
+    state: BaseState,
+    field_name: str,
+    path: tuple[_AccessSpec, ...],
+) -> MutableProxy:
+    """Construct a proxy for a value already known to be mutable.
+
+    Args:
+        base_cls: The proxy class to derive from (see ``__base_proxy__``).
+        value: The mutable value to wrap (not itself a proxy).
+        state: The state to mark dirty when the value is changed.
+        field_name: The state field the value belongs to.
+        path: Access path from the state field to the value.
+
+    Returns:
+        The proxy instance.
+    """
+    key = (base_cls, type(value))
+    try:
+        proxy_cls = MutableProxy.__proxy_classes__[key]
+    except KeyError:
+        proxy_cls = MutableProxy._resolve_proxy_class(base_cls, type(value))
+    proxy = cast("MutableProxy", _proxy_new(proxy_cls))
+    _proxy_init(proxy, value)
+    _proxy_setattr(proxy, "_self_state", state)
+    _proxy_setattr(proxy, "_self_field_name", field_name)
+    if path:
+        _proxy_setattr(proxy, "_self_path", path)
+    return proxy
+
+
 class MutableProxy(wrapt.ObjectProxy):
     """A proxy for a mutable object that tracks changes."""
 
@@ -464,8 +508,9 @@ class MutableProxy(wrapt.ObjectProxy):
         "setdefault",
     }
 
-    # Dynamically generated classes for tracking dataclass mutations.
-    __dataclass_proxies__: dict[tuple[type, type], type] = {}
+    # The concrete proxy class per (base proxy class, wrapped type): the base
+    # class itself, or a generated subclass carrying a dataclass's metadata.
+    __proxy_classes__: dict[tuple[type, type], type] = {}
     _self_path: tuple[_AccessSpec, ...] = ()
     # The state (or StateProxy) whose async context this proxy has entered.
     _self_actx_state: BaseState | None = None
@@ -488,22 +533,36 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The proxy instance.
         """
-        if dataclasses.is_dataclass(wrapped):
-            wrapped_cls = type(wrapped)
-            wrapper_cls_key = (cls, wrapped_cls)
-            # Find the associated class
-            if wrapper_cls_key not in cls.__dataclass_proxies__:
-                # Create a new class carrying the wrapped type's dataclass metadata.
-                wrapper_cls_name = wrapped_cls.__name__ + cls.__name__
-                cls.__dataclass_proxies__[wrapper_cls_key] = type(
-                    wrapper_cls_name,
-                    (cls,),
-                    _dataclass_proxy_namespace(wrapped_cls),
-                )
-            cls = cls.__dataclass_proxies__[wrapper_cls_key]
+        key = (cls, type(wrapped))
+        try:
+            cls = cls.__proxy_classes__[key]
+        except KeyError:
+            cls = cls._resolve_proxy_class(cls, type(wrapped))
         # wrapt-stubs types `ObjectProxy.__new__` as returning `ObjectProxy`
         # rather than `Self`, hence the cast.
         return cast("Self", super().__new__(cls))  # pyright: ignore[reportArgumentType]
+
+    @staticmethod
+    def _resolve_proxy_class(base_cls: type, wrapped_cls: type) -> type:
+        """Find and cache the proxy class for a wrapped type.
+
+        Args:
+            base_cls: The proxy class being instantiated.
+            wrapped_cls: The type of the wrapped value.
+
+        Returns:
+            ``base_cls``, or for a dataclass a generated subclass carrying its
+            dataclass metadata.
+        """
+        proxy_cls = base_cls
+        if dataclasses.is_dataclass(wrapped_cls):
+            proxy_cls = type(
+                wrapped_cls.__name__ + base_cls.__name__,
+                (base_cls,),
+                _dataclass_proxy_namespace(wrapped_cls),
+            )
+        MutableProxy.__proxy_classes__[base_cls, wrapped_cls] = proxy_cls
+        return proxy_cls
 
     def __init__(
         self,
@@ -521,17 +580,15 @@ class MutableProxy(wrapt.ObjectProxy):
                 wrapped object.
             path: Access path from the state field to this wrapped object.
         """
-        super().__init__(wrapped)
-        # Calling the base proxy's __setattr__ directly skips the per-store
-        # Python-level dispatch in MutableProxy.__setattr__; proxy construction
-        # is a per-element hot path. object.__setattr__ is not usable here: on
-        # Python <= 3.13 it rejects instances whose static base (wrapt's C
-        # ObjectProxy) overrides tp_setattro.
-        proxy_setattr = super().__setattr__
-        proxy_setattr("_self_state", state)
-        proxy_setattr("_self_field_name", field_name)
+        _proxy_init(self, wrapped)
+        # The base proxy's __setattr__ skips the per-store Python-level
+        # dispatch in MutableProxy.__setattr__. object.__setattr__ is not
+        # usable here: on Python <= 3.13 it rejects instances whose static
+        # base (wrapt's C ObjectProxy) overrides tp_setattro.
+        _proxy_setattr(self, "_self_state", state)
+        _proxy_setattr(self, "_self_field_name", field_name)
         if path is not None:
-            proxy_setattr("_self_path", path)
+            _proxy_setattr(self, "_self_path", path)
 
     def __repr__(self) -> str:
         """Get the representation of the wrapped object.
@@ -588,7 +645,7 @@ class MutableProxy(wrapt.ObjectProxy):
                 isinstance(refreshed_value, MutableProxy)
                 and self._self_field_name == refreshed_value._self_field_name
                 # The proxy class is specialized per dataclass type (see
-                # __dataclass_proxies__), so a refresh must not change the
+                # __proxy_classes__), so a refresh must not change the
                 # wrapped dataclass type out from under it.
                 and (
                     not dataclasses.is_dataclass(self.__wrapped__)
@@ -666,15 +723,16 @@ class MutableProxy(wrapt.ObjectProxy):
         """
         # Walk up the stack a bit to see if we are called from dataclasses
         # internal code, for example `asdict` or `astuple`.
-        frame = inspect.currentframe()
+        frame = sys._getframe(1)
         for _ in range(5):
             # Why not `inspect.stack()` -- this is much faster! And reading
             # `f_code.co_filename` directly avoids the type-dispatch overhead of
             # `inspect.getfile()`, which dominates this per-element read hot-path.
-            if not (frame := frame and frame.f_back):
+            if frame is None:
                 break
             if frame.f_code.co_filename == _DATACLASSES_FILE:
                 return True
+            frame = frame.f_back
         return False
 
     def _wrap_recursive(
@@ -713,11 +771,12 @@ class MutableProxy(wrapt.ObjectProxy):
         # reference is up to date.
         if isinstance(value, MutableProxy):
             value = value.__wrapped__
-        return globals()[self.__base_proxy__](
-            wrapped=value,
-            state=self._self_state,
-            field_name=self._self_field_name,
-            path=path or None,
+        return _new_proxy(
+            globals()[self.__base_proxy__],
+            value,
+            self._self_state,
+            self._self_field_name,
+            path,
         )
 
     def _wrap_recursive_decorator(
@@ -760,6 +819,9 @@ class MutableProxy(wrapt.ObjectProxy):
             The attribute value.
         """
         value = super().__getattr__(__name)  # pyright: ignore[reportAttributeAccessIssue]
+
+        if type(value) in _IMMUTABLE_SCALARS:
+            return value
 
         if callable(value):
             if __name in self.__mark_dirty_attrs__:
@@ -804,7 +866,9 @@ class MutableProxy(wrapt.ObjectProxy):
             The item value.
         """
         value = super().__getitem__(key)  # pyright: ignore[reportAttributeAccessIssue]
-        if not isinstance(value, MutableProxy) and not is_mutable_type(type(value)):
+        if type(value) in _IMMUTABLE_SCALARS or (
+            not isinstance(value, MutableProxy) and not is_mutable_type(type(value))
+        ):
             # Skip the wrapping machinery entirely on the non-mutable hot path.
             return value
         if isinstance(self.__wrapped__, list):
@@ -827,15 +891,42 @@ class MutableProxy(wrapt.ObjectProxy):
         Yields:
             Each item value (possibly wrapped in MutableProxy).
         """
-        wrap_mutable = self._wrap_mutable
+        wrapped_iter = iter(self.__wrapped__)
+        # Dataclasses internals (asdict, astuple) get the raw values. Checked
+        # once per iteration rather than per element.
+        if self._is_called_from_dataclasses_internal():
+            yield from wrapped_iter
+        else:
+            yield from self._iter_wrapped(wrapped_iter)
+
+    def _iter_wrapped(self, wrapped_iter: Any) -> Any:
+        """Wrap the mutable values yielded by an iterator over the proxied object.
+
+        Args:
+            wrapped_iter: The iterator over the wrapped object.
+
+        Yields:
+            Each item value (possibly wrapped in MutableProxy).
+        """
+        base_cls = globals()[self.__base_proxy__]
+        state = self._self_state
+        field_name = self._self_field_name
         mutable_check = is_mutable_type
         # All iterated elements share one child path; build it once, not per element.
+        # Iterated values have no stable key to refresh through, so their
+        # proxies cannot be used as async context managers.
         child_path = (*self._self_path, _UNREFRESHABLE_ACCESS_SPEC)
-        for value in super().__iter__():  # pyright: ignore[reportAttributeAccessIssue]
-            # Iterated values have no stable key to refresh through, so their
-            # proxies cannot be used as async context managers.
-            if isinstance(value, MutableProxy) or mutable_check(type(value)):
-                yield wrap_mutable(value, child_path)
+        for value in wrapped_iter:
+            value_cls = type(value)
+            if value_cls in _IMMUTABLE_SCALARS:
+                yield value
+            elif isinstance(value, MutableProxy):
+                # Rewrap so the state reference is up to date.
+                yield _new_proxy(
+                    base_cls, value.__wrapped__, state, field_name, child_path
+                )
+            elif mutable_check(value_cls):
+                yield _new_proxy(base_cls, value, state, field_name, child_path)
             else:
                 yield value
 

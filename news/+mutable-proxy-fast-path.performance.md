@@ -1,0 +1,1 @@
+Reading list, dict, and dataclass elements through state vars is about 3.5x faster: proxies are constructed directly, scalar reads skip the wrapping machinery, and the dataclasses-internal check runs once per iteration.
