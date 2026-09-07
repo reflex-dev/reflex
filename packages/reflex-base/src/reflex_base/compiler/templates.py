@@ -338,7 +338,7 @@ export const onLoadInternalEvent = () => {{
         internal_events.push(
             ReflexEvent(
                 '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
-                {{vars: client_storage_vars}},
+                {{{constants.CompileVars.PAYLOAD_VARS}: client_storage_vars}},
             ),
         );
     }}
@@ -359,10 +359,10 @@ export const initialEvents = (first = false) => {{
     const client_storage_vars = clientStorageVars();
     const payload = {{}};
     if (client_storage_vars !== undefined) {{
-        payload.vars = client_storage_vars;
+        payload["{constants.CompileVars.PAYLOAD_VARS}"] = client_storage_vars;
     }}
     if (first) {{
-        payload.hashes = initialStateHashes;
+        payload["{constants.CompileVars.PAYLOAD_HASHES}"] = initialStateHashes;
     }}
     return [ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE_AND_LOAD}', payload)];
 }}

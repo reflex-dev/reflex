@@ -179,6 +179,12 @@ def mock_redis() -> Redis:
             self.results.append(redis_mock.get(key=key))
             return None
 
+        def pttl(self, key: KeyT):
+            if self.watched is not None and not self.in_multi:
+                return redis_mock.pttl(key=key)
+            self.results.append(redis_mock.pttl(key=key))
+            return None
+
         def set(
             self,
             key: KeyT,

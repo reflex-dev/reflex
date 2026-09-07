@@ -2028,7 +2028,11 @@ class EventNamespace(AsyncNamespace):
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
-        if isinstance(auth, dict) and (boot_event := auth.get("event")) is not None:
+        if (
+            isinstance(auth, dict)
+            and (boot_event := auth.get(constants.CompileVars.CONNECT_AUTH_EVENT))
+            is not None
+        ):
             try:
                 await self.on_event(sid, boot_event)
             except Exception:

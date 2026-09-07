@@ -751,17 +751,24 @@ async def test_set_state_checks_lock_once_per_tree(
     state_manager_redis._oplock_enabled = False
     token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
     redis = state_manager_redis.redis
-    real_pttl = redis.pttl
+    real_pipeline = redis.pipeline
     pttls: list[Any] = []
 
-    async def counting_pttl(key):
-        pttls.append(key)
-        return await real_pttl(key)
+    def counting_pipeline(*args, **kwargs):
+        pipe = real_pipeline(*args, **kwargs)
+        real_pttl = pipe.pttl
+
+        def counting_pttl(key):
+            pttls.append(key)
+            return real_pttl(key)
+
+        pipe.pttl = counting_pttl  # pyright: ignore[reportAttributeAccessIssue]
+        return pipe
 
     async with state_manager_redis.modify_state(token) as state:
         assert len(state.substates) == 2
         state.count = 1
-        redis.pttl = counting_pttl  # pyright: ignore[reportAttributeAccessIssue]
+        redis.pipeline = counting_pipeline  # pyright: ignore[reportAttributeAccessIssue]
         try:
             await state_manager_redis.set_state(
                 token,
@@ -769,7 +776,7 @@ async def test_set_state_checks_lock_once_per_tree(
                 lock_id=await redis.get(state_manager_redis._lock_key(token)),
             )
         finally:
-            redis.pttl = real_pttl  # pyright: ignore[reportAttributeAccessIssue]
+            redis.pipeline = real_pipeline  # pyright: ignore[reportAttributeAccessIssue]
 
     # One TTL read for a tree of three states.
     assert len(pttls) == 1

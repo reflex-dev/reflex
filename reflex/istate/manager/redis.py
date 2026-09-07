@@ -439,8 +439,10 @@ class StateManagerRedis(StateManager):
                 isinstance(token, BaseStateToken)
                 and token.lock_key not in self._local_leases
             ):
+                # Immediate mode on the watching connection: the parent client
+                # would need a second pooled connection while this one is held.
                 time_taken = (
-                    self.lock_expiration - (await self.redis.pttl(lock_key))
+                    self.lock_expiration - (await pipeline.pttl(lock_key))
                 ) / 1000
                 if time_taken > self.lock_warning_threshold / 1000:
                     logger.warning(

@@ -599,7 +599,8 @@ export const connect = async (
 
   // The hydrate event rides in the socket.io CONNECT packet, so the backend
   // starts loading state as soon as the namespace connects instead of after
-  // an extra round trip for the connect acknowledgement.
+  // an extra round trip for the connect acknowledgement. The key is read by
+  // the backend as CompileVars.CONNECT_AUTH_EVENT.
   const bootAuth = (first) => ({
     event: withRouterData(initialEvents(first)[0], params),
   });
