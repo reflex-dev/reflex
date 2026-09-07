@@ -2029,7 +2029,14 @@ class EventNamespace(AsyncNamespace):
             )
 
         if isinstance(auth, dict) and (boot_event := auth.get("event")) is not None:
-            await self.on_event(sid, boot_event)
+            try:
+                await self.on_event(sid, boot_event)
+            except Exception:
+                # A refused connect never reaches on_disconnect, so drop the
+                # token link made above before the error refuses the connect.
+                if (linked_token := self.sid_to_token.get(sid)) is not None:
+                    await self._token_manager.disconnect_token(linked_token, sid)
+                raise
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.

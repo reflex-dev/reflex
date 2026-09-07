@@ -397,6 +397,15 @@ class StateManagerRedis(StateManager):
             RuntimeError: If the state instance doesn't match the state name in the token.
         """
         token = self._coerce_token(token)
+        if isinstance(token, BaseStateToken):
+            # Serialize the touched states before checking the lock, so the
+            # check sits right before the single pipelined write.
+            writes = self._collect_state_writes(token, cast(BaseState, state))
+        else:
+            # Non-BaseState token: simple single-key write.
+            pickle_state = token.serialize(state)
+            writes = [(str(token), pickle_state)] if pickle_state else []
+
         # Check that we're holding the lock.
         if (
             lock_id is not None
@@ -416,14 +425,11 @@ class StateManagerRedis(StateManager):
             )
             raise LockExpiredError(msg)
 
-        if not isinstance(token, BaseStateToken):
-            # Non-BaseState token: simple single-key write.
-            pickle_state = token.serialize(state)
-            if pickle_state:
-                await self.redis.set(str(token), pickle_state, ex=self.token_expiration)
-            return
-
-        if lock_id is not None and token.lock_key not in self._local_leases:
+        if (
+            isinstance(token, BaseStateToken)
+            and lock_id is not None
+            and token.lock_key not in self._local_leases
+        ):
             time_taken = (
                 self.lock_expiration - (await self.redis.pttl(self._lock_key(token)))
             ) / 1000
@@ -440,38 +446,35 @@ class StateManagerRedis(StateManager):
                     extra={"dedupe": True},
                 )
 
-        await self._set_state_tree(token, cast(BaseState, state))
+        if len(writes) == 1:
+            await self.redis.set(writes[0][0], writes[0][1], ex=self.token_expiration)
+        elif writes:
+            pipeline = self.redis.pipeline()
+            for key, pickle_state in writes:
+                pipeline.set(key, pickle_state, ex=self.token_expiration)
+            await pipeline.execute()
 
-    async def _set_state_tree(self, token: BaseStateToken, base_state: BaseState):
-        """Persist a state and, concurrently, every substate attached to it.
-
-        The lock check and the hold-time warning happen once in ``set_state``;
-        this recursion only writes the keys that were touched.
+    def _collect_state_writes(
+        self, token: BaseStateToken, base_state: BaseState
+    ) -> list[tuple[str, bytes]]:
+        """Serialize a state and every substate attached to it that was touched.
 
         Args:
             token: The token (any state class) identifying the client.
             base_state: The state instance whose tree to persist.
-        """
-        tasks = [
-            asyncio.create_task(
-                self._set_state_tree(token, substate),
-                name=f"reflex_set_state|{token.lock_key}|{substate.get_full_name()}",
-            )
-            for substate in base_state.substates.values()
-        ]
-        # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        if base_state._get_was_touched():
-            pickle_state = base_state._serialize()
-            if pickle_state:
-                await self.redis.set(
-                    str(token.with_cls(type(base_state))),
-                    pickle_state,
-                    ex=self.token_expiration,
-                )
 
-        # Wait for substates to be persisted.
-        for t in tasks:
-            await t
+        Returns:
+            The redis keys and pickled payloads to write.
+        """
+        writes: list[tuple[str, bytes]] = []
+        stack = [base_state]
+        while stack:
+            state = stack.pop()
+            # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
+            if state._get_was_touched() and (pickle_state := state._serialize()):
+                writes.append((str(token.with_cls(type(state))), pickle_state))
+            stack.extend(state.substates.values())
+        return writes
 
     @contextlib.asynccontextmanager
     async def _try_modify_state(

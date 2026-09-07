@@ -840,13 +840,19 @@ async def test_hydrate_and_load_diffs_against_compiled_defaults(
     class CookieState(State):
         flavor: str = rx.Cookie("plain")
         loads: int = 0
+        ratio: float = 1.0
+
+        @event
+        def set_ratio_int(self):
+            self.ratio = 1  # Python-equal to the default, JSON-distinct.
 
     wired_app.add_page(lambda: rx.text(CookieState.flavor), route="/")
     wired_app._compile_page("index")
     boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
     cookie_key = f"{CookieState.get_full_name()}.flavor{FIELD_MARKER}"
     state_name = State.get_full_name()
-    hashes = state_snapshot_hashes(compile_state(State))
+    compiled = compile_state(State)
+    hashes = state_snapshot_hashes(compiled)
 
     async with real_base_state_processor as processor:
         future = await processor.enqueue(
@@ -864,6 +870,22 @@ async def test_hydrate_and_load_diffs_against_compiled_defaults(
     assert snapshot[CookieState.get_full_name()] == {
         "flavor" + FIELD_MARKER: "chocolate"
     }
+
+    # A value that is Python-equal but serializes differently is still sent.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(CookieState.set_ratio_int())[0]
+            )
+        ).wait_all()
+        emitted_deltas.clear()
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": hashes})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[CookieState.get_full_name()]["ratio" + FIELD_MARKER] == 1
 
     # Hashes compiled against a different set of states fall back to the full snapshot.
     emitted_deltas.clear()

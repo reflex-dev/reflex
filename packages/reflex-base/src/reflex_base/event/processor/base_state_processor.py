@@ -16,6 +16,7 @@ from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
+from reflex_base.constants import CompileVars
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
@@ -41,7 +42,7 @@ def _hydrate_event_names() -> frozenset[str]:
 
     return frozenset(
         format_event_handler(State.event_handlers[name])
-        for name in ("hydrate", "hydrate_and_load")
+        for name in (CompileVars.HYDRATE, CompileVars.HYDRATE_AND_LOAD)
     )
 
 
