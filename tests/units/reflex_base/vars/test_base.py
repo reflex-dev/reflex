@@ -6,7 +6,7 @@ from typing import Any, Literal, TypeVar
 
 import pytest
 from reflex_base.utils.types import get_field_type
-from reflex_base.vars.base import EvenMoreBasicBaseState, Var, field
+from reflex_base.vars.base import EvenMoreBasicBaseState, Var, _linearize_bases, field
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
@@ -181,3 +181,68 @@ def test_state_var_type_alias(alias_cls: type) -> None:
 
     assert isinstance(TypeAliasState.key, StringVar)
     assert TypeAliasState.key._var_type == Literal["day", "week"]
+
+
+@pytest.mark.parametrize(
+    "shape",
+    [
+        "single",
+        "diamond",
+        "shared_via_two_bases",
+        "base_of_a_base",
+        "three_bases",
+        "ancestor_listed_after_descendant",
+    ],
+)
+def test_linearize_bases_matches_real_mro(shape: str) -> None:
+    """The pre-creation linearization equals the MRO `type` builds.
+
+    Args:
+        shape: The inheritance shape to build.
+    """
+    a = type("A", (), {})
+    b = type("B", (a,), {})
+    c = type("C", (a,), {})
+    d = type("D", (), {})
+    bases: tuple[type, ...] = {
+        "single": (b,),
+        "diamond": (b, c),
+        "shared_via_two_bases": (type("E", (b,), {}), type("F", (c,), {})),
+        "base_of_a_base": (b, a),
+        "three_bases": (b, c, d),
+        # C3 keeps `a` ahead of `d` here, though `d` sits earlier in the first
+        # base's own MRO
+        "ancestor_listed_after_descendant": (type("G", (a, d), {}), a),
+    }[shape]
+
+    created = type("Created", bases, {})
+    assert _linearize_bases(bases) == list(created.__mro__[1:])
+
+
+def test_linearize_bases_without_bases() -> None:
+    """A class with no bases has nothing to inherit from."""
+    assert _linearize_bases(()) == []
+
+
+def test_linearize_bases_compares_by_identity() -> None:
+    """A metaclass defining __eq__ must not confuse the linearization."""
+
+    class EqMeta(type):
+        def __eq__(cls, other: object) -> bool:
+            return True
+
+        def __hash__(cls) -> int:
+            return 1
+
+    a = EqMeta("A", (), {})
+    b = EqMeta("B", (a,), {})
+    c = EqMeta("C", (a,), {})
+    created = EqMeta("Created", (b, c), {})
+
+    # `==` between these classes is always True, so compare element identities
+    assert all(
+        left is right
+        for left, right in zip(
+            _linearize_bases((b, c)), created.__mro__[1:], strict=True
+        )
+    )

@@ -78,6 +78,9 @@ _console_stderr = Console(stderr=True, highlight=False)
 # Console that renders nowhere, backing interactive rich features in JSON mode.
 _quiet_console = Console(quiet=True)
 
+# Whether stdout carries a machine-readable document rather than human output.
+_stdout_reserved = False
+
 # The current log level.
 _log_level = LogLevel.INFO
 
@@ -198,7 +201,9 @@ class RichConsoleHandler(logging.Handler):
         """
         try:
             style, prefix = _style_for(record)
-            console = _console_stderr if record.levelno >= logging.ERROR else _console
+            console = (
+                _console_stderr if record.levelno >= logging.ERROR else human_console()
+            )
             # Records may carry a rich Progress to print through, so the
             # message lands above an active progress bar.
             progress = getattr(record, "progress", None)
@@ -242,7 +247,7 @@ def _write_json(payload: dict, *, stderr: bool):
         payload: The record fields.
         stderr: Whether the record targets stderr.
     """
-    stream = sys.stderr if stderr else sys.stdout
+    stream = sys.stderr if stderr or _stdout_reserved else sys.stdout
     stream.write(json.dumps(payload, default=str) + "\n")
     stream.flush()
 
@@ -472,6 +477,38 @@ def is_json_mode() -> bool:
     return environment.REFLEX_LOG_JSON.get()
 
 
+def reserve_stdout(reserved: bool = True):
+    """Reserve stdout for a machine-readable document.
+
+    A command that writes structured output (``--json``) owns stdout for the
+    duration, so every human-readable message -- log records, tables, spinners
+    -- renders to stderr instead and cannot land in the middle of the document.
+
+    Args:
+        reserved: Whether stdout carries data rather than human output.
+    """
+    global _stdout_reserved
+    _stdout_reserved = reserved
+
+
+def is_stdout_reserved() -> bool:
+    """Check whether stdout is reserved for a machine-readable document.
+
+    Returns:
+        True if human-readable output has to go to stderr.
+    """
+    return _stdout_reserved
+
+
+def human_console() -> Console:
+    """Get the console human-readable output renders to.
+
+    Returns:
+        The stderr console while stdout is reserved, the stdout one otherwise.
+    """
+    return _console_stderr if _stdout_reserved else _console
+
+
 def set_json_mode(enabled: bool):
     """Enable or disable machine-readable JSON log output.
 
@@ -633,7 +670,8 @@ def ensure_configured():
 
 def _reset():
     """Detach the sinks and restore propagation (test teardown helper)."""
-    global _configured
+    global _configured, _stdout_reserved
+    _stdout_reserved = False
     for handler in (_console_handler(), _json_handler(), _active_file_handler):
         if handler is not None:
             _REFLEX_LOGGER.removeHandler(handler)
