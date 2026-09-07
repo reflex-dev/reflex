@@ -887,11 +887,12 @@ async def test_hydrate_and_load_diffs_against_compiled_defaults(
     snapshot = emitted_deltas[0][1]
     assert snapshot[CookieState.get_full_name()]["ratio" + FIELD_MARKER] == 1
 
-    # Hashes compiled against a different set of states fall back to the full snapshot.
+    # Hashes compiled against a different set of states (a different names
+    # digest) fall back to the full snapshot.
     emitted_deltas.clear()
     async with real_base_state_processor as processor:
         future = await processor.enqueue(
-            token, _boot_event(boot_name, {"hashes": hashes[:-1]})
+            token, _boot_event(boot_name, {"hashes": ["0" * 16, *hashes[1:]]})
         )
         await future.wait_all()
     snapshot = emitted_deltas[0][1]

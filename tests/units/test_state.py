@@ -5235,6 +5235,12 @@ async def test_on_load_internal_supersedes_previous_navigation(
     """
     assert OnLoadInternalState.event_handlers["on_load_internal"].supersedes
     assert not State.event_handlers["hydrate"].supersedes
+    # A reconnect's hydrate and a navigation's on_load cancel each other's chains.
+    assert (
+        OnLoadInternalState.event_handlers["on_load_internal"].supersede_group
+        == State.event_handlers["hydrate_and_load"].supersede_group
+        == "on_load"
+    )
 
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager

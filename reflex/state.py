@@ -2475,7 +2475,7 @@ class State(BaseState):
         """
         self.is_hydrated = value
 
-    @event(supersedes=True)
+    @event(supersedes=constants.CompileVars.ON_LOAD_SUPERSEDE_GROUP)
     async def hydrate_and_load(
         self,
         vars: dict[str, Any] | None = None,
@@ -2522,8 +2522,20 @@ class State(BaseState):
 T = TypeVar("T", bound=BaseState)
 
 
+def _short_digest(text: str) -> str:
+    """Digest text into a short hex string.
+
+    Args:
+        text: The text to digest.
+
+    Returns:
+        The first 16 hex digits of its SHA-1.
+    """
+    return hashlib.sha1(text.encode()).hexdigest()[:16]
+
+
 def state_snapshot_hashes(snapshot: Delta) -> list[str]:
-    """Hash each state's entry of a full-tree snapshot as the frontend receives it.
+    """Hash a full-tree snapshot as the frontend receives it.
 
     Used at compile time for the ``initialState`` baked into the frontend and
     at runtime for the backend's own default snapshot, so equal hashes mean the
@@ -2533,14 +2545,17 @@ def state_snapshot_hashes(snapshot: Delta) -> list[str]:
         snapshot: A resolved full-tree dict, as returned by ``BaseState.dict``.
 
     Returns:
-        A short hex digest of each state's serialized vars, in sorted state
-        name order.
+        A digest of the sorted state names, followed by a digest of each
+        state's serialized vars in that order; the first entry binds the
+        rest to the state names they were computed for.
     """
+    names = sorted(snapshot)
     return [
-        hashlib.sha1(
-            format.json_dumps(snapshot[state_name], sort_keys=True).encode()
-        ).hexdigest()[:16]
-        for state_name in sorted(snapshot)
+        _short_digest("\n".join(names)),
+        *(
+            _short_digest(format.json_dumps(snapshot[state_name], sort_keys=True))
+            for state_name in names
+        ),
     ]
 
 
@@ -2552,6 +2567,8 @@ class _InitialSnapshot:
     n_state_classes: int
     # Per state full name, each var's serialized default value.
     serialized: dict[str, dict[str, str]]
+    # The digest of the sorted state names.
+    names_digest: str
     # Per state full name, the hash of its serialized defaults.
     hashes: dict[str, str]
 
@@ -2583,15 +2600,15 @@ def cache_initial_snapshot(root_cls: type[BaseState], snapshot: Delta) -> None:
         root_cls: The root state class the snapshot was taken from.
         snapshot: The resolved full-tree default snapshot.
     """
+    names_digest, *state_hashes = state_snapshot_hashes(snapshot)
     _initial_snapshot_cache[root_cls] = _InitialSnapshot(
         n_state_classes=len(all_base_state_classes),
         serialized={
             state_name: {name: _serialize_var(value) for name, value in vars.items()}
             for state_name, vars in snapshot.items()
         },
-        hashes=dict(
-            zip(sorted(snapshot), state_snapshot_hashes(snapshot), strict=True)
-        ),
+        names_digest=names_digest,
+        hashes=dict(zip(sorted(snapshot), state_hashes, strict=True)),
     )
 
 
@@ -2607,8 +2624,9 @@ async def _diff_against_initial_state(
     Args:
         root_cls: The root state class; its default snapshot is computed once.
         delta: The resolved full snapshot about to be sent.
-        hashes: Per-state hashes of the frontend's compiled ``initialState``,
-            in sorted state name order.
+        hashes: The digest of the frontend's compiled state names followed
+            by its per-state hashes of the compiled ``initialState``, in
+            sorted state name order.
 
     Returns:
         The delta with unchanged vars removed for every state whose compiled
@@ -2625,10 +2643,10 @@ async def _diff_against_initial_state(
             ),
         )
         cached = _initial_snapshot_cache[root_cls]
-    if len(hashes) != len(cached.hashes):
+    if not hashes or hashes[0] != cached.names_digest:
         # The frontend was compiled against a different set of states.
         return delta
-    frontend_hashes = dict(zip(sorted(cached.hashes), hashes, strict=True))
+    frontend_hashes = dict(zip(sorted(cached.hashes), hashes[1:], strict=True))
     diff: Delta = {}
     for state_name, state_vars in delta.items():
         default_vars = cached.serialized.get(state_name)
@@ -2813,9 +2831,9 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    # A newer navigation supersedes the previous unfinished on_load chain for
-    # the same client token, cancelling its stale work (#6593).
-    @event(supersedes=True)
+    # A newer navigation or reconnect supersedes the previous unfinished
+    # on_load chain for the same client token, cancelling its stale work (#6593).
+    @event(supersedes=constants.CompileVars.ON_LOAD_SUPERSEDE_GROUP)
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
