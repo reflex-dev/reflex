@@ -188,7 +188,9 @@ def serialize(
     return serialized
 
 
-@functools.cache
+# Bounded like ``is_mutable_type``'s cache: large enough that an app never
+# rescans a class in practice, without retaining dynamically created ones forever.
+@functools.lru_cache(maxsize=1024)
 def _dataclass_field_names(cls: type) -> tuple[str, ...]:
     """Get the field names of a dataclass, memoized per class.
 
