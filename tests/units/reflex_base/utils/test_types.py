@@ -296,3 +296,16 @@ def test_runtime_isinstance_unwraps_proxies():
         assert runtime_isinstance(proxied, hint)
         assert runtime_isinstance([proxied], list[hint])  # pyright: ignore[reportInvalidTypeForm]
         assert not runtime_isinstance(wrapt.ObjectProxy(["x"]), list[_Row])
+
+
+def test_runtime_isinstance_tolerates_class_spoofing_without_wrapped():
+    """An object reporting another __class__ but no __wrapped__ is checked as is."""
+
+    class _Impostor:
+        @property
+        def __class__(self):
+            return list
+
+    impostor = _Impostor()
+    assert runtime_isinstance(impostor, list[int]) is False
+    assert runtime_isinstance(impostor, Any) is True

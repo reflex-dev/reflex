@@ -1201,7 +1201,7 @@ if find_spec("pydantic_core"):
         if type(obj) is not obj.__class__:
             # A MutableProxy (wrapt) reports the wrapped value's class, which
             # isinstance honors but pydantic-core's container checks do not.
-            obj = obj.__wrapped__
+            obj = getattr(obj, "__wrapped__", obj)
         try:
             validator.validate_python(obj)
         except ValidationError:

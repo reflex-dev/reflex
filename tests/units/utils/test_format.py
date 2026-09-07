@@ -917,8 +917,31 @@ def test_json_dumps_compact_matches_json_dumps(value: Any):
 
 @pytest.mark.usefixtures("native_json")
 def test_json_dumps_compact_non_finite_floats():
-    """Non-finite floats become null instead of the invalid JSON tokens."""
-    assert format.json_dumps_compact([float("inf"), float("nan")]) == "[null,null]"
+    """Non-finite floats keep the bare tokens the frontend revives."""
+    assert (
+        format.json_dumps_compact([float("inf"), float("-inf"), float("nan")])
+        == "[Infinity,-Infinity,NaN]"
+    )
+    assert format.json_dumps_compact({"a": None, "b": float("nan")}) == (
+        '{"a":null,"b":NaN}'
+    )
+
+
+@pytest.mark.usefixtures("native_json")
+def test_json_dumps_compact_overwritten_base_serializer(monkeypatch):
+    """Replacing the built-in Enum serializer also disables the native path."""
+    original = serializers.SERIALIZERS[enum.Enum]
+
+    @serializers.serializer(overwrite=True)
+    def serialize_enum_by_name(en: enum.Enum) -> str:
+        return en.name
+
+    try:
+        assert serializers.overrides_native_json_type()
+        assert format.json_dumps_compact([_Shade.LIGHT]) == '["LIGHT"]'
+    finally:
+        serializers.SERIALIZERS[enum.Enum] = original
+        serializers.get_serializer.cache_clear()
 
 
 @pytest.mark.usefixtures("native_json")

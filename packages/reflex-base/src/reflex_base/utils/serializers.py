@@ -127,9 +127,7 @@ def serializer(
         get_serializer.cache_clear()
 
         global _overrides_native_json_type
-        if type_ not in _NATIVE_JSON_TYPES and types.safe_issubclass(
-            type_, _NATIVE_JSON_TYPES
-        ):
+        if types.safe_issubclass(type_, _NATIVE_JSON_TYPES):
             _overrides_native_json_type = True
 
         # Return the function.
@@ -203,14 +201,15 @@ def _dataclass_field_names(cls: type) -> tuple[str, ...]:
     return tuple(field.name for field in dataclasses.fields(cls))
 
 
-# Types orjson encodes itself, so a custom serializer registered for one of
-# their subclasses would be bypassed on the wire; ``json_dumps_compact`` checks.
+# Types orjson encodes itself, matching the serializers below; a serializer an
+# app registers for them or a subclass would be bypassed on the wire, so
+# ``json_dumps_compact`` checks this flag.
 _NATIVE_JSON_TYPES = (Enum, UUID)
 _overrides_native_json_type = False
 
 
 def overrides_native_json_type() -> bool:
-    """Whether a serializer is registered for an Enum or UUID subclass.
+    """Whether an app registered a serializer for Enum, UUID, or a subclass.
 
     Returns:
         True if such a serializer exists.
@@ -547,3 +546,8 @@ with contextlib.suppress(ImportError):
                 mime_type = "image/png"
 
         return f"data:{mime_type};base64,{base64_image}"
+
+
+# The built-in Enum and UUID serializers above render exactly as orjson does;
+# only registrations made after this point count as overrides.
+_overrides_native_json_type = False

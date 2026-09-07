@@ -759,9 +759,9 @@ def json_dumps(obj: Any, **kwargs) -> str:
 def json_dumps_compact(obj: Any) -> str:
     """Serialize an object to compact JSON for the wire.
 
-    Produces the same values as ``json_dumps`` (reflex serializers handle
-    non-JSON types) with compact separators, encoded by orjson. State deltas
-    and streamed updates go through here.
+    Produces the same output as ``json_dumps`` with compact separators (reflex
+    serializers handle non-JSON types), encoded by orjson whenever the payload
+    lets it. State deltas and streamed updates go through here.
 
     Args:
         obj: The object to be serialized.
@@ -772,12 +772,18 @@ def json_dumps_compact(obj: Any) -> str:
     serializers = _get_serializers()
     if not serializers.overrides_native_json_type():
         try:
-            return orjson.dumps(
+            encoded = orjson.dumps(
                 obj, default=serializers.serialize, option=_ORJSON_OPTIONS
-            ).decode()
+            )
         except TypeError:
             # orjson rejects integers beyond 64 bits, which json accepts.
             pass
+        else:
+            # orjson collapses NaN and +/-Infinity to null, but the frontend
+            # expects the bare tokens json emits. A null in the output is
+            # either a None or such a float; only then take the slow path.
+            if b"null" not in encoded:
+                return encoded.decode()
     return json.dumps(
         obj, ensure_ascii=False, separators=(",", ":"), default=serializers.serialize
     )
