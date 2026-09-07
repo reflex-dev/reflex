@@ -2,11 +2,18 @@
 
 import threading
 import typing
+from collections.abc import Mapping
 from typing import Any, Literal, TypeVar
 
 import pytest
 from reflex_base.utils.types import get_field_type
-from reflex_base.vars.base import EvenMoreBasicBaseState, Var, _linearize_bases, field
+from reflex_base.vars.base import (
+    EvenMoreBasicBaseState,
+    Var,
+    _linearize_bases,
+    field,
+    figure_out_type,
+)
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
@@ -14,6 +21,40 @@ from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
 from reflex.state import State
 
 _MARKER_ATTR = "_marker"
+
+
+@pytest.mark.parametrize("size", [0, 1, 100, 101, 1000])
+def test_mapping_type_inference_bounds_iteration(size):
+    """Sampling does not iterate or retrieve values beyond the first 100 items."""
+    keys_seen = []
+    values_seen = []
+
+    class CountingMapping(Mapping):
+        def __len__(self):
+            return size
+
+        def __iter__(self):
+            for index in range(size):
+                keys_seen.append(index)
+                yield index
+
+        def __getitem__(self, key):
+            values_seen.append(key)
+            return str(key)
+
+    expected = Mapping[int, str] if size else Mapping[typing.NoReturn, typing.NoReturn]
+    assert figure_out_type(CountingMapping()) == expected
+    sampled = list(range(min(size, 100)))
+    assert keys_seen == sampled * 2
+    assert values_seen == sampled
+
+
+def test_mapping_type_inference_preserves_sample_boundary():
+    """The hundredth item contributes types, while later items do not."""
+    value: dict[Any, Any] = dict.fromkeys(range(99), 1)
+    value["last sampled"] = "included"
+    value[1.5] = ["not sampled"]
+    assert figure_out_type(value) == Mapping[int | str, int | str]
 
 
 def test_custom_field_attr_survives_annotated_rebuild():
