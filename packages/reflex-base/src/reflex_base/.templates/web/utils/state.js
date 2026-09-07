@@ -395,7 +395,19 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  // Update token and router data (if missing).
+  // Send the event to the server.
+  if (socket) {
+    socket.emit("event", withRouterData(event, params));
+  }
+};
+
+/**
+ * Fill in the event's router data from the current location, if missing.
+ * @param event The event to send.
+ * @param params The params object from useParams
+ * @returns The same event, with router_data populated.
+ */
+const withRouterData = (event, params) => {
   if (
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
@@ -423,11 +435,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       event.router_data.query = query;
     }
   }
-
-  // Send the event to the server.
-  if (socket) {
-    socket.emit("event", event);
-  }
+  return event;
 };
 
 /**
@@ -589,6 +597,13 @@ export const connect = async (
   const endpoint = getBackendURL(EVENTURL);
   const on_hydrated_queue = [];
 
+  // The hydrate event rides in the socket.io CONNECT packet, so the backend
+  // starts loading state as soon as the namespace connects instead of after
+  // an extra round trip for the connect acknowledgement.
+  const bootAuth = (first) => ({
+    event: withRouterData(initialEvents(first)[0], params),
+  });
+
   // Create the socket.
   socket.current = io(endpoint.href, {
     path: endpoint["pathname"],
@@ -596,6 +611,7 @@ export const connect = async (
     protocols: [reflexEnvironment.version],
     autoUnref: false,
     query: { token: getToken() },
+    auth: bootAuth(true),
     reconnection: false, // Reconnection will be handled manually.
   });
   socket.current.wait_connect = !socket.current.connected;
@@ -623,8 +639,9 @@ export const connect = async (
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
-      socket.current.rehydrate = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
+      // A reconnect rehydrates in full: the reducers no longer hold the defaults.
+      socket.current.auth = bootAuth(false);
       socket.current.connect();
     }
   };
@@ -675,10 +692,6 @@ export const connect = async (
     setConnectErrors([]);
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
-    if (socket.current.rehydrate) {
-      socket.current.rehydrate = false;
-      queueEvents(initialEvents(), socket, true, navigate, params);
-    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);
@@ -1060,14 +1073,6 @@ export const useEventLoop = (
       _events.map((e) => e.name).join("+++"),
       () => !!socket.current?.connected,
     );
-  }, []);
-
-  const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
-  useEffect(() => {
-    if (!sentHydrate.current) {
-      queueEvents(initial_events(), socket, true, navigate, params);
-      sentHydrate.current = true;
-    }
   }, []);
 
   // Handle frontend errors and send them to the backend via websocket.

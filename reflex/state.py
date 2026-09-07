@@ -8,6 +8,7 @@ import contextlib
 import copy
 import dataclasses
 import functools
+import hashlib
 import inspect
 import logging
 import pickle
@@ -2474,8 +2475,164 @@ class State(BaseState):
         """
         self.is_hydrated = value
 
+    @event(supersedes=True)
+    async def hydrate_and_load(
+        self,
+        vars: dict[str, Any] | None = None,
+        hashes: list[str] | None = None,
+    ) -> list[Event | EventSpec | event.EventCallback] | None:
+        """Hydrate the frontend and queue the current page's on_load handlers.
+
+        Sent by the frontend once per websocket (re)connect. Doing the client
+        storage reset, the browser-provided client storage values, the state
+        snapshot and the on_load enumeration under one state lock avoids three
+        separate load/persist cycles of the state tree.
+
+        Args:
+            vars: Client storage vars set in the browser, keyed by fully
+                qualified var name.
+            hashes: On the first hydrate of a page, the per-state hashes of the
+                compiled ``initialState`` the frontend still holds, in sorted
+                state name order. States whose hash matches the backend's
+                default snapshot only get the vars that differ from it;
+                everything else is sent in full.
+
+        Returns:
+            The on_load events for the current page, if any.
+        """
+        from reflex_base.event.context import EventContext
+
+        self._reset_client_storage()
+        if vars:
+            await _apply_client_storage_vars(self, vars)
+        # The snapshot must carry is_hydrated=False: the frontend skips
+        # writing client storage for a delta that is not yet hydrated, and
+        # the reset defaults above must not be written back to the browser.
+        self.is_hydrated = False
+        ctx = EventContext.get()
+        if ctx.emit_delta_impl is not None:
+            delta = await _resolve_delta(self.dict())
+            if hashes:
+                delta = await _diff_against_initial_state(type(self), delta, hashes)
+            await ctx.emit_delta(delta=delta)
+        self._clean()
+        return _load_events_for_page(self)
+
 
 T = TypeVar("T", bound=BaseState)
+
+
+def state_snapshot_hashes(snapshot: Delta) -> list[str]:
+    """Hash each state's entry of a full-tree snapshot as the frontend receives it.
+
+    Used at compile time for the ``initialState`` baked into the frontend and
+    at runtime for the backend's own default snapshot, so equal hashes mean the
+    frontend already holds exactly the backend's defaults for that state.
+
+    Args:
+        snapshot: A resolved full-tree dict, as returned by ``BaseState.dict``.
+
+    Returns:
+        A short hex digest of each state's serialized vars, in sorted state
+        name order.
+    """
+    return [
+        hashlib.sha1(
+            format.json_dumps(snapshot[state_name], sort_keys=True).encode()
+        ).hexdigest()[:16]
+        for state_name in sorted(snapshot)
+    ]
+
+
+# Per root state class: the resolved default snapshot and its per-state hashes.
+_initial_snapshot_cache: dict[type[BaseState], tuple[Delta, dict[str, str]]] = {}
+
+
+async def _diff_against_initial_state(
+    root_cls: type[BaseState], delta: Delta, hashes: list[str]
+) -> Delta:
+    """Drop vars the frontend already holds at their default value.
+
+    Args:
+        root_cls: The root state class; its default snapshot is computed once.
+        delta: The resolved full snapshot about to be sent.
+        hashes: Per-state hashes of the frontend's compiled ``initialState``,
+            in sorted state name order.
+
+    Returns:
+        The delta with unchanged vars removed for every state whose compiled
+        defaults match the backend's, and left untouched for the others.
+    """
+    cached = _initial_snapshot_cache.get(root_cls)
+    if cached is None:
+        snapshot = await _resolve_delta(
+            root_cls(_reflex_internal_init=True).dict(initial=True)
+        )
+        cached = _initial_snapshot_cache[root_cls] = (
+            snapshot,
+            dict(zip(sorted(snapshot), state_snapshot_hashes(snapshot), strict=True)),
+        )
+    defaults, default_hashes = cached
+    if len(hashes) != len(default_hashes):
+        # The frontend was compiled against a different set of states.
+        return delta
+    frontend_hashes = dict(zip(sorted(default_hashes), hashes, strict=True))
+    diff: Delta = {}
+    for state_name, state_vars in delta.items():
+        if frontend_hashes.get(state_name) != default_hashes.get(state_name):
+            diff[state_name] = state_vars
+            continue
+        default_vars = defaults[state_name]
+        changed = {
+            name: value
+            for name, value in state_vars.items()
+            if name not in default_vars or value != default_vars[name]
+        }
+        if changed:
+            diff[state_name] = changed
+    return diff
+
+
+async def _apply_client_storage_vars(state: BaseState, vars: dict[str, Any]) -> None:
+    """Apply browser-provided client storage values to the states that own them.
+
+    Args:
+        state: Any state in the tree; used to reach the owning substates.
+        vars: Fully qualified var names mapped to their browser values.
+    """
+    for var, value in vars.items():
+        state_name, _, var_name = var.rpartition(".")
+        var_name = var_name.removesuffix(FIELD_MARKER)
+        var_state_cls = State.get_class_substate(state_name)
+        if var_state_cls._is_client_storage(var_name):
+            var_state = await state.get_state(var_state_cls)
+            setattr(var_state, var_name, value)
+
+
+def _load_events_for_page(
+    state: BaseState,
+) -> list[Event | EventSpec | event.EventCallback] | None:
+    """Queue the on_load handlers for the page the client is on.
+
+    Sets ``is_hydrated`` directly when the page has no on_load handlers, so no
+    extra event round trip is needed for the common case.
+
+    Args:
+        state: Any state in the tree; ``is_hydrated`` is set through it.
+
+    Returns:
+        The on_load events followed by the hydrated flip, or None.
+    """
+    load_events = RegistrationContext.get().app.get_load_events(state.router.url.path)
+    if not load_events:
+        state.is_hydrated = True
+        return None
+    if state.is_hydrated:
+        state.is_hydrated = False
+    return [
+        *Event.from_event_type(load_events, router_data=state.router_data),
+        OnLoadInternalState.set_is_hydrated(True),
+    ]
 
 
 def dynamic(func: Callable[[T], Component]):
@@ -2594,13 +2751,7 @@ class UpdateVarsInternalState(State):
         Args:
             vars: The fully qualified vars and values to update.
         """
-        for var, value in vars.items():
-            state_name, _, var_name = var.rpartition(".")
-            var_name = var_name.removesuffix(FIELD_MARKER)
-            var_state_cls = State.get_class_substate(state_name)
-            if var_state_cls._is_client_storage(var_name):
-                var_state = await self.get_state(var_state_cls)
-                setattr(var_state, var_name, value)
+        await _apply_client_storage_vars(self, vars)
 
 
 class OnLoadInternalState(State):
@@ -2618,20 +2769,7 @@ class OnLoadInternalState(State):
         Returns:
             The list of events to queue for on load handling.
         """
-        load_events = RegistrationContext.get().app.get_load_events(
-            self.router.url.path
-        )
-        if not load_events:
-            self.is_hydrated = True
-            return None  # Fast path for navigation with no on_load events defined.
-        self.is_hydrated = False
-        return [
-            *Event.from_event_type(
-                load_events,
-                router_data=self.router_data,
-            ),
-            OnLoadInternalState.set_is_hydrated(True),
-        ]
+        return _load_events_for_page(self)
 
     @event
     def set_is_hydrated(self, value: bool) -> None:

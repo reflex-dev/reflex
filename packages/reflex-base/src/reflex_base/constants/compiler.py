@@ -57,6 +57,8 @@ class CompileVars(SimpleNamespace):
     EVENTS = "events"
     # The name of the initial hydrate event.
     HYDRATE = "hydrate"
+    # The name of the event sent on (re)connect: hydrate plus on_load in one step.
+    HYDRATE_AND_LOAD = "hydrate_and_load"
     # The name of the is_hydrated variable.
     IS_HYDRATED = "is_hydrated"
     # The name of the function to add events to the queue.

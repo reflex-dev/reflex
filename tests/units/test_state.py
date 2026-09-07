@@ -50,6 +50,7 @@ from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
+from reflex.istate.storage import Cookie
 from reflex.state import BaseState, ImmutableStateError, OnLoadInternalState, State
 from reflex.testing import chdir
 from reflex.utils import prerequisites
@@ -2171,7 +2172,8 @@ async def test_state_manager_lock_warning_threshold_contend(
         # When Oplock is enabled, we don't warn when lock is held too long.
         assert not lock_warnings
     else:
-        assert len(lock_warnings) == 7
+        # One warning per state-tree save, not one per substate.
+        assert len(lock_warnings) == 1
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -3388,14 +3390,15 @@ async def test_preprocess(
         )
         await on_load_future.wait_all()
 
-    # The processor chains all events: on_load_internal sets is_hydrated=False,
-    # then the on_load handler runs, then set_is_hydrated(True) runs.
-    # First delta: router + is_hydrated=False
+    # The processor chains all events: hydrate leaves is_hydrated=False, then
+    # the on_load handler runs, then set_is_hydrated(True) runs.
+    # First delta: router only. on_load_internal does not re-send the
+    # is_hydrated=False the hydrate snapshot already carried.
     assert len(emitted_deltas) == 1 + len(expected)
     first_token, first_delta = emitted_deltas[0]
     assert first_token == token
     assert first_delta[State.get_full_name()].pop("router" + FIELD_MARKER) is not None
-    assert first_delta == exp_is_hydrated(State, False)
+    assert first_delta == {State.get_full_name(): {}}
 
     # Find the deltas containing the test handler's state change
     for (delta_token, actual_delta), expected_delta in zip(
@@ -3451,11 +3454,11 @@ async def test_preprocess_multiple_load_events(
         )
         await processor.join()
 
-    # First delta: router + is_hydrated=False
+    # First delta: router only (is_hydrated=False was already in the hydrate snapshot)
     assert len(emitted_deltas) >= 2
     first_delta = emitted_deltas[0][1]
     assert first_delta[State.get_full_name()].pop("router" + FIELD_MARKER) is not None
-    assert first_delta == exp_is_hydrated(State, False)
+    assert first_delta == {State.get_full_name(): {}}
 
     # Find deltas containing the test handler's state change (num incremented twice)
     handler_deltas = [
@@ -5380,3 +5383,158 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
     assert state.key == 1
     error_mock.assert_called_once()
+
+
+class BootCookieState(State):
+    """A state with a cookie var and an on_load handler for hydrate_and_load tests."""
+
+    flavor: str = Cookie("plain")
+    loads: int = 0
+
+    def on_load_handler(self):
+        """Count page loads."""
+        self.loads += 1
+
+
+async def test_hydrate_and_load_single_lock_cycle(
+    app_module_mock,
+    token,
+    mock_root_event_context: EventContext,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+):
+    """One hydrate_and_load event resets/applies client storage, snapshots, and queues on_load.
+
+    Args:
+        app_module_mock: The app module that will be returned by get_app().
+        token: A token.
+        mock_root_event_context: The mock root event context.
+        mock_base_state_event_processor: The event processor.
+        emitted_deltas: List to capture emitted deltas.
+    """
+    assert State.event_handlers["hydrate_and_load"].supersedes
+
+    app = app_module_mock.app = App(_state=State)
+    app._state_manager = mock_root_event_context.state_manager
+
+    def index():
+        return "hello"
+
+    app.add_page(index, on_load=BootCookieState.on_load_handler)
+    app._compile_page("index")
+
+    boot_name = format.format_event_handler(
+        State.hydrate_and_load  # pyright: ignore[reportArgumentType]
+    )
+    cookie_key = f"{BootCookieState.get_full_name()}.flavor{FIELD_MARKER}"
+    router_data = {RouteVar.PATH: "/", RouteVar.ORIGIN: "/", RouteVar.QUERY: {}}
+
+    async with mock_base_state_event_processor as processor:
+        future = await processor.enqueue(
+            token,
+            Event(
+                name=boot_name,
+                payload={"vars": {cookie_key: "chocolate"}},
+                router_data=router_data,
+            ),
+        )
+        await future.wait_all()
+
+    state_name = State.get_full_name()
+    hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    # Snapshot (not hydrated, browser cookie applied), on_load delta, hydrated.
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[state_name][hydrated_key] is False
+    assert (
+        snapshot[BootCookieState.get_full_name()]["flavor" + FIELD_MARKER]
+        == "chocolate"
+    )
+    assert snapshot[BootCookieState.get_full_name()]["loads" + FIELD_MARKER] == 0
+    assert [d for _, d in emitted_deltas[1:]] == [
+        {BootCookieState.get_full_name(): {"loads" + FIELD_MARKER: 1}},
+        exp_is_hydrated(State, True),
+    ]
+
+    # The next hydrate resets the cookie var to its default when the browser
+    # no longer sends it, and the on_load chain runs again.
+    emitted_deltas.clear()
+    async with mock_base_state_event_processor as processor:
+        future = await processor.enqueue(
+            token, Event(name=boot_name, payload={}, router_data=router_data)
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[BootCookieState.get_full_name()]["flavor" + FIELD_MARKER] == "plain"
+    assert emitted_deltas[1][1] == {
+        BootCookieState.get_full_name(): {"loads" + FIELD_MARKER: 2}
+    }
+
+
+async def test_hydrate_and_load_diffs_against_compiled_defaults(
+    app_module_mock,
+    token,
+    mock_root_event_context: EventContext,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+):
+    """With matching initialState hashes only vars that differ from the defaults are sent.
+
+    Args:
+        app_module_mock: The app module that will be returned by get_app().
+        token: A token.
+        mock_root_event_context: The mock root event context.
+        mock_base_state_event_processor: The event processor.
+        emitted_deltas: List to capture emitted deltas.
+    """
+    from reflex.compiler.utils import compile_state
+    from reflex.state import state_snapshot_hashes
+
+    app = app_module_mock.app = App(_state=State)
+    app._state_manager = mock_root_event_context.state_manager
+
+    def index():
+        return "hello"
+
+    app.add_page(index)
+    app._compile_page("index")
+
+    boot_name = format.format_event_handler(
+        State.hydrate_and_load  # pyright: ignore[reportArgumentType]
+    )
+    cookie_key = f"{BootCookieState.get_full_name()}.flavor{FIELD_MARKER}"
+    router_data = {RouteVar.PATH: "/", RouteVar.ORIGIN: "/", RouteVar.QUERY: {}}
+    hashes = state_snapshot_hashes(compile_state(State))
+
+    async with mock_base_state_event_processor as processor:
+        future = await processor.enqueue(
+            token,
+            Event(
+                name=boot_name,
+                payload={"vars": {cookie_key: "chocolate"}, "hashes": hashes},
+                router_data=router_data,
+            ),
+        )
+        await future.wait_all()
+
+    snapshot = emitted_deltas[0][1]
+    # Only the root router and the changed cookie var differ from the compiled defaults.
+    assert set(snapshot) == {State.get_full_name(), BootCookieState.get_full_name()}
+    assert set(snapshot[State.get_full_name()]) == {"router" + FIELD_MARKER}
+    assert snapshot[BootCookieState.get_full_name()] == {
+        "flavor" + FIELD_MARKER: "chocolate"
+    }
+
+    # Hashes compiled against a different set of states fall back to the full snapshot.
+    emitted_deltas.clear()
+    async with mock_base_state_event_processor as processor:
+        future = await processor.enqueue(
+            token,
+            Event(
+                name=boot_name,
+                payload={"hashes": hashes[:-1]},
+                router_data=router_data,
+            ),
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert "loads" + FIELD_MARKER in snapshot[BootCookieState.get_full_name()]

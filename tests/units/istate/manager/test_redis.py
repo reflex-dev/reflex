@@ -736,3 +736,49 @@ async def test_oplock_hold_oplock_after_cancel(
     )
     assert isinstance(final_state, root_state)
     assert final_state.count == 2
+
+
+async def test_set_state_checks_lock_once_per_tree(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """Saving a state tree verifies the lock and reads its TTL once, not per substate.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    redis = state_manager_redis.redis
+    lock_key = state_manager_redis._lock_key(token)
+    real_get, real_pttl = redis.get, redis.pttl
+    lock_gets: list[Any] = []
+    pttls: list[Any] = []
+
+    async def counting_get(key):
+        if key == lock_key:
+            lock_gets.append(key)
+        return await real_get(key)
+
+    async def counting_pttl(key):
+        pttls.append(key)
+        return await real_pttl(key)
+
+    async with state_manager_redis.modify_state(token) as state:
+        assert len(state.substates) == 2
+        state.count = 1
+        lock_id = await real_get(lock_key)
+        redis.get = counting_get
+        redis.pttl = counting_pttl
+        try:
+            await state_manager_redis.set_state(token, state, lock_id=lock_id)
+        finally:
+            redis.get = real_get
+            redis.pttl = real_pttl
+
+    # One lock check and one TTL read for a tree of three states.
+    assert len(lock_gets) == 1
+    assert len(pttls) == 1
+    saved = await state_manager_redis.get_state(token)
+    assert saved.count == 1
