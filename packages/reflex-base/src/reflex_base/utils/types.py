@@ -586,7 +586,7 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     Returns:
         The type hint of the property, if it is a property, else None.
     """
-    if not isinstance(attr, PROPERTY_CLASSES):
+    if not isinstance(attr, PROPERTY_CLASSES) or attr.fget is None:
         return None
     hints = get_type_hints(attr.fget)
     return hints.get("return", None)
@@ -1115,30 +1115,34 @@ def is_backend_base_variable(name: str, cls: type[BaseState]) -> bool:
 
     from reflex_base.vars.base import Field, Var, is_computed_var
 
-    if name in cls.__dict__:
-        value = cls.__dict__[name]
-        if type(value) is classmethod:
-            return False
-        if callable(value):
-            return False
+    # Read the class dicts directly: `getattr` would run the descriptor this
+    # lookup is meant to detect, against a class that is still being built.
+    for klass in cls.__mro__:
+        if name in klass.__dict__:
+            value = klass.__dict__[name]
+            break
+    else:
+        return True
 
-        if isinstance(
-            value,
-            (
-                types.FunctionType,
-                property,
-                cached_property,
-            ),
-        ) or is_computed_var(value):
-            return False
+    if type(value) is classmethod:
+        return False
+    if callable(value):
+        return False
 
-        # Custom descriptors should be invoked via their __get__/__set__
-        # rather than shadowed by backend var storage. Field/Var define
-        # __get__ for type-checking but are not user descriptors.
-        if hasattr(type(value), "__get__") and not isinstance(value, (Field, Var)):
-            return False
+    if isinstance(
+        value,
+        (
+            types.FunctionType,
+            property,
+            cached_property,
+        ),
+    ) or is_computed_var(value):
+        return False
 
-    return True
+    # Custom descriptors should be invoked via their __get__/__set__
+    # rather than shadowed by backend var storage. Field/Var define
+    # __get__ for type-checking but are not user descriptors.
+    return not hasattr(type(value), "__get__") or isinstance(value, (Field, Var))
 
 
 def check_type_in_allowed_types(value_type: type, allowed_types: Iterable) -> bool:

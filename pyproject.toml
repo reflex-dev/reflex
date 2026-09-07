@@ -68,6 +68,10 @@ pydantic = ["reflex-base[pydantic]"]
 socketio = ["python-socketio >=5.12.0,<6.0"]
 # The uvicorn backend: server, websocket support, and the posix prod runner.
 uvicorn = ["uvicorn >=0.20.0", "websockets >=13.0", "gunicorn >=23.0"]
+testing = [
+  "psutil >=7.0.0,<8.0",
+  "selenium >=4.0.0,<5.0",
+]
 
 [project.urls]
 homepage = "https://reflex.dev"

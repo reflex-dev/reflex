@@ -67,6 +67,8 @@ POLL_INTERVAL = 0.25
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = int | float | None
+
+
 if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
     FRONTEND_POPEN_ARGS["shell"] = True
@@ -613,7 +615,14 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
-        import psutil
+        try:
+            import psutil
+        except ImportError as exc:
+            msg = (
+                "AppHarness cleanup requires `psutil`. Install it with "
+                "`pip install 'reflex[testing]'`."
+            )
+            raise ImportError(msg) from exc
 
         # Quit browsers first to avoid any lingering events being sent during shutdown.
         for driver in self._frontends:
