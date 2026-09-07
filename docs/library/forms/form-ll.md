@@ -138,7 +138,7 @@ rx.form.root(
 )
 ```
 
-In this example, the `rx.input` has an attribute `type="email"` and the `form.message` has the attribute `match="typeMismatch"`. Those are required for the form to validate the input by its type. The prop `as_child="True"` is required when using other components to construct a Form component. This example has used `rx.input` to construct the Form Control and `button` the Form Submit.
+In this example, `type="email"` on `rx.input` enables the browser's email format validation, and `match="typeMismatch"` on `form.message` displays the message when that validation fails. The prop `as_child=True` is required when using other components to construct a Form component. This example has used `rx.input` to construct the Form Control and `button` the Form Submit.
 
 ## Form Anatomy
 
@@ -162,7 +162,7 @@ A Form Root (`form.root`) contains all the parts of a form. The Form Field (`for
 The current version of Radix Forms does not support composing **Form Control** with other Radix form primitives such as **Checkbox**, **Select**, etc.
 ```
 
-The Form Message is a validation message which is automatically wired (functionality and accessibility). When the Form Control determines the input is invalid, the Form Message is shown. The `match` prop is to enable [client side validation](#validation). To perform [server side validation](#validation), **both** the `force_match` prop of the Form Control and the `server_invalid` prop of the Form Field are set together.
+The Form Message is a validation message which is automatically wired (functionality and accessibility). The `match` prop selects which [client side validation](#client-side-validation) failure displays the message. To perform [server side validation](#server-side-validation), **both** the `force_match` prop of the Form Message and the `server_invalid` prop of the Form Field are set together.
 
 The Form Submit is by default a button that submits the form. To use another button component as a Form Submit, include that button as a child inside `form.submit` and set the prop `as_child=True`.
 
@@ -300,6 +300,12 @@ def radix_form_submission_example():
 ```
 
 ## Validation
+
+### Client Side Validation
+
+Client side validation uses the browser's built-in input constraints, such as `required`, `type`, and `pattern`; see the [Input documentation](/docs/library/forms/input/) for available props.
+
+### Server Side Validation
 
 Server side validation is done through **Computed Vars** on the State. The **Var** should return a boolean flag indicating when input is invalid. Set that **Var** on both the `server_invalid` prop of `form.field` and the `force_match` prop of `form.message`. There is an example how to do that in the [Final Example](#final-example).
 
