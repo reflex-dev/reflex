@@ -789,6 +789,12 @@ class StringVar(Var[STRING_TYPE], python_types=str):
             The string slice operation.
         """
         if isinstance(i, slice):
+            if i.step is None or (isinstance(i.step, int) and i.step == 1):
+                return _string_slice_operation(
+                    self,
+                    i.start if i.start is not None else Var(_js_expr="undefined"),
+                    i.stop if i.stop is not None else Var(_js_expr="undefined"),
+                )
             return self.split()[i].join()
         if not isinstance(i, (int, NumberVar)) or (
             isinstance(i, NumberVar) and i._is_strict_float()
@@ -802,7 +808,7 @@ class StringVar(Var[STRING_TYPE], python_types=str):
         Returns:
             The string length operation.
         """
-        return self.split().length()
+        return _string_length_operation(self)
 
     def lower(self) -> StringVar:
         """Convert the string to lowercase.
@@ -1595,6 +1601,36 @@ class ConcatVarOperation(CachedVarOperation, StringVar[str]):
             _var_data=_var_data,
             _var_value=tuple(map(LiteralVar.create, value)),
         )
+
+
+@var_operation
+def _string_length_operation(string: StringVar[Any]):
+    """Get a string's length in UTF-16 code units.
+
+    Args:
+        string: The string.
+
+    Returns:
+        The string length.
+    """
+    return var_operation_return(js_expression=f"{string}.length", var_type=int)
+
+
+@var_operation
+def _string_slice_operation(string: StringVar[Any], start: Var | int, stop: Var | int):
+    """Slice a string using UTF-16 code-unit boundaries.
+
+    Args:
+        string: The string.
+        start: The starting index, or an undefined Var.
+        stop: The ending index, or an undefined Var.
+
+    Returns:
+        The string slice.
+    """
+    return var_operation_return(
+        js_expression=f"{string}.slice({start}, {stop})", var_type=str
+    )
 
 
 @var_operation
