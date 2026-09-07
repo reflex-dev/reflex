@@ -9,7 +9,6 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 from redis.asyncio import Redis
-from redis.exceptions import WatchError
 from redis.typing import EncodableT, KeyT
 
 from reflex.utils import prerequisites
@@ -144,46 +143,8 @@ def mock_redis() -> Redis:
         return False
 
     class _Pipeline:
-        """A pipeline that also models WATCH/MULTI/EXEC on the mocked keys."""
-
         def __init__(self):
             self.results = []
-            self.watched: bytes | None = None
-            self.watched_value: Any = None
-            self.in_multi = False
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *exc_info):
-            await self.reset()
-
-        async def reset(self):
-            self.results = []
-            self.watched = None
-            self.watched_value = None
-            self.in_multi = False
-
-        async def watch(self, key: KeyT):
-            _expire_keys()
-            self.watched = _key_bytes(key)
-            self.watched_value = keys.get(self.watched)
-
-        def multi(self):
-            self.in_multi = True
-
-        def get(self, key: KeyT):
-            if self.watched is not None and not self.in_multi:
-                # Immediate mode while watching, before MULTI.
-                return redis_mock.get(key=key)
-            self.results.append(redis_mock.get(key=key))
-            return None
-
-        def pttl(self, key: KeyT):
-            if self.watched is not None and not self.in_multi:
-                return redis_mock.pttl(key=key)
-            self.results.append(redis_mock.pttl(key=key))
-            return None
 
         def set(
             self,
@@ -197,6 +158,9 @@ def mock_redis() -> Redis:
                 redis_mock.set(key=key, value=value, ex=ex, px=px, nx=nx)
             )
 
+        def get(self, key: KeyT):
+            self.results.append(redis_mock.get(key=key))
+
         def sadd(self, key: KeyT, value: EncodableT):
             self.results.append(redis_mock.sadd(key=key, value=value))
 
@@ -204,22 +168,35 @@ def mock_redis() -> Redis:
             self.results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
 
         async def execute(self):
-            _expire_keys()
-            if (
-                self.watched is not None
-                and keys.get(self.watched) != self.watched_value
-            ):
-                for pending in self.results:
-                    pending.close()
-                self.results = []
-                msg = "Watched variable changed."
-                raise WatchError(msg)
             results = await asyncio.gather(*self.results)
             self.results = []
             return results
 
     def pipeline(transaction: bool = True):
         return _Pipeline()
+
+    async def mock_eval(script: str, numkeys: int, *keys_and_args: Any) -> Any:
+        """Emulate the one script the redis state manager runs.
+
+        It is the fenced save: check the lock held in KEYS[1] against ARGV[1],
+        write the remaining keys with the expiration in ARGV[2], and return
+        the lock's PTTL, or None without writing when the lock is not held.
+
+        Args:
+            script: The Lua source, unused.
+            numkeys: How many leading entries of keys_and_args are keys.
+            keys_and_args: The keys followed by the arguments.
+
+        Returns:
+            The lock's PTTL after writing, or None when nothing was written.
+        """
+        lock_key, *state_keys = keys_and_args[:numkeys]
+        lock_id, expiration, *payloads = keys_and_args[numkeys:]
+        if await redis_mock.get(lock_key) != lock_id:
+            return None
+        for key, payload in zip(state_keys, payloads, strict=True):
+            await redis_mock.set(key, payload, ex=int(expiration))
+        return await redis_mock.pttl(lock_key)
 
     async def pttl(key: KeyT) -> int:  # noqa: RUF029
         _expire_keys()
@@ -289,6 +266,7 @@ def mock_redis() -> Redis:
     redis_mock.scard = mock_scard
     redis_mock.pexpire = mock_pexpire
     redis_mock.pipeline = pipeline
+    redis_mock.eval = mock_eval
     redis_mock.pttl = pttl
     redis_mock.pubsub = pubsub
     redis_mock.config_set = AsyncMock()

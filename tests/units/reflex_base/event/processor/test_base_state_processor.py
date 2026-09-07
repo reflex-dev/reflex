@@ -897,3 +897,14 @@ async def test_hydrate_and_load_diffs_against_compiled_defaults(
         await future.wait_all()
     snapshot = emitted_deltas[0][1]
     assert "loads" + FIELD_MARKER in snapshot[CookieState.get_full_name()]
+
+    # A matching names digest with a truncated hash list is malformed and
+    # also falls back to the full snapshot instead of failing the event.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": hashes[:-1]})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert "loads" + FIELD_MARKER in snapshot[CookieState.get_full_name()]

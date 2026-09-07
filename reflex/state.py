@@ -2643,8 +2643,9 @@ async def _diff_against_initial_state(
             ),
         )
         cached = _initial_snapshot_cache[root_cls]
-    if not hashes or hashes[0] != cached.names_digest:
-        # The frontend was compiled against a different set of states.
+    if len(hashes) != len(cached.hashes) + 1 or hashes[0] != cached.names_digest:
+        # The frontend was compiled against a different set of states, or the
+        # payload is malformed.
         return delta
     frontend_hashes = dict(zip(sorted(cached.hashes), hashes[1:], strict=True))
     diff: Delta = {}

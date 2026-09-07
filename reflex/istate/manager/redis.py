@@ -9,12 +9,11 @@ import os
 import sys
 import time
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable
 from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
-from redis.exceptions import WatchError
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils.exceptions import (
@@ -113,6 +112,21 @@ class RedisPubSubMessage(TypedDict):
 
 class OplockFound(Exception):  # noqa: N818
     """Indicates that an opportunistic lock was found."""
+
+
+# KEYS: the lock key, then the state keys. ARGV: the lock id, the state
+# expiration in seconds, then the serialized states in KEYS order. Writes only
+# while the lock is held by ARGV[1], and returns the lock's remaining PTTL, or
+# nil when the lock changed hands or expired and nothing was written.
+_FENCED_SAVE_SCRIPT = """
+if redis.call('GET', KEYS[1]) ~= ARGV[1] then
+    return nil
+end
+for i = 2, #KEYS do
+    redis.call('SET', KEYS[i], ARGV[i + 1], 'EX', ARGV[2])
+end
+return redis.call('PTTL', KEYS[1])
+"""
 
 
 @dataclasses.dataclass
@@ -399,8 +413,7 @@ class StateManagerRedis(StateManager):
         """
         token = self._coerce_token(token)
         if isinstance(token, BaseStateToken):
-            # Serialize the touched states before checking the lock, so the
-            # check sits right before the single pipelined write.
+            # Serialize the touched states up front so they go out in one write.
             writes = self._collect_state_writes(token, cast(BaseState, state))
         else:
             # Non-BaseState token: simple single-key write.
@@ -420,82 +433,44 @@ class StateManagerRedis(StateManager):
             if (event := context.get("event")) is not None
             else ""
         )
-        # A dropped connection also surfaces as WatchError, since it loses the
-        # WATCH state, and so does a lease refresh touching the lock key: retry
-        # once on a fresh connection, which re-checks the lock before writing.
-        try:
-            await self._fenced_save(token, lock_id, writes, event_suffix)
-        except WatchError:
-            try:
-                await self._fenced_save(token, lock_id, writes, event_suffix)
-            except WatchError:
-                msg = (
-                    f"Lock for token {token} changed while its state was being "
-                    "saved, so the save was discarded. Consider increasing "
-                    f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                    "or use `@rx.event(background=True)` decorator for long-running tasks."
-                    + event_suffix
-                )
-                raise LockExpiredError(msg) from None
-
-    async def _fenced_save(
-        self,
-        token: StateToken[Any],
-        lock_id: bytes,
-        writes: list[tuple[str, bytes]],
-        event_suffix: str,
-    ) -> None:
-        """Write the serialized states in one transaction fenced on the lock.
-
-        WATCH makes EXEC fail if the lock key changed hands or expired between
-        the ownership check and the write.
-
-        Args:
-            token: The token whose lock fences the write.
-            lock_id: The lock id the caller holds.
-            writes: The redis keys and pickled payloads to write.
-            event_suffix: Event context appended to warning and error messages.
-
-        Raises:
-            LockExpiredError: If the lock is not held by lock_id.
-            WatchError: If the lock key changed or the connection dropped
-                while watching it.
-        """
         lock_key = self._lock_key(token)
-        async with self.redis.pipeline(transaction=True) as pipeline:
-            await pipeline.watch(lock_key)
-            existing_lock_id = await pipeline.get(lock_key)
-            if existing_lock_id != lock_id:
-                msg = (
-                    f"Lock expired for token {token} while processing. Consider increasing "
-                    f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                    "or use `@rx.event(background=True)` decorator for long-running tasks. "
-                    f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
-                    + event_suffix
+        # One round trip: the script checks the lock and writes atomically on
+        # the server, so an expired or re-acquired lock discards every write,
+        # and a retried command re-checks the lock instead of bypassing it.
+        pttl = await cast(
+            "Awaitable[int | None]",
+            self.redis.eval(
+                _FENCED_SAVE_SCRIPT,
+                1 + len(writes),
+                lock_key,
+                *(key for key, _ in writes),
+                lock_id,
+                self.token_expiration,
+                *(pickle_state for _, pickle_state in writes),
+            ),
+        )
+        if pttl is None:
+            existing_lock_id = await self.redis.get(lock_key)
+            msg = (
+                f"Lock expired for token {token} while processing. Consider increasing "
+                f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
+                "or use `@rx.event(background=True)` decorator for long-running tasks. "
+                f"Current lock id: {existing_lock_id!r}, expected lock id: {lock_id!r}."
+                + event_suffix
+            )
+            raise LockExpiredError(msg)
+        if (
+            isinstance(token, BaseStateToken)
+            and token.lock_key not in self._local_leases
+        ):
+            time_taken = (self.lock_expiration - pttl) / 1000
+            if time_taken > self.lock_warning_threshold / 1000:
+                logger.warning(
+                    f"Lock for token {token} was held too long {time_taken=}s, "
+                    "use `@rx.event(background=True)` decorator for long-running "
+                    f"tasks.{event_suffix}",
+                    extra={"dedupe": True},
                 )
-                raise LockExpiredError(msg)
-            if (
-                isinstance(token, BaseStateToken)
-                and token.lock_key not in self._local_leases
-            ):
-                # Immediate mode on the watching connection: the parent client
-                # would need a second pooled connection while this one is held.
-                time_taken = (
-                    self.lock_expiration - (await pipeline.pttl(lock_key))
-                ) / 1000
-                if time_taken > self.lock_warning_threshold / 1000:
-                    logger.warning(
-                        f"Lock for token {token} was held too long {time_taken=}s, "
-                        "use `@rx.event(background=True)` decorator for long-running "
-                        f"tasks.{event_suffix}",
-                        extra={"dedupe": True},
-                    )
-            if not writes:
-                return
-            pipeline.multi()
-            for key, pickle_state in writes:
-                pipeline.set(key, pickle_state, ex=self.token_expiration)
-            await pipeline.execute()
 
     def _collect_state_writes(
         self, token: BaseStateToken, base_state: BaseState
