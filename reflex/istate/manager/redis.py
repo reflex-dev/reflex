@@ -423,11 +423,7 @@ class StateManagerRedis(StateManager):
                 await self.redis.set(str(token), pickle_state, ex=self.token_expiration)
             return
 
-        base_state = cast(BaseState, state)
-
-        lock_key = token.lock_key
-
-        if lock_id is not None and lock_key not in self._local_leases:
+        if lock_id is not None and token.lock_key not in self._local_leases:
             time_taken = (
                 self.lock_expiration - (await self.redis.pttl(self._lock_key(token)))
             ) / 1000
@@ -444,16 +440,22 @@ class StateManagerRedis(StateManager):
                     extra={"dedupe": True},
                 )
 
-        # Recursively set_state on all known substates.
+        await self._set_state_tree(token, cast(BaseState, state))
+
+    async def _set_state_tree(self, token: BaseStateToken, base_state: BaseState):
+        """Persist a state and, concurrently, every substate attached to it.
+
+        The lock check and the hold-time warning happen once in ``set_state``;
+        this recursion only writes the keys that were touched.
+
+        Args:
+            token: The token (any state class) identifying the client.
+            base_state: The state instance whose tree to persist.
+        """
         tasks = [
             asyncio.create_task(
-                self.set_state(
-                    token,
-                    substate,
-                    lock_id=lock_id,
-                    **context,
-                ),
-                name=f"reflex_set_state|{lock_key}|{substate.get_full_name()}",
+                self._set_state_tree(token, substate),
+                name=f"reflex_set_state|{token.lock_key}|{substate.get_full_name()}",
             )
             for substate in base_state.substates.values()
         ]

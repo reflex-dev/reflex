@@ -2630,8 +2630,21 @@ class OnLoadInternalState(State):
                 load_events,
                 router_data=self.router_data,
             ),
-            State.set_is_hydrated(True),
+            OnLoadInternalState.set_is_hydrated(True),
         ]
+
+    @event
+    def set_is_hydrated(self, value: bool) -> None:
+        """Set the hydrated flag from this leaf substate.
+
+        Targeting the leaf instead of ``State.set_is_hydrated`` keeps the
+        redis state manager from fetching and persisting every substate in the
+        app just to flip one root var.
+
+        Args:
+            value: The hydrated state.
+        """
+        self.is_hydrated = value
 
 
 class ComponentState(State, mixin=True):
