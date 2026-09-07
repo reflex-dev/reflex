@@ -420,9 +420,48 @@ class StateManagerRedis(StateManager):
             if (event := context.get("event")) is not None
             else ""
         )
+        # A dropped connection also surfaces as WatchError, since it loses the
+        # WATCH state, and so does a lease refresh touching the lock key: retry
+        # once on a fresh connection, which re-checks the lock before writing.
+        try:
+            await self._fenced_save(token, lock_id, writes, event_suffix)
+        except WatchError:
+            try:
+                await self._fenced_save(token, lock_id, writes, event_suffix)
+            except WatchError:
+                msg = (
+                    f"Lock for token {token} changed while its state was being "
+                    "saved, so the save was discarded. Consider increasing "
+                    f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
+                    "or use `@rx.event(background=True)` decorator for long-running tasks."
+                    + event_suffix
+                )
+                raise LockExpiredError(msg) from None
+
+    async def _fenced_save(
+        self,
+        token: StateToken[Any],
+        lock_id: bytes,
+        writes: list[tuple[str, bytes]],
+        event_suffix: str,
+    ) -> None:
+        """Write the serialized states in one transaction fenced on the lock.
+
+        WATCH makes EXEC fail if the lock key changed hands or expired between
+        the ownership check and the write.
+
+        Args:
+            token: The token whose lock fences the write.
+            lock_id: The lock id the caller holds.
+            writes: The redis keys and pickled payloads to write.
+            event_suffix: Event context appended to warning and error messages.
+
+        Raises:
+            LockExpiredError: If the lock is not held by lock_id.
+            WatchError: If the lock key changed or the connection dropped
+                while watching it.
+        """
         lock_key = self._lock_key(token)
-        # Fence the write on the lock: WATCH makes EXEC fail if the lock key
-        # changed hands or expired between the ownership check and the write.
         async with self.redis.pipeline(transaction=True) as pipeline:
             await pipeline.watch(lock_key)
             existing_lock_id = await pipeline.get(lock_key)
@@ -456,17 +495,7 @@ class StateManagerRedis(StateManager):
             pipeline.multi()
             for key, pickle_state in writes:
                 pipeline.set(key, pickle_state, ex=self.token_expiration)
-            try:
-                await pipeline.execute()
-            except WatchError:
-                msg = (
-                    f"Lock for token {token} changed while its state was being "
-                    "saved, so the save was discarded. Consider increasing "
-                    f"`app.state_manager.lock_expiration` (currently {self.lock_expiration}) "
-                    "or use `@rx.event(background=True)` decorator for long-running tasks."
-                    + event_suffix
-                )
-                raise LockExpiredError(msg) from None
+            await pipeline.execute()
 
     def _collect_state_writes(
         self, token: BaseStateToken, base_state: BaseState

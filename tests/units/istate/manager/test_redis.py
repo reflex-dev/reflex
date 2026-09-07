@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from redis.exceptions import WatchError
 
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
@@ -783,6 +784,56 @@ async def test_set_state_checks_lock_once_per_tree(
     saved = await state_manager_redis.get_state(token)
     assert isinstance(saved, root_state)
     assert saved.count == 1
+
+
+async def test_set_state_retries_once_when_connection_drops_while_watching(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+):
+    """A dropped connection during the fenced save is retried on a fresh one.
+
+    redis-py reports a connection error while watching as WatchError, so the
+    save must re-check the lock on a new connection instead of failing.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+    """
+    state_manager_redis._oplock_enabled = False
+    token = BaseStateToken(ident=str(uuid.uuid4()), cls=root_state)
+    redis = state_manager_redis.redis
+    real_pipeline = redis.pipeline
+    pipelines: list[Any] = []
+
+    def dropping_pipeline(*args, **kwargs):
+        pipe = real_pipeline(*args, **kwargs)
+        pipelines.append(pipe)
+        if len(pipelines) == 1:
+
+            async def dropped_execute():
+                await pipe.reset()
+                msg = "A ConnectionError occurred while watching one or more keys"
+                raise WatchError(msg)
+
+            pipe.execute = dropped_execute  # pyright: ignore[reportAttributeAccessIssue]
+        return pipe
+
+    async with state_manager_redis.modify_state(token) as state:
+        state.count = 7
+        redis.pipeline = dropping_pipeline  # pyright: ignore[reportAttributeAccessIssue]
+        try:
+            await state_manager_redis.set_state(
+                token,
+                state,
+                lock_id=await redis.get(state_manager_redis._lock_key(token)),
+            )
+        finally:
+            redis.pipeline = real_pipeline  # pyright: ignore[reportAttributeAccessIssue]
+
+    assert len(pipelines) == 2
+    saved = await state_manager_redis.get_state(token)
+    assert isinstance(saved, root_state)
+    assert saved.count == 7
 
 
 async def test_set_state_discards_writes_when_lock_changes_hands(
