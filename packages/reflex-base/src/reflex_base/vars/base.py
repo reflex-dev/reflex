@@ -65,9 +65,9 @@ from reflex_base.utils.imports import (
 from reflex_base.utils.types import (
     GenericType,
     Self,
-    _isinstance,
     get_origin,
     has_args,
+    runtime_isinstance,
     safe_issubclass,
     unionize,
 )
@@ -2609,7 +2609,7 @@ class ComputedVar(Var[RETURN_TYPE]):
         return value
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
-        if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
+        if not runtime_isinstance(value, self._var_type):
             logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
                 f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."

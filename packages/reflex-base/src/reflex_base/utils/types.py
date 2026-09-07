@@ -30,6 +30,7 @@ from typing import (  # noqa: UP035
     _eval_type,  # pyright: ignore [reportAttributeAccessIssue]
     _GenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
     _SpecialGenericAlias,  # pyright: ignore [reportAttributeAccessIssue]
+    cast,
     get_args,
     is_typeddict,
 )
@@ -1039,6 +1040,187 @@ def _isinstance(
                 treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
             )
         raise
+
+
+if find_spec("pydantic_core"):
+    from pydantic_core import SchemaValidator, ValidationError, core_schema
+
+    def _runtime_schema(cls: GenericType, nested: int) -> core_schema.CoreSchema | None:
+        """Build a pydantic-core schema equivalent to ``_isinstance`` for a hint.
+
+        Mirrors ``_isinstance(obj, cls, nested=nested, treat_var_as_type=False)``
+        branch for branch; leaves are ``isinstance`` checks so subclass semantics
+        (including ``bool`` as ``int``) are unchanged.
+
+        Args:
+            cls: The type hint to compile.
+            nested: How many container levels the check descends into.
+
+        Returns:
+            The schema, or None when the hint has no exact schema equivalent and
+            the check must run through ``_isinstance`` instead.
+        """
+        if cls is Any:
+            return core_schema.any_schema()
+        if cls is _Var:
+            return core_schema.is_instance_schema(_Var)
+        if cls is None or cls is type(None):
+            return core_schema.none_schema()
+        if isinstance(cls, TypeAliasTypes):
+            return _runtime_schema(resolve_type_alias(cls), nested)
+
+        origin_attr = getattr(cls, "__origin__", None)
+
+        if origin_attr is Union or (
+            origin_attr is None and isinstance(cls, types.UnionType)
+        ):
+            # A Var instance never satisfies a union in _isinstance and a bare Var
+            # member never matches a non-Var value, so the member contributes nothing.
+            choices = [
+                _runtime_schema(arg, nested)
+                for arg in _get_args_cached(cls)
+                if arg is not _Var
+            ]
+            if not choices or None in choices:
+                return None
+            return core_schema.union_schema(
+                cast(
+                    "list[core_schema.CoreSchema | tuple[core_schema.CoreSchema, str]]",
+                    choices,
+                ),
+                mode="left_to_right",
+            )
+
+        if origin_attr is Literal:
+            return core_schema.literal_schema(list(_get_args_cached(cls)))
+
+        origin = origin_attr if origin_attr is not None else _get_origin_cached(cls)
+
+        if origin is None:
+            if is_typeddict(cls):
+                # Key-level validation of a TypedDict has no core schema with the
+                # same shallow semantics; only the element-level dict check does.
+                return None if nested else core_schema.is_instance_schema(dict)
+            if cls is float:
+                return core_schema.is_instance_schema((float, int))
+            # ``object`` would also admit Var instances, which _isinstance rejects.
+            if not isinstance(cls, type) or cls is object or issubclass(cls, _Var):
+                return None
+            return core_schema.is_instance_schema(cls)
+
+        args = _get_args_cached(cls)
+
+        if not args:
+            return (
+                core_schema.is_instance_schema(origin)
+                if isinstance(origin, type)
+                else None
+            )
+
+        if origin is _Var or origin is _Field:
+            return _runtime_schema(args[0], nested)
+
+        if nested > 0:
+            if origin is list:
+                items = _runtime_schema(args[0], nested - 1)
+                return (
+                    None
+                    if items is None
+                    else core_schema.list_schema(items, strict=True)
+                )
+            if origin is tuple:
+                if args[-1] is Ellipsis:
+                    item = _runtime_schema(args[0], nested - 1)
+                    if item is None:
+                        return None
+                    return core_schema.tuple_schema(
+                        [item], variadic_item_index=0, strict=True
+                    )
+                items = [_runtime_schema(arg, nested - 1) for arg in args]
+                if None in items:
+                    return None
+                return core_schema.tuple_schema(
+                    cast("list[core_schema.CoreSchema]", items), strict=True
+                )
+            if safe_issubclass(origin, Mapping):
+                if origin is not dict:
+                    return None
+                keys = _runtime_schema(args[0], nested - 1)
+                values = _runtime_schema(args[1], nested - 1)
+                if keys is None or values is None:
+                    return None
+                return core_schema.dict_schema(keys, values, strict=True)
+            if origin is set:
+                item = _runtime_schema(args[0], nested - 1)
+                return (
+                    None if item is None else core_schema.set_schema(item, strict=True)
+                )
+
+        base = get_base_class(cls)
+        return core_schema.is_instance_schema(base) if isinstance(base, type) else None
+
+    # Compiled validators keyed by type hint; None marks hints that fall back to
+    # ``_isinstance``. Hints are finite (one per annotated field) so this is unbounded.
+    _RUNTIME_VALIDATORS: dict[Any, SchemaValidator | None] = {}
+
+    def _compile_runtime_validator(cls: GenericType) -> SchemaValidator | None:
+        """Compile the validator for a hint, or None when it needs ``_isinstance``.
+
+        Args:
+            cls: The type hint to compile.
+
+        Returns:
+            The compiled validator, or None for hints without a schema equivalent.
+        """
+        if _Var is _Unloaded:
+            _load_var_classes()
+        schema = _runtime_schema(cls, 1)
+        return None if schema is None else SchemaValidator(schema)
+
+    def runtime_isinstance(obj: Any, cls: GenericType) -> bool:
+        """Check a runtime value against a state var annotation, one level deep.
+
+        Equivalent to ``_isinstance(obj, cls, nested=1, treat_var_as_type=False)``
+        but runs the per-element checks in pydantic-core, compiled once per hint.
+        Hints without an exact schema equivalent, and Var instances, take the
+        ``_isinstance`` path.
+
+        Args:
+            obj: The value to check.
+            cls: The declared type of the value.
+
+        Returns:
+            Whether the value matches the declared type.
+        """
+        try:
+            validator = _RUNTIME_VALIDATORS[cls]
+        except KeyError:
+            validator = _RUNTIME_VALIDATORS[cls] = _compile_runtime_validator(cls)
+        if validator is None or isinstance(obj, _Var):
+            return _isinstance(obj, cls, nested=1, treat_var_as_type=False)
+        if type(obj) is not obj.__class__:
+            # A MutableProxy (wrapt) reports the wrapped value's class, which
+            # isinstance honors but pydantic-core's container checks do not.
+            obj = obj.__wrapped__
+        try:
+            validator.validate_python(obj)
+        except ValidationError:
+            return False
+        return True
+
+else:  # pragma: no cover - pydantic is an optional dependency of reflex-base
+
+    def runtime_isinstance(obj: Any, cls: GenericType) -> bool:
+        """Check a runtime value against a state var annotation, one level deep.
+
+        Args:
+            obj: The value to check.
+            cls: The declared type of the value.
+
+        Returns:
+            Whether the value matches the declared type.
+        """
+        return _isinstance(obj, cls, nested=1, treat_var_as_type=False)
 
 
 def is_dataframe(value: type) -> bool:

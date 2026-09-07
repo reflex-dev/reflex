@@ -1,11 +1,18 @@
 """Tests for reflex_base.utils.types."""
 
+import collections
+import dataclasses
+import datetime
+import enum
+import types
 import typing
-from collections.abc import Callable
-from typing import Literal, TypeVar
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any, Literal, TypedDict, TypeVar
 
 import pytest
+import wrapt
 from reflex_base.utils.types import (
+    _RUNTIME_VALIDATORS,
     ASGIApp,
     Message,
     Receive,
@@ -13,6 +20,7 @@ from reflex_base.utils.types import (
     Send,
     _isinstance,
     resolve_type_alias,
+    runtime_isinstance,
     typehint_issubclass,
 )
 from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple, Unpack
@@ -122,3 +130,169 @@ def test_typehint_issubclass_resolves_type_alias(alias_cls: type) -> None:
     assert typehint_issubclass(maybe, maybe)
     assert not typehint_issubclass(maybe, str)
     assert typehint_issubclass(str, maybe)
+
+
+class _Point(TypedDict):
+    x: int
+
+
+@dataclasses.dataclass
+class _Row:
+    a: int
+
+
+class _Color(enum.Enum):
+    RED = 1
+
+
+class _Text(str):
+    pass
+
+
+_RUNTIME_HINTS = [
+    int,
+    float,
+    str,
+    bool,
+    None,
+    Any,
+    object,
+    _Row,
+    _Color,
+    _Point,
+    _Text,
+    list,
+    dict,
+    list[int],
+    list[float],
+    list[str],
+    list[_Row],
+    list[_Point],
+    list[list[int]],
+    list[Any],
+    list[object],
+    list[int | None],
+    list[_Row | None],
+    list[Literal["a", "b"]],
+    dict[str, int],
+    dict[int, list[int]],
+    tuple[int, ...],
+    tuple[int, str],
+    tuple[()],
+    set[int],
+    frozenset[int],
+    int | None,
+    int | str,
+    Literal[1, "a"],
+    Sequence[int],
+    Mapping[str, int],
+    collections.OrderedDict[str, int],
+    type[_Row],
+    datetime.datetime,
+    list[datetime.date],
+]
+
+_RUNTIME_VALUES = [
+    1,
+    1.5,
+    True,
+    "a",
+    _Text("a"),
+    None,
+    _Row(1),
+    _Color.RED,
+    {"x": 1},
+    {"x": "s"},
+    {},
+    [],
+    [1, 2],
+    [1.0],
+    [1, "a"],
+    [True],
+    [_Row(1)],
+    [_Row(1), None],
+    [[1]],
+    [[1], ["a"]],
+    [None, 1],
+    (1, 2),
+    (1, "a"),
+    (),
+    {1, 2},
+    frozenset({1}),
+    {"a": 1},
+    {"a": "b"},
+    {1: [1]},
+    collections.OrderedDict(a=1),
+    types.MappingProxyType({"a": 1}),
+    ["a", "b"],
+    ["c"],
+    [object()],
+    _Row,
+    [_Row],
+    datetime.datetime(2024, 1, 1),
+    [datetime.date(2024, 1, 1)],
+]
+
+
+@pytest.mark.parametrize("hint", _RUNTIME_HINTS, ids=repr)
+def test_runtime_isinstance_matches_isinstance(hint: Any):
+    """The compiled check agrees with ``_isinstance`` for every value.
+
+    Args:
+        hint: The declared type to check against.
+    """
+    for value in _RUNTIME_VALUES:
+        expected = _isinstance(value, hint, nested=1, treat_var_as_type=False)
+        assert runtime_isinstance(value, hint) is expected, (value, hint)
+
+
+def test_runtime_isinstance_var_hints_and_values():
+    """Var hints and Var values keep the ``_isinstance`` semantics."""
+    from reflex_base.vars import Field, LiteralVar, Var
+
+    var = Var("x")
+    literal = LiteralVar.create(3)
+    hints = [
+        Var,
+        Var[int],
+        int | Var,
+        list[Var],
+        list[Var[int]],
+        Field[int],
+        Field[list[int]],
+    ]
+    values = [*_RUNTIME_VALUES, var, literal, [var], [literal]]
+    for hint in hints:
+        for value in values:
+            expected = _isinstance(value, hint, nested=1, treat_var_as_type=False)
+            assert runtime_isinstance(value, hint) is expected, (value, hint)
+    for hint in _RUNTIME_HINTS:
+        for value in (var, literal, [var], [literal]):
+            expected = _isinstance(value, hint, nested=1, treat_var_as_type=False)
+            assert runtime_isinstance(value, hint) is expected, (value, hint)
+
+
+def test_runtime_isinstance_compiles_once_and_falls_back():
+    """Supported hints compile to a cached validator; others record a fallback."""
+    for hint in (list[int], dict[str, _Row], tuple[int, ...], int | None):
+        runtime_isinstance([], hint)
+        assert _RUNTIME_VALIDATORS[hint] is not None
+    # Key-level TypedDict checks and non-dict mappings have no schema equivalent.
+    for hint in (_Point, Mapping[str, int], object):
+        runtime_isinstance({}, hint)
+        assert _RUNTIME_VALIDATORS[hint] is None
+
+
+def test_runtime_isinstance_unwraps_proxies():
+    """State reads hand back wrapt proxies; they must validate as their value."""
+    for value, hint in [
+        ([_Row(1)], list[_Row]),
+        ({"a": 1}, dict[str, int]),
+        ((1, 2), tuple[int, ...]),
+        ({1}, set[int]),
+        (_Row(1), _Row),
+    ]:
+        proxied = wrapt.ObjectProxy(value)
+        assert runtime_isinstance(proxied, hint)
+        assert runtime_isinstance([proxied], list[hint])  # pyright: ignore[reportInvalidTypeForm]
+        assert not runtime_isinstance(wrapt.ObjectProxy(["x"]), list[_Row])

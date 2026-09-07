@@ -19,23 +19,23 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
-reflex-components-plotly = false
-reflex-components-radix = false
-reflex-components-moment = false
-reflex-components-sonner = false
 hatch-reflex-pyi = false
-reflex-components-gridjs = false
 reflex = false
-reflex-enterprise = false
+reflex-base = false
 reflex-components-code = false
-reflex-components-recharts = false
 reflex-components-core = false
 reflex-components-dataeditor = false
-reflex-base = false
-reflex-components-markdown = false
+reflex-components-gridjs = false
 reflex-components-internal = false
 reflex-components-lucide = false
+reflex-components-markdown = false
+reflex-components-moment = false
+reflex-components-plotly = false
+reflex-components-radix = false
 reflex-components-react-player = false
+reflex-components-recharts = false
+reflex-components-sonner = false
+reflex-enterprise = false
 reflex-hosting-cli = false
 
 [manifest]
@@ -3945,6 +3945,7 @@ dev = [
 name = "reflex-base"
 source = { editable = "packages/reflex-base" }
 dependencies = [
+    { name = "orjson" },
     { name = "packaging" },
     { name = "platformdirs" },
     { name = "rich" },
@@ -3958,6 +3959,7 @@ pydantic = [
 
 [package.metadata]
 requires-dist = [
+    { name = "orjson", specifier = ">=3.11.3,<4" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
     { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.12.0,<3.0" },

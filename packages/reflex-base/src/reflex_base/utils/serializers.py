@@ -126,6 +126,12 @@ def serializer(
         SERIALIZERS[type_] = fn
         get_serializer.cache_clear()
 
+        global _overrides_native_json_type
+        if type_ not in _NATIVE_JSON_TYPES and types.safe_issubclass(
+            type_, _NATIVE_JSON_TYPES
+        ):
+            _overrides_native_json_type = True
+
         # Return the function.
         return fn
 
@@ -166,7 +172,10 @@ def serialize(
     # If there is no serializer, return None.
     if serializer is None:
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
-            return {k.name: getattr(value, k.name) for k in dataclasses.fields(value)}
+            return {
+                name: getattr(value, name)
+                for name in _dataclass_field_names(type(value))
+            }
 
         if get_type:
             return None, None
@@ -179,6 +188,34 @@ def serialize(
     if get_type:
         return serialized, get_serializer_type(type(value))
     return serialized
+
+
+@functools.lru_cache
+def _dataclass_field_names(cls: type) -> tuple[str, ...]:
+    """Get the field names of a dataclass, memoized per class.
+
+    Args:
+        cls: The dataclass type.
+
+    Returns:
+        The names of the dataclass fields, in definition order.
+    """
+    return tuple(field.name for field in dataclasses.fields(cls))
+
+
+# Types orjson encodes itself, so a custom serializer registered for one of
+# their subclasses would be bypassed on the wire; ``json_dumps_compact`` checks.
+_NATIVE_JSON_TYPES = (Enum, UUID)
+_overrides_native_json_type = False
+
+
+def overrides_native_json_type() -> bool:
+    """Whether a serializer is registered for an Enum or UUID subclass.
+
+    Returns:
+        True if such a serializer exists.
+    """
+    return _overrides_native_json_type
 
 
 @functools.lru_cache
