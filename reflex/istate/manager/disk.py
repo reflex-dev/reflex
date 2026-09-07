@@ -120,6 +120,9 @@ class StateManagerDisk(StateManager):
     async def load_state(self, token: StateToken[TOKEN_TYPE]) -> TOKEN_TYPE | None:
         """Load a state object based on the provided token.
 
+        The file read and unpickle run in a worker thread so a cache miss does
+        not block the event loop.
+
         Args:
             token: The token used to identify the state object.
 
@@ -128,13 +131,15 @@ class StateManagerDisk(StateManager):
         """
         token_path = self.token_path(token)
 
-        if token_path.exists():
+        def _read() -> TOKEN_TYPE | None:
             try:
                 with token_path.open(mode="rb") as file:
                     return token.deserialize(fp=file)
             except Exception:
-                pass
-        return None
+                return None
+
+        # The open and unpickle are blocking, keep them off the event loop.
+        return await asyncio.to_thread(_read)
 
     async def populate_substates(
         self, token: BaseStateToken, state: BaseState, root_state: BaseState
@@ -220,11 +225,17 @@ class StateManagerDisk(StateManager):
         if token.get_and_reset_touched_state(substate):
             pickle_state = token.serialize(substate)
             if pickle_state:
-                if not self.states_directory.exists():
-                    self.states_directory.mkdir(parents=True, exist_ok=True)
-                await run_in_thread(
-                    lambda: self.token_path(substate_token).write_bytes(pickle_state),
-                )
+                token_path = self.token_path(substate_token)
+
+                def _write() -> None:
+                    try:
+                        token_path.write_bytes(pickle_state)
+                    except FileNotFoundError:
+                        # The states directory was removed at runtime.
+                        self.states_directory.mkdir(parents=True, exist_ok=True)
+                        token_path.write_bytes(pickle_state)
+
+                await run_in_thread(_write)
 
         if isinstance(token, BaseStateToken) and isinstance(substate, BaseState):
             for substate_substate in substate.substates.values():
