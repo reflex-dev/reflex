@@ -1,3 +1,10 @@
+## v0.9.10.post2 (2026-09-08)
+
+### Bug Fixes
+
+- Fix the Safari dev-server cache-busting plugin rendering pages as comma-separated byte values with React Router 8. The rewritten HTML now streams through instead of being buffered, and multibyte characters split across response chunks stay intact. ([#7048](https://github.com/reflex-dev/reflex/issues/7048))
+
+
 ## v0.9.10.post1 (2026-09-01)
 
 ### Deprecations
