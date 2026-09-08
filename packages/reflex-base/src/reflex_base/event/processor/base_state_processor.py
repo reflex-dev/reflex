@@ -417,12 +417,15 @@ class BaseStateEventProcessor(EventProcessor):
                 router_data
                 and (previous_router_data := state.router_data) != router_data
             ):
-                # assignment will recurse into substates and force recalculation of
-                # dependent ComputedVar (dynamic route variables)
-                state.router_data = router_data
                 # only the router vars whose backing keys changed are rebuilt
-                # and re-sent; session/headers stay put across navigations
-                state._update_router_vars(router_data, previous_router_data)
+                # and re-sent; session/headers stay put across navigations.
+                # Store what it merged rather than the payload: a partial one
+                # would otherwise drop the keys it omits for the next event.
+                # The assignment recurses into substates and forces
+                # recalculation of dependent ComputedVar (dynamic route vars).
+                state.router_data = state._update_router_vars(
+                    router_data, previous_router_data
+                )
 
             # Preprocess the event.
             if (

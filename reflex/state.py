@@ -1900,7 +1900,7 @@ class BaseState(EvenMoreBasicBaseState):
         self,
         router_data: builtins.dict[str, Any],
         previous_router_data: builtins.dict[str, Any],
-    ) -> None:
+    ) -> builtins.dict[str, Any]:
         """Update the per-field router vars from a new router_data dict.
 
         Each var is rebuilt only when the router_data keys it derives from
@@ -1911,62 +1911,70 @@ class BaseState(EvenMoreBasicBaseState):
         regardless would dirty the var, mark the state touched, and persist it.
 
         A key missing from ``router_data`` carries no information about the
-        value it feeds, so it is not treated as a change: a payload holding
-        only the navigation keys must not reset the connection-scoped vars to
-        their defaults.
+        value it feeds, so the previous one is carried forward rather than
+        letting the constructors default it away: a payload holding only the
+        navigation keys must not empty the connection-scoped vars, nor rebuild
+        the page and URL without the origin header that gives them their host.
 
         Args:
             router_data: The new router_data dict.
             previous_router_data: The router_data dict this state last saw.
+
+        Returns:
+            The router_data to store on the state: the new values over the
+            previous ones, so a partial payload does not drop keys for the
+            next comparison either.
         """
+        # Merging also makes an absent key compare equal to what it replaced,
+        # so it is not read as a change without a special case for it.
+        merged = (
+            {**previous_router_data, **router_data}
+            if previous_router_data
+            else router_data
+        )
+        get = merged.get
+        prev_get = previous_router_data.get
 
-        def changed(key: str) -> bool:
-            return (
-                key in router_data and previous_router_data.get(key) != router_data[key]
-            )
-
-        headers_changed = changed(constants.RouteVar.HEADERS)
+        headers_changed = prev_get(constants.RouteVar.HEADERS) != get(
+            constants.RouteVar.HEADERS
+        )
         # Only the origin header feeds the URL/page host, so the navigation
-        # vars must not be rebuilt for a change to any other header. Read both
-        # sides from router_data: the headers var may already be updated below.
+        # vars must not be rebuilt for a change to any other header.
         origin_changed = headers_changed and (
-            previous_router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
-            != router_data[constants.RouteVar.HEADERS].get("origin", "")
+            prev_get(constants.RouteVar.HEADERS, {}).get("origin", "")
+            != get(constants.RouteVar.HEADERS, {}).get("origin", "")
         )
 
-        if any(
-            changed(key)
-            for key in (
-                constants.RouteVar.CLIENT_TOKEN,
-                constants.RouteVar.SESSION_ID,
-                constants.RouteVar.CLIENT_IP,
+        if (
+            any(
+                prev_get(key) != get(key)
+                for key in (
+                    constants.RouteVar.CLIENT_TOKEN,
+                    constants.RouteVar.SESSION_ID,
+                    constants.RouteVar.CLIENT_IP,
+                )
             )
-        ) and (session := SessionData.from_router_data(router_data)) != (
-            self.router_session
+            and (session := SessionData.from_router_data(merged)) != self.router_session
         ):
             self.router_session = session
         if (
             headers_changed
-            and (headers := HeaderData.from_router_data(router_data))
-            != self.router_headers
+            and (headers := HeaderData.from_router_data(merged)) != self.router_headers
         ):
             self.router_headers = headers
         if (
             origin_changed
-            or changed(constants.RouteVar.PATH)
-            or changed(constants.RouteVar.ORIGIN)
-            or changed(constants.RouteVar.QUERY)
+            or prev_get(constants.RouteVar.PATH) != get(constants.RouteVar.PATH)
+            or prev_get(constants.RouteVar.ORIGIN) != get(constants.RouteVar.ORIGIN)
+            or prev_get(constants.RouteVar.QUERY) != get(constants.RouteVar.QUERY)
         ):
-            if (page := PageData.from_router_data(router_data)) != self.router_page:
+            if (page := PageData.from_router_data(merged)) != self.router_page:
                 self.router_page = page
-            if (url := URLData.from_router_data(router_data)) != self.router_url:
+            if (url := URLData.from_router_data(merged)) != self.router_url:
                 self.router_url = url
-            if (
-                route_id := router_data.get(
-                    constants.RouteVar.PATH, self.router_route_id
-                )
-            ) != self.router_route_id:
+            if (route_id := get(constants.RouteVar.PATH, "")) != self.router_route_id:
                 self.router_route_id = route_id
+        return merged
 
     @classmethod
     @functools.lru_cache

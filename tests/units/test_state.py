@@ -3868,7 +3868,7 @@ def test_update_router_vars_ignores_omitted_static_keys(
         RouteVar.ORIGIN: "/b",
         RouteVar.QUERY: {},
     }
-    test_state._update_router_vars(navigation_only, full_router_data)
+    merged = test_state._update_router_vars(navigation_only, full_router_data)
     assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {
         "router_page",
         "router_url",
@@ -3877,6 +3877,24 @@ def test_update_router_vars_ignores_omitted_static_keys(
     assert test_state.router.session.client_token == "tok"
     assert test_state.router.session.session_id == "sid1"
     assert test_state.router.headers.cookie == "a=b"
+    # The rebuilt navigation vars keep the host from the headers the payload
+    # omitted, rather than being reconstructed from the partial dict alone.
+    assert test_state.router.url.origin == "http://localhost:3000"
+    assert test_state.router.url.path == "/b"
+    assert test_state.router.page.host == "http://localhost:3000"
+    # The merged data is what the caller stores, so the omitted keys are still
+    # there to compare against next time.
+    assert merged[RouteVar.CLIENT_TOKEN] == "tok"
+    assert merged[RouteVar.HEADERS] == full_router_data[RouteVar.HEADERS]
+
+    # A second consecutive partial payload still has the full picture.
+    test_state._clean()
+    merged2 = test_state._update_router_vars(
+        {RouteVar.PATH: "/c", RouteVar.ORIGIN: "/c", RouteVar.QUERY: {}}, merged
+    )
+    assert test_state.router.url.origin == "http://localhost:3000"
+    assert test_state.router.session.client_token == "tok"
+    assert merged2[RouteVar.HEADERS] == full_router_data[RouteVar.HEADERS]
 
 
 def test_update_router_vars_non_origin_header_leaves_navigation_clean(
