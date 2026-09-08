@@ -73,6 +73,7 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
+from reflex.istate.data import SessionData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
@@ -2313,5 +2314,10 @@ class EventNamespace(AsyncNamespace):
                 BaseStateToken(ident=new_token or token, cls=self.app._state)
             ) as state:
                 state.router_data[constants.RouteVar.SESSION_ID] = sid
-                if (session := state.router_session).session_id != sid:
-                    state.router_session = dataclasses.replace(session, session_id=sid)
+                # Rebuild from router_data (rather than replacing the field on
+                # the existing value) to keep the session var and router_data
+                # in step, the same way the event processor refreshes it.
+                if (
+                    session := SessionData.from_router_data(state.router_data)
+                ) != state.router_session:
+                    state.router_session = session
