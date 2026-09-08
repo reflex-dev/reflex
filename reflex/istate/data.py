@@ -584,8 +584,6 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
     an object literal matching the pre-split serialized router shape.
     """
 
-    # _url_var first: VarData.merge picks the first non-empty field_name, so
-    # `deps=[State.router]` registers against the navigation-scoped var.
     _url_var: Var = dataclasses.field(default_factory=_null_var)
     _page_var: Var = dataclasses.field(default_factory=_null_var)
     _session_var: Var = dataclasses.field(default_factory=_null_var)
@@ -608,6 +606,30 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
             f'"url": {self._url_var!s}, '
             f'"route_id": {self._route_id_var!s}'
             " })"
+        )
+
+    def _dependency_field_names(self) -> tuple[str, ...]:
+        """Name every per-field router var backing this switchboard.
+
+        VarData.merge surfaces only the first non-empty field name, so without
+        this a ``deps=[State.router]`` dependency would track one router var
+        and leave the computed var stale when any of the others changed (a
+        reconnect updates the session without touching the URL, for example).
+
+        Returns:
+            The field names of all five per-field router vars.
+        """
+        return tuple(
+            field_name
+            for var in (
+                self._session_var,
+                self._headers_var,
+                self._page_var,
+                self._url_var,
+                self._route_id_var,
+            )
+            if (all_var_data := var._get_all_var_data()) is not None
+            and (field_name := all_var_data.field_name)
         )
 
     @property

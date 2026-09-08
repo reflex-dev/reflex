@@ -3808,6 +3808,102 @@ def test_router_var_dep_legacy_string() -> None:
     State._potentially_dirty_states.discard(LegacyRouterDepState.get_full_name())
 
 
+def test_router_var_dep_whole_router() -> None:
+    """deps=[State.router] must track every per-field router var.
+
+    The switchboard's VarData surfaces only one field name, so without the
+    composite dependency hook a cached var declaring the whole router would go
+    stale when any other router field changed -- a reconnect updates the
+    session without touching the URL, for instance.
+    """
+
+    class WholeRouterDepState(State):
+        """A state depending on the whole router var."""
+
+        @rx.var(deps=[State.router], auto_deps=False)
+        def summary(self) -> str:
+            return ""
+
+    assert WholeRouterDepState.computed_vars["summary"]._static_deps == {
+        State.get_full_name(): set(constants.ROUTER_VARS)
+    }
+    for router_var in constants.ROUTER_VARS:
+        assert (
+            WholeRouterDepState.get_full_name(),
+            "summary",
+        ) in State._var_dependencies[router_var]
+
+    # Drop the class-level registrations; see the note in test_router_var_dep.
+    for dep_set in State._var_dependencies.values():
+        dep_set.discard((WholeRouterDepState.get_full_name(), "summary"))
+    State._potentially_dirty_states.discard(WholeRouterDepState.get_full_name())
+
+
+def test_update_router_vars_ignores_omitted_static_keys(
+    test_state: TestState,
+) -> None:
+    """A navigation-only payload must not reset the connection-scoped vars.
+
+    A router_data carrying only the navigation keys says nothing about the
+    session or headers; treating the omission as a change would wipe them to
+    their defaults and ship a destructive delta.
+
+    Args:
+        test_state: A state.
+    """
+    full_router_data = {
+        RouteVar.PATH: "/a",
+        RouteVar.ORIGIN: "/a",
+        RouteVar.QUERY: {},
+        RouteVar.CLIENT_TOKEN: "tok",
+        RouteVar.SESSION_ID: "sid1",
+        RouteVar.CLIENT_IP: "127.0.0.1",
+        RouteVar.HEADERS: {"origin": "http://localhost:3000", "cookie": "a=b"},
+    }
+    test_state._update_router_vars(full_router_data, {})
+    test_state._clean()
+
+    navigation_only = {
+        RouteVar.PATH: "/b",
+        RouteVar.ORIGIN: "/b",
+        RouteVar.QUERY: {},
+    }
+    test_state._update_router_vars(navigation_only, full_router_data)
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {
+        "router_page",
+        "router_url",
+        "router_route_id",
+    }
+    assert test_state.router.session.client_token == "tok"
+    assert test_state.router.session.session_id == "sid1"
+    assert test_state.router.headers.cookie == "a=b"
+
+
+def test_update_router_vars_non_origin_header_leaves_navigation_clean(
+    test_state: TestState,
+) -> None:
+    """Only the origin header feeds the page/URL, so other headers leave them alone.
+
+    Args:
+        test_state: A state.
+    """
+    router_data = {
+        RouteVar.PATH: "/a",
+        RouteVar.ORIGIN: "/a",
+        RouteVar.QUERY: {},
+        RouteVar.HEADERS: {"origin": "http://localhost:3000", "cookie": "a=b"},
+    }
+    test_state._update_router_vars(router_data, {})
+    test_state._clean()
+
+    new_cookie = {
+        **router_data,
+        RouteVar.HEADERS: {"origin": "http://localhost:3000", "cookie": "c=d"},
+    }
+    test_state._update_router_vars(new_cookie, router_data)
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {"router_headers"}
+
+
 def test_update_router_vars_granular_delta(test_state: TestState) -> None:
     """_update_router_vars only dirties the vars whose source keys changed.
 

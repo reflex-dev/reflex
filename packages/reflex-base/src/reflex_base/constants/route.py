@@ -19,12 +19,18 @@ ROUTER_DATA = "router_data"
 # Session and headers are constant for the lifetime of a websocket connection,
 # while page, url, and route_id change on every navigation; keeping them in
 # separate vars means a navigation delta only re-sends the navigation fields.
+ROUTER_SESSION = "router_session"
+ROUTER_HEADERS = "router_headers"
+ROUTER_PAGE = "router_page"
+ROUTER_URL = "router_url"
+ROUTER_ROUTE_ID = "router_route_id"
+
 ROUTER_VARS = (
-    "router_session",
-    "router_headers",
-    "router_page",
-    "router_url",
-    "router_route_id",
+    ROUTER_SESSION,
+    ROUTER_HEADERS,
+    ROUTER_PAGE,
+    ROUTER_URL,
+    ROUTER_ROUTE_ID,
 )
 
 

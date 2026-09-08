@@ -432,16 +432,16 @@ def _get_router_var(cls: type[BaseState]) -> RouterDataVar:
     router_var = root_cls.__dict__.get("_reflex_router_var")
     if router_var is None:
         base_vars = root_cls.base_vars
-        if "router_session" not in base_vars:
+        if constants.ROUTER_SESSION not in base_vars:
             # BaseState itself and mixins never initialize base vars; give
             # introspection-style access an unbound switchboard.
             return RouterDataVar(_js_expr="", _var_type=RouterData)
         router_var = RouterDataVar.create(
-            session=base_vars["router_session"],
-            headers=base_vars["router_headers"],
-            page=base_vars["router_page"],
-            url=base_vars["router_url"],
-            route_id=base_vars["router_route_id"],
+            session=base_vars[constants.ROUTER_SESSION],
+            headers=base_vars[constants.ROUTER_HEADERS],
+            page=base_vars[constants.ROUTER_PAGE],
+            url=base_vars[constants.ROUTER_URL],
+            route_id=base_vars[constants.ROUTER_ROUTE_ID],
         )
         setattr(root_cls, "_reflex_router_var", router_var)  # noqa: B010
     return router_var
@@ -1700,7 +1700,7 @@ class BaseState(EvenMoreBasicBaseState):
             dynamic_vars[param] = DynamicRouteVar(
                 fget=func,
                 auto_deps=False,
-                deps=["router_page"],
+                deps=[constants.ROUTER_PAGE],
                 _var_data=VarData.from_state(cls, param),
             )
             setattr(cls, param, dynamic_vars[param])
@@ -1910,14 +1910,32 @@ class BaseState(EvenMoreBasicBaseState):
         absent key and an empty one both produce the default), and assigning
         regardless would dirty the var, mark the state touched, and persist it.
 
+        A key missing from ``router_data`` carries no information about the
+        value it feeds, so it is not treated as a change: a payload holding
+        only the navigation keys must not reset the connection-scoped vars to
+        their defaults.
+
         Args:
             router_data: The new router_data dict.
             previous_router_data: The router_data dict this state last saw.
         """
-        get = router_data.get
-        prev_get = previous_router_data.get
+
+        def changed(key: str) -> bool:
+            return (
+                key in router_data and previous_router_data.get(key) != router_data[key]
+            )
+
+        headers_changed = changed(constants.RouteVar.HEADERS)
+        # Only the origin header feeds the URL/page host, so the navigation
+        # vars must not be rebuilt for a change to any other header. Read both
+        # sides from router_data: the headers var may already be updated below.
+        origin_changed = headers_changed and (
+            previous_router_data.get(constants.RouteVar.HEADERS, {}).get("origin", "")
+            != router_data[constants.RouteVar.HEADERS].get("origin", "")
+        )
+
         if any(
-            prev_get(key) != get(key)
+            changed(key)
             for key in (
                 constants.RouteVar.CLIENT_TOKEN,
                 constants.RouteVar.SESSION_ID,
@@ -1927,9 +1945,6 @@ class BaseState(EvenMoreBasicBaseState):
             self.router_session
         ):
             self.router_session = session
-        headers_changed = prev_get(constants.RouteVar.HEADERS) != get(
-            constants.RouteVar.HEADERS
-        )
         if (
             headers_changed
             and (headers := HeaderData.from_router_data(router_data))
@@ -1937,17 +1952,20 @@ class BaseState(EvenMoreBasicBaseState):
         ):
             self.router_headers = headers
         if (
-            # The origin header feeds the URL/page host.
-            headers_changed
-            or prev_get(constants.RouteVar.PATH) != get(constants.RouteVar.PATH)
-            or prev_get(constants.RouteVar.ORIGIN) != get(constants.RouteVar.ORIGIN)
-            or prev_get(constants.RouteVar.QUERY) != get(constants.RouteVar.QUERY)
+            origin_changed
+            or changed(constants.RouteVar.PATH)
+            or changed(constants.RouteVar.ORIGIN)
+            or changed(constants.RouteVar.QUERY)
         ):
             if (page := PageData.from_router_data(router_data)) != self.router_page:
                 self.router_page = page
             if (url := URLData.from_router_data(router_data)) != self.router_url:
                 self.router_url = url
-            if (route_id := get(constants.RouteVar.PATH, "")) != self.router_route_id:
+            if (
+                route_id := router_data.get(
+                    constants.RouteVar.PATH, self.router_route_id
+                )
+            ) != self.router_route_id:
                 self.router_route_id = route_id
 
     @classmethod

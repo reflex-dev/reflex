@@ -4404,6 +4404,46 @@ async def test_on_event_uses_connect_time_router_data(
 
 
 @pytest.mark.asyncio
+async def test_on_event_does_not_share_the_cached_headers(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """Each event gets its own headers mapping, not the cached one.
+
+    The headers reach `state.router_data`, a plain mutable dict, so sharing
+    the cached mapping would let a handler mutating it corrupt the connection
+    cache for every later event on the socket.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    await event_namespace.on_connect("sid1", _connect_environ(token))
+    cached_headers = event_namespace._static_router_data["sid1"][
+        constants.RouteVar.HEADERS
+    ]
+
+    await event_namespace.on_event("sid1", _client_event_payload())
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    _, event = enqueue_mock.call_args[0]
+    event_headers = event.router_data[constants.RouteVar.HEADERS]
+
+    assert event_headers == cached_headers
+    assert event_headers is not cached_headers
+    # Mutating what the handler sees must not reach the connection cache.
+    event_headers["user-agent"] = "mutated"
+    assert cached_headers["user-agent"] == "test-agent"
+
+    enqueue_mock.reset_mock()
+    await event_namespace.on_event("sid1", _client_event_payload())
+    _, next_event = enqueue_mock.call_args[0]
+    assert (
+        next_event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
+    )
+
+
+@pytest.mark.asyncio
 async def test_on_event_falls_back_to_environ_without_connect(
     token: str,
     event_namespace_with_processor_mock: EventNamespace,

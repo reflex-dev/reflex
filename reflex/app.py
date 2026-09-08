@@ -2194,6 +2194,14 @@ class EventNamespace(AsyncNamespace):
             )
         router_data = event.router_data
         router_data.update(static_router_data)
+        # The cached headers reach the event, and from there `state.router_data`,
+        # which is a plain mutable dict: sharing the mapping would let a handler
+        # mutating `self.router_data["headers"]` corrupt the connection cache for
+        # every later event on this socket. The shallow copy is ~17x cheaper than
+        # the per-event header decode it replaced, so the cache still pays off.
+        router_data[constants.RouteVar.HEADERS] = static_router_data[
+            constants.RouteVar.HEADERS
+        ].copy()
         router_data.update({
             constants.RouteVar.QUERY: format.format_query_params(event.router_data),
             constants.RouteVar.CLIENT_TOKEN: token,
