@@ -105,12 +105,13 @@ It is disabled by default. On a cache hit, Reflex restores the pristine JavaScri
 build, then runs post-build plugins, fallback generation, compression, and frontend
 path processing again. Python compilation and the normal dependency checks still run.
 
-On macOS and Linux, production exports sharing `.web` wait for one another from
-compilation through ZIP creation. Production and preview startup also hold this
-lock while compiling and building, even when caching is disabled. The lock file
-`.web/.reflex-build.lock` remains in place between commands; do not remove it while
-a command is running. Initialization, development hot reload, and unrelated tools
-writing to `.web` are outside this lock, so avoid running them during an export.
+On macOS, Linux, and Windows, production exports sharing `.web` wait for one
+another from compilation through ZIP creation. Production and preview startup
+also hold this lock while compiling and building, even when caching is disabled,
+and release it before serving. The lock file `.web/.reflex-build.lock` remains in
+place between commands; do not remove it while a command is running.
+Initialization, development hot reload, and unrelated tools writing to `.web` are
+outside this lock, so avoid running them during an export.
 
 Enable this option only when build output is determined by the tracked local inputs.
 Prerendering, Vite plugins, and custom export scripts can read remote data, the clock,
@@ -123,12 +124,6 @@ the build environment, runtime identity, and installed dependency file metadata.
 It also verifies snapshot file contents before restoring them. Use it on a local
 macOS or Linux filesystem that reports file modification and change timestamps
 reliably; the cache is bypassed on Windows and when links lead outside tracked inputs.
-
-Production exports and production/preview frontend builds sharing the same `.web`
-directory wait for an exclusive workspace lock on macOS, Linux, and Windows,
-including when caching is disabled. The lock covers compilation through build and
-archive creation, and is released before a server starts serving. Initialization,
-development hot reload, and unrelated workspace writers do not participate.
 
 Generated build output, `.react-router`, the build lock, the dependency-install cache marker, and
 the top-level `node_modules/.vite`, `.vite-temp`, and `.cache` directories are

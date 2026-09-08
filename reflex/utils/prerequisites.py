@@ -33,9 +33,9 @@ from reflex.utils.misc import get_module_path
 
 logger = logging.getLogger(__name__)
 
-_LATEST_VERSION_CHECK_INTERVAL = timedelta(
-    days=1
-)  # Reuse successful checks for 24 hours.
+# Reuse successful checks for 24 hours.
+_LATEST_VERSION_CHECK_INTERVAL = timedelta(days=1)
+# Retry failed checks after one hour.
 _LATEST_VERSION_CHECK_FAILURE_INTERVAL = timedelta(hours=1)
 _LATEST_VERSION_CHECK_DATETIME_KEY = "last_version_check_datetime"
 _LATEST_VERSION_CHECK_ATTEMPT_DATETIME_KEY = "last_version_check_attempt_datetime"
