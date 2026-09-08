@@ -747,6 +747,79 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
     assert proxy._self_entered_context is False
 
 
+async def test_no_op_partial_router_data_leaves_the_state_untouched(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A payload that merges to what is already there must not touch the state.
+
+    A partial router_data (only the navigation keys, as `fix_events` produces)
+    is never equal to the full dict the state holds, so it reaches the merge.
+    If it merges to the same thing, nothing moved: assigning it anyway would
+    dirty router_data, mark the state touched, and persist it for an event
+    that changed nothing.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List of deltas captured from the processor.
+        token: The client token.
+    """
+
+    class NoOpRouterState(State):
+        n: int = 0
+
+        @event
+        def bump(self):
+            self.n += 1
+
+    full_view = {
+        "pathname": "/a",
+        "asPath": "/a",
+        "query": {},
+        "token": token,
+        "sid": "sid1",
+        "ip": "127.0.0.1",
+        "headers": {"origin": "http://localhost:3000"},
+    }
+    # Same navigation, but carrying only the keys a chained event keeps.
+    navigation_only = {"pathname": "/a", "asPath": "/a", "query": {}}
+
+    def client_event(router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(NoOpRouterState.bump())[0], router_data=router_data
+        )
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, client_event(full_view))
+        await processor.join(10)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    state._was_touched = False
+    emitted_deltas.clear()
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, client_event(navigation_only))
+        await processor.join(10)
+
+    # The connection-scoped data survived the partial payload...
+    assert state.router_data["headers"] == full_view["headers"]
+    assert state.router_session.client_token == token
+    # ...and nothing about the router was re-sent or marked dirty.
+    assert not any(
+        key.startswith("router")
+        for _token, delta in emitted_deltas
+        for key in delta.get(State.get_full_name(), {})
+    )
+    assert not state._get_was_touched()
+
+
 async def test_navigation_delta_elides_connection_scoped_router_vars(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,

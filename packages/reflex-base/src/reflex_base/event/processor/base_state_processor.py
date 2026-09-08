@@ -419,13 +419,19 @@ class BaseStateEventProcessor(EventProcessor):
             ):
                 # only the router vars whose backing keys changed are rebuilt
                 # and re-sent; session/headers stay put across navigations.
-                # Store what it merged rather than the payload: a partial one
-                # would otherwise drop the keys it omits for the next event.
-                # The assignment recurses into substates and forces
-                # recalculation of dependent ComputedVar (dynamic route vars).
-                state.router_data = state._update_router_vars(
+                merged_router_data = state._update_router_vars(
                     router_data, previous_router_data
                 )
+                # Store what it merged rather than the payload: a partial one
+                # would otherwise drop the keys it omits for the next event.
+                # Only when that actually differs, though -- a payload that
+                # merges to what is already there changed nothing, and the
+                # assignment would still dirty router_data and mark the state
+                # touched, persisting it for an event that moved nothing.
+                # The assignment recurses into substates and forces
+                # recalculation of dependent ComputedVar (dynamic route vars).
+                if merged_router_data != previous_router_data:
+                    state.router_data = merged_router_data
 
             # Preprocess the event.
             if (
