@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import zipfile
-from pathlib import Path, PosixPath
+from pathlib import Path, PurePosixPath
 
 from reflex_base import constants
 from reflex_base.config import get_config
@@ -289,7 +289,7 @@ def build():
 
     if frontend_path := config.frontend_path.strip("/"):
         # Create a subdirectory that matches the configured frontend_path.
-        frontend_path = PosixPath(frontend_path)
+        frontend_path = PurePosixPath(frontend_path)
         first_part = frontend_path.parts[0]
         prefix_dir = static_dir / frontend_path
         # Prerendering emits this directory; with prerendering off nothing does.
