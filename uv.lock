@@ -3765,6 +3765,7 @@ name = "reflex"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
+    { name = "filelock" },
     { name = "granian", extra = ["reload"] },
     { name = "httpx" },
     { name = "packaging" },
@@ -3861,6 +3862,7 @@ dev = [
 requires-dist = [
     { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
     { name = "click", specifier = ">=8.2" },
+    { name = "filelock", specifier = ">=3.32.3,<4.0" },
     { name = "granian", extras = ["reload"], specifier = ">=2.7.4" },
     { name = "httpx", specifier = ">=0.26,<1.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
