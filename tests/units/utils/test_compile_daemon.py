@@ -467,12 +467,14 @@ def test_reset_first_party_purges_modules_and_registries(tmp_path):
 
             from reflex_base.registry import RegistrationContext
 
-            from reflex.page import DECORATED_PAGES
             from reflex.state import all_base_state_classes
 
             RegistrationContext.ensure_context().base_states["sentinel"] = object()  # type: ignore[assignment]
             all_base_state_classes["sentinel"] = None
-            DECORATED_PAGES["sentinel_app"].append((lambda: None, {}))
+            RegistrationContext.ensure_context().decorated_pages.append((
+                lambda: None,
+                {},
+            ))
 
             compile_daemon._reset_first_party([tmp_path.resolve()])
 
@@ -482,7 +484,7 @@ def test_reset_first_party_purges_modules_and_registries(tmp_path):
             cleared = (
                 "sentinel" not in RegistrationContext.ensure_context().base_states
                 and "sentinel" not in all_base_state_classes
-                and not DECORATED_PAGES
+                and not RegistrationContext.ensure_context().decorated_pages
             )
             result = b"1" if (purged and cleared) else b"0"
         except Exception:
@@ -562,3 +564,126 @@ def test_pid_alive_distinguishes_live_and_exited_processes():
     proc = subprocess.Popen([sys.executable, "-c", "pass"])
     proc.wait()
     assert compile_daemon._pid_alive(proc.pid) is False
+
+
+def test_failed_daemon_spawn_leaves_no_marker(tmp_path, monkeypatch):
+    """A failed spawn must leave backend workers owning compilation."""
+    marker = tmp_path / "daemon.pid"
+    monkeypatch.setattr(compile_daemon, "_daemon_marker_path", lambda: marker)
+
+    def fail(*args, **kwargs):
+        """Simulate failure to launch the child."""
+        message = "spawn failed"
+        raise OSError(message)
+
+    monkeypatch.setattr(compile_daemon.subprocess, "Popen", fail)
+    with pytest.raises(OSError, match="spawn failed"):
+        compile_daemon.run_compile_daemon()
+    assert not marker.exists()
+
+
+def test_watch_state_discovers_new_project_root_sources(tmp_path):
+    """Watching existing children must not hide newly created siblings."""
+    existing = tmp_path / "app"
+    existing.mkdir()
+    state = compile_daemon._WatchState(roots=[existing], root=tmp_path)
+    source = tmp_path / "new_helper.py"
+    assert tmp_path in state.targets()
+    assert state.accepts(source)
+    source.write_text("VALUE = 1")
+    assert source in state.watch_paths()
+
+
+def test_watcher_preserves_snapshot_before_teardown(tmp_path, monkeypatch):
+    """An edit during watcher teardown must be caught after compilation."""
+    import watchfiles
+
+    source = tmp_path / "page.py"
+    source.write_text("before")
+    state = compile_daemon._WatchState(roots=[tmp_path], root=tmp_path)
+    state.checkpoint = compile_daemon._dependency_snapshot(state)
+
+    def watch(*args, **kwargs):
+        """Emit an edit, then mutate another input as the watcher closes.
+
+        Yields:
+            A filesystem event batch.
+        """
+        try:
+            source.write_text("first edit")
+            yield {(2, str(source))}
+        finally:
+            (tmp_path / "late.py").write_text("late edit")
+
+    monkeypatch.setattr(watchfiles, "watch", watch)
+    assert compile_daemon._next_changes(state, lambda: True) == {source}
+    assert source not in compile_daemon._missed_changes(
+        state.checkpoint, compile_daemon._dependency_snapshot(state)
+    )
+    assert tmp_path / "late.py" in compile_daemon._missed_changes(
+        state.checkpoint, compile_daemon._dependency_snapshot(state)
+    )
+
+
+@pytest.mark.parametrize("warm_only", [False, True])
+def test_daemon_initial_work_holds_lock(tmp_path, monkeypatch, warm_only):
+    """Startup either warms or compiles, always under the backend wait lock."""
+    from reflex.utils import prerequisites
+
+    lock = tmp_path / "compile.lock"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: lock)
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(compile_daemon, "_next_changes", lambda *args: None)
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState([tmp_path], tmp_path),
+    )
+    calls = []
+
+    def compile_app(**kwargs):
+        """Verify initial compilation blocks backend readers."""
+        calls.append(("compile", lock.exists()))
+
+    def import_app(**kwargs):
+        """Verify warm startup only imports the application."""
+        calls.append(("import", lock.exists()))
+
+    monkeypatch.setattr(prerequisites, "get_compiled_app", compile_app)
+    monkeypatch.setattr(prerequisites, "get_app", import_app)
+    if warm_only:
+        monkeypatch.setenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", "1")
+    else:
+        monkeypatch.delenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", raising=False)
+    compile_daemon._serve()
+    assert calls == [("import" if warm_only else "compile", True)]
+    assert not lock.exists()
+    assert "REFLEX_COMPILE_DAEMON_PRECOMPILED" not in os.environ
+
+
+def test_watcher_reconciles_edits_after_an_idle_batch(tmp_path, monkeypatch):
+    """A late edit must be included even if its OS event is in a later batch."""
+    import watchfiles
+
+    first = tmp_path / "first.py"
+    second = tmp_path / "second.py"
+    first.write_text("old")
+    second.write_text("old")
+    state = compile_daemon._WatchState([tmp_path], tmp_path)
+    state.checkpoint = compile_daemon._dependency_snapshot(state)
+
+    def watch(*args, **kwargs):
+        """Return one event while another changed input awaits its event batch.
+
+        Yields:
+            An idle batch, followed by the first file's event.
+        """
+        yield set()
+        first.write_text("new first")
+        second.write_text("new second")
+        yield {(2, str(first))}
+
+    monkeypatch.setattr(watchfiles, "watch", watch)
+    assert compile_daemon._next_changes(state, lambda: True) == {first, second}

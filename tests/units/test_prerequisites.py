@@ -11,6 +11,7 @@ import pytest
 from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
+from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
@@ -1548,7 +1549,7 @@ def test_install_frontend_packages_does_not_fall_back(
 
 
 @pytest.mark.usefixtures("install_packages_env")
-def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, capsys):
+def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, caplog):
     """A frozen-lockfile mismatch surfaces a 'delete reflex.lock/package.json' hint."""
 
     class _FakeProcess:
@@ -1570,14 +1571,12 @@ def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, 
     with pytest.raises(SystemExit):
         js_runtimes._run_initial_install("bun", env={}, frozen_lockfile=True)
 
-    captured = capsys.readouterr()
-    output = captured.out + captured.err
-    assert "out of sync" in output
-    assert constants.Bun.ROOT_LOCKFILE_DIR in output
+    assert "out of sync" in caplog.text
+    assert constants.Bun.ROOT_LOCKFILE_DIR in caplog.text
 
 
 @pytest.mark.usefixtures("install_packages_env")
-def test_run_initial_install_other_error_replays_logs(monkeypatch, capsys):
+def test_run_initial_install_other_error_replays_logs(monkeypatch, caplog):
     """Non-frozen-lockfile failures replay the captured logs."""
 
     class _FakeProcess:
@@ -1599,8 +1598,7 @@ def test_run_initial_install_other_error_replays_logs(monkeypatch, capsys):
     with pytest.raises(SystemExit):
         js_runtimes._run_initial_install("bun", env={}, frozen_lockfile=True)
 
-    captured = capsys.readouterr()
-    assert "network unreachable" in captured.out + captured.err
+    assert "network unreachable" in caplog.text
 
 
 def test_extract_package_name():
@@ -1807,7 +1805,10 @@ def test_rename_imports_and_app_name_preserves_line_endings(
     assert file_path.read_bytes() == expected.encode()
 
 
-def test_cli_rename_command(temp_directory):
+def test_cli_rename_command(temp_directory, monkeypatch):
+    # The ``cli`` group callback enables managed logging for the process;
+    # snapshot the marker so it does not leak into the rest of the session.
+    monkeypatch.delenv(log._MANAGED_ENV_VAR, raising=False)
     foo_dir = temp_directory / "foo"
     foo_dir.mkdir()
     (foo_dir / "__init__").touch()
@@ -1859,8 +1860,11 @@ app.add_page(index)
 """
     )
 
-    with chdir(temp_directory / "foo"):
-        result = runner.invoke(cli, ["rename", "bar"])
+    try:
+        with chdir(temp_directory / "foo"):
+            result = runner.invoke(cli, ["rename", "bar"])
+    finally:
+        log._reset()
 
     assert result.exit_code == 0, result.output
     assert (foo_dir / "rxconfig.py").read_text() == (

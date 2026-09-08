@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import dataclasses
 import functools
+import logging
 import time
 from collections.abc import AsyncIterator
 from hashlib import md5
@@ -20,8 +21,10 @@ from reflex.istate.manager import (
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
-from reflex.utils import console, path_ops, prerequisites
+from reflex.utils import path_ops, prerequisites
 from reflex.utils.misc import run_in_thread
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -41,7 +44,7 @@ class StateManagerDisk(StateManager):
     states: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The mutex ensures the dict of mutexes is updated exclusively
-    _state_manager_lock: asyncio.Lock = dataclasses.field(default=asyncio.Lock())
+    _state_manager_lock: asyncio.Lock = dataclasses.field(default_factory=asyncio.Lock)
 
     # The dict of mutexes for each client
     _states_locks: dict[str, asyncio.Lock] = dataclasses.field(
@@ -76,12 +79,15 @@ class StateManagerDisk(StateManager):
 
     @functools.cached_property
     def states_directory(self) -> Path:
-        """Get the states directory.
+        """The states directory.
+
+        Resolved once so later cwd changes do not move where states are
+        written or purged.
 
         Returns:
-            The states directory.
+            The absolute states directory.
         """
-        return prerequisites.get_states_dir()
+        return prerequisites.get_states_dir().absolute()
 
     def _purge_expired_states(self):
         """Purge expired states from the disk."""
@@ -282,7 +288,7 @@ class StateManagerDisk(StateManager):
                 await self._flush_write_queue()
                 raise
             except Exception as e:
-                console.error(f"Error processing write queue: {e!r}")
+                logger.error(f"Error processing write queue: {e!r}")
                 if e.args == ("cannot schedule new futures after shutdown",):
                     # Event loop is shutdown, nothing else we can really do...
                     return
@@ -294,7 +300,7 @@ class StateManagerDisk(StateManager):
         n_outstanding_items = len(outstanding_items)
         self._write_queue.clear()
         # When the task is cancelled, write all remaining items to disk.
-        console.debug(
+        logger.debug(
             f"StateManagerDisk._flush_write_queue: writing {n_outstanding_items} remaining items to disk"
         )
         for item in outstanding_items:
@@ -302,7 +308,7 @@ class StateManagerDisk(StateManager):
                 item.token,
                 item.state,
             )
-        console.debug(
+        logger.debug(
             f"StateManagerDisk._flush_write_queue: Finished writing {n_outstanding_items} items"
         )
 

@@ -43,16 +43,19 @@ _WATCH_SUFFIXES = (".py", ".md", ".mdx")
 _SKIP_DIRS = {".web", ".venv", "venv", "node_modules", "__pycache__", ".git"}
 
 
-def run_compile_daemon(prerender_routes: bool = False) -> None:
+def run_compile_daemon(
+    prerender_routes: bool = False, initial_compiled: bool = False
+) -> None:
     """Supervise the compile daemon as its own (fork-safe) subprocess.
 
     Runs on a ``reflex run`` worker thread alongside the frontend. Launching the
     daemon as a separate process keeps it single-threaded so its per-edit
-    ``fork()`` is safe, and isolates its environment from the backend (which is
-    told to skip frontend compilation via ``REFLEX_SKIP_COMPILE``).
+    ``fork()`` is safe, and isolates its environment from the backend (which
+    checks the daemon ownership marker before frontend compilation).
 
     Args:
         prerender_routes: Whether the daemon should prerender routes when compiling.
+        initial_compiled: Whether the parent already produced the initial frontend.
     """
     env = {**os.environ}
     # The daemon DOES compile; ensure the cache is on and the skip flag is off.
@@ -61,7 +64,8 @@ def run_compile_daemon(prerender_routes: bool = False) -> None:
     env[environment.REFLEX_COMPILE_DAEMON.name] = "1"
     if prerender_routes:
         env["REFLEX_PRERENDER_ROUTES"] = "1"
-    mark_daemon_active()
+    if initial_compiled:
+        env["REFLEX_COMPILE_DAEMON_PRECOMPILED"] = "1"
     proc = subprocess.Popen(
         [sys.executable, "-m", "reflex.utils.compile_daemon"], env=env
     )
@@ -82,9 +86,11 @@ def run_compile_daemon(prerender_routes: bool = False) -> None:
 
     atexit.register(_terminate)
     try:
+        mark_daemon_active(proc.pid)
         proc.wait()
     finally:
         _terminate()
+        atexit.unregister(_terminate)
 
 
 def _reload_roots() -> list[Path]:
@@ -255,7 +261,7 @@ class _WatchState:
             The reload roots, the parents of recorded dependencies outside
             them, the project root's global files and the assets directory.
         """
-        targets: dict[Path, None] = dict.fromkeys(self.roots)
+        targets: dict[Path, None] = dict.fromkeys([self.root, *self.roots])
         for dep in self.known:
             if not _under_roots(dep, self.roots):
                 targets[dep.parent] = None
@@ -281,7 +287,9 @@ class _WatchState:
             return True
         if (assets := self.assets) is not None and _under_roots(path, [assets]):
             return True
-        return path.suffix in _WATCH_SUFFIXES and _under_roots(path, self.roots)
+        return path.suffix in _WATCH_SUFFIXES and (
+            path.parent == self.root or _under_roots(path, self.roots)
+        )
 
     def watch_paths(self) -> set[Path]:
         """Collect inputs for polling and watch-subscription catch-up snapshots.
@@ -292,6 +300,11 @@ class _WatchState:
         paths: set[Path] = set(self.known)
         for r in self.roots:
             paths.update(_iter_source_files(r))
+        paths.update(
+            p
+            for p in self.root.iterdir()
+            if p.is_file() and p.suffix in _WATCH_SUFFIXES
+        )
         paths.update(self.globals_)
         if (assets := self.assets) is not None:
             paths.update(p.resolve() for p in assets.rglob("*") if p.is_file())
@@ -329,7 +342,9 @@ def _poll_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | 
     if state.checkpoint is not None and (
         changed := _missed_changes(state.checkpoint, snapshot)
     ):
+        state.checkpoint = snapshot
         return changed
+    state.checkpoint = snapshot
     last_rescan = time.monotonic()
     while alive():
         time.sleep(_POLL_INTERVAL)
@@ -342,6 +357,7 @@ def _poll_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | 
             for p in current.keys() | snapshot.keys()
             if current.get(p) != snapshot.get(p)
         }
+        state.checkpoint = current
         if changed:
             time.sleep(_DEBOUNCE_MS / 1000)  # absorb the rest of a burst
             return changed
@@ -395,8 +411,11 @@ def _next_changes(state: _WatchState, alive: Callable[[], bool]) -> set[Path] | 
             if not alive():
                 return None
             changed = {Path(raw_path) for _change, raw_path in batch}
-            if checkpoint is not None:
-                changed.update(_missed_changes(checkpoint, _dependency_snapshot(state)))
+            if changed or checkpoint is not None:
+                current = _dependency_snapshot(state)
+                if state.checkpoint is not None:
+                    changed.update(_missed_changes(state.checkpoint, current))
+                state.checkpoint = current
                 checkpoint = None
             if changed:
                 return changed
@@ -506,7 +525,6 @@ def _reset_first_party(roots: list[Path]) -> None:
 
     import reflex.istate.dynamic as istate_dynamic
     from reflex.compiler import page_cache
-    from reflex.page import DECORATED_PAGES
     from reflex.state import BaseState, all_base_state_classes
 
     ctx = RegistrationContext.ensure_context()
@@ -540,7 +558,8 @@ def _reset_first_party(roots: list[Path]) -> None:
     for cls in kept:
         ctx._register_base_state(cls)
         all_base_state_classes[cls.get_full_name()] = None
-    DECORATED_PAGES.clear()
+    ctx.decorated_pages.clear()
+    object.__setattr__(ctx, "_app", None)
     # The import graph caches each module's parsed import edges; a changed file
     # may import differently now, so drop it to force a re-parse. Cross-compile
     # page reuse comes from the on-disk manifest.
@@ -604,11 +623,15 @@ def _daemon_marker_path() -> Path:
     return prerequisites.get_backend_dir() / _DAEMON_MARKER_FILE
 
 
-def mark_daemon_active() -> None:
-    """Record that this ``reflex run`` process owns the frontend compile."""
+def mark_daemon_active(pid: int | None = None) -> None:
+    """Record the process that owns frontend compilation.
+
+    Args:
+        pid: Daemon PID, defaulting to the current process.
+    """
     marker = _daemon_marker_path()
     marker.parent.mkdir(parents=True, exist_ok=True)
-    marker.write_text(str(os.getpid()))
+    marker.write_text(str(os.getpid() if pid is None else pid))
 
 
 def clear_daemon_marker() -> None:
@@ -933,13 +956,16 @@ def _serve() -> None:
     # here (e.g. the app is mid-edit and broken) must NOT kill the daemon; fall
     # through to the watch loop so the next edit that fixes it recompiles.
     try:
-        with console.timing("Compile daemon: initial compile"):
-            prerequisites.get_compiled_app(
-                reload=False,
-                prerender_routes=prerender_routes,
-                use_rich=True,
-                trigger="initial",
-            )
+        with _compile_lock(root), console.timing("Compile daemon: initial compile"):
+            if os.environ.pop("REFLEX_COMPILE_DAEMON_PRECOMPILED", None):
+                prerequisites.get_app()
+            else:
+                prerequisites.get_compiled_app(
+                    reload=False,
+                    prerender_routes=prerender_routes,
+                    use_rich=True,
+                    trigger="initial",
+                )
     except BaseException:  # tolerate a broken initial state; keep watching
         import traceback
 
@@ -976,7 +1002,11 @@ def _serve() -> None:
                 sys.executable, [sys.executable, "-m", "reflex.utils.compile_daemon"]
             )
 
-        before = _dependency_snapshot(state)
+        before = (
+            state.checkpoint
+            if state.checkpoint is not None
+            else _dependency_snapshot(state)
+        )
         state.roots = roots = _reload_roots()
         with _compile_lock(root):
             ok = _compile_once(roots, prerender_routes, changed)

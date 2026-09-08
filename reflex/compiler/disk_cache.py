@@ -41,7 +41,7 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 10
+_SCHEMA = 11
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -176,7 +176,10 @@ def _manifest_page_entry(
     Returns:
         The JSON-able manifest entry for the page.
     """
+    from reflex.utils.telemetry_accounting import _count_components
+
     return {
+        "component_counts": _count_components([page_ctx.root_component]),
         "deps": page_cache.page_dependency_entries(
             page_ctx, component, state_index, hasher, files, root
         ),
@@ -390,6 +393,8 @@ def write_manifest(
     pages: Sequence[PageDefinition],
     install_imports: ParsedImportDict,
     root: Path | None = None,
+    *,
+    plugin_sources: dict[str, str] | None = None,
 ) -> None:
     """Persist a manifest of the just-completed full compile.
 
@@ -405,6 +410,7 @@ def write_manifest(
             incremental rebuild reuses the on-disk app-wide files, so it must
             install from this complete set, not just the per-page union.
         root: Project root for fingerprinting. Defaults to cwd.
+        plugin_sources: Unmodified source content for plugin file modifiers.
     """
     try:
         state_index, _ = page_cache.state_dependency_index(root)
@@ -463,6 +469,7 @@ def write_manifest(
 
         manifest = {
             "schema": _SCHEMA,
+            "plugin_sources": plugin_sources or {},
             "reflex_version": page_cache._reflex_version(),
             "files": files,
             # Per-input labels (not one combined digest) so a later mismatch
@@ -916,6 +923,25 @@ def _refresh_file_table(
     return True
 
 
+def _save_incremental_output(
+    path: str, code: str, outputs: dict[Path, str] | None
+) -> None:
+    """Stage output for plugin processing or write it for a direct rebuild.
+
+    Args:
+        path: Generated path relative to the web directory.
+        code: Generated file content.
+        outputs: Output mapping supplied by the main compiler, if any.
+    """
+    from reflex.compiler import utils as compiler_utils
+
+    resolved = compiler_utils.resolve_path_of_web_dir(path)
+    if outputs is None:
+        compiler_utils.write_file(resolved, code)
+    else:
+        outputs[resolved] = code
+
+
 def try_incremental_rebuild(
     app: App,
     *,
@@ -923,6 +949,7 @@ def try_incremental_rebuild(
     prerender_routes: bool,
     root: Path | None = None,
     use_rich: bool = True,
+    outputs: dict[Path, str] | None = None,
 ) -> bool:
     """Attempt a disk-cache-assisted partial rebuild; report whether it ran.
 
@@ -952,6 +979,7 @@ def try_incremental_rebuild(
         prerender_routes: Whether to prerender routes.
         root: Project root for fingerprinting. Defaults to cwd.
         use_rich: Whether to use a rich progress bar (else a plain fallback).
+        outputs: Stage generated files here for plugin processing instead of writing.
 
     Returns:
         True if the partial rebuild completed (the caller should return), else
@@ -1094,7 +1122,6 @@ def try_incremental_rebuild(
                 return False
 
     from reflex.compiler import compiler
-    from reflex.compiler import utils as compiler_utils
 
     # Write changed pages + their memo files; reuse everything else on disk.
     install_imports = _deserialize_imports(manifest["all_imports"])
@@ -1111,10 +1138,7 @@ def try_incremental_rebuild(
                 if output_path is None or output_code is None:
                     _log_fallback(f"page {page.route!r} lost its output before write")
                     return False
-                compiler_utils.write_file(
-                    compiler_utils.resolve_path_of_web_dir(output_path),
-                    output_code,
-                )
+                _save_incremental_output(output_path, output_code, outputs)
                 memo_contributions.update(page_ctx.memo_contributions)
                 miss_imports.append(page_ctx.frontend_imports)
             # Post-evaluation pass: the miss pages just evaluated, so memos
@@ -1138,9 +1162,7 @@ def try_incremental_rebuild(
             _memo_defs_for_rewrite(memo_contributions, dirty_memo_paths, changed_files)
         )
         for mpath, mcode in memo_files:
-            compiler_utils.write_file(
-                compiler_utils.resolve_path_of_web_dir(mpath), mcode
-            )
+            _save_incremental_output(mpath, mcode, outputs)
         # Merge once: re-merging the app-wide set per page re-walks its ~100k
         # entries each time.
         install_imports = merge_imports(install_imports, *miss_imports, memo_imports)
@@ -1158,6 +1180,9 @@ def try_incremental_rebuild(
                 stateful_routes[page.route] = None
         elif manifest["pages"][page.route]["is_stateful"]:
             stateful_routes[page.route] = None
+
+    if miss_ctx is not None:
+        compiler._register_compiled_pages(app, miss_ctx.compiled_pages)
 
     app._stateful_pages.update(stateful_routes)
     app._write_stateful_pages_marker()
@@ -1202,9 +1227,7 @@ def try_incremental_rebuild(
             context_path, context_code = compiler.compile_contexts(
                 app._state, theme, _hit_state_extras(manifest, miss_routes)
             )
-            compiler_utils.write_file(
-                compiler_utils.resolve_path_of_web_dir(context_path), context_code
-            )
+            _save_incremental_output(context_path, context_code, outputs)
 
     # The assets copy is cheap, idempotent, and excluded from dependency
     # tracking entirely, so it is always re-run.
@@ -1253,6 +1276,12 @@ def try_incremental_rebuild(
         validator=validator,
     )
 
+    counts: dict[str, int] = {}
+    for page in pages:
+        page_counts = manifest["pages"][page.route].get("component_counts", {})
+        for name, count in page_counts.items():
+            counts[name] = counts.get(name, 0) + count
+    app._cached_component_counts = counts
     return True
 
 

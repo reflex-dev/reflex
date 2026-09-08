@@ -1,19 +1,33 @@
 import json
+import logging
 
 import httpx
+import pytest
 from click.testing import CliRunner
 from pytest_mock import MockFixture
+from reflex_base.utils.log import SUCCESS
 from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import NotAuthenticatedError
 from reflex_cli.v2.deployments import hosting_cli
-from typer import Typer
-from typer.main import get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import as_click_command
+
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
+
+
+def _log_messages(caplog: pytest.LogCaptureFixture, level: int) -> list[str]:
+    """Return the captured log messages emitted at the given level.
+
+    Args:
+        caplog: The pytest log capture fixture.
+        level: The numeric log level to filter records by.
+
+    Returns:
+        The formatted messages of the matching records.
+    """
+    return [r.getMessage() for r in caplog.records if r.levelno == level]
 
 
 def test_create_project_with_valid_token(mocker: MockFixture):
@@ -67,8 +81,6 @@ def test_create_project_with_json_output(mocker: MockFixture):
             token="valid_token", validated_data={"foo": "bar"}
         ),
     )
-    mock_print = mocker.patch("reflex_cli.utils.console.print")
-
     project_name = "test_project"
     token = "valid_token"
 
@@ -83,7 +95,7 @@ def test_create_project_with_json_output(mocker: MockFixture):
         ),
     )
 
-    mock_print.assert_called_once_with(json.dumps({"name": "test_project", "id": 1}))
+    assert json.loads(result.stdout) == {"name": "test_project", "id": 1}
 
     assert result.exit_code == 0, result.output
 
@@ -116,7 +128,9 @@ def test_create_project_without_token(mocker: MockFixture):
     assert result.exit_code == 0, result.output
 
 
-def test_invite_user_to_project_success(mocker: MockFixture):
+def test_invite_user_to_project_success(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
     mock_invite = mocker.patch(
         "reflex_cli.utils.hosting.invite_user_to_project", return_value="success"
     )
@@ -126,8 +140,6 @@ def test_invite_user_to_project_success(mocker: MockFixture):
             token="valid_token", validated_data={"foo": "bar"}
         ),
     )
-    mock_success = mocker.patch("reflex_cli.utils.console.success")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
 
     role = "admin"
     user = "user123"
@@ -145,13 +157,15 @@ def test_invite_user_to_project_success(mocker: MockFixture):
         ),
     )
 
-    mock_success.assert_called_once_with("Successfully invited user to project.")
-    mock_error.assert_not_called()
+    assert _log_messages(caplog, SUCCESS) == ["Successfully invited user to project."]
+    assert _log_messages(caplog, logging.ERROR) == []
 
     assert result.exit_code == 0, result.output
 
 
-def test_invite_user_to_project_failure(mocker: MockFixture):
+def test_invite_user_to_project_failure(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
     mock_invite = mocker.patch(
         "reflex_cli.utils.hosting.invite_user_to_project",
         return_value="user invite failed: Unauthorized",
@@ -162,8 +176,6 @@ def test_invite_user_to_project_failure(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_success = mocker.patch("reflex_cli.utils.console.success")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
 
     role = "admin"
     user = "user123"
@@ -180,15 +192,17 @@ def test_invite_user_to_project_failure(mocker: MockFixture):
         ),
     )
 
-    mock_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "Unable to invite user to project: user invite failed: Unauthorized"
-    )
-    mock_success.assert_not_called()
+    ]
+    assert _log_messages(caplog, SUCCESS) == []
 
     assert result.exit_code == 1
 
 
-def test_invite_user_to_project_missing_token(mocker: MockFixture):
+def test_invite_user_to_project_missing_token(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
     mock_invite = mocker.patch(
         "reflex_cli.utils.hosting.invite_user_to_project",
     )
@@ -198,8 +212,6 @@ def test_invite_user_to_project_missing_token(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_success = mocker.patch("reflex_cli.utils.console.success")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
 
     role = "admin"
     user = "user123"
@@ -215,13 +227,18 @@ def test_invite_user_to_project_missing_token(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_success.assert_called_once_with("Successfully invited user to project.")
-    mock_error.assert_not_called()
+    assert _log_messages(caplog, SUCCESS) == ["Successfully invited user to project."]
+    assert _log_messages(caplog, logging.ERROR) == []
     assert result.exit_code == 0, result.output
 
 
-def test_select_project_success(mocker: MockFixture):
-    """Test successful project selection."""
+def test_select_project_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """Test successful project selection.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
     mock_select_project = mocker.patch(
         "reflex_cli.utils.hosting.select_project",
         return_value="TestProject is now selected.",
@@ -233,8 +250,6 @@ def test_select_project_success(mocker: MockFixture):
         ),
     )
     mocker.patch("reflex_cli.utils.hosting.get_project")
-    mock_success = mocker.patch("reflex_cli.utils.console.success")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
 
     project = "TestProject"
 
@@ -244,14 +259,19 @@ def test_select_project_success(mocker: MockFixture):
 
     mock_select_project.assert_called_once_with(project=project, token=None)
 
-    mock_success.assert_called_once_with("TestProject is now selected.")
-    mock_error.assert_not_called()
+    assert _log_messages(caplog, SUCCESS) == ["TestProject is now selected."]
+    assert _log_messages(caplog, logging.ERROR) == []
 
     assert result.exit_code == 0, result.output
 
 
-def test_select_project_failure(mocker: MockFixture):
-    """Test failure during project selection."""
+def test_select_project_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """Test failure during project selection.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
     mock_select_project = mocker.patch(
         "reflex_cli.utils.hosting.select_project",
         return_value="failed to select project.",
@@ -262,8 +282,6 @@ def test_select_project_failure(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_success = mocker.patch("reflex_cli.utils.console.success")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
     get_project = mocker.patch("reflex_cli.utils.hosting.get_project")
     mock_response = mocker.Mock()
     mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
@@ -285,14 +303,21 @@ def test_select_project_failure(mocker: MockFixture):
 
     mock_select_project.assert_called_once_with(project=project, token=None)
 
-    mock_error.assert_called_once_with("failed to select project.")
-    mock_success.assert_not_called()
+    assert _log_messages(caplog, logging.ERROR) == ["failed to select project."]
+    assert _log_messages(caplog, SUCCESS) == []
 
     assert result.exit_code == 1
 
 
-def test_select_project_valid_project_name(mocker: MockFixture):
-    """Test successful project selection using project name."""
+def test_select_project_valid_project_name(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """Test successful project selection using project name.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
     mock_select_project = mocker.patch(
         "reflex_cli.utils.hosting.select_project",
         return_value="test_project_id is now selected.",
@@ -310,8 +335,6 @@ def test_select_project_valid_project_name(mocker: MockFixture):
     get_project = mocker.patch(
         "reflex_cli.utils.hosting.get_project",
     )
-    mock_success = mocker.patch("reflex_cli.utils.console.success")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
     mocker.patch(
         "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
     )
@@ -323,14 +346,16 @@ def test_select_project_valid_project_name(mocker: MockFixture):
 
     mock_select_project.assert_called_once_with(project="test_project_id", token=token)
 
-    mock_success.assert_called_once_with("test_project_id is now selected.")
-    mock_error.assert_not_called()
+    assert _log_messages(caplog, SUCCESS) == ["test_project_id is now selected."]
+    assert _log_messages(caplog, logging.ERROR) == []
     get_project.assert_not_called()
 
     assert result.exit_code == 0, result.output
 
 
-def test_select_project_invalid_id(mocker: MockFixture):
+def test_select_project_invalid_id(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
         return_value=hosting.AuthenticatedClient(
@@ -357,21 +382,21 @@ def test_select_project_invalid_id(mocker: MockFixture):
         return_value={"X-API-TOKEN": "fake_token"},
     )
 
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
-
     project = "InvalidProject"
 
     args = ["project", "select", project]
 
     result = runner.invoke(hosting_cli, args)
 
-    mock_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "no project with given id found that user has access to."
-    )
+    ]
     assert result.exit_code == 1
 
 
-def test_select_project_invalid_project_name(mocker: MockFixture):
+def test_select_project_invalid_project_name(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
     mocker.patch(
         "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
     )
@@ -390,8 +415,6 @@ def test_select_project_invalid_project_name(mocker: MockFixture):
         return_value=None,
     )
 
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
-
     args = [
         "project",
         "select",
@@ -403,9 +426,9 @@ def test_select_project_invalid_project_name(mocker: MockFixture):
 
     result = runner.invoke(hosting_cli, args)
 
-    mock_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "No project selected. Please provide a valid project ID or name."
-    )
+    ]
     assert result.exit_code == 1
 
 
@@ -441,8 +464,15 @@ def test_get_project_roles_with_project_id(mocker: MockFixture):
     mock_console_print_table.assert_called_once()
 
 
-def test_get_project_roles_no_project_selected(mocker: MockFixture):
-    """Test retrieving project roles when no project ID is provided or selected."""
+def test_get_project_roles_no_project_selected(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """Test retrieving project roles when no project ID is provided or selected.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
         return_value=hosting.AuthenticatedClient(
@@ -452,15 +482,14 @@ def test_get_project_roles_no_project_selected(mocker: MockFixture):
     mock_get_selected_project = mocker.patch(
         "reflex_cli.utils.hosting.get_selected_project", return_value=None
     )
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(hosting_cli, ["project", "roles"])
 
     assert result.exit_code == 1
     mock_get_selected_project.assert_called_once()
-    mock_console_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "no project_id provided or selected. Set it with `reflex cloud project roles --project-id \\[project_id]`"
-    )
+    ]
 
 
 def test_get_project_roles_as_json(mocker: MockFixture):
@@ -478,8 +507,6 @@ def test_get_project_roles_as_json(mocker: MockFixture):
             {"role": "viewer", "user": "user2@example.com"},
         ],
     )
-    mock_console_print = mocker.patch("reflex_cli.utils.console.print")
-
     result = runner.invoke(
         hosting_cli,
         ["project", "roles", "--project-id", "test_project_id", "--json"],
@@ -492,12 +519,10 @@ def test_get_project_roles_as_json(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_print.assert_called_once_with(
-        json.dumps([
-            {"role": "admin", "user": "user1@example.com"},
-            {"role": "viewer", "user": "user2@example.com"},
-        ])
-    )
+    assert json.loads(result.stdout) == [
+        {"role": "admin", "user": "user1@example.com"},
+        {"role": "viewer", "user": "user2@example.com"},
+    ]
 
 
 def test_get_project_roles_empty_roles(mocker: MockFixture):
@@ -568,8 +593,15 @@ def test_get_project_role_permissions_with_role_and_project_id(mocker: MockFixtu
     mock_console_print_table.assert_called_once()
 
 
-def test_get_project_role_permissions_no_project_selected(mocker: MockFixture):
-    """Test retrieving role permissions when no project_id is provided or selected."""
+def test_get_project_role_permissions_no_project_selected(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """Test retrieving role permissions when no project_id is provided or selected.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
         return_value=hosting.AuthenticatedClient(
@@ -579,19 +611,25 @@ def test_get_project_role_permissions_no_project_selected(mocker: MockFixture):
     mock_get_selected_project = mocker.patch(
         "reflex_cli.utils.hosting.get_selected_project", return_value=None
     )
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(hosting_cli, ["project", "role-permissions", "test_role_id"])
 
     assert result.exit_code == 1
     mock_get_selected_project.assert_called_once()
-    mock_console_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "no project_id provided or selected. Set it with `reflex cloud project role-permissions --project-id \\[project_id]`."
-    )
+    ]
 
 
-def test_get_project_role_permissions_not_authenticated(mocker: MockFixture):
-    """Test retrieving role permissions when the user is not authenticated."""
+def test_get_project_role_permissions_not_authenticated(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """Test retrieving role permissions when the user is not authenticated.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
         return_value=hosting.AuthenticatedClient(
@@ -606,7 +644,6 @@ def test_get_project_role_permissions_not_authenticated(mocker: MockFixture):
         "reflex_cli.utils.hosting.get_selected_project",
         return_value="test_project_id",
     )
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(hosting_cli, ["project", "role-permissions", "test_role_id"])
 
@@ -619,9 +656,9 @@ def test_get_project_role_permissions_not_authenticated(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "You are not authenticated. Run `reflex login` to authenticate."
-    )
+    ]
 
 
 def test_get_project_role_permissions_as_json(mocker: MockFixture):
@@ -639,8 +676,6 @@ def test_get_project_role_permissions_as_json(mocker: MockFixture):
             {"permission": "write", "resource": "resource2"},
         ],
     )
-    mock_console_print = mocker.patch("reflex_cli.utils.console.print")
-
     result = runner.invoke(
         hosting_cli,
         [
@@ -661,12 +696,10 @@ def test_get_project_role_permissions_as_json(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_print.assert_called_once_with(
-        json.dumps([
-            {"permission": "read", "resource": "resource1"},
-            {"permission": "write", "resource": "resource2"},
-        ])
-    )
+    assert json.loads(result.stdout) == [
+        {"permission": "read", "resource": "resource1"},
+        {"permission": "write", "resource": "resource2"},
+    ]
 
 
 def test_get_project_role_permissions_empty_permissions(mocker: MockFixture):
@@ -737,8 +770,15 @@ def test_get_project_role_users_with_project_id(mocker: MockFixture):
     mock_console_print_table.assert_called_once()
 
 
-def test_get_project_role_users_no_project_selected(mocker: MockFixture):
-    """Test retrieving users when no project_id is provided or selected."""
+def test_get_project_role_users_no_project_selected(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """Test retrieving users when no project_id is provided or selected.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
         return_value=hosting.AuthenticatedClient(
@@ -748,15 +788,14 @@ def test_get_project_role_users_no_project_selected(mocker: MockFixture):
     mock_get_selected_project = mocker.patch(
         "reflex_cli.utils.hosting.get_selected_project", return_value=None
     )
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
 
     result = runner.invoke(hosting_cli, ["project", "users"])
 
     assert result.exit_code == 1
     mock_get_selected_project.assert_called_once()
-    mock_console_error.assert_called_once_with(
+    assert _log_messages(caplog, logging.ERROR) == [
         "no project_id provided or selected. Set it with `reflex cloud project users --project-id \\[project_id]`"
-    )
+    ]
 
 
 def test_get_project_role_users_as_json(mocker: MockFixture):
@@ -774,8 +813,6 @@ def test_get_project_role_users_as_json(mocker: MockFixture):
             {"user_id": "user2", "role": "developer"},
         ],
     )
-    mock_console_print = mocker.patch("reflex_cli.utils.console.print")
-
     result = runner.invoke(
         hosting_cli,
         [
@@ -794,12 +831,10 @@ def test_get_project_role_users_as_json(mocker: MockFixture):
             token="fake-token", validated_data={"foo": "bar"}
         ),
     )
-    mock_console_print.assert_called_once_with(
-        json.dumps([
-            {"user_id": "user1", "role": "admin"},
-            {"user_id": "user2", "role": "developer"},
-        ])
-    )
+    assert json.loads(result.stdout) == [
+        {"user_id": "user1", "role": "admin"},
+        {"user_id": "user2", "role": "developer"},
+    ]
 
 
 def test_get_project_role_users_empty_users(mocker: MockFixture):
@@ -829,3 +864,105 @@ def test_get_project_role_users_empty_users(mocker: MockFixture):
         ),
     )
     mock_console_print.assert_called_once_with("[]")
+
+
+def _authed(mocker: MockFixture) -> hosting.AuthenticatedClient:
+    """Patch the client lookup and return the client it hands back.
+
+    Args:
+        mocker: The pytest-mock fixture.
+
+    Returns:
+        The authenticated client every command under test will receive.
+    """
+    client = hosting.AuthenticatedClient(token="fake-token", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
+    )
+    return client
+
+
+def test_invite_user_to_project_json_output(mocker: MockFixture):
+    """An invite reports who was invited to what role."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.invite_user_to_project", return_value="ok")
+
+    result = runner.invoke(
+        hosting_cli, ["project", "invite", "role-1", "user-1", "--json"]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "role_id": "role-1",
+        "user_id": "user-1",
+        "invited": True,
+    }
+
+
+def test_select_project_json_output(mocker: MockFixture):
+    """Selecting a project reports the project it selected."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_project", return_value={"id": "p1"})
+    mocker.patch("reflex_cli.utils.hosting.select_project", return_value="selected p1")
+
+    result = runner.invoke(hosting_cli, ["project", "select", "p1", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "project_id": "p1",
+        "selected": True,
+        "message": "selected p1",
+    }
+
+
+def test_get_selected_project_json_output(mocker: MockFixture):
+    """The selected project comes back as a document rather than a table."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_selected_project", return_value="p1")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        return_value={"id": "p1", "name": "My Project"},
+    )
+
+    result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "project_id": "p1",
+        "name": "My Project",
+        "error": None,
+    }
+
+
+def test_get_selected_project_json_output_when_none(mocker: MockFixture):
+    """No selection is a document saying so, not a warning to parse."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_selected_project", return_value=None)
+
+    result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "project_id": None,
+        "name": None,
+        "error": None,
+    }
+
+
+def test_get_selected_project_json_output_when_the_lookup_fails(mocker: MockFixture):
+    """A failed lookup is not the same document as nothing being selected."""
+    _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_selected_project", return_value="p1")
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_project",
+        side_effect=RuntimeError("project service unavailable"),
+    )
+
+    result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
+
+    assert result.exit_code == 1
+    assert json.loads(result.stdout) == {
+        "project_id": "p1",
+        "name": None,
+        "error": "project service unavailable",
+    }

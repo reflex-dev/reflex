@@ -6,6 +6,7 @@ import contextvars
 import functools
 import io
 import json
+import logging
 import re
 import unittest.mock
 import uuid
@@ -27,7 +28,7 @@ from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import console, exceptions, format, memo_paths
+from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
@@ -307,6 +308,32 @@ def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
     assert app._unevaluated_pages.keys() == {route}
 
 
+def test_apply_decorated_pages_uses_app_context(
+    forked_registration_context: RegistrationContext,
+    app: App,
+    index_page: ComponentCallable,
+):
+    """_apply_decorated_pages reads the App's captured registration context.
+
+    The compiler calls it outside a request, where the ambient context may
+    differ from the one the App was created in; pages registered on the App's
+    own context must still be applied.
+
+    Args:
+        forked_registration_context: The forked registration context.
+        app: The app to test.
+        index_page: The index page.
+    """
+    assert app._registration_context is forked_registration_context
+    forked_registration_context.decorated_pages.append((
+        index_page,
+        {"route": "decorated"},
+    ))
+    with RegistrationContext():
+        app._apply_decorated_pages()
+    assert "decorated" in app._unevaluated_pages
+
+
 def test_add_page_invalid_api_route(app: App, index_page: ComponentCallable):
     """Test adding a page with an invalid route to an app.
 
@@ -344,17 +371,16 @@ def index():
     ],
 )
 def test_add_the_same_page(
-    mocker: MockerFixture, app: App, first_page, second_page, route
+    caplog: pytest.LogCaptureFixture, app: App, first_page, second_page, route
 ):
     app.add_page(first_page, route=route)
-    mock_object = mocker.Mock()
-    mocker.patch.object(
-        console,
-        "warn",
-        mock_object,
-    )
     app.add_page(second_page, route="/" + route.strip("/") if route else None)
-    assert mock_object.call_count == 1
+    warnings = [
+        r
+        for r in caplog.records
+        if r.name == "reflex.app" and r.levelno == logging.WARNING
+    ]
+    assert len(warnings) == 1
 
 
 @pytest.mark.parametrize(
@@ -420,7 +446,7 @@ def test_initialize_with_custom_admin_dashboard(
     from starlette_admin.contrib.sqla.admin import Admin
 
     custom_auth_provider = test_custom_auth_admin()
-    custom_admin = Admin(engine=test_get_engine, auth_provider=custom_auth_provider)
+    custom_admin = Admin(test_get_engine, auth_provider=custom_auth_provider)
     app = App(admin_dash=AdminDash(models=[test_model_auth], admin=custom_admin))
     assert app.admin_dash is not None
     assert app.admin_dash.admin is not None
@@ -1847,7 +1873,6 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         emitted_deltas: List to store emitted deltas.
         emitted_events: List to store emitted events.
     """
-    OnLoadInternalState._app_ref = None
     arg_name = "dynamic"
     route = f"test/[{arg_name}]"
     app = app_module_mock.app = App()
@@ -2158,6 +2183,7 @@ def test_app_wrap_compile_theme(
     react_strict_mode: bool,
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
     """Test that the radix theme component wraps the app.
 
@@ -2165,6 +2191,8 @@ def test_app_wrap_compile_theme(
         react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
         mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
@@ -2303,8 +2331,16 @@ def _example_hydrate_fallback() -> rx.Component:
 def test_compile_hydrate_fallback_from_config(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """The hydrate_fallback config (env-settable) should define the HydrateFallback."""
+    """The hydrate_fallback config (env-settable) should define the HydrateFallback.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
     conf = rx.Config(
         app_name="testing",
         hydrate_fallback="tests.units.test_app._example_hydrate_fallback",
@@ -2407,33 +2443,49 @@ def test_component_from_import_path_resolves_nested_module():
     assert isinstance(component.children[0], Button)
 
 
-def test_component_from_import_path_invalid_returns_none(mocker: MockerFixture):
+def test_component_from_import_path_invalid_returns_none(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
     """An unresolvable path should be logged and return None instead of raising."""
     from reflex.app import _component_from_import_path
 
     mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
-    mock_error = mocker.patch("reflex_base.utils.console.error")
 
     component = _component_from_import_path(
         "nonexistent_module.does_not_exist", "hydrate_fallback"
     )
 
     assert component is None
-    mock_error.assert_called_once()
+    assert (
+        len([
+            r
+            for r in caplog.records
+            if r.name == "reflex.app" and r.levelno == logging.ERROR
+        ])
+        == 1
+    )
 
 
-def test_component_from_import_path_non_callable_returns_none(mocker: MockerFixture):
+def test_component_from_import_path_non_callable_returns_none(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
     """A path resolving to a non-callable attribute should return None."""
     from reflex.app import _component_from_import_path
 
     mocker.patch("reflex.compiler.utils.save_error", return_value="/tmp/error.log")
-    mock_error = mocker.patch("reflex_base.utils.console.error")
 
     # ``reflex.constants`` is a module, not a callable returning a component.
     component = _component_from_import_path("reflex.constants", "hydrate_fallback")
 
     assert component is None
-    mock_error.assert_called_once()
+    assert (
+        len([
+            r
+            for r in caplog.records
+            if r.name == "reflex.app" and r.levelno == logging.ERROR
+        ])
+        == 1
+    )
 
 
 def test_compile_with_radix_component_auto_enables_radix_plugin(
@@ -2503,8 +2555,16 @@ def test_compile_with_legacy_app_theme_warns_and_enables_radix_plugin(
 def test_legacy_app_theme_wins_over_explicit_radix_plugin(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """Deprecated App.theme keeps working (and winning) until its removal."""
+    """Deprecated App.theme keeps working (and winning) until its removal.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
     conf = rx.Config(
         app_name="testing",
         plugins=[rx.plugins.RadixThemesPlugin(theme=rx.theme(accent_color="green"))],
@@ -2923,6 +2983,7 @@ def test_app_wrap_priority(
     react_strict_mode: bool,
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
     """Test that the app wrap components are wrapped in the correct order.
 
@@ -2930,6 +2991,8 @@ def test_app_wrap_priority(
         react_strict_mode: Whether to use React Strict Mode.
         compilable_app: compilable_app fixture.
         mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
     """
     conf = rx.Config(app_name="testing", react_strict_mode=react_strict_mode)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
@@ -3074,7 +3137,8 @@ def test_app_state_determination():
     a1 = App()
     assert a1._state is not None
 
-    a2 = App(enable_state=False)
+    with RegistrationContext.get().fork():
+        a2 = App(enable_state=False)
     assert a2._state is None
 
 
@@ -3677,8 +3741,16 @@ def test_compile_sends_telemetry_when_enabled(
 def test_compile_skips_telemetry_when_disabled(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event."""
+    """When telemetry is disabled, ``_compile`` does not emit a ``compile`` event.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
     conf = rx.Config(app_name="testing", telemetry_enabled=False)
     mocker.patch("reflex_base.config._get_config", return_value=conf)
     app, web_dir = compilable_app
@@ -3913,8 +3985,16 @@ def test_add_page_invalidates_router_cache():
 def test_compile_registers_plugin_routes(
     compilable_app: tuple[App, Path],
     mocker: MockerFixture,
+    clean_registration_context,
 ):
-    """Compilation includes pages contributed by configured plugins."""
+    """Compilation includes pages contributed by configured plugins.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
 
     class RoutePlugin(Plugin):
         """Plugin contributing one page for the compile test."""
@@ -3970,23 +4050,33 @@ def frontend_errors(event_namespace: EventNamespace) -> list[str]:
 
 
 @pytest.fixture
-def client_error_console(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[str]]:
-    """Capture messages logged through the console helpers.
+def client_error_console() -> Generator[dict[str, list[str]], None, None]:
+    """Capture messages logged through the app's logger, keyed by level.
 
-    Args:
-        monkeypatch: The pytest monkeypatch fixture.
-
-    Returns:
+    Yields:
         Captured messages keyed by log level.
     """
     captured: dict[str, list[str]] = {"error": [], "warn": [], "debug": []}
-    for level in captured:
-        monkeypatch.setattr(
-            console,
-            level,
-            lambda msg, _level=level, **kwargs: captured[_level].append(msg),
-        )
-    return captured
+    level_keys = {
+        logging.ERROR: "error",
+        logging.WARNING: "warn",
+        logging.DEBUG: "debug",
+    }
+
+    class _CaptureHandler(logging.Handler):
+        def emit(self, record: logging.LogRecord):
+            key = level_keys.get(record.levelno)
+            if key is not None:
+                captured[key].append(record.getMessage())
+
+    app_logger = logging.getLogger("reflex.app")
+    handler = _CaptureHandler(level=logging.DEBUG)
+    previous_level = app_logger.level
+    app_logger.addHandler(handler)
+    app_logger.setLevel(logging.DEBUG)
+    yield captured
+    app_logger.removeHandler(handler)
+    app_logger.setLevel(previous_level)
 
 
 @pytest.mark.asyncio
@@ -4052,6 +4142,32 @@ async def test_client_error_malformed_payload_is_ignored(
     """
     await event_namespace.on_client_error("known_sid", payload)
     assert not frontend_errors
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("sid", ["known_sid", "unknown_sid"])
+async def test_client_error_no_argument_emit_is_ignored(
+    event_namespace: EventNamespace,
+    frontend_errors: list[str],
+    client_error_console: dict[str, list[str]],
+    sid: str,
+):
+    """A payload-less client_error emit is dropped like any malformed payload.
+
+    python-socketio dispatches ``emit("client_error")`` without a payload as
+    ``on_client_error(sid)``, so a missing ``data`` argument must not raise a
+    TypeError before the anti-abuse guards run.
+
+    Args:
+        event_namespace: The event namespace.
+        frontend_errors: Captured frontend exception handler messages.
+        client_error_console: Captured console messages.
+        sid: The Socket.IO session id to report from.
+    """
+    await event_namespace.on_client_error(sid)
+    assert not frontend_errors
+    assert not client_error_console["error"]
+    assert not client_error_console["warn"]
 
 
 @pytest.mark.asyncio
@@ -4193,3 +4309,38 @@ def test_client_error_constants_match_frontend():
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
     )
+
+
+@pytest.mark.parametrize("compile_raises", [False, True])
+def test_compile_releases_memo_naming_caches(
+    mocker: MockerFixture, compile_raises: bool
+):
+    """``App._compile`` must release the memo-naming caches on every path.
+
+    The CLI and export paths reach ``_compile`` through
+    ``prerequisites.get_compiled_app`` and never touch ``App.__call__``, so the
+    release has to sit in the compile lifecycle -- and in a ``finally``, so a
+    failed compile does not leave the caches behind either.
+    """
+    from reflex_base.utils.deterministic_hash import (
+        _hash_str_encodings,
+        clear_hash_caches,
+    )
+
+    app = App()
+
+    def fake_compile_app(*_args: Any, **_kwargs: Any) -> bool:
+        # Stand in for the naming work a real compile does.
+        _hash_str_encodings["probe"] = b"probe"
+        if compile_raises:
+            msg = "compile blew up"
+            raise RuntimeError(msg)
+        return True
+
+    mocker.patch("reflex.compiler.compiler.compile_app", side_effect=fake_compile_app)
+    clear_hash_caches()
+
+    with pytest.raises(RuntimeError) if compile_raises else contextlib.nullcontext():
+        app._compile()
+
+    assert not _hash_str_encodings

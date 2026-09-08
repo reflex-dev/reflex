@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterable, Iterator
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, TypedDict
 
 from reflex_base.config import Config, get_config
 from reflex_base.telemetry_context import _KNOWN_FEATURES, TelemetryContext
-from reflex_base.utils import console
 from reflex_components_core.core.upload import Upload
 
 from reflex.istate.shared import SharedState
@@ -21,6 +21,8 @@ from reflex.istate.storage import (
 from reflex.model import ModelRegistry
 from reflex.route import get_route_args
 from reflex.utils import telemetry
+
+logger = logging.getLogger(__name__)
 
 _HAS_SQLALCHEMY = find_spec("sqlalchemy") is not None
 
@@ -79,7 +81,7 @@ def record_compile(app: App, ctx: TelemetryContext) -> None:
         payload = _collect_compile_event_payload(app, ctx)
         telemetry.send("compile", properties=dict(payload))
     except Exception as exc:
-        console.debug(f"compile telemetry event failed: {exc!r}")
+        logger.debug(f"compile telemetry event failed: {exc!r}")
 
 
 def _collect_compile_event_payload(
@@ -99,8 +101,12 @@ def _collect_compile_event_payload(
     return {
         "plugins_enabled": [p.__class__.__name__ for p in config.plugins],
         "plugins_disabled": [p.__name__ for p in config.disable_plugins],
-        "pages_count": len(app._pages),
-        "component_counts": _count_components(app._pages.values()),
+        "pages_count": len(app._unevaluated_pages.keys() | app._pages.keys()),
+        "component_counts": (
+            app._cached_component_counts
+            if app._cached_component_counts is not None
+            else _count_components(app._pages.values())
+        ),
         "states": [_collect_state_stats(s) for s in user_states],
         "features_used": _collect_features_used(app, config, user_states),
         "duration_ms": ctx.elapsed_ms(),

@@ -7,6 +7,7 @@ from reflex_base.utils.serializers import serializer
 
 import reflex.constants
 import reflex.model
+from reflex.istate.proxy import MutableProxy
 from reflex.model import (
     ModelRegistry,
     alembic_autogenerate,
@@ -15,7 +16,6 @@ from reflex.model import (
     migrate,
     sqla_session,
 )
-from reflex.state import MutableProxy
 
 pytest.importorskip("sqlalchemy")
 pytest.importorskip("sqlmodel")

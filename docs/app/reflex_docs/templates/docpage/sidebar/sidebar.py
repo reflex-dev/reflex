@@ -217,7 +217,7 @@ def calculate_index(sidebar_items, url: str) -> list[int]:
 
 def append_to_items(items, flat_items):
     for item in items:
-        if not item.children:
+        if not item.children and not item.exclude_from_prev_next:
             flat_items.append(item)
         append_to_items(item.children, flat_items)
 

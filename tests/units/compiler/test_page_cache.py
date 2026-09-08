@@ -567,7 +567,7 @@ def test_file_validator_is_stat_first(tmp_path, monkeypatch):
     v = page_cache.FileValidator(files)
     assert v.changed(str(f)) is False
     assert reads == 0  # stat matched, never read
-    assert v.unchanged([str(f)]) is False or True  # memoized, still no read
+    assert v.unchanged([str(f)]) is True  # memoized, still no read
     assert reads == 0
 
     # Touched with identical content: hashed once, unchanged, entry refreshed.
@@ -674,3 +674,65 @@ def test_page_dependency_files_closes_over_dynamic_imports(tmp_path, monkeypatch
 
     assert str(helper.resolve()) in deps
     assert str(leaf.resolve()) in deps
+
+
+def test_dynamic_import_records_parent_packages(tmp_path, monkeypatch):
+    """Cached dynamic imports still depend on package initialization."""
+    package = tmp_path / "review_dynamic_parent"
+    package.mkdir()
+    parent = package / "__init__.py"
+    parent.write_text("VALUE = 1\n")
+    child = package / "child.py"
+    child.write_text("from . import VALUE\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    page_cache.enable_read_tracking(tmp_path)
+    try:
+        importlib.import_module("review_dynamic_parent.child")
+        with page_cache.record_reads() as reads:
+            importlib.import_module("review_dynamic_parent.child")
+        assert {str(parent), str(child)} <= reads
+    finally:
+        _forget_modules("review_dynamic_parent", "review_dynamic_parent.child")
+
+
+def test_package_relative_import_names(tmp_path):
+    """Relative imports in package initializers resolve from that package."""
+    source = tmp_path / "__init__.py"
+    source.write_text("from . import helper\nfrom ..common import value\n")
+    assert page_cache._module_import_names(str(source), "app.pages") == [
+        "app.pages",
+        "app.pages.helper",
+        "app.common",
+        "app.common.value",
+    ]
+
+
+def test_entrypoint_is_not_a_page_barrier(tmp_path, monkeypatch):
+    """A page defined beside its App cannot hide app-wide configuration."""
+    from types import SimpleNamespace
+
+    entry = tmp_path / "app.py"
+    entry.write_text("THEME = 'dark'\n")
+    monkeypatch.setattr(page_cache, "_app_entrypoint_file", lambda root: entry)
+    monkeypatch.setattr(
+        page_cache, "build_import_graph", lambda root: {str(entry): set()}
+    )
+    monkeypatch.setattr(
+        page_cache, "_component_source_files", lambda component, root: {str(entry)}
+    )
+    assert str(entry) in page_cache.app_dependency_files(
+        [SimpleNamespace(component=None)], tmp_path
+    )
+
+
+def test_missing_read_remains_a_dependency(tmp_path, monkeypatch):
+    """A handled missing read must invalidate when its file later appears."""
+    missing = str(tmp_path / "optional.json")
+    monkeypatch.setattr(page_cache, "page_dependency_files", lambda *args: {missing})
+    files = {}
+    deps = page_cache.page_dependency_entries(
+        cast(Any, None), None, {}, page_cache.file_entry, files, tmp_path
+    )
+    assert deps == [missing]
+    Path(missing).write_text("{}")
+    assert not page_cache.FileValidator(files).unchanged(deps)

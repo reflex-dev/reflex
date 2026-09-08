@@ -392,6 +392,7 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
         # the manifest is pure bookkeeping: dep set + app-wrap keys + flags
         assert set(entry) == {
             "deps",
+            "component_counts",
             "app_wrap_keys",
             "is_stateful",
             "state_slice",
@@ -536,6 +537,12 @@ def test_incremental_rebuild_all_hits(tmp_path, monkeypatch):
         is True
     )
 
+    from reflex.utils.telemetry_accounting import _count_components
+
+    assert app._cached_component_counts == _count_components(
+        page.root_component for page in ctx.compiled_pages.values()
+    )
+
 
 def test_incremental_rebuild_one_miss_writes_only_that_page(tmp_path, monkeypatch):
     from reflex.compiler import utils as compiler_utils
@@ -565,6 +572,9 @@ def test_incremental_rebuild_one_miss_writes_only_that_page(tmp_path, monkeypatc
         )
         is True
     )
+
+    assert edited_route in app._pages
+    assert edited_route in app._evaluated_pages
 
     # The edited page was recompiled and written; its content matches a clean
     # compile of that page.
@@ -1205,7 +1215,10 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
 
     page = _FakePage(route="/a", component=_page_a)
     page_ctx = SimpleNamespace(
-        app_wrap_components={}, frontend_imports={}, memo_contributions={}
+        root_component=rx.el.div(),
+        app_wrap_components={},
+        frontend_imports={},
+        memo_contributions={},
     )
     miss_ctx = SimpleNamespace(compiled_pages={"/a": page_ctx}, stateful_routes={})
     complete_imports = {"memo-lib": [ImportVar("MemoThing")]}

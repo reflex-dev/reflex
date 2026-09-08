@@ -78,3 +78,60 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     )
 
     assert seen["value"] == "True"
+
+
+def test_with_development_condition_sets_node_and_bun_options():
+    """Both runtime option vars gain the development condition flag."""
+    env = exec_utils._with_development_condition({})
+    assert env["NODE_OPTIONS"] == "--conditions=development"
+    assert env["BUN_OPTIONS"] == "--conditions=development"
+
+
+def test_with_development_condition_preserves_existing_options():
+    """Existing runtime options are kept, the flag is appended once, and the
+    base environment is not mutated.
+    """
+    environ = {
+        "NODE_OPTIONS": "--max-old-space-size=4096",
+        "BUN_OPTIONS": "--conditions=development",
+    }
+    env = exec_utils._with_development_condition(environ)
+    assert env["NODE_OPTIONS"] == "--max-old-space-size=4096 --conditions=development"
+    # Already-present flag is not duplicated.
+    assert env["BUN_OPTIONS"] == "--conditions=development"
+    # The dev condition must not leak into the parent environment.
+    assert environ["NODE_OPTIONS"] == "--max-old-space-size=4096"
+
+
+def test_arbitrate_ssr_stores_flag_when_env_unset(monkeypatch: pytest.MonkeyPatch):
+    """The flag value is stored in the environment when REFLEX_SSR is unset."""
+    monkeypatch.setenv(environment.REFLEX_SSR.name, "")
+
+    assert exec_utils.arbitrate_ssr(False) is False
+    assert environment.REFLEX_SSR.get() is False
+
+
+def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
+    """An already-set REFLEX_SSR env var overrides the flag value."""
+    monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
+
+    assert exec_utils.arbitrate_ssr(True) is False
+
+
+@pytest.mark.parametrize("cache_enabled", [False, True])
+def test_uvicorn_markdown_reload_requires_compile_cache(
+    cache_enabled, tmp_path, monkeypatch, mocker
+):
+    """The default backend reloader keeps its Python-only behavior."""
+    uvicorn = pytest.importorskip("uvicorn")
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", str(cache_enabled))
+    mocker.patch.object(
+        exec_utils, "get_dev_backend_reload_marker", return_value=tmp_path / "marker"
+    )
+    mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    run = mocker.patch.object(uvicorn, "run")
+    exec_utils.run_uvicorn_backend("localhost", 8000, exec_utils.LogLevel.INFO)
+    assert run.call_args.kwargs["reload_includes"] == (
+        ["*.py", "*.md", "*.mdx"] if cache_enabled else ["*.py"]
+    )

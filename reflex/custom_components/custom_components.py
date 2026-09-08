@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import subprocess
@@ -9,13 +10,15 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
 
 import click
 from reflex_base import constants
 from reflex_base.constants import CustomComponents
 
 from reflex.utils import console, frontend_skeleton
+from reflex.utils.cli_options import log_options
+
+logger = logging.getLogger(__name__)
 
 
 def _pyproject_toml_template(
@@ -214,35 +217,10 @@ app.add_page(index)
 '''
 
 
-def set_loglevel(ctx: Any, self: Any, value: str | None):
-    """Set the log level.
-
-    Args:
-        ctx: The click context.
-        self: The click command.
-        value: The log level to set.
-    """
-    if value is not None:
-        loglevel = constants.LogLevel.from_string(value)
-        console.set_log_level(loglevel)
-
-
 @click.group
 def custom_components_cli():
     """CLI for creating custom components."""
 
-
-loglevel_option = click.option(
-    "--loglevel",
-    type=click.Choice(
-        [loglevel.value for loglevel in constants.LogLevel],
-        case_sensitive=False,
-    ),
-    callback=set_loglevel,
-    is_eager=True,
-    expose_value=False,
-    help="The log level to use.",
-)
 
 POST_CUSTOM_COMPONENTS_GALLERY_TIMEOUT = 15
 
@@ -335,7 +313,7 @@ def _populate_demo_app(name_variants: NameVariants):
     demo_app_dir = Path(name_variants.demo_app_dir)
     demo_app_name = name_variants.demo_app_name
 
-    console.info(f"Creating app for testing: {demo_app_dir!s}")
+    logger.info(f"Creating app for testing: {demo_app_dir!s}")
 
     demo_app_dir.mkdir(exist_ok=True)
 
@@ -375,13 +353,13 @@ def _get_default_library_name_parts() -> list[str]:
         # If no parts left, cannot find a valid library name, exit.
         if not parts:
             # The folder likely has a name not suitable for python paths.
-            console.error(
+            logger.error(
                 f"Based on current directory name {current_dir_name}, the library name is {constants.Reflex.MODULE_NAME}. This package already exists. Please use --library-name to specify a different name."
             )
             raise SystemExit(1)
     if not parts:
         # The folder likely has a name not suitable for python paths.
-        console.error(
+        logger.error(
             f"Could not find a valid library name based on the current directory: got {current_dir_name}."
         )
         raise SystemExit(1)
@@ -417,7 +395,7 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
     if library_name is not None and not re.match(
         r"^[a-zA-Z-]+[a-zA-Z0-9-]*$", library_name
     ):
-        console.error(
+        logger.error(
             f"Please use only alphanumeric characters or dashes: got {library_name}"
         )
         raise SystemExit(1)
@@ -433,21 +411,21 @@ def _validate_library_name(library_name: str | None) -> NameVariants:
 
     # Component class name is the camel case.
     component_class_name = "".join([part.capitalize() for part in name_parts])
-    console.debug(f"Component class name: {component_class_name}")
+    logger.debug(f"Component class name: {component_class_name}")
 
     # Package name is commonly kebab case.
     package_name = f"reflex-{library_name}"
-    console.debug(f"Package name: {package_name}")
+    logger.debug(f"Package name: {package_name}")
 
     # Module name is the snake case.
     module_name = "_".join(name_parts)
 
     custom_component_module_dir = Path(f"reflex_{module_name}")
-    console.debug(f"Custom component source directory: {custom_component_module_dir}")
+    logger.debug(f"Custom component source directory: {custom_component_module_dir}")
 
     # Use the same name for the directory and the app.
     demo_app_dir = demo_app_name = f"{module_name}_demo"
-    console.debug(f"Demo app directory: {demo_app_dir}")
+    logger.debug(f"Demo app directory: {demo_app_dir}")
 
     return NameVariants(
         library_name=library_name,
@@ -466,7 +444,7 @@ def _populate_custom_component_project(name_variants: NameVariants):
     Args:
         name_variants: the tuple including various names such as package name, class name needed for the project.
     """
-    console.info(
+    logger.info(
         f"Populating pyproject.toml with package name: {name_variants.package_name}"
     )
     # write pyproject.toml, README.md, etc.
@@ -477,7 +455,7 @@ def _populate_custom_component_project(name_variants: NameVariants):
         module_name=name_variants.library_name, package_name=name_variants.package_name
     )
 
-    console.info(
+    logger.info(
         f"Initializing the component directory: {CustomComponents.SRC_DIR / name_variants.custom_component_module_dir}"
     )
     CustomComponents.SRC_DIR.mkdir(exist_ok=True)
@@ -502,7 +480,7 @@ def _populate_custom_component_project(name_variants: NameVariants):
     default=True,
     help="Whether to install package from this local custom component in editable mode.",
 )
-@loglevel_option
+@log_options
 def init(
     library_name: str | None,
     install: bool,
@@ -519,7 +497,7 @@ def init(
     from reflex.utils import exec
 
     if CustomComponents.PYPROJECT_TOML.exists():
-        console.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
+        logger.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
         raise SystemExit(1)
 
     # Show system info.
@@ -543,7 +521,7 @@ def init(
         package_name = name_variants.package_name
         console.rule(f"[bold]Installing {package_name} in editable mode.")
         if _pip_install_on_demand(package_name=".", install_args=["-e"]):
-            console.info(f"Package {package_name} installed!")
+            logger.info(f"Package {package_name} installed!")
         else:
             raise SystemExit(1)
 
@@ -586,7 +564,7 @@ def _pip_install_on_demand(
         *install_args,
         package_name,
     ]
-    console.debug(f"Install package: {' '.join(install_cmds)}")
+    logger.debug(f"Install package: {' '.join(install_cmds)}")
     return _run_commands_in_subprocess(install_cmds)
 
 
@@ -599,15 +577,15 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
     Returns:
         True if the command runs successfully, False otherwise.
     """
-    console.debug(f"Running command: {' '.join(cmds)}")
+    logger.debug(f"Running command: {' '.join(cmds)}")
     try:
         result = subprocess.run(cmds, capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as cpe:
-        console.error(cpe.stdout)
-        console.error(cpe.stderr)
+        logger.error(cpe.stdout)
+        logger.error(cpe.stderr)
         return False
     else:
-        console.debug(result.stdout)
+        logger.debug(result.stdout)
         return True
 
 
@@ -638,13 +616,13 @@ def _run_build():
 
     cmds = [sys.executable, "-m", "build", "."]
     if _run_commands_in_subprocess(cmds):
-        console.info("Custom component built successfully!")
+        logger.info("Custom component built successfully!")
     else:
         raise SystemExit(1)
 
 
 @custom_components_cli.command(name="build")
-@loglevel_option
+@log_options
 def build():
     """Build a custom component. Must be run from the project root directory where the pyproject.toml is."""
     _run_build()
@@ -664,7 +642,7 @@ def _collect_details_for_gallery():
     access_token, _ = hosting.authenticated_token()
 
     if not access_token:
-        console.error(
+        logger.error(
             "Unable to authenticate with Reflex backend services. Make sure you are logged in."
         )
         raise SystemExit(1)
@@ -682,7 +660,7 @@ def _collect_details_for_gallery():
 
     # Check the backend services if the user is allowed to update information of this package is already shared.
     try:
-        console.debug(
+        logger.debug(
             f"Checking if user has permission to upsert information for {package_name} by POST."
         )
         # Send a POST request to achieve two things at once:
@@ -694,13 +672,13 @@ def _collect_details_for_gallery():
             data=params,
         )
         if response.status_code == httpx.codes.FORBIDDEN:
-            console.error(
+            logger.error(
                 f"{package_name} is owned by another user. Unable to update the information for it."
             )
             raise SystemExit(1)
         response.raise_for_status()
     except httpx.HTTPError as he:
-        console.error(f"Unable to complete request due to {he}.")
+        logger.error(f"Unable to complete request due to {he}.")
         raise SystemExit(1) from None
 
     files = []
@@ -725,7 +703,7 @@ def _collect_details_for_gallery():
 
     # Now send the post request to Reflex backend services.
     try:
-        console.debug(f"Sending custom component data: {params}")
+        logger.debug(f"Sending custom component data: {params}")
         response = httpx.post(
             post_custom_components_gallery_endpoint,
             headers={"Authorization": f"Bearer {access_token}"},
@@ -736,10 +714,10 @@ def _collect_details_for_gallery():
         response.raise_for_status()
 
     except httpx.HTTPError as he:
-        console.error(f"Unable to complete request due to {he}.")
+        logger.error(f"Unable to complete request due to {he}.")
         raise SystemExit(1) from None
 
-    console.info("Custom component information successfully shared!")
+    logger.info("Custom component information successfully shared!")
 
 
 def _validate_url_with_protocol_prefix(url: str | None) -> bool:
@@ -766,30 +744,30 @@ def _get_file_from_prompt_in_loop() -> tuple[bytes, str] | None:
         if not image_file_path:
             break
         if not image_file_path.exists():
-            console.error(f"File {image_file_path} does not exist.")
+            logger.error(f"File {image_file_path} does not exist.")
             continue
         file_extension = image_file_path.suffix
         try:
             image_file = image_file_path.read_bytes()
         except OSError as ose:
-            console.error(f"Unable to read the {file_extension} file due to {ose}")
+            logger.error(f"Unable to read the {file_extension} file due to {ose}")
             raise SystemExit(1) from None
         else:
             return image_file, file_extension
 
-    console.debug(f"File extension detected: {file_extension}")
+    logger.debug(f"File extension detected: {file_extension}")
     return None
 
 
 @custom_components_cli.command(name="share")
-@loglevel_option
+@log_options
 def share_more_detail():
     """Collect more details on the published package for gallery."""
     _collect_details_for_gallery()
 
 
 @custom_components_cli.command(name="install")
-@loglevel_option
+@log_options
 def install():
     """Install package from this local custom component in editable mode.
 
@@ -797,6 +775,6 @@ def install():
         SystemExit: If unable to install the current directory in editable mode.
     """
     if _pip_install_on_demand(package_name=".", install_args=["-e"]):
-        console.info("Package installed successfully!")
+        logger.info("Package installed successfully!")
     else:
         raise SystemExit(1)

@@ -31,6 +31,10 @@ class EventFuture(asyncio.Future):
         default_factory=asyncio.get_running_loop, repr=False
     )
 
+    # Key under which this future is registered for latest-wins supersession
+    # in the EventProcessor, if any.
+    supersede_key: tuple[str, str] | None = dataclasses.field(default=None, repr=False)
+
     def __post_init__(self) -> None:
         """Call Future.__init__ for the EventFuture."""
         super(EventFuture, self).__init__(loop=self.loop)

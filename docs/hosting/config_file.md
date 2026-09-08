@@ -34,6 +34,11 @@ vmtype: c2m2                       # Optional: defaults to c1m1
 hostname: myapp                    # Optional: myapp.reflex.dev
 envfile: .env.production           # Optional: defaults to .env
 
+# Google Cloud (Enterprise, requires a connected GCP account)
+provider: gcp                      # Optional: defaults to reflex-cloud
+gcp_connection: eu-prod            # Optional: omit to keep the app's current connection
+full_deploy: true                  # Optional: omit to leave the app's hosting mode unchanged
+
 # Additional dependencies
 packages:                          # Optional: empty by default
   - procps
@@ -88,14 +93,14 @@ rx.table.root(
                 "object",
                 "sjc: 1",
                 "Region deployment mapping",
-                "/docs/hosting/regions",
+                "/hosting/regions",
             ),
             (
                 "vmtype",
                 "string",
                 "c1m1",
                 "Virtual machine specifications",
-                "/docs/hosting/machine-types",
+                "/hosting/machine-types",
             ),
             ("hostname", "string", "null", "Custom subdomain", None),
             (
@@ -103,13 +108,34 @@ rx.table.root(
                 "string",
                 ".env",
                 "Environment variables file path",
-                "/docs/hosting/secrets-environment-vars",
+                "/hosting/secrets-environment-vars",
             ),
             ("project", "uuid", "null", "Project uuid", None),
             ("projectname", "string", "null", "Project name", None),
             ("packages", "array", "empty", "Additional system packages", None),
             ("include_db", "boolean", "false", "Include local sqlite", None),
             ("strategy", "string", "auto", "Deployment strategy", None),
+            (
+                "provider",
+                "string",
+                "reflex-cloud",
+                "Where the app deploys: reflex-cloud or gcp",
+                None,
+            ),
+            (
+                "gcp_connection",
+                "string",
+                "unset",
+                "Connected GCP account to deploy through (see below)",
+                None,
+            ),
+            (
+                "full_deploy",
+                "boolean",
+                "unset",
+                "Serve the frontend from the GCP container (see below)",
+                None,
+            ),
         ]
     ]),
     variant="ghost",
@@ -169,6 +195,55 @@ Available strategies:
 ```yaml
 strategy: immediate
 ```
+
+### Google Cloud
+
+Deploy to a Google Cloud account connected to your organization instead of
+Reflex Cloud. Requires the Enterprise tier and a GCP account connected under
+Organization → Cloud Providers.
+
+```yaml
+provider: gcp
+```
+
+An organization can connect more than one GCP account. Name which one an app
+deploys through:
+
+```yaml
+gcp_connection: eu-prod
+```
+
+Run `reflex cloud providers connections` to list the connections available to
+you, with the project, region and runtime service account of each.
+
+Leaving `gcp_connection` unset keeps the app on the connection it already uses.
+An app that has never deployed to GCP has no connection yet, so for that first
+deploy the unset value means your organization's default connection — which is
+why the options table above lists no fixed default. A connection can only be
+changed before the app has been deployed; afterwards, switch providers instead
+so the old project is torn down properly.
+
+Two settings are ignored on this target: `regions` (the region comes from the
+connected account) and `hostname`. `vmtype` is honored — it maps onto Cloud Run
+CPU and memory limits.
+
+### Full deploy
+
+By default a GCP-deployed app serves its frontend from Reflex's CDN. In full
+deploy mode the frontend is bundled into the GCP container and served on the
+same origin as the backend, so the whole app runs in your cloud account:
+
+```yaml
+full_deploy: true
+```
+
+GCP only, Enterprise tier, and incompatible with a custom domain or multiple
+environments. Leaving `full_deploy` unset leaves the app's hosting mode
+unchanged — it is deliberately three-valued, so a config file that never
+mentions it does not switch an app out of full deploy. Changing the mode stops
+a running app so the next deploy brings it back up in the new one, and its
+earlier deployments stop being rollback targets: they were built for the mode
+it left.
 
 ## Multi-Environment Setup
 

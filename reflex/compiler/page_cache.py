@@ -313,6 +313,11 @@ def _record_imported_modules(
     result_id = id(result)
     if (module := sys.modules.get(name)) and id(module) != result_id:
         _record_module_file(module, target)
+    parent = name
+    while "." in parent:
+        parent = parent.rsplit(".", 1)[0]
+        if (module := sys.modules.get(parent)) is not None:
+            _record_module_file(module, target)
     if not fromlist:
         return
     for item in fromlist:
@@ -692,7 +697,9 @@ def _first_party_module_file(file: str, roots: tuple[Path, ...]) -> str | None:
     return str(resolved) if _under_any(resolved, roots) else None
 
 
-def _import_from_targets(node: object, modname: str) -> list[str]:
+def _import_from_targets(
+    node: object, modname: str, *, is_package: bool = False
+) -> list[str]:
     """Resolve a ``from ... import ...`` node to candidate module names.
 
     Handles relative imports via the importing module's package. Returns the
@@ -703,6 +710,7 @@ def _import_from_targets(node: object, modname: str) -> list[str]:
     Args:
         node: An ``ast.ImportFrom`` node.
         modname: The dotted name of the module containing the import.
+        is_package: Whether the importing module is a package initializer.
 
     Returns:
         Candidate dotted module names to resolve.
@@ -712,8 +720,13 @@ def _import_from_targets(node: object, modname: str) -> list[str]:
     if not isinstance(node, ast.ImportFrom):
         return []
     if node.level:  # relative import: walk up from the importing package
-        base_pkg = modname.rsplit(".", node.level)[0] if "." in modname else ""
-        base = f"{base_pkg}.{node.module}" if node.module else base_pkg
+        package = modname if is_package else modname.rpartition(".")[0]
+        try:
+            base = importlib.util.resolve_name(
+                "." * node.level + (node.module or ""), package
+            )
+        except (ImportError, ValueError):
+            return []
     else:
         base = node.module or ""
     if not base:
@@ -802,7 +815,11 @@ def _module_import_names(file: str, modname: str) -> list[str]:
         if isinstance(node, ast.Import):
             names.extend(a.name for a in node.names)
         elif isinstance(node, ast.ImportFrom):
-            names.extend(_import_from_targets(node, modname))
+            names.extend(
+                _import_from_targets(
+                    node, modname, is_package=Path(file).name == "__init__.py"
+                )
+            )
     if key is not None:
         _import_names_cache[file] = (key, names)
     return names
@@ -993,6 +1010,7 @@ def app_dependency_files(
         page_deps |= _walk_import_closure(graph, starts)
 
     start = str(entrypoint)
+    barriers.discard(start)
     static_deps = _walk_import_closure(graph, {start}, barriers)
     dynamic_deps = _app_import_reads.get(root, set()) - page_deps
     return static_deps | dynamic_deps
@@ -1248,12 +1266,12 @@ def page_dependency_entries(
         root: Project root. Defaults to cwd.
 
     Returns:
-        The sorted dependency paths that were readable (the page's ``deps``).
+        The sorted dependency paths, including missing files (the page's ``deps``).
     """
     deps: list[str] = []
     for path in sorted(page_dependency_files(page_ctx, component, state_index, root)):
         entry = hasher(path)
         if entry is not None:
             files[path] = entry
-            deps.append(path)
+        deps.append(path)
     return deps

@@ -1,0 +1,1 @@
+Mutable proxies over dataclass state values now carry the wrapped type's `__dataclass_params__` and `__match_args__` on their class alongside `__dataclass_fields__`, so code that inspects a dataclass through the class — reading the `frozen`/`eq` flags or the positional field names after `dataclasses.is_dataclass` — no longer raises `AttributeError` on a proxied value.

@@ -1,9 +1,10 @@
 """Components that are dynamically generated on the backend."""
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from reflex_base import constants
-from reflex_base.utils import imports
+from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.utils import console, imports
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.format import format_library_name
 from reflex_base.utils.serializers import serializer
@@ -12,6 +13,48 @@ from reflex_base.vars.base import VarData, transform
 
 if TYPE_CHECKING:
     from reflex_base.components.component import Component
+
+
+def __getattr__(name: str) -> Any:
+    """Provide the module-level globals that moved onto `RegistrationContext`.
+
+    Kept so downstream packages pinned to an older Reflex (notably
+    reflex-enterprise, which reads `dynamic.bundled_libraries`) keep working.
+
+    Args:
+        name: The name of the attribute to look up.
+
+    Returns:
+        The relocated value, resolved against the active `RegistrationContext`.
+
+    Raises:
+        AttributeError: If the attribute is not a relocated global.
+    """
+    if name == "bundled_libraries":
+        console.deprecate(
+            feature_name="reflex_base.components.dynamic.bundled_libraries",
+            reason=(
+                "The bundled library list now lives on the active RegistrationContext. "
+                "Use RegistrationContext.ensure_context().bundled_libraries to read it, "
+                "or bundle_library()/reset_bundled_libraries() to modify it"
+            ),
+            deprecation_version="0.9.9",
+            removal_version="1.0",
+        )
+        return RegistrationContext.ensure_context().bundled_libraries
+    if name == "DEFAULT_BUNDLED_LIBRARIES":
+        console.deprecate(
+            feature_name="reflex_base.components.dynamic.DEFAULT_BUNDLED_LIBRARIES",
+            reason=(
+                "Every RegistrationContext starts with these libraries bundled; call "
+                "reset_bundled_libraries() to restore them on the active context"
+            ),
+            deprecation_version="0.9.9",
+            removal_version="1.0",
+        )
+        return _default_bundled_libraries()
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
 
 
 def get_cdn_url(lib: str) -> str:
@@ -26,19 +69,10 @@ def get_cdn_url(lib: str) -> str:
     return f"https://cdn.jsdelivr.net/npm/{lib}" + "/+esm"
 
 
-DEFAULT_BUNDLED_LIBRARIES = [
-    "react",
-    "@emotion/react",
-    f"$/{constants.Dirs.UTILS}/context",
-    f"$/{constants.Dirs.UTILS}/state",
-]
-bundled_libraries = list(DEFAULT_BUNDLED_LIBRARIES)
-
-
 def reset_bundled_libraries() -> None:
     """Reset the bundled library registry to its default values."""
-    bundled_libraries.clear()
-    bundled_libraries.extend(DEFAULT_BUNDLED_LIBRARIES)
+    bundled = RegistrationContext.ensure_context().bundled_libraries
+    bundled[:] = _default_bundled_libraries()
 
 
 def bundle_library(component: Union["Component", str]):
@@ -50,13 +84,14 @@ def bundle_library(component: Union["Component", str]):
     Raises:
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
+    bundled = RegistrationContext.ensure_context().bundled_libraries
     if isinstance(component, str):
-        bundled_libraries.append(format_library_name(component))
+        bundled.append(format_library_name(component))
         return
     if component.library is None:
         msg = "Component must have a library to bundle."
         raise DynamicComponentMissingLibraryError(msg)
-    bundled_libraries.append(format_library_name(component.library))
+    bundled.append(format_library_name(component.library))
 
 
 def load_dynamic_serializer():
@@ -79,6 +114,8 @@ def load_dynamic_serializer():
 
         from reflex.compiler import compiler, templates, utils
 
+        libs_in_window = RegistrationContext.ensure_context().bundled_libraries
+
         component = Bare.create(Var.create(component))
 
         rendered_components = {}
@@ -96,8 +133,6 @@ def load_dynamic_serializer():
                 export=True,
             )
         ] = None
-
-        libs_in_window = bundled_libraries
 
         component_imports = component._get_all_imports()
         compiler._apply_common_imports(component_imports)

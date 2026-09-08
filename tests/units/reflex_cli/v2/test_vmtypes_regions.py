@@ -1,27 +1,17 @@
 import json
+import logging
 
 import httpx
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
 from reflex_cli.v2.deployments import hosting_cli
-from typer import Typer
-from typer.main import get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import as_click_command
 
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
-
-
-@pytest.fixture
-def mock_console(mocker: MockFixture):
-    """Fixture to mock console.print and console.error."""
-    mock_print = mocker.patch("reflex_cli.utils.console.print")
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
-    return mock_print, mock_error
 
 
 def test_get_vm_types_success(mocker: MockFixture):
@@ -57,15 +47,14 @@ def test_get_vm_types_as_json(mocker: MockFixture):
             {"id": "2", "name": "Medium", "cpu": 4, "ram": 8},
         ],
     )
-    mock_console_print = mocker.patch("reflex_cli.utils.console.print")
-
     result = runner.invoke(hosting_cli, ["vmtypes", "--json"])
 
     assert result.exit_code == 0, result.output
     mock_get_vm_types.assert_called_once()
-    mock_console_print.assert_called_once_with(
-        '[{"id": "1", "name": "Small", "cpu": 2, "ram": 4}, {"id": "2", "name": "Medium", "cpu": 4, "ram": 8}]'
-    )
+    assert json.loads(result.stdout) == [
+        {"id": "1", "name": "Small", "cpu": 2, "ram": 4},
+        {"id": "2", "name": "Medium", "cpu": 4, "ram": 8},
+    ]
 
 
 def test_get_vm_types_empty(mocker: MockFixture):
@@ -100,8 +89,13 @@ def test_get_vm_types_invalid_response(mocker: MockFixture):
     )
 
 
-def test_get_vm_types_http_error(mocker: MockFixture):
-    """Test handling of an HTTP error."""
+def test_get_vm_types_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """Test handling of an HTTP error.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mock_get = mocker.patch("httpx.get")
     mock_response = mocker.Mock()
     mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
@@ -110,7 +104,6 @@ def test_get_vm_types_http_error(mocker: MockFixture):
         response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
     )
     mock_get.return_value = mock_response
-    mocker.patch("reflex_cli.utils.console.error")
     mocker.patch(
         "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
     )
@@ -120,14 +113,12 @@ def test_get_vm_types_http_error(mocker: MockFixture):
         return_value={"X-API-TOKEN": "fake_token"},
     )
 
-    mock_console_error = mocker.patch("reflex_cli.utils.console.error")
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
     result = runner.invoke(hosting_cli, ["vmtypes"])
 
     assert result.exit_code == 0, result.output
-    mock_console_error.assert_called_once_with(
-        "Unable to get vmtypes due to HTTP Error."
-    )
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Unable to get vmtypes due to HTTP Error."]
     mock_console_print.assert_called_once_with("[]")
 
 
@@ -161,18 +152,14 @@ def test_get_deployment_regions_as_json(mocker: MockFixture):
             {"name": "Stockholm, Sweden", "code": "arn"},
         ],
     )
-    mock_print = mocker.patch("reflex_cli.utils.console.print")
-
     result = runner.invoke(hosting_cli, ["regions", "--json"])
 
     assert result.exit_code == 0, result.output
     mock_get_regions.assert_called_once()
-    mock_print.assert_called_once_with(
-        json.dumps([
-            {"name": "Amsterdam, Netherlands", "code": "ams"},
-            {"name": "Stockholm, Sweden", "code": "arn"},
-        ])
-    )
+    assert json.loads(result.stdout) == [
+        {"name": "Amsterdam, Netherlands", "code": "ams"},
+        {"name": "Stockholm, Sweden", "code": "arn"},
+    ]
 
 
 def test_get_deployment_regions_empty(mocker: MockFixture):
@@ -189,8 +176,15 @@ def test_get_deployment_regions_empty(mocker: MockFixture):
     mock_get_regions.assert_called_once()
 
 
-def test_get_deployment_regions_http_error(mocker: MockerFixture):
-    """Test handling of an HTTP error."""
+def test_get_deployment_regions_http_error(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """Test handling of an HTTP error.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
     mock_get = mocker.patch("httpx.get")
     mock_response = mocker.Mock()
     mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
@@ -199,7 +193,6 @@ def test_get_deployment_regions_http_error(mocker: MockerFixture):
         response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
     )
     mock_get.return_value = mock_response
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
     mocker.patch(
         "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
     )
@@ -209,9 +202,59 @@ def test_get_deployment_regions_http_error(mocker: MockerFixture):
         return_value={"X-API-TOKEN": "fake_token"},
     )
 
-    mock_error = mocker.patch("reflex_cli.utils.console.error")
-
     result = runner.invoke(hosting_cli, ["regions"])
 
     assert result.exit_code == 0, result.output
-    mock_error.assert_called_once_with("Unable to get regions due to HTTP Error.")
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Unable to get regions due to HTTP Error."]
+
+
+def test_create_token_json_output(mocker: MockFixture):
+    """Minting a token reports it as a field rather than in a log line."""
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client",
+        return_value=mocker.MagicMock(),
+    )
+    mocker.patch("reflex_cli.utils.hosting.create_token", return_value="tok-1")
+
+    result = runner.invoke(hosting_cli, ["create-token", "ci", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "name": "ci",
+        "token": "tok-1",
+        "expires_in_days": 90,
+    }
+
+
+def test_generate_cloud_config_json_output(mocker: MockFixture, tmp_path):
+    """Generating a config reports the file it wrote.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        tmp_path: A temporary directory standing in for the app root.
+    """
+    written = tmp_path / "cloud.yml"
+    mocker.patch("reflex_cli.utils.hosting.generate_config", return_value=written)
+
+    result = runner.invoke(hosting_cli, ["config", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "generated": True,
+        "path": str(written.resolve()),
+    }
+
+
+def test_generate_cloud_config_json_output_when_nothing_written(mocker: MockFixture):
+    """A config that already exists is reported as not generated.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    mocker.patch("reflex_cli.utils.hosting.generate_config", return_value=None)
+
+    result = runner.invoke(hosting_cli, ["config", "--json"])
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {"generated": False, "path": None}

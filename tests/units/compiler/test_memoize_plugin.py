@@ -127,6 +127,12 @@ class SpecialFormMemoState(BaseState):
     value: Field[str] = field(default="a")
 
 
+class MemoTriggerState(BaseState):
+    @rx.event
+    def ping(self):
+        """No-op handler for event-trigger memoization tests."""
+
+
 @dataclasses.dataclass(slots=True)
 class FakePage:
     route: str
@@ -547,6 +553,197 @@ def test_generated_memo_component_is_not_itself_memoized() -> None:
     assert not _should_memoize(wrapper)
 
 
+def test_auto_memo_wrapper_opts_out_of_being_memoized() -> None:
+    """Generated wrappers carry ``NEVER`` so the pass can't wrap them again.
+
+    The wrapper is itself a ``MemoComponent``; without the opt-out, a wrapper
+    built around a stateful component would look eligible to the heuristic and
+    the pass would wrap wrappers forever.
+    """
+    from reflex_base.event import EventChain
+
+    wrapper_factory, definition = create_passthrough_component_memo(
+        WithProp.create(label=STATE_VAR)
+    )
+    assert definition.auto_memo_wrapper
+    wrapper = wrapper_factory()
+    assert isinstance(wrapper, MemoComponent)
+    assert wrapper._memoization_mode.disposition is MemoizationDisposition.NEVER
+    assert not _should_memoize(wrapper)
+
+    # Even a signal the heuristic normally treats as eligible must not win.
+    wrapper.event_triggers["on_click"] = Var(_js_expr="test_event")._replace(
+        _var_type=EventChain,
+        merge_var_data=VarData(state="TestState"),
+    )
+    assert not _should_memoize(wrapper)
+
+
+def test_user_memo_with_stateful_prop_is_auto_memoized() -> None:
+    """An ``@rx.memo`` component bound to state gets its own memo wrapper.
+
+    Regression: ``MemoComponent`` used to opt out of auto-memoization
+    wholesale, so binding a state Var at the call site left the state
+    ``useContext`` in the page module — every state change then re-rendered
+    the whole page, including static siblings. The hooks must live in a
+    generated wrapper instead, which re-renders on state change and lets
+    React's ``memo`` skip the wrapped component unless a prop value changed.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def stateful_card(label: rx.Var[str]) -> Component:
+        return WithProp.create(label=label)
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: Fragment.create(
+            Plain.create(LiteralVar.create("static sibling")),
+            stateful_card(label=SpecialFormMemoState.value),
+        )
+    )
+
+    page_output = page_ctx.output_code
+    assert page_output is not None
+    assert "useContext(StateContexts" not in page_output
+    assert not any("useContext(StateContexts" in hook for hook in page_ctx.hooks)
+
+    (definition,) = ctx.auto_memo_components.values()
+    assert isinstance(definition, MemoComponentDefinition)
+    wrapped = definition.component
+    assert isinstance(wrapped, MemoComponent)
+    assert wrapped.tag is not None
+    assert wrapped.tag.startswith("StatefulCard")
+
+    # The page renders the wrapper; the wrapper renders the user's memo with
+    # the state-bound prop.
+    assert f"jsx({definition.export_name}," in page_output
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    wrapper_code = next(
+        code for path, code in memo_files if definition.export_name in path
+    )
+    assert "useContext(StateContexts" in wrapper_code
+    assert f"jsx({wrapped.tag}," in wrapper_code
+
+
+def test_user_memo_with_static_props_is_not_auto_memoized() -> None:
+    """A memo with no reactive props stays inline — no wrapper is generated."""
+
+    @rx.memo
+    def static_card(label: rx.Var[str]) -> Component:
+        return WithProp.create(label=label)
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: Fragment.create(static_card(label="static"))
+    )
+
+    assert not ctx.auto_memo_components
+    page_output = page_ctx.output_code
+    assert page_output is not None
+    assert f"jsx({static_card(label='static').tag}," in page_output
+
+
+def test_user_memo_event_trigger_usecallback_leaves_page_scope() -> None:
+    """A memo's event-handler prop is memoized inside the generated wrapper.
+
+    An inline arrow recreated on every page render defeats the ``memo`` the
+    user asked for; the wrapper hoists it into a ``useCallback`` living beside
+    the state hooks it depends on.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def clickable(
+        on_click: rx.EventHandler[rx.event.no_args_event_spec],
+    ) -> Component:
+        return Plain.create(on_click=on_click)
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: Fragment.create(clickable(on_click=MemoTriggerState.ping))
+    )
+
+    assert not any("useCallback" in hook for hook in page_ctx.hooks)
+    (definition,) = ctx.auto_memo_components.values()
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    wrapper_code = next(
+        code for path, code in memo_files if definition.export_name in path
+    )
+    assert "useCallback" in wrapper_code
+
+
+def test_user_memo_children_render_in_page_scope() -> None:
+    """The wrapper passes children through instead of capturing them.
+
+    Children keep compiling in the page module (so their own reactive parts
+    get independent wrappers), and the memo body only holds the ``{children}``
+    hole plus the state-bound props.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def slot_card(label: rx.Var[str], children: rx.Var[Component]) -> Component:
+        return WithProp.create(children, label=label)
+
+    ctx, page_ctx = _compile_single_page(
+        lambda: Fragment.create(
+            slot_card(
+                Plain.create(LiteralVar.create("static child")),
+                label=SpecialFormMemoState.value,
+            )
+        )
+    )
+
+    page_output = page_ctx.output_code
+    assert page_output is not None
+    assert "useContext(StateContexts" not in page_output
+    assert 'jsx(Plain,{},"static child")' in page_output
+
+    wrapper_definition = next(
+        definition
+        for definition in ctx.auto_memo_components.values()
+        if isinstance(definition, MemoComponentDefinition)
+        and isinstance(definition.component, MemoComponent)
+    )
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    wrapper_code = next(
+        code for path, code in memo_files if wrapper_definition.export_name in path
+    )
+    inner_tag = wrapper_definition.component.tag
+    assert f"jsx({inner_tag}," in wrapper_code
+    # The hole, not the authored child, is what the memo body renders.
+    assert ",children)" in wrapper_code
+    assert "static child" not in wrapper_code
+
+
+def test_user_memo_inside_foreach_is_not_independently_memoized() -> None:
+    """Foreach owns its snapshot, so a memo inside it renders in that body."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def row(label: rx.Var[str]) -> Component:
+        return WithProp.create(label=label)
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: rx.box(
+            rx.foreach(SpecialFormMemoState.items, lambda item: row(label=item))
+        )
+    )
+
+    (definition,) = ctx.auto_memo_components.values()
+    assert isinstance(definition, MemoComponentDefinition)
+    assert isinstance(definition.component, Foreach)
+    memo_files, _memo_imports = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values()),
+    )
+    memo_code = "\n".join(code for _, code in memo_files)
+    assert f"jsx({row(label='x').tag}," in memo_code
+
+
 def test_passthrough_memo_skips_hole_for_childless_component() -> None:
     """Childless components own their JSX output, so the wrapper must not
     inject a ``{children}`` hole.
@@ -599,6 +796,28 @@ def test_generated_memo_component_renders_as_its_exported_tag() -> None:
     )
     assert wrapper.tag == tag
     assert wrapper.render()["name"] == tag
+
+
+def test_auto_memo_display_name_is_the_wrapped_python_class() -> None:
+    """Auto-memo wrappers are labelled with the class they wrap, not their tag.
+
+    ``export_name`` carries a content hash so identically-rendering subtrees
+    collapse to one module; that name is unreadable in the React DevTools tree,
+    so the memo's ``displayName`` names the Python component instead.
+    """
+    from reflex.compiler.compiler import compile_memo_components
+
+    ctx, _ = _compile_single_page(
+        lambda: Fragment.create(WithProp.create(label=STATE_VAR))
+    )
+
+    definitions = list(ctx.auto_memo_components.values())
+    assert [definition.display_name for definition in definitions] == ["WithProp"]
+
+    memo_code = "\n".join(
+        code for _, code in compile_memo_components(memos=tuple(definitions))[0]
+    )
+    assert f'{definitions[0].export_name}.displayName = "WithProp";' in memo_code
 
 
 def test_passthrough_memo_definitions_are_not_shared_globally(monkeypatch) -> None:

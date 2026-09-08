@@ -1,5 +1,6 @@
 """This module provides utilities for renaming directories and files in a Reflex app."""
 
+import logging
 import re
 import sys
 import tokenize
@@ -7,9 +8,12 @@ from pathlib import Path
 
 from reflex_base import constants
 from reflex_base.config import get_config
-from reflex_base.utils import console
+from reflex_base.utils import console, log
+from rich.markup import escape
 
 from reflex.utils.misc import get_module_path
+
+logger = logging.getLogger(__name__)
 
 
 def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> Path:
@@ -38,7 +42,7 @@ def rename_path_up_tree(full_path: str | Path, old_name: str, new_name: str) -> 
             new_base = base.replace(old_name, new_name)
             new_path = directory / new_base
             current_path.rename(new_path)
-            console.debug(f"Renamed {current_path} -> {new_path}")
+            logger.debug(f"Renamed {current_path} -> {new_path}")
             current_path = new_path
         else:
             new_path = current_path
@@ -63,7 +67,7 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     console.set_log_level(loglevel)
 
     if not constants.Config.FILE.exists():
-        console.error(
+        logger.error(
             "No rxconfig.py found. Make sure you are in the root directory of your app."
         )
         raise SystemExit(1)
@@ -73,10 +77,10 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
     config = get_config()
     module_path = get_module_path(config.module)
     if module_path is None:
-        console.error(f"Could not find module {config.module}.")
+        logger.error(f"Could not find module {config.module}.")
         raise SystemExit(1)
 
-    console.info(f"Renaming app directory to {new_app_name}.")
+    logger.info(f"Renaming app directory to {new_app_name}.")
     process_directory(
         Path.cwd(),
         config.app_name,
@@ -86,7 +90,11 @@ def rename_app(new_app_name: str, loglevel: constants.LogLevel):
 
     rename_path_up_tree(module_path, config.app_name, new_app_name)
 
-    console.success(f"App directory renamed to [bold]{new_app_name}[/bold].")
+    logger.log(
+        log.SUCCESS,
+        f"App directory renamed to [bold]{escape(new_app_name)}[/bold].",
+        extra={"rich": True},
+    )
 
 
 def rename_imports_and_app_name(file_path: str | Path, old_name: str, new_name: str):

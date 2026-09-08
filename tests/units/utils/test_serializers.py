@@ -259,3 +259,28 @@ def test_serialize_var_to_str(value: Any, expected: str, exp_var_is_string: bool
     """
     v = LiteralVar.create(value)
     assert str(v) == expected
+
+
+def test_serialize_unordered_enum_set_is_deterministic():
+    """Non-orderable enum values serialize independently of set iteration."""
+    from enum import Enum
+
+    class Choice(Enum):
+        A = "a"
+        B = "b"
+
+    class ReversedSet(set):
+        """Model a different process's iteration order."""
+
+        def __iter__(self):
+            """Iterate in the opposite order.
+
+            Returns:
+                The reversed iterator.
+            """
+            return reversed(list(super().__iter__()))
+
+    values = {Choice.A, Choice.B}
+    assert serializers.serialize_set(values) == serializers.serialize_set(
+        ReversedSet(values)
+    )

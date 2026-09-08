@@ -48,8 +48,11 @@ Open a project's **Members** page and assign a role to the synced team. Current 
 
 Teams created manually in Reflex are not managed by the identity provider. If the identity provider deletes a synced group, Reflex removes its team and project-role assignments.
 
+A synced team's project role can also be granted through the API, so that onboarding somebody is nothing more than a directory add. See [Automated provisioning](/docs/ai/organization/automated-provisioning/) for that flow end to end, including the credential a provisioning system should run as.
+
 ## Related
 
+- [Automated provisioning](/docs/ai/organization/automated-provisioning/) — wire directory sync, permissions, and placement together.
 - [Members & seats](/docs/ai/organization/members/) — understand membership and seats.
 - [Teams](/docs/ai/organization/teams/) — grant project access to groups.
 - [Single sign-on (SSO)](/docs/ai/organization/sso/) — authenticate through your identity provider.

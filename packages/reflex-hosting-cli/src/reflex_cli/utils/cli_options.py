@@ -1,0 +1,81 @@
+"""Shared click options for the hosting CLI commands."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import click
+
+from reflex_cli.constants.base import LogLevel
+from reflex_cli.utils import console
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+
+def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
+    """Set the log level.
+
+    Args:
+        ctx: The click context.
+        self: The click command.
+        value: The log level to set.
+    """
+    if value is not None:
+        console.set_log_level(value)
+
+
+loglevel_option = click.option(
+    "--loglevel",
+    "--log-level",
+    "loglevel",
+    type=click.Choice(
+        [loglevel.value for loglevel in LogLevel],
+        case_sensitive=False,
+    ),
+    is_eager=True,
+    callback=set_loglevel,
+    expose_value=False,
+    help="The log level to use.",
+)
+
+
+def set_log_json(ctx: click.Context, self: click.Parameter, value: bool):
+    """Enable machine-readable JSON log output.
+
+    Args:
+        ctx: The click context.
+        self: The click command.
+        value: Whether --json was passed.
+    """
+    if value:
+        try:
+            from reflex_base.utils.log import set_json_mode
+        except ImportError:
+            # JSON records are a reflex-base feature; without it there is no
+            # pipeline to switch, matching reflex_cli.utils.log.is_json_mode.
+            return
+        set_json_mode(True)
+
+
+json_option = click.option(
+    "--json",
+    "log_json",
+    is_flag=True,
+    is_eager=True,
+    callback=set_log_json,
+    expose_value=False,
+    help="Output logs as machine-readable JSON records.",
+)
+
+
+def log_options(func: Callable) -> Callable:
+    """Apply the shared logging CLI options (--loglevel, --json).
+
+    Args:
+        func: The click command callback.
+
+    Returns:
+        The decorated callback.
+    """
+    return loglevel_option(json_option(func))

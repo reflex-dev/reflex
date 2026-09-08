@@ -56,20 +56,34 @@ TYPE_COLORS = {
     "Union": "gray",
 }
 
-count = 0
 
+def get_id(identity: str) -> str:
+    """Derive a stable state variable name from a property-control identity.
 
-def get_id(s):
-    global count
-    count += 1
-    s = str(count)
-    hash_object = hashlib.sha256(s.encode())
-    hex_dig = hash_object.hexdigest()
-    return "a_" + hex_dig[:8]
+    Args:
+        identity: Qualified component, property and control kind.
+
+    Returns:
+        A valid state variable name independent of page evaluation order.
+    """
+    return "a_" + hashlib.sha256(identity.encode()).hexdigest()
 
 
 class PropDocsState(rx.State):
     """Container for dynamic vars used by the prop docs."""
+
+
+def _ensure_prop_var(name: str, type_: type, default: object) -> None:
+    """Register a property-control variable once, including its setter.
+
+    Args:
+        name: Stable state variable name.
+        type_: Control value type.
+        default: Initial control value.
+    """
+    if name not in PropDocsState.__fields__:
+        PropDocsState.add_var(name, type_, default)
+        PropDocsState._create_setter(name, getattr(PropDocsState, name))
 
 
 EXCLUDED_COMPONENTS = [
@@ -151,11 +165,12 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
             "default_open",
             "default_checked",
         ]:
-            name = get_id(f"{component.__qualname__}_{prop.name}")
+            name = get_id(
+                f"{component.__module__}.{component.__qualname__}.{prop.name}"
+            )
             default = prop.name == "loading" and component.__name__ == "Spinner"
-            PropDocsState.add_var(name, bool, default)
+            _ensure_prop_var(name, bool, default)
             var = getattr(PropDocsState, name)
-            PropDocsState._create_setter(name, var)
             setter = getattr(PropDocsState, f"set_{name}")
             prop_dict[prop.name] = var
             return _bool_pills(var, setter)
@@ -184,20 +199,20 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
                 if str(lit_arg) != ""
             ]
             option = literal_values[0]
-            name = get_id(f"{component.__qualname__}_{prop.name}")
-            PropDocsState.add_var(name, str, option)
+            name = get_id(
+                f"{component.__module__}.{component.__qualname__}.{prop.name}"
+            )
+            _ensure_prop_var(name, str, option)
             var = getattr(PropDocsState, name)
-            PropDocsState._create_setter(name, var)
             setter = getattr(PropDocsState, f"set_{name}")
             prop_dict[prop.name] = var
             return _pill_row(literal_values, var, setter)
     # Get the first non-empty option.
     non_empty_args = [a for a in type_.__args__ if str(a) != ""]
     option = non_empty_args[0] if non_empty_args else type_.__args__[0]
-    name = get_id(f"{component.__qualname__}_{prop.name}")
-    PropDocsState.add_var(name, str, option)
+    name = get_id(f"{component.__module__}.{component.__qualname__}.{prop.name}")
+    _ensure_prop_var(name, str, option)
     var = getattr(PropDocsState, name)
-    PropDocsState._create_setter(name, var)
     setter = getattr(PropDocsState, f"set_{name}")
     prop_dict[prop.name] = var
 
@@ -346,10 +361,11 @@ def prop_docs(
     expanded_name = None
     expanded = None
     if is_long_row:
-        expanded_name = get_id(f"{component.__qualname__}_{prop.name}_expanded")
-        PropDocsState.add_var(expanded_name, bool, False)
+        expanded_name = get_id(
+            f"{component.__module__}.{component.__qualname__}.{prop.name}.expanded"
+        )
+        _ensure_prop_var(expanded_name, bool, False)
         expanded = getattr(PropDocsState, expanded_name)
-        PropDocsState._create_setter(expanded_name, expanded)
 
     cell_content_class = (
         rx.cond(expanded, "cell-content", _PROPS_TABLE_COMPACT_CELL_CLASS)
@@ -957,7 +973,13 @@ def multi_docs(
                 )
         return rx.fragment()
 
-    @docpage(set_path=path, t=title, description=description, image=image)
+    @docpage(
+        set_path=path,
+        t=title,
+        description=description,
+        image=image,
+        source_path=actual_path,
+    )
     def out():
         # Build prop docs during page eval so imports stay cheap.
         components = [
@@ -1010,6 +1032,7 @@ def multi_docs(
         t=title + " (Low Level)",
         description=ll_description,
         image=image,
+        source_path=ll_actual_path,
     )
     def ll():
         ll_components = [
