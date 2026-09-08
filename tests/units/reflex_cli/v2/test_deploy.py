@@ -13,7 +13,7 @@ from reflex_base.constants import LogLevel
 from reflex_cli.v2.deploy import deploy
 
 from reflex import hosting
-from reflex.reflex import cli
+from reflex.reflex import _LazyCommand, cli
 
 EXPECTED_DEPLOY_PARAMS = {
     "app_name",
@@ -42,7 +42,10 @@ EXPECTED_DEPLOY_PARAMS = {
 
 def test_deploy_registered_on_reflex_cli():
     """`reflex deploy` resolves to the command hosted in the hosting CLI."""
-    assert cli.commands["deploy"] is deploy
+    command = cli.commands["deploy"]
+
+    assert isinstance(command, _LazyCommand)
+    assert command._resolve() is deploy
 
 
 def test_hosting_cli_deploy_imports_without_the_framework():
