@@ -6,6 +6,7 @@ import time
 import uuid
 from collections.abc import AsyncGenerator
 from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 import pytest_asyncio
@@ -29,6 +30,52 @@ class SubState1(RedisTestState):
 
 class SubState2(RedisTestState):
     """A test substate for redis state manager tests."""
+
+
+@pytest.mark.asyncio
+async def test_get_state_reads_tree_in_one_command():
+    """Read persisted and missing states together, preserving their tree positions."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="batched-read", cls=RedisTestState)
+    persisted = RedisTestState()
+    persisted.foo = "persisted"
+    classes = sorted(
+        manager._get_required_state_classes(RedisTestState, subclasses=True),
+        key=lambda cls: cls.get_full_name(),
+    )
+    redis.mget = AsyncMock(
+        return_value=[
+            persisted._serialize() if cls is RedisTestState else None for cls in classes
+        ]
+    )
+
+    state = await manager.get_state(token)
+
+    assert isinstance(state, RedisTestState)
+    assert state.foo == "persisted"
+    assert state.count == 0
+    assert set(state.substates) == {SubState1.get_name(), SubState2.get_name()}
+    assert all(child.parent_state is state for child in state.substates.values())
+    redis.mget.assert_awaited_once_with([str(token.with_cls(cls)) for cls in classes])
+    await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_get_state_reuses_populated_tree_without_reading():
+    """Fetching an already attached state must not contact Redis or replace it."""
+    redis = mock_redis()
+    manager = StateManagerRedis(redis=redis)
+    token = BaseStateToken(ident="populated-read", cls=SubState1)
+    state = RedisTestState()
+    redis.mget = AsyncMock(return_value=[])
+    redis.pipeline = Mock(side_effect=AssertionError("Unexpected Redis read"))
+
+    child = await manager.get_state(token, top_level=False, for_state_instance=state)
+
+    assert child is state.substates[SubState1.get_name()]
+    redis.mget.assert_not_awaited()
+    await manager.close()
 
 
 @pytest.fixture

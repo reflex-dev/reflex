@@ -344,14 +344,20 @@ class StateManagerRedis(StateManager):
             key=lambda x: x.get_full_name(),
         )
 
-        redis_pipeline = self.redis.pipeline()
-        for state_cls in required_state_classes:
-            redis_pipeline.get(str(token.with_cls(state_cls)))
+        # Read the tree atomically with one command instead of a transaction
+        # containing a GET for each state. An already populated tree needs no IO.
+        redis_states = (
+            await self.redis.mget([
+                str(token.with_cls(state_cls)) for state_cls in required_state_classes
+            ])
+            if required_state_classes
+            else []
+        )
 
         for state_cls, redis_state in zip(
             required_state_classes,
-            await redis_pipeline.execute(),
-            strict=False,
+            redis_states,
+            strict=True,
         ):
             state = None
 

@@ -1,1 +1,1 @@
-Faster first page load: the frontend hydrates in a single event sent with the websocket connect, and only the values that differ from the compiled defaults are sent (a 20-substate app went from 36 KB to 2 KB and from 5 to 3 frames). Redis-backed apps also do about 80% fewer redis commands per page load.
+Speed up first page loads by combining hydration with the websocket connect and sending only values that differ from compiled defaults. Reduce Redis state-tree read/write overhead and avoid repeated class metadata computation in apps with many states.

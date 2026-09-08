@@ -507,6 +507,25 @@ def test_get_parent_state():
     assert GrandchildState.get_parent_state() == ChildState
 
 
+def test_state_names_remain_cached_for_large_apps(mocker: MockerFixture):
+    """Walking more than 128 states must not evict their immutable class names.
+
+    Args:
+        mocker: The mock fixture.
+    """
+    states = [
+        type(f"CachedNameState{i}", (BaseState,), {"__module__": __name__})
+        for i in range(200)
+    ]
+    names = [state.get_full_name() for state in states]
+    snake_case = mocker.patch(
+        "reflex.state.format.to_snake_case", wraps=format.to_snake_case
+    )
+
+    assert [state.get_full_name() for state in states] == names
+    snake_case.assert_not_called()
+
+
 def test_get_substates():
     """Test getting the substates."""
     assert TestState.get_substates() == {ChildState, ChildState2, ChildState3}

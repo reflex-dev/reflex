@@ -145,6 +145,74 @@ export const isBackendDisabled = () => {
 };
 
 /**
+ * Create a socket without starting its namespace or hydration events.
+ * @param endpoint The backend URL.
+ * @param transports The configured transports.
+ * @returns The disconnected socket.
+ */
+const createSocket = (endpoint, transports) =>
+  io(endpoint.href, {
+    path: endpoint.pathname,
+    transports,
+    protocols: [reflexEnvironment.version],
+    autoUnref: false,
+    autoConnect: false,
+    query: { token: getToken() },
+    reconnection: false,
+  });
+
+let warmSocket = null;
+let cancelWarmup = () => {};
+let socketStarted = false;
+
+/** Close an unclaimed transport and remove its cleanup handlers. */
+const discardWarmSocket = () => {
+  const socket = warmSocket;
+  warmSocket = null;
+  cancelWarmup();
+  socket?.disconnect();
+};
+
+// Start only the transport while React is still preparing to mount. The
+// namespace stays disconnected until connect() installs all its handlers.
+// Defer past module evaluation because context.js imports this module too.
+if (typeof window !== "undefined") {
+  queueMicrotask(() => {
+    if (
+      socketStarted ||
+      Object.keys(initialState).length <= 1 ||
+      isBackendDisabled() ||
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+    try {
+      warmSocket = createSocket(getBackendURL(EVENTURL), [env.TRANSPORT]);
+    } catch {
+      // Speculative setup may fail (for example, blocked session storage).
+      // The normal connection path will report failures when the app mounts.
+      return;
+    }
+    const timeout = setTimeout(discardWarmSocket, 10000);
+    window.addEventListener("pagehide", discardWarmSocket);
+    cancelWarmup = () => {
+      clearTimeout(timeout);
+      window.removeEventListener("pagehide", discardWarmSocket);
+    };
+    warmSocket.io.open((error) => {
+      if (error) discardWarmSocket();
+    });
+  });
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    socketStarted = true;
+    discardWarmSocket();
+  });
+}
+
+/**
  * Determine if any event in the event queue is stateful.
  *
  * @returns True if there's any event that requires state and False if none of them do.
@@ -606,15 +674,20 @@ export const connect = async (
   });
 
   // Create the socket.
-  socket.current = io(endpoint.href, {
-    path: endpoint["pathname"],
-    transports: transports,
-    protocols: [reflexEnvironment.version],
-    autoUnref: false,
-    query: { token: getToken() },
-    auth: bootAuth(true),
-    reconnection: false, // Reconnection will be handled manually.
-  });
+  socketStarted = true;
+  if (
+    warmSocket &&
+    (warmSocket.io.opts.transports.length !== transports.length ||
+      transports.some(
+        (transport, i) => transport !== warmSocket.io.opts.transports[i],
+      ))
+  ) {
+    discardWarmSocket();
+  }
+  socket.current = warmSocket ?? createSocket(endpoint, transports);
+  warmSocket = null;
+  cancelWarmup();
+  socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -804,6 +877,7 @@ export const connect = async (
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
+  socket.current.connect();
 };
 
 /**

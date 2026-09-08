@@ -327,6 +327,45 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
+def _cache_per_class(
+    fn: Callable[[type[BaseState]], RETURN],
+) -> Callable[[type[BaseState]], RETURN]:
+    """Cache immutable metadata on the class that owns it.
+
+    A small LRU keeps hot lookups fast; evicted values remain on their owning
+    classes so large apps never recompute them. Read the class's own dict so
+    subclasses never inherit their parent's cached result.
+
+    Args:
+        fn: The class method to cache.
+
+    Returns:
+        A method that computes its value once per class.
+    """
+    cache_key = fn.__name__
+
+    @functools.lru_cache
+    @functools.wraps(fn)
+    def wrapped(cls: type[BaseState]) -> RETURN:
+        """Return the metadata owned by this class.
+
+        Args:
+            cls: The state class.
+
+        Returns:
+            The cached metadata.
+        """
+        cache = cls.__dict__["_reflex_internal_class_cache"]
+        try:
+            return cache[cache_key]
+        except KeyError:
+            value = fn(cls)
+            cache[cache_key] = value
+            return value
+
+    return wrapped
+
+
 def _has_data_descriptor(cls: type, name: str) -> bool:
     """Whether the class provides a descriptor that handles assignment for `name`.
 
@@ -412,6 +451,7 @@ _FRAMEWORK_ATTR_NAMES = frozenset({
 })
 
 CLASS_VAR_NAMES = frozenset({
+    "_reflex_internal_class_cache",
     "_fast_attr_names",
     "vars",
     "base_vars",
@@ -429,6 +469,9 @@ CLASS_VAR_NAMES = frozenset({
 
 class BaseState(EvenMoreBasicBaseState):
     """The state of the app."""
+
+    # Immutable metadata belongs to each class, including when an LRU evicts it.
+    _reflex_internal_class_cache: ClassVar[builtins.dict[str, Any]] = {}
 
     # A map from the var name to the var.
     vars: ClassVar[builtins.dict[str, Var]] = {}
@@ -606,6 +649,8 @@ class BaseState(EvenMoreBasicBaseState):
         from reflex_base.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
+
+        cls._reflex_internal_class_cache = {}
 
         if cls._mixin:
             return
@@ -1131,7 +1176,7 @@ class BaseState(EvenMoreBasicBaseState):
         )
 
     @classmethod
-    @functools.lru_cache
+    @_cache_per_class
     def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
 
@@ -1159,7 +1204,7 @@ class BaseState(EvenMoreBasicBaseState):
         return None  # No known parent
 
     @classmethod
-    @functools.lru_cache
+    @_cache_per_class
     def get_root_state(cls) -> type[BaseState]:
         """Get the root state.
 
@@ -1179,7 +1224,7 @@ class BaseState(EvenMoreBasicBaseState):
         return RegistrationContext.get().get_substates(cls)
 
     @classmethod
-    @functools.lru_cache
+    @_cache_per_class
     def get_name(cls) -> str:
         """Get the name of the state.
 
@@ -1190,7 +1235,7 @@ class BaseState(EvenMoreBasicBaseState):
         return format.to_snake_case(f"{module}___{cls.__name__}")
 
     @classmethod
-    @functools.lru_cache
+    @_cache_per_class
     def get_full_name(cls) -> str:
         """Get the full name of the state.
 

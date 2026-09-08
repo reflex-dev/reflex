@@ -61,6 +61,20 @@ def mock_redis() -> Redis:
         _expire_keys()
         return keys.get(_key_bytes(key))
 
+    async def mock_mget(requested_keys: list[KeyT]):
+        """Read keys in request order, including missing values.
+
+        Args:
+            requested_keys: The keys to read.
+
+        Returns:
+            The stored values, or None for missing keys.
+        """
+        # Let concurrent tasks run, as they would during the real Redis IO.
+        await asyncio.sleep(0)
+        _expire_keys()
+        return [keys.get(_key_bytes(key)) for key in requested_keys]
+
     async def mock_set(  # noqa: RUF029
         key: KeyT,
         value: EncodableT,
@@ -258,6 +272,7 @@ def mock_redis() -> Redis:
 
     redis_mock = AsyncMock(spec=Redis)
     redis_mock.get = mock_get
+    redis_mock.mget = mock_mget
     redis_mock.set = mock_set
     redis_mock.delete = mock_delete
     redis_mock.getdel = mock_getdel
