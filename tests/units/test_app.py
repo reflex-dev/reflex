@@ -1925,8 +1925,11 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         exp_router_delta = {
             "router_page" + FIELD_MARKER: exp_router._page,
             "router_url" + FIELD_MARKER: URLData.from_url(exp_router.url),
-            "router_route_id" + FIELD_MARKER: exp_router.route_id,
         }
+        if exp_index == 0:
+            # Every navigation here matches the same route, so the route_id
+            # only changes on the first one.
+            exp_router_delta["router_route_id" + FIELD_MARKER] = exp_router.route_id
         async with mock_base_state_event_processor as processor:
             await processor.enqueue(
                 token,
@@ -4319,15 +4322,20 @@ def test_client_error_constants_match_frontend():
 
 
 @pytest.fixture
-def event_namespace_with_processor_mock() -> EventNamespace:
+def event_namespace_with_processor_mock() -> Generator[EventNamespace, None, None]:
     """An EventNamespace whose app has a mocked event processor.
 
-    Returns:
+    Yields:
         The EventNamespace instance.
     """
     app = App()
     app._event_processor = Mock(enqueue=AsyncMock())
-    return EventNamespace("/event", app)
+    event_namespace = EventNamespace("/event", app)
+    yield event_namespace
+    # The token manager is backed by redis when one is configured; drop the
+    # tokens these tests link so they do not show up in another test's
+    # enumeration of the shared instance.
+    asyncio.run(event_namespace._token_manager.disconnect_all())
 
 
 def _connect_environ(token: str) -> dict[str, Any]:
