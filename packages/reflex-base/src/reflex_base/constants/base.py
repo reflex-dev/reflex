@@ -21,6 +21,8 @@ class Dirs(SimpleNamespace):
     """Various directories/paths used by Reflex."""
 
     # The frontend directories in a project.
+    # Stable project-root lock used while replacing WEB and installing packages.
+    FRONTEND_INSTALL_LOCK = ".reflex.frontend.lock"
     # The web folder where the frontend app is compiled to.
     WEB = ".web"
     # The directory where uploaded files are stored.

@@ -1,22 +1,25 @@
 import json
+import multiprocessing
+import os
+import pickle
 import shutil
 import tempfile
 import uuid
 from collections.abc import Callable, Generator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 import pytest
 from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.utils import log
-from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir
-from reflex.utils import frontend_skeleton, js_runtimes, prerequisites
+from reflex.utils import frontend_lock, frontend_skeleton, js_runtimes, prerequisites
 from reflex.utils.frontend_skeleton import (
     _compile_vite_config,
     _update_react_router_config,
@@ -25,6 +28,70 @@ from reflex.utils.rename import rename_imports_and_app_name
 from reflex.utils.telemetry import CpuInfo, get_cpu_info
 
 runner = CliRunner()
+
+
+def _install_frontend_packages_in_process(
+    project_dir: str,
+    attempting: Any,
+    package_manager_entered: Any,
+    release_package_manager: Any,
+    active_installs: Any,
+    max_active_installs: Any,
+    config_attribute_order: tuple[str, ...],
+) -> None:
+    """Run a deterministic fake frontend install in a spawned process.
+
+    Args:
+        project_dir: App root containing the shared ``.web`` directory.
+        attempting: Event set immediately before the public install call.
+        package_manager_entered: Event set if this process invokes the package manager.
+        release_package_manager: Event allowing the fake package manager to finish.
+        active_installs: Shared count of active package-manager calls.
+        max_active_installs: Shared maximum active package-manager calls.
+        config_attribute_order: Forced iteration order for internal Config metadata.
+    """
+    os.chdir(project_dir)
+    constants.PackageJson.DEPENDENCIES = {}  # pyright: ignore[reportAttributeAccessIssue]
+    constants.PackageJson.DEV_DEPENDENCIES = {}  # pyright: ignore[reportAttributeAccessIssue]
+    constants.PackageJson.OVERRIDES = {}  # pyright: ignore[reportAttributeAccessIssue]
+    js_runtimes.get_nodejs_compatible_package_managers = lambda raise_on_none=True: (
+        "bun",
+    )
+
+    class OrderedAttributeSet(set[str]):
+        """Set with a forced iteration order to model distinct process hashes."""
+
+        def __iter__(self):
+            return iter(config_attribute_order)
+
+    config = Config(app_name="test")
+    config._non_default_attributes = OrderedAttributeSet(config_attribute_order)
+
+    def run_package_manager(args, **kwargs) -> None:
+        """Block a fake package-manager add so a competing process can contend."""
+        if "add" not in args:
+            return
+        with active_installs.get_lock():
+            active_installs.value += 1
+            max_active_installs.value = max(
+                max_active_installs.value, active_installs.value
+            )
+        package_manager_entered.set()
+        try:
+            if not release_package_manager.wait(20):
+                msg = "Timed out waiting to finish fake frontend install"
+                raise TimeoutError(msg)
+            package_json_path = Path(constants.Dirs.WEB) / constants.PackageJson.PATH
+            package_json = json.loads(package_json_path.read_text())
+            package_json.setdefault("dependencies", {})["race-pkg"] = "1.0.0"
+            package_json_path.write_text(json.dumps(package_json))
+        finally:
+            with active_installs.get_lock():
+                active_installs.value -= 1
+
+    js_runtimes.processes.run_process_with_fallbacks = run_package_manager
+    attempting.set()
+    js_runtimes.install_frontend_packages({"race-pkg@1.0.0"}, config)
 
 
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
@@ -134,6 +201,175 @@ def install_packages_env(
         yield env
 
 
+def test_install_frontend_packages_locks_the_complete_transaction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The project lock covers manager selection, cache work, and persistence."""
+    calls: list[str] = []
+    lock_held = False
+
+    @contextmanager
+    def project_lock():
+        nonlocal lock_held
+        calls.append("lock-enter")
+        lock_held = True
+        try:
+            yield
+        finally:
+            lock_held = False
+            calls.append("lock-exit")
+
+    def record(name: str, result=None):
+        """Return a stub that records a call made while the lock is held."""
+
+        def stub(*args, **kwargs):
+            assert lock_held
+            calls.append(name)
+            return result
+
+        return stub
+
+    monkeypatch.setattr(frontend_lock, "frontend_project_lock", project_lock)
+    monkeypatch.setattr(
+        js_runtimes,
+        "get_nodejs_compatible_package_managers",
+        record("select-manager", ("bun",)),
+    )
+    monkeypatch.setattr(
+        js_runtimes,
+        "_sync_root_lockfiles_for_frontend_install",
+        record("sync-root"),
+    )
+    monkeypatch.setattr(
+        js_runtimes,
+        "_install_frontend_packages",
+        record("install"),
+    )
+    monkeypatch.setattr(
+        frontend_skeleton,
+        "sync_web_lockfiles_to_root",
+        record("sync-web"),
+    )
+    config = Config(app_name="test")
+
+    class FakePlugin:
+        def get_frontend_development_dependencies(self):
+            assert lock_held
+            calls.append("resolve-dev-dependencies")
+            return set()
+
+        def get_frontend_dependencies(self):
+            assert lock_held
+            calls.append("resolve-dependencies")
+            return set()
+
+    monkeypatch.setattr(config, "plugins", [FakePlugin()])
+
+    with chdir(tmp_path):
+        js_runtimes.install_frontend_packages(set(), config)
+
+    assert calls == [
+        "lock-enter",
+        "select-manager",
+        "sync-root",
+        "resolve-dev-dependencies",
+        "resolve-dependencies",
+        "install",
+        "sync-web",
+        "lock-exit",
+    ]
+
+
+def test_concurrent_frontend_installs_share_completed_cache(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A second process waits, then observes the first process's install cache."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _stub_framework_packages(monkeypatch)
+    with chdir(tmp_path):
+        frontend_skeleton.initialize_package_json()
+
+    ctx = multiprocessing.get_context("spawn")
+    first_attempting = ctx.Event()
+    second_attempting = ctx.Event()
+    first_entered = ctx.Event()
+    second_entered = ctx.Event()
+    release_package_manager = ctx.Event()
+    active_installs = ctx.Value("i", 0)
+    max_active_installs = ctx.Value("i", 0)
+    first = ctx.Process(
+        target=_install_frontend_packages_in_process,
+        args=(
+            str(tmp_path),
+            first_attempting,
+            first_entered,
+            release_package_manager,
+            active_installs,
+            max_active_installs,
+            ("loglevel", "app_name"),
+        ),
+    )
+    second = ctx.Process(
+        target=_install_frontend_packages_in_process,
+        args=(
+            str(tmp_path),
+            second_attempting,
+            second_entered,
+            release_package_manager,
+            active_installs,
+            max_active_installs,
+            ("app_name", "loglevel"),
+        ),
+    )
+
+    started_processes = []
+    first_attempted_install = False
+    first_called_package_manager = False
+    second_attempted_install = False
+    second_called_package_manager_while_first_active = False
+    try:
+        first.start()
+        started_processes.append(first)
+        first_attempted_install = first_attempting.wait(20)
+        if first_attempted_install:
+            first_called_package_manager = first_entered.wait(20)
+        if first_called_package_manager:
+            second.start()
+            started_processes.append(second)
+            second_attempted_install = second_attempting.wait(20)
+        if second_attempted_install:
+            second_called_package_manager_while_first_active = second_entered.wait(1)
+    finally:
+        release_package_manager.set()
+        for process in started_processes:
+            process.join(20)
+            if process.is_alive():
+                process.terminate()
+                process.join(5)
+
+    assert first_attempted_install
+    assert first_called_package_manager
+    assert second_attempted_install
+    assert not second_called_package_manager_while_first_active
+    assert not second_entered.is_set()
+    assert first.exitcode == 0
+    assert second.exitcode == 0
+    assert max_active_installs.value == 1
+    assert active_installs.value == 0
+
+    cache_file = web_dir / "reflex.install_frontend_packages.cached"
+    cache_payload, cache_value = pickle.loads(cache_file.read_bytes())
+    assert isinstance(cache_payload, str)
+    assert cache_value is None
+    root_package_json = (
+        tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    )
+    assert json.loads(root_package_json.read_text()) == json.loads(
+        (web_dir / constants.PackageJson.PATH).read_text()
+    )
+
+
 _SKELETON_INITIALIZERS = (
     "initialize_package_json",
     "initialize_bun_config",
@@ -165,6 +401,31 @@ def _stub_skeleton_initializers_except(
 def _stub_skeleton_initializers(monkeypatch):
     """Stub the frontend_skeleton initialize_* helpers to no-ops."""
     _stub_skeleton_initializers_except(monkeypatch)
+
+
+def test_initialize_web_directory_holds_frontend_project_lock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Reinitialization cannot replace ``.web`` during an install transaction."""
+    lock_held = False
+
+    @contextmanager
+    def project_lock():
+        nonlocal lock_held
+        lock_held = True
+        try:
+            yield
+        finally:
+            lock_held = False
+
+    def initialize() -> None:
+        assert lock_held
+
+    monkeypatch.setattr(frontend_lock, "frontend_project_lock", project_lock)
+    monkeypatch.setattr(frontend_skeleton, "_initialize_web_directory", initialize)
+
+    frontend_skeleton.initialize_web_directory()
+    assert not lock_held
 
 
 @pytest.mark.parametrize(
@@ -355,6 +616,66 @@ def test_sync_root_lockfiles_to_web_processes_package_json(tmp_path, monkeypatch
     assert web_pkg["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
 
 
+def test_sync_web_lockfile_to_root_preserves_old_file_if_replace_fails(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed atomic commit leaves the previous persisted lockfile valid."""
+    env = install_packages_env
+    env.web_lock.write_text("new-lock")
+    env.root_lock.write_text("old-lock")
+    original_replace = Path.replace
+    error = OSError("simulated replace failure")
+
+    def fail_root_replace(path: Path, target: Path) -> Path:
+        if target == env.root_lock:
+            raise error
+        return original_replace(path, target)
+
+    monkeypatch.setattr(Path, "replace", fail_root_replace)
+
+    with pytest.raises(OSError, match="simulated replace failure"):
+        frontend_skeleton.sync_web_lockfile_to_root(constants.Bun.LOCKFILE_PATH)
+
+    assert env.root_lock.read_text() == "old-lock"
+    assert list(env.root_lock.parent.glob(f".{env.root_lock.name}.*.tmp")) == []
+
+
+@pytest.mark.skipif(constants.IS_WINDOWS, reason="Windows exposes limited chmod modes")
+def test_sync_web_lockfile_to_root_preserves_existing_mode(
+    install_packages_env: InstallPackagesEnv,
+) -> None:
+    """Atomic replacement does not make a shared persisted lockfile private."""
+    env = install_packages_env
+    env.web_lock.write_text("new-lock")
+    env.root_lock.write_text("old-lock")
+    env.root_lock.chmod(0o644)
+
+    frontend_skeleton.sync_web_lockfile_to_root(constants.Bun.LOCKFILE_PATH)
+
+    assert env.root_lock.read_text() == "new-lock"
+    assert env.root_lock.stat().st_mode & 0o777 == 0o644
+
+
+def test_sync_web_lockfile_to_root_preserves_existing_symlink(
+    install_packages_env: InstallPackagesEnv,
+) -> None:
+    """Atomic replacement follows an existing persisted lockfile symlink."""
+    env = install_packages_env
+    env.web_lock.write_text("new-lock")
+    shared_lock = env.tmp_path / "shared-bun.lock"
+    shared_lock.write_text("old-lock")
+    try:
+        env.root_lock.symlink_to(shared_lock)
+    except OSError as err:
+        pytest.skip(f"Cannot create symlink on this platform: {err}")
+
+    frontend_skeleton.sync_web_lockfile_to_root(constants.Bun.LOCKFILE_PATH)
+
+    assert env.root_lock.is_symlink()
+    assert shared_lock.read_text() == "new-lock"
+
+
 def test_install_frontend_packages_syncs_root_bun_lock(
     install_packages_env: InstallPackagesEnv,
 ):
@@ -502,6 +823,51 @@ def _record_calls(env: InstallPackagesEnv) -> list[list[str]]:
 
     env.patch_pm(["bun"], run_package_manager)
     return calls
+
+
+def test_frontend_package_cache_uses_resolved_plugin_dependencies(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Set iteration order in plugin config does not perturb the cache key."""
+    env = install_packages_env
+    calls = _record_calls(env)
+
+    class OrderedStringSet(set[str]):
+        def __init__(self, values: tuple[str, ...]):
+            super().__init__(values)
+            self.values = values
+
+        def __iter__(self):
+            return iter(self.values)
+
+    @dataclass
+    class FakePlugin:
+        dependencies: OrderedStringSet
+
+        def get_frontend_dependencies(self):
+            return self.dependencies
+
+        def get_frontend_development_dependencies(self):
+            return set()
+
+    monkeypatch.setattr(
+        env.config,
+        "plugins",
+        [FakePlugin(OrderedStringSet(("plugin-b", "plugin-a")))],
+    )
+    first_config_json = env.config.json()
+    env.install()
+    monkeypatch.setattr(
+        env.config,
+        "plugins",
+        [FakePlugin(OrderedStringSet(("plugin-a", "plugin-b")))],
+    )
+    second_config_json = env.config.json()
+    env.install()
+
+    assert first_config_json != second_config_json
+    assert len([call for call in calls if "add" in call]) == 1
 
 
 def test_install_frontend_packages_pinned_packages_single_call(
@@ -1606,59 +1972,6 @@ def test_extract_package_name():
     assert js_runtimes._extract_package_name("react@1.2.3") == "react"
     assert js_runtimes._extract_package_name("@scope/pkg") == "@scope/pkg"
     assert js_runtimes._extract_package_name("@scope/pkg@1.2.3") == "@scope/pkg"
-
-
-def test_cached_procedure():
-    call_count = 0
-
-    temp_file = tempfile.mktemp()
-
-    @cached_procedure(
-        cache_file_path=lambda: Path(temp_file), payload_fn=lambda: "constant"
-    )
-    def _function_with_no_args():
-        nonlocal call_count
-        call_count += 1
-
-    _function_with_no_args()
-    assert call_count == 1
-    _function_with_no_args()
-    assert call_count == 1
-
-    call_count = 0
-
-    another_temp_file = tempfile.mktemp()
-
-    @cached_procedure(
-        cache_file_path=lambda: Path(another_temp_file),
-        payload_fn=lambda *args, **kwargs: f"{repr(args), repr(kwargs)}",
-    )
-    def _function_with_some_args(*args, **kwargs):
-        nonlocal call_count
-        call_count += 1
-
-    _function_with_some_args(1, y=2)
-    assert call_count == 1
-    _function_with_some_args(1, y=2)
-    assert call_count == 1
-    _function_with_some_args(100, y=300)
-    assert call_count == 2
-    _function_with_some_args(100, y=300)
-    assert call_count == 2
-
-    call_count = 0
-
-    @cached_procedure(
-        cache_file_path=lambda: Path(tempfile.mktemp()), payload_fn=lambda: "constant"
-    )
-    def _function_with_no_args_fn():
-        nonlocal call_count
-        call_count += 1
-
-    _function_with_no_args_fn()
-    assert call_count == 1
-    _function_with_no_args_fn()
-    assert call_count == 2
 
 
 def test_get_cpu_info():
