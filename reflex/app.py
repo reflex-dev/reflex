@@ -580,7 +580,11 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
+                    # python-socketio passes ``separators``; the compact
+                    # encoder already emits them.
+                    dumps=staticmethod(
+                        lambda obj, **_kwargs: format.json_dumps_compact(obj)
+                    ),
                     loads=staticmethod(json.loads),
                 ),
                 allow_upgrades=False,

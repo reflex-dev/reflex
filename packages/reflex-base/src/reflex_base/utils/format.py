@@ -10,6 +10,7 @@ from collections.abc import Callable
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
+import orjson
 from rich.markup import escape as escape_markup
 
 from reflex_base import constants
@@ -697,25 +698,46 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
-_serialize: Callable[[Any], Any] | None = None
+if TYPE_CHECKING:
+    from types import ModuleType
+
+_serializers: ModuleType | None = None
 
 
-def _get_serialize() -> Callable[[Any], Any]:
-    """Get ``serializers.serialize``, importing it on first use.
+def _get_serializers() -> ModuleType:
+    """Get the ``serializers`` module, importing it on first use.
 
     The import cannot live at module scope (``serializers`` imports this
     module), and repeating it per call is measurable on the compile path,
-    so the resolved function is cached.
+    so the resolved module is cached.
+
+    Returns:
+        The ``reflex_base.utils.serializers`` module.
+    """
+    global _serializers
+    if _serializers is None:
+        from reflex_base.utils import serializers
+
+        _serializers = serializers
+    return _serializers
+
+
+def _get_serialize() -> Callable[[Any], Any]:
+    """Get ``serializers.serialize``.
 
     Returns:
         The ``serializers.serialize`` callable.
     """
-    global _serialize
-    if _serialize is None:
-        from reflex_base.utils import serializers
+    return _get_serializers().serialize
 
-        _serialize = serializers.serialize
-    return _serialize
+
+# Dataclasses and datetimes keep going through the reflex serializers so their
+# output matches ``json_dumps``; orjson's own rendering of both differs.
+_ORJSON_OPTIONS = (
+    orjson.OPT_NON_STR_KEYS
+    | orjson.OPT_PASSTHROUGH_DATACLASS
+    | orjson.OPT_PASSTHROUGH_DATETIME
+)
 
 
 def json_dumps(obj: Any, **kwargs) -> str:
@@ -732,6 +754,39 @@ def json_dumps(obj: Any, **kwargs) -> str:
     kwargs.setdefault("default", _get_serialize())
 
     return json.dumps(obj, **kwargs)
+
+
+def json_dumps_compact(obj: Any) -> str:
+    """Serialize an object to compact JSON for the wire.
+
+    Produces the same output as ``json_dumps`` with compact separators (reflex
+    serializers handle non-JSON types), encoded by orjson whenever the payload
+    lets it. State deltas and streamed updates go through here.
+
+    Args:
+        obj: The object to be serialized.
+
+    Returns:
+        The JSON string.
+    """
+    serializers = _get_serializers()
+    if not serializers.overrides_native_json_type():
+        try:
+            encoded = orjson.dumps(
+                obj, default=serializers.serialize, option=_ORJSON_OPTIONS
+            )
+        except TypeError:
+            # orjson rejects integers beyond 64 bits, which json accepts.
+            pass
+        else:
+            # orjson collapses NaN and +/-Infinity to null, but the frontend
+            # expects the bare tokens json emits. A null in the output is
+            # either a None or such a float; only then take the slow path.
+            if b"null" not in encoded:
+                return encoded.decode()
+    return json.dumps(
+        obj, ensure_ascii=False, separators=(",", ":"), default=serializers.serialize
+    )
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:

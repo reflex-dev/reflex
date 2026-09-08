@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import dataclasses
 import datetime
+import decimal
+import enum
 import json
+import pathlib
+import uuid
 from typing import Any
 
 import plotly.graph_objects as go
@@ -16,7 +21,7 @@ from reflex_base.event import (
     no_args_event_spec,
 )
 from reflex_base.style import Style
-from reflex_base.utils import format
+from reflex_base.utils import format, serializers
 from reflex_base.utils.serializers import serialize_figure
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import FunctionStringVar
@@ -24,6 +29,7 @@ from reflex_base.vars.object import ObjectVar
 
 pytest.importorskip("pydantic")
 
+from pydantic import BaseModel
 
 from tests.units.test_state import (
     ChildState,
@@ -832,6 +838,129 @@ def test_format_library_name(input: str, output: str):
 )
 def test_json_dumps(input, output):
     assert format.json_dumps(input) == output
+
+
+class _Shade(enum.Enum):
+    LIGHT = "light"
+
+
+@dataclasses.dataclass
+class _Cell:
+    value: int
+    _hidden: int = 2
+
+    def __post_init__(self):
+        # Not a field: json_dumps leaves it out, and so must the compact path.
+        self.transient = 1
+
+
+class _Model(BaseModel):
+    count: int
+    when: datetime.datetime
+
+
+_WIRE_PAYLOAD: dict[str, Any] = {
+    "scalars": [1, 2.5, True, None, "é", "</script>", 2**64, -(2**63) - 1],
+    "types": [
+        _Cell(1),
+        _Shade.LIGHT,
+        uuid.UUID(int=5),
+        datetime.datetime(2024, 1, 1, 12),
+        datetime.date(2024, 1, 1),
+        datetime.timedelta(seconds=5),
+        decimal.Decimal("1.5"),
+        pathlib.Path("/a/b"),
+        {1, 2},
+        (1, 2),
+        _Model(count=1, when=datetime.datetime(2024, 1, 1)),
+    ],
+    "keys": {2: 2, None: 3, True: 4, 1.5: 5},
+}
+
+
+@pytest.fixture
+def native_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Undo Enum-subclass serializers other tests registered, so orjson runs.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr(serializers, "_overrides_native_json_type", False)
+
+
+def _compact_reference(value: Any) -> str:
+    return json.dumps(
+        value, ensure_ascii=False, separators=(",", ":"), default=serializers.serialize
+    )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        _WIRE_PAYLOAD,
+        2**70,
+        {"big": [2**70]},
+        "text",
+        None,
+        [_Cell(i) for i in range(50)],
+    ],
+)
+@pytest.mark.usefixtures("native_json")
+def test_json_dumps_compact_matches_json_dumps(value: Any):
+    """The wire encoder renders the same values as json_dumps, compactly.
+
+    Args:
+        value: The payload to encode.
+    """
+    assert format.json_dumps_compact(value) == _compact_reference(value)
+
+
+@pytest.mark.usefixtures("native_json")
+def test_json_dumps_compact_non_finite_floats():
+    """Non-finite floats keep the bare tokens the frontend revives."""
+    assert (
+        format.json_dumps_compact([float("inf"), float("-inf"), float("nan")])
+        == "[Infinity,-Infinity,NaN]"
+    )
+    assert format.json_dumps_compact({"a": None, "b": float("nan")}) == (
+        '{"a":null,"b":NaN}'
+    )
+
+
+@pytest.mark.usefixtures("native_json")
+def test_json_dumps_compact_overwritten_base_serializer(monkeypatch):
+    """Replacing the built-in Enum serializer also disables the native path."""
+    original = serializers.SERIALIZERS[enum.Enum]
+
+    @serializers.serializer(overwrite=True)
+    def serialize_enum_by_name(en: enum.Enum) -> str:
+        return en.name
+
+    try:
+        assert serializers.overrides_native_json_type()
+        assert format.json_dumps_compact([_Shade.LIGHT]) == '["LIGHT"]'
+    finally:
+        serializers.SERIALIZERS[enum.Enum] = original
+        serializers.get_serializer.cache_clear()
+
+
+@pytest.mark.usefixtures("native_json")
+def test_json_dumps_compact_honors_enum_subclass_serializer(monkeypatch):
+    """A serializer registered for an Enum subclass is still applied on the wire."""
+    monkeypatch.delitem(serializers.SERIALIZERS, _Shade, raising=False)
+    serializers.get_serializer.cache_clear()
+    assert format.json_dumps_compact([_Shade.LIGHT]) == '["light"]'
+
+    @serializers.serializer
+    def serialize_shade(shade: _Shade) -> str:
+        return "shade:" + shade.name
+
+    assert serializers.overrides_native_json_type()
+    assert format.json_dumps_compact([_Shade.LIGHT]) == '["shade:LIGHT"]'
+    monkeypatch.delitem(serializers.SERIALIZERS, _Shade)
+    monkeypatch.delitem(serializers.SERIALIZER_TYPES, _Shade)
+    serializers.get_serializer.cache_clear()
+    serializers.get_serializer_type.cache_clear()
 
 
 def test_sanitize_client_log_value_respects_max_length():
