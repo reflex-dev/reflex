@@ -205,6 +205,26 @@ def test_router_var_renders_composed_object():
     )
 
 
+def test_router_var_shape_matches_the_serializer():
+    """The composed router literal and the serializer must emit the same keys.
+
+    Rendering `State.router` as a whole has to produce the object shape the
+    backend serializes a `RouterData` into, or a component reading the whole
+    router would see different keys from the ones the delta carries. The two
+    are built in different places, so pin them to each other.
+    """
+    import json
+
+    from reflex_base.utils.format import json_dumps
+
+    from reflex.istate.data import RouterData, serialize_router_data
+
+    rendered_keys = list(rx.State.router._wire_fields())
+    assert rendered_keys == list(serialize_router_data(RouterData()))
+    # And that is what actually reaches the client for a whole-router value.
+    assert rendered_keys == list(json.loads(json_dumps(RouterData())))
+
+
 def test_router_var_carries_state_var_data():
     """The switchboard var must merge the per-field vars' VarData so hooks
     and context wiring for the root state are set up when it renders.

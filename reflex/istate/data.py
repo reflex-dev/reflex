@@ -3,7 +3,7 @@
 import dataclasses
 from collections.abc import Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Final
 from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
 from reflex_base import constants
@@ -536,6 +536,16 @@ class RouterData:
         )
 
 
+# Keys of the serialized RouterData: the object shape the frontend receives.
+# `serialize_router_data` emits it, and `RouterDataVar` composes the same shape
+# when the whole router is rendered, so the two must not drift apart.
+SESSION_KEY: Final = "session"
+HEADERS_KEY: Final = "headers"
+PAGE_KEY: Final = "page"
+URL_KEY: Final = "url"
+ROUTE_ID_KEY: Final = "route_id"
+
+
 @serializer(to=dict)
 def serialize_router_data(obj: RouterData) -> dict:
     """Serialize a RouterData object to a dict.
@@ -547,15 +557,15 @@ def serialize_router_data(obj: RouterData) -> dict:
         A dict representation of the RouterData object.
     """
     return {
-        "session": obj.session,
-        "headers": obj.headers,
-        "page": obj._page,
+        SESSION_KEY: obj.session,
+        HEADERS_KEY: obj.headers,
+        PAGE_KEY: obj._page,
         # ReflexURL is a str subclass, so json.dumps handles it natively and
         # never invokes the `default=serialize` hook. Call the URL serializer
         # eagerly here so the frontend receives the parsed component dict
         # instead of just the raw URL string.
-        "url": _serialize_reflex_url(obj.url),
-        "route_id": obj.route_id,
+        URL_KEY: _serialize_reflex_url(obj.url),
+        ROUTE_ID_KEY: obj.route_id,
     }
 
 
@@ -600,13 +610,23 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
         """
         return (
             "({ "
-            f'"session": {self._session_var!s}, '
-            f'"headers": {self._headers_var!s}, '
-            f'"page": {self._page_var!s}, '
-            f'"url": {self._url_var!s}, '
-            f'"route_id": {self._route_id_var!s}'
-            " })"
+            + ", ".join(f'"{key}": {var!s}' for key, var in self._wire_fields().items())
+            + " })"
         )
+
+    def _wire_fields(self) -> dict[str, Var]:
+        """Map each serialized RouterData key to the var backing it.
+
+        Returns:
+            The keys of the serialized router shape, in order, to their vars.
+        """
+        return {
+            SESSION_KEY: self._session_var,
+            HEADERS_KEY: self._headers_var,
+            PAGE_KEY: self._page_var,
+            URL_KEY: self._url_var,
+            ROUTE_ID_KEY: self._route_id_var,
+        }
 
     def _dependency_field_names(self) -> tuple[str, ...]:
         """Name every per-field router var backing this switchboard.
