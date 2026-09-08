@@ -253,8 +253,13 @@ async def state_manager(
     Yields:
         A state manager instance
     """
-    state_manager = StateManager.create()
     if request.param == "redis":
+        # Only construct the configured manager for the redis param. When
+        # REFLEX_REDIS_URL is set, `StateManager.create()` returns a live
+        # StateManagerRedis that starts a `_lock_task`, so building one for the
+        # other params would orphan that task: it is replaced below and never
+        # closed, and then blocks event-loop teardown.
+        state_manager = StateManager.create()
         if not isinstance(state_manager, StateManagerRedis):
             state_manager = StateManagerRedis(redis=mock_redis())
     elif request.param == "disk":

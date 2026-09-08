@@ -13,7 +13,7 @@ import sys
 import threading
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal, TypeVar
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -38,6 +38,7 @@ from reflex_base.utils.exceptions import (
 )
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import Field, Var, computed_var, field
+from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.app import App
@@ -3768,6 +3769,16 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     assert state.dirty_vars == {"foo"}
     assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
 
+    # The locally-defined states above registered themselves in the class-level
+    # dependency maps on State, which outlive this test. Left behind, a later
+    # test that dirties a router var on a fresh State tree resolves the stale
+    # entry and raises on the missing substate. Drop them.
+    for dep_set in State._var_dependencies.values():
+        dep_set.difference_update({
+            (RouterVarDepState.get_full_name(), "foo"),
+        })
+    State._potentially_dirty_states.discard(RouterVarDepState.get_full_name())
+
 
 def test_router_var_dep_legacy_string() -> None:
     """An explicit deps=["router"] still fires when any router var changes.
@@ -3789,6 +3800,12 @@ def test_router_var_dep_legacy_string() -> None:
             "foo",
         ) in State._var_dependencies[router_var]
     assert "router" not in State._var_dependencies
+
+    # Drop the class-level registrations this locally-defined state made; see
+    # the note in test_router_var_dep.
+    for dep_set in State._var_dependencies.values():
+        dep_set.discard((LegacyRouterDepState.get_full_name(), "foo"))
+    State._potentially_dirty_states.discard(LegacyRouterDepState.get_full_name())
 
 
 def test_update_router_vars_granular_delta(test_state: TestState) -> None:
@@ -4467,6 +4484,67 @@ def test_assignment_to_undeclared_vars():
 
     state.handle_supported_regular_vars()
     state.handle_non_var()
+
+
+def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
+    """A Field on a plain base supplies its default; a failing factory is not swallowed."""
+
+    class WithDefault:
+        _n = field(default=3)
+
+    class InheritsDefault(WithDefault, BaseState):
+        _n: int
+
+    assert InheritsDefault.backend_vars["_n"] == 3
+
+    def _boom() -> int:
+        msg = "factory blew up"
+        raise ValueError(msg)
+
+    class WithFailingFactory:
+        _n = field(default_factory=_boom)
+
+    with pytest.raises(ValueError, match="factory blew up"):
+
+        class FactoryState(WithFailingFactory, BaseState):
+            _n: int
+
+
+def test_assignment_through_property_setter():
+    """A property's setter runs instead of the undeclared-var guard."""
+
+    class PropertyState(BaseState):
+        first: str = "Jane"
+        last: str = "Doe"
+
+        @property
+        def full(self) -> str:
+            return f"{self.first} {self.last}"
+
+        @full.setter
+        def full(self, value: str) -> None:
+            self.first, self.last = value.split(" ", 1)
+
+        @full.deleter
+        def full(self) -> None:
+            self.first = self.last = ""
+
+    state = PropertyState()  # pyright: ignore [reportCallIssue]
+    state.full = "Ada Lovelace"
+    assert (state.first, state.last) == ("Ada", "Lovelace")
+    del state.full
+    assert (state.first, state.last) == ("", "")
+
+    # a read-only property raises its own error, not the undeclared-var guard
+    class ReadOnlyState(BaseState):
+        @property
+        def derived(self) -> str:
+            return ""
+
+    with pytest.raises(AttributeError) as exc_info:
+        ReadOnlyState().derived = "x"  # pyright: ignore [reportCallIssue, reportAttributeAccessIssue]
+    # SetUndefinedStateVarError is itself an AttributeError, so exclude it by type
+    assert not isinstance(exc_info.value, SetUndefinedStateVarError)
 
 
 @pytest.mark.asyncio
@@ -5366,3 +5444,50 @@ async def test_resolve_delta_pops_subdict_when_all_keys_drop():
     }
     resolved = await _resolve_delta(delta)
     assert resolved == {"s2": {"keep": 1}}
+
+
+_ALIAS_ITEM = TypeVar("_ALIAS_ITEM")
+NameAlias = TypeAliasType("NameAlias", str)
+KeyAlias = TypeAliasType("KeyAlias", Literal["a", "b"])
+ItemsAlias = TypeAliasType("ItemsAlias", list[_ALIAS_ITEM], type_params=(_ALIAS_ITEM,))  # pyright: ignore[reportGeneralTypeIssues]
+
+
+class AliasAnnotatedState(BaseState):
+    """A state with vars annotated through TypeAliasType (PEP 695 aliases)."""
+
+    name: NameAlias = "x"
+    key: KeyAlias = "a"
+    entries: ItemsAlias[str] = []
+    maybe: KeyAlias | None = None
+
+    @rx.event
+    def assign(self):
+        """Assign a new value to every alias-annotated var."""
+        self.name = "y"
+        self.key = "b"
+        self.entries = ["z"]
+        self.maybe = "a"
+
+
+def test_setattr_alias_annotated_var(mocker: MockerFixture):
+    """Assigning alias-annotated state vars via an event handler works.
+
+    The __setattr__ type guard must resolve TypeAliasType annotations and only
+    log a mismatch instead of raising TypeError from isinstance().
+
+    Args:
+        mocker: Pytest mock fixture.
+    """
+    error_mock = mocker.patch("reflex.state.logger.error")
+    state = AliasAnnotatedState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.assign()
+    assert state.name == "y"
+    assert state.key == "b"
+    assert state.entries == ["z"]
+    assert state.maybe == "a"
+    error_mock.assert_not_called()
+
+    # A mismatched value is logged by the guard, not raised.
+    state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
+    assert state.key == 1
+    error_mock.assert_called_once()
