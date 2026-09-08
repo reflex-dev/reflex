@@ -10,7 +10,7 @@ import logging
 import re
 import unittest.mock
 import uuid
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import pytest_asyncio
 import reflex_base
 from pytest_mock import MockerFixture
 from reflex_base.components.component import Component
@@ -4321,8 +4322,8 @@ def test_client_error_constants_match_frontend():
     )
 
 
-@pytest.fixture
-def event_namespace_with_processor_mock() -> Generator[EventNamespace, None, None]:
+@pytest_asyncio.fixture
+async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace, None]:
     """An EventNamespace whose app has a mocked event processor.
 
     Yields:
@@ -4334,8 +4335,9 @@ def event_namespace_with_processor_mock() -> Generator[EventNamespace, None, Non
     yield event_namespace
     # The token manager is backed by redis when one is configured; drop the
     # tokens these tests link so they do not show up in another test's
-    # enumeration of the shared instance.
-    asyncio.run(event_namespace._token_manager.disconnect_all())
+    # enumeration of the shared instance. Awaited rather than run in a fresh
+    # loop via asyncio.run: the redis client is bound to the test's loop.
+    await event_namespace._token_manager.disconnect_all()
 
 
 def _connect_environ(token: str) -> dict[str, Any]:
@@ -4401,6 +4403,55 @@ async def test_on_event_uses_connect_time_router_data(
     # Disconnect drops the cached connection data.
     event_namespace.on_disconnect("sid1")
     assert "sid1" not in event_namespace._static_router_data
+
+
+@pytest.mark.asyncio
+async def test_link_token_to_sid_records_the_connecting_identity(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """The session var carries the token the state was loaded under.
+
+    Duplicate-token handling hands back a fresh token, and the state is loaded
+    under it. Leaving `router_session.client_token` empty until the first event
+    would let anything reading it in between -- a background task, a
+    shared-state link -- address the wrong state tree.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    state = Mock()
+    state.router_data = {}
+    mocker.patch.object(
+        event_namespace.app.state_manager,
+        "modify_state",
+        Mock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))),
+    )
+
+    # No duplicate: the connecting token is recorded.
+    await event_namespace.link_token_to_sid("sid1", token)
+    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == token
+    assert state.router_session.client_token == token
+    assert state.router_session.session_id == "sid1"
+
+    # Duplicate: the *new* token is recorded, not the one the client sent.
+    # The duplicate branch emits the replacement token to the client, which
+    # needs a server the bare namespace does not have.
+    event_namespace.emit = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
+    new_token = "a-fresh-token"
+    mocker.patch.object(
+        event_namespace._token_manager,
+        "link_token_to_sid",
+        AsyncMock(return_value=new_token),
+    )
+    await event_namespace.link_token_to_sid("sid2", token)
+    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == new_token
+    assert state.router_session.client_token == new_token
+    assert state.router_session.session_id == "sid2"
 
 
 @pytest.mark.asyncio
