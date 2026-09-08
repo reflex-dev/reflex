@@ -1,8 +1,9 @@
 /**
  * Browser-side OpenTelemetry for Reflex apps, installed by reflex_otel.OtelPlugin.
  *
- * - Every event and file upload sent to the backend gets a PRODUCER span and
- *   a W3C `traceparent`, so the backend event span joins the browser trace.
+ * - Every event and file upload sent to the backend is marked with a PRODUCER
+ *   span; sampled sends carry a W3C `traceparent`, so the backend event span
+ *   joins the browser trace.
  * - Web vitals (LCP, CLS, INP, FCP, TTFB) are reported as spans.
  * - React commits are reported as `react.render` spans via a root <Profiler>
  *   (opt-in; production builds need the react-dom profiling alias the plugin adds).
