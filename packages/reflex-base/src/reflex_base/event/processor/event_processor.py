@@ -550,7 +550,8 @@ class EventProcessor:
 
         Root handlers marked with ``supersedes`` (e.g. ``on_load_internal``)
         use latest-wins semantics: enqueuing a new invocation cancels the
-        previous unfinished event chain for the same handler and client token.
+        previous unfinished event chain of the same supersede group (the
+        handler itself, or the group it names) for the same client token.
 
         Args:
             token: The client token associated with the event.
@@ -561,9 +562,9 @@ class EventProcessor:
             registered = RegistrationContext.get().event_handlers.get(event.name)
         except LookupError:
             return
-        if registered is None or not registered.handler.supersedes:
+        if registered is None or (group := registered.handler.supersede_group) is None:
             return
-        key = (event.name, token)
+        key = (group, token)
         previous = self._superseded.get(key)
         if previous is not None and not previous.all_done():
             logger.debug(

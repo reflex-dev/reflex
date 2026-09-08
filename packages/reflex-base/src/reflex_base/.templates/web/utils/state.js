@@ -145,6 +145,74 @@ export const isBackendDisabled = () => {
 };
 
 /**
+ * Create a socket without starting its namespace or hydration events.
+ * @param endpoint The backend URL.
+ * @param transports The configured transports.
+ * @returns The disconnected socket.
+ */
+const createSocket = (endpoint, transports) =>
+  io(endpoint.href, {
+    path: endpoint.pathname,
+    transports,
+    protocols: [reflexEnvironment.version],
+    autoUnref: false,
+    autoConnect: false,
+    query: { token: getToken() },
+    reconnection: false,
+  });
+
+let warmSocket = null;
+let cancelWarmup = () => {};
+let socketStarted = false;
+
+/** Close an unclaimed transport and remove its cleanup handlers. */
+const discardWarmSocket = () => {
+  const socket = warmSocket;
+  warmSocket = null;
+  cancelWarmup();
+  socket?.disconnect();
+};
+
+// Start only the transport while React is still preparing to mount. The
+// namespace stays disconnected until connect() installs all its handlers.
+// Defer past module evaluation because context.js imports this module too.
+if (typeof window !== "undefined") {
+  queueMicrotask(() => {
+    if (
+      socketStarted ||
+      Object.keys(initialState).length <= 1 ||
+      isBackendDisabled() ||
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+    try {
+      warmSocket = createSocket(getBackendURL(EVENTURL), [env.TRANSPORT]);
+    } catch {
+      // Speculative setup may fail (for example, blocked session storage).
+      // The normal connection path will report failures when the app mounts.
+      return;
+    }
+    const timeout = setTimeout(discardWarmSocket, 10000);
+    window.addEventListener("pagehide", discardWarmSocket);
+    cancelWarmup = () => {
+      clearTimeout(timeout);
+      window.removeEventListener("pagehide", discardWarmSocket);
+    };
+    warmSocket.io.open((error) => {
+      if (error) discardWarmSocket();
+    });
+  });
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    socketStarted = true;
+    discardWarmSocket();
+  });
+}
+
+/**
  * Determine if any event in the event queue is stateful.
  *
  * @returns True if there's any event that requires state and False if none of them do.
@@ -395,7 +463,19 @@ export const applyEvent = async (event, socket, navigate, params) => {
     return;
   }
 
-  // Update token and router data (if missing).
+  // Send the event to the server.
+  if (socket) {
+    socket.emit("event", withRouterData(event, params));
+  }
+};
+
+/**
+ * Fill in the event's router data from the current location, if missing.
+ * @param event The event to send.
+ * @param params The params object from useParams
+ * @returns The same event, with router_data populated.
+ */
+const withRouterData = (event, params) => {
   if (
     event.router_data === undefined ||
     Object.keys(event.router_data).length === 0
@@ -423,11 +503,7 @@ export const applyEvent = async (event, socket, navigate, params) => {
       event.router_data.query = query;
     }
   }
-
-  // Send the event to the server.
-  if (socket) {
-    socket.emit("event", event);
-  }
+  return event;
 };
 
 /**
@@ -589,15 +665,29 @@ export const connect = async (
   const endpoint = getBackendURL(EVENTURL);
   const on_hydrated_queue = [];
 
-  // Create the socket.
-  socket.current = io(endpoint.href, {
-    path: endpoint["pathname"],
-    transports: transports,
-    protocols: [reflexEnvironment.version],
-    autoUnref: false,
-    query: { token: getToken() },
-    reconnection: false, // Reconnection will be handled manually.
+  // The hydrate event rides in the socket.io CONNECT packet, so the backend
+  // starts loading state as soon as the namespace connects instead of after
+  // an extra round trip for the connect acknowledgement. The key is read by
+  // the backend as CompileVars.CONNECT_AUTH_EVENT.
+  const bootAuth = (first) => ({
+    event: withRouterData(initialEvents(first)[0], params),
   });
+
+  // Create the socket.
+  socketStarted = true;
+  if (
+    warmSocket &&
+    (warmSocket.io.opts.transports.length !== transports.length ||
+      transports.some(
+        (transport, i) => transport !== warmSocket.io.opts.transports[i],
+      ))
+  ) {
+    discardWarmSocket();
+  }
+  socket.current = warmSocket ?? createSocket(endpoint, transports);
+  warmSocket = null;
+  cancelWarmup();
+  socket.current.auth = bootAuth(true);
   socket.current.wait_connect = !socket.current.connected;
   // Ensure undefined fields in events are sent as null instead of removed
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
@@ -623,8 +713,9 @@ export const connect = async (
       !socket.current.wait_connect
     ) {
       socket.current.wait_connect = true;
-      socket.current.rehydrate = true;
       socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
+      // A reconnect rehydrates in full: the reducers no longer hold the defaults.
+      socket.current.auth = bootAuth(false);
       socket.current.connect();
     }
   };
@@ -675,10 +766,6 @@ export const connect = async (
     setConnectErrors([]);
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
-    if (socket.current.rehydrate) {
-      socket.current.rehydrate = false;
-      queueEvents(initialEvents(), socket, true, navigate, params);
-    }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
       await processEvent(socket.current, navigate, params);
@@ -790,6 +877,7 @@ export const connect = async (
   });
 
   document.addEventListener("visibilitychange", checkVisibility);
+  socket.current.connect();
 };
 
 /**
@@ -1060,14 +1148,6 @@ export const useEventLoop = (
       _events.map((e) => e.name).join("+++"),
       () => !!socket.current?.connected,
     );
-  }, []);
-
-  const sentHydrate = useRef(false); // Avoid double-hydrate due to React strict-mode
-  useEffect(() => {
-    if (!sentHydrate.current) {
-      queueEvents(initial_events(), socket, true, navigate, params);
-      sentHydrate.current = true;
-    }
   }, []);
 
   // Handle frontend errors and send them to the backend via websocket.

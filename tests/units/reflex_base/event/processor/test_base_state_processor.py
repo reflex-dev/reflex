@@ -745,3 +745,166 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
         object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
 
     assert proxy._self_entered_context is False
+
+
+def _boot_event(name: str, payload: dict[str, Any]) -> Event:
+    return Event(
+        name=name,
+        payload=payload,
+        router_data={"pathname": "/", "asPath": "/", "query": {}},
+    )
+
+
+async def test_hydrate_and_load_single_lock_cycle(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """One hydrate_and_load event resets/applies client storage, snapshots, and queues on_load.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    assert State.event_handlers["hydrate_and_load"].supersedes
+
+    class CookieState(State):
+        flavor: str = rx.Cookie("plain")
+        loads: int = 0
+
+        @event
+        def on_load_handler(self):
+            self.loads += 1
+
+    wired_app.add_page(
+        lambda: rx.text(CookieState.flavor),
+        route="/",
+        on_load=CookieState.on_load_handler,
+    )
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    cookie_key = f"{CookieState.get_full_name()}.flavor{FIELD_MARKER}"
+    state_name = State.get_full_name()
+    hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"vars": {cookie_key: "chocolate"}})
+        )
+        await future.wait_all()
+
+    # Snapshot (not hydrated, browser cookie applied), the on_load chain, hydrated.
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[state_name][hydrated_key] is False
+    assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "chocolate"
+    assert snapshot[CookieState.get_full_name()]["loads" + FIELD_MARKER] == 0
+    assert [d for _, d in emitted_deltas[1:]] == [
+        {state_name: {hydrated_key: False}},
+        {CookieState.get_full_name(): {"loads" + FIELD_MARKER: 1}},
+        {state_name: {hydrated_key: True}},
+    ]
+
+    # The next hydrate resets the cookie var when the browser no longer sends
+    # it, and the on_load chain runs again.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(token, _boot_event(boot_name, {}))
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[CookieState.get_full_name()]["flavor" + FIELD_MARKER] == "plain"
+    assert emitted_deltas[2][1] == {
+        CookieState.get_full_name(): {"loads" + FIELD_MARKER: 2}
+    }
+
+
+async def test_hydrate_and_load_diffs_against_compiled_defaults(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """With matching initialState hashes only vars that differ from the defaults are sent.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    from reflex.compiler.utils import compile_state
+    from reflex.state import state_snapshot_hashes
+
+    class CookieState(State):
+        flavor: str = rx.Cookie("plain")
+        loads: int = 0
+        ratio: float = 1.0
+
+        @event
+        def set_ratio_int(self):
+            self.ratio = 1  # Python-equal to the default, JSON-distinct.
+
+    wired_app.add_page(lambda: rx.text(CookieState.flavor), route="/")
+    wired_app._compile_page("index")
+    boot_name = Event.from_event_type(State.hydrate_and_load())[0].name  # pyright: ignore[reportCallIssue]
+    cookie_key = f"{CookieState.get_full_name()}.flavor{FIELD_MARKER}"
+    state_name = State.get_full_name()
+    compiled = compile_state(State)
+    hashes = state_snapshot_hashes(compiled)
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token,
+            _boot_event(
+                boot_name, {"vars": {cookie_key: "chocolate"}, "hashes": hashes}
+            ),
+        )
+        await future.wait_all()
+
+    snapshot = emitted_deltas[0][1]
+    # Only the root router and the changed cookie var differ from the compiled defaults.
+    assert set(snapshot) == {state_name, CookieState.get_full_name()}
+    assert set(snapshot[state_name]) == {"router" + FIELD_MARKER}
+    assert snapshot[CookieState.get_full_name()] == {
+        "flavor" + FIELD_MARKER: "chocolate"
+    }
+
+    # A value that is Python-equal but serializes differently is still sent.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        await (
+            await processor.enqueue(
+                token, Event.from_event_type(CookieState.set_ratio_int())[0]
+            )
+        ).wait_all()
+        emitted_deltas.clear()
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": hashes})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert snapshot[CookieState.get_full_name()]["ratio" + FIELD_MARKER] == 1
+
+    # Hashes compiled against a different set of states (a different names
+    # digest) fall back to the full snapshot.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": ["0" * 16, *hashes[1:]]})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert "loads" + FIELD_MARKER in snapshot[CookieState.get_full_name()]
+
+    # A matching names digest with a truncated hash list is malformed and
+    # also falls back to the full snapshot instead of failing the event.
+    emitted_deltas.clear()
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, _boot_event(boot_name, {"hashes": hashes[:-1]})
+        )
+        await future.wait_all()
+    snapshot = emitted_deltas[0][1]
+    assert "loads" + FIELD_MARKER in snapshot[CookieState.get_full_name()]
