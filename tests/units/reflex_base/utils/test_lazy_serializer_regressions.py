@@ -56,6 +56,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, select
 from reflex_base.utils import serializers
 from reflex_base.utils.format import json_dumps
+from reflex_base.vars.base import can_use_in_object_var
 
 class Team(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -103,6 +104,12 @@ if CUSTOM_ENABLED:
     assert '"custom":true' in payload.replace(" ", "")
 else:
     assert serializers.get_serializer_type(Team) == dict[str, Any]
+    assert serializers.has_serializer(Team, dict)
+    assert serializers.has_serializer(Team, dict[str, Any])
+    assert not serializers.has_serializer(Team, dict[str, int])
+    assert not serializers.has_serializer(Team, list)
+    assert can_use_in_object_var(Team)
+    assert State.teams[0].name._var_type is str
 json.loads(payload)
 engine.dispose()
 """

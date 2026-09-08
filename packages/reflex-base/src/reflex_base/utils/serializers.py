@@ -286,14 +286,18 @@ def has_serializer(type_: type, into_type: type | None = None) -> bool:
 
     Args:
         type_: The type to check.
-        into_type: The type to serialize into.
+        into_type: The type to serialize into, including a generic type's origin.
 
     Returns:
         Whether there is a serializer for the type.
     """
-    serializer_for_type = get_serializer(type_)
-    return serializer_for_type is not None and (
-        into_type is None or get_serializer_type(type_) == into_type
+    if get_serializer(type_) is None:
+        return False
+    if into_type is None:
+        return True
+    serializer_type = get_serializer_type(type_)
+    return (
+        serializer_type == into_type or types.get_origin(serializer_type) == into_type
     )
 
 

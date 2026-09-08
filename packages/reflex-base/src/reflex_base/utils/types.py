@@ -10,6 +10,7 @@ import typing
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property, lru_cache
+from importlib.util import find_spec
 from types import GenericAlias
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
