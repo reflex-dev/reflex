@@ -3846,7 +3846,8 @@ def test_update_router_vars_granular_delta(test_state: TestState) -> None:
     assert test_state.router.session.session_id == "sid2"
     test_state._clean()
 
-    # Header change: headers and the URL (whose host derives from them) update.
+    # Header change: headers, and the page/URL whose host derives from them.
+    # route_id derives from the path alone, so it is left clean.
     new_headers_router_data = {
         **reconnect_router_data,
         RouteVar.HEADERS: {"origin": "http://example.com"},
@@ -3856,9 +3857,18 @@ def test_update_router_vars_granular_delta(test_state: TestState) -> None:
         "router_headers",
         "router_page",
         "router_url",
-        "router_route_id",
     }
     assert test_state.router.url.origin == "http://example.com"
+    test_state._clean()
+
+    # Keys that differ but derive the same values leave every var clean: an
+    # absent key and an empty one both produce the default, and dirtying on
+    # that alone would mark the state touched and persist it.
+    equivalent_router_data = {
+        k: v for k, v in new_headers_router_data.items() if k != RouteVar.QUERY
+    }
+    test_state._update_router_vars(equivalent_router_data, new_headers_router_data)
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == set()
 
 
 @pytest.mark.asyncio

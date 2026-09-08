@@ -1903,9 +1903,12 @@ class BaseState(EvenMoreBasicBaseState):
     ) -> None:
         """Update the per-field router vars from a new router_data dict.
 
-        Only rebuilds and reassigns the vars whose backing router_data keys
-        actually changed, so connection-scoped data (session, headers) is not
-        recomputed or re-sent in the delta on every navigation.
+        Each var is rebuilt only when the router_data keys it derives from
+        changed, so connection-scoped data (session, headers) is not recomputed
+        on every navigation, and is then assigned only when the rebuilt value
+        actually differs -- different keys can still yield an equal value (an
+        absent key and an empty one both produce the default), and assigning
+        regardless would dirty the var, mark the state touched, and persist it.
 
         Args:
             router_data: The new router_data dict.
@@ -1920,13 +1923,19 @@ class BaseState(EvenMoreBasicBaseState):
                 constants.RouteVar.SESSION_ID,
                 constants.RouteVar.CLIENT_IP,
             )
+        ) and (session := SessionData.from_router_data(router_data)) != (
+            self.router_session
         ):
-            self.router_session = SessionData.from_router_data(router_data)
+            self.router_session = session
         headers_changed = prev_get(constants.RouteVar.HEADERS) != get(
             constants.RouteVar.HEADERS
         )
-        if headers_changed:
-            self.router_headers = HeaderData.from_router_data(router_data)
+        if (
+            headers_changed
+            and (headers := HeaderData.from_router_data(router_data))
+            != self.router_headers
+        ):
+            self.router_headers = headers
         if (
             # The origin header feeds the URL/page host.
             headers_changed
@@ -1934,9 +1943,12 @@ class BaseState(EvenMoreBasicBaseState):
             or prev_get(constants.RouteVar.ORIGIN) != get(constants.RouteVar.ORIGIN)
             or prev_get(constants.RouteVar.QUERY) != get(constants.RouteVar.QUERY)
         ):
-            self.router_page = PageData.from_router_data(router_data)
-            self.router_url = URLData.from_router_data(router_data)
-            self.router_route_id = get(constants.RouteVar.PATH, "")
+            if (page := PageData.from_router_data(router_data)) != self.router_page:
+                self.router_page = page
+            if (url := URLData.from_router_data(router_data)) != self.router_url:
+                self.router_url = url
+            if (route_id := get(constants.RouteVar.PATH, "")) != self.router_route_id:
+                self.router_route_id = route_id
 
     @classmethod
     @functools.lru_cache
