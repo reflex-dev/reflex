@@ -35,6 +35,7 @@ DEPENDENCY_MODULE = "config_reload_dependency"
 PACKAGE_NAME = "config_reload_package"
 PACKAGE_STATE_MODULE = f"{PACKAGE_NAME}.state"
 PACKAGE_SETTINGS_MODULE = f"{PACKAGE_NAME}.settings"
+CONFIG_RELOAD_FAIL_ENV = "CONFIG_RELOAD_FAIL"
 
 
 def test_requires_app_name():
@@ -1231,7 +1232,7 @@ def test_reload_config_records_package_imports_after_failure(
     (package / "__init__.py").write_text(
         "import os\n"
         "from .settings import APP_NAME\n\n"
-        "if os.environ.get('CONFIG_RELOAD_FAIL'):\n"
+        f"if os.environ.get({CONFIG_RELOAD_FAIL_ENV!r}):\n"
         "    raise RuntimeError('reload failed')\n"
     )
     (tmp_path / f"{CONFIG_MODULE}.py").write_text(
@@ -1243,10 +1244,10 @@ def test_reload_config_records_package_imports_after_failure(
 
     with RegistrationContext():
         assert reflex_base.config.get_config().app_name == "first"
-        monkeypatch.setenv("CONFIG_RELOAD_FAIL", "1")
+        monkeypatch.setenv(CONFIG_RELOAD_FAIL_ENV, "1")
         with pytest.raises(RuntimeError, match="reload failed"):
             reflex_base.config.reload_config()
-        monkeypatch.delenv("CONFIG_RELOAD_FAIL")
+        monkeypatch.delenv(CONFIG_RELOAD_FAIL_ENV)
         (package / "settings.py").write_text("APP_NAME = 'second'\n")
         assert reflex_base.config.reload_config().app_name == "second"
 
