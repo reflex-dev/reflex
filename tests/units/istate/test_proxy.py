@@ -877,3 +877,104 @@ def test_frozen_dataclass_proxy_rejects_mutation() -> None:
 
     with pytest.raises(dataclasses.FrozenInstanceError):
         proxy.tag = "b"
+
+
+def test_interval_computed_vars_resolve_through_state_proxy(
+    attached_mock_event_context: EventContext,
+):
+    """Marking dirty through a StateProxy resolves the class cache on the wrapped state.
+
+    `_expired_computed_vars` caches the interval-var names per class; looked up
+    via `type(self)` that would hit the proxy class and fail.
+
+    Args:
+        attached_mock_event_context: The attached mock event context fixture.
+    """
+    import datetime
+
+    from reflex.state import State
+    from reflex.vars.base import computed_var
+
+    class IntervalState(State):
+        base: int = 0
+
+        @computed_var(interval=datetime.timedelta(seconds=30))
+        def timed(self) -> int:
+            return self.base
+
+    state = IntervalState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    proxy = StateProxy(state)
+    assert proxy._expired_computed_vars() == {"timed"}
+    assert IntervalState._interval_computed_var_names == frozenset({"timed"})
+
+
+def test_fast_path_skips_names_a_subclass_defines():
+    """A subclass defining a fast-pathed framework name keeps the full lookup for it.
+
+    The fast path bypasses var resolution, so it must not apply to a name the
+    state itself defines (here a marked override of a BaseState method, and a
+    backend var named like a framework method). The class is a detached root
+    (not a substate of ``State``) so the shadowed method never reaches the
+    framework paths that other tests exercise on the shared state tree.
+    """
+    from reflex.state import BaseState
+
+    def get_value(self, key: str):
+        return f"shadow:{key}"
+
+    get_value.__override_base_method__ = True  # pyright: ignore [reportFunctionMemberAccess]
+
+    ShadowState = type(
+        "ShadowState",
+        (BaseState,),
+        {
+            "__module__": __name__,
+            "__qualname__": "ShadowState",
+            "__annotations__": {"_get_was_touched": int},
+            "_get_was_touched": 7,
+            "get_value": get_value,
+        },
+    )
+    assert "get_value" in BaseState._fast_attr_names
+    assert "get_value" not in ShadowState._fast_attr_names
+    assert "_get_was_touched" not in ShadowState._fast_attr_names
+    assert "dirty_vars" in ShadowState._fast_attr_names
+    state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    assert state.get_value("k") == "shadow:k"
+    assert state._get_was_touched == 7
+
+
+def test_fast_path_prunes_names_registered_after_class_creation():
+    """Vars and handlers added after class creation also leave the fast path."""
+    from reflex_base.constants import RouteArgType
+
+    from reflex.state import BaseState
+
+    DynamicState = type(
+        "DynamicState",
+        (BaseState,),
+        {"__module__": __name__, "__qualname__": "DynamicState"},
+    )
+    DynamicSubState = type(
+        "DynamicSubState",
+        (DynamicState,),
+        {"__module__": __name__, "__qualname__": "DynamicSubState"},
+    )
+    DynamicGrandChild = type(
+        "DynamicGrandChild",
+        (DynamicSubState,),
+        {"__module__": __name__, "__qualname__": "DynamicGrandChild"},
+    )
+    tree = (DynamicState, DynamicSubState, DynamicGrandChild)
+    for cls in tree:
+        assert {"get_value", "get_delta", "get_state"} <= cls._fast_attr_names
+
+    DynamicState.setup_dynamic_args({"get_value": RouteArgType.SINGLE})
+    DynamicState._add_event_handler("get_delta", lambda self: None)
+    DynamicState.add_var("get_state", int, 0)
+    # Registered on the root and inherited down the tree, so pruned everywhere.
+    for cls in tree:
+        assert "get_value" not in cls._fast_attr_names
+        assert "get_delta" not in cls._fast_attr_names
+        assert "get_state" not in cls._fast_attr_names
+        assert "dirty_vars" in cls._fast_attr_names

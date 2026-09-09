@@ -12,7 +12,7 @@ import sys
 from collections.abc import Callable, Sequence
 from importlib.util import find_spec
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
 
 import wrapt
 from reflex_base.event import Event
@@ -98,6 +98,12 @@ class StateProxy(wrapt.ObjectProxy):
                 async with self:
                     self.counter += 1
     """
+
+    if TYPE_CHECKING:
+        # wrapt-stubs types `ObjectProxy.__new__` as returning `ObjectProxy`
+        # rather than `Self`, which loses the subclass type at every call site.
+        def __new__(cls, *args: Any, **kwargs: Any) -> Self:  # noqa: D102
+            ...
 
     def __init__(
         self,
@@ -272,7 +278,9 @@ class StateProxy(wrapt.ObjectProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
             return ImmutableMutableProxy(
                 wrapped=value.__wrapped__,
-                state=self,
+                # The proxy stands in for the wrapped state, and is passed
+                # deliberately so mutability is still gated on this proxy.
+                state=cast("BaseState", self),
                 field_name=value._self_field_name,
             )
         if isinstance(value, functools.partial) and value.args[0] is self.__wrapped__:
@@ -468,7 +476,7 @@ class MutableProxy(wrapt.ObjectProxy):
         *args,
         path: tuple[_AccessSpec, ...] | None = None,
         **kwargs,
-    ) -> MutableProxy:
+    ) -> Self:
         """Create a proxy instance for a mutable object that tracks changes.
 
         Args:
@@ -493,7 +501,9 @@ class MutableProxy(wrapt.ObjectProxy):
                     _dataclass_proxy_namespace(wrapped_cls),
                 )
             cls = cls.__dataclass_proxies__[wrapper_cls_key]
-        return super().__new__(cls)  # pyright: ignore[reportArgumentType]
+        # wrapt-stubs types `ObjectProxy.__new__` as returning `ObjectProxy`
+        # rather than `Self`, hence the cast.
+        return cast("Self", super().__new__(cls))  # pyright: ignore[reportArgumentType]
 
     def __init__(
         self,

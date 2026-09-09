@@ -585,6 +585,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],
+                # Handlers here only parse and enqueue (or emit a pong), so run
+                # them inline on the socket's receive loop instead of paying a
+                # task creation and a loop hop per incoming message.
+                async_handlers=False,
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
@@ -1433,8 +1437,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if admin_dash and admin_dash.models:
             # Build the admin dashboard
+            # The first positional argument is `engine` before starlette-admin
+            # 1.0 and `session_provider` (which still accepts an Engine) after,
+            # so pass it positionally to support both.
             admin = admin_dash.admin or Admin(
-                engine=get_engine(),
+                get_engine(),
                 title="Reflex Admin Dashboard",
                 logo_url="https://reflex.dev/Reflex.svg",
             )
