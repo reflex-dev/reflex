@@ -1,1 +1,1 @@
-Fix the compatibility rehydrate never running under `StateManagerRedis`. It only fetches the state classes needed to reach the event's own substate, so the on-load substate the rehydrate looked for was never in the tree it checked. After a token's state expired, the page the client was on never got its `on_load` back and `is_hydrated` stayed `False` until the client navigated or reloaded.
+Fix the post-eviction rehydrate fallback not running under `StateManagerRedis`.
