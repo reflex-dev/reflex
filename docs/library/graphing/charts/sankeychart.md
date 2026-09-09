@@ -157,10 +157,10 @@ def sankey_custom_render():
                 font_size=10,
             ),
             rx.el.svg.rect(
-                x=node.x,
-                y=node.y,
-                width=node.width,
-                height=node.height,
+                x=node.x.to(int),
+                y=node.y.to(int),
+                width=node.width.to(int),
+                height=node.height.to(int),
                 # Accessing custom keys in the payload needs a `dict` cast.
                 fill=node.payload.to(dict)["fill"],
                 stroke=rx.color("gray", 12),
