@@ -780,19 +780,6 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
     assert proxy._self_entered_context is False
 
 
-# StateManagerRedis materializes only the state classes needed to reach the
-# event's own substate, so ``OnLoadInternalState`` is absent from the fetched
-# tree and ``BaseStateEventProcessor._rehydrate`` bails on its
-# ``... not in root_state.substates`` guard. The preamble sets ``router_data``
-# on the root anyway, so no later event rehydrates either: once a token's
-# state has expired, the page the client is on never gets its ``on_load`` back
-# and ``is_hydrated`` stays False until the client navigates or reloads.
-_REHYDRATE_SKIPPED_ON_REDIS = pytest.mark.xfail(
-    reason="_rehydrate skips trees where OnLoadInternalState was not fetched",
-    strict=True,
-)
-
-
 def _client_event(spec: Any, router_data: dict[str, Any]) -> Event:
     """Build an event the way the socket layer delivers one: carrying router_data.
 
@@ -848,9 +835,7 @@ async def _send(
 
 
 @pytest.mark.parametrize(
-    "processor_state_manager",
-    ["in_process", "disk", pytest.param("redis", marks=_REHYDRATE_SKIPPED_ON_REDIS)],
-    indirect=True,
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
 )
 async def test_rehydrate_runs_on_load_for_the_incoming_events_route(
     wired_app: App,
@@ -1009,9 +994,7 @@ def _cleanup_item_id_route_arg():
 
 @pytest.mark.usefixtures("_cleanup_item_id_route_arg")
 @pytest.mark.parametrize(
-    "processor_state_manager",
-    ["in_process", "disk", pytest.param("redis", marks=_REHYDRATE_SKIPPED_ON_REDIS)],
-    indirect=True,
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
 )
 async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
     wired_app: App,
