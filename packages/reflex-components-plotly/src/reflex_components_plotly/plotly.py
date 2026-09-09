@@ -308,6 +308,12 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
 
     def _render(self):
         tag = super()._render()
+        # react-plotly.js only forwards `divId` (plus style, className and ref) to
+        # the container div it renders; the framework `id` prop would be dropped.
+        element_id = tag.props.get("id")
+        if element_id is not None:
+            tag = tag.remove_props("id")
+            tag = tag.set(props={**tag.props, "divId": element_id})
         figure = self.data.to(dict) if self.data is not None else Var.create({})
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:

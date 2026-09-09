@@ -75,3 +75,26 @@ def test_plotly_basic_locale_option_merges_into_config(plotly_fig: go.Figure):
     assert "locale" not in rendered.props
     assert "_rxGetPlotlyLocaleConfig" in str(config_var)
     assert "fr" in str(config_var)
+
+
+def test_plotly_id_renders_as_div_id(plotly_fig: go.Figure):
+    """Test that `id` reaches the DOM via react-plotly.js's `divId` prop.
+
+    Args:
+        plotly_fig: The figure to display.
+    """
+    rendered = rx.plotly(data=plotly_fig, id="the-plot")._render()
+
+    assert "id" not in rendered.props
+    assert "the-plot" in str(rendered.props["divId"])
+
+
+def test_plotly_without_id_has_no_div_id(plotly_fig: go.Figure):
+    """Test that no `divId` is emitted when no `id` was given.
+
+    Args:
+        plotly_fig: The figure to display.
+    """
+    rendered = rx.plotly(data=plotly_fig)._render()
+
+    assert "divId" not in rendered.props
