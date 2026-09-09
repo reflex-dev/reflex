@@ -21,6 +21,8 @@ from .recharts import (
     Recharts,
 )
 
+_USE_CHART_WIDTH_HOOK = "useChartWidth"
+
 
 class ResponsiveContainer(Recharts, MemoizationLeaf):
     """A base class for responsive containers in Recharts."""
@@ -310,7 +312,9 @@ def use_chart_width() -> Var[int | None]:
         The chart width var.
     """
     return use_hook_var(
-        library=Recharts.library or "", hook="useChartWidth", _var_type=int | None
+        library=Recharts.library or "",
+        hook=_USE_CHART_WIDTH_HOOK,
+        _var_type=int | None,
     )
 
 

@@ -10,6 +10,8 @@ from reflex_base.utils.types import GenericType
 from reflex_base.vars.base import Var, VarData, get_unique_variable_name
 
 HOOK_VAR_TYPE = TypeVar("HOOK_VAR_TYPE")
+_REACT_LIBRARY = "react"
+_USE_ID_HOOK = "useId"
 
 
 @overload
@@ -57,4 +59,4 @@ def use_id() -> Var[str]:
     Returns:
         A Var representing the useId hook value.
     """
-    return use_hook_var(library="react", hook="useId", _var_type=str)
+    return use_hook_var(library=_REACT_LIBRARY, hook=_USE_ID_HOOK, _var_type=str)
