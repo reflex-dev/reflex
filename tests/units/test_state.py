@@ -43,7 +43,13 @@ from typing_extensions import TypeAliasType
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.istate.data import HeaderData, RouterData, URLData, _FrozenDictStrStr
+from reflex.istate.data import (
+    HeaderData,
+    RouterData,
+    RouterDataVar,
+    URLData,
+    _FrozenDictStrStr,
+)
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -384,6 +390,7 @@ def test_class_vars(test_state):
     """
     cls = type(test_state)
     assert cls.vars.keys() == {
+        constants.ROUTER,
         *constants.ROUTER_VARS,
         "num1",
         "num2",
@@ -465,8 +472,10 @@ def test_dict(test_state: TestState):
     }
     test_state_dict = test_state.dict()
     assert set(test_state_dict) == substates
+    # Only vars with a backing field are serialized; `router` is a switchboard
+    # over the per-field router vars and has no field of its own.
     assert set(test_state_dict[test_state.get_name()]) == {
-        var + FIELD_MARKER for var in test_state.vars
+        var + FIELD_MARKER for var in (*test_state.base_vars, *test_state.computed_vars)
     }
     assert set(test_state.dict(include_computed=False)[test_state.get_name()]) == {
         var + FIELD_MARKER for var in test_state.base_vars
@@ -3837,6 +3846,30 @@ def test_router_var_dep_whole_router() -> None:
     for dep_set in State._var_dependencies.values():
         dep_set.discard((WholeRouterDepState.get_full_name(), "summary"))
     State._potentially_dirty_states.discard(WholeRouterDepState.get_full_name())
+
+
+def test_router_is_listed_as_a_var_and_inherited_by_substates() -> None:
+    """`router` is usable as a Var, so it is listed in vars and inherited.
+
+    It has no backing field of its own, so it must stay out of anything that
+    serializes vars: the switchboard resolves to the root state's per-field
+    base vars instead.
+    """
+
+    class RouterVarListingState(State):
+        """A substate that only inherits the router."""
+
+    assert constants.ROUTER in State.vars
+    assert constants.ROUTER in RouterVarListingState.inherited_vars
+    assert constants.ROUTER not in State.base_vars
+    assert constants.ROUTER not in State.computed_vars
+
+    # The substate's entry is the root's switchboard, resolving to the root's
+    # per-field base vars rather than to anything on the substate.
+    router_var = RouterVarListingState.vars[constants.ROUTER]
+    assert isinstance(router_var, RouterDataVar)
+    assert router_var.equals(State.router)
+    assert str(router_var.route_id) == str(State.router_route_id)
 
 
 def test_update_router_vars_ignores_omitted_static_keys(

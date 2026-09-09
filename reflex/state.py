@@ -877,6 +877,11 @@ class BaseState(EvenMoreBasicBaseState):
             **cls.inherited_vars,
             **cls.base_vars,
             **cls.computed_vars,
+            # `router` is a switchboard over the per-field router vars rather
+            # than a field of its own, but it is usable as a Var everywhere one
+            # is accepted, so it is listed here (and thus inherited by
+            # substates). It has no backing field, so it never reaches a delta.
+            constants.ROUTER: _get_router_var(cls),
         }
         cls.event_handlers = {}
 
