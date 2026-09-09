@@ -4375,6 +4375,67 @@ def test_assignment_to_undeclared_vars():
     state.handle_non_var()
 
 
+def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
+    """A Field on a plain base supplies its default; a failing factory is not swallowed."""
+
+    class WithDefault:
+        _n = field(default=3)
+
+    class InheritsDefault(WithDefault, BaseState):
+        _n: int
+
+    assert InheritsDefault.backend_vars["_n"] == 3
+
+    def _boom() -> int:
+        msg = "factory blew up"
+        raise ValueError(msg)
+
+    class WithFailingFactory:
+        _n = field(default_factory=_boom)
+
+    with pytest.raises(ValueError, match="factory blew up"):
+
+        class FactoryState(WithFailingFactory, BaseState):
+            _n: int
+
+
+def test_assignment_through_property_setter():
+    """A property's setter runs instead of the undeclared-var guard."""
+
+    class PropertyState(BaseState):
+        first: str = "Jane"
+        last: str = "Doe"
+
+        @property
+        def full(self) -> str:
+            return f"{self.first} {self.last}"
+
+        @full.setter
+        def full(self, value: str) -> None:
+            self.first, self.last = value.split(" ", 1)
+
+        @full.deleter
+        def full(self) -> None:
+            self.first = self.last = ""
+
+    state = PropertyState()  # pyright: ignore [reportCallIssue]
+    state.full = "Ada Lovelace"
+    assert (state.first, state.last) == ("Ada", "Lovelace")
+    del state.full
+    assert (state.first, state.last) == ("", "")
+
+    # a read-only property raises its own error, not the undeclared-var guard
+    class ReadOnlyState(BaseState):
+        @property
+        def derived(self) -> str:
+            return ""
+
+    with pytest.raises(AttributeError) as exc_info:
+        ReadOnlyState().derived = "x"  # pyright: ignore [reportCallIssue, reportAttributeAccessIssue]
+    # SetUndefinedStateVarError is itself an AttributeError, so exclude it by type
+    assert not isinstance(exc_info.value, SetUndefinedStateVarError)
+
+
 @pytest.mark.asyncio
 async def test_deserialize_gc_state_disk(token):
     """Test that a state can be deserialized from disk with a grandchild state.

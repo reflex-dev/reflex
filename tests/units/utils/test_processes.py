@@ -10,9 +10,17 @@ import pytest
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness
 from reflex.utils.processes import (
+    _can_bind_at_any_port,
     is_process_on_port,
     run_concurrently,
     run_concurrently_context,
+)
+
+# `socket.has_ipv6` only reflects build-time support; without a runtime IPv6
+# stack every port looks occupied to `is_process_on_port`'s default families.
+requires_ipv6 = pytest.mark.skipif(
+    not _can_bind_at_any_port(socket.AF_INET6),
+    reason="IPv6 is not available on this system",
 )
 
 
@@ -24,7 +32,7 @@ def test_is_process_on_port_free_port():
         free_port = sock.getsockname()[1]
 
     # Port should be free after socket is closed
-    assert not is_process_on_port(free_port)
+    assert not is_process_on_port(free_port, (socket.AF_INET,))
 
 
 def test_is_process_on_port_occupied_port():
@@ -38,29 +46,25 @@ def test_is_process_on_port_occupied_port():
 
     try:
         # Port should be occupied
-        assert is_process_on_port(occupied_port)
+        assert is_process_on_port(occupied_port, (socket.AF_INET,))
     finally:
         server_socket.close()
 
 
+@requires_ipv6
 def test_is_process_on_port_ipv6():
     """Test is_process_on_port works with IPv6."""
-    # Test with IPv6 socket
+    server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+    server_socket.bind(("", 0))
+    server_socket.listen(1)
+
+    occupied_port = server_socket.getsockname()[1]
+
     try:
-        server_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        server_socket.bind(("", 0))
-        server_socket.listen(1)
-
-        occupied_port = server_socket.getsockname()[1]
-
-        try:
-            # Port should be occupied on IPv6
-            assert is_process_on_port(occupied_port)
-        finally:
-            server_socket.close()
-    except OSError:
-        # IPv6 might not be available on some systems
-        pytest.skip("IPv6 not available on this system")
+        # Port should be occupied on IPv6
+        assert is_process_on_port(occupied_port)
+    finally:
+        server_socket.close()
 
 
 def test_is_process_on_port_both_protocols():
@@ -74,7 +78,7 @@ def test_is_process_on_port_both_protocols():
 
     try:
         # Should detect IPv4 occupation
-        assert is_process_on_port(port)
+        assert is_process_on_port(port, (socket.AF_INET,))
     finally:
         ipv4_socket.close()
 
@@ -148,7 +152,7 @@ def test_is_process_on_port_concurrent_access():
 
         # Port should be occupied while server is running (both bound-only and listening)
         assert AppHarness._poll_for(
-            lambda: shared is not None and is_process_on_port(shared)
+            lambda: shared is not None and is_process_on_port(shared, (socket.AF_INET,))
         )
     finally:
         do_close.set()
@@ -156,7 +160,7 @@ def test_is_process_on_port_concurrent_access():
 
     # Give it a moment for the socket to be fully released
     assert AppHarness._poll_for(
-        lambda: shared is not None and not is_process_on_port(shared)
+        lambda: shared is not None and not is_process_on_port(shared, (socket.AF_INET,))
     )
 
 

@@ -310,7 +310,7 @@ class StateManagerRedis(StateManager):
         token = self._coerce_token(token)
         if not isinstance(token, BaseStateToken):
             # Non-BaseState token: simple single-key fetch.
-            redis_data = await self.redis.get(str(token))
+            redis_data = cast("bytes | None", await self.redis.get(str(token)))
             if redis_data is not None:
                 return token.deserialize(data=redis_data)
             return token.cls()
@@ -792,11 +792,15 @@ class StateManagerRedis(StateManager):
         Returns:
             True if the lock was obtained.
         """
-        return await self.redis.set(
-            lock_key,
-            lock_id,
-            px=self.lock_expiration,
-            nx=True,  # only set if it doesn't exist
+        # With `nx=True` and no `get=True`, SET replies with True or None.
+        return cast(
+            "bool | None",
+            await self.redis.set(
+                lock_key,
+                lock_id,
+                px=self.lock_expiration,
+                nx=True,  # only set if it doesn't exist
+            ),
         )
 
     async def _handle_lock_release(self, message: RedisPubSubMessage) -> None:
@@ -1101,7 +1105,9 @@ class StateManagerRedis(StateManager):
         finally:
             if state_is_locked:
                 # only delete our lock
-                deleted_lock_id = await self.redis.getdel(lock_key)
+                deleted_lock_id = cast(
+                    "bytes | None", await self.redis.getdel(lock_key)
+                )
                 if deleted_lock_id == lock_id:
                     if self._debug_enabled:
                         logger.debug(
