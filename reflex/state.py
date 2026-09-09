@@ -1292,7 +1292,10 @@ class BaseState(EvenMoreBasicBaseState):
                 "dirty_vars",
                 "dirty_substates",
                 "router_data",
-                # Not a var: assignment must reach the _RouterDescriptor.
+                # Listed in `vars` but backed by no field of its own, so a
+                # `router` annotation must never become a base var that would
+                # half-shadow the descriptor. Substates are already covered by
+                # `inherited_vars` above; this catches a root state class.
                 constants.ROUTER,
             }
             | types.RESERVED_BACKEND_VAR_NAMES
