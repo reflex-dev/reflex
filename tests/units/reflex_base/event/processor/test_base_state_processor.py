@@ -1,6 +1,7 @@
 """Tests for BaseStateEventProcessor, specifically the _rehydrate path."""
 
 import asyncio
+import contextlib
 import dataclasses
 import logging
 import traceback
@@ -19,10 +20,14 @@ import reflex as rx
 from reflex import event
 from reflex.app import App
 from reflex.event import Event
+from reflex.istate.manager import StateManager
+from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
 from reflex.state import OnLoadInternalState, State, StateUpdate
+from tests.units.mock_redis import mock_redis
 
 
 @pytest.fixture
@@ -64,11 +69,40 @@ def emitted_events() -> list[tuple[str, tuple[Event, ...]]]:
 
 
 @pytest_asyncio.fixture
-async def real_base_state_processor(
+async def processor_state_manager(request: pytest.FixtureRequest):
+    """The state manager backing the processor.
+
+    Defaults to the in-memory manager. Tests that care about how much of the
+    state tree a manager materializes parametrize this indirectly with
+    "in_process", "disk" or "redis".
+
+    Args:
+        request: pytest request object, whose optional param selects the manager.
+
+    Yields:
+        The state manager.
+    """
+    kind = getattr(request, "param", "in_process")
+    state_manager: StateManager
+    if kind == "redis":
+        state_manager = StateManagerRedis(redis=mock_redis())
+    elif kind == "disk":
+        state_manager = StateManagerDisk()
+    else:
+        state_manager = StateManagerMemory()
+
+    yield state_manager
+
+    await state_manager.close()
+
+
+@pytest.fixture
+def real_base_state_processor(
     _real_base_state_processor_obj: BaseStateEventProcessor,
     emitted_deltas: list,
     emitted_events: list,
     clean_registration_context: RegistrationContext,
+    processor_state_manager: StateManager,
 ):
     """A fully wired BaseStateEventProcessor with real _rehydrate.
 
@@ -80,12 +114,13 @@ async def real_base_state_processor(
         emitted_deltas: List to capture emitted deltas.
         emitted_events: List to capture emitted events.
         clean_registration_context: Isolated registration context for the test.
+        processor_state_manager: The state manager to back the processor.
 
-    Yields:
+    Returns:
         The configured but not-yet-started BaseStateEventProcessor.
     """
     clean_registration_context.register_base_state(OnLoadInternalState)
-    state_manager = StateManagerMemory()
+    state_manager = processor_state_manager
 
     async def emit_delta_impl(  # noqa: RUF029
         token: str, delta: Mapping[str, Mapping[str, Any]]
@@ -104,9 +139,7 @@ async def real_base_state_processor(
     )
     _real_base_state_processor_obj._root_context = root_ctx
 
-    yield _real_base_state_processor_obj
-
-    await state_manager.close()
+    return _real_base_state_processor_obj
 
 
 @pytest.fixture
@@ -745,3 +778,293 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
         object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
 
     assert proxy._self_entered_context is False
+
+
+# StateManagerRedis materializes only the state classes needed to reach the
+# event's own substate, so ``OnLoadInternalState`` is absent from the fetched
+# tree and ``BaseStateEventProcessor._rehydrate`` bails on its
+# ``... not in root_state.substates`` guard. The preamble sets ``router_data``
+# on the root anyway, so no later event rehydrates either: once a token's
+# state has expired, the page the client is on never gets its ``on_load`` back
+# and ``is_hydrated`` stays False until the client navigates or reloads.
+_REHYDRATE_SKIPPED_ON_REDIS = pytest.mark.xfail(
+    reason="_rehydrate skips trees where OnLoadInternalState was not fetched",
+    strict=True,
+)
+
+
+def _client_event(spec: Any, router_data: dict[str, Any]) -> Event:
+    """Build an event the way the socket layer delivers one: carrying router_data.
+
+    Args:
+        spec: The event spec to build the event from.
+        router_data: The router data the client sent the event with.
+
+    Returns:
+        The event.
+    """
+    return dataclasses.replace(Event.from_event_type(spec)[0], router_data=router_data)
+
+
+def _view(path: str, as_path: str | None = None, **query: str) -> dict[str, Any]:
+    """The router_data the socket layer builds for a page view.
+
+    ``pathname`` is the matched route (``/item/[item_id]``) and ``asPath`` the
+    URL the client is actually on (``/item/abc``); see
+    ``EventNamespace.on_event``.
+
+    Args:
+        path: The matched route.
+        as_path: The client's URL, defaulting to the matched route.
+        query: The route and query params for the view.
+
+    Returns:
+        A router_data dict.
+    """
+    return {
+        "pathname": path,
+        "asPath": as_path if as_path is not None else path,
+        "query": query,
+    }
+
+
+async def _send(
+    processor: BaseStateEventProcessor, token: str, ev: Event, timeout: float = 10
+) -> None:
+    """Enqueue an event and wait for it and everything it chains.
+
+    ``processor.join()`` only drains the queue, which can empty between an
+    event finishing and the events it chained being put on it, so the on_load
+    chain these tests are about is not covered by it.
+
+    Args:
+        processor: The processor to enqueue against.
+        token: The client token.
+        ev: The event to enqueue.
+        timeout: Seconds to wait for the chain to finish.
+    """
+    future = await processor.enqueue(token, ev)
+    await asyncio.wait_for(future.wait_all(), timeout=timeout)
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager",
+    ["in_process", "disk", pytest.param("redis", marks=_REHYDRATE_SKIPPED_ON_REDIS)],
+    indirect=True,
+)
+async def test_rehydrate_runs_on_load_for_the_incoming_events_route(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """The compatibility rehydrate loads the page the event came from.
+
+    Once a token's state has expired, the next event arrives against a fresh
+    tree with no ``router_data`` and the processor rehydrates it before running
+    the handler. ``on_load`` is page dependent, so that rehydrate has to
+    resolve the route from the event that triggered it: anything else runs
+    another page's loader, or the 404 loader, against a client that is plainly
+    somewhere else.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class RouteLoadState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def load_404(self):
+            self.loaded = [*self.loaded, "404"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=RouteLoadState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=RouteLoadState.load_b
+    )
+    wired_app.add_page(
+        lambda: rx.text("404"), route="/404", on_load=RouteLoadState.load_404
+    )
+
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, _client_event(RouteLoadState.ping(), _view("/page-b"))
+        )
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    root = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await root.get_state(RouteLoadState)).loaded == ["b"], (
+        "the rehydrate ran a loader for a page the event did not come from"
+    )
+    assert root.router.url.path == "/page-b"
+    assert (await root.get_state(State)).is_hydrated is True
+
+
+async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A state that expired on one page rehydrates against the client's new page.
+
+    The client navigates from ``/page-a`` to ``/page-b`` while the backend
+    drops the token's state. The next event carries the ``/page-b`` view, so
+    the rehydrate it triggers must not resurrect ``/page-a``'s loader from
+    whatever the previous event left behind.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class ExpiredLoadState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=ExpiredLoadState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=ExpiredLoadState.load_b
+    )
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state_manager = root_ctx.state_manager
+
+    async with real_base_state_processor as processor:
+        # A first event settles the state on /page-a.
+        await _send(
+            processor, token, _client_event(ExpiredLoadState.ping(), _view("/page-a"))
+        )
+        # The token's state expires out from under the still-connected client.
+        # Only the in-memory manager is driven here; expiry is a manager
+        # concern, and what it leaves the processor with -- a fresh tree for a
+        # known token -- is what the other managers are exercised on above.
+        assert isinstance(state_manager, StateManagerMemory)
+        state_manager.states.pop(token)
+        # The client, now on /page-b, sends the next event.
+        await _send(
+            processor, token, _client_event(ExpiredLoadState.ping(), _view("/page-b"))
+        )
+
+    root = await state_manager.get_state(BaseStateToken(ident=token, cls=State))
+    assert (await root.get_state(ExpiredLoadState)).loaded == ["b"], (
+        "the post-expiry rehydrate loaded the route the client had left"
+    )
+    assert root.router.url.path == "/page-b"
+
+
+@pytest.fixture
+def _cleanup_item_id_route_arg():
+    """Remove the ``item_id`` dynamic route var from ``State`` after the test.
+
+    ``add_page`` installs a route's dynamic args as computed vars on the shared
+    ``State`` class, where they outlive the test and show up in every later
+    delta that touches ``router``.
+
+    Yields:
+        None.
+    """
+    yield
+    with contextlib.suppress(AttributeError):
+        del State.item_id  # pyright: ignore[reportAttributeAccessIssue]
+    State.computed_vars.pop("item_id", None)
+    State.vars.pop("item_id", None)
+    State._var_dependencies = {}
+    State._potentially_dirty_states = set()
+    State._always_dirty_computed_vars = set()
+    State._init_var_dependency_dicts()
+
+
+@pytest.mark.usefixtures("_cleanup_item_id_route_arg")
+@pytest.mark.parametrize(
+    "processor_state_manager",
+    ["in_process", "disk", pytest.param("redis", marks=_REHYDRATE_SKIPPED_ON_REDIS)],
+    indirect=True,
+)
+async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A rehydrated dynamic page loads with the event's own route args.
+
+    The loader for ``/item/[item_id]`` is useless without ``item_id``: the
+    rehydrate has to seed ``router`` from the incoming event before chaining
+    ``on_load``, or the loader reads an empty arg on a URL that plainly names
+    one.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class DynamicLoadState(State):
+        seen: list[str] = []
+
+        @event
+        def load_item(self):
+            item_id = self.item_id  # pyright: ignore[reportAttributeAccessIssue]
+            self.seen = [*self.seen, f"{self.router.url.path}|{item_id}"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("item"),
+        route="/item/[item_id]",
+        on_load=DynamicLoadState.load_item,
+    )
+    wired_app.add_page(
+        lambda: rx.text("other"), route="/other", on_load=DynamicLoadState.load_item
+    )
+
+    async with real_base_state_processor as processor:
+        await _send(
+            processor,
+            token,
+            _client_event(
+                DynamicLoadState.ping(),
+                _view("/item/[item_id]", "/item/abc", item_id="abc"),
+            ),
+        )
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    root = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    assert (await root.get_state(DynamicLoadState)).seen == ["/item/abc|abc"]
