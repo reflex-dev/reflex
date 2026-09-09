@@ -274,7 +274,7 @@ class ImportOnlyCollectorPlugin(DefaultCollectorPlugin):
 
 @dataclass
 class Order:
-    """A row of the table state used by the holistic event benchmark."""
+    """An order in the table event benchmark."""
 
     name: str
     customer: str
@@ -283,13 +283,7 @@ class Order:
 
 
 class TableState(rx.State):
-    """A state with a 1000-row table, a filter, and derived views of the rows.
-
-    One event on it drives the whole per-event runtime path: a base var
-    assignment, iterating proxied dataclass rows, sorting them, re-running
-    the computed vars with their return-type checks, and a delta carrying
-    hundreds of rows.
-    """
+    """A 1000-row table with filtering, sorting, and a computed total."""
 
     orders: rx.Field[list[Order]] = rx.field(
         default_factory=lambda: [
@@ -303,7 +297,6 @@ class TableState(rx.State):
         ]
     )
     status: rx.Field[str] = rx.field("")
-    sort_key: rx.Field[str] = rx.field("amount")
     sort_reverse: rx.Field[bool] = rx.field(False)
 
     @rx.event
@@ -328,7 +321,7 @@ class TableState(rx.State):
             orders = [order for order in orders if order.status == self.status]
         return sorted(
             orders,
-            key=lambda order: getattr(order, self.sort_key),
+            key=lambda order: order.amount,
             reverse=self.sort_reverse,
         )
 
