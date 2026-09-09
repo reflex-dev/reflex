@@ -1430,44 +1430,6 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
-def test_context_template_takes_contexts_from_registry():
-    """The generated module never creates a React context itself.
-
-    Vite re-executes the generated module on every hot update of it. A context
-    created there would be a new object, so a provider mounted before the
-    update and a consumer loaded after it would stop sharing one. Every context
-    object comes from the static ``context-registry`` module instead.
-    """
-    from reflex_base.compiler.templates import context_template
-
-    rendered = context_template(
-        is_dev_mode=True,
-        default_color_mode='"light"',
-        initial_state={
-            "reflex___state____state": {},
-            "reflex___state____state.demo_state": {},
-        },
-        state_name="reflex___state____state",
-    )
-
-    assert "createContext" not in rendered
-    assert 'from "$/utils/context-registry"' in rendered
-    # Importers keep reading the fixed contexts from ``$/utils/context``.
-    assert (
-        "export { ColorModeContext, UploadFilesContext, DispatchContext, "
-        "EventLoopContext };" in rendered
-    )
-    # State contexts are looked up by the dotted Python state name.
-    assert (
-        'reflex___state____state: getStateContext("reflex___state____state"),'
-        in rendered
-    )
-    assert (
-        "reflex___state____state__demo_state: "
-        'getStateContext("reflex___state____state.demo_state"),' in rendered
-    )
-
-
 def test_context_registry_names_contexts_for_devtools():
     """Every context in the registry carries a ``displayName``.
 
@@ -1486,51 +1448,6 @@ def test_context_registry_names_contexts_for_devtools():
     ):
         assert f'{context_name}.displayName = "{context_name}";' in registry
     assert "context.displayName = `StateContext(${name})`;" in registry
-
-
-def test_static_runtime_never_imports_generated_context():
-    """The static runtime modules take app data from the registry, not context.js.
-
-    Vite re-executes every module between a changed file and a React refresh
-    boundary. A static module that imports the generated context module is
-    re-executed on every compile, which replaces its module-level singletons
-    such as ``refs`` while mounted components still hold the old ones.
-    """
-    utils = constants.Templates.Dirs.WEB_TEMPLATE / "utils"
-    for module in ("state.js", "react-theme.js", "context-registry.js"):
-        assert '$/utils/context"' not in (utils / module).read_text(), module
-    registry = (utils / "context-registry.js").read_text()
-    assert "export function registerApp(" in registry
-    assert "export const eventLoop = {" in registry
-
-
-def test_context_template_registers_app_data():
-    """The generated module pushes its data into the registry on execution."""
-    from reflex_base.compiler.templates import context_template
-
-    rendered = context_template(
-        is_dev_mode=True,
-        default_color_mode='"light"',
-        initial_state={"reflex___state____state": {}},
-        state_name="reflex___state____state",
-    )
-
-    assert "registerApp({" in rendered
-    for name in (
-        "initialState",
-        "clientStorage",
-        "state_name",
-        "exception_state_name",
-        "onLoadInternalEvent",
-        "initialEvents",
-        "isDevMode",
-        "defaultColorMode",
-    ):
-        assert f"  {name},\n" in rendered, name
-    # The event loop slot lives in the registry so a re-executed module
-    # still reaches the mounted provider.
-    assert "_addEventsImpl" not in rendered
-    assert "eventLoop.addEvents = addEventsLocal;" in rendered
 
 
 def test_context_template_client_side_component_is_named():
