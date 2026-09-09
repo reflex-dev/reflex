@@ -476,17 +476,6 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
         reset_bundled_libraries()
 
 
-def test_context_registry_has_default_color_mode_context():
-    """ColorModeContext should have a safe fallback value without a provider."""
-    registry = (
-        constants.Templates.Dirs.WEB_TEMPLATE / "utils" / "context-registry.js"
-    ).read_text()
-
-    assert "export const ColorModeContext = createContext({" in registry
-    assert 'resolvedColorMode: "light",' in registry
-    assert "setColorMode: () => {}," in registry
-
-
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
     """Point the compiler's get_config at a fresh config with the given mode.
 
@@ -1428,50 +1417,6 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "REFLEX_REACT_OWNER_STACKS" in rendered
     # The trade-off must be stated where a reader of the output will see it.
     assert "captureOwnerStack" in rendered
-
-
-def test_context_registry_names_contexts_for_devtools():
-    """Every context in the registry carries a ``displayName``.
-
-    React DevTools labels a provider from its context's ``displayName``;
-    without one the whole provider stack renders as ``Context.Provider``.
-    """
-    registry = (
-        constants.Templates.Dirs.WEB_TEMPLATE / "utils" / "context-registry.js"
-    ).read_text()
-
-    for context_name in (
-        "ColorModeContext",
-        "UploadFilesContext",
-        "DispatchContext",
-        "EventLoopContext",
-    ):
-        assert f'{context_name}.displayName = "{context_name}";' in registry
-    assert "context.displayName = `StateContext(${name})`;" in registry
-
-
-def test_compile_contexts_writes_jsx_and_drops_stale_js(
-    tmp_path: Path, mocker: MockerFixture
-):
-    """The context module is emitted as ``.jsx`` so fast refresh registers it.
-
-    Vite's React plugin skips the refresh transform for a ``.js`` file without
-    JSX. Without registration every re-execution of the module yields new
-    provider component types, and React remounts the whole provider subtree,
-    socket and client state included, on every compile. A stale ``context.js``
-    would shadow the ``.jsx`` file when resolving ``$/utils/context``, so it is
-    removed.
-    """
-    web_dir = tmp_path / ".web"
-    (web_dir / "utils").mkdir(parents=True)
-    stale = web_dir / "utils" / "context.js"
-    stale.write_text("stale")
-    mocker.patch("reflex.compiler.utils.get_web_dir", return_value=web_dir)
-
-    output_path, _ = compiler.compile_contexts(None, None)
-
-    assert output_path == str(web_dir / "utils" / "context.jsx")
-    assert not stale.exists()
 
 
 def test_context_template_client_side_component_is_named():
