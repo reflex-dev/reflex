@@ -1144,3 +1144,116 @@ async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
 
     async with _read_back(real_base_state_processor, token) as root:
         assert (await root.get_state(DynamicLoadState)).seen == ["/item/abc|abc"]
+
+
+async def test_event_without_router_data_hydrates_once_without_loaders(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A backend-initiated event hydrates an expired state, but only once.
+
+    Regression: the rehydrate ran ``on_load_internal`` against the empty
+    route, whose loaders (the 404 ones) chained events that carried no
+    ``router_data`` either and rehydrated again, fanning out until the queue
+    was shut down. Nothing sets ``router_data`` on this path, so the rehydrate
+    also has to stop repeating itself.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class BackendPushState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_index(self):
+            self.loaded = [*self.loaded, "index"]
+
+        @event
+        def load_404(self):
+            self.loaded = [*self.loaded, "404"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("i"), route="/", on_load=BackendPushState.load_index
+    )
+    wired_app.add_page(
+        lambda: rx.text("404"), route="/404", on_load=BackendPushState.load_404
+    )
+
+    async with real_base_state_processor as processor:
+        # join, not the event's future: pre-fix the fan-out outruns wait_all.
+        for _ in range(2):
+            await processor.enqueue(
+                token, Event.from_event_type(BackendPushState.ping())[0]
+            )
+            await processor.join(1)
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(BackendPushState)).loaded == []
+        assert (await root.get_state(State)).is_hydrated is True
+
+    state_name = State.get_full_name()
+    is_hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    hydrate_deltas = [
+        d
+        for _, d in emitted_deltas
+        if d.get(state_name, {}).get(is_hydrated_key) is False
+    ]
+    assert len(hydrate_deltas) == 1, "the second event hydrated the state again"
+
+
+async def test_routed_event_after_a_routeless_rehydrate_loads_its_page(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Hydrating without a route does not consume the page's on_load.
+
+    A backend-initiated event leaves the state hydrated but still routeless,
+    so the first event that does carry a route still owes it its loaders.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class MixedOriginState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=MixedOriginState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=MixedOriginState.load_b
+    )
+
+    async with real_base_state_processor as processor:
+        await _send(processor, token, Event.from_event_type(MixedOriginState.ping())[0])
+        await _send(
+            processor, token, _client_event(MixedOriginState.ping(), _view("/page-b"))
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(MixedOriginState)).loaded == ["b"]
