@@ -1,6 +1,7 @@
 """Sitemap plugin for Reflex."""
 
 import datetime
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +14,8 @@ from typing_extensions import NotRequired
 from reflex_base import constants
 
 from .base import Plugin as PluginBase
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.app import UnevaluatedPage
@@ -146,7 +149,6 @@ def generate_links_for_sitemap(
         A list of SitemapLink dictionaries.
     """
     from reflex_base.config import get_config
-    from reflex_base.utils import console
 
     deploy_url = get_config().deploy_url
 
@@ -167,9 +169,8 @@ def generate_links_for_sitemap(
                 route_message = (
                     "Dynamic route" if is_route_dynamic(page.route) else "Route 404"
                 )
-                console.warn(
-                    route_message
-                    + f" '{page.route}' does not have a 'loc' in sitemap configuration. Skipping."
+                logger.warning(
+                    f"{route_message} '{page.route}' does not have a 'loc' in sitemap configuration. Skipping."
                 )
                 continue
 

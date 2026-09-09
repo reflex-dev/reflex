@@ -6,6 +6,7 @@ import contextlib
 import hashlib
 import importlib.util
 import json
+import logging
 import os
 import platform
 import re
@@ -26,6 +27,8 @@ from reflex_base.utils.decorator import once
 from reflex.utils import path_ops
 from reflex.utils.misc import get_module_path
 from reflex.utils.prerequisites import get_web_dir
+
+logger = logging.getLogger(__name__)
 
 # For uvicorn windows bug fix (#2335)
 frontend_process = None
@@ -284,10 +287,10 @@ def run_process_and_launch_url(
                         get_different_packages(last_content, new_content)
                     )
                     last_content, last_hash = new_content, new_hash
-                    console.info(
-                        "Detected changes in package.json.\n"
-                        + format_change("Dependencies", dependencies_change)
-                        + format_change("Dev Dependencies", dev_dependencies_change)
+                    logger.info(
+                        f"Detected changes in package.json.\n"
+                        f"{format_change('Dependencies', dependencies_change)}"
+                        f"{format_change('Dev Dependencies', dev_dependencies_change)}"
                     )
 
                 match = re.search(constants.ReactRouter.FRONTEND_LISTENING_REGEX, line)
@@ -401,7 +404,7 @@ def run_frontend_prod(host: str, port: int):
 
 @once
 def _warn_user_about_uvicorn():
-    console.warn(
+    logger.warning(
         "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
     )
 
@@ -530,7 +533,7 @@ def get_reload_paths() -> Sequence[Path]:
     )
 
     if override_dirs:
-        console.debug(f"Reload paths (override): {list(map(str, override_dirs))}")
+        logger.debug(f"Reload paths (override): {list(map(str, override_dirs))}")
         return override_dirs
 
     config = get_config()
@@ -550,7 +553,7 @@ def get_reload_paths() -> Sequence[Path]:
                 if init_file_content.strip():
                     msg = "There should not be an `__init__.py` file in your app root directory"
                     raise RuntimeError(msg)
-                console.warn(
+                logger.warning(
                     "Removing `__init__.py` file in the app root directory. "
                     "This file can cause issues with module imports. "
                 )
@@ -600,7 +603,7 @@ def get_reload_paths() -> Sequence[Path]:
             if all(not path.samefile(exclude) for exclude in exclude_dirs)
         )
 
-    console.debug(f"Reload paths: {list(map(str, reload_paths))}")
+    logger.debug(f"Reload paths: {list(map(str, reload_paths))}")
 
     return reload_paths
 
@@ -657,7 +660,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
-    console.debug("Using Granian for backend")
+    logger.debug("Using Granian for backend")
 
     if environment.REFLEX_STRICT_HOT_RELOAD.get():
         import multiprocessing
@@ -797,7 +800,7 @@ def run_granian_backend_prod(
     from granian.log import LogLevels
     from granian.server import Server as Granian
 
-    console.debug("Using Granian for backend")
+    logger.debug("Using Granian for backend")
 
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),
@@ -814,7 +817,7 @@ def run_granian_backend_prod(
 
 def output_system_info():
     """Show system information if the loglevel is in DEBUG."""
-    if console._LOG_LEVEL > constants.LogLevel.DEBUG:
+    if not console.is_debug():
         return
 
     from reflex.utils import js_runtimes
@@ -826,8 +829,8 @@ def output_system_info():
         config_file = None
 
     console.rule("System Info")
-    console.debug(f"Config file: {config_file!r}")
-    console.debug(f"Config: {config}")
+    logger.debug(f"Config file: {config_file!r}")
+    logger.debug(f"Config: {config}")
 
     dependencies = [
         f"[Reflex {constants.Reflex.VERSION} with Python {platform.python_version()} (PATH: {sys.executable})]",
@@ -848,16 +851,16 @@ def output_system_info():
     dependencies.append(f"[OS {platform.system()} {os_version}]")
 
     for dep in dependencies:
-        console.debug(f"{dep}")
+        logger.debug(f"{dep}")
 
-    console.debug(
+    logger.debug(
         f"Using package installer at: {js_runtimes.get_nodejs_compatible_package_managers(raise_on_none=False)}"
     )
-    console.debug(
+    logger.debug(
         f"Using package executer at: {js_runtimes.get_js_package_executor(raise_on_none=False)}"
     )
     if system != "Windows":
-        console.debug(f"Unzip path: {path_ops.which('unzip')}")
+        logger.debug(f"Unzip path: {path_ops.which('unzip')}")
 
 
 def is_testing_env() -> bool:
@@ -896,6 +899,24 @@ def should_prerender_routes() -> bool:
     """
     if not environment.REFLEX_SSR.is_set():
         return is_prod_mode()
+    return environment.REFLEX_SSR.get()
+
+
+def arbitrate_ssr(ssr: bool) -> bool:
+    """Reconcile an --ssr flag value with the REFLEX_SSR environment variable.
+
+    The environment variable wins when already set; otherwise the flag value
+    is stored in the environment so worker subprocesses inherit it.
+
+    Args:
+        ssr: The flag value from the command line.
+
+    Returns:
+        The effective SSR setting.
+    """
+    if not environment.REFLEX_SSR.is_set():
+        environment.REFLEX_SSR.set(ssr)
+        return ssr
     return environment.REFLEX_SSR.get()
 
 

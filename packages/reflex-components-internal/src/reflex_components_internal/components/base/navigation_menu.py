@@ -40,7 +40,7 @@ class NavigationMenuBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the navigation menu component."""
+        """The import variable for the navigation menu component."""
         return ImportVar(tag="NavigationMenu", package_path="", install=False)
 
 

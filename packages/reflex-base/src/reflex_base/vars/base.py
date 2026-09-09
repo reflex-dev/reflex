@@ -10,6 +10,7 @@ import datetime
 import functools
 import inspect
 import json
+import logging
 import re
 import string
 import uuid
@@ -37,13 +38,12 @@ from typing import (
     overload,
 )
 
-from rich.markup import escape
 from typing_extensions import LiteralString, dataclass_transform, override
 
 from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
-from reflex_base.utils import console, exceptions, imports, serializers, types
+from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
@@ -71,6 +71,8 @@ from reflex_base.utils.types import (
     safe_issubclass,
     unionize,
 )
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from reflex.state import BaseState
@@ -1074,6 +1076,10 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         if var_type is NoReturn:
             return self.to(Any)
 
+        resolved_type = types.resolve_type_alias(var_type)
+        if resolved_type is not var_type:
+            return dataclasses.replace(self, _var_type=resolved_type).guess_type()
+
         var_type = types.value_inside_optional(var_type)
 
         if var_type is Any:
@@ -1157,7 +1163,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                     value = self._var_type(value)
                     setattr(state, name, value)
                 except ValueError:
-                    console.debug(
+                    logger.debug(
                         f"{type(state).__name__}.{self._js_expr}: Failed conversion of {value!s} to '{self._var_type.__name__}'. Value not set.",
                     )
             else:
@@ -1477,7 +1483,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                     f"access the attribute '{name}'",
                 )
 
-            msg = f"The State var {escape(self._js_expr)} of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated wrongly."
+            msg = f"The State var {self._js_expr} of type {self._var_type} has no attribute '{name}' or may have been annotated wrongly."
             raise VarAttributeError(msg)
 
         def __bool__(self) -> bool:
@@ -2461,7 +2467,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def _cache_attr(self) -> str:
-        """Get the attribute used to cache the value on the instance.
+        """The attribute used to cache the value on the instance.
 
         Returns:
             An attribute name.
@@ -2470,7 +2476,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def _last_updated_attr(self) -> str:
-        """Get the attribute used to store the last updated timestamp.
+        """The attribute used to store the last updated timestamp.
 
         Returns:
             An attribute name.
@@ -2604,9 +2610,9 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     def _check_deprecated_return_type(self, instance: BaseState, value: Any) -> None:
         if not _isinstance(value, self._var_type, nested=1, treat_var_as_type=False):
-            console.error(
+            logger.error(
                 f"Computed var '{type(instance).__name__}.{self._name}' must return"
-                f" a value of type '{escape(str(self._var_type))}', got '{value!s}' of type {type(value)}."
+                f" a value of type '{self._var_type}', got '{value!s}' of type {type(value)}."
             )
 
     def _deps(
@@ -2653,7 +2659,7 @@ class ComputedVar(Var[RETURN_TYPE]):
                 func=obj, state_cls=objclass, dependencies=d
             ).dependencies
         except Exception as e:
-            console.warn(
+            logger.warning(
                 "Failed to automatically determine dependencies for computed var "
                 f"{objclass.__name__}.{self._name}: {e}. "
                 "Set auto_deps=False and provide accurate deps=['var1', 'var2'] to suppress this warning."
@@ -2721,7 +2727,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def __class__(self) -> type:
-        """Get the class of the var.
+        """The class of the var.
 
         Returns:
             The class of the var.
@@ -2730,7 +2736,7 @@ class ComputedVar(Var[RETURN_TYPE]):
 
     @property
     def fget(self) -> Callable[[BaseState], RETURN_TYPE]:
-        """Get the getter function.
+        """The getter function.
 
         Returns:
             The getter function.
@@ -2866,7 +2872,7 @@ class AsyncComputedVar(ComputedVar[RETURN_TYPE]):
 
     @property
     def fget(self) -> Callable[[BaseState], Coroutine[None, None, RETURN_TYPE]]:
-        """Get the getter function.
+        """The getter function.
 
         Returns:
             The getter function.
@@ -3482,8 +3488,8 @@ class Field(Generic[FIELD_TYPE]):
 
     if TYPE_CHECKING:
         type_: GenericType
-        default: FIELD_TYPE | _MISSING_TYPE
-        default_factory: Callable[[], FIELD_TYPE] | None
+        default: FIELD_TYPE | _MISSING_TYPE | None
+        default_factory: Callable[[], FIELD_TYPE | None] | None
 
     def __init__(
         self,
@@ -3517,7 +3523,11 @@ class Field(Generic[FIELD_TYPE]):
                 type_origin = get_origin(annotated_type) or annotated_type
 
             if self.default is MISSING and self.default_factory is None:
-                default_value = types.get_default_value_for_type(annotated_type)
+                # A type with no computed default gets None, even when FIELD_TYPE
+                # itself excludes None; `annotated_type` is widened to match below.
+                default_value: FIELD_TYPE | None = types.get_default_value_for_type(
+                    annotated_type
+                )
                 if default_value is None and not types.is_optional(annotated_type):
                     annotated_type = annotated_type | None
                 if types.is_immutable(default_value):
@@ -3544,7 +3554,7 @@ class Field(Generic[FIELD_TYPE]):
                 if key not in self.__dict__ and key not in _RESERVED_FIELD_ATTRS:
                     self.__dict__[key] = value
 
-    def default_value(self) -> FIELD_TYPE:
+    def default_value(self) -> FIELD_TYPE | None:
         """Get the default value for the field.
 
         Returns:
@@ -3711,7 +3721,7 @@ def field(
         msg = "cannot specify both default and default_factory"
         raise ValueError(msg)
     if default is not MISSING and not types.is_immutable(default):
-        console.warn(
+        logger.warning(
             "Mutable default values are not recommended. "
             "Use default_factory instead to avoid unexpected behavior."
         )
@@ -3724,6 +3734,57 @@ def field(
         default_factory=default_factory,
         is_var=is_var,
     )
+
+
+def _linearize_bases(bases: tuple[type, ...]) -> list[type]:
+    """Order the bases the way the class being created will resolve attributes.
+
+    The class does not exist yet, so its `__mro__` cannot be read; this is the
+    C3 merge `type` itself will run. A hierarchy `type` would reject linearizes
+    to a prefix here, and the class creation that follows raises for it.
+
+    Args:
+        bases: The bases of the class being created.
+
+    Returns:
+        The bases and their ancestors in method resolution order.
+    """
+    sequences = [list(base.__mro__) for base in bases]
+    sequences.append(list(bases))
+    order: list[type] = []
+    while True:
+        sequences = [sequence for sequence in sequences if sequence]
+        if not sequences:
+            return order
+        # compared by identity, as `type.mro()` does: a metaclass may define __eq__
+        tails = [klass for sequence in sequences for klass in sequence[1:]]
+        for sequence in sequences:
+            head = sequence[0]
+            if not any(head is klass for klass in tails):
+                break
+        else:
+            # No valid head: `type.__new__` will reject these bases.
+            return order
+        order.append(head)
+        for sequence in sequences:
+            if sequence[0] is head:
+                del sequence[0]
+
+
+def _inherited_value(lookup_order: list[type], name: str) -> Any:
+    """Look up an inherited class attribute without running descriptors.
+
+    Args:
+        lookup_order: The bases in method resolution order.
+        name: The attribute name to look up.
+
+    Returns:
+        The value the created class would resolve `name` to, or MISSING.
+    """
+    for klass in lookup_order:
+        if name in klass.__dict__:
+            return klass.__dict__[name]
+    return MISSING
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
@@ -3818,11 +3879,21 @@ class BaseStateMeta(ABCMeta):
 
             own_fields[key] = new_value
 
+        lookup_order = _linearize_bases(bases)
+
         for key, annotation in resolved_annotations.items():
             value = namespace.get(key, MISSING)
 
             if types.is_classvar(annotation):
                 # If the annotation is a classvar, skip it.
+                continue
+
+            declared = (
+                value if value is not MISSING else _inherited_value(lookup_order, key)
+            )
+            if isinstance(declared, property):
+                # A (hybrid) property under an annotated name stays a descriptor,
+                # here or on a base; a field would shadow it with a stored value.
                 continue
 
             if value is MISSING:

@@ -22,7 +22,7 @@ class CollapsibleBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the collapsible component."""
+        """The import variable for the collapsible component."""
         return ImportVar(tag="Collapsible", package_path="", install=False)
 
 

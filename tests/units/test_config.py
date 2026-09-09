@@ -1,7 +1,13 @@
+import importlib
+import importlib.util
+import logging
 import multiprocessing
 import os
+import sys
+import textwrap
 import threading
 import time
+from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
@@ -608,7 +614,9 @@ class TestDisablePlugins:
         config = rx.Config(app_name="test")
         assert any(isinstance(p, SitemapPlugin) for p in config.plugins)
 
-    def test_disable_non_builtin_plugin_does_not_warn(self, mocker: MockerFixture):
+    def test_disable_non_builtin_plugin_does_not_warn(
+        self, caplog: pytest.LogCaptureFixture
+    ):
         """Disabling a non-builtin plugin emits no warning.
 
         Non-builtin plugins (e.g. ones added via REFLEX_EXTRA_PLUGINS) can be
@@ -618,10 +626,9 @@ class TestDisablePlugins:
 
         class CustomPlugin(Plugin): ...
 
-        warn = mocker.patch("reflex_base.config.console.warn")
         rx.Config(app_name="test", disable_plugins=[CustomPlugin])
         assert not any(
-            "not a built-in plugin" in str(call.args[0]) for call in warn.call_args_list
+            "not a built-in plugin" in r.getMessage() for r in caplog.records
         )
 
 
@@ -790,29 +797,31 @@ def test_extra_plugins_disabled_is_never_instantiated(monkeypatch: pytest.Monkey
 
 
 def test_extra_plugins_bad_spec_warns_and_keeps_valid(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
     """A bad REFLEX_EXTRA_PLUGINS entry warns but valid entries are still added."""
-    warn = mocker.patch("reflex_base.config.console.warn")
     monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", f"{_BAD_PLUGIN_SPEC}:{_EXTRA_PLUGIN_A}")
     config = rx.Config(app_name="test")
     # The valid entry survives despite the bad one (no all-or-nothing failure).
     assert any(isinstance(p, ExtraPluginA) for p in config.plugins)
     assert any(
-        "REFLEX_EXTRA_PLUGINS" in str(call.args[0]) for call in warn.call_args_list
+        "REFLEX_EXTRA_PLUGINS" in r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING
     )
 
 
 def test_extra_plugins_uninstantiable_warns_and_skips(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
     """An extra plugin that cannot be instantiated warns and is skipped, not fatal."""
-    warn = mocker.patch("reflex_base.config.console.warn")
     monkeypatch.setenv("REFLEX_EXTRA_PLUGINS", _NEEDS_ARGS_EXTRA_PLUGIN)
     config = rx.Config(app_name="test")
     assert not any(isinstance(p, NeedsArgsExtraPlugin) for p in config.plugins)
     assert any(
-        "could not be instantiated" in str(call.args[0]) for call in warn.call_args_list
+        "could not be instantiated" in r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING
     )
 
 
@@ -831,14 +840,15 @@ def test_plugins_bad_env_spec_raises_invalid_plugin_config_error(
 
 
 def test_disable_plugins_bad_env_spec_warns(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ):
     """An invalid REFLEX_DISABLE_PLUGINS import path warns but does not crash."""
-    warn = mocker.patch("reflex_base.config.console.warn")
     monkeypatch.setenv("REFLEX_DISABLE_PLUGINS", _BAD_PLUGIN_SPEC)
     rx.Config(app_name="test")
     assert any(
-        "REFLEX_DISABLE_PLUGINS" in str(call.args[0]) for call in warn.call_args_list
+        "REFLEX_DISABLE_PLUGINS" in r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.WARNING
     )
 
 
@@ -857,22 +867,29 @@ def test_get_config_loads_once_for_shared_context(monkeypatch: pytest.MonkeyPatc
     n_threads = 8
     load_count = 0
     count_lock = threading.Lock()
+    # Only count loads made by this test's worker threads: unrelated background
+    # threads (e.g. the telemetry worker, which has no RegistrationContext of its
+    # own) may call get_config() while the patch below is installed and would
+    # otherwise be counted as a duplicate load of the shared context.
+    under_test = threading.local()
 
     def slow_load() -> rx.Config:
         nonlocal load_count
-        with count_lock:
-            load_count += 1
+        if getattr(under_test, "active", False):
+            with count_lock:
+                load_count += 1
         # Widen the check-to-set window so an unserialized load path races.
         time.sleep(0.05)
         return rx.Config(app_name="shared")
 
-    monkeypatch.setattr(reflex_base.config, "_load_config", slow_load)
+    monkeypatch.setattr(reflex_base.config, "_get_config", slow_load)
 
     ctx = RegistrationContext()
     barrier = threading.Barrier(n_threads)
     results: list[rx.Config | None] = [None] * n_threads
 
     def worker(i: int) -> None:
+        under_test.active = True
         RegistrationContext._context_var.set(ctx)
         barrier.wait()
         results[i] = reflex_base.config.get_config()
@@ -885,3 +902,409 @@ def test_get_config_loads_once_for_shared_context(monkeypatch: pytest.MonkeyPatc
 
     assert load_count == 1
     assert all(config is results[0] for config in results)
+
+
+class _RaceGate:
+    """Events an rxconfig.py under test uses to hand control back mid-load."""
+
+    def __init__(self) -> None:
+        """Create the gate with both events unset."""
+        self.in_load = threading.Event()
+        self.release = threading.Event()
+
+
+@pytest.fixture
+def race_gate(monkeypatch: pytest.MonkeyPatch) -> _RaceGate:
+    """Install a module an rxconfig.py under test can import to pause itself.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        The gate: `in_load` is set once rxconfig.py is running, and it blocks
+        on `release` until the test lets it finish.
+    """
+    gate = _RaceGate()
+    monkeypatch.setitem(sys.modules, "_config_race_gate", gate)  # pyright: ignore[reportArgumentType]
+    return gate
+
+
+def test_get_config_keeps_sys_path_usable_for_other_threads(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    race_gate: _RaceGate,
+    clean_config_modules: None,
+):
+    """Importing an unrelated module while rxconfig loads must succeed.
+
+    The loader used to clear sys.path down to the cwd for the duration of
+    the rxconfig import, so any concurrent first-time import in another
+    thread (e.g. the lazy granian import when the backend starts) failed
+    with ModuleNotFoundError.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        race_gate: Handle to pause the load inside rxconfig.py.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import _config_race_gate
+            import reflex as rx
+
+            _config_race_gate.in_load.set()
+            _config_race_gate.release.wait(timeout=5)
+            config = rx.Config(app_name="racer")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    # A stdlib module that nothing imports by default; drop it so the import
+    # below walks sys.path again.
+    monkeypatch.delitem(sys.modules, "colorsys", raising=False)
+    sys_path_before = sys.path.copy()
+
+    loader = threading.Thread(target=reflex_base.config._get_config)
+    loader.start()
+    try:
+        assert race_gate.in_load.wait(timeout=5)
+        import colorsys  # noqa: F401
+    finally:
+        race_gate.release.set()
+        loader.join(timeout=5)
+    assert not loader.is_alive()
+    # The temporarily prepended cwd entry was removed again.
+    assert sys.path == sys_path_before
+
+
+def test_get_config_keeps_caller_owned_cwd_entry(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A pre-existing cwd entry survives even if rxconfig removes one itself.
+
+    The cleanup must only take back the entry the loader prepended, not a
+    caller-owned equal entry.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import os
+            import sys
+
+            import reflex as rx
+
+            sys.path.remove(os.getcwd())
+            config = rx.Config(app_name="pathological")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    cwd = str(Path.cwd())
+    monkeypatch.setattr(sys, "path", [cwd, *sys.path])
+    caller_owned = sys.path.count(cwd)
+
+    assert reflex_base.config._get_config().app_name == "pathological"
+    assert sys.path.count(cwd) == caller_owned
+
+
+def test_get_config_accepts_explicit_project_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """An explicit project_root loads that project whatever the cwd is.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "rxconfig.py").write_text(
+        "import reflex as rx\nconfig = rx.Config(app_name='explicit')\n"
+    )
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+
+    assert reflex_base.config._get_config(project).app_name == "explicit"
+
+
+@pytest.fixture
+def clean_config_modules() -> Generator[None, None, None]:
+    """Drop the modules and dep records a real rxconfig load leaves behind.
+
+    Yields:
+        None, once the module table is clean.
+    """
+    names = ("rxconfig", "side_module", "chdir_dep_module")
+    try:
+        yield
+    finally:
+        for name in names:
+            sys.modules.pop(name, None)
+        reflex_base.config._config_module_deps.clear()
+
+
+# Reruns: taking the prepended entry back out is itself a sys.path shrink, so
+# a probe walk overlapping that one `del` can still skip an entry (~1 lookup in
+# 5000, ~12% of runs here). That residual is what this test is meant to keep an
+# eye on, not something a submitter can act on, so let it re-run rather than
+# fail their PR. Reruns make a spurious failure ~0.02% per run; a test that
+# fails all four attempts is a real regression, not this.
+@pytest.mark.flaky(reruns=3)
+def test_get_config_keeps_sys_path_intact_for_other_threads(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    tmp_path_factory: pytest.TempPathFactory,
+    clean_config_modules: None,
+):
+    """Loading rxconfig must not shrink sys.path while other threads import.
+
+    `reflex run` loads the config from the frontend thread while the main
+    thread is still importing the backend; the import system walks sys.path
+    by index, so shrinking it under another thread turns unrelated imports
+    into ModuleNotFoundError. Unlike the gated test above, this one drives a
+    real rxconfig load in a loop, so it also covers the path the loader takes
+    around the actual import rather than a stubbed inner seam.
+
+    Marked flaky: the loader's own cleanup can trip the probe on a small
+    fraction of runs. It still fails every attempt against a loader that
+    clears sys.path outright.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        tmp_path: The pytest tmp_path fixture.
+        tmp_path_factory: The pytest tmp_path_factory fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        "import reflex as rx\nconfig = rx.Config(app_name='race')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    # A private module at the end of sys.path. Probing it with find_spec walks
+    # sys.path the way an import does but never registers anything in
+    # sys.modules, so the loader's own module bookkeeping cannot interfere.
+    probe_dir = tmp_path_factory.mktemp("rx_race_probe")
+    (probe_dir / "rx_race_probe.py").write_text("VALUE = 1\n")
+    sys.path.append(str(probe_dir))
+    importlib.invalidate_caches()
+    stop = threading.Event()
+    loader_errors: list[BaseException] = []
+
+    def loader() -> None:
+        while not stop.is_set():
+            try:
+                reflex_base.config._get_config()
+            except BaseException as e:
+                loader_errors.append(e)
+                return
+
+    thread = threading.Thread(target=loader)
+    thread.start()
+    try:
+        missing = 0
+        for _ in range(500):
+            if importlib.util.find_spec("rx_race_probe") is None:
+                missing += 1
+    finally:
+        stop.set()
+        thread.join()
+        sys.path.remove(str(probe_dir))
+    assert not loader_errors
+    assert missing == 0
+
+
+def test_concurrent_import_not_recorded_as_rxconfig_dep(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    race_gate: _RaceGate,
+    clean_config_modules: None,
+):
+    """A project-local module imported by another thread mid-load is not evicted.
+
+    Dependency recording used to diff sys.modules around the rxconfig import,
+    so a concurrent import from another thread was misattributed to rxconfig
+    and evicted from sys.modules on the next config load.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        race_gate: Handle to pause the load inside rxconfig.py.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import _config_race_gate
+            import reflex as rx
+
+            _config_race_gate.in_load.set()
+            _config_race_gate.release.wait(timeout=5)
+            config = rx.Config(app_name="depapp")
+            """
+        )
+    )
+    (tmp_path / "side_module.py").write_text("value = 42\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "side_module", raising=False)
+
+    loader = threading.Thread(target=reflex_base.config._get_config)
+    loader.start()
+    try:
+        assert race_gate.in_load.wait(timeout=5)
+        # Import a project-local module from this thread while rxconfig loads.
+        import side_module  # noqa: F401  # pyright: ignore[reportMissingImports]
+    finally:
+        race_gate.release.set()
+        loader.join(timeout=5)
+    assert not loader.is_alive()
+
+    assert "side_module" not in reflex_base.config._config_module_deps
+    # A second load must not evict the concurrently imported module.
+    race_gate.release.set()
+    reflex_base.config._get_config()
+    assert "side_module" in sys.modules
+
+
+def test_config_deps_recorded_against_load_root_when_rxconfig_chdirs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A project-local dep is recorded even when rxconfig.py changes the cwd.
+
+    Dependency classification used to read Path.cwd() after the import rather
+    than the root the load started from, so an rxconfig.py that chdir'd made
+    its own project-local imports look external. They were then never recorded
+    as deps, never evicted, and stayed cached for the next project to inherit.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    (tmp_path / "chdir_dep_module.py").write_text("value = 1\n")
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            f"""
+            import os
+
+            import chdir_dep_module  # noqa: F401
+            import reflex as rx
+
+            os.chdir({str(elsewhere)!r})
+            config = rx.Config(app_name="chdirapp")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "chdir_dep_module", raising=False)
+
+    config = reflex_base.config._get_config()
+
+    assert config.app_name == "chdirapp"
+    assert "chdir_dep_module" in reflex_base.config._config_module_deps
+
+
+def test_record_imports_never_rebinds_meta_path():
+    """Recording must mutate sys.meta_path in place, never rebind it.
+
+    Rebinding drops finders another thread inserted while the replacement list
+    was being built. reflex.components installs its redirect finder on first
+    import, and losing it makes every later reflex.components.* import fail
+    with ModuleNotFoundError for the rest of the process.
+    """
+    meta_path = sys.meta_path
+    with reflex_base.config._record_imports():
+        assert sys.meta_path is meta_path
+    assert sys.meta_path is meta_path
+
+
+def test_get_config_survives_rxconfig_rebuilding_meta_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A load succeeds even if rxconfig.py rebuilds sys.meta_path.
+
+    The recorder is dropped by the rebuild, so the next load has to reinstall
+    it rather than assume it is still there.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import sys
+            import reflex as rx
+            from reflex_base.config import _import_recorder
+
+            sys.meta_path = [f for f in sys.meta_path if f is not _import_recorder]
+            config = rx.Config(app_name="metapathapp")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    meta_path = sys.meta_path
+    contents_before = meta_path.copy()
+    try:
+        config = reflex_base.config._get_config()
+        assert config.app_name == "metapathapp"
+        assert reflex_base.config._import_recorder not in sys.meta_path
+        # The next load reinstalls the recorder, so deps are recorded again.
+        reflex_base.config._get_config()
+        assert "rxconfig" in reflex_base.config._config_module_deps
+    finally:
+        meta_path[:] = contents_before
+        sys.meta_path = meta_path
+
+
+def test_load_config_deprecated(mocker: MockerFixture):
+    """_load_config() still loads a config, but warns about the rename.
+
+    Args:
+        mocker: The pytest mocker fixture.
+    """
+    conf = rx.Config(app_name="renamed")
+    get_config = mocker.patch.object(
+        reflex_base.config, "_get_config", return_value=conf
+    )
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+
+    assert reflex_base.config._load_config() is conf
+
+    get_config.assert_called_once_with()
+    deprecate.assert_called_once()
+    assert deprecate.call_args.kwargs["feature_name"] == "_load_config()"
+
+
+def test_get_config_reload_deprecated(mocker: MockerFixture):
+    """get_config(reload=True) reloads the config and warns about deprecation.
+
+    Args:
+        mocker: The pytest-mock fixture.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    deprecate = mocker.patch("reflex_base.utils.console.deprecate")
+    first = rx.Config(app_name="first")
+    second = rx.Config(app_name="second")
+    mocker.patch.object(reflex_base.config, "_get_config", side_effect=[first, second])
+
+    with RegistrationContext():
+        assert reflex_base.config.get_config() is first
+        deprecate.assert_not_called()
+        assert reflex_base.config.get_config(reload=True) is second
+        deprecate.assert_called_once()
+        assert deprecate.call_args.kwargs["feature_name"] == "get_config(reload=True)"
+        # The freshly loaded config stays cached on the context afterwards.
+        assert reflex_base.config.get_config() is second
+        deprecate.assert_called_once()

@@ -7,11 +7,12 @@ import importlib
 import importlib.metadata
 import inspect
 import json
+import logging
 import re
 import sys
 import typing
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from os import getcwd
 from pathlib import Path
 from types import ModuleType
@@ -24,10 +25,18 @@ from reflex_base.constants.base import RunningMode
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.decorator import once
+from rich.markup import escape
 
 from reflex import model
-from reflex.utils import console, net, path_ops
+from reflex.utils import net, path_ops
 from reflex.utils.misc import get_module_path
+
+logger = logging.getLogger(__name__)
+
+_LATEST_VERSION_CHECK_INTERVAL = timedelta(days=1)
+_LATEST_VERSION_CHECK_FAILURE_INTERVAL = timedelta(hours=1)
+_LATEST_VERSION_CHECK_DATETIME_KEY = "last_version_check_datetime"
+_LATEST_VERSION_CHECK_ATTEMPT_DATETIME_KEY = "last_version_check_attempt_datetime"
 
 if typing.TYPE_CHECKING:
     from redis import Redis as RedisSync
@@ -84,43 +93,98 @@ def check_latest_package_version(package_name: str):
     if environment.REFLEX_CHECK_LATEST_VERSION.get() is False:
         return
     try:
-        console.debug(f"Checking for the latest version of {package_name}...")
+        if get_or_set_last_reflex_version_check_datetime(package_name):
+            return
+        logger.debug(f"Checking for the latest version of {package_name}...")
         # Get the latest version from PyPI
         current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = net.get(url, timeout=2)
         latest_version = response.json()["info"]["version"]
-        console.debug(f"Latest version of {package_name}: {latest_version}")
-        if get_or_set_last_reflex_version_check_datetime():
-            # Versions were already checked and saved in reflex.json, no need to warn again
-            return
-        if version.parse(current_version) < version.parse(latest_version):
+        logger.debug(f"Latest version of {package_name}: {latest_version}")
+        current_version_parsed = version.parse(current_version)
+        latest_version_parsed = version.parse(latest_version)
+        path_ops.update_json_file(
+            get_web_dir() / constants.Reflex.JSON,
+            {_version_check_timestamp_key(package_name): str(datetime.now())},
+        )
+        if current_version_parsed < latest_version_parsed:
             # Show a warning when the host version is older than PyPI version
-            console.warn(
+            logger.warning(
                 f"Your version ({current_version}) of {package_name} is out of date. Upgrade to {latest_version} with 'pip install {package_name} --upgrade'"
             )
     except Exception:
-        console.debug(f"Failed to check for the latest version of {package_name}.")
+        logger.debug(f"Failed to check for the latest version of {package_name}.")
 
 
-def get_or_set_last_reflex_version_check_datetime():
-    """Get the last time a check was made for the latest reflex version.
-    This is typically useful for cases where the host reflex version is
-    less than that on Pypi.
+def _version_check_timestamp_key(package_name: str, *, attempt: bool = False) -> str:
+    """Return the per-package reflex.json key for a version-check timestamp.
+
+    Args:
+        package_name: The distribution being checked.
+        attempt: Whether to return the shorter failure-cooldown key.
 
     Returns:
-        The last version check datetime.
+        The normalized timestamp key, retaining the legacy key for Reflex.
+    """
+    normalized_name = re.sub(r"[-_.]+", "_", package_name).lower()
+    reflex_name = re.sub(r"[-_.]+", "_", constants.Reflex.MODULE_NAME).lower()
+    suffix = "" if normalized_name == reflex_name else f"_{normalized_name}"
+    key = (
+        _LATEST_VERSION_CHECK_ATTEMPT_DATETIME_KEY
+        if attempt
+        else _LATEST_VERSION_CHECK_DATETIME_KEY
+    )
+    return f"{key}{suffix}"
+
+
+def get_or_set_last_reflex_version_check_datetime(
+    package_name: str = constants.Reflex.MODULE_NAME,
+) -> str | None:
+    """Return a recent version-check timestamp or record a new attempt.
+
+    Successful checks remain fresh for a day. Failed attempts use a shorter
+    cooldown so offline commands do not repeatedly wait on the network without
+    delaying update notices for a full day.
+
+    Args:
+        package_name: The distribution being checked.
+
+    Returns:
+        A fresh existing timestamp when the check can be skipped, otherwise None.
     """
     reflex_json_file = get_web_dir() / constants.Reflex.JSON
     if not reflex_json_file.exists():
         return None
-    # Open and read the file
+
     data = json.loads(reflex_json_file.read_text())
-    last_version_check_datetime = data.get("last_version_check_datetime")
-    if not last_version_check_datetime:
-        data.update({"last_version_check_datetime": str(datetime.now())})
-        path_ops.update_json_file(reflex_json_file, data)
-    return last_version_check_datetime
+    now = datetime.now()
+    for key, interval in (
+        (
+            _version_check_timestamp_key(package_name),
+            _LATEST_VERSION_CHECK_INTERVAL,
+        ),
+        (
+            _version_check_timestamp_key(package_name, attempt=True),
+            _LATEST_VERSION_CHECK_FAILURE_INTERVAL,
+        ),
+    ):
+        timestamp = data.get(key)
+        if not isinstance(timestamp, str):
+            continue
+        try:
+            elapsed = now - datetime.fromisoformat(timestamp)
+        except (TypeError, ValueError):
+            continue
+        else:
+            if timedelta(0) <= elapsed < interval:
+                return timestamp
+
+    path_ops.update_json_file(
+        reflex_json_file,
+        {_version_check_timestamp_key(package_name, attempt=True): str(now)},
+    )
+    return None
 
 
 def set_last_reflex_run_time():
@@ -390,7 +454,7 @@ def get_redis() -> Redis | None:
         from redis.asyncio import Redis
         from redis.exceptions import RedisError
     except ImportError:
-        console.debug("Redis package not installed.")
+        logger.debug("Redis package not installed.")
         return None
     if (redis_url := parse_redis_url()) is not None:
         return Redis.from_url(
@@ -410,7 +474,7 @@ def get_redis_sync() -> RedisSync | None:
         from redis import Redis as RedisSync
         from redis.exceptions import RedisError
     except ImportError:
-        console.debug("Redis package not installed.")
+        logger.debug("Redis package not installed.")
         return None
     if (redis_url := parse_redis_url()) is not None:
         return RedisSync.from_url(
@@ -457,9 +521,9 @@ async def get_redis_status() -> dict[str, bool | None]:
             status = None
     except Exception as exc:
         status = False
-        console.error(
+        logger.error(
             f"Redis health check failed: {exc} (subsequent errors will not be logged)",
-            dedupe=True,
+            extra={"dedupe": True},
         )
 
     return {"redis": status}
@@ -482,14 +546,15 @@ def validate_app_name(app_name: str | None = None) -> str:
     app_name = app_name or Path.cwd().name.replace("-", "_")
     # Make sure the app is not named "reflex".
     if app_name.lower() == constants.Reflex.MODULE_NAME:
-        console.error(
-            f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold]."
+        logger.error(
+            f"The app directory cannot be named [bold]{constants.Reflex.MODULE_NAME}[/bold].",
+            extra={"rich": True},
         )
         raise SystemExit(1)
 
     # Make sure the app name is standard for a python package name.
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", app_name):
-        console.error(
+        logger.error(
             "The app directory name must start with a letter and can contain letters, numbers, and underscores."
         )
         raise SystemExit(1)
@@ -578,8 +643,9 @@ def assert_in_reflex_dir():
         SystemExit: If the current working directory is not the reflex directory.
     """
     if not constants.Config.FILE.exists():
-        console.error(
-            f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project."
+        logger.error(
+            f"[cyan]{constants.Config.FILE}[/cyan] not found. Move to the root folder of your project, or run [bold]{constants.Reflex.MODULE_NAME} init[/bold] to start a new project.",
+            extra={"rich": True},
         )
         raise SystemExit(1)
 
@@ -602,12 +668,12 @@ def needs_reinit() -> bool:
         return True
 
     if constants.IS_WINDOWS:
-        console.warn(
+        logger.warning(
             """Windows Subsystem for Linux (WSL) is recommended for improving initial install times."""
         )
 
         if windows_check_onedrive_in_path():
-            console.warn(
+            logger.warning(
                 "Creating project directories in OneDrive may lead to performance issues. For optimal performance, It is recommended to avoid using OneDrive for your reflex app."
             )
     # No need to reinitialize if the app is already initialized.
@@ -629,7 +695,7 @@ def ensure_reflex_installation_id() -> int | None:
         Distinct id.
     """
     try:
-        console.debug("Ensuring reflex installation id.")
+        logger.debug("Ensuring reflex installation id.")
         initialize_reflex_user_directory()
         installation_id_file = environment.REFLEX_DIR.get() / "installation_id"
 
@@ -653,7 +719,7 @@ def ensure_reflex_installation_id() -> int | None:
             # up front; there is no legacy numeric id for telemetry to alias.
             mark_uuid_distinct_id_semantics()
     except Exception as e:
-        console.debug(f"Failed to ensure reflex installation id: {e}")
+        logger.debug(f"Failed to ensure reflex installation id: {e}")
         return None
     else:
         # If we get here, installation_id is definitely set
@@ -662,7 +728,7 @@ def ensure_reflex_installation_id() -> int | None:
 
 def initialize_reflex_user_directory():
     """Initialize the reflex user directory."""
-    console.debug(f"Creating {environment.REFLEX_DIR.get()}")
+    logger.debug(f"Creating {environment.REFLEX_DIR.get()}")
     # Create the reflex directory.
     path_ops.mkdir(environment.REFLEX_DIR.get())
 
@@ -673,10 +739,10 @@ def initialize_frontend_dependencies():
     from reflex.utils.js_runtimes import install_bun, validate_frontend_dependencies
 
     # validate dependencies before install
-    console.debug("Validating frontend dependencies.")
+    logger.debug("Validating frontend dependencies.")
     validate_frontend_dependencies()
     # Install the frontend dependencies.
-    console.debug("Installing or validating bun.")
+    logger.debug("Installing or validating bun.")
     install_bun()
     # Set up the web directory.
     initialize_web_directory()
@@ -710,9 +776,9 @@ def check_db_initialized() -> bool:
         get_config().db_url is not None
         and not environment.ALEMBIC_CONFIG.get().exists()
     ):
-        console.error(
+        logger.error(
             "Database is not initialized. Run [bold]reflex db init[/bold] first.",
-            dedupe=True,
+            extra={"dedupe": True, "rich": True},
         )
         return False
     return True
@@ -730,14 +796,16 @@ def check_schema_up_to_date():
                 connection=connection,
                 write_migration_scripts=False,
             ):
-                console.error(
+                logger.error(
                     "Detected database schema changes. Run [bold]reflex db makemigrations[/bold] "
                     "to generate migration scripts.",
+                    extra={"rich": True},
                 )
         except CommandError as command_error:
             if "Target database is not up to date." in str(command_error):
-                console.error(
-                    f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
+                logger.error(
+                    f"{escape(str(command_error))} Run [bold]reflex db migrate[/bold] to update database.",
+                    extra={"rich": True},
                 )
 
 

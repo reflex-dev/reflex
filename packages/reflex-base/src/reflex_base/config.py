@@ -2,11 +2,13 @@
 
 import dataclasses
 import importlib
+import logging
 import os
 import sys
 import threading
 import urllib.parse
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from importlib.util import find_spec
 from pathlib import Path
 from types import ModuleType
@@ -29,8 +31,10 @@ from reflex_base.environment import environment as environment
 from reflex_base.plugins import Plugin
 from reflex_base.plugins.sitemap import SitemapPlugin
 from reflex_base.registry import RegistrationContext
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 from reflex_base.utils.exceptions import ConfigError, InvalidPluginConfigError
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -350,6 +354,10 @@ class Config(BaseConfig):
             env_loglevel = LogLevel(env_loglevel.lower())
         if env_loglevel or self.loglevel != LogLevel.DEFAULT:
             console.set_log_level(env_loglevel or self.loglevel)
+        else:
+            # In managed (CLI) mode, make sure backend workers render records;
+            # outside the CLI this is a no-op and handlers stay untouched.
+            log.ensure_configured()
 
         # Update the config from environment variables.
         env_kwargs = self.update_from_env()
@@ -486,14 +494,14 @@ class Config(BaseConfig):
         """
         for plugin_class in environment.REFLEX_EXTRA_PLUGINS.get():
             if isinstance(plugin_class, _InvalidPlugin):
-                console.warn(
+                logger.warning(
                     f"Ignoring invalid REFLEX_EXTRA_PLUGINS entry {plugin_class.describe()}."
                 )
                 continue
             if any(
                 issubclass(plugin_class, disabled) for disabled in self.disable_plugins
             ):
-                console.debug(
+                logger.debug(
                     f"Skipping REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
                     "because its type is listed in disable_plugins.",
                 )
@@ -503,7 +511,7 @@ class Config(BaseConfig):
             try:
                 self.plugins.append(plugin_class())
             except Exception as exc:
-                console.warn(
+                logger.warning(
                     f"Ignoring REFLEX_EXTRA_PLUGINS entry {plugin_class.__name__!r} "
                     f"that could not be instantiated: {exc}"
                 )
@@ -519,7 +527,7 @@ class Config(BaseConfig):
         normalized: list[type[Plugin]] = []
         for entry in self.disable_plugins:
             if isinstance(entry, _InvalidPlugin):
-                console.warn(
+                logger.warning(
                     f"Ignoring invalid disable_plugins entry {entry.describe()}. "
                     "Check the REFLEX_DISABLE_PLUGINS import path(s)."
                 )
@@ -541,12 +549,12 @@ class Config(BaseConfig):
                         interpret_plugin_class_env(entry, "disable_plugins")
                     )
                 except Exception:
-                    console.warn(
+                    logger.warning(
                         f"Failed to import plugin from string {entry!r} in disable_plugins. "
                         "Please pass Plugin subclasses directly.",
                     )
             else:
-                console.warn(
+                logger.warning(
                     f"reflex.Config.disable_plugins should contain Plugin subclasses, but got {entry!r}.",
                 )
         self.disable_plugins = normalized
@@ -588,7 +596,7 @@ class Config(BaseConfig):
             plugin_name = plugin.__module__ + "." + plugin.__qualname__
             if plugin not in self.disable_plugins:
                 if not any(isinstance(p, plugin) for p in self.plugins):
-                    console.warn(
+                    logger.warning(
                         f"`{plugin_name}` plugin is enabled by default, but not explicitly added to the config. "
                         "If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. "
                         f"To disable this plugin, add `{plugin.__name__}` to the `disable_plugins` list.",
@@ -596,7 +604,7 @@ class Config(BaseConfig):
                     self.plugins.append(plugin())
             else:
                 if any(isinstance(p, plugin) for p in self.plugins):
-                    console.warn(
+                    logger.warning(
                         f"`{plugin_name}` is disabled in the config, but it is still present in the `plugins` list. "
                         "Please remove it from the `plugins` list in your config inside of `rxconfig.py`.",
                     )
@@ -675,7 +683,7 @@ class Config(BaseConfig):
 
     @property
     def app_module(self) -> ModuleType | None:
-        """Return the app module if `app_module_import` is set.
+        """The app module if `app_module_import` is set.
 
         Returns:
             The app module.
@@ -688,7 +696,7 @@ class Config(BaseConfig):
 
     @property
     def module(self) -> str:
-        """Get the module name of the app.
+        """The module name of the app.
 
         Returns:
             The module name.
@@ -734,9 +742,9 @@ class Config(BaseConfig):
                     environment_variable = "***"
 
                 if value != getattr(self, field.name):
-                    console.debug(
+                    logger.debug(
                         f"Overriding config value {field.name} with env var {field.name.upper()}={environment_variable}",
-                        dedupe=True,
+                        extra={"dedupe": True},
                     )
         return updated_values
 
@@ -801,41 +809,63 @@ class Config(BaseConfig):
 _config_module_deps: set[str] = set()
 
 
-def _get_config() -> Config:
-    """Import rxconfig.py fresh and return its config object.
+class _ImportRecorder:
+    """Meta-path finder that records import attempts made on one thread.
 
-    Returns:
-        The app config.
+    Never resolves anything. Recording per thread keeps imports other threads
+    happen to make during the window out of the rxconfig dep set, which a plain
+    sys.modules diff cannot tell apart from rxconfig's own imports.
     """
-    # only import the module if it exists. If a module spec exists then
-    # the module exists.
-    spec = find_spec(constants.Config.MODULE)
-    if not spec:
-        # we need this condition to ensure that a ModuleNotFound error is not thrown when
-        # running unit/integration tests or during `reflex init`.
-        return Config(app_name="", _skip_plugins_checks=True)
-    # Never cache rxconfig or its project-local dependencies — each load goes
-    # to disk so different RegistrationContexts hold independent Config
-    # instances resolved against the current project.
-    sys.modules.pop(constants.Config.MODULE, None)
-    for dep in _config_module_deps:
-        sys.modules.pop(dep, None)
-    _config_module_deps.clear()
-    before = set(sys.modules)
+
+    def __init__(self) -> None:
+        """Initialize the recorder as inactive."""
+        self._thread: int | None = None
+        self.names: set[str] = set()
+
+    def start(self) -> None:
+        """Start recording imports made on the current thread."""
+        self.names.clear()
+        self._thread = threading.get_ident()
+
+    def stop(self) -> None:
+        """Stop recording; names stay readable."""
+        self._thread = None
+
+    def find_spec(self, fullname: str, path: Any = None, target: Any = None) -> None:
+        """Record the import attempt without resolving it.
+
+        Args:
+            fullname: The module being imported.
+            path: Unused.
+            target: Unused.
+        """
+        if self._thread is not None and self._thread == threading.get_ident():
+            self.names.add(fullname)
+
+
+_import_recorder = _ImportRecorder()
+
+
+@contextmanager
+def _record_imports() -> Iterator[_ImportRecorder]:
+    """Record imports made on the current thread while rxconfig loads.
+
+    Yields:
+        The recorder, readable after the block.
+    """
+    # Installed in place and never removed. Both ways of taking it back out are
+    # unsafe: importlib._find_spec iterates the list object it read from
+    # sys.meta_path (it only copies it since 3.14), so an in-place removal can
+    # make a concurrent lookup skip a real finder, and rebinding the list drops
+    # whatever another thread inserted meanwhile — reflex.components installs a
+    # redirect finder on first import, and losing it is permanent.
+    if _import_recorder not in sys.meta_path:
+        sys.meta_path.insert(0, _import_recorder)
+    _import_recorder.start()
     try:
-        rxconfig = importlib.import_module(constants.Config.MODULE)
+        yield _import_recorder
     finally:
-        # Record even on failure so a retry evicts partially-imported deps.
-        project_root = Path.cwd()
-        for name in set(sys.modules) - before:
-            origin = getattr(sys.modules[name], "__file__", None)
-            if (
-                origin
-                and (path := Path(origin)).is_relative_to(project_root)
-                and "site-packages" not in path.parts
-            ):
-                _config_module_deps.add(name)
-    return rxconfig.config
+        _import_recorder.stop()
 
 
 # Protect sys.path from concurrent modification during config loading.
@@ -864,49 +894,120 @@ def get_state_auto_setters() -> bool:
     return False
 
 
-def _load_config() -> Config:
-    """Load the config from rxconfig.py with cwd on sys.path.
+def _get_config(project_root: Path | None = None) -> Config:
+    """Import rxconfig.py fresh from the project root and return its config.
+
+    The project root is prepended to sys.path for the duration of the import so
+    rxconfig.py and its project-local imports resolve ahead of installed
+    packages. Prepending (not replacing sys.path) keeps concurrent imports in
+    other threads working.
+
+    Args:
+        project_root: Directory to load the config from. Defaults to the
+            current working directory, resolved once up front so an rxconfig.py
+            that changes the cwd cannot move the root that the sys.path entry
+            and the dependency classification below are based on.
 
     Returns:
         The app config.
     """
+    project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
-        orig_sys_path = sys.path.copy()
-        sys.path.clear()
-        sys.path.append(str(Path.cwd()))
+        # A fresh str object, so the exact inserted entry can be removed by
+        # identity: rxconfig.py may itself add or remove equal cwd entries,
+        # which removal by value could confuse with caller-owned ones.
+        cwd = str(project_root)
+        sys.path.insert(0, cwd)
         try:
-            return _get_config()
-        except Exception:
-            # If the module import fails, try to import with the original sys.path.
-            sys.path.extend(orig_sys_path)
-            return _get_config()
+            # Never cache rxconfig or its project-local dependencies — each load
+            # goes to disk so different RegistrationContexts hold independent
+            # Config instances resolved against the current project. Evict
+            # before probing: find_spec answers from sys.modules, so modules
+            # left behind by another project directory would fake the existence
+            # check below.
+            sys.modules.pop(constants.Config.MODULE, None)
+            for dep in _config_module_deps:
+                sys.modules.pop(dep, None)
+            _config_module_deps.clear()
+            # only import the module if it exists. If a module spec exists then
+            # the module exists.
+            if not find_spec(constants.Config.MODULE):
+                # we need this condition to ensure that a ModuleNotFound error is not thrown when
+                # running unit/integration tests or during `reflex init`.
+                return Config(app_name="", _skip_plugins_checks=True)
+            with _record_imports() as recorder:
+                try:
+                    rxconfig = importlib.import_module(constants.Config.MODULE)
+                finally:
+                    # Record even on failure so a retry evicts partially-imported deps.
+                    for name in recorder.names:
+                        origin = getattr(sys.modules.get(name), "__file__", None)
+                        if (
+                            origin
+                            and (path := Path(origin)).is_relative_to(project_root)
+                            and "site-packages" not in path.parts
+                        ):
+                            _config_module_deps.add(name)
+            return rxconfig.config
         finally:
-            # Find any entries added to sys.path by rxconfig.py itself.
-            extra_paths = [
-                p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
-            ]
-            # Restore the original sys.path.
-            sys.path.clear()
-            sys.path.extend(extra_paths)
-            sys.path.extend(orig_sys_path)
+            for i, entry in enumerate(sys.path):
+                if entry is cwd:
+                    del sys.path[i]
+                    break
 
 
-def get_config() -> Config:
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
+    @deprecated("Use _get_config() to load a config, or get_config() to read it")
+    def _load_config() -> Config: ...
+
+else:
+
+    def _load_config() -> Config:
+        """Load the config for the current working directory (deprecated).
+
+        Returns:
+            The app config.
+        """
+        console.deprecate(
+            feature_name="_load_config()",
+            reason="Use _get_config() to load a config from disk, or get_config() to read the config cached on the current RegistrationContext",
+            deprecation_version="0.9.9.post1",
+            removal_version="1.0",
+        )
+        return _get_config()
+
+
+def get_config(reload: bool = False) -> Config:
     """Get the app config from the current RegistrationContext.
 
     The config is loaded from rxconfig.py once per RegistrationContext and
     cached on the context thereafter. If no context is currently attached,
     one is created and attached automatically.
 
+    Args:
+        reload: Deprecated; force a fresh load of the config. Use
+            reload_config() instead.
+
     Returns:
         The app config.
     """
+    if reload:
+        console.deprecate(
+            feature_name="get_config(reload=True)",
+            reason="Use reload_config() to force a fresh load of the config",
+            deprecation_version="0.9.9",
+            removal_version="1.0",
+        )
+        with _load_config_lock:
+            return reload_config()
     ctx = RegistrationContext.ensure_context()
     if ctx._config is None:
         # Serialize check/load/set so threads sharing a context load once.
         with _load_config_lock:
             if ctx._config is None:
-                ctx._set_config(_load_config())
+                ctx._set_config(_get_config())
     return ctx.config
 
 
@@ -920,6 +1021,6 @@ def reload_config() -> Config:
         The freshly loaded app config.
     """
     ctx = RegistrationContext.ensure_context()
-    config = _load_config()
+    config = _get_config()
     ctx._set_config(config)
     return config

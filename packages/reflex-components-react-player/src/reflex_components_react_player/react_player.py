@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any, TypedDict
 
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler, no_args_event_spec
-from reflex_base.utils import console
 from reflex_base.vars.base import Var
 from reflex_base.vars.object import ObjectVar
 from reflex_components_core.core.cond import cond
+
+logger = logging.getLogger(__name__)
 
 ReactPlayerEvent = ObjectVar[dict[str, dict[str, dict[str, Any]]]]
 
@@ -252,7 +254,7 @@ class ReactPlayer(Component):
                         f"The prop {prop!r} is deprecated, but the replacement {new_prop!r} is also passed. Please remove {prop!r}.",
                     )
                     raise ValueError(msg)
-                console.warn(
+                logger.warning(
                     f"The prop {prop!r} has been replaced by {new_prop!r}, please update your code.",
                 )
                 props[new_prop] = props.pop(prop)
