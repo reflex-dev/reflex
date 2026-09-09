@@ -151,7 +151,7 @@ def sankey_custom_render():
             rx.el.svg.text(
                 node.payload.name,
                 x=rx.cond(is_out, node.x - 6, node.x + node.width + 6).to(int),
-                y=node.y + node.height / 2,
+                y=(node.y + node.height / 2).to(int),
                 text_anchor=rx.cond(is_out, "end", "start"),
                 fill=rx.color("gray", 12),
                 font_size=10,
@@ -195,8 +195,8 @@ def sankey_custom_render():
             ),
             rx.el.svg.text(
                 link.payload.value,
-                x=(link.sourceX + link.targetX) / 2,
-                y=(link.sourceY + link.targetY) / 2,
+                x=((link.sourceX + link.targetX) / 2).to(int),
+                y=((link.sourceY + link.targetY) / 2).to(int),
                 text_anchor="middle",
                 fill=rx.color("gray", 12),
                 font_size=10,
