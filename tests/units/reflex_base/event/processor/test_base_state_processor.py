@@ -11,8 +11,9 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
-from reflex_base.constants import CompileVars
+from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
@@ -186,7 +187,7 @@ async def processor_state_manager(
     elif kind == "disk":
         # Resolved once in __post_init__, and the manager both purges and
         # persists there, so keep it out of the process-wide states directory.
-        monkeypatch.setenv("REFLEX_STATES_WORKDIR", str(tmp_path))
+        monkeypatch.setenv(environment.REFLEX_STATES_WORKDIR.name, str(tmp_path))
         state_manager = StateManagerDisk()
     else:
         state_manager = StateManagerMemory()
@@ -909,10 +910,33 @@ def _view(path: str, as_path: str | None = None, **query: str) -> dict[str, Any]
         A router_data dict.
     """
     return {
-        "pathname": path,
-        "asPath": as_path if as_path is not None else path,
-        "query": query,
+        RouteVar.PATH: path,
+        RouteVar.ORIGIN: as_path if as_path is not None else path,
+        RouteVar.QUERY: query,
     }
+
+
+@contextlib.asynccontextmanager
+async def _read_back(processor: BaseStateEventProcessor, token: str):
+    """Read the token's final state through the lock.
+
+    ``StateManagerRedis.get_state`` goes straight to redis, which under
+    opportunistic locking has not yet seen the writes still held in the
+    lease's cached copy.
+
+    Args:
+        processor: The processor whose state manager holds the token.
+        token: The client token.
+
+    Yields:
+        The root state.
+    """
+    root_ctx = processor._root_context
+    assert root_ctx is not None
+    async with root_ctx.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as root:
+        yield root
 
 
 async def _send(
@@ -991,16 +1015,12 @@ async def test_rehydrate_runs_on_load_for_the_incoming_events_route(
             processor, token, _client_event(RouteLoadState.ping(), _view("/page-b"))
         )
 
-    root_ctx = real_base_state_processor._root_context
-    assert root_ctx is not None
-    root = await root_ctx.state_manager.get_state(
-        BaseStateToken(ident=token, cls=State)
-    )
-    assert (await root.get_state(RouteLoadState)).loaded == ["b"], (
-        "the rehydrate ran a loader for a page the event did not come from"
-    )
-    assert root.router.url.path == "/page-b"
-    assert (await root.get_state(State)).is_hydrated is True
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(RouteLoadState)).loaded == ["b"], (
+            "the rehydrate ran a loader for a page the event did not come from"
+        )
+        assert root.router.url.path == "/page-b"
+        assert (await root.get_state(State)).is_hydrated is True
 
 
 async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
@@ -1063,11 +1083,11 @@ async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
             processor, token, _client_event(ExpiredLoadState.ping(), _view("/page-b"))
         )
 
-    root = await state_manager.get_state(BaseStateToken(ident=token, cls=State))
-    assert (await root.get_state(ExpiredLoadState)).loaded == ["b"], (
-        "the post-expiry rehydrate loaded the route the client had left"
-    )
-    assert root.router.url.path == "/page-b"
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(ExpiredLoadState)).loaded == ["b"], (
+            "the post-expiry rehydrate loaded the route the client had left"
+        )
+        assert root.router.url.path == "/page-b"
 
 
 @pytest.mark.parametrize(
@@ -1122,9 +1142,5 @@ async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
             ),
         )
 
-    root_ctx = real_base_state_processor._root_context
-    assert root_ctx is not None
-    root = await root_ctx.state_manager.get_state(
-        BaseStateToken(ident=token, cls=State)
-    )
-    assert (await root.get_state(DynamicLoadState)).seen == ["/item/abc|abc"]
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(DynamicLoadState)).seen == ["/item/abc|abc"]
