@@ -191,25 +191,56 @@ def test_invalid_frontend_compression_formats(base_config_values: dict[str, Any]
 
 
 @pytest.mark.parametrize(
-    "frontend_path", ["/..", "..", "/../other", "/app/../other", "app/.."]
+    "frontend_path",
+    [
+        "/..",
+        "..",
+        "/../other",
+        "/app/../other",
+        "app/..",
+        "/./app",
+        "/..\\escaped",
+        "/app\\..\\other",
+        "/C:/other",
+        "/D:other",
+        "/\\\\",
+        "/app/\\",
+        "\\\\server\\share",
+    ],
 )
-def test_frontend_path_rejects_parent_segments(
+def test_frontend_path_rejects_unsafe_segments(
     base_config_values: dict[str, Any], frontend_path: str
 ):
-    """A ``..`` segment would move the production build outside its output directory.
+    """A segment that is not a plain directory name could escape the build output.
 
     Args:
         base_config_values: Minimal valid Config kwargs.
-        frontend_path: A frontend_path containing a parent-directory segment.
+        frontend_path: A frontend_path with a traversal, backslash, or drive segment.
     """
-    with pytest.raises(ConfigError, match=r"must not contain '\.\.' segments"):
+    with pytest.raises(ConfigError, match="is not a plain directory name"):
         rx.Config(**base_config_values, frontend_path=frontend_path)
 
 
-def test_frontend_path_allows_dotted_names(base_config_values: dict[str, Any]):
-    """Only a bare ``..`` segment is traversal; names merely containing dots are fine."""
-    config = rx.Config(**base_config_values, frontend_path="v1.2/..app/.hidden")
-    assert config.frontend_path == "/v1.2/..app/.hidden"
+@pytest.mark.parametrize(
+    ("frontend_path", "expected"),
+    [
+        ("v1.2/..app/.hidden", "/v1.2/..app/.hidden"),
+        ("/app//sub", "/app//sub"),
+        ("/v1:beta", "/v1:beta"),
+    ],
+)
+def test_frontend_path_allows_plain_names(
+    base_config_values: dict[str, Any], frontend_path: str, expected: str
+):
+    """Names merely containing dots or colons, and empty segments, are not traversal.
+
+    Args:
+        base_config_values: Minimal valid Config kwargs.
+        frontend_path: A frontend_path made of plain directory names.
+        expected: The normalized frontend_path.
+    """
+    config = rx.Config(**base_config_values, frontend_path=frontend_path)
+    assert config.frontend_path == expected
 
 
 @pytest.mark.parametrize(
