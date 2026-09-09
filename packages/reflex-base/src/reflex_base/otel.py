@@ -3,28 +3,34 @@
 The framework calls into this module at a small number of fixed points (event
 dispatch, event context forks, state acquisition, socket messages). Every entry
 point checks the module-level ``enabled`` flag first, so with no
-instrumentation installed the cost is one attribute read: no span is started
-and nothing is recorded (only no-op API objects exist, created at import).
+instrumentation installed the cost is one attribute read: no span is started,
+nothing is recorded, and nothing from ``opentelemetry`` is imported.
 
 The ``reflex-otel`` package flips the flag via :func:`enable` once a tracer
-provider is available.
+provider is available. ``enable`` also binds the OpenTelemetry API modules the
+trace points use as globals of this module: a trace point runs per event, so
+it must not carry an import statement, which costs a ``sys.modules`` lookup
+even when the module is already loaded.
 """
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Awaitable, Callable, Iterator, Mapping
 from contextlib import contextmanager
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
-from opentelemetry import context as otel_context
-from opentelemetry import metrics, propagate, trace
-from opentelemetry.context import Context
-from opentelemetry.trace import SpanKind
-
 from reflex_base.constants.base import Reflex
 
 if TYPE_CHECKING:
+    # opentelemetry-api is a dependency of reflex-otel, not of reflex-base: it
+    # is imported by enable(), which binds ``context_api`` and ``trace`` here.
+    from opentelemetry import context as context_api
+    from opentelemetry import metrics, trace
+    from opentelemetry.context import Context
+    from opentelemetry.propagators.textmap import TextMapPropagator
+
     from reflex_base.event import Event
     from reflex_base.event.context import EventContext
     from reflex_base.registry import RegisteredEventHandler
@@ -47,8 +53,15 @@ METRIC_STATE_ACQUIRE_DURATION = "reflex.state.acquire.duration"
 METRIC_WEBSOCKET_MESSAGE_SIZE = "reflex.websocket.message.size"
 METRIC_WEBSOCKET_CONNECTIONS = "reflex.websocket.connections"
 
-# Key of the W3C trace context carried in an event payload sent by the frontend.
+# Keys of the W3C trace context carried in an event payload sent by the frontend.
 TRACEPARENT_FIELD = "traceparent"
+TRACESTATE_FIELD = "tracestate"
+
+# The event payload is unauthenticated client input, so only the W3C trace
+# context is read from it (never the global propagator: a client could
+# otherwise plant baggage that every instrumented downstream call forwards).
+# Bound by enable().
+_remote_propagator: TextMapPropagator
 
 # Histogram bucket advisories: seconds (semconv http.server.request.duration) and bytes.
 _DURATION_BUCKETS = (
@@ -77,12 +90,37 @@ enabled: bool = False
 # Wraps the app's ASGI callable when set (installed by enable()).
 asgi_middleware: Callable[[ASGIApp], ASGIApp] | None = None
 
-_tracer: trace.Tracer = trace.NoOpTracer()
-_noop_meter = metrics.NoOpMeter(INSTRUMENTATION_NAME)
-_event_duration = _noop_meter.create_histogram(METRIC_EVENT_DURATION)
-_state_acquire_duration = _noop_meter.create_histogram(METRIC_STATE_ACQUIRE_DURATION)
-_message_size = _noop_meter.create_histogram(METRIC_WEBSOCKET_MESSAGE_SIZE)
-_ws_connections = _noop_meter.create_up_down_counter(METRIC_WEBSOCKET_CONNECTIONS)
+
+class _NoOpInstrument:
+    """Stand-in for the metric instruments while instrumentation is off."""
+
+    __slots__ = ()
+
+    def record(self, *args: Any, **kwargs: Any) -> None:
+        """Drop a measurement.
+
+        Args:
+            *args: Ignored.
+            **kwargs: Ignored.
+        """
+
+    def add(self, *args: Any, **kwargs: Any) -> None:
+        """Drop an increment.
+
+        Args:
+            *args: Ignored.
+            **kwargs: Ignored.
+        """
+
+
+_NOOP_INSTRUMENT = _NoOpInstrument()
+
+# Bound by enable(); the trace points only run while enabled.
+_tracer: trace.Tracer
+_event_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
+_state_acquire_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
+_message_size: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
+_ws_connections: metrics.UpDownCounter | _NoOpInstrument = _NOOP_INSTRUMENT
 
 
 def _create_instruments(meter: metrics.Meter) -> None:
@@ -124,6 +162,9 @@ def enable(
 ) -> None:
     """Turn the trace points and metrics on.
 
+    A second call while enabled is ignored: call :func:`disable` first to
+    switch providers.
+
     Args:
         tracer_provider: The provider to obtain the tracer from. Defaults to
             the global provider, which may be configured later; the returned
@@ -134,7 +175,20 @@ def enable(
             e.g. the OpenTelemetry ASGI middleware. Applied by the app when it
             builds its ASGI app.
     """
-    global _tracer, enabled, asgi_middleware
+    global _tracer, _remote_propagator, enabled, asgi_middleware, context_api, trace
+    if enabled:
+        # Re-creating the instruments on another meter would log duplicate
+        # instrument warnings; reconfiguring goes through disable() first.
+        return
+    # The API modules stay bound after disable(): the trace points only run
+    # while enabled, and attach_context() may still see a captured context.
+    from opentelemetry import context as context_api
+    from opentelemetry import metrics, trace
+    from opentelemetry.trace.propagation.tracecontext import (
+        TraceContextTextMapPropagator,
+    )
+
+    _remote_propagator = TraceContextTextMapPropagator()
     _tracer = trace.get_tracer(
         INSTRUMENTATION_NAME, Reflex.VERSION, tracer_provider=tracer_provider
     )
@@ -148,12 +202,22 @@ def enable(
 
 
 def disable() -> None:
-    """Turn the trace points off and drop the tracer and instruments."""
-    global _tracer, enabled, asgi_middleware
+    """Turn the trace points off and reset the metric instruments.
+
+    The tracer, the propagator and the API modules stay bound: the trace
+    points only run while enabled, and :func:`enable` rebinds them.
+    """
+    global \
+        enabled, \
+        asgi_middleware, \
+        _event_duration, \
+        _state_acquire_duration, \
+        _message_size, \
+        _ws_connections
     enabled = False
     asgi_middleware = None
-    _tracer = trace.NoOpTracer()
-    _create_instruments(_noop_meter)
+    _event_duration = _state_acquire_duration = _NOOP_INSTRUMENT
+    _message_size = _ws_connections = _NOOP_INSTRUMENT
 
 
 def capture_context() -> Context | None:
@@ -162,7 +226,9 @@ def capture_context() -> Context | None:
     Returns:
         The current context when tracing is enabled, otherwise None.
     """
-    return otel_context.get_current() if enabled else None
+    if not enabled:
+        return None
+    return context_api.get_current()
 
 
 def attach_context(context: Context | None) -> None:
@@ -172,7 +238,7 @@ def attach_context(context: Context | None) -> None:
         context: The context to attach; None is ignored.
     """
     if context is not None:
-        otel_context.attach(context)
+        context_api.attach(context)
 
 
 class _AttachedContext:
@@ -190,7 +256,7 @@ class _AttachedContext:
 
     def __enter__(self) -> None:
         """Attach the context."""
-        self._token = otel_context.attach(self._context)
+        self._token = context_api.attach(self._context)
 
     def __exit__(self, *exc_info: object) -> None:
         """Detach the context.
@@ -198,15 +264,17 @@ class _AttachedContext:
         Args:
             *exc_info: Ignored exception details.
         """
-        otel_context.detach(self._token)
+        context_api.detach(self._token)
 
 
 def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     """Make the trace context carried by a frontend event the current context.
 
-    Only call when ``enabled``. Events that carry no ``traceparent`` start a
-    new trace: the websocket connection span (if any) is deliberately not
-    used as their parent.
+    Only call when ``enabled``. Events that carry no usable ``traceparent``
+    start a new trace: the websocket connection span (if any) is deliberately
+    not used as their parent. Only string ``traceparent``/``tracestate``
+    fields are read; anything else a client sends is ignored, so this never
+    raises on hostile input.
 
     Args:
         carrier: The raw event fields received from the frontend.
@@ -214,7 +282,46 @@ def remote_context(carrier: Mapping[str, Any]) -> _AttachedContext:
     Returns:
         A context manager to run the enqueue under.
     """
-    return _AttachedContext(propagate.extract(carrier, context=Context()))
+    fields: dict[str, str] = {}
+    for key in (TRACEPARENT_FIELD, TRACESTATE_FIELD):
+        if isinstance(value := carrier.get(key), str):
+            fields[key] = value
+    return _AttachedContext(
+        _remote_propagator.extract(fields, context=context_api.Context())
+    )
+
+
+def _session_id(token: str) -> str:
+    """Pseudonymous session id for a client token.
+
+    The token authorizes access to the session's state, so it must not leave
+    the process in telemetry; a truncated digest still correlates one
+    session's spans.
+
+    Args:
+        token: The client token.
+
+    Returns:
+        The first 16 hex digits of the token's SHA-256.
+    """
+    return hashlib.sha256(token.encode()).hexdigest()[:16]
+
+
+def _code_function_name(fn: Callable[..., Any], fallback: str) -> str:
+    """Fully qualified name of a handler, per the ``code.*`` semantic conventions.
+
+    Args:
+        fn: The handler function.
+        fallback: Value to use when the function has no qualified name.
+
+    Returns:
+        ``module.qualname``, or the fallback.
+    """
+    qualname = getattr(fn, "__qualname__", None)
+    if qualname is None:
+        return fallback
+    module = getattr(fn, "__module__", None)
+    return f"{module}.{qualname}" if module else qualname
 
 
 @contextmanager
@@ -224,8 +331,9 @@ def event_span(
     """Open the span for one event handler execution and record its duration.
 
     Chained events are INTERNAL children of the span that enqueued them;
-    events that arrive from the frontend are SERVER spans (a new trace, or a
-    child of the browser's remote span).
+    events that arrive from the frontend are CONSUMER spans (a new trace, or
+    a child of the browser's PRODUCER span): the browser fires an event over
+    the socket and does not wait for it, which is messaging, not RPC.
 
     Args:
         event: The event being processed.
@@ -243,22 +351,30 @@ def event_span(
     attributes: dict[str, Any] = {
         **metric_attributes,
         ATTR_EVENT_TXID: ctx.txid,
-        ATTR_SESSION_ID: ctx.token,
-        ATTR_CODE_FUNCTION_NAME: getattr(handler.fn, "__qualname__", event.name),
+        ATTR_SESSION_ID: _session_id(ctx.token),
+        ATTR_CODE_FUNCTION_NAME: _code_function_name(handler.fn, event.name),
     }
-    if ctx.parent_txid:
-        attributes[ATTR_EVENT_PARENT_TXID] = ctx.parent_txid
     # An event whose parent span is local (a chained event) is an internal
-    # step of that request; anything else is a new inbound request.
+    # step of that request; anything else is a new inbound message.
     parent = trace.get_current_span(ctx.otel_context).get_span_context()
-    kind = (
-        SpanKind.INTERNAL
-        if parent.is_valid and not parent.is_remote
-        else SpanKind.SERVER
-    )
+    if parent.is_valid and not parent.is_remote:
+        kind = trace.SpanKind.INTERNAL
+        # Only a chained event has a parent event. A top-level event is forked
+        # from the processor's root context, whose txid carries no information.
+        if ctx.parent_txid:
+            attributes[ATTR_EVENT_PARENT_TXID] = ctx.parent_txid
+    else:
+        kind = trace.SpanKind.CONSUMER
     with _tracer.start_as_current_span(
         event.name, context=ctx.otel_context, kind=kind, attributes=attributes
     ) as span:
+        # From here on the event context describes this event's execution:
+        # anything chained from it, including the events the backend exception
+        # handler returns after a failure, parents under this span. The
+        # context is frozen; this is the one place that extends it.
+        object.__setattr__(
+            ctx, "otel_context", trace.set_span_in_context(span, ctx.otel_context)
+        )
         # Record while the span is still current: exporter latency stays out
         # of the sample and exemplars keep the trace/span IDs.
         start = perf_counter()
@@ -300,3 +416,34 @@ def record_connection(delta: int) -> None:
         delta: ``1`` on connect, ``-1`` on disconnect.
     """
     _ws_connections.add(delta)
+
+
+__all__ = [
+    "ATTR_CODE_FUNCTION_NAME",
+    "ATTR_ERROR_TYPE",
+    "ATTR_EVENT_BACKGROUND",
+    "ATTR_EVENT_NAME",
+    "ATTR_EVENT_PARENT_TXID",
+    "ATTR_EVENT_TXID",
+    "ATTR_NETWORK_IO_DIRECTION",
+    "ATTR_SESSION_ID",
+    "INSTRUMENTATION_NAME",
+    "METRIC_EVENT_DURATION",
+    "METRIC_STATE_ACQUIRE_DURATION",
+    "METRIC_WEBSOCKET_CONNECTIONS",
+    "METRIC_WEBSOCKET_MESSAGE_SIZE",
+    "TRACEPARENT_FIELD",
+    "TRACESTATE_FIELD",
+    "ASGIApp",
+    "asgi_middleware",
+    "attach_context",
+    "capture_context",
+    "disable",
+    "enable",
+    "enabled",
+    "event_span",
+    "record_connection",
+    "record_message_size",
+    "record_state_acquired",
+    "remote_context",
+]

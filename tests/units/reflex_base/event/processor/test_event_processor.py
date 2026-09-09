@@ -21,6 +21,7 @@ from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
+from tests.units.conftest import active_tracer
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -1098,10 +1099,32 @@ async def test_no_spans_when_otel_disabled(
     """
     assert otel.enabled is False
     tracer = Mock()
-    monkeypatch.setattr(otel, "_tracer", tracer)
+    # Nothing has bound the tracer yet in a process that never enabled tracing.
+    monkeypatch.setattr(otel, "_tracer", tracer, raising=False)
     async with mock_event_processor as ep:
         await ep.enqueue(token, Event.from_event_type(noop_event())[0])
     tracer.start_as_current_span.assert_not_called()
+
+
+async def test_stream_delta_span_nests_under_caller(token: str, otel_exporter):
+    """enqueue_stream_delta captures the caller's trace context like enqueue().
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(delta_event())[0]
+        with active_tracer().start_as_current_span("POST /_upload") as http_span:
+            async for _ in ep.enqueue_stream_delta(token, event):
+                pass
+    spans = {s.name: s for s in otel_exporter.get_finished_spans()}
+    handler = spans[event.name]
+    assert handler.parent is not None
+    assert handler.parent.span_id == http_span.get_span_context().span_id
+    assert handler.kind == SpanKind.INTERNAL
 
 
 async def test_event_spans_chain_parent_child(token: str, otel_exporter):
@@ -1120,7 +1143,7 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
     parent = spans["_chaining_handler"]
     child = spans["_logging_handler"]
     assert parent.parent is None
-    assert parent.kind == SpanKind.SERVER
+    assert parent.kind == SpanKind.CONSUMER
     assert child.parent is not None
     assert child.parent.span_id == parent.context.span_id
     assert child.kind == SpanKind.INTERNAL
@@ -1128,4 +1151,4 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
         child.attributes[otel.ATTR_EVENT_PARENT_TXID]
         == parent.attributes[otel.ATTR_EVENT_TXID]
     )
-    assert child.attributes[otel.ATTR_SESSION_ID] == token
+    assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)

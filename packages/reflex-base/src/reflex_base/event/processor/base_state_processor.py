@@ -521,8 +521,7 @@ class BaseStateEventProcessor(EventProcessor):
                 # Ensure the event context is set for the exception handler.
                 EventContext.set(ev_ctx)
                 if otel.enabled:
-                    # Chain the handler's events under the failed event's parent context
-                    # (its remote or enqueuing span); parent_txid links them to it.
+                    # Chain the handler's events under the failed event's span.
                     otel.attach_context(ev_ctx.otel_context)
             if events := self.backend_exception_handler(ex):
                 await chain_updates(

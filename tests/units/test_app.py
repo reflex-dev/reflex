@@ -71,7 +71,7 @@ from reflex.model import Model
 from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
 from reflex.utils import exec as exec_utils
 
-from .conftest import chdir, metric_points
+from .conftest import active_tracer, chdir, metric_points
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -4369,18 +4369,24 @@ def test_call_app_wraps_with_otel_asgi_middleware():
 
 
 def test_sio_json_records_message_sizes(otel_metrics):
-    """Socket.IO packet serialization records sizes in both directions."""
+    """Socket.IO packet serialization records UTF-8 sizes in both directions."""
     data = _sio_dumps({"a": "é"}, separators=(",", ":"))
     assert data == '{"a":"é"}'
     assert _sio_loads(data) == {"a": "é"}
     assert _sio_loads(data.encode()) == {"a": "é"}
+    # ASCII payloads take the fast path that sizes without encoding a copy.
+    ascii_data = _sio_dumps({"b": "x"}, separators=(",", ":"))
+    assert _sio_loads(ascii_data) == {"b": "x"}
     points = {
         p.attributes[otel.ATTR_NETWORK_IO_DIRECTION]: p.sum
         for p in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
     }
     size = len(data.encode())
     assert size == len(data) + 1
-    assert points == {"transmit": size, "receive": 2 * size}
+    assert points == {
+        "transmit": size + len(ascii_data),
+        "receive": 2 * size + len(ascii_data),
+    }
 
 
 @pytest.mark.asyncio
@@ -4402,7 +4408,7 @@ async def test_on_event_uses_frontend_traceparent(otel_exporter):
     ns._token_manager.sid_to_token["sid"] = "tok"
 
     traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
-    with otel._tracer.start_as_current_span("websocket"):
+    with active_tracer().start_as_current_span("websocket"):
         await ns.on_event("sid", {"name": "state.h", "traceparent": traceparent})
         await ns.on_event("sid", {"name": "state.h"})
     remote, fresh = seen

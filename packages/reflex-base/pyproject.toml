@@ -8,7 +8,6 @@ authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
 requires-python = ">=3.10"
 dependencies = [
-  "opentelemetry-api >=1.30.0,<2.0",
   "packaging >=24.2,<27",
   "rich >=13,<16",
   "typing_extensions >=4.13.0",
