@@ -53,6 +53,9 @@ class _ClassThatErrorsOnInit:
     def __init__(self, *args, **kwargs):
         _print_db_not_available(*args, **kwargs)
 
+    def __init_subclass__(cls, **kwargs):
+        _print_db_not_available(**kwargs)
+
 
 if find_spec("sqlalchemy"):
     import sqlalchemy
