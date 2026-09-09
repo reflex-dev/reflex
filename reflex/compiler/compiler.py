@@ -725,6 +725,9 @@ def compile_contexts(
     """
     # Get the path for the output file.
     output_path = utils.get_context_path()
+    # A leftover ``.js`` module would win extensionless resolution of
+    # ``$/utils/context`` over the ``.jsx`` file written here.
+    Path(output_path).with_suffix(constants.Ext.JS).unlink(missing_ok=True)
 
     return output_path, _compile_contexts(state, theme)
 

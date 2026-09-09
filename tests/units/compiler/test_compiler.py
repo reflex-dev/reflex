@@ -1450,6 +1450,30 @@ def test_context_registry_names_contexts_for_devtools():
     assert "context.displayName = `StateContext(${name})`;" in registry
 
 
+def test_compile_contexts_writes_jsx_and_drops_stale_js(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """The context module is emitted as ``.jsx`` so fast refresh registers it.
+
+    Vite's React plugin skips the refresh transform for a ``.js`` file without
+    JSX. Without registration every re-execution of the module yields new
+    provider component types, and React remounts the whole provider subtree,
+    socket and client state included, on every compile. A stale ``context.js``
+    would shadow the ``.jsx`` file when resolving ``$/utils/context``, so it is
+    removed.
+    """
+    web_dir = tmp_path / ".web"
+    (web_dir / "utils").mkdir(parents=True)
+    stale = web_dir / "utils" / "context.js"
+    stale.write_text("stale")
+    mocker.patch("reflex.compiler.utils.get_web_dir", return_value=web_dir)
+
+    output_path, _ = compiler.compile_contexts(None, None)
+
+    assert output_path == str(web_dir / "utils" / "context.jsx")
+    assert not stale.exists()
+
+
 def test_context_template_client_side_component_is_named():
     """``ClientSide`` returns a named component, not an anonymous arrow."""
     from reflex_base.compiler.templates import context_template

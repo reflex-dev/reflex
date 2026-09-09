@@ -41,7 +41,10 @@ def HmrApp():
         )
 
     def index():
-        return rx.text("index-v0", id="version")
+        return rx.box(
+            rx.text("index-v0", id="version"),
+            rx.link("counter", href="/counter"),
+        )
 
     def unloaded():
         return rx.text("unloaded-v0", id="unloaded-version")
@@ -175,26 +178,28 @@ def test_unloaded_route_update_does_not_wedge_hmr(
     expect(page.locator("#unloaded-version")).to_have_text("unloaded-v1")
 
 
-def test_consumer_refresh_before_provider_preserves_state_and_events(
+def test_route_loaded_during_held_provider_refresh_uses_mounted_provider(
     hmr_app: AppHarness, page: Page
 ) -> None:
-    """A refreshed consumer must still use the mounted provider and input ref.
+    """A route loaded against a new context instance reaches the mounted provider.
+
+    The provider module is edited and the root refresh it triggers is held, so
+    the mounted provider still runs the old module instance. A route module
+    loaded by navigation in that window imports the new instance. Its state,
+    event dispatch, and input ref must all work, before and after the refresh.
 
     Args:
         hmr_app: Running application harness.
         page: Playwright page driving the application.
     """
     assert hmr_app.frontend_url is not None
-    web_dir = hmr_app.app_path / ".web"
-    consumer = _find_module(web_dir / "app_components", "hmr-ui-v0")
-    context = web_dir / "utils" / "context.js"
-    consumer_path = "/" + consumer.relative_to(web_dir).as_posix()
-    originals = {path: path.read_text() for path in (consumer, context)}
+    context = hmr_app.app_path / ".web" / "utils" / "context.jsx"
+    original = context.read_text()
     held: list[Route] = []
     runtime_requests: list[str] = []
 
-    def hold_updates(route: Route) -> None:
-        """Defer updated JSX modules until the test releases their requests.
+    def hold_root_refresh(route: Route) -> None:
+        """Defer the root module's refresh so the old provider stays mounted.
 
         Args:
             route: Intercepted browser request.
@@ -202,62 +207,46 @@ def test_consumer_refresh_before_provider_preserves_state_and_events(
         url = urlsplit(route.request.url)
         if url.path == "/utils/state.js":
             runtime_requests.append(route.request.url)
-        if "t" in parse_qs(url.query) and url.path.endswith((".jsx", ".tsx")):
+        if url.path == "/app/root.jsx" and "t" in parse_qs(url.query):
             held.append(route)
         else:
             route.continue_()
 
-    with page.expect_websocket(
-        predicate=lambda ws: (
-            urlsplit(ws.url).netloc == urlsplit(hmr_app.frontend_url).netloc
-        )
-    ) as vite:
-        page.goto(f"{hmr_app.frontend_url.rstrip('/')}/counter")
-    expect(page.locator("#count")).to_have_text("0")
-    page.get_by_role("button", name="Increment", exact=True).click()
-    expect(page.locator("#count")).to_have_text("1")
-    page.locator("#focus-target").fill("keep this input mounted")
+    page.goto(hmr_app.frontend_url)
+    expect(page.locator("#version")).to_be_visible()
     time_origin = page.evaluate("performance.timeOrigin")
     errors: list[str] = []
     page.on("pageerror", lambda error: errors.append(str(error)))
-    page.route("**/*", hold_updates)
+    page.route("**/*", hold_root_refresh)
     try:
+        # The provider module self-accepts, fails refresh-boundary validation
+        # because it exports data, and invalidates its importers.
         with page.expect_request(
             lambda request: (
-                urlsplit(request.url).path == consumer_path
+                urlsplit(request.url).path == "/app/root.jsx"
                 and "t" in parse_qs(urlsplit(request.url).query)
             )
         ):
-            _replace_once(consumer, "hmr-ui-v0", "hmr-ui-v1")
-
-        # Invalidate context.js before letting the consumer fetch its imports.
-        with vite.value.expect_event(
-            "framereceived",
-            predicate=lambda frame: any(
-                update["path"].startswith("/app/root.jsx")
-                for update in json.loads(frame).get("updates", [])
-            ),
-        ):
             _replace_once(context, "hmr-context-v0", "hmr-context-v1")
 
-        consumer_request = next(
-            route for route in held if urlsplit(route.request.url).path == consumer_path
-        )
-        held.remove(consumer_request)
-        consumer_request.continue_()
-
-        expect(page.locator("#hmr-version")).to_have_text("hmr-ui-v1", timeout=10_000)
-        expect(page.locator("#count")).to_have_text("1")
-        expect(page.locator("#context-marker")).to_have_text("hmr-context-v0")
+        page.get_by_role("link", name="counter").click()
+        expect(page.locator("#count")).to_have_text("0")
         page.get_by_role("button", name="Increment", exact=True).click()
-        expect(page.locator("#count")).to_have_text("2")
+        expect(page.locator("#count")).to_have_text("1")
+        page.locator("#focus-target").fill("keep this input mounted")
         page.get_by_role("button", name="Focus input", exact=True).click()
         expect(page.locator("#focus-target")).to_be_focused()
+        assert page.evaluate("performance.timeOrigin") == time_origin
+
+        for route in held:
+            route.continue_()
+        held.clear()
+        page.get_by_role("button", name="Increment", exact=True).click()
+        expect(page.locator("#count")).to_have_text("2")
         expect(page.locator("#focus-target")).to_have_value("keep this input mounted")
         assert page.evaluate("performance.timeOrigin") == time_origin
         assert not errors
         assert not runtime_requests, "HMR reloaded the static event runtime"
     finally:
         page.close()
-        for path, source in originals.items():
-            path.write_text(source)
+        context.write_text(original)
