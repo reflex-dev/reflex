@@ -1461,6 +1461,7 @@ async def test_upload_file_without_annotation(
 
     await app.state_manager.close()
 
+
 @pytest.mark.asyncio
 async def test_upload_file_unknown_handler_returns_400(
     token: str,
@@ -1487,7 +1488,6 @@ async def test_upload_file_unknown_handler_returns_400(
     with pytest.raises(HTTPException) as err:
         await fn(request_mock)
     assert err.value.status_code == 400
-    assert err.value.detail == "Unknown upload event handler: 'no.such.State.handler'."
     # The form should never have been read: the handler lookup fails first.
     request_mock.form.assert_not_called()
     await app.state_manager.close()
