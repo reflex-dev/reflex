@@ -6,6 +6,7 @@ import dataclasses
 import logging
 import traceback
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -26,8 +27,98 @@ from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
-from reflex.state import OnLoadInternalState, State, StateUpdate
+from reflex.state import BaseState, OnLoadInternalState, State, StateUpdate
 from tests.units.mock_redis import mock_redis
+
+# Class-level registries on State that registering a substate, or installing a
+# dynamic route arg, writes into with no removal path.
+_STATE_REGISTRIES = (
+    "vars",
+    "computed_vars",
+    "_var_dependencies",
+    "_potentially_dirty_states",
+    "_always_dirty_computed_vars",
+    "_always_dirty_substates",
+    "_interval_computed_var_names",
+    "_fast_attr_names",
+)
+
+
+def _snapshot_registry(value: Any) -> Any:
+    """Copy a registry deeply enough that mutating the original cannot reach it.
+
+    Args:
+        value: The registry to copy.
+
+    Returns:
+        The copy, or the value itself when it is immutable.
+    """
+    if isinstance(value, dict):
+        return {k: set(v) if isinstance(v, set) else v for k, v in value.items()}
+    if isinstance(value, set):
+        return set(value)
+    return value
+
+
+def _restore_registry(cls: type[BaseState], name: str, value: Any) -> None:
+    """Put a registry back, in place where the container is shared by reference.
+
+    Args:
+        cls: The state class to restore on.
+        name: The registry name.
+        value: The snapshotted value.
+    """
+    current = getattr(cls, name)
+    if isinstance(current, (dict, set)):
+        current.clear()
+        current.update(value)  # pyright: ignore[reportArgumentType]
+    else:
+        setattr(cls, name, value)
+
+
+def _state_tree(cls: type[BaseState]) -> list[type[BaseState]]:
+    """The state class and every substate registered under it.
+
+    Args:
+        cls: The root of the tree.
+
+    Returns:
+        The class followed by its substates, depth first.
+    """
+    return [cls, *(s for sub in cls.get_substates() for s in _state_tree(sub))]
+
+
+@pytest.fixture(autouse=True)
+def _isolate_state_class_registries(clean_registration_context: RegistrationContext):
+    """Undo what a test leaves on state classes that outlive it.
+
+    Defining a substate writes into ``State``'s dependency dicts, and
+    ``add_page`` on a dynamic route installs the arg on ``State`` and copies it
+    into the ``vars`` of every substate registered at the time -- including
+    framework ones like ``OnLoadInternalState``.
+
+    Args:
+        clean_registration_context: Requested so this tears down while the
+            test's substate registrations are still resolvable.
+
+    Yields:
+        None.
+    """
+    snapshot = {
+        name: _snapshot_registry(getattr(State, name)) for name in _STATE_REGISTRIES
+    }
+    known_vars = set(State.computed_vars)
+
+    yield
+
+    for name in set(State.computed_vars) - known_vars:
+        with contextlib.suppress(AttributeError):
+            delattr(State, name)
+        for cls in _state_tree(State):
+            cls.vars.pop(name, None)
+            cls.inherited_vars.pop(name, None)
+    for name, value in snapshot.items():
+        _restore_registry(State, name, value)
 
 
 @pytest.fixture
@@ -69,7 +160,11 @@ def emitted_events() -> list[tuple[str, tuple[Event, ...]]]:
 
 
 @pytest_asyncio.fixture
-async def processor_state_manager(request: pytest.FixtureRequest):
+async def processor_state_manager(
+    request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
     """The state manager backing the processor.
 
     Defaults to the in-memory manager. Tests that care about how much of the
@@ -78,6 +173,8 @@ async def processor_state_manager(request: pytest.FixtureRequest):
 
     Args:
         request: pytest request object, whose optional param selects the manager.
+        monkeypatch: pytest monkeypatch fixture.
+        tmp_path: Per-test directory for the disk manager to persist into.
 
     Yields:
         The state manager.
@@ -87,6 +184,9 @@ async def processor_state_manager(request: pytest.FixtureRequest):
     if kind == "redis":
         state_manager = StateManagerRedis(redis=mock_redis())
     elif kind == "disk":
+        # Resolved once in __post_init__, and the manager both purges and
+        # persists there, so keep it out of the process-wide states directory.
+        monkeypatch.setenv("REFLEX_STATES_WORKDIR", str(tmp_path))
         state_manager = StateManagerDisk()
     else:
         state_manager = StateManagerMemory()
@@ -970,29 +1070,6 @@ async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
     assert root.router.url.path == "/page-b"
 
 
-@pytest.fixture
-def _cleanup_item_id_route_arg():
-    """Remove the ``item_id`` dynamic route var from ``State`` after the test.
-
-    ``add_page`` installs a route's dynamic args as computed vars on the shared
-    ``State`` class, where they outlive the test and show up in every later
-    delta that touches ``router``.
-
-    Yields:
-        None.
-    """
-    yield
-    with contextlib.suppress(AttributeError):
-        del State.item_id  # pyright: ignore[reportAttributeAccessIssue]
-    State.computed_vars.pop("item_id", None)
-    State.vars.pop("item_id", None)
-    State._var_dependencies = {}
-    State._potentially_dirty_states = set()
-    State._always_dirty_computed_vars = set()
-    State._init_var_dependency_dicts()
-
-
-@pytest.mark.usefixtures("_cleanup_item_id_route_arg")
 @pytest.mark.parametrize(
     "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
 )
