@@ -7,7 +7,7 @@
 import { createContext } from "react";
 
 export const ColorModeContext = createContext({
-  colorMode: "system",
+  rawColorMode: "system",
   resolvedColorMode: "light",
   toggleColorMode: () => {},
   setColorMode: () => {},
