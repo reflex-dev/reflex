@@ -476,12 +476,15 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
         reset_bundled_libraries()
 
 
-def test_compile_contexts_has_default_color_mode_context():
-    """ColorModeContext should have a safe fallback value without Radix."""
-    _, code = compiler.compile_contexts(None, None)
+def test_context_registry_has_default_color_mode_context():
+    """ColorModeContext should have a safe fallback value without a provider."""
+    registry = (
+        constants.Templates.Dirs.WEB_TEMPLATE / "utils" / "context-registry.js"
+    ).read_text()
 
-    assert "createContext({" in code
-    assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
+    assert "export const ColorModeContext = createContext({" in registry
+    assert 'resolvedColorMode: "light",' in registry
+    assert "setColorMode: () => {}," in registry
 
 
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
@@ -1427,11 +1430,13 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
-def test_context_template_names_contexts_for_devtools():
-    """Every context in the generated module carries a ``displayName``.
+def test_context_template_takes_contexts_from_registry():
+    """The generated module never creates a React context itself.
 
-    React DevTools labels a provider from its context's ``displayName``;
-    without one the whole provider stack renders as ``Context.Provider``.
+    Vite re-executes the generated module on every hot update of it. A context
+    created there would be a new object, so a provider mounted before the
+    update and a consumer loaded after it would stop sharing one. Every context
+    object comes from the static ``context-registry`` module instead.
     """
     from reflex_base.compiler.templates import context_template
 
@@ -1445,24 +1450,42 @@ def test_context_template_names_contexts_for_devtools():
         state_name="reflex___state____state",
     )
 
+    assert "createContext" not in rendered
+    assert 'from "$/utils/context-registry"' in rendered
+    # Importers keep reading the fixed contexts from ``$/utils/context``.
+    assert (
+        "export { ColorModeContext, UploadFilesContext, DispatchContext, "
+        "EventLoopContext };" in rendered
+    )
+    # State contexts are looked up by the dotted Python state name.
+    assert (
+        'reflex___state____state: getStateContext("reflex___state____state"),'
+        in rendered
+    )
+    assert (
+        "reflex___state____state__demo_state: "
+        'getStateContext("reflex___state____state.demo_state"),' in rendered
+    )
+
+
+def test_context_registry_names_contexts_for_devtools():
+    """Every context in the registry carries a ``displayName``.
+
+    React DevTools labels a provider from its context's ``displayName``;
+    without one the whole provider stack renders as ``Context.Provider``.
+    """
+    registry = (
+        constants.Templates.Dirs.WEB_TEMPLATE / "utils" / "context-registry.js"
+    ).read_text()
+
     for context_name in (
         "ColorModeContext",
         "UploadFilesContext",
         "DispatchContext",
         "EventLoopContext",
     ):
-        assert f'{context_name}.displayName = "{context_name}";' in rendered
-
-    # State contexts are named for the Python state they carry, using the
-    # dotted state name rather than the mangled JS identifier.
-    assert (
-        "StateContexts.reflex___state____state.displayName = "
-        '"StateContext(reflex___state____state)";' in rendered
-    )
-    assert (
-        "StateContexts.reflex___state____state__demo_state.displayName = "
-        '"StateContext(reflex___state____state.demo_state)";' in rendered
-    )
+        assert f'{context_name}.displayName = "{context_name}";' in registry
+    assert "context.displayName = `StateContext(${name})`;" in registry
 
 
 def test_context_template_client_side_component_is_named():
