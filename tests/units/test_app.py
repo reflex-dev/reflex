@@ -2672,10 +2672,18 @@ def test_compile_dry_run_does_not_prune_or_write_manifest(
     manifest = web_dir / compiler_utils._MEMO_MANIFEST_FILENAME
     manifest.write_text(json.dumps([stale_rel]), encoding="utf-8")
     manifest_before = manifest.read_text(encoding="utf-8")
+    # A real compile removes a leftover ``utils/context.js`` (the module is now
+    # emitted as ``.jsx``); a dry run must leave it alone too.
+    stale_context = Path(compiler_utils.get_context_path()).with_suffix(
+        constants.Ext.JS
+    )
+    stale_context.parent.mkdir(parents=True, exist_ok=True)
+    stale_context.write_text("// stale", encoding="utf-8")
 
     app._compile(dry_run=True)
 
     assert stale.exists(), "dry run must not delete stale memo files"
+    assert stale_context.exists(), "dry run must not delete the old context module"
     assert manifest.read_text(encoding="utf-8") == manifest_before, (
         "dry run must not rewrite the memo manifest"
     )
