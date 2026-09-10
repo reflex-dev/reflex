@@ -50,6 +50,10 @@ Traces:
   that decision on the server.
 - HTTP requests and the websocket connection are wrapped in the standard
   OpenTelemetry ASGI middleware (per-message websocket spans are off).
+- One `reflex.compile` span per app compile (`reflex.compile.trigger`,
+  `reflex.compile.dry_run`) with the stages `reflex.compile.evaluate_pages`,
+  `.pages`, `.copy_assets`, `.install_frontend_packages`, `.write` as
+  child spans.
 
 What leaves the process: event and handler names, a pseudonymous
 `session.id` (a truncated SHA-256 of the client token, never the token
@@ -70,6 +74,39 @@ Plus the ASGI middleware's `http.server.*` metrics. The instrumentor opts the
 middleware into the stable HTTP semantic conventions
 (`OTEL_SEMCONV_STABILITY_OPT_IN=http`) unless that variable is already set,
 so request attributes use the same generation of names as Reflex's own.
+
+## Browser (frontend) tracing
+
+```python
+# rxconfig.py
+from reflex_otel import OtelPlugin
+
+config = rx.Config(
+    app_name="myapp",
+    plugins=[OtelPlugin(endpoint="https://collector.example.com/v1/traces")],
+)
+```
+
+The plugin compiles a small OpenTelemetry web bundle into the frontend:
+
+- every event sent to the backend gets a `PRODUCER` span and a W3C
+  `traceparent`, so the backend event span joins the browser trace (one trace
+  per interaction, browser → backend → chained events);
+- web vitals (`web_vital.LCP`, `CLS`, `INP`, `FCP`, `TTFB`) as spans with
+  `web_vital.value` / `web_vital.rating`;
+- with `render_timing=True`, React commits as `react.render` spans
+  (`react.render.phase`, `react.render.actual_duration_ms`); this aliases
+  `react-dom/client` to the `react-dom/profiling` build and emits one span per
+  commit, so it is off by default;
+- `socket.connect` / `socket.disconnect` spans for reconnect tracking
+  (unintentional disconnects are marked as errors).
+
+Options: `endpoint` (OTLP/HTTP traces URL reachable from the browser; required
+to export, with no default and no `OTEL_EXPORTER_OTLP_*` fallback: without it
+no exporter is installed and browser spans are dropped), `service_name` (default
+`<app_name>-frontend`), `headers` (compiled into the public bundle — no
+secrets), `web_vitals`, `render_timing`. The endpoint must allow CORS from the
+app origin.
 
 ## Options
 
