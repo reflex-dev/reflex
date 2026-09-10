@@ -54,6 +54,14 @@ class _ClassThatErrorsOnInit:
         _print_db_not_available(*args, **kwargs)
 
     def __init_subclass__(cls, **kwargs):
+        """Point at the db extra when a model is declared without it.
+
+        Args:
+            **kwargs: Class keywords such as ``table=True``.
+
+        Raises:
+            ImportError: Always, with the ``pip install reflex[db]`` guidance.
+        """
         _print_db_not_available(**kwargs)
 
 
