@@ -66,6 +66,11 @@ db = [
   "sqlmodel >=0.0.24,<0.1",
 ]
 pydantic = ["reflex-base[pydantic]"]
+testing = [
+  "psutil >=7.0.0,<8.0",
+  "selenium >=4.0.0,<5.0",
+  "uvicorn >=0.34.0,<1.0",
+]
 
 [project.urls]
 homepage = "https://reflex.dev"
@@ -87,6 +92,7 @@ dev = [
   "hatchling",
   "libsass",
   "numpy",
+  "opentelemetry-sdk",
   "pandas",
   "pillow",
   "playwright",
@@ -108,6 +114,7 @@ dev = [
   "python-dotenv",
   "pyyaml",
   "reflex-docgen",
+  "reflex-otel",
   "reflex-release",
   "reflex-site-shared",
   "ruff",
@@ -164,6 +171,7 @@ extraPaths = [
   "packages/reflex-recharts/src",
   "packages/reflex-sonner/src",
   "packages/reflex-components-internal/src",
+  "packages/reflex-otel/src",
   "packages/reflex-site-shared/src",
   "packages/integrations-docs/src",
 ]
@@ -303,6 +311,7 @@ source = [
   "reflex_base",
   "reflex_i18n",
   "reflex_docgen",
+  "reflex_otel",
   "reflex_release",
   "reflex_site_shared",
   "reflex_components_internal",
@@ -521,6 +530,7 @@ reflex-i18n.workspace = true
 reflex-docgen.workspace = true
 reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
+reflex-otel.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
 reflex-integrations-docs.workspace = true

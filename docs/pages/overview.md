@@ -78,7 +78,7 @@ rx.link("Reflex Home Page.", href="https://reflex.dev/")
 You can also provide local links to other pages in your project without writing the full url.
 
 ```python demo
-rx.link("Example", href="/docs/library")
+rx.link("Example", href="/library")
 ```
 
 To open the link in a new tab, set the `is_external` prop to `True`.
@@ -102,9 +102,7 @@ Redirect the user to a new path within the application using `rx.redirect()`.
 
 ```python demo
 rx.vstack(
-    rx.button(
-        "open in tab", on_click=rx.redirect("/docs/api-reference/special-events")
-    ),
+    rx.button("open in tab", on_click=rx.redirect("/api-reference/special-events")),
     rx.button(
         "open in new tab",
         on_click=rx.redirect("https://github.com/reflex-dev/reflex/", is_external=True),

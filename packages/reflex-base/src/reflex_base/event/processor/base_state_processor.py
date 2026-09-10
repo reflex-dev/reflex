@@ -10,12 +10,14 @@ import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
+from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.event.processor.scope import event_scope
@@ -369,10 +371,13 @@ class BaseStateEventProcessor(EventProcessor):
         """
         from reflex.state import OnLoadInternalState, State
 
-        if (
-            type(root_state) is not State
-            or OnLoadInternalState.get_name() not in root_state.substates
-        ):
+        if type(root_state) is not State:
+            return
+
+        # A backend-initiated event carries no route, so nothing sets
+        # router_data and every one of them would rehydrate again.
+        routeless = not root_state.router_data
+        if routeless and root_state.is_hydrated:
             return
 
         await process_event(
@@ -381,6 +386,15 @@ class BaseStateEventProcessor(EventProcessor):
             state=root_state,
             root_state=root_state,
         )
+        if routeless:
+            # No page to load, but hydration still has to finish.
+            await process_event(
+                handler=State.event_handlers["set_is_hydrated"],
+                payload={"value": True},
+                state=root_state,
+                root_state=root_state,
+            )
+            return
         await process_event(
             handler=OnLoadInternalState.event_handlers["on_load_internal"],
             payload={},
@@ -405,6 +419,7 @@ class BaseStateEventProcessor(EventProcessor):
         # The context, not the event: a chained event carries none of its own
         # and inherits the producing view's through fork().
         router_data = ctx.router_data
+        acquire_start = perf_counter() if otel.enabled else 0.0
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
             BaseStateToken(
@@ -413,6 +428,8 @@ class BaseStateEventProcessor(EventProcessor):
             ),
             event=entry.event,
         ) as state:
+            if otel.enabled:
+                otel.record_state_acquired(acquire_start, event)
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
                 not state.router_data and event.name != _hydrate_event_name()
@@ -525,6 +542,9 @@ class BaseStateEventProcessor(EventProcessor):
             if ev_ctx is not None:
                 # Ensure the event context is set for the exception handler.
                 EventContext.set(ev_ctx)
+                if otel.enabled:
+                    # Chain the handler's events under the failed event's span.
+                    otel.attach_context(ev_ctx.otel_context)
             if events := self.backend_exception_handler(ex):
                 await chain_updates(
                     events=events,
