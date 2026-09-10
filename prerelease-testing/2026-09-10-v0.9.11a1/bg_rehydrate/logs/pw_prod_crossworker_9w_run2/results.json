@@ -1,0 +1,12 @@
+[
+ {
+  "name": "XW.backend_event_delta_delivery",
+  "status": "fail",
+  "details": "0/6 backend-initiated pings produced a delta in the browser; final UI pings=0; per call: [{'i': 0, 'api': ['done'], 'worker_runs_ping': 1, 'deltas_received': 0, 'ui': 'pings=0'}, {'i': 1, 'api': ['done'], 'worker_runs_ping': 1, 'deltas_received': 0, 'ui': 'pings=0'}, {'i': 2, 'api': ['done'], 'worker_runs_ping': 1, 'deltas_received': 0, 'ui': 'pings=0'}, {'i': 3, 'api': ['done'], 'worker_runs_ping': 1, 'deltas_received': 0, 'ui': 'pings=0'}, {'i': 4, 'api': ['done'], 'worker_runs_ping': 1, 'deltas_received': 0, 'ui': 'pings=0'}, {'i': 5, 'api': ['done'], 'worker_runs_ping': 1, 'deltas_received': 0, 'ui': 'pings=0'}]"
+ },
+ {
+  "name": "XW.ui_after_click",
+  "status": "pass",
+  "details": "snapshot={'pings': 'pings=6', 'clicks': 'clicks=1', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=2'}"
+ }
+]

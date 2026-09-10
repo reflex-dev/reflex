@@ -1,0 +1,15 @@
+{
+ "beats": 16,
+ "exc": [
+  "RuntimeError: boom-noctx",
+  "RuntimeError: boom-after-ctx",
+  "RuntimeError: boom-inside-ctx",
+  "RuntimeError: boom-after-yield",
+  "RuntimeError: boom-after-yield-state-event",
+  "RuntimeError: boom-flush-fails",
+  "RuntimeError: boom-noctx",
+  "RuntimeError: boom-noctx",
+  "RuntimeError: boom-noctx"
+ ],
+ "flush_fail": false
+}

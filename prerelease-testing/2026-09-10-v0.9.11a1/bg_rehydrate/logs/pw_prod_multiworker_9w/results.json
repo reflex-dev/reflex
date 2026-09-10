@@ -1,0 +1,271 @@
+[
+ {
+  "name": "MW.three_backend_events_after_expiry",
+  "status": "fail",
+  "details": "keys before={'manager': 'StateManagerRedis', 'keys': {'token_manager_socket_record_6959ecbd-0b0f-4a8d-a7c3-0caf8f63c63d': 2}} enqueue=[['queued'], ['queued'], ['queued']] hydrate_deltas=0 deltas=0 before={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'clicks': 'clicks=0', 'pings': 'pings=0', 'name': 'name=', 'other_count': 'other_count=0'} after={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'clicks': 'clicks=0', 'pings': 'pings=0', 'name': 'name=', 'other_count': 'other_count=0'}",
+  "deltas": []
+ },
+ {
+  "name": "MW.routed_click_reruns_on_load",
+  "status": "pass",
+  "details": "hydrate_deltas=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'clicks': 'clicks=1', 'pings': 'pings=3', 'name': 'name=', 'other_count': 'other_count=0'}",
+  "deltas": [
+   {
+    "t": 10.49,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false,
+       "item_id_rx_state_": "",
+       "router_rx_state_": {
+        "session": {
+         "client_token": "6959ecbd-0b0f-4a8d-a7c3-0caf8f63c63d",
+         "client_ip": "127.0.0.1",
+         "session_id": "XJjhE5DQ1j7cpk_iAAAB"
+        },
+        "headers": {
+         "host": "localhost:3223",
+         "origin": "http://localhost:3223",
+         "upgrade": "websocket",
+         "connection": "Upgrade",
+         "cookie": "",
+         "pragma": "no-cache",
+         "cache_control": "no-cache",
+         "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+         "sec_websocket_version": "13",
+         "sec_websocket_key": "ekt3C5RPpbeAHEWoCVtqPw==",
+         "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+         "accept_encoding": "gzip, deflate, br, zstd",
+         "accept_language": "en-US,en;q=0.9",
+         "raw_headers": {
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "en-US,en;q=0.9",
+          "asgi-scope-client": "127.0.0.1",
+          "cache-control": "no-cache",
+          "connection": "Upgrade",
+          "host": "localhost:3223",
+          "origin": "http://localhost:3223",
+          "pragma": "no-cache",
+          "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+          "sec-websocket-key": "ekt3C5RPpbeAHEWoCVtqPw==",
+          "sec-websocket-protocol": "0.9.11a1",
+          "sec-websocket-version": "13",
+          "upgrade": "websocket",
+          "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+         }
+        },
+        "page": {
+         "host": "http://localhost:3223",
+         "path": "/index",
+         "raw_path": "/",
+         "full_path": "http://localhost:3223/index",
+         "full_raw_path": "http://localhost:3223/",
+         "params": {}
+        },
+        "url": {
+         "scheme": "http",
+         "netloc": "localhost:3223",
+         "origin": "http://localhost:3223",
+         "path": "/",
+         "query": "",
+         "query_parameters": {},
+         "fragment": "",
+         "href": "http://localhost:3223/"
+        },
+        "route_id": "/index"
+       }
+      },
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "bg_status_rx_state_": "idle",
+       "clicks_rx_state_": 0,
+       "flavor_rx_state_": "",
+       "item_arg_rx_state_": "",
+       "load_seq_rx_state_": 0,
+       "loaded_at_rx_state_": "",
+       "loaded_page_rx_state_": "",
+       "name_rx_state_": "",
+       "path_rx_state_": "/",
+       "pings_rx_state_": 3
+      }
+     }
+    }
+   },
+   {
+    "t": 10.49,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false
+      }
+     }
+    }
+   },
+   {
+    "t": 10.494,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "clicks_rx_state_": 1
+      }
+     }
+    }
+   },
+   {
+    "t": 10.495,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "loaded_page_rx_state_": "index",
+       "load_seq_rx_state_": 1,
+       "loaded_at_rx_state_": "13:53:59"
+      }
+     }
+    }
+   },
+   {
+    "t": 10.5,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": true
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "name": "MW.click_after_eviction_rehydrates",
+  "status": "pass",
+  "details": "hydrate_deltas=1 deltas=5 snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'clicks': 'clicks=1', 'pings': 'pings=0', 'name': 'name=', 'other_count': 'other_count=0'}",
+  "deltas": [
+   {
+    "t": 20.04,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false,
+       "item_id_rx_state_": "",
+       "router_rx_state_": {
+        "session": {
+         "client_token": "91bbf532-f4c3-4721-ecce-2d4d585eed9b",
+         "client_ip": "127.0.0.1",
+         "session_id": "YravpxQ1YpVmFYwdAAAB"
+        },
+        "headers": {
+         "host": "localhost:3223",
+         "origin": "http://localhost:3223",
+         "upgrade": "websocket",
+         "connection": "Upgrade",
+         "cookie": "",
+         "pragma": "no-cache",
+         "cache_control": "no-cache",
+         "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+         "sec_websocket_version": "13",
+         "sec_websocket_key": "YR8RBZSnLc8jRdqwcGQcSg==",
+         "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+         "accept_encoding": "gzip, deflate, br, zstd",
+         "accept_language": "en-US,en;q=0.9",
+         "raw_headers": {
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "en-US,en;q=0.9",
+          "asgi-scope-client": "127.0.0.1",
+          "cache-control": "no-cache",
+          "connection": "Upgrade",
+          "host": "localhost:3223",
+          "origin": "http://localhost:3223",
+          "pragma": "no-cache",
+          "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+          "sec-websocket-key": "YR8RBZSnLc8jRdqwcGQcSg==",
+          "sec-websocket-protocol": "0.9.11a1",
+          "sec-websocket-version": "13",
+          "upgrade": "websocket",
+          "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+         }
+        },
+        "page": {
+         "host": "http://localhost:3223",
+         "path": "/page-b",
+         "raw_path": "/page-b/",
+         "full_path": "http://localhost:3223/page-b",
+         "full_raw_path": "http://localhost:3223/page-b/",
+         "params": {}
+        },
+        "url": {
+         "scheme": "http",
+         "netloc": "localhost:3223",
+         "origin": "http://localhost:3223",
+         "path": "/page-b/",
+         "query": "",
+         "query_parameters": {},
+         "fragment": "",
+         "href": "http://localhost:3223/page-b/"
+        },
+        "route_id": "/page-b"
+       }
+      },
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "bg_status_rx_state_": "idle",
+       "clicks_rx_state_": 0,
+       "flavor_rx_state_": "",
+       "item_arg_rx_state_": "",
+       "load_seq_rx_state_": 0,
+       "loaded_at_rx_state_": "",
+       "loaded_page_rx_state_": "",
+       "name_rx_state_": "",
+       "path_rx_state_": "/page-b/",
+       "pings_rx_state_": 0
+      }
+     }
+    }
+   },
+   {
+    "t": 20.041,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false
+      }
+     }
+    }
+   },
+   {
+    "t": 20.041,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "clicks_rx_state_": 1
+      }
+     }
+    }
+   },
+   {
+    "t": 20.044,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "loaded_page_rx_state_": "page-b",
+       "load_seq_rx_state_": 1,
+       "loaded_at_rx_state_": "13:54:09"
+      }
+     }
+    }
+   },
+   {
+    "t": 20.047,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": true
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "name": "MW.browser_anomalies",
+  "status": "anomaly",
+  "details": "{'label': 'prod_mw', 'console_err_warn': [{'type': 'error', 'text': 'Failed to load resource: the server responded with a status of 404 (Not Found)'}], 'page_errors': [], 'failed_requests': [], 'http_4xx_5xx': []}"
+ }
+]

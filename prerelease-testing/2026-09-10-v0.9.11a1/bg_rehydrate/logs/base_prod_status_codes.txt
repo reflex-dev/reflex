@@ -1,0 +1,6 @@
+/              200 -> 
+/page-b        307 -> http://localhost:3227/page-b/
+/page-b/       200 -> 
+/item/abc      404 -> 
+/nope          404 -> 
+/favicon.ico   404 -> 

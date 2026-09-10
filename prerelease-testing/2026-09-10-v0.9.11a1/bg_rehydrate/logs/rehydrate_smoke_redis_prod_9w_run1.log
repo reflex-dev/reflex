@@ -1,0 +1,236 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value redis_url with env var REDIS_URL=***
+Debug: Overriding config value redis_token_expiration with env var 
+REDIS_TOKEN_EXPIRATION=5
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='rehydrate_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url='redis://localhost:8235', telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=5, 
+_non_default_attributes={'app_name', 'redis_url', 'redis_token_expiration', 
+'telemetry_enabled', 'plugins', 'loglevel'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve'), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/smoke/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3223
+Debug: Overriding config value backend_port with env var BACKEND_PORT=3223
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 3223 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 3223 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 3223 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.15s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 19/18 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [10.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'vite@8.2.2', '@react-router/dev@8.3.1', '@react-router/fs-routes@8.3.1', 
+'postcss-import@17.0.0', '@emotion/react@11.14.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed postcss-import@17.0.0
+Debug: installed @emotion/react@11.14.0
+Debug: 
+Debug: [11.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '@radix-ui/themes@3.3.0', 'react-router@8.3.1', 
+'react-dom@19.2.8', 'socket.io-client@4.8.3', '@react-router/node@8.3.1', 
+'universal-cookie@8.1.2', 'isbot@5.2.2', 'react-error-boundary@6.1.2', 
+'sonner@2.0.8', 'react-helmet@6.1.0', 'react@19.2.8', 'lucide-react@1.26.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-router@8.3.1
+Debug: installed react-dom@19.2.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed @react-router/node@8.3.1
+Debug: installed universal-cookie@8.1.2
+Debug: installed isbot@5.2.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed react-helmet@6.1.0
+Debug: installed react@19.2.8
+Debug: installed lucide-react@1.26.0
+Debug: 
+Debug: [10.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/bg_rehydrate/rehydrate_app/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/bg_rehydrate/rehydrate_app/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.06s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 
+'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 417 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                            3.18 kB │ 
+gzip:  0.59 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css   698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-CBg5mjU3.js                  0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_index-BovlNtC6.js                      2.61 kB │ 
+gzip:  0.96 kB
+Debug: build/client/assets/_page-b_._index-Chb1P5QE.js             2.61 kB │ 
+gzip:  0.97 kB
+Debug: build/client/assets/_item_.__item_id_._index-rZ_Eb_ZZ.js    2.62 kB │ 
+gzip:  0.97 kB
+Debug: build/client/assets/_404_._index-Br5V3SVM.js                2.67 kB │ 
+gzip:  1.00 kB
+Debug: build/client/assets/rehydrate_app-C1f1E0UQ.js               3.68 kB │ 
+gzip:  0.75 kB
+Debug: build/client/assets/errorBoundaries-BNQPJewV.js           121.57 kB │ 
+gzip: 39.79 kB
+Debug: build/client/assets/text-field-C4Z7Rv16.js                172.69 kB │ 
+gzip: 52.83 kB
+Debug: build/client/assets/entry.client-BMMizPZy.js              182.30 kB │ 
+gzip: 57.69 kB
+Debug: build/client/assets/root-Cqlzh9E5.js                      302.58 kB │ 
+gzip: 85.31 kB
+Debug: 
+Debug: ✓ built in 2.03s
+Debug: vite v8.2.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - item/:item_id
+Debug:   - *
+Debug: ✓ 27 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.78 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-CBg5mjU3.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     63.13 kB │ 
+gzip: 15.05 kB
+Debug: 
+Debug: ✓ built in 672ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /page-b -> build/client/page-b/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Copying .web/build/client/page-b/index.html to 
+.web/build/client/page-b.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/bg_rehydrate/rehydrate_app/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/bg_rehydrate/rehydrate_app/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3223/
+Debug: Using Granian for backend
+[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+[INFO] Starting granian (main PID: 12972)
+[INFO] Listening at: http://0.0.0.0:3223
+[INFO] Spawning worker-1 with PID: 13049
+[INFO] Spawning worker-2 with PID: 13051
+[INFO] Spawning worker-3 with PID: 13053
+[INFO] Spawning worker-4 with PID: 13055
+[INFO] Spawning worker-5 with PID: 13057
+[INFO] Spawning worker-6 with PID: 13059
+[INFO] Spawning worker-7 with PID: 13061
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-2
+[INFO] Started worker-3
+[INFO] Spawning worker-8 with PID: 13068
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+[INFO] Spawning worker-9 with PID: 13074
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-4
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-5
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-8
+[INFO] Started worker-6
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-7
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-9
+[INFO] Stopping worker-1
+[INFO] Stopping worker-6
+[INFO] Stopping worker-8
+[INFO] Stopping worker-9
+[INFO] Shutting down granian
+[INFO] Stopping worker-3
+[INFO] Stopping worker-2
+[INFO] Stopping worker-7
+[INFO] Stopping worker-5
+[INFO] Stopping worker-4
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

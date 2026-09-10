@@ -1,0 +1,16 @@
+{
+ "runs": {
+  "index": 0,
+  "page-b": 1,
+  "item": 0,
+  "404": 0,
+  "ping": 0,
+  "click": 1,
+  "hydrate_seen": 0
+ },
+ "log": [
+  "14:02:19 on_load page-b (run #1) path=/page-b/",
+  "14:02:20 click -> clicks=1 path=/page-b/",
+  "14:02:27 api kick token=e2ebfb68 mode=eio sids=['rukF9WhWEc8seHA_AAAT']"
+ ]
+}

@@ -1,0 +1,4 @@
+requests=60 distinct_pids=9 distinct_instance_ids=1 token_manager=RedisTokenManager
+pids: [16692, 16694, 16696, 16698, 16700, 16708, 16713, 16718, 16720]
+instance_ids: ['ae36e14e-3483-4157-8281-860ced0d515f']
+local_tokens per pid: {16720: [], 16708: [], 16694: [], 16713: [], 16698: [], 16718: [], 16696: [], 16692: [], 16700: []}

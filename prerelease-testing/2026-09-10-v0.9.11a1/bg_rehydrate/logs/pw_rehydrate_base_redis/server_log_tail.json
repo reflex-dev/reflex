@@ -1,0 +1,15 @@
+{
+ "runs": {
+  "index": 0,
+  "page-b": 1,
+  "item": 0,
+  "404": 0,
+  "ping": 0,
+  "click": 1,
+  "hydrate_seen": 0
+ },
+ "log": [
+  "13:46:43 on_load page-b (run #1) path=/page-b",
+  "13:46:46 click -> clicks=2 path=/page-b"
+ ]
+}

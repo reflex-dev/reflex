@@ -1,0 +1,15 @@
+{
+ "runs": {
+  "index": 0,
+  "page-b": 0,
+  "item": 0,
+  "404": 0,
+  "ping": 1,
+  "click": 0,
+  "hydrate_seen": 0
+ },
+ "log": [
+  "13:34:59 backend enqueue reflex___state____state.rehydrate_app___rehydrate_app____state.ping token=a9dd4e22 router_data={}",
+  "13:34:59 ping -> pings=1 router_data_empty=True"
+ ]
+}

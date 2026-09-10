@@ -1,0 +1,533 @@
+[
+ {
+  "name": "bgflush.load",
+  "status": "pass",
+  "details": "initial snapshot {'beat': 'beat=3', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='}"
+ },
+ {
+  "name": "bgflush.fg_noop_control",
+  "status": "pass",
+  "details": "fg event refreshed beat | before={'beat': 'beat=3', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} after={'beat': 'beat=4', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} | deltas=1 with_beat=1 events_only=0 | new_exc=[]",
+  "deltas": [
+   {
+    "t": 3.446,
+    "update": {
+     "delta": {
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 4
+      }
+     }
+    }
+   }
+  ],
+  "exc_new": []
+ },
+ {
+  "name": "bgflush.bg_ok_noctx_control",
+  "status": "pass",
+  "details": "bg no-ctx normal return refreshed beat | before={'beat': 'beat=4', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} after={'beat': 'beat=5', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} | deltas=1 with_beat=1 events_only=0 | new_exc=[]",
+  "deltas": [
+   {
+    "t": 11.653,
+    "update": {
+     "delta": {
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 5
+      }
+     }
+    }
+   }
+  ],
+  "exc_new": []
+ },
+ {
+  "name": "bgflush.noctx_raise_flushes_delta",
+  "status": "fail",
+  "details": "expect beat refreshed AND handler got RuntimeError: boom-noctx | before={'beat': 'beat=5', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} after={'beat': 'beat=5', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} | deltas=1 with_beat=0 events_only=1 | new_exc=['RuntimeError: boom-noctx']",
+  "deltas": [
+   {
+    "t": 12.865,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"error\"](\"handled: RuntimeError: boom-noctx\", ({ [\"id\"] : \"bexc\" }))))",
+        "callback": null
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "exc_new": [
+   "RuntimeError: boom-noctx"
+  ]
+ },
+ {
+  "name": "bgflush.noctx_raise_toast_visible",
+  "status": "pass",
+  "details": "exception-handler toast count=1"
+ },
+ {
+  "name": "bgflush.after_ctx_raise",
+  "status": "pass",
+  "details": "count+1, note updated, exc handled | before={'beat': 'beat=5', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} after={'beat': 'beat=6', 'count': 'count=1', 'note': 'note=after-ctx: mutated, about to raise outside ctx', 'where': 'where=path=/ q='} | deltas=2 with_beat=1 events_only=1 | new_exc=['RuntimeError: boom-after-ctx']",
+  "deltas": [
+   {
+    "t": 13.976,
+    "update": {
+     "delta": {
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 6,
+       "note_rx_state_": "after-ctx: mutated, about to raise outside ctx",
+       "count_rx_state_": 1
+      }
+     }
+    }
+   },
+   {
+    "t": 13.976,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"error\"](\"handled: RuntimeError: boom-after-ctx\", ({ [\"id\"] : \"bexc\" }))))",
+        "callback": null
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "exc_new": [
+   "RuntimeError: boom-after-ctx"
+  ]
+ },
+ {
+  "name": "bgflush.inside_ctx_raise",
+  "status": "pass",
+  "details": "exc handled; count changed by 1 (mutation before raise inside ctx) | before={'beat': 'beat=6', 'count': 'count=1', 'note': 'note=after-ctx: mutated, about to raise outside ctx', 'where': 'where=path=/ q='} after={'beat': 'beat=7', 'count': 'count=2', 'note': 'note=inside-ctx: mutated, raising inside ctx', 'where': 'where=path=/ q='} | deltas=2 with_beat=1 events_only=1 | new_exc=['RuntimeError: boom-inside-ctx']",
+  "deltas": [
+   {
+    "t": 15.078,
+    "update": {
+     "delta": {
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 7,
+       "note_rx_state_": "inside-ctx: mutated, raising inside ctx",
+       "count_rx_state_": 2
+      }
+     }
+    }
+   },
+   {
+    "t": 15.079,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"error\"](\"handled: RuntimeError: boom-inside-ctx\", ({ [\"id\"] : \"bexc\" }))))",
+        "callback": null
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "exc_new": [
+   "RuntimeError: boom-inside-ctx"
+  ]
+ },
+ {
+  "name": "bgflush.yield_then_raise",
+  "status": "fail",
+  "details": "beat refreshed + exc handled | before={'beat': 'beat=7', 'count': 'count=2', 'note': 'note=inside-ctx: mutated, raising inside ctx', 'where': 'where=path=/ q='} after={'beat': 'beat=7', 'count': 'count=2', 'note': 'note=inside-ctx: mutated, raising inside ctx', 'where': 'where=path=/ q='} | deltas=2 with_beat=0 events_only=2 | new_exc=['RuntimeError: boom-after-yield']",
+  "deltas": [
+   {
+    "t": 16.282,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"info\"](\"yielded-before-raise\")))",
+        "callback": null
+       }
+      }
+     ]
+    }
+   },
+   {
+    "t": 16.282,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"error\"](\"handled: RuntimeError: boom-after-yield\", ({ [\"id\"] : \"bexc\" }))))",
+        "callback": null
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "exc_new": [
+   "RuntimeError: boom-after-yield"
+  ]
+ },
+ {
+  "name": "bgflush.yield_then_raise_toast",
+  "status": "pass",
+  "details": "yielded toast count=1"
+ },
+ {
+  "name": "bgflush.yield_state_event_then_raise",
+  "status": "pass",
+  "details": "yielded state event ran, beat refreshed, exc handled | before={'beat': 'beat=7', 'count': 'count=2', 'note': 'note=inside-ctx: mutated, raising inside ctx', 'where': 'where=path=/ q='} after={'beat': 'beat=8', 'count': 'count=2', 'note': 'note=bump_note ran', 'where': 'where=path=/ q='} | deltas=2 with_beat=1 events_only=1 | new_exc=['RuntimeError: boom-after-yield-state-event']",
+  "deltas": [
+   {
+    "t": 17.516,
+    "update": {
+     "delta": {
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 8,
+       "note_rx_state_": "bump_note ran"
+      }
+     }
+    }
+   },
+   {
+    "t": 17.516,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"error\"](\"handled: RuntimeError: boom-after-yield-state-event\", ({ [\"id\"] : \"bexc\" }))))",
+        "callback": null
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "exc_new": [
+   "RuntimeError: boom-after-yield-state-event"
+  ]
+ },
+ {
+  "name": "bgflush.flush_failure_does_not_mask",
+  "status": "pass",
+  "details": "handler's RuntimeError delivered (not the ValueError from the failing flush) | before={'beat': 'beat=8', 'count': 'count=2', 'note': 'note=bump_note ran', 'where': 'where=path=/ q='} after={'beat': 'beat=8', 'count': 'count=2', 'note': 'note=bump_note ran', 'where': 'where=path=/ q='} | deltas=1 with_beat=0 events_only=1 | new_exc=['RuntimeError: boom-flush-fails']",
+  "deltas": [
+   {
+    "t": 18.627,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"error\"](\"handled: RuntimeError: boom-flush-fails\", ({ [\"id\"] : \"bexc\" }))))",
+        "callback": null
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "exc_new": [
+   "RuntimeError: boom-flush-fails"
+  ]
+ },
+ {
+  "name": "bgflush.clear_flush_fail",
+  "status": "pass",
+  "details": "cleared | before={'beat': 'beat=8', 'count': 'count=2', 'note': 'note=bump_note ran', 'where': 'where=path=/ q='} after={'beat': 'beat=9', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/ q='} | deltas=1 with_beat=1 events_only=0 | new_exc=[]",
+  "deltas": [
+   {
+    "t": 22.839,
+    "update": {
+     "delta": {
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 9,
+       "note_rx_state_": "flush_fail cleared"
+      }
+     }
+    }
+   }
+  ],
+  "exc_new": []
+ },
+ {
+  "name": "bgflush.navigate_other",
+  "status": "pass",
+  "details": "where after nav: where=path=/other q=x=1"
+ },
+ {
+  "name": "bgflush.noctx_raise_on_other",
+  "status": "fail",
+  "details": "beat refreshed on /other, where intact | before={'beat': 'beat=10', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/other q=x=1'} after={'beat': 'beat=10', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/other q=x=1'} | deltas=1 with_beat=0 events_only=1 | new_exc=['RuntimeError: boom-noctx']",
+  "deltas": [
+   {
+    "t": 24.18,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"error\"](\"handled: RuntimeError: boom-noctx\", ({ [\"id\"] : \"bexc\" }))))",
+        "callback": null
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "exc_new": [
+   "RuntimeError: boom-noctx"
+  ]
+ },
+ {
+  "name": "bgflush.onload_bg_raise",
+  "status": "pass",
+  "details": "on_load bg raise: exc=['RuntimeError: boom-noctx'] is_hydrated_true_deltas=1 deltas=3 snap={'beat': 'beat=12', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/onload-bg q='}",
+  "deltas": [
+   {
+    "t": 24.33,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "router_rx_state_": {
+        "session": {
+         "client_token": "28b5b5a6-3b50-490a-b5b0-5b7033adcca9",
+         "client_ip": "127.0.0.1",
+         "session_id": "7FzUGNpFsRQQXkEHAAAB"
+        },
+        "headers": {
+         "host": "localhost:8224",
+         "origin": "http://localhost:3224",
+         "upgrade": "websocket",
+         "connection": "Upgrade",
+         "cookie": "",
+         "pragma": "no-cache",
+         "cache_control": "no-cache",
+         "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+         "sec_websocket_version": "13",
+         "sec_websocket_key": "bpsrLK7UEINHziKGiF5qkA==",
+         "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+         "accept_encoding": "gzip, deflate, br, zstd",
+         "accept_language": "en-US,en;q=0.9",
+         "raw_headers": {
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "en-US,en;q=0.9",
+          "asgi-scope-client": "127.0.0.1",
+          "cache-control": "no-cache",
+          "connection": "Upgrade",
+          "host": "localhost:8224",
+          "origin": "http://localhost:3224",
+          "pragma": "no-cache",
+          "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+          "sec-websocket-key": "bpsrLK7UEINHziKGiF5qkA==",
+          "sec-websocket-protocol": "0.9.10.post2",
+          "sec-websocket-version": "13",
+          "upgrade": "websocket",
+          "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+         }
+        },
+        "page": {
+         "host": "http://localhost:3224",
+         "path": "/onload-bg",
+         "raw_path": "/onload-bg",
+         "full_path": "http://localhost:3224/onload-bg",
+         "full_raw_path": "http://localhost:3224/onload-bg",
+         "params": {}
+        },
+        "url": {
+         "scheme": "http",
+         "netloc": "localhost:3224",
+         "origin": "http://localhost:3224",
+         "path": "/onload-bg",
+         "query": "",
+         "query_parameters": {},
+         "fragment": "",
+         "href": "http://localhost:3224/onload-bg"
+        },
+        "route_id": "/onload-bg"
+       },
+       "is_hydrated_rx_state_": false
+      },
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "where_rx_state_": "path=/onload-bg q=",
+       "beat_rx_state_": 11
+      }
+     }
+    }
+   },
+   {
+    "t": 24.33,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": true
+      },
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 12
+      }
+     }
+    }
+   },
+   {
+    "t": 25.438,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"error\"](\"handled: RuntimeError: boom-noctx\", ({ [\"id\"] : \"bexc\" }))))",
+        "callback": null
+       }
+      }
+     ]
+    }
+   }
+  ]
+ },
+ {
+  "name": "bgflush.onload_bg_raise_fullreload",
+  "status": "pass",
+  "details": "full reload: exc=['RuntimeError: boom-noctx'] is_hydrated_true_deltas=1 deltas=4 snap={'beat': 'beat=16', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/onload-bg q='}",
+  "deltas": [
+   {
+    "t": 25.784,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false,
+       "router_rx_state_": {
+        "session": {
+         "client_token": "28b5b5a6-3b50-490a-b5b0-5b7033adcca9",
+         "client_ip": "127.0.0.1",
+         "session_id": "95bt1LyZdi1hgQcXAAAD"
+        },
+        "headers": {
+         "host": "localhost:8224",
+         "origin": "http://localhost:3224",
+         "upgrade": "websocket",
+         "connection": "Upgrade",
+         "cookie": "",
+         "pragma": "no-cache",
+         "cache_control": "no-cache",
+         "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+         "sec_websocket_version": "13",
+         "sec_websocket_key": "MTTPawksfx2RtK0dr6nlLg==",
+         "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+         "accept_encoding": "gzip, deflate, br, zstd",
+         "accept_language": "en-US,en;q=0.9",
+         "raw_headers": {
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "en-US,en;q=0.9",
+          "asgi-scope-client": "127.0.0.1",
+          "cache-control": "no-cache",
+          "connection": "Upgrade",
+          "host": "localhost:8224",
+          "origin": "http://localhost:3224",
+          "pragma": "no-cache",
+          "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+          "sec-websocket-key": "MTTPawksfx2RtK0dr6nlLg==",
+          "sec-websocket-protocol": "0.9.10.post2",
+          "sec-websocket-version": "13",
+          "upgrade": "websocket",
+          "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+         }
+        },
+        "page": {
+         "host": "http://localhost:3224",
+         "path": "/onload-bg",
+         "raw_path": "/onload-bg",
+         "full_path": "http://localhost:3224/onload-bg",
+         "full_raw_path": "http://localhost:3224/onload-bg",
+         "params": {}
+        },
+        "url": {
+         "scheme": "http",
+         "netloc": "localhost:3224",
+         "origin": "http://localhost:3224",
+         "path": "/onload-bg",
+         "query": "",
+         "query_parameters": {},
+         "fragment": "",
+         "href": "http://localhost:3224/onload-bg"
+        },
+        "route_id": "/onload-bg"
+       }
+      },
+      "reflex___state____state.reflex___istate___shared____shared_state_base_internal": {},
+      "reflex___state____state.reflex___state____update_vars_internal_state": {},
+      "reflex___state____state.reflex___state____frontend_event_exception_state": {},
+      "reflex___state____state.reflex___state____on_load_internal_state": {},
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 13,
+       "count_rx_state_": 2,
+       "note_rx_state_": "flush_fail cleared",
+       "where_rx_state_": "path=/onload-bg q="
+      }
+     }
+    }
+   },
+   {
+    "t": 25.784,
+    "update": {
+     "delta": {
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 14
+      }
+     }
+    }
+   },
+   {
+    "t": 25.785,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false
+      },
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 15
+      }
+     }
+    }
+   },
+   {
+    "t": 25.785,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": true
+      },
+      "reflex___state____state.bgflush_app___bgflush_app____state": {
+       "beat_rx_state_": 16
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "name": "bgflush.browser_anomalies",
+  "status": "pass",
+  "details": "{'label': 'base0910', 'console_err_warn': [], 'page_errors': [], 'failed_requests': [], 'http_4xx_5xx': []}"
+ }
+]
