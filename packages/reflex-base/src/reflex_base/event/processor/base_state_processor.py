@@ -367,12 +367,27 @@ class BaseStateEventProcessor(EventProcessor):
         if type(root_state) is not State:
             return
 
+        # A backend-initiated event carries no route, so nothing sets
+        # router_data and every one of them would rehydrate again.
+        routeless = not root_state.router_data
+        if routeless and root_state.is_hydrated:
+            return
+
         await process_event(
             handler=State.event_handlers["hydrate"],
             payload={},
             state=root_state,
             root_state=root_state,
         )
+        if routeless:
+            # No page to load, but hydration still has to finish.
+            await process_event(
+                handler=State.event_handlers["set_is_hydrated"],
+                payload={"value": True},
+                state=root_state,
+                root_state=root_state,
+            )
+            return
         await process_event(
             handler=OnLoadInternalState.event_handlers["on_load_internal"],
             payload={},
