@@ -7,7 +7,7 @@ import os
 import sys
 import threading
 import urllib.parse
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from importlib.util import find_spec
 from pathlib import Path, PureWindowsPath
@@ -881,6 +881,28 @@ class _ImportRecorder:
 _import_recorder = _ImportRecorder()
 
 
+def _project_local_modules(names: Iterable[str], project_root: Path) -> set[str]:
+    """Filter recorded import names down to modules that live in the project.
+
+    Args:
+        names: Module names observed by the import recorder.
+        project_root: The root that classifies a module as project-local.
+
+    Returns:
+        The names whose module file is under project_root and not installed.
+    """
+    project_local: set[str] = set()
+    for name in names:
+        origin = getattr(sys.modules.get(name), "__file__", None)
+        if (
+            origin
+            and (path := Path(origin)).is_relative_to(project_root)
+            and "site-packages" not in path.parts
+        ):
+            project_local.add(name)
+    return project_local
+
+
 @contextmanager
 def _record_imports() -> Iterator[_ImportRecorder]:
     """Record imports made on the current thread while rxconfig loads.
@@ -979,20 +1001,17 @@ def _get_config(project_root: Path | None = None) -> Config:
                 try:
                     rxconfig = importlib.import_module(constants.Config.MODULE)
                 except BaseException:
-                    # Nothing from a failed load is worth keeping: forget the
-                    # root so the retry evicts what this load imported.
-                    _config_module_deps_root = None
+                    # The recorder only sees modules this attempt imported
+                    # fresh, so nothing here is in use yet. Drop them so the
+                    # retry re-imports them; modules from an earlier successful
+                    # load are untouched since the running app may hold them.
+                    for name in _project_local_modules(recorder.names, project_root):
+                        sys.modules.pop(name, None)
+                        _config_module_deps.discard(name)
                     raise
-                finally:
-                    # Record even on failure so the retry knows what to evict.
-                    for name in recorder.names:
-                        origin = getattr(sys.modules.get(name), "__file__", None)
-                        if (
-                            origin
-                            and (path := Path(origin)).is_relative_to(project_root)
-                            and "site-packages" not in path.parts
-                        ):
-                            _config_module_deps.add(name)
+            _config_module_deps.update(
+                _project_local_modules(recorder.names, project_root)
+            )
             return rxconfig.config
         finally:
             for i, entry in enumerate(sys.path):

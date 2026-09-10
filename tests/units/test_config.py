@@ -1105,6 +1105,8 @@ def clean_config_modules() -> Generator[None, None, None]:
         "shared_helper",
         "config_reload_state_module",
         "failing_dep_module",
+        "kept_helper",
+        "failed_only_helper",
     )
     try:
         yield
@@ -1320,10 +1322,10 @@ def test_same_root_reload_keeps_dependency_modules(
 def test_retry_after_failed_load_evicts_dependency_modules(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
-    """A retry after a failed load re-imports what the failed load pulled in.
+    """A failed load drops the modules it imported so a retry re-imports them.
 
-    Nothing from a failed load is in use anywhere, so the retry must not keep
-    a helper module the developer has fixed in the meantime.
+    Nothing a failed load imported for the first time is in use anywhere, so
+    the retry must not keep a helper module the developer fixed in the meantime.
 
     Args:
         tmp_path: The pytest tmp_path fixture.
@@ -1352,13 +1354,66 @@ def test_retry_after_failed_load_evicts_dependency_modules(
     monkeypatch.setenv("RX_TEST_FAIL_LOAD", "1")
     with pytest.raises(RuntimeError, match="broken rxconfig"):
         reflex_base.config._get_config()
-    failed_helper = sys.modules["failing_dep_module"]
-    assert "failing_dep_module" in reflex_base.config._config_module_deps
+    assert "failing_dep_module" not in sys.modules
+    assert "failing_dep_module" not in reflex_base.config._config_module_deps
 
     monkeypatch.delenv("RX_TEST_FAIL_LOAD")
     helper.write_text("VALUE = 22\n")
     assert reflex_base.config._get_config().app_name == "app22"
-    assert sys.modules["failing_dep_module"] is not failed_helper
+    assert "failing_dep_module" in reflex_base.config._config_module_deps
+
+
+def test_failed_reload_keeps_modules_from_last_good_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A failed same-root reload drops only what it imported itself.
+
+    The running app may hold classes from the last successful load, so those
+    modules must survive both the failure and the retry after it. A module the
+    failed attempt imported for the first time is not in use and is dropped.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "kept_helper.py").write_text("class Kept:\n    pass\n")
+    (tmp_path / "failed_only_helper.py").write_text("VALUE = 1\n")
+    good_rxconfig = textwrap.dedent(
+        """
+        import kept_helper  # noqa: F401
+        import reflex as rx
+
+        config = rx.Config(app_name="good")
+        """
+    )
+    broken_rxconfig = textwrap.dedent(
+        """
+        import kept_helper  # noqa: F401
+        import failed_only_helper  # noqa: F401
+        import reflex as rx
+
+        raise RuntimeError("broken rxconfig")
+        """
+    )
+    (tmp_path / "rxconfig.py").write_text(good_rxconfig)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "kept_helper", raising=False)
+    monkeypatch.delitem(sys.modules, "failed_only_helper", raising=False)
+
+    assert reflex_base.config._get_config().app_name == "good"
+    kept = sys.modules["kept_helper"]
+
+    (tmp_path / "rxconfig.py").write_text(broken_rxconfig)
+    with pytest.raises(RuntimeError, match="broken rxconfig"):
+        reflex_base.config._get_config()
+    assert sys.modules["kept_helper"] is kept
+    assert "failed_only_helper" not in sys.modules
+    assert "failed_only_helper" not in reflex_base.config._config_module_deps
+
+    (tmp_path / "rxconfig.py").write_text(good_rxconfig)
+    assert reflex_base.config._get_config().app_name == "good"
+    assert sys.modules["kept_helper"] is kept
 
 
 def test_other_root_load_evicts_dependency_modules(
