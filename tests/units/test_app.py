@@ -1779,7 +1779,6 @@ class DynamicState(State):
         recalculated when the dynamic route var was dirty
     """
 
-    is_hydrated: bool = False
     loaded: int = 0
     counter: int = 0
 

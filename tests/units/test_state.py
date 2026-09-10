@@ -5380,3 +5380,53 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
     assert state.key == 1
     error_mock.assert_called_once()
+
+
+def test_base_var_shadowing_inherited_var_warns(mocker: MockerFixture) -> None:
+    """A base var shadowing an inherited var warns instead of being dropped silently.
+
+    Args:
+        mocker: Pytest mock fixture.
+    """
+    warn_mock = mocker.patch("reflex.state.console.warn")
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class ShadowChild(ShadowParent):
+        shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    assert any("shadowed_value" in call.args[0] for call in warn_mock.call_args_list), (
+        "expected a warning naming the shadowed var"
+    )
+
+
+def test_base_var_shadowing_non_state_descriptor_does_not_warn(
+    mocker: MockerFixture,
+) -> None:
+    """Re-annotating to win over a descriptor from a non-state base is not a shadow.
+
+    Args:
+        mocker: Pytest mock fixture.
+    """
+    from reflex_base.vars.hybrid_property import hybrid_property
+
+    warn_mock = mocker.patch("reflex.state.console.warn")
+
+    class SharedMixin:
+        @hybrid_property
+        def descriptor_value(self) -> int:
+            return 1
+
+    class PlainBase(SharedMixin):
+        pass
+
+    class OverridingState(SharedMixin, BaseState):
+        descriptor_value: int = 5  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    class DescriptorChild(PlainBase, OverridingState):
+        descriptor_value: int  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
+
+    assert not [
+        call for call in warn_mock.call_args_list if "descriptor_value" in call.args[0]
+    ], "re-annotation resolving a descriptor MRO conflict must not warn"
