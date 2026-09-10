@@ -1,0 +1,13 @@
+──────────────────────────── Initializing smoke_app ────────────────────────────
+Info: Initializing the web directory.
+Info: Failed to connect to https://registry.npmmirror.com.
+Info: Failed to connect to https://registry.npmmirror.com.
+Info: Failed to connect to https://registry.npmmirror.com.
+Info: Initializing the app directory.
+Success: Initialized smoke_app using the blank template. Install dependencies 
+from `requirements.txt` with `uv pip install -r requirements.txt` (or your 
+preferred installer) before running `uv run reflex run`.
+
+real	0m4.894s
+user	0m1.843s
+sys	0m1.038s
