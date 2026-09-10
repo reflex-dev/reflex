@@ -364,10 +364,7 @@ class BaseStateEventProcessor(EventProcessor):
         """
         from reflex.state import OnLoadInternalState, State
 
-        if (
-            type(root_state) is not State
-            or OnLoadInternalState.get_name() not in root_state.substates
-        ):
+        if type(root_state) is not State:
             return
 
         await process_event(
