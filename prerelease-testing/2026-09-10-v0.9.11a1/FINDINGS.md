@@ -44,14 +44,22 @@ What needs a decision or a fix before final:
   hydrate delta is one of the things it swallows.
 - Several verifier verdicts still pending (hybrid_property typing claim; bg_rehydrate items).
 
-Index (confirmed = independently re-reproduced; claimed = awaiting verification):
+Index (confirmed = independently re-reproduced by a verifier; claimed = verification pending):
 - FINDING-001: reflex-otel 0.1.0a1 not published by the release run (PROCESS, resolved)
 - FINDING-002: rx.moment on_change fires at mount with react-moment 2.0.2 (LOW, regression, downstream) — CONFIRMED
-- FINDING-003: prod multi-worker + redis: cross-worker deltas silently dropped (HIGH, pre-existing) — claimed, verification pending
-- FINDING-004: client-storage vars show defaults after a backend rehydrate until full reload (MEDIUM, pre-existing) — claimed
+- FINDING-003: prod multi-worker + redis: cross-worker deltas silently dropped, swallowing the new #7073 hydrate (HIGH, pre-existing) — claimed
+- FINDING-004: client-storage vars show defaults after a backend rehydrate until a full reload (MEDIUM, pre-existing) — claimed
 - FINDING-005: hybrid_property class-level access types as Any on pyright 1.1.413 (MEDIUM, typing claim in changelog) — claimed
 - FINDING-006: uv cannot build the `reflex` sdist (workspace sources in pyproject) (LOW, pre-existing)
-- FINDING-007: plain `uv pip install --prerelease=allow reflex==0.9.11a1` in place leaves the alpha sub-packages at their stable versions (LOW, upgrade-path note)
+- FINDING-007: reflex-only in-place upgrade leaves the alpha sub-packages at their stable versions (LOW, upgrade-path note)
+- FINDING-008: `reflex run --backend-only` leaks `.web/nocompile`; the next full run serves a stale frontend (MEDIUM, pre-existing) — claimed
+- FINDING-009: `frontend_path` mis-routes pages whose route starts with the prefix text (MEDIUM, pre-existing) — claimed
+- FINDING-010: a backend var named `_get_was_touched` breaks the disk state manager's persistence (MEDIUM, pre-existing) — claimed
+- FINDING-011: state attribute names colliding with BaseState internals are unvalidated; some crash with `'int' object is not callable` (LOW, pre-existing) — claimed
+- FINDING-012: `rx.Model(table=True)` without sqlmodel still gives a bare TypeError, no `reflex[db]` pointer (LOW, pre-existing, previous campaign's FINDING-014)
+- FINDING-013: AttributeError inside a cached var computation is still masked as `Attribute _cached_get_all_var_data not found` (MEDIUM, pre-existing, previous campaign's FINDING-024)
+- FINDING-014: `frontend_path` validation accepts segments Win32 trims (trailing space or dot) and empty segments (LOW, gap in #7044)
+- FINDING-015: `reflex cloud regions/vmtypes --json` exit 0 with `[]` after a 403 (LOW, pre-existing, agent-usability gap)
 
 ## FINDING-001: reflex-otel 0.1.0a1 not published by the release run (PROCESS, resolved)
 
@@ -105,7 +113,93 @@ Index (confirmed = independently re-reproduced; claimed = awaiting verification)
   unless they pin them explicitly. Expected resolver behaviour; worth a line in the pre-release
   announcement.
 
-(Findings 003–005 and the remaining clusters are appended as their verifiers report.)
+## FINDING-008: `reflex run --backend-only` leaks `.web/nocompile`; the next full run serves a stale frontend (MEDIUM, pre-existing)
+
+- Cluster: `event_hotpath` | Regression vs 0.9.10.post2: no (identical) | Verifier: pending
+- Repro: in any app dir, `reflex run --backend-only --backend-port <BP>`, wait for `/ping`, stop it →
+  `.web/nocompile` exists. Delete a compiled page (or edit the app to add a component), then run a
+  normal `reflex run`: the marker is consumed, the log has no "Compiling" line, the page is not
+  regenerated, and Vite exits with `ENOENT ... .web/app/routes/[...]._index.jsx` (or the browser
+  silently shows the old UI).
+- Evidence: `event_hotpath/logs/repro_nocompile_smoke.out`, `repro_nocompile_base0910.out`,
+  `nocompile_smoke_fullrun.trimmed.log`.
+- Why it matters here: it silently invalidated the first pass of this cluster's own browser runs,
+  which is exactly how it would bite a user who runs the backend alone once.
+
+## FINDING-009: `frontend_path` mis-routes pages whose route starts with the prefix text (MEDIUM, pre-existing)
+
+- Cluster: `event_hotpath` | Regression: no (identical on 0.9.10.post2) | Verifier: pending
+- Repro: `rx.Config(frontend_path='/app')` with pages `/apple`, `/app`, `/item/[id]`, `/docs/[[...splat]]`;
+  open `http://localhost:<FP>/app/apple` (or click its link): the recorded `on_load` shows
+  `path=/404`, `route_id=/404`; `/app/app` resolves to `/index` and fires the index page's on_load.
+  Other prefixed routes match correctly.
+- Root cause (reporter): the client sends the basename-relative pathname (`/apple`), and
+  `route.get_route` strips `config.frontend_path` again with `str.removeprefix`, leaving `le`.
+  #7025 memoized this matcher without changing the prefix logic.
+- Evidence: `event_hotpath/logs/pw_routes_smoke_dev_fp/results.json` vs `pw_routes_base_dev_fp/results.json`.
+
+## FINDING-010: a backend var named `_get_was_touched` breaks the disk state manager (MEDIUM, pre-existing)
+
+- Cluster: `event_hotpath` | Regression: no | Verifier: pending
+- Repro: add `_get_was_touched: int = 7` to a state, run with the default disk state manager, send one
+  event, wait past the flush debounce: every flush logs `Error processing write queue:
+  TypeError("'int' object is not callable")` and shutdown ends in a traceback from
+  `istate/manager/token.py get_and_reset_touched_state`. State is never persisted. Reads and writes of
+  the var in the browser work, so the failure is invisible from the UI.
+- Note: #7025's own unit test uses this exact name as a supported collision, while the runtime call
+  site (which predates the PR) calls it as a method.
+- Evidence: `event_hotpath/logs/gwt_disk_smoke.trimmed.log`, `gwt_disk_base0910.trimmed.log`.
+
+## FINDING-011: state attribute names colliding with BaseState internals are unvalidated (LOW, pre-existing)
+
+- Cluster: `event_hotpath` | Regression: no (91/95 sweep outcomes byte-identical to 0.9.10.post2) | Verifier: pending
+- Repro: `class S(rx.State): get_delta: int = 0` with a handler that increments it. Clicking does
+  nothing; the server log shows `[Reflex Backend Exception] ... in get_delta:
+  delta.update(substates[substate].get_delta()) TypeError: 'int' object is not callable`.
+  The offline sweep (`event_hotpath/scripts/probe_names.py`) covers 19 framework names × 5 kinds:
+  only a few collisions produce a clear error; `get_delta`, `get_value`, `_expired_computed_vars`
+  and `_mark_dirty` crash the framework instead.
+
+## FINDING-012: `rx.Model(table=True)` without sqlmodel still gives a bare TypeError (LOW, pre-existing)
+
+- Cluster: `orch_probes` | Regression: no | This is the previous campaign's FINDING-014, still open.
+- Repro (bare venv, no sqlmodel): `class Thing(rx.Model, table=True): name: str` →
+  `TypeError: Thing.__init_subclass__() takes no keyword arguments`, with no mention of
+  `reflex[db]` or sqlmodel. Evidence: `orch_probes/logs/probe_smoke.json`.
+
+## FINDING-013: AttributeError inside a cached var computation is still masked (MEDIUM, pre-existing)
+
+- Cluster: `orch_probes` | Regression: no (identical on 0.9.10.post2) | Previous campaign's FINDING-024.
+- Repro: a `CachedVarOperation` subclass whose `_cached_get_all_var_data` raises `AttributeError`
+  surfaces as `VarAttributeError: Attribute _cached_get_all_var_data not found.` with
+  `__cause__` and `__context__` both unset — the real error is invisible.
+  Run `orch_probes/probe_reverify.py` with any venv's python from `/tmp`.
+- Why it still matters: this is what turned the previous release's headline enterprise breakage into
+  an undebuggable message.
+
+## FINDING-014: `frontend_path` validation accepts segments Win32 trims (LOW, gap in #7044)
+
+- Cluster: `orch_probes` | Regression: no (the validation is new in this train, so this is a gap in a
+  new guard rather than a break)
+- The new validator (`packages/reflex-base/src/reflex_base/config.py:612`) correctly rejects `..`,
+  `.`, backslashes and drive letters, naming the offending segment. It still accepts `/a ` (trailing
+  space), `/ .`, `//srv` and `/a//b` (empty segments). Trailing spaces and dots are the same Win32
+  trimming class the PR cites as its reason for rejecting drive letters and backslashes.
+- Evidence: `orch_probes/logs/probe_smoke.json` (`frontend_path_validation`).
+
+## FINDING-015: `reflex cloud regions|vmtypes --json` exit 0 with an empty list after a 403 (LOW, pre-existing)
+
+- Cluster: `orch_probes` | Regression: no (identical on 0.9.10.post2)
+- Repro: with no cloud token, `reflex cloud regions --json` prints `[]` to stdout and exits **0**
+  while stderr says `Unable to get regions due to 403 Forbidden.`; same for `vmtypes`.
+  `reflex cloud config --json` exits 0 with `{"generated": false, "path": null}` while stderr reports
+  that PyYAML is missing (PyYAML is not a dependency of reflex-hosting-cli).
+- Why it matters for this train: #6917's stated goal is an agent-usable CLI, and an agent that trusts
+  the exit code reads an auth failure as "no regions exist". `reflex cloud project selected --json`
+  already models the fix with an explicit `"error"` field.
+- Evidence: `orch_probes/logs/cloud_sweep_0911.json`, `orch_probes/NOTES.md`.
+
+(Findings 003–005 carry full detail in their clusters' NOTES.md; remaining clusters are appended as they finish.)
 
 ## Cluster summaries (interim)
 
@@ -138,6 +232,25 @@ TYPE_CHECKING-only annotation on a dataclass hides all its attributes; `len(var)
 0.9.10.post2 (0.9.10.post2 spun the index loader ~220×/s on a backend-initiated event). FAILs are
 the pre-existing prod multi-worker + redis delta drop (FINDING-003, claimed high) — verification
 pending.
+
+### `event_hotpath` (pass 32, anomaly 6, fail 2) — no regression from #7025
+Event ordering, background tasks and StateProxy, 3-deep substates, interval computed vars, route
+matching over 150+ routes, slow-handler isolation and a 100-click hammer all behave identically to
+0.9.10.post2 on Python 3.11 and 3.13, with and without a custom asyncio task factory. Measured A/B
+over the wire: +17% (3.11) / +21% (3.13) events/s at 20 concurrent clients and 14-16% less worker CPU
+per event, all counters exact. The two FAILs and several anomalies are pre-existing (FINDING-008 to
+FINDING-011).
+
+### `up_upload_traversal_quiz` (pass 10, anomaly 4) — no regressions
+upload, traversal and quiz upgrade cleanly (baseline, in-place, cold); sonner 2.0.8 toasts and shiki
+4.4.3 highlighting render identically to their prior versions. Anomalies are app-level or pre-existing,
+including `rx._x.code_block(use_transformers=True)` compiling `transformers:[]` so the shiki
+notation comments are never applied (identical on 0.9.10.post2).
+
+### `orch_probes` (orchestrator) — 2 fixed items confirmed, 4 pre-existing gaps
+AppHarness now names `reflex[testing]` in its error (previous FINDING-016 fixed); `reflex_base.otel`
+is genuinely inert without reflex-otel; all 34 `reflex cloud` leaf commands return off a TTY with
+clean single-document JSON on stdout. Gaps: FINDING-012 to FINDING-015.
 
 ### `up_counter_todo_clock` (pass 18, anomaly 8, skipped 1) — no regression except FINDING-002
 counter, todo, clock, linkinbio: baseline → in-place → cold identical (md5-identical screenshots),
