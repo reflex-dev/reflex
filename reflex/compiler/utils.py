@@ -789,10 +789,13 @@ def get_root_stylesheet_path() -> str:
 def get_context_path() -> str:
     """Get the path of the context / initial state file.
 
+    The module is emitted as ``.jsx`` so the React fast-refresh transform
+    registers its provider components; a ``.js`` file without JSX is skipped.
+
     Returns:
         The path of the context module.
     """
-    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JS))
+    return str(get_web_dir() / (constants.Dirs.CONTEXTS_PATH + constants.Ext.JSX))
 
 
 def get_memo_components_dir() -> str:

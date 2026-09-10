@@ -10,13 +10,7 @@ import {
   useSearchParams,
   useParams,
 } from "react-router";
-import {
-  initialEvents,
-  initialState,
-  onLoadInternalEvent,
-  state_name,
-  exception_state_name,
-} from "$/utils/context";
+import { app } from "$/utils/context-registry";
 import debounce from "$/utils/helpers/debounce";
 import { parseNonFiniteAwareJSON } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
@@ -259,31 +253,31 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
@@ -653,7 +647,7 @@ export const connect = async (
     window.addEventListener("beforeunload", disconnectTrigger);
     if (socket.current.rehydrate) {
       socket.current.rehydrate = false;
-      queueEvents(initialEvents(), socket, true, navigate, params);
+      queueEvents(app.initialEvents(), socket, true, navigate, params);
     }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
@@ -733,7 +727,7 @@ export const connect = async (
           dispatch[substate](update.delta[substate]);
           // handle events waiting for `is_hydrated`
           if (
-            substate === state_name &&
+            substate === app.state_name &&
             update.delta[substate]?.is_hydrated_rx_state_
           ) {
             // Deliberately not awaited: the rest of the delta and the client
@@ -990,7 +984,7 @@ export const useEventLoop = (
     }
     // only use websockets if state is present and backend is not disabled (reflex cloud).
     if (
-      Object.keys(initialState).length > 1 &&
+      Object.keys(app.initialState).length > 1 &&
       !isBackendDisabled() &&
       !socket.current?.connected
     ) {
@@ -1054,7 +1048,7 @@ export const useEventLoop = (
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
           info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
@@ -1066,7 +1060,7 @@ export const useEventLoop = (
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
           info:
             event.reason?.name +
             ": " +
@@ -1132,7 +1126,7 @@ export const useEventLoop = (
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = ReflexEvent(
-          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
+          `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars },
         );
         addEvents([event], e);
@@ -1175,11 +1169,11 @@ export const useEventLoop = (
     }
 
     // Equivalent to routeChangeComplete - runs after navigation completes
-    addEvents(onLoadInternalEvent());
+    addEvents(app.onLoadInternalEvent());
 
     // Update the ref
     prevLocationRef.current = location;
-  }, [location, dispatch, onLoadInternalEvent, addEvents]);
+  }, [location, dispatch, addEvents]);
 
   return [addEvents, connectErrors];
 };

@@ -8,13 +8,13 @@ import {
   useMemo,
 } from "react";
 
-import { isDevMode, defaultColorMode, ColorModeContext } from "$/utils/context";
+import { ColorModeContext, app } from "$/utils/context-registry";
 
 const allowedModes = ["light", "dark", "system"];
 
 const ThemeContext = createContext({
-  theme: defaultColorMode,
-  resolvedTheme: defaultColorMode !== "system" ? defaultColorMode : "light",
+  theme: "system",
+  resolvedTheme: "light",
   setTheme: () => {},
 });
 ThemeContext.displayName = "ThemeContext";
@@ -29,9 +29,9 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
   const setColorMode = (mode) => {
     if (!allowedModes.includes(mode)) {
       console.error(
-        `Invalid color mode "${mode}". Defaulting to "${defaultColorMode}".`,
+        `Invalid color mode "${mode}". Defaulting to "${app.defaultColorMode}".`,
       );
-      mode = defaultColorMode;
+      mode = app.defaultColorMode;
     }
     setTheme(mode);
   };
@@ -54,13 +54,13 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
 
     firstRender.current = false;
 
-    if (isDevMode) {
+    if (app.isDevMode) {
       const lastCompiledTheme = localStorage.getItem("last_compiled_theme");
-      if (lastCompiledTheme !== defaultColorMode) {
+      if (lastCompiledTheme !== app.defaultColorMode) {
         // on app startup, make sure the application color mode is persisted correctly.
-        setColorMode(defaultColorMode);
-        localStorage.setItem("last_compiled_theme", defaultColorMode);
-        localStorage.setItem("theme", defaultColorMode);
+        setColorMode(app.defaultColorMode);
+        localStorage.setItem("last_compiled_theme", app.defaultColorMode);
+        localStorage.setItem("theme", app.defaultColorMode);
         setIsInitialized(true);
         return;
       }

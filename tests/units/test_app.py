@@ -19,7 +19,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import reflex_base
+from opentelemetry import trace
 from pytest_mock import MockerFixture
+from reflex_base import otel
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
@@ -44,7 +46,14 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import App, ComponentCallable, EventNamespace, default_overlay_component
+from reflex.app import (
+    App,
+    ComponentCallable,
+    EventNamespace,
+    _sio_dumps,
+    _sio_loads,
+    default_overlay_component,
+)
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -62,7 +71,7 @@ from reflex.model import Model
 from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
 from reflex.utils import exec as exec_utils
 
-from .conftest import chdir
+from .conftest import active_tracer, chdir, metric_points
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -2784,10 +2793,18 @@ def test_compile_dry_run_does_not_prune_or_write_manifest(
     manifest = web_dir / compiler_utils._MEMO_MANIFEST_FILENAME
     manifest.write_text(json.dumps([stale_rel]), encoding="utf-8")
     manifest_before = manifest.read_text(encoding="utf-8")
+    # A real compile removes a leftover ``utils/context.js`` (the module is now
+    # emitted as ``.jsx``); a dry run must leave it alone too.
+    stale_context = Path(compiler_utils.get_context_path()).with_suffix(
+        constants.Ext.JS
+    )
+    stale_context.parent.mkdir(parents=True, exist_ok=True)
+    stale_context.write_text("// stale", encoding="utf-8")
 
     app._compile(dry_run=True)
 
     assert stale.exists(), "dry run must not delete stale memo files"
+    assert stale_context.exists(), "dry run must not delete the old context module"
     assert manifest.read_text(encoding="utf-8") == manifest_before, (
         "dry run must not rewrite the memo manifest"
     )
@@ -4456,3 +4473,111 @@ def test_compile_releases_memo_naming_caches(
         app._compile()
 
     assert not _hash_str_encodings
+
+
+def test_call_app_wraps_with_otel_asgi_middleware():
+    """The app's ASGI callable is wrapped when instrumentation installs a middleware."""
+    app = App()
+    app._compile = unittest.mock.Mock()
+    wrapped = []
+    otel.enable(asgi_middleware_factory=lambda asgi: wrapped.append(asgi) or asgi)
+    try:
+        api = app()
+    finally:
+        otel.disable()
+    assert wrapped == [api]
+
+
+def test_sio_json_records_message_sizes(otel_metrics):
+    """Socket.IO packet serialization records UTF-8 sizes in both directions."""
+    data = _sio_dumps({"a": "é"}, separators=(",", ":"))
+    assert data == '{"a":"é"}'
+    assert _sio_loads(data) == {"a": "é"}
+    assert _sio_loads(data.encode()) == {"a": "é"}
+    # ASCII payloads take the fast path that sizes without encoding a copy.
+    ascii_data = _sio_dumps({"b": "x"}, separators=(",", ":"))
+    assert _sio_loads(ascii_data) == {"b": "x"}
+    points = {
+        p.attributes[otel.ATTR_NETWORK_IO_DIRECTION]: p.sum
+        for p in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
+    }
+    size = len(data.encode())
+    assert size == len(data) + 1
+    assert points == {
+        "transmit": size + len(ascii_data),
+        "receive": 2 * size + len(ascii_data),
+    }
+
+
+@pytest.mark.asyncio
+async def test_on_event_uses_frontend_traceparent(otel_exporter):
+    """A traceparent in the event payload becomes the parent of the event span."""
+    mock_app = unittest.mock.Mock()
+    mock_app.router.return_value = "/"
+    mock_app.sio.get_environ.return_value = {
+        "asgi.scope": {"headers": [], "client": ("127.0.0.1", 1)}
+    }
+    seen: list = []
+
+    async def enqueue(token, event):
+        await asyncio.sleep(0)
+        seen.append(trace.get_current_span().get_span_context())
+
+    mock_app.event_processor.enqueue = enqueue
+    ns = EventNamespace(namespace="/", app=mock_app)
+    ns._token_manager.sid_to_token["sid"] = "tok"
+
+    traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+    with active_tracer().start_as_current_span("websocket"):
+        await ns.on_event("sid", {"name": "state.h", "traceparent": traceparent})
+        await ns.on_event("sid", {"name": "state.h"})
+    remote, fresh = seen
+    assert f"{remote.trace_id:032x}" == "0af7651916cd43dd8448eb211c80319c"
+    assert not fresh.is_valid
+
+
+@pytest.mark.asyncio
+async def test_connect_disconnect_counts_connections(otel_metrics):
+    """Connect and disconnect adjust the open connection gauge."""
+    mock_app = unittest.mock.Mock()
+    mock_app._state = None
+    ns = EventNamespace(namespace="/", app=mock_app)
+    ns.emit = unittest.mock.AsyncMock()
+    await ns.on_connect("sid1", {"QUERY_STRING": "token=t1"})
+    await ns.on_connect("sid2", {"QUERY_STRING": "token=t2"})
+    task = ns.on_disconnect("sid1")
+    if task is not None:
+        await task
+    (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
+    assert point.value == 1
+    # Release t2 so a shared token store (redis) does not leak into other tests.
+    await ns._token_manager.disconnect_all()
+
+
+def test_compile_emits_stage_spans(
+    compilable_app: tuple[App, Path], mocker: MockerFixture, otel_exporter
+):
+    """A real compile runs inside `reflex.compile` with the stages as children.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config", return_value=rx.Config(app_name="testing")
+    )
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app._compile(trigger="hot_reload")
+    spans = {span.name: span for span in otel_exporter.get_finished_spans()}
+    root = spans[otel.COMPILE_SPAN_NAME]
+    assert root.parent is None
+    assert root.attributes[otel.ATTR_COMPILE_TRIGGER] == "hot_reload"
+    assert root.attributes[otel.ATTR_COMPILE_DRY_RUN] is False
+    stages = {name for name in spans if name.startswith("reflex.compile.")}
+    assert {"reflex.compile.pages", "reflex.compile.write"} <= stages
+    for name in stages:
+        parent = spans[name].parent
+        assert parent is not None
+        assert parent.span_id == root.get_span_context().span_id
