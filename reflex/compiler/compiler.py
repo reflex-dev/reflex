@@ -32,7 +32,7 @@ from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
-from reflex_base.registry import RegistrationContext
+from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
@@ -152,6 +152,19 @@ def _compile_app(
     ]
 
     window_libraries_deduped = list(dict.fromkeys(window_libraries))
+    lazy_window_libraries = []
+    if get_config().frontend_lazy_bundled_libraries:
+        core_libraries = set(_default_bundled_libraries())
+        lazy_window_libraries = [
+            library
+            for library in window_libraries_deduped
+            if library[1] not in core_libraries
+        ]
+        window_libraries_deduped = [
+            library
+            for library in window_libraries_deduped
+            if library[1] in core_libraries
+        ]
 
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
@@ -161,6 +174,7 @@ def _compile_app(
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
         window_libraries=window_libraries_deduped,
+        lazy_window_libraries=lazy_window_libraries,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
         hydrate_fallback_export=hydrate_fallback_export,
