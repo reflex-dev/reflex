@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping, MutableMapping
 from typing import TYPE_CHECKING, Any
 
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.event import _EVENT_FIELDS, Event
@@ -44,6 +44,20 @@ _CLIENT_ERROR = str(constants.SocketEvent.CLIENT_ERROR)
 
 # The heartbeat frame is static; serialize it once.
 _PING_FRAME = json.dumps([PING_MESSAGE])
+
+
+def utf8_size(data: str) -> int:
+    """Size of a serialized message in UTF-8 bytes.
+
+    ASCII payloads (the common case) are sized without encoding a copy.
+
+    Args:
+        data: The serialized message.
+
+    Returns:
+        The number of bytes the message occupies on the wire.
+    """
+    return len(data) if data.isascii() else len(data.encode())
 
 
 class BaseEventNamespace(ABC):
@@ -124,6 +138,8 @@ class BaseEventNamespace(ABC):
             query_string: The raw query string of the connection request.
             subprotocol: The websocket subprotocol offered by the client.
         """
+        if otel.enabled:
+            otel.record_connection(1)
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
             self._token_manager.ensure_lost_and_found_task(self.emit_update)
@@ -152,6 +168,8 @@ class BaseEventNamespace(ABC):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        if otel.enabled:
+            otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
@@ -290,7 +308,11 @@ class BaseEventNamespace(ABC):
         except (AttributeError, LookupError, TypeError, ValueError) as ex:
             msg = "Failed to normalize event router_data."
             raise exceptions.EventDeserializationError(msg) from ex
-        await self.app.event_processor.enqueue(token, event)
+        if not otel.enabled:
+            await self.app.event_processor.enqueue(token, event)
+            return
+        with otel.remote_context(data):
+            await self.app.event_processor.enqueue(token, event)
 
     async def handle_ping(self, sid: str) -> None:
         """Handle an application-level ping test event.
@@ -431,8 +453,11 @@ class WebsocketEventNamespace(BaseEventNamespace):
             # being processed, so its remaining updates have nowhere to go.
             logger.debug(f"Attempted to emit {event!r} to unknown session {to!r}.")
             return
+        text = format.json_dumps([event, data])
+        if otel.enabled:
+            otel.record_message_size(utf8_size(text), "transmit")
         try:
-            await websocket.send_text(format.json_dumps([event, data]))
+            await websocket.send_text(text)
         except Exception:
             # The connection went away mid-send; the receive loop cleans up.
             logger.debug(f"Failed to emit {event!r} to session {to!r}.", exc_info=True)
@@ -482,6 +507,8 @@ class WebsocketEventNamespace(BaseEventNamespace):
         ):
             logger.debug(f"Closing session {sid}: message over {max_size} bytes.")
             return 1009
+        if otel.enabled:
+            otel.record_message_size(utf8_size(text), "receive")
         try:
             message = json.loads(text)
         except json.JSONDecodeError:

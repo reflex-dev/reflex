@@ -25,7 +25,7 @@ from collections.abc import (
 from contextvars import Token
 from typing import TYPE_CHECKING, Any, overload
 
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
@@ -775,6 +775,8 @@ class App(MiddlewareMixin, LifespanMixin):
             self._context_middleware(asgi_app),
         )
         App._add_cors(top_asgi_app)
+        if otel.asgi_middleware is not None:
+            return otel.asgi_middleware(top_asgi_app)
         return top_asgi_app
 
     def _add_default_endpoints(self):

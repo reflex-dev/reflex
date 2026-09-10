@@ -9,6 +9,8 @@ from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+from opentelemetry import trace
+from reflex_base import otel
 from starlette.routing import WebSocketRoute
 
 from reflex.app import App
@@ -18,6 +20,9 @@ from reflex.event_namespace import (
     PONG_MESSAGE,
     WebsocketEventNamespace,
 )
+from reflex.utils import format
+
+from .conftest import active_tracer, metric_points
 
 _DISCONNECT = object()
 
@@ -416,6 +421,56 @@ async def test_emit_to_unknown_sid_does_not_raise(
     with caplog.at_level(logging.DEBUG, logger="reflex.event_namespace"):
         await namespace.emit("event", {"delta": {}}, to="gone")
     assert all(record.levelno <= logging.DEBUG for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_websocket_records_connections_and_message_sizes(
+    namespace: WebsocketEventNamespace, otel_metrics
+):
+    """A session adjusts the connection gauge and sizes frames in both directions."""
+    websocket = FakeWebSocket()
+    websocket.feed(["ping"])
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    (connections,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
+    # Connect and disconnect both happened, so the gauge is back at zero.
+    assert connections.value == 0
+    sizes = {
+        p.attributes[otel.ATTR_NETWORK_IO_DIRECTION]: p.sum
+        for p in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
+    }
+    assert sizes == {
+        "receive": len(json.dumps(["ping"])),
+        "transmit": len(format.json_dumps(["ping", "pong"])),
+    }
+
+
+@pytest.mark.asyncio
+async def test_websocket_event_uses_frontend_traceparent(
+    namespace: WebsocketEventNamespace, mock_app: Mock, otel_exporter
+):
+    """A traceparent in the event payload becomes the parent of the event span."""
+    seen: list = []
+
+    async def enqueue(token, event):
+        await asyncio.sleep(0)
+        seen.append(trace.get_current_span().get_span_context())
+
+    mock_app.event_processor.enqueue = enqueue
+    traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+    websocket = FakeWebSocket()
+    websocket.feed(
+        ["event", {"name": "state.h", "traceparent": traceparent}],
+        ["event", {"name": "state.h"}],
+    )
+    with active_tracer().start_as_current_span("websocket"):
+        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    remote, fresh = seen
+    assert f"{remote.trace_id:032x}" == "0af7651916cd43dd8448eb211c80319c"
+    assert not fresh.is_valid
 
 
 def test_default_transport_uses_websocket_namespace():

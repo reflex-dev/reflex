@@ -41,8 +41,12 @@ from typing_extensions import TypeAliasType, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
+from reflex_base.utils.compat import declares_annotation
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    PROPERTY_CLASSES: tuple[type, ...]
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
@@ -570,11 +574,46 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     return type_hints.get(field_name, None)
 
 
-PROPERTY_CLASSES = (property,)
-if find_spec("sqlalchemy") and find_spec("sqlalchemy.ext"):
-    from sqlalchemy.ext.hybrid import hybrid_property
+@lru_cache
+def _get_property_classes() -> tuple[type, ...]:
+    """Resolve the legacy property-class tuple on explicit access.
 
-    PROPERTY_CLASSES += (hybrid_property,)
+    Returns:
+        Python's property class and SQLAlchemy's hybrid property class when
+        SQLAlchemy is installed.
+    """
+    if find_spec("sqlalchemy") and find_spec("sqlalchemy.ext"):
+        from sqlalchemy.ext.hybrid import hybrid_property
+
+        return property, hybrid_property
+    return (property,)
+
+
+def __getattr__(name: str) -> object:
+    """Resolve compatibility attributes without importing optional runtimes.
+
+    Args:
+        name: The module attribute being requested.
+
+    Returns:
+        The lazily resolved compatibility value.
+
+    Raises:
+        AttributeError: If the module does not define the requested attribute.
+    """
+    if name == "PROPERTY_CLASSES":
+        return _get_property_classes()
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
+
+
+def __dir__() -> list[str]:
+    """List module attributes, including lazy compatibility exports.
+
+    Returns:
+        The module's attribute names.
+    """
+    return sorted({*globals(), "PROPERTY_CLASSES"})
 
 
 def get_property_hint(attr: Any | None) -> GenericType | None:
@@ -586,9 +625,15 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     Returns:
         The type hint of the property, if it is a property, else None.
     """
-    if not isinstance(attr, PROPERTY_CLASSES) or attr.fget is None:
+    if not isinstance(attr, property):
+        sqlalchemy_hybrid = sys.modules.get("sqlalchemy.ext.hybrid")
+        if sqlalchemy_hybrid is None or not isinstance(
+            attr, sqlalchemy_hybrid.hybrid_property
+        ):
+            return None
+    if (getter := getattr(attr, "fget", None)) is None:
         return None
-    hints = get_type_hints(attr.fget)
+    hints = get_type_hints(getter)
     return hints.get("return", None)
 
 
@@ -706,6 +751,9 @@ def get_attribute_access_type(
             isinstance(cls, type)
             and not is_generic_alias(cls)
             and issubclass(cls, sqlmodel_types)
+            # Probes for unannotated names must not trigger hint resolution,
+            # which may fail on unresolvable ForwardRefs.
+            and declares_annotation(cls, name)
         ):
             # Check in the annotations directly (for sqlmodel.Relationship)
             hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
@@ -721,13 +769,16 @@ def get_attribute_access_type(
             *(get_attribute_access_type(arg, name) for arg in get_args(cls))
         )
     if isinstance(cls, type):
-        # Bare class
-        exceptions = NameError
+        # Bare class. Skip hint resolution entirely when the name is not
+        # annotated anywhere in the MRO: attribute probes (e.g. inspect's
+        # `_is_coroutine_marker` check) must not trigger, and warn about,
+        # ForwardRef resolution of unrelated annotations.
         try:
-            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
-            if name in hints:
-                return hints[name]
-        except exceptions as e:
+            if declares_annotation(cls, name):
+                hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
+                if name in hints:
+                    return hints[name]
+        except NameError as e:
             logger.warning(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
     return None  # Attribute is not accessible.
 
@@ -1523,3 +1574,10 @@ def is_immutable(i: Any) -> bool:
         Whether the value is immutable.
     """
     return isinstance(i, IMMUTABLE_TYPES)
+
+
+if not TYPE_CHECKING:
+    # Keep the historical wildcard-import surface while allowing the optional
+    # SQLAlchemy descriptor class to resolve only when that export is used.
+    __all__ = [name for name in globals() if not name.startswith("_")]
+    __all__.append("PROPERTY_CLASSES")

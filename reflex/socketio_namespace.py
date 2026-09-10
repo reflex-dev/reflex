@@ -6,12 +6,13 @@ import json
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
+from reflex_base import otel
 from reflex_base.environment import environment
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from socketio import ASGIApp as EngineIOApp
 from socketio import AsyncNamespace, AsyncServer
 
-from reflex.event_namespace import BaseEventNamespace
+from reflex.event_namespace import BaseEventNamespace, utf8_size
 from reflex.utils import format
 
 if TYPE_CHECKING:
@@ -22,12 +23,46 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 
-# The JSON codec socket.io serializes packets with: Reflex's dumps (which
-# emits the non-finite float tokens the frontend revives) and the stdlib
-# loads for client-supplied data.
+def _sio_dumps(obj: Any, **kwargs: Any) -> str:
+    """Serialize an outgoing Socket.IO packet, recording its size when telemetry is on.
+
+    Uses Reflex's dumps, which emits the non-finite float tokens the frontend
+    revives.
+
+    Args:
+        obj: The packet payload.
+        **kwargs: Options forwarded to the JSON encoder.
+
+    Returns:
+        The JSON string.
+    """
+    data = format.json_dumps(obj, **kwargs)
+    if otel.enabled:
+        otel.record_message_size(utf8_size(data), "transmit")
+    return data
+
+
+def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
+    """Deserialize an incoming Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        data: The JSON string.
+        **kwargs: Options forwarded to the JSON decoder.
+
+    Returns:
+        The decoded payload.
+    """
+    if otel.enabled:
+        otel.record_message_size(
+            utf8_size(data) if isinstance(data, str) else len(data), "receive"
+        )
+    return json.loads(data, **kwargs)
+
+
+# The JSON codec socket.io serializes packets with.
 _SOCKET_JSON_CODEC = SimpleNamespace(
-    dumps=staticmethod(format.json_dumps),
-    loads=staticmethod(json.loads),
+    dumps=staticmethod(_sio_dumps),
+    loads=staticmethod(_sio_loads),
 )
 
 

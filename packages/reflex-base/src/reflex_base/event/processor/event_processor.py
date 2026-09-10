@@ -18,6 +18,7 @@ from typing_extensions import Self
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
@@ -495,6 +496,9 @@ class EventProcessor:
             ev_ctx=dataclasses.replace(
                 self._root_context.fork(token=token),
                 emit_delta_impl=_emit_delta_impl,
+                # Like fork(): the handler span nests under the caller's span
+                # (the upload request, a custom route).
+                otel_context=otel.capture_context(),
             ),
         )
 
@@ -638,7 +642,15 @@ class EventProcessor:
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
-        await self._execute_event(entry=entry, registered_handler=registered_handler)
+        if not otel.enabled:
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
+            return
+        with otel.event_span(entry.event, entry.ctx, registered_handler):
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
 
     def _create_event_task(
         self,
