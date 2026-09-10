@@ -49,7 +49,7 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - FINDING-002: rx.moment on_change fires at mount with react-moment 2.0.2 (LOW, regression, downstream) — CONFIRMED
 - FINDING-003: prod multi-worker + redis: cross-worker deltas silently dropped, swallowing the new #7073 hydrate (HIGH, pre-existing) — claimed
 - FINDING-004: client-storage vars show defaults after a backend rehydrate until a full reload (MEDIUM, pre-existing) — claimed
-- FINDING-005: hybrid_property class-level access types as Any on pyright 1.1.413 (MEDIUM, typing claim in changelog) — claimed
+- FINDING-005: hybrid_property class-level typing works on the repo-pinned pyright 1.1.411 but degrades to `Any` from pyright 1.1.412 onward (MEDIUM, forward-compat) — CONFIRMED by version bracketing
 - FINDING-006: uv cannot build the `reflex` sdist (workspace sources in pyproject) (LOW, pre-existing)
 - FINDING-007: reflex-only in-place upgrade leaves the alpha sub-packages at their stable versions (LOW, upgrade-path note)
 - FINDING-008: `reflex run --backend-only` leaks `.web/nocompile`; the next full run serves a stale frontend (MEDIUM, pre-existing) — claimed
@@ -112,6 +112,23 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
   Users testing the alpha therefore do not get the alpha sub-packages (and not FINDING-002)
   unless they pin them explicitly. Expected resolver behaviour; worth a line in the pre-release
   announcement.
+
+## FINDING-005: hybrid_property class-level typing degrades to `Any` on pyright 1.1.412+ (MEDIUM)
+
+- Cluster: `hybrid_property` (reported) / `orch_probes` (bracketed) | Regression vs 0.9.10.post2: no
+  (0.9.10.post2 typed it as the descriptor) | Verifier: version-bracketed A/B with one identical file
+- The reflex-base 0.9.11a1 changelog promises that "type checkers now resolve class-level access to
+  the frontend var's type instead of the descriptor". That holds exactly at **pyright 1.1.411**, the
+  version this repo pins (raised from 1.1.408 in this same train): `State.full` → `StringVar[str]`,
+  `State.doubled` → `NumberVar[int]`, `State.positive` → `BooleanVar`, a var function with its own
+  declared type → that type, instance access → the Python type. On 0.9.10.post2 the same file typed
+  every one as `HybridProperty`, so the feature is a real improvement.
+- From **pyright 1.1.412 onward** (412, 413 and 414 all checked) every class-level access types as
+  `Any`. No error is raised, so downstream users on a current pyright silently lose the checking the
+  changelog advertises. Instance access is unaffected.
+- Repro and the full table: `orch_probes/NOTES.md` and `orch_probes/hp_types.py`.
+- Maintainer decision: the overload set in `hybrid_property` needs to survive pyright's newer
+  overload resolution, or the promise needs qualifying with a supported checker version.
 
 ## FINDING-008: `reflex run --backend-only` leaks `.web/nocompile`; the next full run serves a stale frontend (MEDIUM, pre-existing)
 

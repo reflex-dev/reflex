@@ -80,3 +80,30 @@ auth failure as "no regions exist". `reflex cloud config --json` likewise exits 
 `{"generated": false, "path": null}` while stderr says PyYAML is missing (PyYAML is not a
 dependency of reflex-hosting-cli). Compare `reflex cloud project selected --json`, which carries
 an explicit `"error": null` field — the pattern the failing commands do not follow.
+
+## hybrid_property typing promise vs pyright version (#6812) — bracketed to pyright 1.1.412
+
+The `hybrid_property` cluster reported class-level access typing as `Any` on pyright 1.1.413,
+contradicting the reflex-base 0.9.11a1 changelog ("type checkers now resolve class-level access to
+the frontend var's type instead of the descriptor"). Re-run here with ONE file
+(`pyright/hp_types.py`, copied next to this NOTES.md) across versions, each in its own venv:
+
+| reflex | pyright | `State.full` | `State.doubled` | `State.positive` | explicit var fn | `State().full` |
+|---|---|---|---|---|---|---|
+| 0.9.10.post2 | 1.1.411 | `HybridProperty` | `HybridProperty` | `HybridProperty` | `HybridProperty` | `str` |
+| **0.9.11a1** | **1.1.411** (repo pin) | **`StringVar[str]`** | **`NumberVar[int]`** | **`BooleanVar`** | **`StringVar[str]`** | `str` |
+| 0.9.11a1 | 1.1.412 | `Any` | `Any` | `Any` | `Any` | `str` |
+| 0.9.11a1 | 1.1.413 | `Any` | `Any` | `Any` | `Any` | `str` |
+| 0.9.11a1 | 1.1.414 | `Any` | `Any` | `Any` | `Any` | `str` |
+
+So the feature **does** work, and is a clear improvement over 0.9.10.post2, at the pyright version
+this repo pins (1.1.411, raised from 1.1.408 in this same train by #6893). It degrades to `Any`
+from **pyright 1.1.412 onward** — every version a downstream user would install today. Instance
+access stays correct everywhere, and there are no errors either way, so the loss is silent.
+
+Rerun:
+```
+uv venv envs/pyrightNNN --python 3.11
+uv pip install --python envs/pyrightNNN/bin/python --prerelease=allow 'reflex==0.9.11a1' 'pyright==1.1.NNN'
+PATH=/opt/node22/bin:$PATH envs/pyrightNNN/bin/pyright --pythonpath envs/pyrightNNN/bin/python --outputjson <thisdir>/hp_types.py
+```
