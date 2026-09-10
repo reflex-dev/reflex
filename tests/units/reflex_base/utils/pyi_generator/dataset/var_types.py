@@ -7,10 +7,11 @@ This module tests:
 - Callable prop: Var[Callable[[], bool]] (should NOT expand inner type)
 - Component with no custom props (just inherited defaults)
 - Component with only event handlers (no data props)
+- Union props without None: still optional in create()
 """
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Literal
 
 from reflex_base.components.component import Component, field
 from reflex_base.event import EventHandler, passthrough_event_spec
@@ -48,3 +49,13 @@ class VarTypesComponent(Component):
 
     # Callable prop — the inner Callable type should not be expanded.
     on_check: Var[Callable[[], bool]] = field(doc="A callable that returns bool.")
+
+
+class UnionPropsComponent(Component):
+    """A component with props annotated as unions that do not include None."""
+
+    # Union of a Var and another type; create() still defaults it to None.
+    content: Var[str] | Component = field(doc="The content to render.")
+
+    # Union of a Literal and a Var.
+    color_scheme: Literal["red", "blue"] | Var[str] = field(doc="The color scheme.")

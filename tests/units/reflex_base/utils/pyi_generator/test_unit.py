@@ -154,6 +154,18 @@ def test_get_type_hint_union_without_none(type_hint_globals):
     assert result == "int | str"
 
 
+def test_get_type_hint_union_without_none_optional(type_hint_globals):
+    """A union prop still gets `| None`, since create() defaults it to None."""
+    result = _get_type_hint(Union[str, int], type_hint_globals, is_optional=True)  # noqa: UP007
+    assert result == "int | str | None"
+
+
+def test_get_type_hint_str_union_without_none_optional(type_hint_globals):
+    """A union given as a string annotation is treated the same way."""
+    result = _get_type_hint("Union[str, int]", type_hint_globals, is_optional=True)
+    assert result == "str | int | None"
+
+
 def test_get_type_hint_union_with_none(type_hint_globals):
     result = _get_type_hint(Union[str, int, None], type_hint_globals)  # noqa: UP007
     assert result == "int | str | None"
