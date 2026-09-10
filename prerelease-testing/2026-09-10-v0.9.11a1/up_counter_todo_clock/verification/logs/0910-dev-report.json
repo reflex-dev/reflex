@@ -1,0 +1,234 @@
+{
+ "url": "http://localhost:4600/",
+ "wait_seconds": 10.0,
+ "phases": [
+  [
+   "13:40:48",
+   "goto"
+  ],
+  [
+   "13:40:50",
+   "mounted"
+  ],
+  [
+   "13:41:00",
+   "reload"
+  ],
+  [
+   "13:41:01",
+   "remounted"
+  ],
+  [
+   "13:41:11",
+   "nav_to_other"
+  ],
+  [
+   "13:41:14",
+   "nav_back"
+  ],
+  [
+   "13:41:14",
+   "client_remounted"
+  ],
+  [
+   "13:41:24",
+   "done"
+  ]
+ ],
+ "frames": [
+  [
+   "13:40:49.991",
+   "ws#1",
+   "hydrate",
+   null
+  ],
+  [
+   "13:40:49.991",
+   "ws#1",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:40:53.098",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:40:53"
+   }
+  ],
+  [
+   "13:40:56.096",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:40:56"
+   }
+  ],
+  [
+   "13:40:59.095",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:40:59"
+   }
+  ],
+  [
+   "13:41:00.954",
+   "ws#2",
+   "hydrate",
+   null
+  ],
+  [
+   "13:41:00.954",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:41:03.979",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:41:03"
+   }
+  ],
+  [
+   "13:41:06.978",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:41:06"
+   }
+  ],
+  [
+   "13:41:09.978",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:41:09"
+   }
+  ],
+  [
+   "13:41:11.600",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:41:14.193",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:41:17.195",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:41:17"
+   }
+  ],
+  [
+   "13:41:20.195",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:41:20"
+   }
+  ],
+  [
+   "13:41:23.194",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:41:23"
+   }
+  ]
+ ],
+ "counts_after_load": {
+  "tick_count": "tick_count=3",
+  "static_count": "static_count=0",
+  "tick_log": "tick_log=13:40:53,13:40:56,13:40:59",
+  "static_log": "static_log="
+ },
+ "counts_after_reload": {
+  "tick_count": "tick_count=6",
+  "static_count": "static_count=0",
+  "tick_log": "tick_log=13:40:53,13:40:56,13:40:59,13:41:03,13:41:06,13:41:09",
+  "static_log": "static_log="
+ },
+ "counts_after_client_nav": {
+  "tick_count": "tick_count=9",
+  "static_count": "static_count=0",
+  "tick_log": "tick_log=13:40:53,13:40:56,13:40:59,13:41:03,13:41:06,13:41:09,13:41:17,13:41:20,13:41:23",
+  "static_log": "static_log="
+ },
+ "interval_time_outerHTML": "<time datetime=\"1789047659093\">13:40:59</time>",
+ "static_innerHTML": "<time datetime=\"1577934245000\">2020-01-02 03:04</time>",
+ "websockets": [
+  [
+   "open",
+   "13:40:49",
+   "ws://localhost:4600/?token=32dSNSDPvOFN"
+  ],
+  [
+   "open",
+   "13:40:49",
+   "ws://localhost:9600/_event/?token=28781387-1d96-4c62-ad3d-882007d60ec0&EIO=4&transport=websocket"
+  ],
+  [
+   "close",
+   "13:41:00",
+   "ws://localhost:9600/_event/?token=28781387-1d96-4c62-ad3d-882007d60ec0&EIO=4&transport=websocket"
+  ],
+  [
+   "open",
+   "13:41:00",
+   "ws://localhost:4600/?token=32dSNSDPvOFN"
+  ],
+  [
+   "open",
+   "13:41:00",
+   "ws://localhost:9600/_event/?token=28781387-1d96-4c62-ad3d-882007d60ec0&EIO=4&transport=websocket"
+  ]
+ ],
+ "console": [
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  [
+   "log",
+   "Disconnect websocket on page navigation"
+  ],
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+ ],
+ "page_errors": []
+}

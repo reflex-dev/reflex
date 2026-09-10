@@ -1,0 +1,152 @@
+{
+  "url": "http://localhost:4103/",
+  "steps": [
+    {
+      "name": "false_branch_renders",
+      "ok": true,
+      "detail": "heading 'Bio Page if False' visible (no LD_SDK_KEY)"
+    },
+    {
+      "name": "bio_texts",
+      "ok": true,
+      "detail": "texts=['dub.link/pronouns', '< insert bio here >', 'Website', 'Twitter', 'GitHub', 'LinkedIn']"
+    },
+    {
+      "name": "built_with_reflex_badge",
+      "ok": true,
+      "detail": "badge links present=1 (expected 1 in prod, 0 in dev)"
+    },
+    {
+      "name": "link_buttons",
+      "ok": true,
+      "detail": "links=[['Website', 'https://reflex.dev', '_blank', None, 1], ['Twitter', 'https://twitter.com/getreflex', '_blank', None, 1], ['GitHub', 'https://github.com/reflex-dev/reflex-examples', '_blank', None, 1], ['LinkedIn', 'https://www.linkedin.com/company/reflex-dev', '_blank', None, 1]]"
+    },
+    {
+      "name": "link_icons_rendered",
+      "ok": true,
+      "detail": "svg-per-link=[1, 1, 1, 1]"
+    },
+    {
+      "name": "avatar_renders",
+      "ok": true,
+      "detail": "avatar roots=1 inner=<span class=\"rt-AvatarFallback\"></span>"
+    },
+    {
+      "name": "button_hover_style",
+      "ok": true,
+      "detail": "rgba(0, 0, 0, 0.5) -> rgba(0, 0, 0, 0.7)"
+    },
+    {
+      "name": "moment_renders_time",
+      "ok": true,
+      "detail": "count=1 text='13:30:43' outerHTML='<time datetime=\"2026-09-10T13:30:43.614Z\">13:30:43</time>'"
+    },
+    {
+      "name": "moment_matches_browser_clock",
+      "ok": true,
+      "detail": "moment='13:30:43' browser='13:30:44'"
+    },
+    {
+      "name": "moment_interval_ticks",
+      "ok": true,
+      "detail": "t1='13:30:43' t2='13:30:46' (interval=3000)"
+    },
+    {
+      "name": "moment_on_change_events_sent",
+      "ok": true,
+      "detail": "on_update frames=8 payloads=[('ws#1', '13:30:28'), ('ws#1', '13:30:31'), ('ws#1', '13:30:34'), ('ws#1', '13:30:37'), ('ws#1', '13:30:40')]"
+    },
+    {
+      "name": "moment_on_change_mount_duplicates",
+      "ok": true,
+      "detail": "on_update dates=['13:30:28', '13:30:31', '13:30:34', '13:30:37', '13:30:40', '13:30:43', '13:30:46', '13:30:49'] consecutive-duplicate dates=[] (0.9.10/react-moment 1.2.2: none; react-moment 2.0.2 dev: one duplicate per mount)"
+    },
+    {
+      "name": "link_click_opens_new_tab",
+      "ok": true,
+      "detail": "popup url='chrome-error://chromewebdata/'"
+    },
+    {
+      "name": "reload_rerenders_and_ticks",
+      "ok": true,
+      "detail": "a='13:31:06' b='13:31:09'"
+    }
+  ],
+  "all_steps_ok": true,
+  "console": [
+    [
+      "error",
+      "Failed to load resource: net::ERR_CONNECTION_RESET"
+    ],
+    [
+      "log",
+      "Disconnect websocket on page navigation"
+    ],
+    [
+      "error",
+      "Failed to load resource: net::ERR_CONNECTION_RESET"
+    ]
+  ],
+  "unexpected_console": [
+    [
+      "error",
+      "Failed to load resource: net::ERR_CONNECTION_RESET"
+    ],
+    [
+      "error",
+      "Failed to load resource: net::ERR_CONNECTION_RESET"
+    ]
+  ],
+  "page_errors": [],
+  "failed_requests": [
+    [
+      "https://avatars.githubusercontent.com/%3Cyour_username_here%3E",
+      "net::ERR_CONNECTION_RESET"
+    ],
+    [
+      "https://avatars.githubusercontent.com/%3Cyour_username_here%3E",
+      "net::ERR_CONNECTION_RESET"
+    ]
+  ],
+  "http_4xx_5xx": [],
+  "websockets": [
+    [
+      "open",
+      "ws://localhost:4103/_event/?token=01c5c6b8-ff74-4cfc-be90-c393d0f63d99&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:4103/_event/?token=01c5c6b8-ff74-4cfc-be90-c393d0f63d99&EIO=4&transport=websocket"
+    ],
+    [
+      "open",
+      "ws://localhost:4103/_event/?token=01c5c6b8-ff74-4cfc-be90-c393d0f63d99&EIO=4&transport=websocket"
+    ]
+  ],
+  "event_frames_sent": [
+    "ws#1 40/_event,",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:28\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:31\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:34\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:37\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:40\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:43\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:46\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:49\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:52\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 3",
+    "ws#1 41/_event,",
+    "ws#2 40/_event,",
+    "ws#2 42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#2 42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#2 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:54\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#2 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:30:57\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#2 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:31:00\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#2 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:31:03\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#2 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:31:06\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#2 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:31:09\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#2 42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"13:31:12\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  ]
+}

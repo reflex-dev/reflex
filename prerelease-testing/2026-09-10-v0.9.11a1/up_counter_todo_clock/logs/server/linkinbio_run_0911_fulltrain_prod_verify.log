@@ -1,0 +1,237 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/up_counter_todo_clock_linkinbio/lib/python3.11/site-packages/reflex_base/c
+onfig.py'
+Debug: Config: Config(app_name='linkinbio', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4
+dc3b5b67/scratchpad/envs/rxdir_linkinbio/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'telemetry_enabled', 'plugins', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: 
+[PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67
+/scratchpad/envs/rxdir_linkinbio/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/up_counter_todo_clock_linkinbio/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/rxdir_linkinbio/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: 
+[['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchp
+ad/envs/rxdir_linkinbio/bun/bin/bun'], ['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=4103
+Debug: Overriding config value backend_port with env var BACKEND_PORT=4103
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Fullstack port: 4103 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Fullstack port: 4103 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 4103 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.04s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 227 installs across 250 packages (no changes) [12.00ms]
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 
+'@react-router/fs-routes@8.3.1', 'vite@8.2.2', 'postcss@8.5.26', 
+'autoprefixer@10.5.4', '@react-router/dev@8.3.1', '@emotion/react@11.14.0', 
+'postcss-import@17.0.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss@8.5.26
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: 
+Debug: [11.00ms] done
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', 'add', '--legacy-peer-deps', 
+'universal-cookie@8.1.2', 'isbot@5.2.2', 'moment@2.30.1', 
+'react-error-boundary@6.1.2', '@react-router/node@8.3.1', 'react-moment@2.0.2', 
+'react-helmet@6.1.0', 'socket.io-client@4.8.3', 'react-dom@19.2.8', 
+'react-router@8.3.1', 'lucide-react@1.26.0', 'sonner@2.0.8', 
+'@radix-ui/themes@3.3.0', 'react@19.2.8']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed universal-cookie@8.1.2
+Debug: installed isbot@5.2.2
+Debug: installed moment@2.30.1
+Debug: installed react-error-boundary@6.1.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed react-moment@2.0.2
+Debug: installed react-helmet@6.1.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-dom@19.2.8
+Debug: installed react-router@8.3.1
+Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react@19.2.8
+Debug: 
+Debug: [11.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_counter_todo_clock/linkinbio/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_counter_todo_clock/linkinbio/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.06s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', 'run', 'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 416 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             3.11 kB │ 
+gzip:  0.65 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-Ddr8jTlj.js                   0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-bnJxr_Q8.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_index-B4gfjqsR.js                       5.34 kB │ 
+gzip:  1.72 kB
+Debug: build/client/assets/emotion-react.browser.esm-BocJsOJy.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-OVKOAVv-.js             36.82 kB │ 
+gzip: 12.78 kB
+Debug: build/client/assets/dist-DlTXz7pT.js                        66.19 kB │ 
+gzip: 21.72 kB
+Debug: build/client/assets/components-BMMV3sFN.js                  85.27 kB │ 
+gzip: 28.38 kB
+Debug: build/client/assets/createLucideIcon-Dme6krnd.js           153.35 kB │ 
+gzip: 46.17 kB
+Debug: build/client/assets/entry.client-BqvogvTC.js               182.34 kB │ 
+gzip: 57.73 kB
+Debug: build/client/assets/root-FEwmob7B.js                       297.65 kB │ 
+gzip: 83.71 kB
+Debug: 
+Debug: ✓ built in 2.38s
+Debug: vite v8.2.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 25 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.79 kB │ 
+gzip:  0.31 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-Ddr8jTlj.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     47.24 kB │ 
+gzip: 14.18 kB
+Debug: 
+Debug: ✓ built in 554ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:04
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/up_counter_todo_clock/linkinbio/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/up_counter_todo_clock/linkinbio/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:4103/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 6523)
+[INFO] Listening at: http://0.0.0.0:4103
+[INFO] Spawning worker-1 with PID: 6590
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+0 :: 13:30:28
+0 :: 13:30:31
+0 :: 13:30:34
+0 :: 13:30:37
+0 :: 13:30:40
+0 :: 13:30:43
+0 :: 13:30:46
+0 :: 13:30:49
+0 :: 13:30:52
+0 :: 13:30:54
+0 :: 13:30:57
+0 :: 13:31:00
+0 :: 13:31:03
+0 :: 13:31:06
+0 :: 13:31:09
+0 :: 13:31:12
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

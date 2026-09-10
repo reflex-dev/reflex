@@ -1,0 +1,15 @@
+# trimmed: header + react-moment install lines + every EVT line (full log at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify_up_counter_todo_clock_0/logs/server_0911_moment093_dev.log)
+129:───────────────────────────── Starting Reflex App ──────────────────────────────
+179:Debug: + react-moment@1.2.2
+216:'socket.io-client@4.8.3', 'react-moment@1.2.2']
+236:Debug: installed react-moment@1.2.2
+276:App running at: http://localhost:4600/
+281:EVT seq=1 kind=interval payload='13:42:38' server_time=13:42:38.475
+282:EVT seq=2 kind=interval payload='13:42:41' server_time=13:42:41.431
+283:EVT seq=3 kind=interval payload='13:42:44' server_time=13:42:44.430
+284:EVT seq=4 kind=interval payload='13:42:49' server_time=13:42:49.378
+285:EVT seq=5 kind=interval payload='13:42:52' server_time=13:42:52.378
+286:EVT seq=6 kind=interval payload='13:42:55' server_time=13:42:55.377
+287:EVT seq=7 kind=interval payload='13:43:02' server_time=13:43:02.626
+288:EVT seq=8 kind=interval payload='13:43:05' server_time=13:43:05.626
+289:EVT seq=9 kind=interval payload='13:43:08' server_time=13:43:08.626

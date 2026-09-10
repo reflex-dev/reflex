@@ -1,0 +1,180 @@
+{
+  "url": "http://localhost:4105/",
+  "steps": [
+    {
+      "name": "pre_edit_count_3",
+      "ok": true,
+      "detail": "count=3, marker set"
+    },
+    {
+      "name": "hot_update_applied",
+      "ok": true,
+      "detail": "new label visible after 0.8s"
+    },
+    {
+      "name": "no_full_reload",
+      "ok": true,
+      "detail": "window marker='alive' (None => page fully reloaded)"
+    },
+    {
+      "name": "state_survived_hot_update",
+      "ok": true,
+      "detail": "count after edit='3'"
+    },
+    {
+      "name": "event_socket_connections",
+      "ok": true,
+      "detail": "/_event sockets opened before=1 after=4 (extra opens = reconnects)"
+    },
+    {
+      "name": "interactive_after_hot_update",
+      "ok": true,
+      "detail": "3 -> 4"
+    }
+  ],
+  "all_steps_ok": true,
+  "console": [
+    [
+      "log",
+      "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ],
+    [
+      "error",
+      "WebSocket connection to 'ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ],
+    [
+      "error",
+      "WebSocket connection to 'ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ],
+    [
+      "debug",
+      "[vite] hot updated: /app/routes/_index.jsx"
+    ],
+    [
+      "debug",
+      "[vite] hot updated: /app/routes/_index.jsx"
+    ],
+    [
+      "error",
+      "WebSocket connection to 'ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ],
+    [
+      "error",
+      "WebSocket connection to 'ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ],
+    [
+      "debug",
+      "[vite] hot updated: /app/routes/_index.jsx"
+    ],
+    [
+      "debug",
+      "[vite] hot updated: /app/routes/_index.jsx"
+    ]
+  ],
+  "unexpected_console": [
+    [
+      "error",
+      "WebSocket connection to 'ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ],
+    [
+      "error",
+      "WebSocket connection to 'ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ],
+    [
+      "error",
+      "WebSocket connection to 'ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ],
+    [
+      "error",
+      "WebSocket connection to 'ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ]
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "websockets": [
+    [
+      "open",
+      "ws://localhost:4105/?token=dGCoZWDCfMLa"
+    ],
+    [
+      "open",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "open",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "open",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "open",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "open",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "open",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ],
+    [
+      "open",
+      "ws://localhost:9105/_event/?token=3268a612-7baa-412b-98a5-f840f42b989f&EIO=4&transport=websocket"
+    ]
+  ],
+  "event_frames_sent": [
+    "ws#1 40/_event,",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.counter___counter____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.counter___counter____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#1 42/_event,[\"event\",{\"name\":\"reflex___state____state.counter___counter____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#4 40/_event,",
+    "ws#4 42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#4 42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#4 42/_event,[\"event\",{\"name\":\"reflex___state____state.counter___counter____state.increment\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#7 40/_event,",
+    "ws#7 42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "ws#7 42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  ]
+}

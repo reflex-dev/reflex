@@ -1,0 +1,312 @@
+{
+ "url": "http://localhost:4600/",
+ "wait_seconds": 10.0,
+ "phases": [
+  [
+   "13:46:56",
+   "goto"
+  ],
+  [
+   "13:46:59",
+   "mounted"
+  ],
+  [
+   "13:47:09",
+   "reload"
+  ],
+  [
+   "13:47:10",
+   "remounted"
+  ],
+  [
+   "13:47:20",
+   "nav_to_other"
+  ],
+  [
+   "13:47:22",
+   "nav_back"
+  ],
+  [
+   "13:47:22",
+   "client_remounted"
+  ],
+  [
+   "13:47:32",
+   "done"
+  ]
+ ],
+ "frames": [
+  [
+   "13:46:58.506",
+   "ws#1",
+   "hydrate",
+   null
+  ],
+  [
+   "13:46:58.506",
+   "ws#1",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:46:58.585",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:46:58"
+   }
+  ],
+  [
+   "13:46:58.586",
+   "ws#1",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:46:58.586",
+   "ws#1",
+   "zero_change",
+   {
+    "date": "13:46:58"
+   }
+  ],
+  [
+   "13:47:01.586",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:47:01"
+   }
+  ],
+  [
+   "13:47:04.586",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:47:04"
+   }
+  ],
+  [
+   "13:47:07.586",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:47:07"
+   }
+  ],
+  [
+   "13:47:09.516",
+   "ws#2",
+   "hydrate",
+   null
+  ],
+  [
+   "13:47:09.516",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:47:09.563",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:47:09"
+   }
+  ],
+  [
+   "13:47:09.563",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:47:09.565",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "13:47:09"
+   }
+  ],
+  [
+   "13:47:12.556",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:47:12"
+   }
+  ],
+  [
+   "13:47:15.556",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:47:15"
+   }
+  ],
+  [
+   "13:47:18.556",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:47:18"
+   }
+  ],
+  [
+   "13:47:20.207",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:47:22.766",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:47:22.772",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:47:22"
+   }
+  ],
+  [
+   "13:47:22.772",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:47:22.772",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "13:47:22"
+   }
+  ],
+  [
+   "13:47:25.773",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:47:25"
+   }
+  ],
+  [
+   "13:47:28.772",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:47:28"
+   }
+  ],
+  [
+   "13:47:31.772",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:47:31"
+   }
+  ]
+ ],
+ "counts_after_load": {
+  "tick_count": "tick_count=4",
+  "static_count": "static_count=1",
+  "zero_count": "zero_count=1",
+  "tick_log": "tick_log=13:46:58,13:47:01,13:47:04,13:47:07",
+  "static_log": "static_log=2020-01-02 03:04",
+  "zero_log": "zero_log=13:46:58"
+ },
+ "counts_after_reload": {
+  "tick_count": "tick_count=8",
+  "static_count": "static_count=2",
+  "zero_count": "zero_count=2",
+  "tick_log": "tick_log=13:46:58,13:47:01,13:47:04,13:47:07,13:47:09,13:47:12,13:47:15,13:47:18",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=13:46:58,13:47:09"
+ },
+ "counts_after_client_nav": {
+  "tick_count": "tick_count=12",
+  "static_count": "static_count=3",
+  "zero_count": "zero_count=3",
+  "tick_log": "tick_log=13:46:58,13:47:01,13:47:04,13:47:07,13:47:09,13:47:12,13:47:15,13:47:18,13:47:22,13:47:25,13:47:28,13:47:31",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=13:46:58,13:47:09,13:47:22"
+ },
+ "interval_time_outerHTML": "<time datetime=\"2026-09-10T13:47:07.585Z\">13:47:07</time>",
+ "static_innerHTML": "<time datetime=\"2020-01-02T03:04:05.000Z\">2020-01-02 03:04</time>",
+ "websockets": [
+  [
+   "open",
+   "13:46:58",
+   "ws://localhost:4600/?token=qFto6bW9bkoq"
+  ],
+  [
+   "open",
+   "13:46:58",
+   "ws://localhost:9600/_event/?token=5a0941a6-815c-46e0-b031-d736f571187a&EIO=4&transport=websocket"
+  ],
+  [
+   "close",
+   "13:47:09",
+   "ws://localhost:9600/_event/?token=5a0941a6-815c-46e0-b031-d736f571187a&EIO=4&transport=websocket"
+  ],
+  [
+   "open",
+   "13:47:09",
+   "ws://localhost:4600/?token=qFto6bW9bkoq"
+  ],
+  [
+   "open",
+   "13:47:09",
+   "ws://localhost:9600/_event/?token=5a0941a6-815c-46e0-b031-d736f571187a&EIO=4&transport=websocket"
+  ]
+ ],
+ "console": [
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  [
+   "log",
+   "Disconnect websocket on page navigation"
+  ],
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+ ],
+ "page_errors": []
+}

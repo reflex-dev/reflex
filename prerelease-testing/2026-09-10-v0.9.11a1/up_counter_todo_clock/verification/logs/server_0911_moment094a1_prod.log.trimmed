@@ -1,0 +1,23 @@
+# trimmed: header + react-moment install lines + every EVT line (full log at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify_up_counter_todo_clock_0/logs/server_0911_moment094a1_prod.log)
+51:───────────────────────────── Starting Reflex App ──────────────────────────────
+102:'@radix-ui/themes@3.3.0', 'isbot@5.2.2', 'react-moment@2.0.2', 
+115:Debug: installed react-moment@2.0.2
+211:App running at: http://0.0.0.0:4601/
+218:EVT seq=1 kind=interval payload='13:45:19' server_time=13:45:19.627
+219:EVT seq=2 kind=static payload='2020-01-02 03:04' server_time=13:45:19.628
+220:EVT seq=3 kind=interval0 payload='13:45:19' server_time=13:45:19.630
+221:EVT seq=4 kind=interval payload='13:45:22' server_time=13:45:22.623
+222:EVT seq=5 kind=interval payload='13:45:25' server_time=13:45:25.627
+223:EVT seq=6 kind=interval payload='13:45:28' server_time=13:45:28.624
+224:EVT seq=7 kind=interval payload='13:45:30' server_time=13:45:30.393
+225:EVT seq=8 kind=static payload='2020-01-02 03:04' server_time=13:45:30.394
+226:EVT seq=9 kind=interval0 payload='13:45:30' server_time=13:45:30.395
+227:EVT seq=10 kind=interval payload='13:45:33' server_time=13:45:33.390
+228:EVT seq=11 kind=interval payload='13:45:36' server_time=13:45:36.390
+229:EVT seq=12 kind=interval payload='13:45:39' server_time=13:45:39.390
+230:EVT seq=13 kind=interval payload='13:45:43' server_time=13:45:43.597
+231:EVT seq=14 kind=static payload='2020-01-02 03:04' server_time=13:45:43.599
+232:EVT seq=15 kind=interval0 payload='13:45:43' server_time=13:45:43.601
+233:EVT seq=16 kind=interval payload='13:45:46' server_time=13:45:46.597
+234:EVT seq=17 kind=interval payload='13:45:49' server_time=13:45:49.597
+235:EVT seq=18 kind=interval payload='13:45:52' server_time=13:45:52.597

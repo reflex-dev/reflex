@@ -1,0 +1,134 @@
+{
+  "url": "http://localhost:4101/",
+  "steps": [
+    {
+      "name": "initial_render",
+      "ok": true,
+      "detail": "items=['Write Code', 'Sleep', 'Have Fun']"
+    },
+    {
+      "name": "add_item_button",
+      "ok": true,
+      "detail": "items=['Write Code', 'Sleep', 'Have Fun', 'Buy milk'] input_after='' (reset_on_submit)"
+    },
+    {
+      "name": "add_item_enter",
+      "ok": true,
+      "detail": "items=['Write Code', 'Sleep', 'Have Fun', 'Buy milk', 'Walk dog']"
+    },
+    {
+      "name": "empty_submit_noop",
+      "ok": true,
+      "detail": "before=['Write Code', 'Sleep', 'Have Fun', 'Buy milk', 'Walk dog'] after=['Write Code', 'Sleep', 'Have Fun', 'Buy milk', 'Walk dog']"
+    },
+    {
+      "name": "add_item_special_chars",
+      "ok": true,
+      "detail": "items=['Write Code', 'Sleep', 'Have Fun', 'Buy milk', 'Walk dog', 'Café <b>&amp;</b> 50%']"
+    },
+    {
+      "name": "finish_middle_item",
+      "ok": true,
+      "detail": "items=['Write Code', 'Have Fun', 'Buy milk', 'Walk dog', 'Café <b>&amp;</b> 50%']"
+    },
+    {
+      "name": "finish_first_item",
+      "ok": true,
+      "detail": "items=['Have Fun', 'Buy milk', 'Walk dog', 'Café <b>&amp;</b> 50%']"
+    },
+    {
+      "name": "finish_buttons_have_icons",
+      "ok": true,
+      "detail": "buttons=4 svgs=4"
+    },
+    {
+      "name": "reload_state",
+      "ok": true,
+      "detail": "pre=['Have Fun', 'Buy milk', 'Walk dog', 'Café <b>&amp;</b> 50%'] post=['Have Fun', 'Buy milk', 'Walk dog', 'Café <b>&amp;</b> 50%'] persisted=True"
+    }
+  ],
+  "all_steps_ok": true,
+  "console": [
+    [
+      "log",
+      "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ],
+    [
+      "log",
+      "Disconnect websocket on page navigation"
+    ],
+    [
+      "log",
+      "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ]
+  ],
+  "unexpected_console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "websockets": [
+    [
+      "open",
+      "ws://localhost:4101/?token=DzsipDR3CyB7"
+    ],
+    [
+      "open",
+      "ws://localhost:9101/_event/?token=cacbcaad-4f02-43f5-b70a-4290c112abf8&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:9101/_event/?token=cacbcaad-4f02-43f5-b70a-4290c112abf8&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:4101/?token=DzsipDR3CyB7"
+    ],
+    [
+      "open",
+      "ws://localhost:4101/?token=DzsipDR3CyB7"
+    ],
+    [
+      "open",
+      "ws://localhost:9101/_event/?token=cacbcaad-4f02-43f5-b70a-4290c112abf8&EIO=4&transport=websocket"
+    ]
+  ],
+  "event_frames_sent": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.todo___todo____state.add_item\",\"payload\":{\"form_data\":{\"new_item\":\"Buy milk\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.todo___todo____state.add_item\",\"payload\":{\"form_data\":{\"new_item\":\"Walk dog\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.todo___todo____state.add_item\",\"payload\":{\"form_data\":{\"new_item\":\"\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.todo___todo____state.add_item\",\"payload\":{\"form_data\":{\"new_item\":\"Café <b>&amp;</b> 50%\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.todo___todo____state.finish_item\",\"payload\":{\"item\":\"Sleep\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.todo___todo____state.finish_item\",\"payload\":{\"item\":\"Write Code\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  ]
+}

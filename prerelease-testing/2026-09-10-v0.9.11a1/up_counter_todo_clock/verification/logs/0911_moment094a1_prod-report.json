@@ -1,0 +1,274 @@
+{
+ "url": "http://localhost:4601/",
+ "wait_seconds": 10.0,
+ "phases": [
+  [
+   "13:45:19",
+   "goto"
+  ],
+  [
+   "13:45:20",
+   "mounted"
+  ],
+  [
+   "13:45:30",
+   "reload"
+  ],
+  [
+   "13:45:30",
+   "remounted"
+  ],
+  [
+   "13:45:40",
+   "nav_to_other"
+  ],
+  [
+   "13:45:43",
+   "nav_back"
+  ],
+  [
+   "13:45:43",
+   "client_remounted"
+  ],
+  [
+   "13:45:53",
+   "done"
+  ]
+ ],
+ "frames": [
+  [
+   "13:45:19.622",
+   "ws#1",
+   "hydrate",
+   null
+  ],
+  [
+   "13:45:19.622",
+   "ws#1",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:45:19.623",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:45:19"
+   }
+  ],
+  [
+   "13:45:19.624",
+   "ws#1",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:45:19.624",
+   "ws#1",
+   "zero_change",
+   {
+    "date": "13:45:19"
+   }
+  ],
+  [
+   "13:45:22.624",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:45:22"
+   }
+  ],
+  [
+   "13:45:25.626",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:45:25"
+   }
+  ],
+  [
+   "13:45:28.624",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:45:28"
+   }
+  ],
+  [
+   "13:45:30.391",
+   "ws#2",
+   "hydrate",
+   null
+  ],
+  [
+   "13:45:30.392",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:45:30.392",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:45:30"
+   }
+  ],
+  [
+   "13:45:30.392",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:45:30.392",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "13:45:30"
+   }
+  ],
+  [
+   "13:45:33.390",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:45:33"
+   }
+  ],
+  [
+   "13:45:36.390",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:45:36"
+   }
+  ],
+  [
+   "13:45:39.390",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:45:39"
+   }
+  ],
+  [
+   "13:45:41.035",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:45:43.595",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:45:43.596",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:45:43"
+   }
+  ],
+  [
+   "13:45:43.596",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:45:43.596",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "13:45:43"
+   }
+  ],
+  [
+   "13:45:46.597",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:45:46"
+   }
+  ],
+  [
+   "13:45:49.597",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:45:49"
+   }
+  ],
+  [
+   "13:45:52.598",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:45:52"
+   }
+  ]
+ ],
+ "counts_after_load": {
+  "tick_count": "tick_count=4",
+  "static_count": "static_count=1",
+  "zero_count": "zero_count=1",
+  "tick_log": "tick_log=13:45:19,13:45:22,13:45:25,13:45:28",
+  "static_log": "static_log=2020-01-02 03:04",
+  "zero_log": "zero_log=13:45:19"
+ },
+ "counts_after_reload": {
+  "tick_count": "tick_count=8",
+  "static_count": "static_count=2",
+  "zero_count": "zero_count=2",
+  "tick_log": "tick_log=13:45:19,13:45:22,13:45:25,13:45:28,13:45:30,13:45:33,13:45:36,13:45:39",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=13:45:19,13:45:30"
+ },
+ "counts_after_client_nav": {
+  "tick_count": "tick_count=12",
+  "static_count": "static_count=3",
+  "zero_count": "zero_count=3",
+  "tick_log": "tick_log=13:45:19,13:45:22,13:45:25,13:45:28,13:45:30,13:45:33,13:45:36,13:45:39,13:45:43,13:45:46,13:45:49,13:45:52",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=13:45:19,13:45:30,13:45:43"
+ },
+ "interval_time_outerHTML": "<time datetime=\"2026-09-10T13:45:28.623Z\">13:45:28</time>",
+ "static_innerHTML": "<time datetime=\"2020-01-02T03:04:05.000Z\">2020-01-02 03:04</time>",
+ "websockets": [
+  [
+   "open",
+   "13:45:19",
+   "ws://localhost:4601/_event/?token=5962addc-a51a-4281-bbe9-33745bf513bd&EIO=4&transport=websocket"
+  ],
+  [
+   "close",
+   "13:45:30",
+   "ws://localhost:4601/_event/?token=5962addc-a51a-4281-bbe9-33745bf513bd&EIO=4&transport=websocket"
+  ],
+  [
+   "open",
+   "13:45:30",
+   "ws://localhost:4601/_event/?token=5962addc-a51a-4281-bbe9-33745bf513bd&EIO=4&transport=websocket"
+  ]
+ ],
+ "console": [
+  [
+   "error",
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  [
+   "log",
+   "Disconnect websocket on page navigation"
+  ]
+ ],
+ "page_errors": []
+}

@@ -1,0 +1,184 @@
+{
+  "url": "http://localhost:4103/",
+  "steps": [
+    {
+      "name": "false_branch_renders",
+      "ok": true,
+      "detail": "heading 'Bio Page if False' visible (no LD_SDK_KEY)"
+    },
+    {
+      "name": "bio_texts",
+      "ok": true,
+      "detail": "texts=['dub.link/pronouns', '< insert bio here >', 'Website', 'Twitter', 'GitHub', 'LinkedIn']"
+    },
+    {
+      "name": "link_buttons",
+      "ok": true,
+      "detail": "links=[['Website', 'https://reflex.dev', '_blank', None, 1], ['Twitter', 'https://twitter.com/getreflex', '_blank', None, 1], ['GitHub', 'https://github.com/reflex-dev/reflex-examples', '_blank', None, 1], ['LinkedIn', 'https://www.linkedin.com/company/reflex-dev', '_blank', None, 1]]"
+    },
+    {
+      "name": "link_icons_rendered",
+      "ok": true,
+      "detail": "svg-per-link=[1, 1, 1, 1]"
+    },
+    {
+      "name": "avatar_renders",
+      "ok": true,
+      "detail": "avatar roots=1 inner=<span class=\"rt-AvatarFallback\"></span>"
+    },
+    {
+      "name": "button_hover_style",
+      "ok": true,
+      "detail": "rgba(0, 0, 0, 0.5) -> rgba(0, 0, 0, 0.7)"
+    },
+    {
+      "name": "moment_renders_time",
+      "ok": true,
+      "detail": "count=1 text='09:51:19' outerHTML='<time datetime=\"1789033879117\">09:51:19</time>'"
+    },
+    {
+      "name": "moment_matches_browser_clock",
+      "ok": true,
+      "detail": "moment='09:51:19' browser='09:51:19'"
+    },
+    {
+      "name": "moment_interval_ticks",
+      "ok": true,
+      "detail": "t1='09:51:19' t2='09:51:22' (interval=3000)"
+    },
+    {
+      "name": "moment_on_change_events_sent",
+      "ok": true,
+      "detail": "on_update frames=7 payloads=[{'date': '09:51:07'}, {'date': '09:51:10'}, {'date': '09:51:13'}, {'date': '09:51:16'}, {'date': '09:51:19'}]"
+    },
+    {
+      "name": "link_click_opens_new_tab",
+      "ok": true,
+      "detail": "popup url='chrome-error://chromewebdata/'"
+    },
+    {
+      "name": "reload_rerenders_and_ticks",
+      "ok": true,
+      "detail": "a='09:51:41' b='09:51:44'"
+    }
+  ],
+  "all_steps_ok": true,
+  "console": [
+    [
+      "log",
+      "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ],
+    [
+      "error",
+      "Failed to load resource: net::ERR_CONNECTION_RESET"
+    ],
+    [
+      "log",
+      "Disconnect websocket on page navigation"
+    ],
+    [
+      "log",
+      "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ],
+    [
+      "error",
+      "Failed to load resource: net::ERR_CONNECTION_RESET"
+    ]
+  ],
+  "unexpected_console": [
+    [
+      "error",
+      "Failed to load resource: net::ERR_CONNECTION_RESET"
+    ],
+    [
+      "error",
+      "Failed to load resource: net::ERR_CONNECTION_RESET"
+    ]
+  ],
+  "page_errors": [],
+  "failed_requests": [
+    [
+      "https://avatars.githubusercontent.com/%3Cyour_username_here%3E",
+      "net::ERR_CONNECTION_RESET"
+    ],
+    [
+      "https://avatars.githubusercontent.com/%3Cyour_username_here%3E",
+      "net::ERR_CONNECTION_RESET"
+    ]
+  ],
+  "http_4xx_5xx": [],
+  "websockets": [
+    [
+      "open",
+      "ws://localhost:4103/?token=Lu3TyZXQVraM"
+    ],
+    [
+      "open",
+      "ws://localhost:9103/_event/?token=efa755a9-ebee-4092-f001-fa2ff8083951&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:9103/_event/?token=efa755a9-ebee-4092-f001-fa2ff8083951&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:4103/?token=Lu3TyZXQVraM"
+    ],
+    [
+      "open",
+      "ws://localhost:4103/?token=Lu3TyZXQVraM"
+    ],
+    [
+      "open",
+      "ws://localhost:9103/_event/?token=efa755a9-ebee-4092-f001-fa2ff8083951&EIO=4&transport=websocket"
+    ]
+  ],
+  "event_frames_sent": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:07\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:10\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:13\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:16\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:19\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:22\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:25\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:28\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "3",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:32\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:35\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:38\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:41\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:44\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.linkinbio___linkinbio____state.on_update\",\"payload\":{\"date\":\"09:51:47\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  ]
+}

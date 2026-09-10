@@ -1,0 +1,384 @@
+{
+ "url": "http://localhost:4600/",
+ "wait_seconds": 10.0,
+ "phases": [
+  [
+   "13:43:47",
+   "goto"
+  ],
+  [
+   "13:43:49",
+   "mounted"
+  ],
+  [
+   "13:43:59",
+   "reload"
+  ],
+  [
+   "13:44:00",
+   "remounted"
+  ],
+  [
+   "13:44:10",
+   "nav_to_other"
+  ],
+  [
+   "13:44:12",
+   "nav_back"
+  ],
+  [
+   "13:44:13",
+   "client_remounted"
+  ],
+  [
+   "13:44:23",
+   "done"
+  ]
+ ],
+ "frames": [
+  [
+   "13:43:48.857",
+   "ws#1",
+   "hydrate",
+   null
+  ],
+  [
+   "13:43:48.857",
+   "ws#1",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:43:48.915",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:43:48"
+   }
+  ],
+  [
+   "13:43:48.915",
+   "ws#1",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:43:48.915",
+   "ws#1",
+   "zero_change",
+   {
+    "date": "13:43:48"
+   }
+  ],
+  [
+   "13:43:48.916",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:43:48"
+   }
+  ],
+  [
+   "13:43:48.916",
+   "ws#1",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:43:48.916",
+   "ws#1",
+   "zero_change",
+   {
+    "date": "13:43:48"
+   }
+  ],
+  [
+   "13:43:51.915",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:43:51"
+   }
+  ],
+  [
+   "13:43:54.916",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:43:54"
+   }
+  ],
+  [
+   "13:43:57.917",
+   "ws#1",
+   "tick",
+   {
+    "date": "13:43:57"
+   }
+  ],
+  [
+   "13:43:59.781",
+   "ws#2",
+   "hydrate",
+   null
+  ],
+  [
+   "13:43:59.782",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:43:59.818",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:43:59"
+   }
+  ],
+  [
+   "13:43:59.818",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:43:59.818",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "13:43:59"
+   }
+  ],
+  [
+   "13:43:59.818",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:43:59"
+   }
+  ],
+  [
+   "13:43:59.819",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:43:59.819",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "13:43:59"
+   }
+  ],
+  [
+   "13:44:02.819",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:44:02"
+   }
+  ],
+  [
+   "13:44:05.818",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:44:05"
+   }
+  ],
+  [
+   "13:44:08.818",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:44:08"
+   }
+  ],
+  [
+   "13:44:10.457",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:44:13.055",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "13:44:13.064",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:44:13"
+   }
+  ],
+  [
+   "13:44:13.064",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:44:13.065",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "13:44:13"
+   }
+  ],
+  [
+   "13:44:13.066",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:44:13"
+   }
+  ],
+  [
+   "13:44:13.068",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "13:44:13.068",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "13:44:13"
+   }
+  ],
+  [
+   "13:44:16.071",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:44:16"
+   }
+  ],
+  [
+   "13:44:19.065",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:44:19"
+   }
+  ],
+  [
+   "13:44:22.066",
+   "ws#2",
+   "tick",
+   {
+    "date": "13:44:22"
+   }
+  ]
+ ],
+ "counts_after_load": {
+  "tick_count": "tick_count=5",
+  "static_count": "static_count=2",
+  "zero_count": "zero_count=2",
+  "tick_log": "tick_log=13:43:48,13:43:48,13:43:51,13:43:54,13:43:57",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=13:43:48,13:43:48"
+ },
+ "counts_after_reload": {
+  "tick_count": "tick_count=10",
+  "static_count": "static_count=4",
+  "zero_count": "zero_count=4",
+  "tick_log": "tick_log=13:43:48,13:43:48,13:43:51,13:43:54,13:43:57,13:43:59,13:43:59,13:44:02,13:44:05,13:44:08",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=13:43:48,13:43:48,13:43:59,13:43:59"
+ },
+ "counts_after_client_nav": {
+  "tick_count": "tick_count=15",
+  "static_count": "static_count=6",
+  "zero_count": "zero_count=6",
+  "tick_log": "tick_log=13:43:48,13:43:48,13:43:51,13:43:54,13:43:57,13:43:59,13:43:59,13:44:02,13:44:05,13:44:08,13:44:13,13:44:13,13:44:16,13:44:19,13:44:22",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=13:43:48,13:43:48,13:43:59,13:43:59,13:44:13,13:44:13"
+ },
+ "interval_time_outerHTML": "<time datetime=\"2026-09-10T13:43:57.915Z\">13:43:57</time>",
+ "static_innerHTML": "<time datetime=\"2020-01-02T03:04:05.000Z\">2020-01-02 03:04</time>",
+ "websockets": [
+  [
+   "open",
+   "13:43:48",
+   "ws://localhost:4600/?token=7eki2bMxpu2u"
+  ],
+  [
+   "open",
+   "13:43:48",
+   "ws://localhost:9600/_event/?token=c84e61ab-92fe-4591-dccc-ad9e330eb751&EIO=4&transport=websocket"
+  ],
+  [
+   "close",
+   "13:43:59",
+   "ws://localhost:9600/_event/?token=c84e61ab-92fe-4591-dccc-ad9e330eb751&EIO=4&transport=websocket"
+  ],
+  [
+   "open",
+   "13:43:59",
+   "ws://localhost:4600/?token=7eki2bMxpu2u"
+  ],
+  [
+   "open",
+   "13:43:59",
+   "ws://localhost:9600/_event/?token=c84e61ab-92fe-4591-dccc-ad9e330eb751&EIO=4&transport=websocket"
+  ]
+ ],
+ "console": [
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  [
+   "log",
+   "Disconnect websocket on page navigation"
+  ],
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+ ],
+ "page_errors": []
+}

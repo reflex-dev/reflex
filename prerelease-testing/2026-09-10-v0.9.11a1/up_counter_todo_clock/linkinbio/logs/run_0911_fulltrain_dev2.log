@@ -1,0 +1,219 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/up_counter_todo_clock_linkinbio/lib/python3.11/site-packages/reflex_base/c
+onfig.py'
+Debug: Config: Config(app_name='linkinbio', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4
+dc3b5b67/scratchpad/envs/rxdir_linkinbio/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'loglevel', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: 
+[PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67
+/scratchpad/envs/rxdir_linkinbio/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/up_counter_todo_clock_linkinbio/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/rxdir_linkinbio/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: 
+[['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchp
+ad/envs/rxdir_linkinbio/bun/bin/bun'], ['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=4103
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9103
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 4103 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 4103 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 4103 is not in use.
+Debug: Checking if Backend port: 9103 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9103 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9103 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.03s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 227 installs across 250 packages (no changes) [12.00ms]
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 
+'@emotion/react@11.14.0', 'vite@8.2.2', '@react-router/fs-routes@8.3.1', 
+'postcss@8.5.26', '@react-router/dev@8.3.1', 'autoprefixer@10.5.4', 
+'postcss-import@17.0.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss-import@17.0.0
+Debug: 
+Debug: [12.00ms] done
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-moment@2.0.2', 'socket.io-client@4.8.3', 'react-router@8.3.1', 
+'react-error-boundary@6.1.2', 'isbot@5.2.2', '@radix-ui/themes@3.3.0', 
+'@react-router/node@8.3.1', 'react-dom@19.2.8', 'react@19.2.8', 
+'react-helmet@6.1.0', 'universal-cookie@8.1.2', 'moment@2.30.1', 'sonner@2.0.8',
+'lucide-react@1.26.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed react-moment@2.0.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-router@8.3.1
+Debug: installed react-error-boundary@6.1.2
+Debug: installed isbot@5.2.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed @react-router/node@8.3.1
+Debug: installed react-dom@19.2.8
+Debug: installed react@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed moment@2.30.1
+Debug: installed sonner@2.0.8
+Debug: installed lucide-react@1.26.0
+Debug: 
+Debug: [11.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_counter_todo_clock/linkinbio/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_counter_todo_clock/linkinbio/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.06s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/envs/rxdir_linkinbio/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/apps/up_counter_todo_clock/linkinbio/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_counter_todo_clock/linkinbio/assets', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_counter_todo_clock/linkinbio/README.md', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_counter_todo_clock/linkinbio/logs', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_counter_todo_clock/linkinbio/linkinbio', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_counter_todo_clock/linkinbio/rxconfig.py']
+[INFO] Starting granian (main PID: 21408)
+[INFO] Listening at: http://0.0.0.0:9103
+[INFO] Spawning worker-1 with PID: 21445
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:4103/
+App running at: http://localhost:4103/
+Backend running at: http://0.0.0.0:9103
+Debug:   ➜  Network: http://192.0.2.2:4103/  eth0
+Debug: 10:01:12 AM [vite] (ssr) connected.
+0 :: 10:01:14
+0 :: 10:01:14
+0 :: 10:01:17
+0 :: 10:01:20
+0 :: 10:01:23
+0 :: 10:01:26
+0 :: 10:01:29
+0 :: 10:01:32
+0 :: 10:01:35
+0 :: 10:01:38
+0 :: 10:01:39
+0 :: 10:01:39
+0 :: 10:01:42
+0 :: 10:01:45
+0 :: 10:01:48
+0 :: 10:01:51
+0 :: 10:01:54
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:4103/
+  ➜  Network: http://192.0.2.2:4103/  eth0
+10:01:12 AM [vite] (ssr) connected.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

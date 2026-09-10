@@ -1,0 +1,14 @@
+Metadata-Version: 2.5
+Name: reflex-components-moment
+Version: 0.9.4a1
+Summary: Reflex moment components.
+Author-email: Khaleel Al-Adhami <khaleel@reflex.dev>
+Maintainer-email: Khaleel Al-Adhami <khaleel@reflex.dev>
+License: Apache-2.0
+Requires-Python: >=3.10
+Requires-Dist: reflex-base>=0.9.0
+Description-Content-Type: text/markdown
+
+# reflex-components-moment
+
+Reflex moment components.

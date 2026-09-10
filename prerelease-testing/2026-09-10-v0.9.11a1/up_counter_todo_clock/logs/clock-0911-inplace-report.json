@@ -1,0 +1,141 @@
+{
+  "url": "http://localhost:4102/",
+  "steps": [
+    {
+      "name": "index_renders",
+      "ok": true,
+      "detail": "switch=1 select=1 digital=['2', ':', '46', ':', '53', 'AM']"
+    },
+    {
+      "name": "analog_hands_render",
+      "ok": true,
+      "detail": "computed transforms=['matrix(0.866025, -0.5, 0.5, 0.866025, 0, 0)', 'matrix(-0.993469, -0.114105, 0.114105, -0.993469, 0, 0)', 'matrix(-0.66084, -0.750526, 0.750526, -0.66084, 0, 0)']"
+    },
+    {
+      "name": "clock_stopped_on_load",
+      "ok": true,
+      "detail": "before=['2', ':', '46', ':', '53', 'AM'] after=['2', ':', '46', ':', '53', 'AM']"
+    },
+    {
+      "name": "clock_ticks_when_started",
+      "ok": true,
+      "detail": "t1=['2', ':', '46', ':', '59', 'AM'] t2=['2', ':', '47', ':', '02', 'AM']"
+    },
+    {
+      "name": "default_zone_time_correct",
+      "ok": true,
+      "detail": "shown=['2', ':', '47', ':', '02', 'AM'] expected_hour=2 AM (US/Pacific now=2026-09-10T02:47:02.710931-07:00)"
+    },
+    {
+      "name": "timezone_switch_tokyo",
+      "ok": true,
+      "detail": "shown=['6', ':', '47', ':', '04', 'PM'] expected_hour=6 PM (Tokyo now=2026-09-10T18:47:04.867947+09:00)"
+    },
+    {
+      "name": "zone_cookie_persists",
+      "ok": true,
+      "detail": "select shows 'Asia/Tokyo'; cookies=[('reflex___state____state.clock___clock____state.zone_rx_state_', 'Asia%2FTokyo')]"
+    },
+    {
+      "name": "clock_stopped_after_reload",
+      "ok": true,
+      "detail": "r1=['6', ':', '47', ':', '05', 'PM'] r2=['6', ':', '47', ':', '05', 'PM']"
+    },
+    {
+      "name": "clock_stops_when_switched_off",
+      "ok": true,
+      "detail": "x1=['6', ':', '47', ':', '11', 'PM'] x2=['6', ':', '47', ':', '11', 'PM']"
+    },
+    {
+      "name": "timezone_switch_london_ticking",
+      "ok": true,
+      "detail": "shown=['10', ':', '47', ':', '19', 'AM'] expected_hour=10 AM (London now=2026-09-10T10:47:19.271721+01:00)"
+    }
+  ],
+  "all_steps_ok": true,
+  "console": [
+    [
+      "log",
+      "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ],
+    [
+      "log",
+      "Disconnect websocket on page navigation"
+    ],
+    [
+      "log",
+      "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    [
+      "debug",
+      "[vite] connecting..."
+    ],
+    [
+      "debug",
+      "[vite] connected."
+    ],
+    [
+      "info",
+      "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    ]
+  ],
+  "unexpected_console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "websockets": [
+    [
+      "open",
+      "ws://localhost:4102/?token=86laqiEjHMaF"
+    ],
+    [
+      "open",
+      "ws://localhost:9102/_event/?token=058dfecc-bd39-4f93-d055-cc9014aa4a18&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:9102/_event/?token=058dfecc-bd39-4f93-d055-cc9014aa4a18&EIO=4&transport=websocket"
+    ],
+    [
+      "close",
+      "ws://localhost:4102/?token=86laqiEjHMaF"
+    ],
+    [
+      "open",
+      "ws://localhost:4102/?token=86laqiEjHMaF"
+    ],
+    [
+      "open",
+      "ws://localhost:9102/_event/?token=058dfecc-bd39-4f93-d055-cc9014aa4a18&EIO=4&transport=websocket"
+    ]
+  ],
+  "event_frames_sent": [
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.flip_switch\",\"payload\":{\"running\":true},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.set_zone\",\"payload\":{\"zone\":\"Asia/Tokyo\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "41/_event,",
+    "40/_event,",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____update_vars_internal_state.update_vars_internal\",\"payload\":{\"vars\":{\"reflex___state____state.clock___clock____state.zone_rx_state_\":\"Asia/Tokyo\"}},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.flip_switch\",\"payload\":{\"running\":true},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.flip_switch\",\"payload\":{\"running\":false},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.set_zone\",\"payload\":{\"zone\":\"Europe/London\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.flip_switch\",\"payload\":{\"running\":true},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+    "42/_event,[\"event\",{\"name\":\"reflex___state____state.clock___clock____state.flip_switch\",\"payload\":{\"running\":false},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+  ]
+}
