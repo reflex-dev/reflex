@@ -25,6 +25,8 @@ from reflex_base.components.memo import (
     _LazyBody,
     _MemoCallBinding,
     _strip_optional,
+    component_hash,
+    memo_tag,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.registry import RegistrationContext
@@ -37,6 +39,8 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
 from reflex_base.vars.function import FunctionStringVar, FunctionVar
 from reflex_base.vars.object import ObjectVar
+from reflex_components_core.base.bare import Bare
+from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 from reflex.compiler import compiler
@@ -2038,3 +2042,282 @@ def test_self_referencing_var_memo():
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)
+
+
+class _AppWrapProbe(Component):
+    """A component whose only per-instance artifact is an app-wrap component."""
+
+    library = "app-wrap-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Wrap the app in a ``MarkdownComponentMap``-based component.
+
+        Returns:
+            The app wrap components.
+        """
+        return {(50, "AppWrapProbe"): rx.text(self.marker)}
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the app wrap differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_dataclass_inheriting_app_wrap_components():
+    """App-wrap components that also inherit a dataclass must hash by render.
+
+    ``rx.text`` and friends inherit ``MarkdownComponentMap``, a dataclass with
+    no fields, so encoding the dataclass ahead of the component collapsed every
+    one of them to the same nine bytes -- and two memo bodies whose app wraps
+    differed only in such a component shared a tag, dropping one app wrap.
+    """
+    a = _AppWrapProbe.create(marker="alpha")
+    b = _AppWrapProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _ImportLibraryProbe(Component):
+    """One class whose import library varies with a prop ``_render`` drops."""
+
+    library = "import-library-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_imports(self):
+        """Import the same binding from a marker-dependent library.
+
+        Returns:
+            The imports.
+        """
+        return {
+            **super()._get_imports(),
+            f"probe-lib-{self.marker!s}": [ImportVar(tag="Thing")],
+        }
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the imports differ.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_import_libraries():
+    """The libraries a memo body imports from must reach the hash."""
+    a = _ImportLibraryProbe.create(marker="alpha")
+    b = _ImportLibraryProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _ImportPayloadProbe(Component):
+    """One class, one library, an ``ImportVar`` payload that varies by prop."""
+
+    library = "import-payload-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_imports(self):
+        """Import a side-effect stylesheet whose path varies with the marker.
+
+        Returns:
+            The imports.
+        """
+        return {
+            **super()._get_imports(),
+            "payload-lib": [ImportVar(tag=None, package_path=f"/{self.marker!s}.css")],
+        }
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the imports differ.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_import_var_payloads():
+    """``ImportVar`` fields must reach the hash, not just the library name.
+
+    ``package_path`` and ``alias`` vary per instance in shipping components
+    (``Icon._get_imports`` builds both), and a tagless ``ImportVar`` defaults to
+    ``render=True``, so it emits as a side-effect import. Two such bodies render
+    identically under one library key; sharing a tag drops one body's import
+    from the compiled module with no error.
+    """
+    a = _ImportPayloadProbe.create(marker="light")
+    b = _ImportPayloadProbe.create(marker="dark")
+
+    assert a.render() == b.render()
+    assert sorted(dict(a._get_all_imports())) == sorted(dict(b._get_all_imports()))
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _CustomCodeProbe(Component):
+    """A component whose only per-instance artifact is its custom code."""
+
+    library = "custom-code-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def add_custom_code(self) -> list[str]:
+        """Emit a marker-dependent module-level constant.
+
+        Returns:
+            The custom code lines.
+        """
+        return [f"const PROBE = {self.marker!s};"]
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only custom code differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_add_custom_code():
+    """``add_custom_code`` output must reach the own-node hash.
+
+    Two bodies that render identically and differ only in the module-level code
+    they emit compile to different modules, so they must not share a tag — a
+    collision would drop one of the two constants.
+    """
+    a = _CustomCodeProbe.create(marker="alpha")
+    b = _CustomCodeProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_component_hash_recursive_covers_descendant_artifacts():
+    """A recursive hash must see artifacts that a descendant's JSX omits."""
+    inner_a = Box.create(Bare.create(contents="x"), on_mount=rx.console_log("x"))
+    inner_b = Box.create(Bare.create(contents="x"))
+    outer_a, outer_b = Box.create(inner_a), Box.create(inner_b)
+
+    # ``on_mount`` lives in a lifecycle hook, not in the rendered props.
+    assert outer_a.render() == outer_b.render()
+    assert component_hash(outer_a, recursive=True) != component_hash(
+        outer_b, recursive=True
+    )
+    # The passthrough form deliberately ignores descendants: they render at the
+    # call site behind the ``{children}`` hole, not inside the memo body.
+    assert component_hash(outer_a, recursive=False) == component_hash(
+        outer_b, recursive=False
+    )
+
+
+class _DynamicImportProbe(Component):
+    """One class whose dynamic import varies with a prop ``_render`` drops."""
+
+    library = "dynamic-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_dynamic_imports(self) -> str:
+        """Emit a marker-dependent dynamic import.
+
+        Returns:
+            The dynamic import statement.
+        """
+        return f"const EXTRA = await import({self.marker!s});"
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the dynamic import differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_dynamic_imports():
+    """Dynamic imports are emitted into the memo body, so they must be hashed.
+
+    Same class, same rendered JSX, different dynamic import: a collision here
+    would drop one of the two import statements from the compiled output.
+    """
+    a = _DynamicImportProbe.create(marker="alpha")
+    b = _DynamicImportProbe.create(marker="beta")
+
+    assert type(a) is type(b)
+    assert a.render() == b.render()
+    assert a._get_dynamic_imports() != b._get_dynamic_imports()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_memo_tag_separates_same_named_classes_from_different_modules():
+    """Two modules defining an identical component must not share a memo tag.
+
+    ``__qualname__`` alone does not distinguish them -- both are ``Probe`` -- so
+    the defining module has to reach the digest.
+    """
+    probes = []
+    for module_name in ("_memo_tag_module_a", "_memo_tag_module_b"):
+        namespace = {"Component": Component, "__name__": module_name}
+        exec(
+            "class Probe(Component):\n    tag = 'Probe'\n    library = 'probe-lib'\n",
+            namespace,
+        )
+        probes.append(namespace["Probe"].create())
+
+    a, b = probes
+    assert type(a) is not type(b)
+    assert type(a).__qualname__ == type(b).__qualname__
+    assert a.render() == b.render()
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_memo_tag_separates_identically_rendering_classes():
+    """Distinct classes that render alike must not collide on a tag."""
+
+    class _AlphaProbe(Component):
+        tag = "Same"
+
+    class _BetaProbe(Component):
+        tag = "Same"
+
+    alpha, beta = _AlphaProbe.create(), _BetaProbe.create()
+
+    assert alpha.render() == beta.render()
+    assert memo_tag(alpha) != memo_tag(beta)

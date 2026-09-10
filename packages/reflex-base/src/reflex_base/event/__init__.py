@@ -2021,14 +2021,12 @@ def _check_event_args_subclass_of_callback(
                     for arg in args
                 ]
 
-                expect_string = ", ".join(
-                    repr(arg) for arg in args_types_without_vars
-                ).replace("[", "\\[")
+                expect_string = ", ".join(repr(arg) for arg in args_types_without_vars)
 
                 given_string = ", ".join(
                     repr(callback_param_name_to_type.get(arg, Any))
                     for arg in callback_params_names
-                ).replace("[", "\\[")
+                )
 
                 as_annotated_in = (
                     f" as annotated in {callback_name}" if callback_name else ""

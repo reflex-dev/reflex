@@ -41,8 +41,12 @@ from typing_extensions import TypeAliasType, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
+from reflex_base.utils.compat import declares_annotation
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    PROPERTY_CLASSES: tuple[type, ...]
 
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
@@ -230,6 +234,19 @@ def get_origin(tp: Any):
         if (origin := getattr(tp, "__origin__", None)) is not None
         else _get_origin_cached(tp)
     )
+
+
+@lru_cache(maxsize=1024)
+def _get_args_cached(tp: Any) -> tuple[Any, ...]:
+    """Get the generic arguments of a type, memoized on the type.
+
+    Args:
+        tp: The type to get the arguments of.
+
+    Returns:
+        The generic arguments of the type.
+    """
+    return get_args(tp)
 
 
 @lru_cache
@@ -503,12 +520,17 @@ def resolve_type_alias(cls: GenericType) -> GenericType:
     if isinstance(cls, TypeAliasTypes):
         return resolve_type_alias(cls.__value__)
     if is_union(cls):
+        # Rebuild the union only when a member actually resolved, so the
+        # common alias-free case allocates nothing.
+        resolved_args = None
         args = get_args(cls)
-        resolved_args = tuple(resolve_type_alias(arg) for arg in args)
-        if any(
-            resolved is not arg
-            for resolved, arg in zip(resolved_args, args, strict=True)
-        ):
+        for index, arg in enumerate(args):
+            resolved = resolve_type_alias(arg)
+            if resolved is not arg:
+                if resolved_args is None:
+                    resolved_args = list(args)
+                resolved_args[index] = resolved
+        if resolved_args is not None:
             return unionize(*resolved_args)
     return cls
 
@@ -552,11 +574,46 @@ def get_field_type(cls: GenericType, field_name: str) -> GenericType | None:
     return type_hints.get(field_name, None)
 
 
-PROPERTY_CLASSES = (property,)
-if find_spec("sqlalchemy") and find_spec("sqlalchemy.ext"):
-    from sqlalchemy.ext.hybrid import hybrid_property
+@lru_cache
+def _get_property_classes() -> tuple[type, ...]:
+    """Resolve the legacy property-class tuple on explicit access.
 
-    PROPERTY_CLASSES += (hybrid_property,)
+    Returns:
+        Python's property class and SQLAlchemy's hybrid property class when
+        SQLAlchemy is installed.
+    """
+    if find_spec("sqlalchemy") and find_spec("sqlalchemy.ext"):
+        from sqlalchemy.ext.hybrid import hybrid_property
+
+        return property, hybrid_property
+    return (property,)
+
+
+def __getattr__(name: str) -> object:
+    """Resolve compatibility attributes without importing optional runtimes.
+
+    Args:
+        name: The module attribute being requested.
+
+    Returns:
+        The lazily resolved compatibility value.
+
+    Raises:
+        AttributeError: If the module does not define the requested attribute.
+    """
+    if name == "PROPERTY_CLASSES":
+        return _get_property_classes()
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
+
+
+def __dir__() -> list[str]:
+    """List module attributes, including lazy compatibility exports.
+
+    Returns:
+        The module's attribute names.
+    """
+    return sorted({*globals(), "PROPERTY_CLASSES"})
 
 
 def get_property_hint(attr: Any | None) -> GenericType | None:
@@ -568,9 +625,15 @@ def get_property_hint(attr: Any | None) -> GenericType | None:
     Returns:
         The type hint of the property, if it is a property, else None.
     """
-    if not isinstance(attr, PROPERTY_CLASSES):
+    if not isinstance(attr, property):
+        sqlalchemy_hybrid = sys.modules.get("sqlalchemy.ext.hybrid")
+        if sqlalchemy_hybrid is None or not isinstance(
+            attr, sqlalchemy_hybrid.hybrid_property
+        ):
+            return None
+    if (getter := getattr(attr, "fget", None)) is None:
         return None
-    hints = get_type_hints(attr.fget)
+    hints = get_type_hints(getter)
     return hints.get("return", None)
 
 
@@ -688,6 +751,9 @@ def get_attribute_access_type(
             isinstance(cls, type)
             and not is_generic_alias(cls)
             and issubclass(cls, sqlmodel_types)
+            # Probes for unannotated names must not trigger hint resolution,
+            # which may fail on unresolvable ForwardRefs.
+            and declares_annotation(cls, name)
         ):
             # Check in the annotations directly (for sqlmodel.Relationship)
             hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
@@ -703,13 +769,16 @@ def get_attribute_access_type(
             *(get_attribute_access_type(arg, name) for arg in get_args(cls))
         )
     if isinstance(cls, type):
-        # Bare class
-        exceptions = NameError
+        # Bare class. Skip hint resolution entirely when the name is not
+        # annotated anywhere in the MRO: attribute probes (e.g. inspect's
+        # `_is_coroutine_marker` check) must not trigger, and warn about,
+        # ForwardRef resolution of unrelated annotations.
         try:
-            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
-            if name in hints:
-                return hints[name]
-        except exceptions as e:
+            if declares_annotation(cls, name):
+                hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
+                if name in hints:
+                    return hints[name]
+        except NameError as e:
             logger.warning(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
     return None  # Attribute is not accessible.
 
@@ -797,6 +866,27 @@ def does_obj_satisfy_typed_dict(
     return required_keys.issubset(frozenset(obj))
 
 
+class _Unloaded:
+    """Stands in for the Var classes until they are first needed."""
+
+
+_Var: type = _Unloaded
+_LiteralVar: type = _Unloaded
+_Field: type = _Unloaded
+
+
+def _load_var_classes() -> None:
+    """Resolve the Var classes ``_isinstance`` compares against.
+
+    ``reflex_base.vars`` imports this module, so the import has to be deferred;
+    doing it per call is measurable when validating large containers.
+    """
+    global _Var, _LiteralVar, _Field
+    from reflex_base.vars import Field, LiteralVar, Var
+
+    _Var, _LiteralVar, _Field = Var, LiteralVar, Field
+
+
 def _isinstance(
     obj: Any,
     cls: GenericType,
@@ -820,15 +910,16 @@ def _isinstance(
     if cls is Any:
         return True
 
-    from reflex_base.vars import LiteralVar, Var
+    if _Var is _Unloaded:
+        _load_var_classes()
 
-    if cls is Var:
-        return isinstance(obj, Var)
-    if isinstance(obj, LiteralVar):
+    if cls is _Var:
+        return isinstance(obj, _Var)
+    if isinstance(obj, _LiteralVar):
         return treat_var_as_type and _isinstance(
             obj._var_value, cls, nested=nested, treat_var_as_type=True
         )
-    if isinstance(obj, Var):
+    if isinstance(obj, _Var):
         return treat_var_as_type and typehint_issubclass(
             obj._var_type,
             cls,
@@ -840,16 +931,22 @@ def _isinstance(
     if cls is None or cls is type(None):
         return obj is None
 
-    if is_union(cls):
+    # ``is_union``, ``is_literal`` and ``get_origin`` all start from this
+    # attribute; container checks call back in once per element, so read it once.
+    origin_attr = getattr(cls, "__origin__", None)
+
+    if origin_attr is Union or (
+        origin_attr is None and isinstance(cls, types.UnionType)
+    ):
         return any(
             _isinstance(obj, arg, nested=nested, treat_var_as_type=treat_var_as_type)
-            for arg in get_args(cls)
+            for arg in _get_args_cached(cls)
         )
 
-    if is_literal(cls):
-        return obj in get_args(cls)
+    if origin_attr is Literal:
+        return obj in _get_args_cached(cls)
 
-    origin = get_origin(cls)
+    origin = origin_attr if origin_attr is not None else _get_origin_cached(cls)
 
     if origin is None:
         # cls is a typed dict
@@ -869,9 +966,23 @@ def _isinstance(
             return isinstance(obj, (float, int))
 
         # cls is a simple class
-        return isinstance(obj, cls)
+        try:
+            return isinstance(obj, cls)
+        except TypeError:
+            # A bare PEP 695 type alias is opaque to ``isinstance``; unwrap it
+            # and re-dispatch. Alias members of a union resolve in the
+            # per-member recursion of the union branch above.
+            if isinstance(cls, TypeAliasTypes):
+                return _isinstance(
+                    obj,
+                    resolve_type_alias(cls),
+                    nested=nested,
+                    treat_var_as_type=treat_var_as_type,
+                    treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
+                )
+            raise
 
-    args = get_args(cls)
+    args = _get_args_cached(cls)
 
     if not args:
         if treat_mutable_obj_as_immutable:
@@ -882,7 +993,7 @@ def _isinstance(
         # cls is a simple generic class
         return isinstance(obj, origin)
 
-    if origin is Var and args:
+    if origin is _Var and args:
         # cls is a Var
         return _isinstance(
             obj,
@@ -958,15 +1069,27 @@ def _isinstance(
                 for item in obj
             )
 
-    if args:
-        from reflex_base.vars import Field
+    if args and origin is _Field:
+        return _isinstance(
+            obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
+        )
 
-        if origin is Field:
+    try:
+        return isinstance(obj, get_base_class(cls))
+    except TypeError:
+        # A subscripted PEP 695 type alias keeps the alias as its origin, so it
+        # matches none of the branches above and get_base_class hands the
+        # opaque alias back; unwrap it and re-dispatch. Checked lazily here so
+        # alias-free generic checks pay nothing.
+        if isinstance(origin, TypeAliasTypes):
             return _isinstance(
-                obj, args[0], nested=nested, treat_var_as_type=treat_var_as_type
+                obj,
+                resolve_type_alias(cls),
+                nested=nested,
+                treat_var_as_type=treat_var_as_type,
+                treat_mutable_obj_as_immutable=treat_mutable_obj_as_immutable,
             )
-
-    return isinstance(obj, get_base_class(cls))
+        raise
 
 
 def is_dataframe(value: type) -> bool:
@@ -1043,30 +1166,34 @@ def is_backend_base_variable(name: str, cls: type[BaseState]) -> bool:
 
     from reflex_base.vars.base import Field, Var, is_computed_var
 
-    if name in cls.__dict__:
-        value = cls.__dict__[name]
-        if type(value) is classmethod:
-            return False
-        if callable(value):
-            return False
+    # Read the class dicts directly: `getattr` would run the descriptor this
+    # lookup is meant to detect, against a class that is still being built.
+    for klass in cls.__mro__:
+        if name in klass.__dict__:
+            value = klass.__dict__[name]
+            break
+    else:
+        return True
 
-        if isinstance(
-            value,
-            (
-                types.FunctionType,
-                property,
-                cached_property,
-            ),
-        ) or is_computed_var(value):
-            return False
+    if type(value) is classmethod:
+        return False
+    if callable(value):
+        return False
 
-        # Custom descriptors should be invoked via their __get__/__set__
-        # rather than shadowed by backend var storage. Field/Var define
-        # __get__ for type-checking but are not user descriptors.
-        if hasattr(type(value), "__get__") and not isinstance(value, (Field, Var)):
-            return False
+    if isinstance(
+        value,
+        (
+            types.FunctionType,
+            property,
+            cached_property,
+        ),
+    ) or is_computed_var(value):
+        return False
 
-    return True
+    # Custom descriptors should be invoked via their __get__/__set__
+    # rather than shadowed by backend var storage. Field/Var define
+    # __get__ for type-checking but are not user descriptors.
+    return not hasattr(type(value), "__get__") or isinstance(value, (Field, Var))
 
 
 def check_type_in_allowed_types(value_type: type, allowed_types: Iterable) -> bool:
@@ -1189,7 +1316,22 @@ def typehint_issubclass(
 
     if provided_type_origin is None and accepted_type_origin is None:
         # In this case, we are dealing with a non-generic type, so we can use issubclass
-        return issubclass(possible_subclass, possible_superclass)
+        try:
+            return issubclass(possible_subclass, possible_superclass)
+        except TypeError:
+            # A bare PEP 695 type alias is opaque to ``issubclass``; unwrap it
+            # and re-dispatch.
+            if isinstance(possible_subclass, TypeAliasTypes) or isinstance(
+                possible_superclass, TypeAliasTypes
+            ):
+                return typehint_issubclass(
+                    resolve_type_alias(possible_subclass),
+                    resolve_type_alias(possible_superclass),
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+                )
+            raise
 
     if treat_literals_as_union_of_types and is_literal(possible_superclass):
         args = get_args(possible_superclass)
@@ -1229,6 +1371,18 @@ def typehint_issubclass(
 
     if accepted_type_origin is Union:
         if provided_type_origin is not Union:
+            if isinstance(provided_type_origin or possible_subclass, TypeAliasTypes):
+                # A PEP 695 type alias — bare (checked via the hint itself
+                # when the origin is None) or subscripted (the alias is the
+                # origin) — must unwrap before the member-wise comparison so
+                # an alias of a union is compared with union semantics.
+                return typehint_issubclass(
+                    resolve_type_alias(possible_subclass),
+                    possible_superclass,
+                    treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                    treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                    treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+                )
             return any(
                 typehint_issubclass(
                     possible_subclass,
@@ -1253,6 +1407,16 @@ def typehint_issubclass(
             for provided_arg in provided_args
         )
     if provided_type_origin is Union:
+        if isinstance(accepted_type_origin or possible_superclass, TypeAliasTypes):
+            # Same as above, mirrored: the union members must compare against
+            # the alias's resolved value, not the opaque alias.
+            return typehint_issubclass(
+                possible_subclass,
+                resolve_type_alias(possible_superclass),
+                treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+                treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+                treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
+            )
         return all(
             typehint_issubclass(
                 provided_arg,
@@ -1262,6 +1426,19 @@ def typehint_issubclass(
                 treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
             )
             for provided_arg in provided_args
+        )
+
+    if isinstance(
+        provided_type_origin or possible_subclass, TypeAliasTypes
+    ) or isinstance(accepted_type_origin or possible_superclass, TypeAliasTypes):
+        # A PEP 695 type alias on either side is opaque to the origin
+        # comparison below, so unwrap it and re-dispatch.
+        return typehint_issubclass(
+            resolve_type_alias(possible_subclass),
+            resolve_type_alias(possible_superclass),
+            treat_mutable_superclasss_as_immutable=treat_mutable_superclasss_as_immutable,
+            treat_literals_as_union_of_types=treat_literals_as_union_of_types,
+            treat_any_as_subtype_of_everything=treat_any_as_subtype_of_everything,
         )
 
     provided_type_origin = provided_type_origin or possible_subclass
@@ -1397,3 +1574,10 @@ def is_immutable(i: Any) -> bool:
         Whether the value is immutable.
     """
     return isinstance(i, IMMUTABLE_TYPES)
+
+
+if not TYPE_CHECKING:
+    # Keep the historical wildcard-import surface while allowing the optional
+    # SQLAlchemy descriptor class to resolve only when that export is used.
+    __all__ = [name for name in globals() if not name.startswith("_")]
+    __all__.append("PROPERTY_CLASSES")

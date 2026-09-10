@@ -14,11 +14,11 @@ from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequen
 from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
 
-import rich.markup
 from typing_extensions import Self
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
@@ -423,7 +423,10 @@ class EventProcessor:
                 # tracker since this event will never enter the queue.
                 tracked.cancel()
                 return tracked
-            parent_future.add_child(tracked)
+            # Skip registration if the parent is already done (late-chained
+            # event) so the child runs instead of crashing.
+            if not parent_future.done():
+                parent_future.add_child(tracked)
         if parent_future is None:
             self._supersede_previous(token=token, event=event, tracked=tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
@@ -492,6 +495,9 @@ class EventProcessor:
                 self._root_context,
                 token=token,
                 emit_delta_impl=_emit_delta_impl,
+                # Like fork(): the handler span nests under the caller's span
+                # (the upload request, a custom route).
+                otel_context=otel.capture_context(),
             ),
         )
 
@@ -635,7 +641,15 @@ class EventProcessor:
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
-        await self._execute_event(entry=entry, registered_handler=registered_handler)
+        if not otel.enabled:
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
+            return
+        with otel.event_span(entry.event, entry.ctx, registered_handler):
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
 
     def _create_event_task(
         self,
@@ -652,12 +666,25 @@ class EventProcessor:
         Returns:
             The created asyncio.Task.
         """
-        task = asyncio.create_task(
-            self._process_event_queue_entry(
-                entry=entry, registered_handler=registered_handler
-            ),
-            name=f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}",
+        coro = self._process_event_queue_entry(
+            entry=entry, registered_handler=registered_handler
         )
+        name = f"reflex_event|{entry.event.name}|{entry.ctx.token}|{time.time()}"
+        loop = asyncio.get_running_loop()
+        if (
+            sys.version_info >= (3, 12)
+            and not registered_handler.handler.is_background
+            and loop.get_task_factory() is None
+        ):
+            # Start a foreground handler synchronously instead of after another
+            # loop iteration: the common event runs its handler and emits its
+            # delta before its first real suspension point. Background tasks
+            # keep the deferred start so their interleaving with later events
+            # is unchanged, and a loop with a custom task factory keeps going
+            # through it.
+            task = asyncio.Task(coro, loop=loop, name=name, eager_start=True)
+        else:
+            task = asyncio.create_task(coro, name=name)
         if sys.version_info < (3, 12):
             task._event_ctx = entry.ctx  # pyright: ignore[reportAttributeAccessIssue]
         self._tasks[entry.ctx.txid] = task
@@ -749,9 +776,7 @@ class EventProcessor:
                 except Exception:
                     # Log the error and continue processing the next events.
                     logger.exception(
-                        rich.markup.escape(
-                            f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
-                        )
+                        f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                     )
                 queue.task_done()
         if self._queue_task is asyncio.current_task():

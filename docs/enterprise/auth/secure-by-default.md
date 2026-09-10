@@ -558,6 +558,8 @@ class DemoState(rx.State):
 ## Related
 
 - [Overview](/docs/enterprise/auth/overview/): plugin setup and the login flow.
+- [Example: a complete app](/docs/enterprise/auth/example-app/): the whole
+  pattern — checks, state, and pages — in one small app.
 - [Providers](/docs/enterprise/auth/providers/): provider configuration.
 - [Custom pages](/docs/enterprise/auth/custom-pages/): custom login, callback,
   logout, and forbidden pages.

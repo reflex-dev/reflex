@@ -295,19 +295,12 @@ def context_template(
         Rendered context file content as string.
     """
     initial_state = initial_state or {}
+    # Context objects come from the static registry so they survive hot
+    # updates of this module; only the lookup table is generated here.
     state_contexts_str = "".join([
-        f"{format_state_name(state_name)}: createContext(null),"
+        f'{format_state_name(state_name)}: getStateContext("{state_name}"),'
         for state_name in initial_state
     ])
-
-    # React DevTools labels a context provider from the context's
-    # ``displayName``; without it every state provider in the tree renders as
-    # ``Context.Provider``. Name each one after the Python state it carries.
-    state_context_display_names_str = "\n".join(
-        f"StateContexts.{format_state_name(state_name)}.displayName = "
-        f'"StateContext({state_name})";'
-        for state_name in initial_state
-    )
 
     state_str = (
         rf"""
@@ -399,51 +392,41 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
+import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
+export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
-export const ColorModeContext = createContext({{
-  colorMode: defaultColorMode,
-  resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light",
-  toggleColorMode: () => {{}},
-  setColorMode: () => {{}},
-}});
-export const UploadFilesContext = createContext(null);
-export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
-export const EventLoopContext = createContext(null);
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
-
-ColorModeContext.displayName = "ColorModeContext";
-UploadFilesContext.displayName = "UploadFilesContext";
-DispatchContext.displayName = "DispatchContext";
-EventLoopContext.displayName = "EventLoopContext";
-{state_context_display_names_str}
 
 {state_str}
 
 export const isDevMode = {json.dumps(is_dev_mode)};
 
-// Module-level event dispatchers populated by ``EventLoopProvider`` on each
-// render. Components reach addEvents/connectErrors via this import instead of
-// hoisting ``useContext(EventLoopContext)`` so JSX literals (e.g.
-// ``ErrorBoundary.onError``) constructed in any JS scope can dispatch events
-// without depending on lexical hook hoisting.
-let _addEventsImpl = (events, args, event_actions) => {{
-  console.warn("addEvents called before EventLoopProvider mounted", events);
-}};
-let _connectErrorsImpl = [];
+// The static runtime reads these through the registry, so this module is the
+// only one Vite re-executes when they change.
+registerApp({{
+  initialState,
+  clientStorage,
+  state_name,
+  exception_state_name,
+  onLoadInternalEvent,
+  initialEvents,
+  isDevMode,
+  defaultColorMode,
+}});
 
 export function addEvents(events, args, event_actions) {{
-  return _addEventsImpl(events, args, event_actions);
+  return eventLoop.addEvents(events, args, event_actions);
 }}
 
 export function getConnectErrors() {{
-  return _connectErrorsImpl;
+  return eventLoop.connectErrors;
 }}
 
 export function UploadFilesProvider({{ children }}) {{
@@ -485,11 +468,10 @@ export function EventLoopProvider({{ children }}) {{
     initialEvents,
     clientStorage,
   )
-  // Populate the module-level dispatchers so JSX literals constructed
-  // outside the React-tree path (e.g. ``ErrorBoundary.onError``) can call
-  // ``addEvents`` without needing the events hook hoisted in their scope.
-  _addEventsImpl = addEventsLocal;
-  _connectErrorsImpl = connectErrors;
+  // Publish the dispatchers so JSX literals constructed outside the
+  // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
+  eventLoop.addEvents = addEventsLocal;
+  eventLoop.connectErrors = connectErrors;
   return createElement(
     EventLoopContext.Provider,
     {{ value: [addEventsLocal, connectErrors] }},
@@ -631,6 +613,8 @@ def vite_config_template(
     sourcemap: bool | Literal["inline", "hidden"],
     minify: bool = True,
     allowed_hosts: bool | list[str] = False,
+    prod_react: bool = False,
+    warmup_routes: bool = False,
 ):
     """Template for vite.config.js.
 
@@ -642,6 +626,10 @@ def vite_config_template(
         sourcemap: The sourcemap configuration.
         minify: Whether to minify the build output.
         allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
+        prod_react: Prebundle the browser's React from its production build
+            (dev server only; see REFLEX_DEV_PROD_REACT).
+        warmup_routes: Pre-transform every route module when the dev server
+            starts, so the first visit to a page does not wait on Vite.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -652,10 +640,96 @@ def vite_config_template(
         allowed_hosts_line = f"\n    allowedHosts: {json.dumps(allowed_hosts)},"
     else:
         allowed_hosts_line = ""
+    # Dev-only: prebundle the browser's React from React's production files
+    # so the dev server renders with production React (no per-element dev
+    # validation, no StrictMode double-render). This is scoped to the
+    # dependency optimizer (`optimizeDeps` is a client-environment option),
+    # so SSR keeps resolving React from Node and every other dependency
+    # (react-refresh, the router, radix, emotion) keeps its development
+    # build. A `resolve.alias` would not do: Vite refuses to externalize any
+    # SSR import matching an alias, which breaks the server renderer. JSX is
+    # compiled with the non-dev runtime so nothing imports `jsxDEV`, which the
+    # production jsx-dev-runtime does not export. Fast Refresh cannot patch a
+    # production renderer, so this mode pairs with fullReload(). Absolute
+    # paths: React's package `exports` map does not expose ./cjs/*.
+    prod_react_str = (
+        """
+  oxc: {
+    jsx: { development: false },
+  },
+  optimizeDeps: {
+    rolldownOptions: {
+      // Not part of the optimizer's cache key (plugins are excluded), so the
+      // define below is what invalidates prebundled deps when this toggles.
+      transform: { define: { "process.env.REFLEX_DEV_PROD_REACT": '"1"' } },
+      plugins: [prodReactPrebundle()],
+    },
+  },"""
+        if prod_react
+        else ""
+    )
+    prod_react_plugin_str = (
+        """
+import path from "path";
+import { createRequire } from "module";
+
+function prodReactPrebundle() {
+  // Resolve each package the way Node does from where it is actually used,
+  // so a nested install (e.g. react-dom/node_modules/scheduler) still works.
+  const packageRoot = (name, from) =>
+    path.dirname(createRequire(from).resolve(name + "/package.json"));
+  const reactRoot = packageRoot("react", import.meta.url);
+  const reactDomRoot = packageRoot("react-dom", import.meta.url);
+  const schedulerRoot = packageRoot("scheduler", path.join(reactDomRoot, "package.json"));
+  const production = {
+    react: path.join(reactRoot, "cjs/react.production.js"),
+    "react/jsx-runtime": path.join(reactRoot, "cjs/react-jsx-runtime.production.js"),
+    "react/jsx-dev-runtime": path.join(reactRoot, "cjs/react-jsx-dev-runtime.production.js"),
+    "react-dom": path.join(reactDomRoot, "cjs/react-dom.production.js"),
+    "react-dom/client": path.join(reactDomRoot, "cjs/react-dom-client.production.js"),
+    scheduler: path.join(schedulerRoot, "cjs/scheduler.production.js"),
+  };
+  // Optimizer entries arrive as the packages' resolved entry files (with the
+  // platform's separators, hence the normalization).
+  const key = (file) => {
+    const normalized = path.normalize(file);
+    return process.platform === "win32" ? normalized.toLowerCase() : normalized;
+  };
+  const entryFiles = Object.fromEntries(
+    Object.entries({
+      react: path.join(reactRoot, "index.js"),
+      "react/jsx-runtime": path.join(reactRoot, "jsx-runtime.js"),
+      "react/jsx-dev-runtime": path.join(reactRoot, "jsx-dev-runtime.js"),
+      "react-dom": path.join(reactDomRoot, "index.js"),
+      "react-dom/client": path.join(reactDomRoot, "client.js"),
+      scheduler: path.join(schedulerRoot, "index.js"),
+    }).map(([bare, file]) => [key(file), bare]),
+  );
+  return {
+    name: "reflex-prod-react-prebundle",
+    resolveId(id) {
+      if (id in production) return production[id];
+      const bare = entryFiles[key(id)];
+      return bare ? production[bare] : null;
+    },
+  };
+}
+"""
+        if prod_react
+        else ""
+    )
+    warmup_str = (
+        """
+    warmup: {
+      clientFiles: ["./app/routes/**/*.jsx"],
+    },"""
+        if warmup_routes
+        else ""
+    )
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
-import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
+import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
 
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
@@ -663,21 +737,24 @@ function alwaysUseReactDomServerNode() {{
     name: "vite-plugin-always-use-react-dom-server-node",
     enforce: "pre",
 
-    resolveId(source, importer) {{
-      if (
-        typeof importer === "string" &&
-        importer.endsWith("/entry.server.node.tsx") &&
-        source.includes("react-dom/server")
-      ) {{
-        return this.resolve("react-dom/server.node", importer, {{
-          skipSelf: true,
-        }});
-      }}
-      return null;
+    resolveId: {{
+      filter: {{ id: /react-dom\/server/ }},
+      handler(source, importer) {{
+        if (
+          typeof importer === "string" &&
+          importer.endsWith("/entry.server.node.tsx")
+        ) {{
+          return this.resolve("react-dom/server.node", importer, {{
+            skipSelf: true,
+          }});
+        }}
+        return null;
+      }},
     }},
   }};
 }}
 
+{prod_react_plugin_str}
 function fullReload() {{
   return {{
     name: "full-reload",
@@ -733,9 +810,8 @@ export default defineConfig((config) => ({{
         if (warning.code === "EVAL" && warning.id && warning.id.endsWith("state.js")) return;
         warn(warning);
       }},
-      jsx: {{}},
       output: {{
-        advancedChunks: {{
+        codeSplitting: {{
           groups: [
             {{
               test: /env.json/,
@@ -749,10 +825,10 @@ export default defineConfig((config) => ({{
   experimental: {{
     enableNativePlugin: false,
     hmr: {"true" if experimental_hmr else "false"},
-  }},
+  }},{prod_react_str}
   server: {{
     port: process.env.PORT,{allowed_hosts_line}
-    hmr: {"true" if hmr else "false"},
+    hmr: {"true" if hmr else "false"},{warmup_str}
     watch: {{
       ignored: [
         "**/.web/backend/**",
