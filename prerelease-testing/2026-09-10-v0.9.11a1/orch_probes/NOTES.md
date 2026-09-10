@@ -138,3 +138,21 @@ The nine are granian's own lifecycle messages, which bypass the reflex logging p
 Unchanged from 0.9.10.post2, so pre-existing, not a regression of this train. Note the contrast
 with `reflex cloud --json`, where #6917's `reserve_stdout` keeps stdout clean: the same treatment
 has not reached `reflex run`. Evidence: `logs/json_backend_0911a1.out`, `logs/json_backend_0910.out`.
+
+## `rx.plotly` still drops the `id` prop on react-plotly.js 4.1.0 (previous campaign's FINDING-020) — STILL OPEN
+
+```
+uv venv envs/probe_plotly --python 3.11
+uv pip install --python envs/probe_plotly/bin/python --prerelease=allow \
+  'reflex==0.9.11a1' 'reflex-components-plotly==0.9.6a1' plotly
+cd /tmp && envs/probe_plotly/bin/python -c "
+import reflex as rx, plotly.graph_objects as go
+c = rx.plotly(data=go.Figure(data=[go.Scatter(x=[1,2], y=[3,4])]), id='the-plot')
+print(c.render()['props'])"
+```
+
+Compiled props: `['id:"the-plot"', 'ref:ref_the_plot', 'useResizeHandler:true', ...]` — the wrapper
+still emits a React `id` prop and never `divId`, which is the only identifier react-plotly.js's
+`Plot` forwards to the container div. The plotly bump to react-plotly.js 4.1.0 in this train does
+not change that, so the previous campaign's end-to-end result (chart renders,
+`document.getElementById('the-plot')` is null) still stands. Pre-existing, low.

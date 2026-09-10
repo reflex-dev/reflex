@@ -61,6 +61,7 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - FINDING-014: `frontend_path` validation accepts segments Win32 trims (trailing space or dot) and empty segments (LOW, gap in #7044)
 - FINDING-015: `reflex cloud regions/vmtypes --json` exit 0 with `[]` after a 403 (LOW, pre-existing, agent-usability gap)
 - FINDING-016: `reflex run --json` stdout still carries 9 plain-text granian lines, breaking strict JSON-lines parsing (LOW, pre-existing, previous campaign's FINDING-013)
+- FINDING-017: `rx.plotly` still emits `id` rather than `divId`, so the id never reaches the DOM, unchanged by the react-plotly.js 4.1.0 bump (LOW, pre-existing, previous campaign's FINDING-020)
 
 ## FINDING-001: reflex-otel 0.1.0a1 not published by the release run (PROCESS, resolved)
 
@@ -230,6 +231,15 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - Contrast: `reflex cloud --json` is clean in this same train thanks to #6917's `reserve_stdout`;
   `reflex run --json` has not had the same treatment.
 - Evidence: `orch_probes/logs/json_backend_0911a1.out`, `orch_probes/logs/json_backend_0910.out`.
+
+## FINDING-017: `rx.plotly` still drops the `id` prop on react-plotly.js 4.1.0 (LOW, pre-existing)
+
+- Cluster: `orch_probes` | Regression: no | Previous campaign's FINDING-020, still open.
+- Repro (compile only, no server): `rx.plotly(data=go.Figure(...), id='the-plot').render()['props']`
+  yields `id:"the-plot"` and no `divId`. react-plotly.js's `Plot` forwards only `divId` to the
+  container div, so the id never reaches the DOM (the previous campaign confirmed that end to end).
+  The 4.0.0 → 4.1.0 bump in this train does not change the mechanism.
+- Evidence: `orch_probes/NOTES.md`.
 
 ## Cluster summaries (interim)
 
