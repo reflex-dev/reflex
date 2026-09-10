@@ -131,3 +131,5 @@ def use_chart_width() -> rx.Var[int | None]:
 ```
 
 For React's built-in [`useId`](https://react.dev/reference/react/useId), `rx.vars.use_id()` returns a `Var[str]` with a stable unique id for the component being rendered, e.g. for linking SVG elements to gradient or filter definitions.
+
+A hook var is evaluated once per compiled component, so every element that reads it must render inside the same one. An `rx.el.svg` root, an `@rx.memo` body, and a custom renderer body each compile into a single component and satisfy this.

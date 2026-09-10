@@ -1,10 +1,12 @@
 from typing import get_type_hints
 
 import pytest
+import reflex_components_recharts as recharts
 from reflex_base.components.component import (
     ComponentNamespace,
     evaluate_style_namespaces,
 )
+from reflex_components_recharts import charts
 from reflex_components_recharts.charts import (
     AreaChart,
     BarChart,
@@ -150,3 +152,16 @@ def test_use_chart_width():
     assert dict(var_data.imports)[Recharts.library or ""] == (
         rx.ImportVar(tag="useChartWidth", alias=hook_alias),
     )
+
+
+def test_sankey_typed_dicts_exported_from_package():
+    for name in (
+        "SankeyNode",
+        "SankeyLink",
+        "SankeyData",
+        "SankeyNodePayload",
+        "SankeyNodeProps",
+        "SankeyLinkPayload",
+        "SankeyLinkProps",
+    ):
+        assert getattr(recharts, name) is getattr(charts, name)
