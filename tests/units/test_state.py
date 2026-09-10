@@ -4075,14 +4075,16 @@ def test_state_flags_load_config_on_demand(tmp_path):
         )
     )
 
-    with chdir(proj_root), RegistrationContext():
+    try:
+        with chdir(proj_root), RegistrationContext():
 
-        class LazyConfigState(State):
-            def helper(self):
-                pass
+            class LazyConfigState(State):
+                def helper(self):
+                    pass
 
-        assert "helper" not in LazyConfigState.event_handlers
-    del sys.modules[constants.Config.MODULE]
+            assert "helper" not in LazyConfigState.event_handlers
+    finally:
+        sys.modules.pop(constants.Config.MODULE, None)
 
 
 def test_reload_config_resets_state_flags(tmp_path, forked_registration_context):
