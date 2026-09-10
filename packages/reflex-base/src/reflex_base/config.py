@@ -978,8 +978,13 @@ def _get_config(project_root: Path | None = None) -> Config:
             with _record_imports() as recorder:
                 try:
                     rxconfig = importlib.import_module(constants.Config.MODULE)
+                except BaseException:
+                    # Nothing from a failed load is worth keeping: forget the
+                    # root so the retry evicts what this load imported.
+                    _config_module_deps_root = None
+                    raise
                 finally:
-                    # Record even on failure so a retry evicts partially-imported deps.
+                    # Record even on failure so the retry knows what to evict.
                     for name in recorder.names:
                         origin = getattr(sys.modules.get(name), "__file__", None)
                         if (
