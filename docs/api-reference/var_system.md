@@ -95,10 +95,13 @@ chart_width = rx.vars.use_hook_var(
 
 A component using `chart_width` will import `useChartWidth` from `recharts` and render `const <unique_name> = useChartWidth();` in its body, so `chart_width` can be used like any other `Var[int | None]`.
 
+Hook vars are scoped to the component that consumes them. Use a hook var within one component body, or within one `@rx.memo` or custom renderer body. Do not share the same hook var between sibling components, because each consumer creates its own hook value.
+
 For the common case of React's built-in [`useId`](https://react.dev/reference/react/useId), `rx.vars.use_id()` returns a `Var[str]` containing a stable unique id for the rendered component.
 This is useful for linking SVG elements to `defs` such as gradients or filters:
 
 ```py
+@rx.memo
 def gradient_rect() -> rx.Component:
     gradient_id = rx.vars.use_id()
     return rx.el.svg(

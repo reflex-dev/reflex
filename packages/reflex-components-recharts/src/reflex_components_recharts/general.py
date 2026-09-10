@@ -12,6 +12,7 @@ from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.special import use_hook_var
 
 from .recharts import (
+    _RECHARTS_LIBRARY,
     LiteralAnimationEasing,
     LiteralIconType,
     LiteralLayout,
@@ -312,7 +313,7 @@ def use_chart_width() -> Var[int | None]:
         The chart width var.
     """
     return use_hook_var(
-        library=Recharts.library or "",
+        library=_RECHARTS_LIBRARY,
         hook=_USE_CHART_WIDTH_HOOK,
         _var_type=int | None,
     )

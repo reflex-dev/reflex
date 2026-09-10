@@ -621,6 +621,15 @@ class SankeyLinkProps(TypedDict):
     payload: SankeyLinkPayload
 
 
+_SankeyNodeType = SankeyNode
+_SankeyLinkType = SankeyLink
+_SankeyDataType = SankeyData
+_SankeyNodePayloadType = SankeyNodePayload
+_SankeyNodePropsType = SankeyNodeProps
+_SankeyLinkPayloadType = SankeyLinkPayload
+_SankeyLinkPropsType = SankeyLinkProps
+
+
 def _sankey_renderer(
     fn: Callable,
     props_type: type,
@@ -761,13 +770,13 @@ class SankeyNamespace(ComponentNamespace):
     __call__ = staticmethod(SankeyChart.create)
 
     # For type checking
-    SankeyNode = SankeyNode
-    SankeyLink = SankeyLink
-    SankeyData = SankeyData
-    SankeyNodePayload = SankeyNodePayload
-    SankeyNodeProps = SankeyNodeProps
-    SankeyLinkPayload = SankeyLinkPayload
-    SankeyLinkProps = SankeyLinkProps
+    SankeyNode = _SankeyNodeType
+    SankeyLink = _SankeyLinkType
+    SankeyData = _SankeyDataType
+    SankeyNodePayload = _SankeyNodePayloadType
+    SankeyNodeProps = _SankeyNodePropsType
+    SankeyLinkPayload = _SankeyLinkPayloadType
+    SankeyLinkProps = _SankeyLinkPropsType
 
 
 class Treemap(RechartsCharts):

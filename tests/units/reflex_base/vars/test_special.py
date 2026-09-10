@@ -84,3 +84,13 @@ def test_hook_var_hoisted_into_component():
     assert f"const {v!s} = {hook_alias}();" in comp._get_all_hooks()
     assert ImportVar(tag="useId", alias=hook_alias) in comp._get_all_imports()["react"]
     assert comp.render()["props"] == [f"id:{v!s}"]
+
+
+def test_hook_var_is_scoped_to_each_consuming_component():
+    """A hook var must be consumed within one component body."""
+    v = use_id()
+    first = HookComponent.create(id=v)
+    second = HookComponent.create(id=v)
+
+    assert first._get_all_hooks() == second._get_all_hooks()
+    assert list(first._get_all_hooks()) == [f"const {v!s} = useId_{v!s}();"]
