@@ -634,7 +634,7 @@ def _collect_details_for_gallery():
     Raises:
         SystemExit: If pyproject.toml file is ill-formed or the request to the backend services fails.
     """
-    import httpx
+    import httpx2
     from reflex_cli.utils import hosting
 
     console.rule("[bold]Authentication with Reflex Services")
@@ -666,18 +666,18 @@ def _collect_details_for_gallery():
         # Send a POST request to achieve two things at once:
         # 1. Check if the package is already shared by the user. If not, the backend will return 403.
         # 2. If this package is not shared before, this request records the package name in the backend.
-        response = httpx.post(
+        response = httpx2.post(
             post_custom_components_gallery_endpoint,
             headers={"Authorization": f"Bearer {access_token}"},
             data=params,
         )
-        if response.status_code == httpx.codes.FORBIDDEN:
+        if response.status_code == httpx2.codes.FORBIDDEN:
             logger.error(
                 f"{package_name} is owned by another user. Unable to update the information for it."
             )
             raise SystemExit(1)
         response.raise_for_status()
-    except httpx.HTTPError as he:
+    except httpx2.HTTPError as he:
         logger.error(f"Unable to complete request due to {he}.")
         raise SystemExit(1) from None
 
@@ -704,7 +704,7 @@ def _collect_details_for_gallery():
     # Now send the post request to Reflex backend services.
     try:
         logger.debug(f"Sending custom component data: {params}")
-        response = httpx.post(
+        response = httpx2.post(
             post_custom_components_gallery_endpoint,
             headers={"Authorization": f"Bearer {access_token}"},
             data=params,
@@ -713,7 +713,7 @@ def _collect_details_for_gallery():
         )
         response.raise_for_status()
 
-    except httpx.HTTPError as he:
+    except httpx2.HTTPError as he:
         logger.error(f"Unable to complete request due to {he}.")
         raise SystemExit(1) from None
 

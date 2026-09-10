@@ -69,7 +69,9 @@ def httpx_post(mocker: MockerFixture):
     Returns:
         The mock for ``httpx.post`` so tests can assert on the posted payload.
     """
-    return mocker.patch("httpx.post")
+    import httpx2
+
+    return mocker.patch.object(httpx2, "post")
 
 
 def test_telemetry():
@@ -123,7 +125,7 @@ def test_get_reflex_package_versions_reports_only_first_party(mocker: MockerFixt
             "reflex-base>=0.9.4",
             "reflex-components-radix>=0.9.2",
             "reflex-hosting-cli>=0.1.66",
-            "httpx<1.0,>=0.26",
+            "httpx2>=2.12.0",
             'pydantic>=2.12.0; extra == "db"',
         ],
     )
@@ -131,7 +133,7 @@ def test_get_reflex_package_versions_reports_only_first_party(mocker: MockerFixt
         "reflex-base": "0.9.4",
         "reflex-components-radix": "0.9.2",
         # reflex-hosting-cli is a declared dependency but is not installed here.
-        "httpx": "0.27.0",
+        "httpx2": "2.12.0",
         "pydantic": "2.12.0",
         # A third-party reflex-* package installed separately by the user.
         "reflex-enterprise": "1.2.3",

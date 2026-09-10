@@ -234,14 +234,14 @@ def download_and_run(url: str, *args, show_status: bool = False, **env):
     Raises:
         SystemExit: If the script fails to download.
     """
-    import httpx
+    import httpx2
 
     # Download the script
     logger.debug(f"Downloading {url}")
     try:
         response = net.get(url)
         response.raise_for_status()
-    except httpx.HTTPError as e:
+    except httpx2.HTTPError as e:
         logger.error(
             f"Failed to download bun install script. You can install or update bun manually from https://bun.com \n{e}"
         )

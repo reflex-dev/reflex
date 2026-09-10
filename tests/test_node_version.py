@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Generator
 from typing import Any
 
-import httpx
+import httpx2
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -58,7 +58,7 @@ def test_node_version(node_version_app: AppHarness, page: Page):
     """
 
     def get_latest_node_version():
-        response = httpx.get("https://nodejs.org/dist/index.json")
+        response = httpx2.get("https://nodejs.org/dist/index.json")
         versions = response.json()
 
         # Assuming the first entry in the API response is the most recent version

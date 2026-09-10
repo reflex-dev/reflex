@@ -3766,7 +3766,7 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "granian", extra = ["reload"] },
-    { name = "httpx" },
+    { name = "httpx2" },
     { name = "packaging" },
     { name = "psutil", marker = "sys_platform == 'win32'" },
     { name = "python-multipart" },
@@ -3862,7 +3862,7 @@ requires-dist = [
     { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
     { name = "click", specifier = ">=8.2" },
     { name = "granian", extras = ["reload"], specifier = ">=2.7.4" },
-    { name = "httpx", specifier = ">=0.26,<1.0" },
+    { name = "httpx2", specifier = ">=2.12.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
     { name = "psutil", marker = "extra == 'testing'", specifier = ">=7.0.0,<8.0" },

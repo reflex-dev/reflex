@@ -436,10 +436,10 @@ def _prepare_event(
 
 
 def _send_event(event_data: _Event) -> bool:
-    import httpx
+    import httpx2
 
     try:
-        httpx.post(POSTHOG_API_URL, json=event_data)
+        httpx2.post(POSTHOG_API_URL, json=event_data)
     except Exception:
         return False
     else:
