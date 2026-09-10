@@ -1,1 +1,0 @@
-`reflex.components.dynamic.bundled_libraries` and `DEFAULT_BUNDLED_LIBRARIES` are deprecated (removal in 1.0) but keep working: reading either emits a deprecation warning and resolves against the active `RegistrationContext`. Use `RegistrationContext.ensure_context().bundled_libraries` to read the list, or `bundle_library()` / `reset_bundled_libraries()` to modify it.

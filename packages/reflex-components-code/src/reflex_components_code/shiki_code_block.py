@@ -423,7 +423,7 @@ class ShikiBaseTransformers:
 class ShikiJsTransformer(ShikiBaseTransformers):
     """A Wrapped shikijs transformer."""
 
-    library: str = "@shikijs/transformers@4.3.1"
+    library: str = "@shikijs/transformers@4.4.3"
     fns: list[FunctionStringVar] = dataclasses.field(
         default_factory=lambda: [
             FunctionStringVar.create(fn) for fn in SHIKIJS_TRANSFORMER_FNS
@@ -546,7 +546,7 @@ class ShikiCodeBlock(Component, MarkdownComponentMap):
 
     alias = "ShikiCode"
 
-    lib_dependencies: list[str] = ["shiki@4.3.1"]
+    lib_dependencies: list[str] = ["shiki@4.4.3"]
 
     language: Var[LiteralCodeLanguage] = field(
         default=Var.create("python"), doc="The language to use."

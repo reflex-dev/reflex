@@ -10,12 +10,14 @@ import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from importlib.util import find_spec
+from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
@@ -392,10 +394,13 @@ class BaseStateEventProcessor(EventProcessor):
         """
         from reflex.state import OnLoadInternalState, State
 
-        if (
-            type(root_state) is not State
-            or OnLoadInternalState.get_name() not in root_state.substates
-        ):
+        if type(root_state) is not State:
+            return
+
+        # A backend-initiated event carries no route, so nothing sets
+        # router_data and every one of them would rehydrate again.
+        routeless = not root_state.router_data
+        if routeless and root_state.is_hydrated:
             return
 
         await process_event(
@@ -404,6 +409,15 @@ class BaseStateEventProcessor(EventProcessor):
             state=root_state,
             root_state=root_state,
         )
+        if routeless:
+            # No page to load, but hydration still has to finish.
+            await process_event(
+                handler=State.event_handlers["set_is_hydrated"],
+                payload={"value": True},
+                state=root_state,
+                root_state=root_state,
+            )
+            return
         await process_event(
             handler=OnLoadInternalState.event_handlers["on_load_internal"],
             payload={},
@@ -428,6 +442,7 @@ class BaseStateEventProcessor(EventProcessor):
         # The context, not the event: a chained event carries none of its own
         # and inherits the producing view's through fork().
         router_data = ctx.router_data
+        acquire_start = perf_counter() if otel.enabled else 0.0
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
             BaseStateToken(
@@ -436,6 +451,8 @@ class BaseStateEventProcessor(EventProcessor):
             ),
             event=entry.event,
         ) as state:
+            if otel.enabled:
+                otel.record_state_acquired(acquire_start, event)
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
                 not state.router_data and event.name != _hydrate_event_name()
@@ -487,29 +504,48 @@ class BaseStateEventProcessor(EventProcessor):
         # background task's own state changes are emitted (and cleaned) by its
         # `async with self` context exits, which re-acquire the lock.
         proxy = StateProxy(substate)
-        await process_event(
-            handler=registered_handler.handler,
-            state=proxy,
-            payload=event.payload,
-            root_state=None,
-        )
-        if not proxy._self_entered_context:
-            # A handler that never entered `async with self` emitted nothing,
-            # but every background event used to flush a delta (refreshing
-            # uncached computed vars, and any dirty vars the preamble left,
-            # like router_data). Preserve that, under the lock this time.
-            async with ctx.state_manager.modify_state_with_links(
-                BaseStateToken(
-                    ident=ctx.token,
-                    cls=registered_handler.states[0],
-                ),
-                event=event,
-            ) as flush_state:
-                await chain_updates(
-                    None,
-                    root_state=flush_state._get_root_state(),
-                    handler_name=registered_handler.handler.fn.__qualname__,
-                )
+        handler_error: BaseException | None = None
+        try:
+            await process_event(
+                handler=registered_handler.handler,
+                state=proxy,
+                payload=event.payload,
+                root_state=None,
+            )
+        except BaseException as ex:
+            handler_error = ex
+            raise
+        finally:
+            if not proxy._self_entered_context:
+                # A handler that never entered `async with self` emitted nothing,
+                # but every background event used to flush a delta (refreshing
+                # uncached computed vars, and any dirty vars the preamble left,
+                # like router_data). Preserve that, under the lock this time --
+                # also when the handler raises, so the client gets the same
+                # refresh regardless of how the task ended.
+                try:
+                    async with ctx.state_manager.modify_state_with_links(
+                        BaseStateToken(
+                            ident=ctx.token,
+                            cls=registered_handler.states[0],
+                        ),
+                        event=event,
+                    ) as flush_state:
+                        await chain_updates(
+                            None,
+                            root_state=flush_state._get_root_state(),
+                            handler_name=registered_handler.handler.fn.__qualname__,
+                        )
+                except Exception:
+                    if handler_error is None:
+                        raise
+                    # The handler's exception is the actionable one; log the
+                    # flush failure instead of letting it mask the exception
+                    # already propagating to the backend exception handler.
+                    logger.exception(
+                        "Error flushing delta after background handler "
+                        f"{registered_handler.handler.fn.__qualname__} raised:"
+                    )
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None
@@ -524,6 +560,9 @@ class BaseStateEventProcessor(EventProcessor):
             if ev_ctx is not None:
                 # Ensure the event context is set for the exception handler.
                 EventContext.set(ev_ctx)
+                if otel.enabled:
+                    # Chain the handler's events under the failed event's span.
+                    otel.attach_context(ev_ctx.otel_context)
             if events := self.backend_exception_handler(ex):
                 await chain_updates(
                     events=events,

@@ -28,7 +28,7 @@ from contextvars import Token
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
@@ -580,11 +580,15 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
-                    loads=staticmethod(json.loads),
+                    dumps=staticmethod(_sio_dumps),
+                    loads=staticmethod(_sio_loads),
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],
+                # Handlers here only parse and enqueue (or emit a pong), so run
+                # them inline on the socket's receive loop instead of paying a
+                # task creation and a loop hop per incoming message.
+                async_handlers=False,
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
@@ -812,6 +816,8 @@ class App(MiddlewareMixin, LifespanMixin):
             self._context_middleware(asgi_app),
         )
         App._add_cors(top_asgi_app)
+        if otel.asgi_middleware is not None:
+            return otel.asgi_middleware(top_asgi_app)
         return top_asgi_app
 
     def _add_default_endpoints(self):
@@ -1431,8 +1437,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         if admin_dash and admin_dash.models:
             # Build the admin dashboard
+            # The first positional argument is `engine` before starlette-admin
+            # 1.0 and `session_provider` (which still accepts an Engine) after,
+            # so pass it positionally to support both.
             admin = admin_dash.admin or Admin(
-                engine=get_engine(),
+                get_engine(),
                 title="Reflex Admin Dashboard",
                 logo_url="https://reflex.dev/Reflex.svg",
             )
@@ -1657,32 +1666,44 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        ctx = TelemetryContext.start(trigger=trigger)
-        if ctx is None:
-            compiler.compile_app(
-                self,
-                prerender_routes=prerender_routes,
-                dry_run=dry_run,
-                use_rich=use_rich,
-            )
-            return
+        from reflex_base.utils.deterministic_hash import clear_hash_caches
 
-        with ctx:
-            did_real_compile = False
+        with otel.compile_span(trigger, dry_run):
+            ctx = TelemetryContext.start(trigger=trigger)
             try:
-                did_real_compile = compiler.compile_app(
-                    self,
-                    prerender_routes=prerender_routes,
-                    dry_run=dry_run,
-                    use_rich=use_rich,
-                )
-            except Exception as exc:
-                ctx.set_exception(exc)
-                did_real_compile = True
-                raise
+                if ctx is None:
+                    compiler.compile_app(
+                        self,
+                        prerender_routes=prerender_routes,
+                        dry_run=dry_run,
+                        use_rich=use_rich,
+                    )
+                    return
+
+                with ctx:
+                    did_real_compile = False
+                    try:
+                        did_real_compile = compiler.compile_app(
+                            self,
+                            prerender_routes=prerender_routes,
+                            dry_run=dry_run,
+                            use_rich=use_rich,
+                        )
+                    except Exception as exc:
+                        ctx.set_exception(exc)
+                        did_real_compile = True
+                        raise
+                    finally:
+                        if did_real_compile:
+                            telemetry_accounting.record_compile(self, ctx)
             finally:
-                if did_real_compile:
-                    telemetry_accounting.record_compile(self, ctx)
+                # Auto-memoization named every wrapper it will ever name during the
+                # compile, so its encoding caches are dead weight from here. This is
+                # the single funnel every compile goes through -- the CLI and export
+                # paths reach it via ``get_compiled_app`` and never touch
+                # ``App.__call__`` -- and the ``finally`` keeps a failed compile
+                # from leaving them behind.
+                clear_hash_caches()
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""
@@ -1927,6 +1948,53 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+def _utf8_size(data: str) -> int:
+    """Size of a serialized message in UTF-8 bytes.
+
+    ASCII payloads (the common case) are sized without encoding a copy.
+
+    Args:
+        data: The serialized message.
+
+    Returns:
+        The number of bytes the message occupies on the wire.
+    """
+    return len(data) if data.isascii() else len(data.encode())
+
+
+def _sio_dumps(obj: Any, **kwargs: Any) -> str:
+    """Serialize an outgoing Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        obj: The packet payload.
+        **kwargs: Options forwarded to the JSON encoder.
+
+    Returns:
+        The JSON string.
+    """
+    data = format.json_dumps(obj, **kwargs)
+    if otel.enabled:
+        otel.record_message_size(_utf8_size(data), "transmit")
+    return data
+
+
+def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
+    """Deserialize an incoming Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        data: The JSON string.
+        **kwargs: Options forwarded to the JSON decoder.
+
+    Returns:
+        The decoded payload.
+    """
+    if otel.enabled:
+        otel.record_message_size(
+            _utf8_size(data) if isinstance(data, str) else len(data), "receive"
+        )
+    return json.loads(data, **kwargs)
+
+
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
@@ -2007,6 +2075,8 @@ class EventNamespace(AsyncNamespace):
             logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
+        if otel.enabled:
+            otel.record_connection(1)
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
@@ -2017,6 +2087,8 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        if otel.enabled:
+            otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
@@ -2155,7 +2227,11 @@ class EventNamespace(AsyncNamespace):
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
-        await self.app.event_processor.enqueue(token, event)
+        if not otel.enabled:
+            await self.app.event_processor.enqueue(token, event)
+            return
+        with otel.remote_context(fields):
+            await self.app.event_processor.enqueue(token, event)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.

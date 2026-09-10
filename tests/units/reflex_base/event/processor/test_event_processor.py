@@ -2,20 +2,26 @@
 
 import asyncio
 import contextlib
+import dataclasses
 import logging
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
+from opentelemetry.trace import SpanKind
 from pytest_mock import MockerFixture
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
     QueueShutDown,
     _stream_queue_until_done,
 )
+from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
+from tests.units.conftest import active_tracer
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -622,6 +628,38 @@ async def test_chained_event_processed(token: str):
     assert _CALL_LOG == [{"value": "chained"}]
 
 
+async def test_enqueue_child_of_done_parent_does_not_crash(
+    mock_event_processor: EventProcessor,
+    token: str,
+):
+    """Regression: a late-chained event whose parent future already completed
+    still runs instead of crashing when registered as the parent's child.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+    """
+    async with mock_event_processor as ep:
+        done_parent = EventFuture(txid="parent-txid")
+        done_parent.set_result(None)
+        ep._futures["parent-txid"] = done_parent
+
+        assert ep._root_context is not None
+        child_ctx = dataclasses.replace(
+            ep._root_context.fork(token=token), parent_txid="parent-txid"
+        )
+        future = await ep.enqueue(
+            token,
+            Event.from_event_type(logging_event("late-child"))[0],
+            ev_ctx=child_ctx,
+        )
+        await future
+
+    assert _CALL_LOG == [{"value": "late-child"}]
+    # The child is not registered under the already-done parent.
+    assert done_parent.children == []
+
+
 async def test_join_when_not_started(processor: EventProcessor):
     """join() when not started is a no-op (queue is None).
 
@@ -1047,3 +1085,70 @@ async def test_superseded_chain_cannot_chain_new_events(
 
     assert {"value": "resurrected"} not in _CALL_LOG
     assert {"value": "fresh"} in _CALL_LOG
+
+
+async def test_no_spans_when_otel_disabled(
+    mock_event_processor: EventProcessor, token: str, monkeypatch
+):
+    """With tracing off the processor never touches the tracer.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    assert otel.enabled is False
+    tracer = Mock()
+    # Nothing has bound the tracer yet in a process that never enabled tracing.
+    monkeypatch.setattr(otel, "_tracer", tracer, raising=False)
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+    tracer.start_as_current_span.assert_not_called()
+
+
+async def test_stream_delta_span_nests_under_caller(token: str, otel_exporter):
+    """enqueue_stream_delta captures the caller's trace context like enqueue().
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(delta_event())[0]
+        with active_tracer().start_as_current_span("POST /_upload") as http_span:
+            async for _ in ep.enqueue_stream_delta(token, event):
+                pass
+    spans = {s.name: s for s in otel_exporter.get_finished_spans()}
+    handler = spans[event.name]
+    assert handler.parent is not None
+    assert handler.parent.span_id == http_span.get_span_context().span_id
+    assert handler.kind == SpanKind.INTERNAL
+
+
+async def test_event_spans_chain_parent_child(token: str, otel_exporter):
+    """Each event gets a span; chained events are children of the enqueuing span.
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
+    assert _CALL_LOG == [{"value": "chained"}]
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    parent = spans["_chaining_handler"]
+    child = spans["_logging_handler"]
+    assert parent.parent is None
+    assert parent.kind == SpanKind.CONSUMER
+    assert child.parent is not None
+    assert child.parent.span_id == parent.context.span_id
+    assert child.kind == SpanKind.INTERNAL
+    assert (
+        child.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == parent.attributes[otel.ATTR_EVENT_TXID]
+    )
+    assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)

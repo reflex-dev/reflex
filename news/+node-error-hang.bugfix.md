@@ -1,1 +1,0 @@
-`reflex run` no longer hangs forever when a fatal error (e.g. the node minimum-version check on the npm path) exits the frontend worker thread while the backend blocks the main thread; the failure now interrupts the main thread and the CLI exits promptly with the original error.

@@ -1,15 +1,21 @@
 """Tests for BaseStateEventProcessor, specifically the _rehydrate path."""
 
 import asyncio
+import contextlib
 import dataclasses
+import logging
 import traceback
 from collections.abc import Mapping
-from typing import Any
+from pathlib import Path
+from typing import Any, cast
 
 import pytest
 import pytest_asyncio
-from reflex_base.constants import CompileVars
+from opentelemetry.trace import SpanKind, StatusCode
+from reflex_base import otel
+from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.registry import RegistrationContext
@@ -17,11 +23,106 @@ from reflex_base.registry import RegistrationContext
 import reflex as rx
 from reflex import event
 from reflex.app import App
-from reflex.event import Event
+from reflex.event import Event, EventSpec
+from reflex.istate.manager import StateManager
+from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
+from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
-from reflex.state import OnLoadInternalState, State, StateUpdate
+from reflex.state import BaseState, OnLoadInternalState, State, StateUpdate
+from tests.units.conftest import metric_points
+from tests.units.mock_redis import mock_redis
+
+# Class-level registries on State that registering a substate, or installing a
+# dynamic route arg, writes into with no removal path.
+_STATE_REGISTRIES = (
+    "vars",
+    "computed_vars",
+    "_var_dependencies",
+    "_potentially_dirty_states",
+    "_always_dirty_computed_vars",
+    "_always_dirty_substates",
+    "_interval_computed_var_names",
+    "_fast_attr_names",
+)
+
+
+def _snapshot_registry(value: Any) -> Any:
+    """Copy a registry deeply enough that mutating the original cannot reach it.
+
+    Args:
+        value: The registry to copy.
+
+    Returns:
+        The copy, or the value itself when it is immutable.
+    """
+    if isinstance(value, dict):
+        return {k: set(v) if isinstance(v, set) else v for k, v in value.items()}
+    if isinstance(value, set):
+        return set(value)
+    return value
+
+
+def _restore_registry(cls: type[BaseState], name: str, value: Any) -> None:
+    """Put a registry back, in place where the container is shared by reference.
+
+    Args:
+        cls: The state class to restore on.
+        name: The registry name.
+        value: The snapshotted value.
+    """
+    current = getattr(cls, name)
+    if isinstance(current, (dict, set)):
+        current.clear()
+        current.update(value)  # pyright: ignore[reportArgumentType]
+    else:
+        setattr(cls, name, value)
+
+
+def _state_tree(cls: type[BaseState]) -> list[type[BaseState]]:
+    """The state class and every substate registered under it.
+
+    Args:
+        cls: The root of the tree.
+
+    Returns:
+        The class followed by its substates, depth first.
+    """
+    return [cls, *(s for sub in cls.get_substates() for s in _state_tree(sub))]
+
+
+@pytest.fixture(autouse=True)
+def _isolate_state_class_registries(clean_registration_context: RegistrationContext):
+    """Undo what a test leaves on state classes that outlive it.
+
+    Defining a substate writes into ``State``'s dependency dicts, and
+    ``add_page`` on a dynamic route installs the arg on ``State`` and copies it
+    into the ``vars`` of every substate registered at the time -- including
+    framework ones like ``OnLoadInternalState``.
+
+    Args:
+        clean_registration_context: Requested so this tears down while the
+            test's substate registrations are still resolvable.
+
+    Yields:
+        None.
+    """
+    snapshot = {
+        name: _snapshot_registry(getattr(State, name)) for name in _STATE_REGISTRIES
+    }
+    known_vars = set(State.computed_vars)
+
+    yield
+
+    for name in set(State.computed_vars) - known_vars:
+        with contextlib.suppress(AttributeError):
+            delattr(State, name)
+        for cls in _state_tree(State):
+            cls.vars.pop(name, None)
+            cls.inherited_vars.pop(name, None)
+    for name, value in snapshot.items():
+        _restore_registry(State, name, value)
 
 
 @pytest.fixture
@@ -63,11 +164,49 @@ def emitted_events() -> list[tuple[str, tuple[Event, ...]]]:
 
 
 @pytest_asyncio.fixture
-async def real_base_state_processor(
+async def processor_state_manager(
+    request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+):
+    """The state manager backing the processor.
+
+    Defaults to the in-memory manager. Tests that care about how much of the
+    state tree a manager materializes parametrize this indirectly with
+    "in_process", "disk" or "redis".
+
+    Args:
+        request: pytest request object, whose optional param selects the manager.
+        monkeypatch: pytest monkeypatch fixture.
+        tmp_path: Per-test directory for the disk manager to persist into.
+
+    Yields:
+        The state manager.
+    """
+    kind = getattr(request, "param", "in_process")
+    state_manager: StateManager
+    if kind == "redis":
+        state_manager = StateManagerRedis(redis=mock_redis())
+    elif kind == "disk":
+        # Resolved once in __post_init__, and the manager both purges and
+        # persists there, so keep it out of the process-wide states directory.
+        monkeypatch.setenv(environment.REFLEX_STATES_WORKDIR.name, str(tmp_path))
+        state_manager = StateManagerDisk()
+    else:
+        state_manager = StateManagerMemory()
+
+    yield state_manager
+
+    await state_manager.close()
+
+
+@pytest.fixture
+def real_base_state_processor(
     _real_base_state_processor_obj: BaseStateEventProcessor,
     emitted_deltas: list,
     emitted_events: list,
     clean_registration_context: RegistrationContext,
+    processor_state_manager: StateManager,
 ):
     """A fully wired BaseStateEventProcessor with real _rehydrate.
 
@@ -79,12 +218,13 @@ async def real_base_state_processor(
         emitted_deltas: List to capture emitted deltas.
         emitted_events: List to capture emitted events.
         clean_registration_context: Isolated registration context for the test.
+        processor_state_manager: The state manager to back the processor.
 
-    Yields:
+    Returns:
         The configured but not-yet-started BaseStateEventProcessor.
     """
     clean_registration_context.register_base_state(OnLoadInternalState)
-    state_manager = StateManagerMemory()
+    state_manager = processor_state_manager
 
     async def emit_delta_impl(  # noqa: RUF029
         token: str, delta: Mapping[str, Mapping[str, Any]]
@@ -103,9 +243,7 @@ async def real_base_state_processor(
     )
     _real_base_state_processor_obj._root_context = root_ctx
 
-    yield _real_base_state_processor_obj
-
-    await state_manager.close()
+    return _real_base_state_processor_obj
 
 
 @pytest.fixture
@@ -467,6 +605,135 @@ async def test_background_event_without_context_still_flushes_a_delta(
     )
 
 
+async def test_background_event_raising_without_context_still_flushes_a_delta(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A background handler that raises before ``async with self`` still flushes.
+
+    Regression: the compatibility flush for handlers that never enter their
+    proxy context ran only after a normal return, so a raising handler
+    propagated the exception before the flush and no delta was emitted --
+    unlike every non-raising no-context background handler. The flush now
+    runs in a finally, and the exception still reaches the backend
+    exception handler afterwards.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+    handled: list[Exception] = []
+
+    class RaisingBgState(State):
+        @rx.var(cache=False)
+        def beat(self) -> int:
+            return 11
+
+        @event(background=True)
+        async def bg_raises(self):
+            msg = "boom"
+            raise RuntimeError(msg)
+
+    real_base_state_processor.backend_exception_handler = handled.append
+
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    try:
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(RaisingBgState.bg_raises())[0]
+            )
+            await processor.join(5)
+    finally:
+        State._always_dirty_substates.discard(RaisingBgState.get_name())
+
+    state_name = RaisingBgState.get_full_name()
+    beat_key = "beat" + FIELD_MARKER
+    assert any(d.get(state_name, {}).get(beat_key) == 11 for _, d in emitted_deltas), (
+        f"no delta refreshed the uncached var after the handler raised: {emitted_deltas}"
+    )
+    assert [type(ex) for ex in handled] == [RuntimeError], (
+        f"the handler's exception did not reach the backend handler: {handled}"
+    )
+
+
+async def test_background_flush_failure_does_not_mask_handler_exception(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A failing compat flush must not replace a raised handler's exception.
+
+    Regression: with the flush running after the handler raised, a flush
+    failure (e.g. an uncached computed var throwing during delta
+    resolution) replaced the handler's exception, so the backend exception
+    handler received the flush error instead of the actionable application
+    error. The flush failure is now logged and the handler's exception
+    still propagates.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        caplog: Fixture capturing log records.
+    """
+    handled: list[Exception] = []
+    handler_ran: list[bool] = []
+
+    class MaskingBgState(State):
+        @rx.var(cache=False)
+        def beat(self) -> int:
+            if handler_ran:
+                msg = "flush boom"
+                raise ValueError(msg)
+            return 13
+
+        @event(background=True)
+        async def bg_raises(self):
+            handler_ran.append(True)
+            msg = "boom"
+            raise RuntimeError(msg)
+
+    real_base_state_processor.backend_exception_handler = handled.append
+
+    assert real_base_state_processor._root_context is not None
+    state_manager = real_base_state_processor._root_context.state_manager
+    async with state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as seed_root:
+        seed_root.router_data = {"pathname": "/", "query": {}}
+
+    try:
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(MaskingBgState.bg_raises())[0]
+            )
+            with caplog.at_level(
+                logging.ERROR, logger="reflex_base.event.processor.base_state_processor"
+            ):
+                await processor.join(5)
+    finally:
+        State._always_dirty_substates.discard(MaskingBgState.get_name())
+
+    assert [type(ex) for ex in handled] == [RuntimeError], (
+        f"the flush failure masked the handler's exception: {handled}"
+    )
+    assert any(
+        record.exc_info and record.exc_info[0] is ValueError
+        for record in caplog.records
+    ), f"the flush failure was not logged: {caplog.records}"
+
+
 async def test_chained_event_keeps_originating_router_data(
     wired_app: App,
     real_base_state_processor: BaseStateEventProcessor,
@@ -615,6 +882,462 @@ async def test_failed_context_enter_does_not_mark_the_proxy_entered(
         object.__setattr__(root_ctx.state_manager, "modify_state_with_links", original)
 
     assert proxy._self_entered_context is False
+
+
+def _client_event(spec: Any, router_data: dict[str, Any]) -> Event:
+    """Build an event the way the socket layer delivers one: carrying router_data.
+
+    Args:
+        spec: The event spec to build the event from.
+        router_data: The router data the client sent the event with.
+
+    Returns:
+        The event.
+    """
+    return dataclasses.replace(Event.from_event_type(spec)[0], router_data=router_data)
+
+
+def _view(path: str, as_path: str | None = None, **query: str) -> dict[str, Any]:
+    """The router_data the socket layer builds for a page view.
+
+    ``pathname`` is the matched route (``/item/[item_id]``) and ``asPath`` the
+    URL the client is actually on (``/item/abc``); see
+    ``EventNamespace.on_event``.
+
+    Args:
+        path: The matched route.
+        as_path: The client's URL, defaulting to the matched route.
+        query: The route and query params for the view.
+
+    Returns:
+        A router_data dict.
+    """
+    return {
+        RouteVar.PATH: path,
+        RouteVar.ORIGIN: as_path if as_path is not None else path,
+        RouteVar.QUERY: query,
+    }
+
+
+@contextlib.asynccontextmanager
+async def _read_back(processor: BaseStateEventProcessor, token: str):
+    """Read the token's final state through the lock.
+
+    ``StateManagerRedis.get_state`` goes straight to redis, which under
+    opportunistic locking has not yet seen the writes still held in the
+    lease's cached copy.
+
+    Args:
+        processor: The processor whose state manager holds the token.
+        token: The client token.
+
+    Yields:
+        The root state.
+    """
+    root_ctx = processor._root_context
+    assert root_ctx is not None
+    async with root_ctx.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=State)
+    ) as root:
+        yield root
+
+
+async def _send(
+    processor: BaseStateEventProcessor, token: str, ev: Event, timeout: float = 10
+) -> None:
+    """Enqueue an event and wait for it and everything it chains.
+
+    ``processor.join()`` only drains the queue, which can empty between an
+    event finishing and the events it chained being put on it, so the on_load
+    chain these tests are about is not covered by it.
+
+    Args:
+        processor: The processor to enqueue against.
+        token: The client token.
+        ev: The event to enqueue.
+        timeout: Seconds to wait for the chain to finish.
+    """
+    future = await processor.enqueue(token, ev)
+    await asyncio.wait_for(future.wait_all(), timeout=timeout)
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
+)
+async def test_rehydrate_runs_on_load_for_the_incoming_events_route(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """The compatibility rehydrate loads the page the event came from.
+
+    Once a token's state has expired, the next event arrives against a fresh
+    tree with no ``router_data`` and the processor rehydrates it before running
+    the handler. ``on_load`` is page dependent, so that rehydrate has to
+    resolve the route from the event that triggered it: anything else runs
+    another page's loader, or the 404 loader, against a client that is plainly
+    somewhere else.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class RouteLoadState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def load_404(self):
+            self.loaded = [*self.loaded, "404"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=RouteLoadState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=RouteLoadState.load_b
+    )
+    wired_app.add_page(
+        lambda: rx.text("404"), route="/404", on_load=RouteLoadState.load_404
+    )
+
+    async with real_base_state_processor as processor:
+        await _send(
+            processor, token, _client_event(RouteLoadState.ping(), _view("/page-b"))
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(RouteLoadState)).loaded == ["b"], (
+            "the rehydrate ran a loader for a page the event did not come from"
+        )
+        assert root.router.url.path == "/page-b"
+        assert (await root.get_state(State)).is_hydrated is True
+
+
+async def test_rehydrate_after_expiry_does_not_reload_the_previous_route(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A state that expired on one page rehydrates against the client's new page.
+
+    The client navigates from ``/page-a`` to ``/page-b`` while the backend
+    drops the token's state. The next event carries the ``/page-b`` view, so
+    the rehydrate it triggers must not resurrect ``/page-a``'s loader from
+    whatever the previous event left behind.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class ExpiredLoadState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=ExpiredLoadState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=ExpiredLoadState.load_b
+    )
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state_manager = root_ctx.state_manager
+
+    async with real_base_state_processor as processor:
+        # A first event settles the state on /page-a.
+        await _send(
+            processor, token, _client_event(ExpiredLoadState.ping(), _view("/page-a"))
+        )
+        # The token's state expires out from under the still-connected client.
+        # Only the in-memory manager is driven here; expiry is a manager
+        # concern, and what it leaves the processor with -- a fresh tree for a
+        # known token -- is what the other managers are exercised on above.
+        assert isinstance(state_manager, StateManagerMemory)
+        state_manager.states.pop(token)
+        # The client, now on /page-b, sends the next event.
+        await _send(
+            processor, token, _client_event(ExpiredLoadState.ping(), _view("/page-b"))
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(ExpiredLoadState)).loaded == ["b"], (
+            "the post-expiry rehydrate loaded the route the client had left"
+        )
+        assert root.router.url.path == "/page-b"
+
+
+@pytest.mark.parametrize(
+    "processor_state_manager", ["in_process", "disk", "redis"], indirect=True
+)
+async def test_rehydrate_resolves_dynamic_route_args_of_the_incoming_event(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A rehydrated dynamic page loads with the event's own route args.
+
+    The loader for ``/item/[item_id]`` is useless without ``item_id``: the
+    rehydrate has to seed ``router`` from the incoming event before chaining
+    ``on_load``, or the loader reads an empty arg on a URL that plainly names
+    one.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class DynamicLoadState(State):
+        seen: list[str] = []
+
+        @event
+        def load_item(self):
+            item_id = self.item_id  # pyright: ignore[reportAttributeAccessIssue]
+            self.seen = [*self.seen, f"{self.router.url.path}|{item_id}"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("item"),
+        route="/item/[item_id]",
+        on_load=DynamicLoadState.load_item,
+    )
+    wired_app.add_page(
+        lambda: rx.text("other"), route="/other", on_load=DynamicLoadState.load_item
+    )
+
+    async with real_base_state_processor as processor:
+        await _send(
+            processor,
+            token,
+            _client_event(
+                DynamicLoadState.ping(),
+                _view("/item/[item_id]", "/item/abc", item_id="abc"),
+            ),
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(DynamicLoadState)).seen == ["/item/abc|abc"]
+
+
+async def test_event_without_router_data_hydrates_once_without_loaders(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]],
+    token: str,
+):
+    """A backend-initiated event hydrates an expired state, but only once.
+
+    Regression: the rehydrate ran ``on_load_internal`` against the empty
+    route, whose loaders (the 404 ones) chained events that carried no
+    ``router_data`` either and rehydrated again, fanning out until the queue
+    was shut down. Nothing sets ``router_data`` on this path, so the rehydrate
+    also has to stop repeating itself.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List to capture emitted deltas.
+        token: The client token.
+    """
+
+    class BackendPushState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_index(self):
+            self.loaded = [*self.loaded, "index"]
+
+        @event
+        def load_404(self):
+            self.loaded = [*self.loaded, "404"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("i"), route="/", on_load=BackendPushState.load_index
+    )
+    wired_app.add_page(
+        lambda: rx.text("404"), route="/404", on_load=BackendPushState.load_404
+    )
+
+    async with real_base_state_processor as processor:
+        # join, not the event's future: pre-fix the fan-out outruns wait_all.
+        for _ in range(2):
+            await processor.enqueue(
+                token, Event.from_event_type(BackendPushState.ping())[0]
+            )
+            await processor.join(1)
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(BackendPushState)).loaded == []
+        assert (await root.get_state(State)).is_hydrated is True
+
+    state_name = State.get_full_name()
+    is_hydrated_key = CompileVars.IS_HYDRATED + FIELD_MARKER
+    hydrate_deltas = [
+        d
+        for _, d in emitted_deltas
+        if d.get(state_name, {}).get(is_hydrated_key) is False
+    ]
+    assert len(hydrate_deltas) == 1, "the second event hydrated the state again"
+
+
+async def test_routed_event_after_a_routeless_rehydrate_loads_its_page(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Hydrating without a route does not consume the page's on_load.
+
+    A backend-initiated event leaves the state hydrated but still routeless,
+    so the first event that does carry a route still owes it its loaders.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+
+    class MixedOriginState(State):
+        loaded: list[str] = []
+
+        @event
+        def load_a(self):
+            self.loaded = [*self.loaded, "a"]
+
+        @event
+        def load_b(self):
+            self.loaded = [*self.loaded, "b"]
+
+        @event
+        def ping(self):
+            pass
+
+    wired_app.add_page(
+        lambda: rx.text("a"), route="/page-a", on_load=MixedOriginState.load_a
+    )
+    wired_app.add_page(
+        lambda: rx.text("b"), route="/page-b", on_load=MixedOriginState.load_b
+    )
+
+    async with real_base_state_processor as processor:
+        await _send(processor, token, Event.from_event_type(MixedOriginState.ping())[0])
+        await _send(
+            processor, token, _client_event(MixedOriginState.ping(), _view("/page-b"))
+        )
+
+    async with _read_back(real_base_state_processor, token) as root:
+        assert (await root.get_state(MixedOriginState)).loaded == ["b"]
+
+
+async def test_backend_exception_handler_events_parent_under_failed_span(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    otel_exporter,
+):
+    """Events returned by the backend exception handler are children of the failed span.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+
+    class RecoverState(State):
+        @event
+        def fail(self):
+            msg = "boom"
+            raise RuntimeError(msg)
+
+        @event
+        def recover(self):
+            pass
+
+    def recover_from(_ex: Exception) -> EventSpec:
+        return cast("EventSpec", RecoverState.recover())
+
+    real_base_state_processor.backend_exception_handler = recover_from
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(RecoverState.fail())[0])
+        await processor.join(5)
+
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    failed, recovery = spans["fail"], spans["recover"]
+    assert failed.status.status_code == StatusCode.ERROR
+    assert recovery.parent is not None
+    assert recovery.parent.span_id == failed.context.span_id
+    assert recovery.kind == SpanKind.INTERNAL
+    assert failed.attributes is not None
+    assert recovery.attributes is not None
+    assert (
+        recovery.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == failed.attributes[otel.ATTR_EVENT_TXID]
+    )
+
+
+async def test_execute_event_records_state_acquire_duration(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    otel_metrics,
+):
+    """Executing an event records how long acquiring the session state took.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        otel_metrics: In-memory metric reader with metrics enabled.
+    """
+
+    class AcquireState(State):
+        @event
+        def noop(self):
+            pass
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(AcquireState.noop())[0])
+        await processor.join(1)
+
+    names = {
+        p.attributes[otel.ATTR_EVENT_NAME]
+        for p in metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
+    }
+    assert Event.from_event_type(AcquireState.noop())[0].name in names
 
 
 async def test_chain_updates_keeps_writes_made_during_delta_resolution(

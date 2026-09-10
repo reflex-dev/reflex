@@ -1,1 +1,0 @@
-`get_config(reload=True)` is deprecated (removal in 1.0) but keeps working: passing `reload=True` emits a deprecation warning and delegates to `reload_config()`, which forces a fresh load of the config into the current `RegistrationContext`.
