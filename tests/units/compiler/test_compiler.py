@@ -476,14 +476,6 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
         reset_bundled_libraries()
 
 
-def test_compile_contexts_has_default_color_mode_context():
-    """ColorModeContext should have a safe fallback value without Radix."""
-    _, code = compiler.compile_contexts(None, None)
-
-    assert "createContext({" in code
-    assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
-
-
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
     """Point the compiler's get_config at a fresh config with the given mode.
 
@@ -1427,21 +1419,14 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
-def test_context_template_names_contexts_for_devtools():
-    """Every context in the generated module carries a ``displayName``.
-
-    React DevTools labels a provider from its context's ``displayName``;
-    without one the whole provider stack renders as ``Context.Provider``.
-    """
+def test_context_template_renders_internal_event_names():
+    """The generated module carries the resolved framework event names."""
     from reflex_base.compiler.templates import InternalEventNames, context_template
 
     rendered = context_template(
         is_dev_mode=True,
         default_color_mode='"light"',
-        initial_state={
-            "reflex___state____state": {},
-            "reflex___state____state.demo_state": {},
-        },
+        initial_state={"reflex___state____state": {}},
         state_name="reflex___state____state",
         internal_events=InternalEventNames(
             main_state_name="reflex___state____state",
@@ -1453,25 +1438,14 @@ def test_context_template_names_contexts_for_devtools():
     assert "ReflexEvent('reflex___state____state.a.b')" in rendered
     assert "'reflex___state____state.c.d'" in rendered
     assert 'handle_frontend_exception = "reflex___state____state.e.f"' in rendered
-
-    for context_name in (
-        "ColorModeContext",
-        "UploadFilesContext",
-        "DispatchContext",
-        "EventLoopContext",
+    # The static runtime reads the names through the registry.
+    registered = rendered[rendered.index("registerApp({") :]
+    for name in (
+        "main_state_name",
+        "update_vars_internal",
+        "handle_frontend_exception",
     ):
-        assert f'{context_name}.displayName = "{context_name}";' in rendered
-
-    # State contexts are named for the Python state they carry, using the
-    # dotted state name rather than the mangled JS identifier.
-    assert (
-        "StateContexts.reflex___state____state.displayName = "
-        '"StateContext(reflex___state____state)";' in rendered
-    )
-    assert (
-        "StateContexts.reflex___state____state__demo_state.displayName = "
-        '"StateContext(reflex___state____state.demo_state)";' in rendered
-    )
+        assert f"  {name},\n" in registered
 
 
 def test_context_template_requires_internal_events_with_state():

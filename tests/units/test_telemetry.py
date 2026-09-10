@@ -7,7 +7,10 @@ from types import SimpleNamespace
 import pytest
 from packaging.version import parse as parse_python_version
 from pytest_mock import MockerFixture
+from reflex_base.config import get_config
+from reflex_base.registry import RegistrationContext
 
+import reflex as rx
 from reflex.utils import telemetry
 
 
@@ -708,6 +711,59 @@ async def test_send_within_event_loop_runs_off_loop_thread(mocker: MockerFixture
     await asyncio.to_thread(telemetry._flush)
 
     assert seen["thread"] is not loop_thread
+
+
+def test_submit_runs_job_in_callers_registration_context():
+    """Queued telemetry work runs under the submitting thread's context.
+
+    The worker thread carries no RegistrationContext of its own, so a config
+    lookup during event collection (e.g. ``get_bun_path``) used to attach a
+    throwaway context and re-import ``rxconfig.py`` off-thread. The submitter's
+    context travels with the job instead, so the already-loaded config is reused.
+    """
+    seen: dict[str, object] = {}
+
+    def record() -> None:
+        seen["thread"] = threading.current_thread()
+        seen["context"] = RegistrationContext.get()
+        seen["config"] = get_config()
+
+    with RegistrationContext() as ctx:
+        config = rx.Config(app_name="telemetry_ctx")
+        ctx._set_config(config)
+
+        telemetry._submit(record)
+        telemetry._flush()
+
+    assert seen["thread"] is not threading.current_thread()
+    assert seen["context"] is ctx
+    assert seen["config"] is config
+
+
+def test_submit_leaves_worker_context_clean_between_jobs():
+    """The attached context is detached again once the job finishes."""
+    seen: list[RegistrationContext | None] = []
+
+    def record() -> None:
+        try:
+            seen.append(RegistrationContext.get())
+        except LookupError:
+            seen.append(None)
+
+    with RegistrationContext() as ctx:
+        ctx._set_config(rx.Config(app_name="telemetry_ctx"))
+        telemetry._submit(record)
+        telemetry._flush()
+
+    # Submitted from a thread that is not under ``ctx``: the worker must not
+    # still be holding the previous job's context.
+    submitter = threading.Thread(target=lambda: telemetry._submit(record))
+    submitter.start()
+    submitter.join()
+    telemetry._flush()
+
+    assert seen[0] is ctx
+    assert seen[1] is not ctx
 
 
 def test_send_suppresses_worker_errors(mocker: MockerFixture):

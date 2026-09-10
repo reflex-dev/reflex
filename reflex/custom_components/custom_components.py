@@ -15,7 +15,7 @@ import click
 from reflex_base import constants
 from reflex_base.constants import CustomComponents
 
-from reflex.utils import console, frontend_skeleton
+from reflex.utils import console
 from reflex.utils.cli_options import log_options
 
 logger = logging.getLogger(__name__)
@@ -494,7 +494,7 @@ def init(
     Raises:
         SystemExit: If the pyproject.toml already exists.
     """
-    from reflex.utils import exec
+    from reflex.utils import exec, frontend_skeleton
 
     if CustomComponents.PYPROJECT_TOML.exists():
         logger.error(f"A {CustomComponents.PYPROJECT_TOML} already exists. Aborting.")
