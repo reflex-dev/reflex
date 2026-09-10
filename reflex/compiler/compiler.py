@@ -1410,6 +1410,9 @@ def compile_app(
     # Delete memo files this compile no longer emits. Done here (not before the
     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
     utils.prune_stale_memo_files(path for path, _ in memo_component_files)
+    # A leftover ``.js`` module would win extensionless resolution of
+    # ``$/utils/context`` over the ``.jsx`` file written below.
+    Path(utils.get_context_path()).with_suffix(constants.Ext.JS).unlink(missing_ok=True)
 
     with log.timing(logger, "Install Frontend Packages"):
         app._get_frontend_packages(all_imports)

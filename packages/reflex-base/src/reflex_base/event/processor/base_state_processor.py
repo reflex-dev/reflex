@@ -366,10 +366,13 @@ class BaseStateEventProcessor(EventProcessor):
         """
         from reflex.state import OnLoadInternalState, State
 
-        if (
-            type(root_state) is not State
-            or OnLoadInternalState.get_name() not in root_state.substates
-        ):
+        if type(root_state) is not State:
+            return
+
+        # A backend-initiated event carries no route, so nothing sets
+        # router_data and every one of them would rehydrate again.
+        routeless = not root_state.router_data
+        if routeless and root_state.is_hydrated:
             return
 
         await process_event(
@@ -378,6 +381,15 @@ class BaseStateEventProcessor(EventProcessor):
             state=root_state,
             root_state=root_state,
         )
+        if routeless:
+            # No page to load, but hydration still has to finish.
+            await process_event(
+                handler=State.event_handlers["set_is_hydrated"],
+                payload={"value": True},
+                state=root_state,
+                root_state=root_state,
+            )
+            return
         await process_event(
             handler=OnLoadInternalState.event_handlers["on_load_internal"],
             payload={},

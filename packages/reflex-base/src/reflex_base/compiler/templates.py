@@ -295,19 +295,12 @@ def context_template(
         Rendered context file content as string.
     """
     initial_state = initial_state or {}
+    # Context objects come from the static registry so they survive hot
+    # updates of this module; only the lookup table is generated here.
     state_contexts_str = "".join([
-        f"{format_state_name(state_name)}: createContext(null),"
+        f'{format_state_name(state_name)}: getStateContext("{state_name}"),'
         for state_name in initial_state
     ])
-
-    # React DevTools labels a context provider from the context's
-    # ``displayName``; without it every state provider in the tree renders as
-    # ``Context.Provider``. Name each one after the Python state it carries.
-    state_context_display_names_str = "\n".join(
-        f"StateContexts.{format_state_name(state_name)}.displayName = "
-        f'"StateContext({state_name})";'
-        for state_name in initial_state
-    )
 
     state_str = (
         rf"""
@@ -399,51 +392,41 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
+import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
+export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
 export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
 
 export const defaultColorMode = {default_color_mode}
-export const ColorModeContext = createContext({{
-  colorMode: defaultColorMode,
-  resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light",
-  toggleColorMode: () => {{}},
-  setColorMode: () => {{}},
-}});
-export const UploadFilesContext = createContext(null);
-export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
-export const EventLoopContext = createContext(null);
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
-
-ColorModeContext.displayName = "ColorModeContext";
-UploadFilesContext.displayName = "UploadFilesContext";
-DispatchContext.displayName = "DispatchContext";
-EventLoopContext.displayName = "EventLoopContext";
-{state_context_display_names_str}
 
 {state_str}
 
 export const isDevMode = {json.dumps(is_dev_mode)};
 
-// Module-level event dispatchers populated by ``EventLoopProvider`` on each
-// render. Components reach addEvents/connectErrors via this import instead of
-// hoisting ``useContext(EventLoopContext)`` so JSX literals (e.g.
-// ``ErrorBoundary.onError``) constructed in any JS scope can dispatch events
-// without depending on lexical hook hoisting.
-let _addEventsImpl = (events, args, event_actions) => {{
-  console.warn("addEvents called before EventLoopProvider mounted", events);
-}};
-let _connectErrorsImpl = [];
+// The static runtime reads these through the registry, so this module is the
+// only one Vite re-executes when they change.
+registerApp({{
+  initialState,
+  clientStorage,
+  state_name,
+  exception_state_name,
+  onLoadInternalEvent,
+  initialEvents,
+  isDevMode,
+  defaultColorMode,
+}});
 
 export function addEvents(events, args, event_actions) {{
-  return _addEventsImpl(events, args, event_actions);
+  return eventLoop.addEvents(events, args, event_actions);
 }}
 
 export function getConnectErrors() {{
-  return _connectErrorsImpl;
+  return eventLoop.connectErrors;
 }}
 
 export function UploadFilesProvider({{ children }}) {{
@@ -485,11 +468,10 @@ export function EventLoopProvider({{ children }}) {{
     initialEvents,
     clientStorage,
   )
-  // Populate the module-level dispatchers so JSX literals constructed
-  // outside the React-tree path (e.g. ``ErrorBoundary.onError``) can call
-  // ``addEvents`` without needing the events hook hoisted in their scope.
-  _addEventsImpl = addEventsLocal;
-  _connectErrorsImpl = connectErrors;
+  // Publish the dispatchers so JSX literals constructed outside the
+  // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
+  eventLoop.addEvents = addEventsLocal;
+  eventLoop.connectErrors = connectErrors;
   return createElement(
     EventLoopContext.Provider,
     {{ value: [addEventsLocal, connectErrors] }},
