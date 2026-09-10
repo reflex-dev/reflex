@@ -1,3 +1,10 @@
+## v0.9.5a1 (2026-09-10)
+
+### Miscellaneous
+
+- Bump `shiki` and `@shikijs/transformers` to 4.4.3. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
 ## v0.9.4 (2026-08-28)
 
 ### Bug Fixes

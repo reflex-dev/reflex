@@ -1,3 +1,18 @@
+## v0.1.72a1 (2026-09-10)
+
+### Breaking Changes
+
+- Two `reflex cloud` defaults changed. `--interactive` now defaults to whether stdout is a terminal rather than to on, so a pipe, a CI job or an agent is refused with an error instead of waiting at a prompt that nobody answers -- `reflex cloud apps list` in CI with no token now exits 1 with "Token is required for non-interactive mode." Pass `--interactive` to restore the old behavior. And `reflex cloud apps logs --follow` now defaults to off, since following prompts between pages and so never returns on its own; pass `--follow true` for the old behavior. `reflex deploy` takes the same terminal-derived `--interactive`; it keeps `--json` for log records only, since its progress is a stream rather than a result. ([#6917](https://github.com/reflex-dev/reflex/issues/6917))
+
+### Features
+
+- Every `reflex cloud` command now takes `--json`, writing one JSON document to stdout while human-readable messages move to stderr, so the output is parseable without reading a Rich table. Note that a message only lands on stderr if the installed `reflex-base` carries the reservation: against an older one, `--loglevel debug` still writes its records to stdout and they precede the document. ([#6917](https://github.com/reflex-dev/reflex/issues/6917))
+
+### Bug Fixes
+
+- Fix version comparison bug that broke compatibility with reflex-0.7.6.post1 ([#6963](https://github.com/reflex-dev/reflex/issues/6963))
+
+
 ## v0.1.71 (2026-08-28)
 
 ### Breaking Changes
