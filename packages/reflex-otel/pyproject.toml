@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.entry-points.opentelemetry_instrumentor]
-reflex = "reflex_otel:ReflexInstrumentor"
+reflex = "reflex_otel.instrumentor:ReflexInstrumentor"
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
