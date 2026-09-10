@@ -9,8 +9,10 @@ from reflex_base.components.component import Component, MemoizationLeaf, field
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.special import use_hook_var
 
 from .recharts import (
+    _RECHARTS_LIBRARY,
     LiteralAnimationEasing,
     LiteralIconType,
     LiteralLayout,
@@ -19,6 +21,8 @@ from .recharts import (
     LiteralVerticalAlign,
     Recharts,
 )
+
+_USE_CHART_WIDTH_HOOK = "useChartWidth"
 
 
 class ResponsiveContainer(Recharts, MemoizationLeaf):
@@ -297,6 +301,21 @@ class Cell(Recharts):
 
     stroke: Var[str | Color] = field(
         doc="The presentation attribute of a rectangle in bar or a sector in pie."
+    )
+
+
+def use_chart_width() -> Var[int | None]:
+    """Get the chart width as a var.
+
+    Outside of a chart context, this will be None/undefined.
+
+    Returns:
+        The chart width var.
+    """
+    return use_hook_var(
+        library=_RECHARTS_LIBRARY,
+        hook=_USE_CHART_WIDTH_HOOK,
+        _var_type=int | None,
     )
 
 
