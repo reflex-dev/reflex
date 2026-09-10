@@ -5430,3 +5430,34 @@ def test_base_var_shadowing_non_state_descriptor_does_not_warn(
     assert not [
         call for call in warn_mock.call_args_list if "descriptor_value" in call.args[0]
     ], "re-annotation resolving a descriptor MRO conflict must not warn"
+
+
+def test_base_var_shadowing_warns_when_descriptor_outranks_state_field(
+    mocker: MockerFixture,
+) -> None:
+    """A descriptor closer than the state field does not exempt a dropped declaration.
+
+    Args:
+        mocker: Pytest mock fixture.
+    """
+    from reflex_base.vars.hybrid_property import hybrid_property
+
+    warn_mock = mocker.patch("reflex.state.console.warn")
+
+    class CloserMixin:
+        @hybrid_property
+        def outranked_value(self) -> int:
+            return 1
+
+    class OutrankedParent(BaseState):
+        outranked_value: int = 1  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    class OutrankedChild(CloserMixin, OutrankedParent):
+        outranked_value: str = "x"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    assert "outranked_value" not in OutrankedChild.base_vars, (
+        "declaration is still dropped, so it must not be treated as effective"
+    )
+    assert any(
+        "outranked_value" in call.args[0] for call in warn_mock.call_args_list
+    ), "expected a warning when the descriptor outranks the state field"

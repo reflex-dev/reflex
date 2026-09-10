@@ -1117,21 +1117,29 @@ class BaseState(EvenMoreBasicBaseState):
                 raise ComputedVarShadowsStateVarError(msg)
 
     @classmethod
-    def _shadows_non_state_descriptor(cls, name: str) -> bool:
-        """Whether a base outside the state hierarchy defines name as a descriptor.
+    def _state_field_precedes_descriptor(cls, name: str) -> bool:
+        """Whether a state base declaring name outranks a same-named descriptor.
+
+        Re-annotating is how a state field that already wins over a descriptor on a
+        non-state base is kept, so that redeclaration is inert rather than a mistake.
+        A descriptor that instead outranks the state field does not make the
+        redeclaration take effect, so it is not exempt.
 
         Args:
             name: The var name to look up.
 
         Returns:
-            True if a non-state base in the MRO defines name as a user descriptor.
+            True if a state base declaring name precedes a non-state descriptor.
         """
-        return any(
-            not issubclass(base, BaseState)
-            and _is_user_descriptor(base.__dict__[name], include_properties=True)
-            for base in cls.__mro__
-            if name in base.__dict__
-        )
+        state_first = False
+        for base in cls.__mro__[1:]:
+            if name not in base.__dict__:
+                continue
+            if issubclass(base, BaseState):
+                state_first = True
+            elif _is_user_descriptor(base.__dict__[name], include_properties=True):
+                return state_first
+        return False
 
     @classmethod
     def _check_overridden_inherited_vars(cls) -> None:
@@ -1162,7 +1170,7 @@ class BaseState(EvenMoreBasicBaseState):
             if (
                 parent_field is None
                 or parent_field is own_field
-                or cls._shadows_non_state_descriptor(name)
+                or cls._state_field_precedes_descriptor(name)
             ):
                 continue
             console.warn(
