@@ -39,7 +39,7 @@ async def _poll_until(
     assert predicate()
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_memory() -> AsyncGenerator[StateManagerMemory]:
     """Create a memory state manager with a short expiration.
 

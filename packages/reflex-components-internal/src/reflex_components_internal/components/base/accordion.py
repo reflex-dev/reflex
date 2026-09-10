@@ -37,7 +37,7 @@ class AccordionBaseComponent(BaseUIComponent):
 
     @property
     def import_var(self):
-        """Return the import variable for the accordion component."""
+        """The import variable for the accordion component."""
         return ImportVar(tag="Accordion", package_path="", install=False)
 
 

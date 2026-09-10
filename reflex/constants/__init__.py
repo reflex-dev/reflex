@@ -110,6 +110,7 @@ __all__ = [
     "PyprojectToml",
     "ReactRouter",
     "Reflex",
+    "ReflexHostingCLI",
     "RequirementsTxt",
     "RouteArgType",
     "RouteRegex",

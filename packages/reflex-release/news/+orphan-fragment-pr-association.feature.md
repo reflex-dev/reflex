@@ -1,1 +1,0 @@
-Materializing a changelog now names leftover orphan news fragments (`+something.feature.md`) after the pull request whose commit added them, so their entries get the usual `#`-link instead of shipping unlinked.

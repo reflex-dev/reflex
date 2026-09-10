@@ -10,9 +10,9 @@ import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.components.component import (
     BaseComponent,
     Component,
@@ -236,11 +236,12 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     )
 
 
-def _compile_page(component: BaseComponent) -> str:
+def _compile_page(component: BaseComponent, route: str) -> str:
     """Compile the component.
 
     Args:
         component: The component to compile.
+        route: The route the page is compiled for.
 
     Returns:
         The compiled component.
@@ -256,6 +257,7 @@ def _compile_page(component: BaseComponent) -> str:
         custom_codes=component._get_all_custom_code(),
         hooks=component._get_all_hooks(),
         render=component.render(),
+        route=route,
     )
 
 
@@ -397,9 +399,13 @@ def _compile_root_stylesheet(
                 from sass import compile as sass_compile
 
                 target.write_text(
-                    data=sass_compile(
-                        filename=str(stylesheet),
-                        output_style="compressed",
+                    # libsass is untyped; compiling from a filename returns the CSS.
+                    data=cast(
+                        "str",
+                        sass_compile(
+                            filename=str(stylesheet),
+                            output_style="compressed",
+                        ),
                     ),
                     encoding="utf8",
                 )
@@ -737,7 +743,7 @@ def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = _compile_page(component)
+    code = _compile_page(component, path)
     return output_path, code
 
 
@@ -765,6 +771,7 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         custom_codes=page_ctx.custom_code_dict(),
         hooks=page_ctx.hooks,
         render=page_ctx.root_component.render(),
+        route=page_ctx.route,
     )
     return output_path, code
 
@@ -1184,7 +1191,10 @@ def compile_app(
     app.style = evaluate_style_namespaces(app.style)
 
     if not should_compile and not dry_run:
-        with log.timing(logger, "Evaluate Pages (Backend)"):
+        with (
+            log.timing(logger, "Evaluate Pages (Backend)"),
+            otel.span("reflex.compile.evaluate_pages"),
+        ):
             for route in app._unevaluated_pages:
                 logger.debug(f"Evaluating page: {route}")
                 app._compile_page(route, save_page=False)
@@ -1218,7 +1228,11 @@ def compile_app(
         ),
     )
 
-    with log.timing(logger, "Compile pages"), compile_ctx:
+    with (
+        log.timing(logger, "Compile pages"),
+        otel.span("reflex.compile.pages"),
+        compile_ctx,
+    ):
         compile_ctx.compile(
             evaluate_progress=lambda: progress.advance(task),
             render_progress=lambda: progress.advance(task),
@@ -1325,7 +1339,7 @@ def compile_app(
 
     assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
     if assets_src.is_dir() and not dry_run:
-        with log.timing(logger, "Copy assets"):
+        with log.timing(logger, "Copy assets"), otel.span("reflex.compile.copy_assets"):
             path_ops.update_directory_tree(
                 src=assets_src,
                 dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
@@ -1403,8 +1417,14 @@ def compile_app(
     # Delete memo files this compile no longer emits. Done here (not before the
     # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
     utils.prune_stale_memo_files(path for path, _ in memo_component_files)
+    # A leftover ``.js`` module would win extensionless resolution of
+    # ``$/utils/context`` over the ``.jsx`` file written below.
+    Path(utils.get_context_path()).with_suffix(constants.Ext.JS).unlink(missing_ok=True)
 
-    with log.timing(logger, "Install Frontend Packages"):
+    with (
+        log.timing(logger, "Install Frontend Packages"),
+        otel.span("reflex.compile.install_frontend_packages"),
+    ):
         app._get_frontend_packages(all_imports)
 
     frontend_skeleton.update_react_router_config(
@@ -1454,7 +1474,7 @@ def compile_app(
                 raise FileNotFoundError(msg)
         output_mapping[path] = modify_fn(file_content)
 
-    with log.timing(logger, "Write to Disk"):
+    with log.timing(logger, "Write to Disk"), otel.span("reflex.compile.write"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
 

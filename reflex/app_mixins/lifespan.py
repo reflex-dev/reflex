@@ -60,14 +60,14 @@ class LifespanMixin(AppMixin):
         @property
         @deprecated("Use get_lifespan_tasks method instead.")
         def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
-            """Get a copy of registered lifespan tasks (deprecated)."""
+            """A copy of registered lifespan tasks (deprecated)."""
             ...
 
     else:
 
         @property
         def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
-            """Get a copy of registered lifespan tasks.
+            """A copy of registered lifespan tasks.
 
             Returns:
                 A frozenset of registered lifespan tasks.

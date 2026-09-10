@@ -37,7 +37,7 @@ def root_state() -> type[RedisTestState]:
     return RedisTestState
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_redis(
     root_state: type[RedisTestState],
 ) -> AsyncGenerator[StateManagerRedis]:

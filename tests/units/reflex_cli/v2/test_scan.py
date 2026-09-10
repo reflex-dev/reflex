@@ -12,11 +12,10 @@ from pytest_mock import MockFixture
 from reflex_cli.utils import hosting
 from reflex_cli.utils.exceptions import NotAuthenticatedError
 from reflex_cli.v2.deployments import hosting_cli
-from typer.main import Typer, get_command
 
-hosting_cli = (
-    get_command(hosting_cli) if isinstance(hosting_cli, Typer) else hosting_cli
-)
+from .utils import as_click_command
+
+hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
 
@@ -216,14 +215,12 @@ def test_scan_json_output(mocker: MockFixture, tmp_path: Path):
         "reflex_cli.utils.hosting.get_security_review",
         return_value={"job_id": "job123", "status": "complete", "result": _RESULT},
     )
-    mock_print = mocker.patch("reflex_cli.utils.console.print")
-
     result = runner.invoke(
         hosting_cli, ["scan", str(tmp_path), "--json", "--fail-on", "none"]
     )
 
     assert result.exit_code == 0, result.output
-    mock_print.assert_called_once_with(json.dumps(_RESULT))
+    assert json.loads(result.stdout) == _RESULT
 
 
 def test_scan_polls_until_complete(mocker: MockFixture, tmp_path: Path):

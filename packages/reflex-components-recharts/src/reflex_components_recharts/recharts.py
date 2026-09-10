@@ -4,7 +4,7 @@ from typing import Any, Literal
 
 from reflex_base.components.component import Component, MemoizationLeaf, NoSSRComponent
 
-_RECHARTS_LIBRARY = "recharts@3.8.1"
+_RECHARTS_LIBRARY = "recharts@3.10.1"
 
 
 class Recharts(Component):

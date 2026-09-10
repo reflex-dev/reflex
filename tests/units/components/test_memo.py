@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import inspect
+import re
+from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import patch
@@ -23,6 +25,8 @@ from reflex_base.components.memo import (
     _LazyBody,
     _MemoCallBinding,
     _strip_optional,
+    component_hash,
+    memo_tag,
 )
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec
 from reflex_base.registry import RegistrationContext
@@ -35,6 +39,8 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
 from reflex_base.vars.function import FunctionStringVar, FunctionVar
 from reflex_base.vars.object import ObjectVar
+from reflex_components_core.base.bare import Bare
+from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 from reflex.compiler import compiler
@@ -105,7 +111,11 @@ def test_component_returning_memo_with_children_and_rest():
     sym = memo_paths.mirrored_symbol("MyCard", __name__)
     assert isinstance(component, MemoComponent)
     assert len(component.children) == 2
-    assert component.get_props() == ("title", "foo")
+    # `foo` is not a field of the rest target (`Box`), so it joins `style` and
+    # renders as `css` just like `rx.box(foo="extra")` would — via
+    # `Component._get_style()`, so it is not a declared prop. `className` is a
+    # base field and stays out of the rest sweep entirely.
+    assert component.get_props() == ("title",)
     assert type(component) is type(component_again)
     assert type(component).tag == sym
     assert type(component).get_fields()["tag"].default == sym
@@ -113,7 +123,7 @@ def test_component_returning_memo_with_children_and_rest():
     rendered = component.render()
     assert rendered["name"] == sym
     assert 'title:"Hello"' in rendered["props"]
-    assert 'foo:"extra"' in rendered["props"]
+    assert 'css:({ ["foo"] : "extra" })' in rendered["props"]
     assert 'className:"extra"' in rendered["props"]
 
     definition = MEMOS["MyCard", __name__]
@@ -456,6 +466,109 @@ def test_memo_base_props_forward_to_root_via_rest_prop():
     # ``className``/``id`` actually reach the rendered element.
     assert "...rest" in code
     assert "{...rest}" in code
+
+
+def test_memo_css_props_forwarded_via_rest_prop_become_css():
+    """CSS props forwarded through an ``rx.RestProp`` compile to ``css`` (ENG-9676).
+
+    A normal component folds any kwarg that is not a declared field of the target
+    into emotion ``css``. A memo forwarding via ``rx.RestProp`` must do the same:
+    ``font_weight`` is not a ``Text`` field, so it has to reach the root as ``css``
+    rather than a raw ``fontWeight`` plain prop the target silently drops.
+    """
+
+    @rx.memo
+    def styled_text(rest: rx.RestProp) -> rx.Component:
+        return rx.text("Foo", rest)
+
+    rendered = str(styled_text(font_weight="bold", class_name="c"))
+    # Matches the shape of `rx.text("Bar", font_weight="bold")`.
+    assert "css:" in rendered
+    assert '["fontWeight"] : "bold"' in rendered
+    # Not forwarded as a plain prop the target would ignore.
+    assert 'fontWeight:"bold"' not in rendered
+    # A genuine base `Component` field stays a normal plain prop.
+    assert 'className:"c"' in rendered
+
+
+def test_memo_rest_prop_keeps_real_target_props_as_props():
+    """A prop that IS a declared field of the rest target stays a plain prop (ENG-9676).
+
+    Guards the shadowing case: ``weight`` is a real ``Text`` prop, so it must be
+    forwarded normally and never reclassified into ``css``.
+    """
+
+    @rx.memo
+    def styled_text(rest: rx.RestProp) -> rx.Component:
+        return rx.text("Foo", rest)
+
+    rendered = str(styled_text(weight="bold"))
+    assert 'weight:"bold"' in rendered
+    assert "css:" not in rendered
+
+
+def test_memo_css_props_merge_with_explicit_style_via_rest_prop():
+    """A forwarded CSS prop merges into an explicit ``style=`` instead of vanishing.
+
+    ``Component._render`` applies ``_get_style()`` (derived from ``style``) *after*
+    the declared props, so a separately-emitted ``css`` prop is overwritten
+    whenever the caller also passes ``style=``. The CSS props therefore have to
+    join ``style`` itself, matching ``rx.el.div(background_color=..., style=...)``,
+    which emits one merged ``css``.
+    """
+
+    @rx.memo
+    def mycomp(children: rx.Var[rx.Component], rest: rx.RestProp) -> rx.Component:
+        return rx.el.div(children, rest)
+
+    rendered = str(
+        mycomp(
+            rx.heading("Hello World!"),
+            background_color="red",
+            style={"padding": "10px", "border-radius": "5px"},
+        )
+    )
+    # One `css` prop carrying both the explicit style and the forwarded CSS prop.
+    assert rendered.count("css:") == 1
+    assert '["padding"] : "10px"' in rendered
+    assert '["borderRadius"] : "5px"' in rendered
+    assert '["backgroundColor"] : "red"' in rendered
+
+
+def test_memo_rest_prop_css_matches_plain_component_shape():
+    """Forwarded CSS props compile to the same ``css`` a plain component emits.
+
+    The classification rule the fix implements is `Component._post_init`'s own:
+    a kwarg that is not a declared field joins ``style``. Pinning the memo's
+    output to the non-memo component's keeps the two from drifting.
+    """
+
+    @rx.memo
+    def mycomp(rest: rx.RestProp) -> rx.Component:
+        return rx.el.div(rest)
+
+    # Each case is applied to the memo and to a bare `div`; both must render the
+    # same `css`. `make` is untyped so one lambda can call either signature.
+    cases: tuple[Callable[[Any], rx.Component], ...] = (
+        lambda make: make(background_color="red"),
+        lambda make: make(background_color="red", style={"padding": "10px"}),
+        lambda make: make(style={"padding": "10px"}),
+    )
+    for case in cases:
+        assert _css_prop(str(case(mycomp))) == _css_prop(str(case(rx.el.div)))
+
+
+def _css_prop(rendered: str) -> str | None:
+    """Extract the ``css`` prop's source text from a rendered component.
+
+    Args:
+        rendered: The compiled JSX for a single component.
+
+    Returns:
+        The ``css`` prop text, or ``None`` when the component has no ``css``.
+    """
+    match = re.search(r"css:\((.*?)\)(?:,|\})", rendered)
+    return match.group(1) if match else None
 
 
 def test_memo_component_still_rejects_unknown_props_without_rest():
@@ -1156,6 +1269,61 @@ def test_component_memo_inline_function_wrapper_is_parenthesized():
     )
 
 
+def test_component_memo_sets_display_name_from_python_name():
+    """A ``@rx.memo`` component is labelled with its Python function name.
+
+    ``memo()`` erases the name JS would otherwise infer from the assignment,
+    so React DevTools shows ``Anonymous`` without an explicit ``displayName``.
+    """
+
+    @rx.memo
+    def named_widget(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["NamedWidget", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("NamedWidget", __name__)
+    assert f'{sym}.displayName = "NamedWidget";' in code
+
+
+def test_component_memo_display_name_survives_custom_wrapper():
+    """The ``displayName`` is assigned on the exported symbol, whatever wraps it."""
+    track_render = FunctionStringVar.create(
+        "trackRender",
+        _var_data=VarData(imports={"my-render-lib": [ImportVar(tag="trackRender")]}),
+    )
+
+    @rx.memo(wrapper=track_render)
+    def wrapped_widget(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    files, _ = compiler.compile_memo_components((MEMOS["WrappedWidget", __name__],))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("WrappedWidget", __name__)
+    assert f"export const {sym} = trackRender((" in code
+    assert f'{sym}.displayName = "WrappedWidget";' in code
+
+
+def test_component_memo_display_name_is_escaped():
+    """A display name is emitted as a JS string literal, never raw."""
+    definition = MemoComponentDefinition(
+        fn=lambda: None,
+        python_name="quoted",
+        params=(),
+        export_name="Quoted",
+        _component=_LazyBody.ready(rx.text("hi")),
+        passthrough_hole_child=None,
+        display_name='Weird"Name',
+    )
+
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert 'Quoted.displayName = "Weird\\"Name";' in code
+
+
 def test_component_memo_wrapper_none_in_unmirrored_module():
     """The per-name fallback module honors ``wrapper=None`` too."""
     definition = MemoComponentDefinition(
@@ -1717,12 +1885,17 @@ def test_bind_children_and_rest_are_noops_at_the_param_level():
     assert binding._event_triggers == {}
 
 
-def test_take_rest_sweeps_unconsumed_keys_into_camel_cased_dict():
-    """binding.take_rest collects every leftover kwarg not on the Component."""
-    binding = _MemoCallBinding({"foo_bar": "x", "class_name": "y"})
-    rest = binding.take_rest(component_fields={})
-    assert set(rest) == {"fooBar", "className"}
-    assert binding.raw_kwargs == {}
+def test_take_rest_forwards_target_fields_and_leaves_css_props_behind():
+    """take_rest claims declared target fields and leaves the remainder in place.
+
+    Keys that are fields of the rest target are popped and forwarded as
+    camelCased plain props. Everything else is a CSS prop, left in
+    ``raw_kwargs`` for ``Component._post_init`` to fold into ``style``.
+    """
+    binding = _MemoCallBinding({"foo_bar": "x", "font_weight": "bold"})
+    rest = binding.take_rest(component_fields={}, rest_target_fields={"foo_bar"})
+    assert set(rest) == {"fooBar"}
+    assert binding.raw_kwargs == {"font_weight": "bold"}
 
 
 @pytest.mark.parametrize(
@@ -1869,3 +2042,282 @@ def test_self_referencing_var_memo():
 
     invoked = recursive_count(n=Var(_js_expr="three", _var_type=int))
     assert "recursive_count" in str(invoked)
+
+
+class _AppWrapProbe(Component):
+    """A component whose only per-instance artifact is an app-wrap component."""
+
+    library = "app-wrap-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_app_wrap_components(self) -> dict[tuple[int, str], Component]:
+        """Wrap the app in a ``MarkdownComponentMap``-based component.
+
+        Returns:
+            The app wrap components.
+        """
+        return {(50, "AppWrapProbe"): rx.text(self.marker)}
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the app wrap differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_dataclass_inheriting_app_wrap_components():
+    """App-wrap components that also inherit a dataclass must hash by render.
+
+    ``rx.text`` and friends inherit ``MarkdownComponentMap``, a dataclass with
+    no fields, so encoding the dataclass ahead of the component collapsed every
+    one of them to the same nine bytes -- and two memo bodies whose app wraps
+    differed only in such a component shared a tag, dropping one app wrap.
+    """
+    a = _AppWrapProbe.create(marker="alpha")
+    b = _AppWrapProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _ImportLibraryProbe(Component):
+    """One class whose import library varies with a prop ``_render`` drops."""
+
+    library = "import-library-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_imports(self):
+        """Import the same binding from a marker-dependent library.
+
+        Returns:
+            The imports.
+        """
+        return {
+            **super()._get_imports(),
+            f"probe-lib-{self.marker!s}": [ImportVar(tag="Thing")],
+        }
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the imports differ.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_import_libraries():
+    """The libraries a memo body imports from must reach the hash."""
+    a = _ImportLibraryProbe.create(marker="alpha")
+    b = _ImportLibraryProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _ImportPayloadProbe(Component):
+    """One class, one library, an ``ImportVar`` payload that varies by prop."""
+
+    library = "import-payload-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_imports(self):
+        """Import a side-effect stylesheet whose path varies with the marker.
+
+        Returns:
+            The imports.
+        """
+        return {
+            **super()._get_imports(),
+            "payload-lib": [ImportVar(tag=None, package_path=f"/{self.marker!s}.css")],
+        }
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the imports differ.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_import_var_payloads():
+    """``ImportVar`` fields must reach the hash, not just the library name.
+
+    ``package_path`` and ``alias`` vary per instance in shipping components
+    (``Icon._get_imports`` builds both), and a tagless ``ImportVar`` defaults to
+    ``render=True``, so it emits as a side-effect import. Two such bodies render
+    identically under one library key; sharing a tag drops one body's import
+    from the compiled module with no error.
+    """
+    a = _ImportPayloadProbe.create(marker="light")
+    b = _ImportPayloadProbe.create(marker="dark")
+
+    assert a.render() == b.render()
+    assert sorted(dict(a._get_all_imports())) == sorted(dict(b._get_all_imports()))
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert component_hash(a, recursive=True) != component_hash(b, recursive=True)
+    assert memo_tag(a) != memo_tag(b)
+
+
+class _CustomCodeProbe(Component):
+    """A component whose only per-instance artifact is its custom code."""
+
+    library = "custom-code-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def add_custom_code(self) -> list[str]:
+        """Emit a marker-dependent module-level constant.
+
+        Returns:
+            The custom code lines.
+        """
+        return [f"const PROBE = {self.marker!s};"]
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only custom code differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_add_custom_code():
+    """``add_custom_code`` output must reach the own-node hash.
+
+    Two bodies that render identically and differ only in the module-level code
+    they emit compile to different modules, so they must not share a tag — a
+    collision would drop one of the two constants.
+    """
+    a = _CustomCodeProbe.create(marker="alpha")
+    b = _CustomCodeProbe.create(marker="beta")
+
+    assert a.render() == b.render()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_component_hash_recursive_covers_descendant_artifacts():
+    """A recursive hash must see artifacts that a descendant's JSX omits."""
+    inner_a = Box.create(Bare.create(contents="x"), on_mount=rx.console_log("x"))
+    inner_b = Box.create(Bare.create(contents="x"))
+    outer_a, outer_b = Box.create(inner_a), Box.create(inner_b)
+
+    # ``on_mount`` lives in a lifecycle hook, not in the rendered props.
+    assert outer_a.render() == outer_b.render()
+    assert component_hash(outer_a, recursive=True) != component_hash(
+        outer_b, recursive=True
+    )
+    # The passthrough form deliberately ignores descendants: they render at the
+    # call site behind the ``{children}`` hole, not inside the memo body.
+    assert component_hash(outer_a, recursive=False) == component_hash(
+        outer_b, recursive=False
+    )
+
+
+class _DynamicImportProbe(Component):
+    """One class whose dynamic import varies with a prop ``_render`` drops."""
+
+    library = "dynamic-probe"
+    tag = "Probe"
+
+    marker: Var[str]
+
+    def _get_dynamic_imports(self) -> str:
+        """Emit a marker-dependent dynamic import.
+
+        Returns:
+            The dynamic import statement.
+        """
+        return f"const EXTRA = await import({self.marker!s});"
+
+    def _render(self, props: dict[str, Any] | None = None):
+        """Render without the marker prop so only the dynamic import differs.
+
+        Args:
+            props: The props to render.
+
+        Returns:
+            The rendered tag.
+        """
+        return super()._render(props).remove_props("marker")
+
+
+def test_component_hash_covers_dynamic_imports():
+    """Dynamic imports are emitted into the memo body, so they must be hashed.
+
+    Same class, same rendered JSX, different dynamic import: a collision here
+    would drop one of the two import statements from the compiled output.
+    """
+    a = _DynamicImportProbe.create(marker="alpha")
+    b = _DynamicImportProbe.create(marker="beta")
+
+    assert type(a) is type(b)
+    assert a.render() == b.render()
+    assert a._get_dynamic_imports() != b._get_dynamic_imports()
+    assert component_hash(a, recursive=False) != component_hash(b, recursive=False)
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_memo_tag_separates_same_named_classes_from_different_modules():
+    """Two modules defining an identical component must not share a memo tag.
+
+    ``__qualname__`` alone does not distinguish them -- both are ``Probe`` -- so
+    the defining module has to reach the digest.
+    """
+    probes = []
+    for module_name in ("_memo_tag_module_a", "_memo_tag_module_b"):
+        namespace = {"Component": Component, "__name__": module_name}
+        exec(
+            "class Probe(Component):\n    tag = 'Probe'\n    library = 'probe-lib'\n",
+            namespace,
+        )
+        probes.append(namespace["Probe"].create())
+
+    a, b = probes
+    assert type(a) is not type(b)
+    assert type(a).__qualname__ == type(b).__qualname__
+    assert a.render() == b.render()
+    assert memo_tag(a) != memo_tag(b)
+
+
+def test_memo_tag_separates_identically_rendering_classes():
+    """Distinct classes that render alike must not collide on a tag."""
+
+    class _AlphaProbe(Component):
+        tag = "Same"
+
+    class _BetaProbe(Component):
+        tag = "Same"
+
+    alpha, beta = _AlphaProbe.create(), _BetaProbe.create()
+
+    assert alpha.render() == beta.render()
+    assert memo_tag(alpha) != memo_tag(beta)
