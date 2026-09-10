@@ -1,0 +1,22 @@
+[
+  {
+    "gap_s": 0.3,
+    "same_length_edits": false,
+    "single_edit_settled_s": 0.6,
+    "second_edit_compiled_after_s": 2.6,
+    "compiled_heading_after_wait": "HMR Runtime App p101b-longer",
+    "source_heading": "HMR Runtime App p101b-longer",
+    "reloads_detected_during_probe": 2,
+    "lost": false
+  },
+  {
+    "gap_s": 0.5,
+    "same_length_edits": false,
+    "single_edit_settled_s": 0.6,
+    "second_edit_compiled_after_s": 0.6,
+    "compiled_heading_after_wait": "HMR Runtime App p102b-longer",
+    "source_heading": "HMR Runtime App p102b-longer",
+    "reloads_detected_during_probe": 2,
+    "lost": false
+  }
+]

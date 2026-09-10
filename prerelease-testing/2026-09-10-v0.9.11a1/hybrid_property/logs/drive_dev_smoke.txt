@@ -1,0 +1,105 @@
+PASS core.backend_connected  -- token=ae1c95da
+PASS core.full_name.frontend  -- ['Ada Lovelace']
+PASS core.full_name.backend  -- ['Ada Lovelace']
+PASS core.has_last.cond
+PASS core.has_last.backend  -- ['true']
+PASS core.upper_tags.foreach(staticmethod var fn)  -- ['ALPHA', 'BETA']
+PASS core.upper_tags.backend  -- ['ALPHA,BETA']
+PASS core.scaled.frontend(var fn under own name, x3)  -- ['3']
+PASS core.scaled.backend(getter x2)  -- ['2']
+PASS core.secret_len.backend(var fn returns None)  -- ['6']
+PASS core.plain_full.backend
+PASS core.setter.frontend_updates  -- ['Grace Hopper']
+PASS core.setter.backend_updates  -- ['Grace Hopper']
+PASS core.setter.log  -- ['rename->Grace Hopper']
+PASS core.plain_property_setter.frontend  -- ['Alan Turing']
+PASS core.plain_property_setter.backend  -- ['Alan/Turing']
+PASS core.setter.from_input  -- ['Linus Torvalds']
+PASS core.assign_without_setter.raises_AttributeError  -- rename->Grace Hopper | rename_plain->Alan/Turing | rename->Linus Torvalds | no-setter:AttributeError:Hybrid property 'scaled' has no setter
+PASS core.deleter.frontend  -- ' '
+PASS core.deleter.cond_flips
+PASS core.deleter.backend_bool  -- ['false']
+PASS core.inc.frontend_x3  -- ['6']
+PASS core.inc.backend_x2  -- ['4']
+PASS core.add_tag.foreach_updates  -- ['ALPHA', 'BETA', 'TAG2']
+PASS core.reset  -- ['Ada Lovelace']
+PASS inherit.label.frontend(plain base hybrid, annotated on state)  -- ['reflex!']
+PASS inherit.label.backend  -- ['reflex!']
+PASS inherit.shout.frontend(mixin hybrid, annotated)  -- ['REFLEX']
+PASS inherit.shout.backend  -- ['REFLEX']
+PASS inherit.backend_var.default_factory_from_base  -- ['0']
+PASS inherit.backend_var.default_from_base  -- ['7']
+PASS inherit.substate.label.frontend  -- ['reflex!']
+PASS inherit.substate.label.backend  -- ['reflex!child']
+PASS inherit.sibling.own_var_fn.frontend  -- ['bee?']
+PASS inherit.sibling.getter_unchanged.backend  -- ['bee!']
+PASS inherit.backend_var.mutation  -- ['1']
+PASS inherit.backend_var.level_incr  -- ['8']
+PASS inherit.inherited_setter  -- ['pynecone!']
+PASS inherit.inherited_setter.substate  -- ['pynecone!']
+PASS combo.full_label  -- ['a-b']
+PASS combo.doubled  -- ['6']
+PASS combo.computed_var_depends_on_hybrid  -- ['A-B#6']
+PASS combo.memo_props_bound_to_hybrid  -- ['a-b:6']
+PASS combo.client_state_alongside  -- ['a-b / note']
+PASS combo.client_state_update  -- ['a-b / hi']
+PASS combo.dep_tracking.first->summary  -- ['ZZ-B#6']
+PASS combo.memo_updates  -- ['zz-b:6']
+PASS combo.dep_tracking.n->summary  -- ['ZZ-B#8']
+PASS combo.background_setter  -- ['bg-task']
+PASS combo.background_setter.summary  -- ['BG-TASK#20']
+PASS combo.background_getter_log  -- bg:bg-task | bg:doubled=20
+PASS combo.component_state.initial  -- ['count=0', 'count=0'] ['2', '2'] ['count=0', 'count=0']
+PASS combo.component_state.independent  -- ['count=1', 'count=0'] ['3', '2'] ['count=1', 'count=0']
+PASS combo.component_state.setter  -- ['count=1', 'count=8'] ['3', '10']
+PASS dc.initial  -- ['pt=(1,2)'] ['fz=(f,1)']
+PASS dc.inspect.no_errors  -- ['']
+PASS dc.pt.is_dataclass  -- True
+PASS dc.pt.type_is_dataclass  -- True
+PASS dc.pt.__dataclass_params__.frozen  -- False
+PASS dc.pt.__dataclass_params__.eq  -- True
+PASS dc.pt.__match_args__  -- ('x', 'y')
+PASS dc.pt.fields  -- x,y
+PASS dc.pt.asdict  -- {"x": 1, "y": 2}
+PASS dc.pt.astuple  -- (1, 2)
+PASS dc.pt.proxy_type  -- PointMutableProxy
+PASS dc.fz.is_dataclass  -- True
+PASS dc.fz.type_is_dataclass  -- True
+PASS dc.fz.__dataclass_params__.frozen  -- True
+PASS dc.fz.__dataclass_params__.eq  -- True
+PASS dc.fz.__match_args__  -- ('label', 'n')
+PASS dc.fz.fields  -- label,n
+PASS dc.fz.asdict  -- {"label": "f", "n": 1}
+PASS dc.fz.astuple  -- ('f', 1)
+PASS dc.fz.proxy_type  -- FrozenMutableProxy
+PASS dc.shape.is_dataclass  -- True
+PASS dc.shape.type_is_dataclass  -- True
+PASS dc.shape.__dataclass_params__.frozen  -- False
+PASS dc.shape.__dataclass_params__.eq  -- True
+PASS dc.shape.__match_args__  -- ('name', 'points')
+PASS dc.shape.fields  -- name,points
+PASS dc.shape.asdict  -- {"name": "tri", "points": [{"x": 0, "y": 0}, {"x": 1, "y": 1}]}
+PASS dc.shape.astuple  -- ('tri', [(0, 0), (1, 1)])
+PASS dc.shape.proxy_type  -- ShapeMutableProxy
+PASS dc.shape0.is_dataclass  -- True
+PASS dc.shape0.type_is_dataclass  -- True
+PASS dc.shape0.__dataclass_params__.frozen  -- False
+PASS dc.shape0.__dataclass_params__.eq  -- True
+PASS dc.shape0.__match_args__  -- ('name', 'points')
+PASS dc.shape0.fields  -- name,points
+PASS dc.shape0.asdict  -- {"name": "s0", "points": [{"x": 5, "y": 5}, {"x": 6, "y": 6}]}
+PASS dc.shape0.astuple  -- ('s0', [(5, 5), (6, 6)])
+PASS dc.shape0.proxy_type  -- ShapeMutableProxy
+PASS dc.match_pt  -- 1,2
+PASS dc.match_fz  -- f/1
+PASS dc.match_nested_x  -- 1
+PASS dc.replace  -- pt.x=11 fz.n=2
+PASS dc.replace.ui  -- ['pt=(11,2)'] ['fz=(f,2)']
+PASS dc.mutate_nested.ui  -- ['(1,0)', '(1,1)', '(9,9)'] ['(5,5)', '(6,11)'] ['pt=(11,3)']
+PASS dc.frozen_stays_frozen  -- FrozenInstanceError
+PASS fwd.banner  -- ['fwd:fwd']
+PASS fwd.weighted_name(computed var over unresolvable dataclass)  -- ['w']
+PASS fwd.add  -- ['1'] ['i0/t0']
+PASS fwd.async_add  -- ['2'] ['i0', 'i1']
+
+103 passed, 0 failed; console problems=0 page_errors=0 failed_requests=0 bad_responses=0

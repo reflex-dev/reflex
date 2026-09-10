@@ -1,0 +1,10 @@
+python 3.11.15 reflex /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py
+class access none_fe: OK -> reflex___state____state____main_____s.count_rx_state_
+rx.text(S.none_fe): OK -> {'name': 'RadixThemesText', 'props': ['as:"p"'], 'children': [{'contents': 'reflex___state____state____main_____s.count_rx_state_'}]}
+rx.cond(S.none_fe, ...): OK -> {'name': 'Fragment', 'props': [], 'children': [{'cond_state': 'isTrue(reflex___state____state____main_____s.count_rx_state_)', 'true_value': {'name': 'Fragment', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:"p"'], 'children': [{'contents': '"a"'}]}]}, 'false_value': {'name': '
+rx.foreach(S.none_fe, ...): ForeachVarError: Could not foreach over var `reflex___state____state____main_____s.count_rx_state_` of type <class 'int'>. See https://reflex.dev/docs/library/dynamic-rendering/foreach/
+f-string with S.none_fe: OK -> {'name': 'RadixThemesText', 'props': ['as:"p"'], 'children': [{'contents': '("v="+reflex___state____state____main_____s.count_rx_state_)'}]}
+class access leaky (backend var in getter): HybridPropertyError: Hybrid property 'leaky' of state 'S' accessed backend-only var '_secret' while building its frontend value. Backend vars (prefixed with '_') exist only on the server and cannot be referenced from a hybrid property's frontend logic. Use a regular var, or provide a separate frontend implementation with '@leaky.var'.
+class access has_last (bool(var) getter): VarTypeError: Cannot convert Var 'reflex___state____state____main_____s.last_rx_state_' to bool for use with `if`, `and`, `or`, and `not`. Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert).
+class access upper_tags (iterating var getter): VarTypeError: Cannot iterate over Var 'reflex___state____state____main_____s.last_rx_state_'. Instead use `rx.foreach`.
+instance none_fe: OK -> 0

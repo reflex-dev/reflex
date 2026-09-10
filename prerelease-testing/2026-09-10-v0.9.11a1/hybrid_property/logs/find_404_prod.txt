@@ -1,0 +1,3 @@
+CONSOLE error Failed to load resource: the server responded with a status of 404 (Not Found) {'url': 'http://localhost:3141/favicon.ico', 'line': 0, 'column': 0, 'lineNumber': 0, 'columnNumber': 0}
+CDP RESP 404 Other http://localhost:3141/favicon.ico
+done

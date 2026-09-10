@@ -1,0 +1,12 @@
+python 3.11.15 reflex /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py
+S.stats (dict getter) -> type: OK -> dict
+rx.text(S.stats['n']): OK -> [{'contents': 'reflex___state____state____main_____s.count_rx_state_'}]
+S.pair (list getter) -> type: OK -> list
+rx.foreach(S.pair): OK -> {'name': '', 'props': [], 'children': [{'name': 'RadixThemesText', 'props': ['as:"p"', 'key:index_47280981cc9a18854b05e944f8590dce'], 'children': [{'c
+S.pair.length(): AttributeError: 'list' object has no attribute 'length'
+S.n_tags (len(var) getter): TypeError: object of type 'ArrayCastedVar' has no len()
+S.pick (conditional expression getter): VarTypeError: Cannot convert Var 'reflex___state____state____main_____s.count_rx_state_' to bool for use with `if`, `and`, `or`, and `not`. Instead use `rx.cond` and bitwise operators `&` (and), `|` (or), `~` (invert).
+S.via_classmethod (var fn calls cls.get_name()): OK -> skipped on 0.9.10
+event arg: S.rename(S.full): OK -> EventSpec(event_actions={}, handler=EventHandler(event_actions={}, fn=<function S.rename at 0x7f49481b1300>), client_handler_name='', args=((Var(_js_expr='v', _var_type=typing.Any, _var_data=None), ConcatVarOperation(_js
+State.setvar on hybrid property vs base var: OK -> [("setvar('full')", "AttributeError: 'S' object has no attribute 'set_full'"), ("setvar('first')", "AttributeError: 'S' object has no attribute 'set_first'")]
+delta after property assignment / dict() excludes property: SetUndefinedStateVarError: The state variable 'full' has not been defined in 'S'. All state variables must be declared before they can be set.

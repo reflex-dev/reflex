@@ -1,0 +1,39 @@
+{
+  "url": "http://localhost:3102/",
+  "title": "Long \u2014 na\u00efve \ud55c\uad6d\uc5b4 \ud83c\udfc1",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "click: '#inc-btn'",
+    "click: '#inc-btn'",
+    "wait: 800",
+    "expect_text: 'Counter: 2'",
+    "click: '#cs-btn'",
+    "expect_text: 'client: cs-changed'",
+    "click: '#toggle-btn'",
+    "wait: 600",
+    "expect_text: 'Toggle: ON'",
+    "goto: 'http://localhost:3102/about'",
+    "expect_text: 'About'",
+    "goto: 'http://localhost:3102/long'",
+    "wait: 500",
+    "expect_text: 'END OF LONG PAGE'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "Home\nAbout\nLong\nPage2\nPage3\nLong page\n\nParagraph 0: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 1: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 2: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 3: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 4: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 5: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 6: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 7: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 8: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 9: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 10: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 11: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 12: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 13: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 14: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 15: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 16: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 The quick brown fox jumps over the lazy dog.\n\nParagraph 17: caf\u00e9 na\u00efve r\u00e9sum\u00e9 \u00fcber stra\u00dfe \u65e5\u672c\u8a9e\u30c6\u30b9\u30c8 \u4e2d\u6587\u6d4b\u8bd5 \ud55c\uad6d\uc5b4 \ud83c\udf89\ud83d\ude80\ud83d\ude0e\ud83c\uddef\ud83c\uddf5 T"
+}

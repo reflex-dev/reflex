@@ -1,0 +1,12 @@
+curl_safari_index      bytes=347557 x-modified-by=vite-plugin-safari-cachebust transfer=chunked reflex_ts=0 byte-list=1 utf8-valid=yes fffd=0 nihongo=0
+curl_chrome_index      bytes=92570  x-modified-by= transfer=chunked reflex_ts=0 byte-list=0 utf8-valid=yes fffd=0 nihongo=561
+curl_safari_about      bytes=347593 x-modified-by=vite-plugin-safari-cachebust transfer=chunked reflex_ts=0 byte-list=1 utf8-valid=yes fffd=0 nihongo=0
+curl_chrome_about      bytes=92580  x-modified-by= transfer=chunked reflex_ts=0 byte-list=0 utf8-valid=yes fffd=0 nihongo=561
+curl_safari_long       bytes=347589 x-modified-by=vite-plugin-safari-cachebust transfer=chunked reflex_ts=0 byte-list=1 utf8-valid=yes fffd=0 nihongo=0
+curl_chrome_long       bytes=92578  x-modified-by= transfer=chunked reflex_ts=0 byte-list=0 utf8-valid=yes fffd=0 nihongo=561
+--- first 120 bytes of the Safari /long response (hexdump):
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/scripts/curl_safari.sh: line 22: xxd: command not found
+--- head of the Safari /long response (text):
+60,33,68,79,67,84,89,80,69,32,104,116,109,108,62,60,104,116,109,108,32,108,97,110,103,61,34,101,110,34,62,60,104,101,97,100,62,60,109,101,116,97,32,99,104,97,114,83,101,116,61,34,117,116,102,45,56,34,47,62,60,109,101,116,97,32,99,111,110,116,101,110,116,61,34,119,105,100,116,104,61,100,101,118,105,99,101,45,119,105,100,116,104,44,32,105,110,105,116,105,97,108,45,115,99,97,108,101,61,49,34,32,110,97,109,101,61,34,118,
+--- diff safari vs chrome after stripping the param (/long):
+DIFFERENT

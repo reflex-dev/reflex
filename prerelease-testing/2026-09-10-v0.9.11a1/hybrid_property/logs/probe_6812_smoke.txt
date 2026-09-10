@@ -1,0 +1,8 @@
+python 3.11.15 reflex /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py
+a_hybrid_setter: OK -> ('Ada', 'Lovelace', ['first', 'last'])
+a_plain_setter: OK -> ('Ada', 'Lovelace')
+b_inherited_annotated: OK -> (6, False, '(reflex___state____state__reflex___istate___dynamic____inherited_state.count_rx_state_ * 2)')
+c_backend_default: OK -> (3, {'hits': 0}, 3, MutableProxy({'hits': 0}))
+d_factory_raises: ValueError: factory blew up
+e_lazy_var_fn: OK -> ([], ['var'])
+f_underscore_inherited_hybrid: OK -> ('calls after class creation', [], '_foo in backend_vars', False, 'instance._foo', 1)

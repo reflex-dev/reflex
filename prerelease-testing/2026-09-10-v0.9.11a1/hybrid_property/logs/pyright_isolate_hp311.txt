@@ -1,0 +1,15 @@
+hp_types_isolate.py
+  hp_types_isolate.py:31:13 - information: Type of "S.first" is "str"
+  hp_types_isolate.py:32:13 - information: Type of "S.n" is "int"
+  hp_types_isolate.py:33:13 - information: Type of "S.full" is "Any"
+  hp_types_isolate.py:34:13 - information: Type of "S.direct" is "Any"
+  hp_types_isolate.py:35:13 - information: Type of "Plain.v" is "HybridProperty[str, Plain, Var[Any] | None]"
+  hp_types_isolate.py:36:13 - information: Type of "S.__dict__" is "MappingProxyType[str, Any]"
+  hp_types_isolate.py:38:13 - information: Type of "hp" is "HybridProperty[str, S, Var[Any] | None]"
+  hp_types_isolate.py:39:13 - information: Type of "hp.__get__(None, S)" is "Any"
+  hp_types_isolate.py:40:13 - information: Type of "hp.__get__(None, BaseState)" is "Any"
+  hp_types_isolate.py:42:13 - information: Type of "hp2" is "HybridProperty[str, S, Var[Any] | None]"
+  hp_types_isolate.py:43:13 - information: Type of "hp2.__get__(None, S)" is "Any"
+  hp_types_isolate.py:44:13 - information: Type of "HybridProperty(lambda s: "x")" is "HybridProperty[str, Unknown, Var[Any] | None]"
+  hp_types_isolate.py:45:13 - information: Type of "S.__dict__["full"]" is "Any"
+0 errors, 0 warnings, 13 informations

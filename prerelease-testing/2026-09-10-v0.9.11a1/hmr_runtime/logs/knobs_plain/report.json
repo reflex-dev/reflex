@@ -1,0 +1,170 @@
+{
+  "mode": "plain",
+  "url": "http://localhost:3103",
+  "index_cold_ms": 1785,
+  "count_after_2_clicks": "Counter: 2",
+  "cs_after_click": "client: cs-changed",
+  "toggle_after_click": "Toggle: ON",
+  "fiber_debug_fields": {
+    "fiberKey": true,
+    "has_debugOwner": true,
+    "has_debugInfo": true,
+    "has_debugStack": true
+  },
+  "first_visit_client_nav_ms": {
+    "/page2": 70,
+    "/page3": 125,
+    "/about": 117,
+    "/long": 364
+  },
+  "second_visit_client_nav_ms": {
+    "/page2": 61,
+    "/page3": 74,
+    "/about": 62,
+    "/long": 150
+  },
+  "react_module_urls": [
+    "http://localhost:3103/node_modules/.vite/deps/react-debounce-input.js?v=cdc8f7f6",
+    "http://localhost:3103/node_modules/.vite/deps/react-dom.js?v=cdc8f7f6",
+    "http://localhost:3103/node_modules/.vite/deps/react-dom_client.js?v=cdc8f7f6",
+    "http://localhost:3103/node_modules/.vite/deps/react-error-boundary.js?v=cdc8f7f6",
+    "http://localhost:3103/node_modules/.vite/deps/react-router.js?v=cdc8f7f6",
+    "http://localhost:3103/node_modules/.vite/deps/react-router_dom.js?v=cdc8f7f6",
+    "http://localhost:3103/node_modules/.vite/deps/react.js?v=cdc8f7f6",
+    "http://localhost:3103/node_modules/.vite/deps/react_jsx-runtime.js?v=cdc8f7f6"
+  ],
+  "react_module_scan": {
+    "react-debounce-input.js?v=cdc8f7f6": {
+      "dev": {},
+      "prod": {},
+      "bytes": 66882
+    },
+    "react-dom.js?v=cdc8f7f6": {
+      "dev": {},
+      "prod": {},
+      "bytes": 48830
+    },
+    "react-dom_client.js?v=cdc8f7f6": {
+      "dev": {
+        "react-dom-client.development.js": 2,
+        "Each child in a list should have a unique": 1
+      },
+      "prod": {},
+      "bytes": 2819639
+    },
+    "react-error-boundary.js?v=cdc8f7f6": {
+      "dev": {},
+      "prod": {},
+      "bytes": 10763
+    },
+    "react-router.js?v=cdc8f7f6": {
+      "dev": {},
+      "prod": {},
+      "bytes": 25889
+    },
+    "react-router_dom.js?v=cdc8f7f6": {
+      "dev": {},
+      "prod": {},
+      "bytes": 106651
+    },
+    "react.js?v=cdc8f7f6": {
+      "dev": {
+        "react.development.js": 2
+      },
+      "prod": {},
+      "bytes": 130087
+    },
+    "react_jsx-runtime.js?v=cdc8f7f6": {
+      "dev": {
+        "jsxDEV": 4
+      },
+      "prod": {},
+      "bytes": 35787
+    },
+    "direct:react.js": {
+      "status": 200,
+      "dev": {
+        "react.development.js": 2
+      },
+      "prod": {},
+      "bytes": 130087
+    },
+    "direct:react-dom_client.js": {
+      "status": 200,
+      "dev": {
+        "react-dom-client.development.js": 2,
+        "Each child in a list should have a unique": 1
+      },
+      "prod": {},
+      "bytes": 2819639
+    },
+    "direct:react_jsx-dev-runtime.js": {
+      "status": 200,
+      "dev": {
+        "jsxDEV": 4,
+        "react-jsx-dev-runtime.development": 2
+      },
+      "prod": {},
+      "bytes": 34713
+    },
+    "direct:react_jsx-runtime.js": {
+      "status": 200,
+      "dev": {
+        "jsxDEV": 4
+      },
+      "prod": {},
+      "bytes": 35787
+    },
+    "direct:react-dom.js": {
+      "status": 200,
+      "dev": {},
+      "prod": {},
+      "bytes": 48830
+    }
+  },
+  "edit": {
+    "settled": true,
+    "edit_to_settle_s": 2.13,
+    "vite_frames": [
+      "custom",
+      "custom",
+      "update:['/app/routes/_index.jsx']",
+      "update:['/app/routes/_index.jsx']"
+    ],
+    "page_loads_after_edit": 0,
+    "cs_before": "client: cs-changed",
+    "cs_after": "client: cs-changed",
+    "count_before": "Counter: 2",
+    "count_after": "Counter: 2",
+    "heading_after": "HMR Runtime App KNOB"
+  },
+  "console_errors": [
+    "error: WebSocket connection to 'ws://localhost:8103/_event/?token=6284a7d7-e2c0-413f-945e-aa7a5c0905c3&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+    "error: WebSocket connection to 'ws://localhost:8103/_event/?token=6284a7d7-e2c0-413f-945e-aa7a5c0905c3&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+    "error: WebSocket connection to 'ws://localhost:8103/_event/?token=6284a7d7-e2c0-413f-945e-aa7a5c0905c3&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+    "error: WebSocket connection to 'ws://localhost:8103/_event/?token=6284a7d7-e2c0-413f-945e-aa7a5c0905c3&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  ],
+  "console_all": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "error: WebSocket connection to 'ws://localhost:8103/_event/?token=6284a7d7-e2c0-413f-945e-aa7a5c0905c3&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+    "error: WebSocket connection to 'ws://localhost:8103/_event/?token=6284a7d7-e2c0-413f-945e-aa7a5c0905c3&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+    "debug: [vite] hot updated: /app/routes/_index.jsx",
+    "debug: [vite] hot updated: /app/routes/_index.jsx",
+    "error: WebSocket connection to 'ws://localhost:8103/_event/?token=6284a7d7-e2c0-413f-945e-aa7a5c0905c3&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+    "error: WebSocket connection to 'ws://localhost:8103/_event/?token=6284a7d7-e2c0-413f-945e-aa7a5c0905c3&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+    "debug: [vite] hot updated: /app/routes/_index.jsx",
+    "debug: [vite] hot updated: /app/routes/_index.jsx"
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "full_load_fresh_context_ms": {
+    "/page2": 907,
+    "/page3": 902,
+    "/about": 912,
+    "/long": 894
+  }
+}

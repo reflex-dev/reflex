@@ -1,0 +1,8 @@
+hp_types_anyfree.py
+  hp_types_anyfree.py:20:13 - information: Type of "hp_any.__get__(None, S)" is "Any"
+  hp_types_anyfree.py:21:13 - information: Type of "hp_str.__get__(None, S)" is "StringVar[str]"
+  hp_types_anyfree.py:22:13 - information: Type of "hp_none.__get__(None, S)" is "None"
+  hp_types_anyfree.py:23:13 - information: Type of "hp_int.__get__(None, S)" is "NumberVar[int]"
+  hp_types_anyfree.py:24:13 - information: Type of "hp_bool.__get__(None, S)" is "BooleanVar"
+  hp_types_anyfree.py:25:13 - information: Type of "hp_list.__get__(None, S)" is "ArrayVar[list[str]]"
+0 errors, 0 warnings, 6 informations

@@ -1,0 +1,12 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using CPython 3.11.15 interpreter at: /usr/local/bin/python3
+Creating virtual environment at: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp_pyright_old
+Activate with: source /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp_pyright_old/bin/activate
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.11.15 environment at: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp_pyright_old
+Resolved 3 packages in 145ms
+Prepared 1 package in 25ms
+Installed 3 packages in 5ms
+ + nodeenv==1.10.0
+ + pyright==1.1.389
+ + typing-extensions==4.16.0

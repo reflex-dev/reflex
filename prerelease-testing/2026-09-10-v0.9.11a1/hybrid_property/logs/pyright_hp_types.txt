@@ -1,0 +1,22 @@
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:74:16 - error: Type "int" is not assignable to return type "Var[int]"
+    "int" is not assignable to "Var[int]" (reportReturnType)
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:81:13 - information: Type of "State.full" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:82:13 - information: Type of "State.doubled" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:83:13 - information: Type of "State.positive" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:84:13 - information: Type of "State.upper" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:85:13 - information: Type of "State.half" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:86:13 - information: Type of "State.meta_copy" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:87:13 - information: Type of "State.maybe" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:88:13 - information: Type of "State.greeting" is "Var[str]"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:89:13 - information: Type of "State.nothing" is "None"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:90:13 - information: Type of "State.scaled" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:91:13 - information: Type of "State().full" is "str"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:92:13 - information: Type of "State().doubled" is "int"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:93:13 - information: Type of "State().greeting" is "str"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:94:13 - information: Type of "State().nothing" is "int"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:95:13 - information: Type of "State.full.upper()" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:96:13 - information: Type of "State.doubled + 1" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:97:13 - information: Type of "State.upper.length()" is "Any"
+  /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hybrid_property/scripts/typecheck/hp_types.py:98:13 - information: Type of "State.__dict__["full"]" is "Any"
+1 error, 0 warnings, 18 informations

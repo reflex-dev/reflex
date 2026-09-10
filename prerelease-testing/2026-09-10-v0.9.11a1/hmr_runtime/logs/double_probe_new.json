@@ -1,0 +1,49 @@
+[
+  {
+    "gap_s": 0.3,
+    "single_edit_settled_s": 0.6,
+    "second_edit_compiled_after_s": null,
+    "compiled_heading_after_wait": "HMR Runtime App p101a",
+    "source_heading": "HMR Runtime App p101b",
+    "reloads_detected_during_probe": 2,
+    "lost": true,
+    "recovery_edit_compiled_after_s": 0.6
+  },
+  {
+    "gap_s": 0.5,
+    "single_edit_settled_s": 0.6,
+    "second_edit_compiled_after_s": null,
+    "compiled_heading_after_wait": "HMR Runtime App p102a",
+    "source_heading": "HMR Runtime App p102b",
+    "reloads_detected_during_probe": 2,
+    "lost": true,
+    "recovery_edit_compiled_after_s": 0.6
+  },
+  {
+    "gap_s": 1.0,
+    "single_edit_settled_s": 0.6,
+    "second_edit_compiled_after_s": 0.6,
+    "compiled_heading_after_wait": "HMR Runtime App p103b",
+    "source_heading": "HMR Runtime App p103b",
+    "reloads_detected_during_probe": 2,
+    "lost": false
+  },
+  {
+    "gap_s": 2.0,
+    "single_edit_settled_s": 0.6,
+    "second_edit_compiled_after_s": 0.6,
+    "compiled_heading_after_wait": "HMR Runtime App p104b",
+    "source_heading": "HMR Runtime App p104b",
+    "reloads_detected_during_probe": 2,
+    "lost": false
+  },
+  {
+    "gap_s": 4.0,
+    "single_edit_settled_s": 0.6,
+    "second_edit_compiled_after_s": 0.6,
+    "compiled_heading_after_wait": "HMR Runtime App p105b",
+    "source_heading": "HMR Runtime App p105b",
+    "reloads_detected_during_probe": 2,
+    "lost": false
+  }
+]

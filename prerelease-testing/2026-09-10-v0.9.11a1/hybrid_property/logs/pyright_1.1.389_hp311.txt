@@ -1,0 +1,25 @@
+WARNING: there is a new pyright version available (v1.1.389 -> v1.1.413).
+Please install the new version or set PYRIGHT_PYTHON_FORCE_VERSION to `latest`
+
+hp_types_anyfree.py
+  hp_types_anyfree.py:20:13 - information: Type of "hp_any.__get__(None, S)" is "StringVar[str]"
+  hp_types_anyfree.py:21:13 - information: Type of "hp_str.__get__(None, S)" is "StringVar[str]"
+  hp_types_anyfree.py:22:13 - information: Type of "hp_none.__get__(None, S)" is "None"
+  hp_types_anyfree.py:23:13 - information: Type of "hp_int.__get__(None, S)" is "NumberVar[int]"
+  hp_types_anyfree.py:24:13 - information: Type of "hp_bool.__get__(None, S)" is "BooleanVar"
+  hp_types_anyfree.py:25:13 - information: Type of "hp_list.__get__(None, S)" is "ArrayVar[list[str]]"
+hp_types_isolate.py
+  hp_types_isolate.py:31:13 - information: Type of "S.first" is "str"
+  hp_types_isolate.py:32:13 - information: Type of "S.n" is "int"
+  hp_types_isolate.py:33:13 - information: Type of "S.full" is "StringVar[str]"
+  hp_types_isolate.py:34:13 - information: Type of "S.direct" is "StringVar[str]"
+  hp_types_isolate.py:35:13 - information: Type of "Plain.v" is "HybridProperty[str, Plain, Var[Any] | None]"
+  hp_types_isolate.py:36:13 - information: Type of "S.__dict__" is "MappingProxyType[str, Any]"
+  hp_types_isolate.py:38:13 - information: Type of "hp" is "HybridProperty[str, S, Var[Any] | None]"
+  hp_types_isolate.py:39:13 - information: Type of "hp.__get__(None, S)" is "StringVar[str]"
+  hp_types_isolate.py:40:13 - information: Type of "hp.__get__(None, BaseState)" is "StringVar[str]"
+  hp_types_isolate.py:42:13 - information: Type of "hp2" is "HybridProperty[str, S, Var[Any] | None]"
+  hp_types_isolate.py:43:13 - information: Type of "hp2.__get__(None, S)" is "StringVar[str]"
+  hp_types_isolate.py:44:13 - information: Type of "HybridProperty(lambda s: "x")" is "HybridProperty[str, Unknown, Var[Any] | None]"
+  hp_types_isolate.py:45:13 - information: Type of "S.__dict__["full"]" is "Any"
+0 errors, 0 warnings, 19 informations 

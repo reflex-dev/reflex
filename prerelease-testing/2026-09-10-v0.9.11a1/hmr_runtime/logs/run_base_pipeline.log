@@ -1,0 +1,34 @@
+=== BASELINE 0.9.10.post2
+started pid 11755 log /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/dev_base.log
+frontend ready after ~6s (http 200)
+--- .web/utils under baseline:
+components
+context.js
+helpers
+react-theme.js
+state.js
+theme.js
+driver exit 0
+safari exit 0
+probe exit 0
+remaining on ports 3101/8101:
+  none
+=== UPGRADE: same dir under 0.9.11a1
+started pid 14598 log /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/dev_upgrade.log
+frontend ready after ~6s (http 200)
+--- .web/utils after upgrade:
+total 84
+drwxr-xr-x  4 root root  4096 Sep 10 09:51 .
+drwxr-xr-x 11 root root  4096 Sep 10 09:51 ..
+drwxr-xr-x  2 root root  4096 Sep 10 09:51 components
+-rw-r--r--  1 root root  2669 Sep 10 09:05 context-registry.js
+-rw-r--r--  1 root root 11248 Sep 10 09:51 context.jsx
+drwxr-xr-x  2 root root  4096 Sep 10 09:05 helpers
+-rw-r--r--  1 root root  3462 Sep 10 09:05 react-theme.js
+-rw-r--r--  1 root root 43900 Sep 10 09:05 state.js
+-rw-r--r--  1 root root    96 Sep 10 09:51 theme.js
+upgrade drive exit 0
+upgrade driver exit 0
+remaining on ports 3102/8102:
+  none
+PIPELINE-DONE

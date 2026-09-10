@@ -1,0 +1,38 @@
+hp_types.py
+  hp_types.py:62:6 - error: Argument of type "(cls: type[Self@State]) -> None" cannot be assigned to parameter "func" of type "(Any) -> Var[Unknown]" in function "var"
+    Type "(cls: type[Self@State]) -> None" is not assignable to type "(Any) -> Var[Unknown]"
+      Function return type "None" is incompatible with type "Var[Unknown]"
+        "None" is not assignable to "Var[Unknown]" (reportArgumentType)
+  hp_types.py:74:16 - error: Type "int" is not assignable to return type "Var[int]"
+    "int" is not assignable to "Var[int]" (reportReturnType)
+  hp_types.py:78:21 - error: Cannot assign to attribute "full" for class "State*"
+    "str" is not assignable to "HybridProperty" (reportAttributeAccessIssue)
+  hp_types.py:81:13 - information: Type of "State.full" is "HybridProperty"
+  hp_types.py:82:13 - information: Type of "State.doubled" is "HybridProperty"
+  hp_types.py:83:13 - information: Type of "State.positive" is "HybridProperty"
+  hp_types.py:84:13 - information: Type of "State.upper" is "HybridProperty"
+  hp_types.py:85:13 - information: Type of "State.half" is "HybridProperty"
+  hp_types.py:86:13 - information: Type of "State.meta_copy" is "HybridProperty"
+  hp_types.py:87:13 - information: Type of "State.maybe" is "HybridProperty"
+  hp_types.py:88:13 - information: Type of "State.greeting" is "HybridProperty"
+  hp_types.py:89:13 - information: Type of "State.nothing" is "HybridProperty"
+  hp_types.py:90:13 - information: Type of "State.scaled" is "HybridProperty"
+  hp_types.py:91:13 - information: Type of "State().full" is "str"
+  hp_types.py:92:13 - information: Type of "State().doubled" is "int"
+  hp_types.py:93:13 - information: Type of "State().greeting" is "str"
+  hp_types.py:94:13 - information: Type of "State().nothing" is "int"
+  hp_types.py:95:13 - information: Type of "State.full.upper()" is "Unknown"
+  hp_types.py:95:24 - error: Cannot access attribute "upper" for class "HybridProperty"
+    Attribute "upper" is unknown (reportAttributeAccessIssue)
+  hp_types.py:96:13 - error: Operator "+" not supported for types "HybridProperty" and "Literal[1]" (reportOperatorIssue)
+  hp_types.py:96:13 - information: Type of "State.doubled + 1" is "Unknown"
+  hp_types.py:97:13 - information: Type of "State.upper.length()" is "Unknown"
+  hp_types.py:97:25 - error: Cannot access attribute "length" for class "HybridProperty"
+    Attribute "length" is unknown (reportAttributeAccessIssue)
+  hp_types.py:98:13 - information: Type of "State.__dict__["full"]" is "Any"
+  hp_types.py:101:17 - error: Argument of type "HybridProperty" cannot be assigned to parameter "iterable" of type "Var[Iterable[Unknown]] | Iterable[Unknown]" in function "create"
+    Type "HybridProperty" is not assignable to type "Var[Iterable[Unknown]] | Iterable[Unknown]"
+      "HybridProperty" is not assignable to "Var[Iterable[Unknown]]"
+      "HybridProperty" is incompatible with protocol "Iterable[Unknown]"
+        "__iter__" is not present (reportArgumentType)
+7 errors, 0 warnings, 18 informations

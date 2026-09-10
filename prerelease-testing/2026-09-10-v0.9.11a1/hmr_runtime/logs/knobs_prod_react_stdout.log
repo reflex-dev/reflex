@@ -1,0 +1,21 @@
+fiber debug fields: {'fiberKey': True, 'has_debugOwner': False, 'has_debugInfo': False, 'has_debugStack': False}
+first-visit client nav ms: {'/page2': 62, '/page3': 84, '/about': 129, '/long': 390}
+second-visit client nav ms: {'/page2': 81, '/page3': 65, '/about': 75, '/long': 186}
+  module react-debounce-input.js?v=81b034e9 {"dev": {}, "prod": {}, "bytes": 66908}
+  module react-dom.js?v=e4d159ee {"dev": {}, "prod": {}, "bytes": 20384}
+  module react-dom_client.js?v=e4d159ee {"dev": {}, "prod": {"react-dom-client.production.js": 2}, "bytes": 1541752}
+  module react-error-boundary.js?v=93ce383c {"dev": {}, "prod": {}, "bytes": 10918}
+  module react-router.js?v=e4d159ee {"dev": {}, "prod": {}, "bytes": 25889}
+  module react-router_dom.js?v=e4d159ee {"dev": {}, "prod": {}, "bytes": 107134}
+  module react.js?v=e4d159ee {"dev": {}, "prod": {"react.production.js": 2}, "bytes": 51848}
+  module react_jsx-runtime.js?v=e4d159ee {"dev": {}, "prod": {"react-jsx-runtime.production": 2}, "bytes": 3573}
+  module direct:react.js {"status": 200, "dev": {}, "prod": {"react.production.js": 2}, "bytes": 51848}
+  module direct:react-dom_client.js {"status": 200, "dev": {}, "prod": {"react-dom-client.production.js": 2}, "bytes": 1541752}
+  module direct:react_jsx-dev-runtime.js {"status": 200, "dev": {"jsxDEV": 1}, "prod": {}, "bytes": 1588}
+  module direct:react_jsx-runtime.js {"status": 200, "dev": {}, "prod": {"react-jsx-runtime.production": 2}, "bytes": 3573}
+  module direct:react-dom.js {"status": 200, "dev": {}, "prod": {}, "bytes": 20384}
+edit result: {"settled": true, "edit_to_settle_s": 2.84, "vite_frames": ["full-reload", "custom", "connected"], "page_loads_after_edit": 1, "cs_before": "client: cs-changed", "cs_after": "client: cs-initial", "count_before": "Counter: 2", "count_after": "Counter: 2", "heading_after": "HMR Runtime App KNOB"}
+console errors/warnings: ["error: WebSocket connection to 'ws://localhost:8103/_event/?token=f7ce998a-f71b-426f-b5ac-bbe8821158db&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "error: WebSocket connection to 'ws://localhost:8103/_event/?token=f7ce998a-f71b-426f-b5ac-bbe8821158db&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "error: WebSocket connection to 'ws://localhost:8103/_event/?token=f7ce998a-f71b-426f-b5ac-bbe8821158db&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED", "error: WebSocket connection to 'ws://localhost:8103/_event/?token=f7ce998a-f71b-426f-b5ac-bbe8821158db&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"]
+page errors: [] failed: [] bad: []
+full load fresh context ms: {'/page2': 925, '/page3': 919, '/about': 893, '/long': 943}
+report: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/knobs_prod_react/report.json

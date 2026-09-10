@@ -1,0 +1,32 @@
+python 3.11.15 reflex /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py
+
+== inspect.iscoroutinefunction(FwdState.weighted)  [ObjectVar over unresolvable dataclass]
+-> False
+
+== inspect.iscoroutinefunction(FwdState.items) / FwdState.current / FwdState.banner
+-> ArrayCastedVar False
+-> ObjectCastedVar False
+-> str False
+
+== mock.patch.object(FwdState, 'weighted') / 'items' / 'add' / 'async_add'
+-> patched weighted: MagicMock
+-> patched items: MagicMock
+-> patched add: MagicMock
+-> patched async_add: MagicMock
+
+== FwdState.weighted.name  [annotated attr on unresolvable dataclass -- expected to warn]
+-> RAISED VarAttributeError The State var `reflex___state____state__hp_app___fwd_state____fwd_state.weighted_rx_state_` of type <class 'hp_app.fwd_state.Weighted'> has no attribute 'name' or may have been annotated wrongly.
+
+== FwdState.current.name / .tag.label  [resolvable later-defined forward ref]
+-> reflex___state____state__hp_app___fwd_state____fwd_state.current_rx_state_?.["name"] | reflex___state____state__hp_app___fwd_state____fwd_state.current_rx_state_?.["tag"]?.["label"]
+
+== captured warnings:
+Failed to resolve ForwardRefs for <class 'hp_app.fwd_state.Weighted'>._is_coroutine due to name 'Unresolvable' is not defined
+Failed to resolve ForwardRefs for <class 'hp_app.fwd_state.Weighted'>._is_coroutine due to name 'Unresolvable' is not defined
+Failed to resolve ForwardRefs for <class 'hp_app.fwd_state.Weighted'>._is_coroutine due to name 'Unresolvable' is not defined
+Failed to resolve ForwardRefs for <class 'hp_app.fwd_state.Weighted'>._is_coroutine due to name 'Unresolvable' is not defined
+Failed to resolve ForwardRefs for <class 'hp_app.fwd_state.Weighted'>.name due to name 'Unresolvable' is not defined
+Failed to resolve ForwardRefs for <class 'hp_app.fwd_state.Weighted'>.name due to name 'Unresolvable' is not defined
+Failed to resolve ForwardRefs for <class 'hp_app.fwd_state.Weighted'>.name due to name 'Unresolvable' is not defined
+Failed to resolve ForwardRefs for <class 'hp_app.fwd_state.Weighted'>.name due to name 'Unresolvable' is not defined
+

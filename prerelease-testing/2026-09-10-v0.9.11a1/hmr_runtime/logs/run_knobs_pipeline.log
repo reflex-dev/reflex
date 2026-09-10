@@ -1,0 +1,26 @@
+=== MODE plain ()
+started pid 15699 log /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/dev_knobs_plain.log
+frontend ready after ~3s (http 200)
+knobs_test exit 0
+safari (plain, head meta) exit 0
+remaining on ports 3103/8103:
+  none
+=== MODE prod_react (REFLEX_DEV_PROD_REACT=1)
+started pid 16579 log /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/dev_knobs_prod_react.log
+frontend ready after ~3s (http 200)
+knobs_test exit 0
+remaining on ports 3103/8103:
+  none
+=== MODE warmup (REFLEX_VITE_WARMUP_ROUTES=1)
+started pid 17435 log /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/dev_knobs_warmup.log
+frontend ready after ~3s (http 200)
+knobs_test exit 0
+remaining on ports 3103/8103:
+  none
+=== MODE both (REFLEX_DEV_PROD_REACT=1 REFLEX_VITE_WARMUP_ROUTES=1)
+started pid 18241 log /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/dev_knobs_both.log
+frontend ready after ~4s (http 200)
+knobs_test exit 0
+remaining on ports 3103/8103:
+  none
+PIPELINE-DONE

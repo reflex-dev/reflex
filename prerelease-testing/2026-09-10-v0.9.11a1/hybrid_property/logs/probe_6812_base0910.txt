@@ -1,0 +1,8 @@
+python 3.11.15 reflex /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py
+a_hybrid_setter: SetUndefinedStateVarError: The state variable 'full' has not been defined in 'NameState'. All state variables must be declared before they can be set.
+a_plain_setter: SetUndefinedStateVarError: The state variable 'full' has not been defined in 'PlainState'. All state variables must be declared before they can be set.
+b_inherited_annotated: OK -> (0, True, 'reflex___state____state__reflex___istate___dynamic____inherited_state.doubled_rx_state_')
+c_backend_default: OK -> (None, None, None, None)
+d_factory_raises: OK -> ('class created without error; backend_vars=', None)
+e_lazy_var_fn: OK -> (['var'], ['var'])
+f_underscore_inherited_hybrid: AttributeError: property '_foo' of 'GuardState' object has no setter

@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link rel="modulepreload" href="/@id/__x00__virtual:react-router/browser-manifest"/><link rel="modulepreload" href="/app/entry.client.js"/><link rel="modulepreload" href="/app/root.jsx"/><script>
+// Only run in browser environment, not during SSR
+if (typeof document !== 'undefined') {
+    try {
+        const theme = localStorage.getItem("theme") || 'system';
+        const systemPreference = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        const resolvedTheme = theme === "system" ? systemPreference : theme;
+
+        // Apply theme immediately - blocks until complete
+        // Use classList to avoid overwriting other classes
+        document.documentElement.classList.remove("light", "dark");
+        document.documentElement.classList.add(resolvedTheme);
+        document.documentElement.style.colorScheme = resolvedTheme;
+
+    } catch (e) {
+        // Fallback to system preference on any error (resolve "system" to actual theme)
+        const fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.classList.remove("light", "dark");
+        document.documentElement.classList.add(fallbackTheme);
+        document.documentElement.style.colorScheme = fallbackTheme;
+    }
+}
+</script><link href="/styles/__reflex_global_styles.css" rel="stylesheet" type="text/css"/><link data-react-router-critical-css="" rel="stylesheet" href="/@react-router/critical.css?pathname=/long"/></head><body><section aria-label="Notifications alt+T" tabindex="-1" aria-live="polite" aria-relevant="additions text" aria-atomic="false"></section><div data-is-root-theme="true" data-accent-color="blue" data-gray-color="slate" data-has-background="true" data-panel-background="translucent" data-radius="medium" data-scaling="100%" class="radix-themes css-0"><style data-emotion="css 17rg0dp">.css-17rg0dp{position:fixed;width:100vw;height:0;}</style><div title="Connection Error: " class="css-17rg0dp"></div><script>
+              console.log(
+                "💿 Hey developer 👋. You can provide a way better UX than this " +
+                "when your app is loading JS modules and/or running `clientLoader` " +
+                "functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback " +
+                "for more information."
+              );
+            </script></div><script>window.__reactRouterContext = {"basename":"/","future":{"unstable_enableNodeReadableStream":false,"unstable_optimizeDeps":true},"routeDiscovery":{"mode":"initial"},"ssr":false,"isSpaMode":true,"criticalCss":{"rel":"stylesheet","href":"/@react-router/critical.css?pathname=/long"}};window.__reactRouterContext.stream = new ReadableStream({start(controller){window.__reactRouterContext.streamController = controller;}}).pipeThrough(new TextEncoderStream());</script><script type="module" async="">import "/@id/__x00__virtual:react-router/inject-hmr-runtime";import "/@id/__x00__virtual:react-router/browser-manifest";
+import * as route0 from "/app/root.jsx";
+  
+  window.__reactRouterRouteModules = {"root":route0};
+
+import("/app/entry.client.js");</script><!--$--><script>window.__reactRouterContext.streamController.enqueue("[{\"_1\":2,\"_3\":-5,\"_4\":-5},\"loaderData\",{},\"actionData\",\"errors\"]\n");</script><!--$--><script>window.__reactRouterContext.streamController.close();</script><!--/$--><!--/$--></body></html>

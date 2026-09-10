@@ -1,0 +1,43 @@
+python 3.11.15 reflex /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py
+-- pt: type(val)=PointMutableProxy wrapped=Point
+   is_dataclass(val): True
+   is_dataclass(type(val)): True
+   type(val).__dataclass_params__.frozen: False
+   type(val).__dataclass_params__.eq: True
+   type(val).__match_args__: ('x', 'y')
+   val.__match_args__: ('x', 'y')
+   fields(val): ['x', 'y']
+   asdict(val): {"x": 1, "y": 2}
+   astuple(val): (1, 2)
+   replace(val): Point(x=1, y=2)
+   val == wrapped: True
+   hash/eq frozen: n/a
+-- fz: type(val)=FrozenMutableProxy wrapped=Frozen
+   is_dataclass(val): True
+   is_dataclass(type(val)): True
+   type(val).__dataclass_params__.frozen: True
+   type(val).__dataclass_params__.eq: True
+   type(val).__match_args__: ('label', 'n')
+   val.__match_args__: ('label', 'n')
+   fields(val): ['label', 'n']
+   asdict(val): {"label": "f", "n": 1}
+   astuple(val): ('f', 1)
+   replace(val): Frozen(label='f', n=1)
+   val == wrapped: True
+   hash/eq frozen: True
+-- shape: type(val)=ShapeMutableProxy wrapped=Shape
+   is_dataclass(val): True
+   is_dataclass(type(val)): True
+   type(val).__dataclass_params__.frozen: False
+   type(val).__dataclass_params__.eq: True
+   type(val).__match_args__: ('name', 'points')
+   val.__match_args__: ('name', 'points')
+   fields(val): ['name', 'points']
+   asdict(val): {"name": "tri", "points": [{"x": 0, "y": 0}, {"x": 1, "y": 1}]}
+   astuple(val): ('tri', [(0, 0), (1, 1)])
+   replace(val): Shape(name='tri', points=[Point(x=0, y=0), Point(x=1, y=1)])
+   val == wrapped: True
+   hash/eq frozen: n/a
+match Point(x, y) -> 1 2
+nested mutation -> [Point(x=1, y=0), Point(x=1, y=1), Point(x=9, y=9)] dirty_vars= ['shape']
+frozen setattr -> FrozenInstanceError (good)

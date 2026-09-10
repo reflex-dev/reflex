@@ -1,0 +1,12 @@
+curl_safari_index      bytes=92759  x-modified-by=vite-plugin-safari-cachebust transfer=chunked reflex_ts=6 byte-list=0 utf8-valid=yes fffd=0 nihongo=561
+curl_chrome_index      bytes=92603  x-modified-by= transfer=chunked reflex_ts=0 byte-list=0 utf8-valid=yes fffd=0 nihongo=561
+curl_safari_about      bytes=92769  x-modified-by=vite-plugin-safari-cachebust transfer=chunked reflex_ts=6 byte-list=0 utf8-valid=yes fffd=0 nihongo=561
+curl_chrome_about      bytes=92613  x-modified-by= transfer=chunked reflex_ts=0 byte-list=0 utf8-valid=yes fffd=0 nihongo=561
+curl_safari_long       bytes=92767  x-modified-by=vite-plugin-safari-cachebust transfer=chunked reflex_ts=6 byte-list=0 utf8-valid=yes fffd=0 nihongo=561
+curl_chrome_long       bytes=92611  x-modified-by= transfer=chunked reflex_ts=0 byte-list=0 utf8-valid=yes fffd=0 nihongo=561
+--- first 120 bytes of the Safari /long response (hexdump):
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/scripts/curl_safari.sh: line 22: xxd: command not found
+--- head of the Safari /long response (text):
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><title>HMR — café 日本語 🎉</title><meta content="Paragraph 0: café naïve résumé über straße 日本語テスト 中文测试 한국어 🎉🚀😎🇯🇵 The quick brown fox jumps over the lazy dog. Paragraph 1: café naïve résumé über straße 日本語テスト 中文�
+--- diff safari vs chrome after stripping the param (/long):
+IDENTICAL

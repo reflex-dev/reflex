@@ -1,0 +1,1799 @@
+{
+  "label": "new",
+  "url": "http://localhost:3100",
+  "steps": [
+    {
+      "name": "text",
+      "hold_context": false,
+      "t_edit": 1789032466.7819908,
+      "settled": true,
+      "settle_info": "HMR Runtime App v2",
+      "settle_seconds": 5.34,
+      "clicks_during_window": 12,
+      "count_expected": 15,
+      "count_ok_after_window": true,
+      "count_actual_after_window": "Counter: 15",
+      "post_update_click_ok": true,
+      "post_update_count": "Counter: 16",
+      "focus_after": {
+        "before": "",
+        "after": "todo_input",
+        "ok": true
+      },
+      "before": {
+        "heading": "HMR Runtime App",
+        "memo_count": "Counter: 3",
+        "cond": "count is small",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo",
+          "buy milk"
+        ],
+        "bg_ticks": "ticks: 1",
+        "bg_status": "running",
+        "extra": null,
+        "memo_class": "rt-Text rt-r-size-6",
+        "active_element": "bg-start",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "after": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Counter: 16",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo",
+          "buy milk"
+        ],
+        "bg_ticks": "ticks: 2",
+        "bg_status": "running",
+        "extra": null,
+        "memo_class": "rt-Text rt-r-size-6",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "marks_survived": {
+        "heading": "stamped",
+        "memo-count": "stamped",
+        "cs-text": "stamped",
+        "todo-list": "stamped"
+      },
+      "events": {
+        "page_errors": [],
+        "console_errors": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+        ],
+        "console_all": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx"
+        ],
+        "failed_requests": [],
+        "bad_responses": [],
+        "socketio_opens": 4,
+        "vite_opens": 0,
+        "vite_frames": [
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          }
+        ],
+        "state_js_refetches": 0,
+        "context_fetches": []
+      },
+      "hold_events": [],
+      "screenshot": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/hmr_new/text.png"
+    },
+    {
+      "name": "default",
+      "hold_context": false,
+      "t_edit": 1789032473.2639213,
+      "settled": true,
+      "settle_info": {
+        "vite_frames": [
+          "custom",
+          "custom",
+          "update",
+          "update",
+          "update",
+          "update"
+        ]
+      },
+      "settle_seconds": 45.61,
+      "clicks_during_window": 8,
+      "count_expected": 24,
+      "count_ok_after_window": false,
+      "count_actual_after_window": "Compteur: 7",
+      "post_update_click_ok": false,
+      "post_update_count": "Compteur: 8",
+      "focus_after": {
+        "before": "",
+        "after": "todo_input",
+        "ok": true
+      },
+      "before": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Counter: 16",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo",
+          "buy milk"
+        ],
+        "bg_ticks": "ticks: 2",
+        "bg_status": "running",
+        "extra": null,
+        "memo_class": "rt-Text rt-r-size-6",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "after": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Compteur: 8",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": null,
+        "memo_class": "rt-Text rt-r-size-6",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "marks_survived": {
+        "heading": "stamped",
+        "memo-count": "stamped",
+        "cs-text": "stamped",
+        "todo-list": "stamped"
+      },
+      "events": {
+        "page_errors": [],
+        "console_errors": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+        ],
+        "console_all": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "debug: [vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports",
+          "debug: [vite] hot updated: /utils/context.jsx",
+          "debug: [vite] hot updated: /utils/context.jsx",
+          "debug: [vite] hot updated: /utils/context.jsx",
+          "debug: [vite] hot updated: /app/root.jsx",
+          "debug: [vite] hot updated: /utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+          "debug: [vite] hot updated: /app_components/reflex/compiler/compiler.jsx",
+          "debug: [vite] hot updated: /app_components/reflex/app.jsx",
+          "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx"
+        ],
+        "failed_requests": [],
+        "bad_responses": [],
+        "socketio_opens": 4,
+        "vite_opens": 0,
+        "vite_frames": [
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/utils/context.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/utils/context.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/utils/context.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/root.jsx",
+              "/utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+              "/app_components/reflex/compiler/compiler.jsx",
+              "/app_components/reflex/app.jsx",
+              "/app_components/hmr_app/hmr_app.jsx"
+            ]
+          }
+        ],
+        "state_js_refetches": 0,
+        "context_fetches": [
+          "utils/context.jsx?t=1789032473814",
+          "utils/context.jsx?t=1789032473815",
+          "utils/context.jsx?t=1789032473813"
+        ]
+      },
+      "hold_events": [],
+      "screenshot": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/hmr_new/default.png"
+    },
+    {
+      "name": "newvar",
+      "hold_context": false,
+      "t_edit": 1789032518.9226902,
+      "settled": true,
+      "settle_info": "extra: 7",
+      "settle_seconds": 44.55,
+      "clicks_during_window": 8,
+      "count_expected": 33,
+      "count_ok_after_window": false,
+      "count_actual_after_window": "Compteur: 7",
+      "post_update_click_ok": false,
+      "post_update_count": "Compteur: 8",
+      "focus_after": {
+        "before": "",
+        "after": "todo_input",
+        "ok": true
+      },
+      "before": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Compteur: 8",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": null,
+        "memo_class": "rt-Text rt-r-size-6",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "after": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Compteur: 8",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": "extra: 7",
+        "memo_class": "rt-Text rt-r-size-6",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": null,
+          "memo-count": null,
+          "cs-text": null,
+          "todo-list": null
+        }
+      },
+      "marks_survived": {
+        "heading": null,
+        "memo-count": null,
+        "cs-text": null,
+        "todo-list": null
+      },
+      "events": {
+        "page_errors": [],
+        "console_errors": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+        ],
+        "console_all": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "debug: [vite] invalidate /app_components/hmr_app/hmr_app.jsx: Could not Fast Refresh (new export)",
+          "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+          "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+          "debug: [vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports",
+          "debug: [vite] hot updated: /utils/context.jsx",
+          "debug: [vite] hot updated: /utils/context.jsx",
+          "debug: [vite] hot updated: /utils/context.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "debug: [vite] hot updated: /app/root.jsx",
+          "debug: [vite] hot updated: /utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+          "debug: [vite] hot updated: /app_components/reflex/compiler/compiler.jsx",
+          "debug: [vite] hot updated: /app_components/reflex/app.jsx",
+          "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx"
+        ],
+        "failed_requests": [],
+        "bad_responses": [],
+        "socketio_opens": 3,
+        "vite_opens": 0,
+        "vite_frames": [
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app_components/hmr_app/hmr_app.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app_components/hmr_app/hmr_app.jsx"
+            ]
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/utils/context.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/utils/context.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/utils/context.jsx"
+            ]
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/root.jsx",
+              "/utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+              "/app_components/reflex/compiler/compiler.jsx",
+              "/app_components/reflex/app.jsx",
+              "/app_components/hmr_app/hmr_app.jsx"
+            ]
+          }
+        ],
+        "state_js_refetches": 0,
+        "context_fetches": [
+          "utils/context.jsx?t=1789032519459",
+          "utils/context.jsx?t=1789032519460",
+          "utils/context.jsx?t=1789032519461"
+        ]
+      },
+      "hold_events": [],
+      "screenshot": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/hmr_new/newvar.png"
+    },
+    {
+      "name": "handler",
+      "hold_context": false,
+      "t_edit": 1789032563.5230045,
+      "settled": true,
+      "settle_info": "add-ten-btn present",
+      "settle_seconds": 44.72,
+      "clicks_during_window": 8,
+      "count_expected": 42,
+      "count_ok_after_window": false,
+      "count_actual_after_window": "Compteur: 16",
+      "post_update_click_ok": false,
+      "post_update_count": "Compteur: 17",
+      "focus_after": {
+        "before": "",
+        "after": "todo_input",
+        "ok": true
+      },
+      "before": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Compteur: 8",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": "extra: 7",
+        "memo_class": "rt-Text rt-r-size-6",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "after": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Compteur: 17",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": "extra: 7",
+        "memo_class": "rt-Text rt-r-size-6",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "marks_survived": {
+        "heading": "stamped",
+        "memo-count": "stamped",
+        "cs-text": "stamped",
+        "todo-list": "stamped"
+      },
+      "events": {
+        "page_errors": [],
+        "console_errors": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+        ],
+        "console_all": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "debug: [vite] invalidate /app_components/hmr_app/hmr_app.jsx: Could not Fast Refresh (new export)",
+          "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+          "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx"
+        ],
+        "failed_requests": [],
+        "bad_responses": [],
+        "socketio_opens": 4,
+        "vite_opens": 0,
+        "vite_frames": [
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app_components/hmr_app/hmr_app.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app_components/hmr_app/hmr_app.jsx"
+            ]
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          }
+        ],
+        "state_js_refetches": 0,
+        "context_fetches": []
+      },
+      "hold_events": [],
+      "screenshot": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/hmr_new/handler.png",
+      "new_handler_click_ok": false,
+      "new_handler_count": "Compteur: 27"
+    },
+    {
+      "name": "props",
+      "hold_context": false,
+      "t_edit": 1789032648.4673283,
+      "settled": true,
+      "settle_info": "rt-Text rt-r-size-8",
+      "settle_seconds": 44.56,
+      "clicks_during_window": 8,
+      "count_expected": 61,
+      "count_ok_after_window": false,
+      "count_actual_after_window": "Compteur: 35",
+      "post_update_click_ok": false,
+      "post_update_count": "Compteur: 36",
+      "focus_after": {
+        "before": "",
+        "after": "todo_input",
+        "ok": true
+      },
+      "before": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Compteur: 27",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": "extra: 7",
+        "memo_class": "rt-Text rt-r-size-6",
+        "active_element": "add-ten-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "after": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Compteur: 36",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": "extra: 7",
+        "memo_class": "rt-Text rt-r-size-8",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "marks_survived": {
+        "heading": "stamped",
+        "memo-count": "stamped",
+        "cs-text": "stamped",
+        "todo-list": "stamped"
+      },
+      "events": {
+        "page_errors": [],
+        "console_errors": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+        ],
+        "console_all": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+          "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx"
+        ],
+        "failed_requests": [],
+        "bad_responses": [],
+        "socketio_opens": 4,
+        "vite_opens": 0,
+        "vite_frames": [
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app_components/hmr_app/hmr_app.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app_components/hmr_app/hmr_app.jsx"
+            ]
+          }
+        ],
+        "state_js_refetches": 0,
+        "context_fetches": []
+      },
+      "hold_events": [],
+      "screenshot": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/hmr_new/props.png"
+    },
+    {
+      "name": "double",
+      "hold_context": false,
+      "t_edit": 1789032693.0845525,
+      "settled": false,
+      "settle_info": "HMR Runtime App v3",
+      "settle_seconds": 85.88,
+      "clicks_during_window": 10,
+      "count_expected": 72,
+      "count_ok_after_window": false,
+      "count_actual_after_window": "Compteur: 46",
+      "post_update_click_ok": false,
+      "post_update_count": "Compteur: 47",
+      "focus_after": {
+        "before": "",
+        "after": "todo_input",
+        "ok": true
+      },
+      "before": {
+        "heading": "HMR Runtime App v2",
+        "memo_count": "Compteur: 36",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": "extra: 7",
+        "memo_class": "rt-Text rt-r-size-8",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "after": {
+        "heading": "HMR Runtime App v3",
+        "memo_count": "Compteur: 47",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": "extra: 7",
+        "memo_class": "rt-Text rt-r-size-8",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "marks_survived": {
+        "heading": "stamped",
+        "memo-count": "stamped",
+        "cs-text": "stamped",
+        "todo-list": "stamped"
+      },
+      "events": {
+        "page_errors": [],
+        "console_errors": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+        ],
+        "console_all": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+        ],
+        "failed_requests": [],
+        "bad_responses": [],
+        "socketio_opens": 8,
+        "vite_opens": 0,
+        "vite_frames": [
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "custom",
+            "paths": null
+          }
+        ],
+        "state_js_refetches": 0,
+        "context_fetches": []
+      },
+      "hold_events": [],
+      "screenshot": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/hmr_new/double.png"
+    },
+    {
+      "name": "hold",
+      "hold_context": true,
+      "t_edit": 1789032779.049561,
+      "settled": true,
+      "settle_info": {
+        "vite_frames": [
+          "custom",
+          "custom",
+          "update",
+          "update",
+          "update",
+          "custom",
+          "update",
+          "update",
+          "update"
+        ]
+      },
+      "settle_seconds": 48.27,
+      "clicks_during_window": 8,
+      "count_expected": 81,
+      "count_ok_after_window": false,
+      "count_actual_after_window": "Zaehler: 7",
+      "post_update_click_ok": false,
+      "post_update_count": "Zaehler: 8",
+      "focus_after": {
+        "before": "",
+        "after": "todo_input",
+        "ok": true
+      },
+      "before": {
+        "heading": "HMR Runtime App v3",
+        "memo_count": "Compteur: 47",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": "extra: 7",
+        "memo_class": "rt-Text rt-r-size-8",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": "stamped",
+          "memo-count": "stamped",
+          "cs-text": "stamped",
+          "todo-list": "stamped"
+        }
+      },
+      "after": {
+        "heading": "HMR Runtime App v4",
+        "memo_count": "Zaehler: 8",
+        "cond": "count is big",
+        "toggle": "Toggle: ON",
+        "cs_text": "client: cs-changed",
+        "todos": [
+          "first todo"
+        ],
+        "bg_ticks": "ticks: 0",
+        "bg_status": "idle",
+        "extra": "extra: 7",
+        "memo_class": "rt-Text rt-r-size-8",
+        "active_element": "inc-btn",
+        "marks": {
+          "heading": null,
+          "memo-count": null,
+          "cs-text": null,
+          "todo-list": null
+        }
+      },
+      "marks_survived": {
+        "heading": null,
+        "memo-count": null,
+        "cs-text": null,
+        "todo-list": null
+      },
+      "events": {
+        "page_errors": [],
+        "console_errors": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+        ],
+        "console_all": [
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+          "debug: [vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports",
+          "debug: [vite] hot updated: /utils/context.jsx",
+          "debug: [vite] hot updated: /utils/context.jsx",
+          "debug: [vite] hot updated: /utils/context.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "debug: [vite] hot updated: /app/routes/_index.jsx",
+          "debug: [vite] hot updated: /app/root.jsx",
+          "debug: [vite] hot updated: /utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+          "debug: [vite] hot updated: /app_components/reflex/compiler/compiler.jsx",
+          "debug: [vite] hot updated: /app_components/reflex/app.jsx",
+          "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx"
+        ],
+        "failed_requests": [],
+        "bad_responses": [],
+        "socketio_opens": 5,
+        "vite_opens": 0,
+        "vite_frames": [
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/utils/context.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/utils/context.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/utils/context.jsx"
+            ]
+          },
+          {
+            "type": "custom",
+            "paths": null
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/routes/_index.jsx"
+            ]
+          },
+          {
+            "type": "update",
+            "paths": [
+              "/app/root.jsx",
+              "/utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+              "/app_components/reflex/compiler/compiler.jsx",
+              "/app_components/reflex/app.jsx",
+              "/app_components/hmr_app/hmr_app.jsx"
+            ]
+          }
+        ],
+        "state_js_refetches": 0,
+        "context_fetches": [
+          "utils/context.jsx?t=1789032779625",
+          "utils/context.jsx?t=1789032779624",
+          "utils/context.jsx?t=1789032779626"
+        ]
+      },
+      "hold_events": [
+        [
+          "hold",
+          1789032779.625288,
+          "http://localhost:3100/utils/context.jsx?t=1789032779625"
+        ],
+        [
+          "hold",
+          1789032780.107326,
+          "http://localhost:3100/utils/context.jsx?t=1789032779624"
+        ],
+        [
+          "release",
+          1789032782.6266077,
+          "http://localhost:3100/utils/context.jsx?t=1789032779625"
+        ],
+        [
+          "hold",
+          1789032782.6376085,
+          "http://localhost:3100/utils/context.jsx?t=1789032779626"
+        ],
+        [
+          "release",
+          1789032783.1075637,
+          "http://localhost:3100/utils/context.jsx?t=1789032779624"
+        ],
+        [
+          "release",
+          1789032785.6387408,
+          "http://localhost:3100/utils/context.jsx?t=1789032779626"
+        ]
+      ],
+      "screenshot": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/hmr_new/hold.png"
+    }
+  ],
+  "start": 1789032461.8720589,
+  "initial_load": {
+    "ok": true,
+    "memo_count": "Counter: 0",
+    "events": {
+      "page_errors": [],
+      "console_errors": [],
+      "console_all": [
+        "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module",
+        "debug: [vite] connecting...",
+        "debug: [vite] connected.",
+        "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      ],
+      "failed_requests": [],
+      "bad_responses": [],
+      "socketio_opens": 1,
+      "vite_opens": 1,
+      "vite_frames": [
+        {
+          "type": "connected",
+          "paths": null
+        }
+      ],
+      "state_js_refetches": 1,
+      "context_fetches": [
+        "utils/context.jsx"
+      ]
+    }
+  },
+  "pre_edit": {
+    "snapshot": {
+      "heading": "HMR Runtime App",
+      "memo_count": "Counter: 3",
+      "cond": "count is small",
+      "toggle": "Toggle: ON",
+      "cs_text": "client: cs-changed",
+      "todos": [
+        "first todo",
+        "buy milk"
+      ],
+      "bg_ticks": "ticks: 1",
+      "bg_status": "running",
+      "extra": null,
+      "memo_class": "rt-Text rt-r-size-6",
+      "active_element": "bg-start",
+      "marks": {
+        "heading": null,
+        "memo-count": null,
+        "cs-text": null,
+        "todo-list": null
+      }
+    },
+    "cs_ok": true,
+    "toggle_ok": true,
+    "focus": {
+      "before": "",
+      "after": "todo_input",
+      "ok": true
+    },
+    "events": {
+      "page_errors": [],
+      "console_errors": [],
+      "console_all": [
+        "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module",
+        "debug: [vite] connecting...",
+        "debug: [vite] connected.",
+        "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+      ],
+      "failed_requests": [],
+      "bad_responses": [],
+      "socketio_opens": 1,
+      "vite_opens": 1,
+      "vite_frames": [
+        {
+          "type": "connected",
+          "paths": null
+        }
+      ],
+      "state_js_refetches": 1,
+      "context_fetches": [
+        "utils/context.jsx"
+      ]
+    }
+  },
+  "bg_after_text_edit": {
+    "immediately": {
+      "heading": "HMR Runtime App v2",
+      "memo_count": "Counter: 16",
+      "cond": "count is big",
+      "toggle": "Toggle: ON",
+      "cs_text": "client: cs-changed",
+      "todos": [
+        "first todo",
+        "buy milk"
+      ],
+      "bg_ticks": "ticks: 2",
+      "bg_status": "running",
+      "extra": null,
+      "memo_class": "rt-Text rt-r-size-6",
+      "active_element": "inc-btn",
+      "marks": {
+        "heading": "stamped",
+        "memo-count": "stamped",
+        "cs-text": "stamped",
+        "todo-list": "stamped"
+      }
+    },
+    "1s_later": {
+      "heading": "HMR Runtime App v2",
+      "memo_count": "Counter: 16",
+      "cond": "count is big",
+      "toggle": "Toggle: ON",
+      "cs_text": "client: cs-changed",
+      "todos": [
+        "first todo",
+        "buy milk"
+      ],
+      "bg_ticks": "ticks: 2",
+      "bg_status": "running",
+      "extra": null,
+      "memo_class": "rt-Text rt-r-size-6",
+      "active_element": "inc-btn",
+      "marks": {
+        "heading": "stamped",
+        "memo-count": "stamped",
+        "cs-text": "stamped",
+        "todo-list": "stamped"
+      }
+    }
+  },
+  "nav_after_edits": {
+    "/about": {
+      "ok": true,
+      "ms": 201
+    },
+    "/page2": {
+      "ok": true,
+      "ms": 180
+    },
+    "/long": {
+      "ok": true,
+      "ms": 362
+    },
+    "/": {
+      "ok": true,
+      "ms": 178
+    }
+  },
+  "final_snapshot": {
+    "heading": "HMR Runtime App v4",
+    "memo_count": "Zaehler: 8",
+    "cond": "count is big",
+    "toggle": "Toggle: ON",
+    "cs_text": "client: cs-changed",
+    "todos": [
+      "first todo"
+    ],
+    "bg_ticks": "ticks: 0",
+    "bg_status": "idle",
+    "extra": "extra: 7",
+    "memo_class": "rt-Text rt-r-size-8",
+    "active_element": "",
+    "marks": {
+      "heading": null,
+      "memo-count": null,
+      "cs-text": null,
+      "todo-list": null
+    }
+  },
+  "all_events": {
+    "page_errors": [],
+    "console_errors": [
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+    ],
+    "console_all": [
+      "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module",
+      "debug: [vite] connecting...",
+      "debug: [vite] connected.",
+      "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "debug: [vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports",
+      "debug: [vite] hot updated: /utils/context.jsx",
+      "debug: [vite] hot updated: /utils/context.jsx",
+      "debug: [vite] hot updated: /utils/context.jsx",
+      "debug: [vite] hot updated: /app/root.jsx",
+      "debug: [vite] hot updated: /utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+      "debug: [vite] hot updated: /app_components/reflex/compiler/compiler.jsx",
+      "debug: [vite] hot updated: /app_components/reflex/app.jsx",
+      "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "debug: [vite] invalidate /app_components/hmr_app/hmr_app.jsx: Could not Fast Refresh (new export)",
+      "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+      "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+      "debug: [vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports",
+      "debug: [vite] hot updated: /utils/context.jsx",
+      "debug: [vite] hot updated: /utils/context.jsx",
+      "debug: [vite] hot updated: /utils/context.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "debug: [vite] hot updated: /app/root.jsx",
+      "debug: [vite] hot updated: /utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+      "debug: [vite] hot updated: /app_components/reflex/compiler/compiler.jsx",
+      "debug: [vite] hot updated: /app_components/reflex/app.jsx",
+      "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "debug: [vite] invalidate /app_components/hmr_app/hmr_app.jsx: Could not Fast Refresh (new export)",
+      "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+      "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+      "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "debug: [vite] invalidate /utils/context.jsx: Could not Fast Refresh. Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports",
+      "debug: [vite] hot updated: /utils/context.jsx",
+      "debug: [vite] hot updated: /utils/context.jsx",
+      "debug: [vite] hot updated: /utils/context.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "debug: [vite] hot updated: /app/routes/_index.jsx",
+      "debug: [vite] hot updated: /app/root.jsx",
+      "debug: [vite] hot updated: /utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+      "debug: [vite] hot updated: /app_components/reflex/compiler/compiler.jsx",
+      "debug: [vite] hot updated: /app_components/reflex/app.jsx",
+      "debug: [vite] hot updated: /app_components/hmr_app/hmr_app.jsx"
+    ],
+    "failed_requests": [],
+    "bad_responses": [],
+    "socketio_opens": 33,
+    "vite_opens": 1,
+    "vite_frames": [
+      {
+        "type": "connected",
+        "paths": null
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/utils/context.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/utils/context.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/utils/context.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/root.jsx",
+          "/utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+          "/app_components/reflex/compiler/compiler.jsx",
+          "/app_components/reflex/app.jsx",
+          "/app_components/hmr_app/hmr_app.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app_components/hmr_app/hmr_app.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app_components/hmr_app/hmr_app.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/utils/context.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/utils/context.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/utils/context.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/root.jsx",
+          "/utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+          "/app_components/reflex/compiler/compiler.jsx",
+          "/app_components/reflex/app.jsx",
+          "/app_components/hmr_app/hmr_app.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app_components/hmr_app/hmr_app.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app_components/hmr_app/hmr_app.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app_components/hmr_app/hmr_app.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app_components/hmr_app/hmr_app.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/utils/context.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/utils/context.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/utils/context.jsx"
+        ]
+      },
+      {
+        "type": "custom",
+        "paths": null
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/routes/_index.jsx"
+        ]
+      },
+      {
+        "type": "update",
+        "paths": [
+          "/app/root.jsx",
+          "/utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx",
+          "/app_components/reflex/compiler/compiler.jsx",
+          "/app_components/reflex/app.jsx",
+          "/app_components/hmr_app/hmr_app.jsx"
+        ]
+      }
+    ],
+    "state_js_refetches": 1,
+    "context_fetches": [
+      "utils/context.jsx",
+      "utils/context.jsx?t=1789032473814",
+      "utils/context.jsx?t=1789032473815",
+      "utils/context.jsx?t=1789032473813",
+      "utils/context.jsx?t=1789032519459",
+      "utils/context.jsx?t=1789032519460",
+      "utils/context.jsx?t=1789032519461",
+      "utils/context.jsx?t=1789032779625",
+      "utils/context.jsx?t=1789032779624",
+      "utils/context.jsx?t=1789032779626"
+    ]
+  },
+  "ws": [
+    {
+      "t": 1789032464.3678594,
+      "url": "ws://localhost:3100/?token=4DqOlHiO-hyV",
+      "closed": null,
+      "kind": "vite"
+    },
+    {
+      "t": 1789032464.6135879,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032466.9400868,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032466.9403367,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032466.9412296,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032467.109241,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032467.1096802,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032467.1429133,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032467.1432579,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032467.4109676,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032473.462795,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032473.4661512,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032473.4664881,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032473.6238825,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032473.624214,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032473.6655219,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032473.6658328,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032473.958658,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032519.0794735,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032519.0817173,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032519.0821881,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032519.2885237,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032519.2888205,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032519.6216414,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032563.693683,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032563.694733,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032563.6950135,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032563.88801,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032563.8887377,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032563.8965423,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032563.8968644,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032564.236832,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032648.5954053,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032648.5959668,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032648.5965862,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032648.7975452,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032648.798331,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032648.8336675,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032648.8349214,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032649.1666641,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032693.2143111,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032693.215168,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032693.215454,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032693.4170232,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032693.4180396,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032693.6315782,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032693.7287006,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032693.7296457,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032693.7298968,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032693.8190663,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032693.819363,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032693.9324994,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032693.9327946,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032693.9828093,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032693.9831545,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032694.2211552,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032779.2107303,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032779.2117875,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032779.2143438,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032779.314682,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032779.3149624,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032779.4137914,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032779.4140701,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032779.561716,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": 1789032779.5630598,
+      "kind": "socketio"
+    },
+    {
+      "t": 1789032779.7135563,
+      "url": "ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket",
+      "closed": null,
+      "kind": "socketio"
+    }
+  ],
+  "end": 1789032828.3963184
+}

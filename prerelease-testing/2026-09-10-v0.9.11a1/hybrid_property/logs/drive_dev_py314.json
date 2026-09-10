@@ -1,0 +1,651 @@
+{
+ "base": "http://localhost:3142",
+ "results": [
+  {
+   "name": "core.backend_connected",
+   "ok": true,
+   "detail": "token=3877a9aa"
+  },
+  {
+   "name": "core.full_name.frontend",
+   "ok": true,
+   "detail": [
+    "Ada Lovelace"
+   ]
+  },
+  {
+   "name": "core.full_name.backend",
+   "ok": true,
+   "detail": [
+    "Ada Lovelace"
+   ]
+  },
+  {
+   "name": "core.has_last.cond",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "core.has_last.backend",
+   "ok": true,
+   "detail": [
+    "true"
+   ]
+  },
+  {
+   "name": "core.upper_tags.foreach(staticmethod var fn)",
+   "ok": true,
+   "detail": "['ALPHA', 'BETA']"
+  },
+  {
+   "name": "core.upper_tags.backend",
+   "ok": true,
+   "detail": [
+    "ALPHA,BETA"
+   ]
+  },
+  {
+   "name": "core.scaled.frontend(var fn under own name, x3)",
+   "ok": true,
+   "detail": [
+    "3"
+   ]
+  },
+  {
+   "name": "core.scaled.backend(getter x2)",
+   "ok": true,
+   "detail": [
+    "2"
+   ]
+  },
+  {
+   "name": "core.secret_len.backend(var fn returns None)",
+   "ok": true,
+   "detail": [
+    "6"
+   ]
+  },
+  {
+   "name": "core.plain_full.backend",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "core.setter.frontend_updates",
+   "ok": true,
+   "detail": [
+    "Grace Hopper"
+   ]
+  },
+  {
+   "name": "core.setter.backend_updates",
+   "ok": true,
+   "detail": [
+    "Grace Hopper"
+   ]
+  },
+  {
+   "name": "core.setter.log",
+   "ok": true,
+   "detail": [
+    "rename->Grace Hopper"
+   ]
+  },
+  {
+   "name": "core.plain_property_setter.frontend",
+   "ok": true,
+   "detail": [
+    "Alan Turing"
+   ]
+  },
+  {
+   "name": "core.plain_property_setter.backend",
+   "ok": true,
+   "detail": [
+    "Alan/Turing"
+   ]
+  },
+  {
+   "name": "core.setter.from_input",
+   "ok": true,
+   "detail": [
+    "Linus Torvalds"
+   ]
+  },
+  {
+   "name": "core.assign_without_setter.raises_AttributeError",
+   "ok": true,
+   "detail": "rename->Grace Hopper | rename_plain->Alan/Turing | rename->Linus Torvalds | no-setter:AttributeError:Hybrid property 'scaled' has no setter"
+  },
+  {
+   "name": "core.deleter.frontend",
+   "ok": true,
+   "detail": "' '"
+  },
+  {
+   "name": "core.deleter.cond_flips",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "core.deleter.backend_bool",
+   "ok": true,
+   "detail": [
+    "false"
+   ]
+  },
+  {
+   "name": "core.inc.frontend_x3",
+   "ok": true,
+   "detail": [
+    "6"
+   ]
+  },
+  {
+   "name": "core.inc.backend_x2",
+   "ok": true,
+   "detail": [
+    "4"
+   ]
+  },
+  {
+   "name": "core.add_tag.foreach_updates",
+   "ok": true,
+   "detail": "['ALPHA', 'BETA', 'TAG2']"
+  },
+  {
+   "name": "core.reset",
+   "ok": true,
+   "detail": [
+    "Ada Lovelace"
+   ]
+  },
+  {
+   "name": "inherit.label.frontend(plain base hybrid, annotated on state)",
+   "ok": true,
+   "detail": [
+    "reflex!"
+   ]
+  },
+  {
+   "name": "inherit.label.backend",
+   "ok": true,
+   "detail": [
+    "reflex!"
+   ]
+  },
+  {
+   "name": "inherit.shout.frontend(mixin hybrid, annotated)",
+   "ok": true,
+   "detail": [
+    "REFLEX"
+   ]
+  },
+  {
+   "name": "inherit.shout.backend",
+   "ok": true,
+   "detail": [
+    "REFLEX"
+   ]
+  },
+  {
+   "name": "inherit.backend_var.default_factory_from_base",
+   "ok": true,
+   "detail": [
+    "0"
+   ]
+  },
+  {
+   "name": "inherit.backend_var.default_from_base",
+   "ok": true,
+   "detail": [
+    "7"
+   ]
+  },
+  {
+   "name": "inherit.substate.label.frontend",
+   "ok": true,
+   "detail": [
+    "reflex!"
+   ]
+  },
+  {
+   "name": "inherit.substate.label.backend",
+   "ok": true,
+   "detail": [
+    "reflex!child"
+   ]
+  },
+  {
+   "name": "inherit.sibling.own_var_fn.frontend",
+   "ok": true,
+   "detail": [
+    "bee?"
+   ]
+  },
+  {
+   "name": "inherit.sibling.getter_unchanged.backend",
+   "ok": true,
+   "detail": [
+    "bee!"
+   ]
+  },
+  {
+   "name": "inherit.backend_var.mutation",
+   "ok": true,
+   "detail": [
+    "1"
+   ]
+  },
+  {
+   "name": "inherit.backend_var.level_incr",
+   "ok": true,
+   "detail": [
+    "8"
+   ]
+  },
+  {
+   "name": "inherit.inherited_setter",
+   "ok": true,
+   "detail": [
+    "pynecone!"
+   ]
+  },
+  {
+   "name": "inherit.inherited_setter.substate",
+   "ok": true,
+   "detail": [
+    "pynecone!"
+   ]
+  },
+  {
+   "name": "combo.full_label",
+   "ok": true,
+   "detail": [
+    "a-b"
+   ]
+  },
+  {
+   "name": "combo.doubled",
+   "ok": true,
+   "detail": [
+    "6"
+   ]
+  },
+  {
+   "name": "combo.computed_var_depends_on_hybrid",
+   "ok": true,
+   "detail": [
+    "A-B#6"
+   ]
+  },
+  {
+   "name": "combo.memo_props_bound_to_hybrid",
+   "ok": true,
+   "detail": [
+    "a-b:6"
+   ]
+  },
+  {
+   "name": "combo.client_state_alongside",
+   "ok": true,
+   "detail": [
+    "a-b / note"
+   ]
+  },
+  {
+   "name": "combo.client_state_update",
+   "ok": true,
+   "detail": [
+    "a-b / hi"
+   ]
+  },
+  {
+   "name": "combo.dep_tracking.first->summary",
+   "ok": true,
+   "detail": [
+    "ZZ-B#6"
+   ]
+  },
+  {
+   "name": "combo.memo_updates",
+   "ok": true,
+   "detail": [
+    "zz-b:6"
+   ]
+  },
+  {
+   "name": "combo.dep_tracking.n->summary",
+   "ok": true,
+   "detail": [
+    "ZZ-B#8"
+   ]
+  },
+  {
+   "name": "combo.background_setter",
+   "ok": true,
+   "detail": [
+    "bg-task"
+   ]
+  },
+  {
+   "name": "combo.background_setter.summary",
+   "ok": true,
+   "detail": [
+    "BG-TASK#20"
+   ]
+  },
+  {
+   "name": "combo.background_getter_log",
+   "ok": true,
+   "detail": "bg:bg-task | bg:doubled=20"
+  },
+  {
+   "name": "combo.component_state.initial",
+   "ok": true,
+   "detail": "['count=0', 'count=0'] ['2', '2'] ['count=0', 'count=0']"
+  },
+  {
+   "name": "combo.component_state.independent",
+   "ok": true,
+   "detail": "['count=1', 'count=0'] ['3', '2'] ['count=1', 'count=0']"
+  },
+  {
+   "name": "combo.component_state.setter",
+   "ok": true,
+   "detail": "['count=1', 'count=8'] ['3', '10']"
+  },
+  {
+   "name": "dc.initial",
+   "ok": true,
+   "detail": "['pt=(1,2)'] ['fz=(f,1)']"
+  },
+  {
+   "name": "dc.inspect.no_errors",
+   "ok": true,
+   "detail": "['']"
+  },
+  {
+   "name": "dc.pt.is_dataclass",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.pt.type_is_dataclass",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.pt.__dataclass_params__.frozen",
+   "ok": true,
+   "detail": "False"
+  },
+  {
+   "name": "dc.pt.__dataclass_params__.eq",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.pt.__match_args__",
+   "ok": true,
+   "detail": "('x', 'y')"
+  },
+  {
+   "name": "dc.pt.fields",
+   "ok": true,
+   "detail": "x,y"
+  },
+  {
+   "name": "dc.pt.asdict",
+   "ok": true,
+   "detail": "{\"x\": 1, \"y\": 2}"
+  },
+  {
+   "name": "dc.pt.astuple",
+   "ok": true,
+   "detail": "(1, 2)"
+  },
+  {
+   "name": "dc.pt.proxy_type",
+   "ok": true,
+   "detail": "PointMutableProxy"
+  },
+  {
+   "name": "dc.fz.is_dataclass",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.fz.type_is_dataclass",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.fz.__dataclass_params__.frozen",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.fz.__dataclass_params__.eq",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.fz.__match_args__",
+   "ok": true,
+   "detail": "('label', 'n')"
+  },
+  {
+   "name": "dc.fz.fields",
+   "ok": true,
+   "detail": "label,n"
+  },
+  {
+   "name": "dc.fz.asdict",
+   "ok": true,
+   "detail": "{\"label\": \"f\", \"n\": 1}"
+  },
+  {
+   "name": "dc.fz.astuple",
+   "ok": true,
+   "detail": "('f', 1)"
+  },
+  {
+   "name": "dc.fz.proxy_type",
+   "ok": true,
+   "detail": "FrozenMutableProxy"
+  },
+  {
+   "name": "dc.shape.is_dataclass",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.shape.type_is_dataclass",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.shape.__dataclass_params__.frozen",
+   "ok": true,
+   "detail": "False"
+  },
+  {
+   "name": "dc.shape.__dataclass_params__.eq",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.shape.__match_args__",
+   "ok": true,
+   "detail": "('name', 'points')"
+  },
+  {
+   "name": "dc.shape.fields",
+   "ok": true,
+   "detail": "name,points"
+  },
+  {
+   "name": "dc.shape.asdict",
+   "ok": true,
+   "detail": "{\"name\": \"tri\", \"points\": [{\"x\": 0, \"y\": 0}, {\"x\": 1, \"y\": 1}]}"
+  },
+  {
+   "name": "dc.shape.astuple",
+   "ok": true,
+   "detail": "('tri', [(0, 0), (1, 1)])"
+  },
+  {
+   "name": "dc.shape.proxy_type",
+   "ok": true,
+   "detail": "ShapeMutableProxy"
+  },
+  {
+   "name": "dc.shape0.is_dataclass",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.shape0.type_is_dataclass",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.shape0.__dataclass_params__.frozen",
+   "ok": true,
+   "detail": "False"
+  },
+  {
+   "name": "dc.shape0.__dataclass_params__.eq",
+   "ok": true,
+   "detail": "True"
+  },
+  {
+   "name": "dc.shape0.__match_args__",
+   "ok": true,
+   "detail": "('name', 'points')"
+  },
+  {
+   "name": "dc.shape0.fields",
+   "ok": true,
+   "detail": "name,points"
+  },
+  {
+   "name": "dc.shape0.asdict",
+   "ok": true,
+   "detail": "{\"name\": \"s0\", \"points\": [{\"x\": 5, \"y\": 5}, {\"x\": 6, \"y\": 6}]}"
+  },
+  {
+   "name": "dc.shape0.astuple",
+   "ok": true,
+   "detail": "('s0', [(5, 5), (6, 6)])"
+  },
+  {
+   "name": "dc.shape0.proxy_type",
+   "ok": true,
+   "detail": "ShapeMutableProxy"
+  },
+  {
+   "name": "dc.match_pt",
+   "ok": true,
+   "detail": "1,2"
+  },
+  {
+   "name": "dc.match_fz",
+   "ok": true,
+   "detail": "f/1"
+  },
+  {
+   "name": "dc.match_nested_x",
+   "ok": true,
+   "detail": "1"
+  },
+  {
+   "name": "dc.replace",
+   "ok": true,
+   "detail": "pt.x=11 fz.n=2"
+  },
+  {
+   "name": "dc.replace.ui",
+   "ok": true,
+   "detail": "['pt=(11,2)'] ['fz=(f,2)']"
+  },
+  {
+   "name": "dc.mutate_nested.ui",
+   "ok": true,
+   "detail": "['(1,0)', '(1,1)', '(9,9)'] ['(5,5)', '(6,11)'] ['pt=(11,3)']"
+  },
+  {
+   "name": "dc.frozen_stays_frozen",
+   "ok": true,
+   "detail": "FrozenInstanceError"
+  },
+  {
+   "name": "fwd.banner",
+   "ok": true,
+   "detail": [
+    "fwd:fwd"
+   ]
+  },
+  {
+   "name": "fwd.weighted_name(computed var over unresolvable dataclass)",
+   "ok": true,
+   "detail": [
+    "w"
+   ]
+  },
+  {
+   "name": "fwd.add",
+   "ok": true,
+   "detail": "['1'] ['i0/t0']"
+  },
+  {
+   "name": "fwd.async_add",
+   "ok": true,
+   "detail": "['2'] ['i0', 'i1']"
+  },
+  {
+   "name": "lazy.initial",
+   "ok": true,
+   "detail": "['0'] ['lw']"
+  },
+  {
+   "name": "lazy.add",
+   "ok": true,
+   "detail": "['1'] ['l0/lt']"
+  }
+ ],
+ "n_pass": 105,
+ "n_fail": 0,
+ "console_non_benign": [
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/inherit"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/combo"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/dc"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/fwd"
+  }
+ ],
+ "console_problems": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "bad_responses": []
+}

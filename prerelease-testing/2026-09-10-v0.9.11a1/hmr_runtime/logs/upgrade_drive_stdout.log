@@ -1,0 +1,19 @@
+TITLE: Long — naïve 한국어 🏁
+BODY:  Home | About | Long | Page2 | Page3 | Long page |  | Paragraph 0: café naïve résumé über straße 日本語テスト 中文测试 한국어 🎉🚀😎🇯🇵 The quick brown fox jumps over the lazy dog. |  | Paragraph 1: café naïve résumé über straße 日本語テスト 中文测试 한국어 🎉🚀😎🇯🇵 The quick brown fox jumps over the lazy dog. |  | Paragraph 2: café naïve résumé über str
+  did  click: '#inc-btn'
+  did  click: '#inc-btn'
+  did  wait: 800
+  did  expect_text: 'Counter: 2'
+  did  click: '#cs-btn'
+  did  expect_text: 'client: cs-changed'
+  did  click: '#toggle-btn'
+  did  wait: 600
+  did  expect_text: 'Toggle: ON'
+  did  goto: 'http://localhost:3102/about'
+  did  expect_text: 'About'
+  did  goto: 'http://localhost:3102/long'
+  did  wait: 500
+  did  expect_text: 'END OF LONG PAGE'
+  [log] Disconnect websocket on page navigation
+  [log] Disconnect websocket on page navigation
+RESULT: clean

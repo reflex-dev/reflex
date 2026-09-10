@@ -1,0 +1,348 @@
+{
+  "url": "http://localhost:3100",
+  "browser": {
+    "safari": {
+      "pages": {
+        "/": {
+          "bytes": 3749,
+          "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+          "is_html": true,
+          "looks_like_byte_list": false,
+          "has_replacement_char": false,
+          "modulepreload_links": 3,
+          "reflex_ts_occurrences": 6,
+          "x_modified_by": "vite-plugin-safari-cachebust",
+          "content_type": "text/html",
+          "transfer_encoding": "chunked",
+          "content_length": null,
+          "has_cjk": false,
+          "has_emoji": false,
+          "has_accents": false,
+          "status": 200,
+          "load_ms": 986,
+          "sel_text": "HMR Runtime App v6",
+          "sel_text_ok": false,
+          "texts": {},
+          "count_after_click": "Zaehler: 1"
+        },
+        "/about": {
+          "bytes": 3759,
+          "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+          "is_html": true,
+          "looks_like_byte_list": false,
+          "has_replacement_char": false,
+          "modulepreload_links": 3,
+          "reflex_ts_occurrences": 6,
+          "x_modified_by": "vite-plugin-safari-cachebust",
+          "content_type": "text/html",
+          "transfer_encoding": "chunked",
+          "content_length": null,
+          "has_cjk": false,
+          "has_emoji": false,
+          "has_accents": false,
+          "status": 200,
+          "load_ms": 678,
+          "sel_text": "About — café über naïve",
+          "sel_text_ok": true,
+          "texts": {
+            "#emoji-text": {
+              "ok": true,
+              "got": "Emoji: 🎉 🚀 😎 🇯🇵 👨‍👩‍👧"
+            },
+            "#cjk-text": {
+              "ok": true,
+              "got": "CJK: 日本語のテスト 中文测试文本 한국어 테스트"
+            },
+            "#accent-text": {
+              "ok": true,
+              "got": "Accents: éèêë àâ ñ ø å ß ıİ șț"
+            }
+          }
+        },
+        "/long": {
+          "bytes": 3757,
+          "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+          "is_html": true,
+          "looks_like_byte_list": false,
+          "has_replacement_char": false,
+          "modulepreload_links": 3,
+          "reflex_ts_occurrences": 6,
+          "x_modified_by": "vite-plugin-safari-cachebust",
+          "content_type": "text/html",
+          "transfer_encoding": "chunked",
+          "content_length": null,
+          "has_cjk": false,
+          "has_emoji": false,
+          "has_accents": false,
+          "status": 200,
+          "load_ms": 682,
+          "sel_text": "END OF LONG PAGE 🏁",
+          "sel_text_ok": true,
+          "texts": {},
+          "long_para_count": 700,
+          "body_text_len": 82548,
+          "body_text_has_fffd": false
+        }
+      },
+      "console_errors": [],
+      "console_all": [
+        "log: 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reac",
+        "debug: [vite] connecting...",
+        "debug: [vite] connected.",
+        "log: Disconnect websocket on page navigation",
+        "log: 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reac",
+        "debug: [vite] connecting...",
+        "debug: [vite] connected.",
+        "log: Disconnect websocket on page navigation",
+        "log: 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reac",
+        "debug: [vite] connecting...",
+        "debug: [vite] connected."
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "bad_responses": [],
+      "requests_with_reflex_ts": 9,
+      "sample_ts_requests": [
+        "http://localhost:3100/@id/__x00__virtual:react-router/browser-manifest?__reflex_ts=1789033490810",
+        "http://localhost:3100/app/entry.client.js?__reflex_ts=1789033490810",
+        "http://localhost:3100/app/root.jsx?__reflex_ts=1789033490810",
+        "http://localhost:3100/@id/__x00__virtual:react-router/browser-manifest?__reflex_ts=1789033492701",
+        "http://localhost:3100/app/entry.client.js?__reflex_ts=1789033492701"
+      ]
+    },
+    "chrome": {
+      "pages": {
+        "/": {
+          "bytes": 3593,
+          "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+          "is_html": true,
+          "looks_like_byte_list": false,
+          "has_replacement_char": false,
+          "modulepreload_links": 3,
+          "reflex_ts_occurrences": 0,
+          "x_modified_by": null,
+          "content_type": "text/html",
+          "transfer_encoding": "chunked",
+          "content_length": null,
+          "has_cjk": false,
+          "has_emoji": false,
+          "has_accents": false,
+          "status": 200,
+          "load_ms": 911,
+          "sel_text": "HMR Runtime App v6",
+          "sel_text_ok": false,
+          "texts": {},
+          "count_after_click": "Zaehler: 1"
+        },
+        "/about": {
+          "bytes": 3603,
+          "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+          "is_html": true,
+          "looks_like_byte_list": false,
+          "has_replacement_char": false,
+          "modulepreload_links": 3,
+          "reflex_ts_occurrences": 0,
+          "x_modified_by": null,
+          "content_type": "text/html",
+          "transfer_encoding": "chunked",
+          "content_length": null,
+          "has_cjk": false,
+          "has_emoji": false,
+          "has_accents": false,
+          "status": 200,
+          "load_ms": 684,
+          "sel_text": "About — café über naïve",
+          "sel_text_ok": true,
+          "texts": {
+            "#emoji-text": {
+              "ok": true,
+              "got": "Emoji: 🎉 🚀 😎 🇯🇵 👨‍👩‍👧"
+            },
+            "#cjk-text": {
+              "ok": true,
+              "got": "CJK: 日本語のテスト 中文测试文本 한국어 테스트"
+            },
+            "#accent-text": {
+              "ok": true,
+              "got": "Accents: éèêë àâ ñ ø å ß ıİ șț"
+            }
+          }
+        },
+        "/long": {
+          "bytes": 3601,
+          "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+          "is_html": true,
+          "looks_like_byte_list": false,
+          "has_replacement_char": false,
+          "modulepreload_links": 3,
+          "reflex_ts_occurrences": 0,
+          "x_modified_by": null,
+          "content_type": "text/html",
+          "transfer_encoding": "chunked",
+          "content_length": null,
+          "has_cjk": false,
+          "has_emoji": false,
+          "has_accents": false,
+          "status": 200,
+          "load_ms": 653,
+          "sel_text": "END OF LONG PAGE 🏁",
+          "sel_text_ok": true,
+          "texts": {},
+          "long_para_count": 700,
+          "body_text_len": 82548,
+          "body_text_has_fffd": false
+        }
+      },
+      "console_errors": [],
+      "console_all": [
+        "log: 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reac",
+        "debug: [vite] connecting...",
+        "debug: [vite] connected.",
+        "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "log: Disconnect websocket on page navigation",
+        "log: 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reac",
+        "debug: [vite] connecting...",
+        "debug: [vite] connected.",
+        "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "log: Disconnect websocket on page navigation",
+        "log: 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reac",
+        "debug: [vite] connecting...",
+        "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+        "debug: [vite] connected."
+      ],
+      "page_errors": [],
+      "failed_requests": [],
+      "bad_responses": [],
+      "requests_with_reflex_ts": 0,
+      "sample_ts_requests": []
+    }
+  },
+  "raw": {
+    "safari": {
+      "/": {
+        "bytes": 3749,
+        "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+        "is_html": true,
+        "looks_like_byte_list": false,
+        "has_replacement_char": false,
+        "modulepreload_links": 3,
+        "reflex_ts_occurrences": 6,
+        "x_modified_by": "vite-plugin-safari-cachebust",
+        "content_type": "text/html",
+        "transfer_encoding": "chunked",
+        "content_length": null,
+        "has_cjk": false,
+        "has_emoji": false,
+        "has_accents": false,
+        "status": 200
+      },
+      "/about": {
+        "bytes": 3759,
+        "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+        "is_html": true,
+        "looks_like_byte_list": false,
+        "has_replacement_char": false,
+        "modulepreload_links": 3,
+        "reflex_ts_occurrences": 6,
+        "x_modified_by": "vite-plugin-safari-cachebust",
+        "content_type": "text/html",
+        "transfer_encoding": "chunked",
+        "content_length": null,
+        "has_cjk": false,
+        "has_emoji": false,
+        "has_accents": false,
+        "status": 200
+      },
+      "/long": {
+        "bytes": 3757,
+        "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+        "is_html": true,
+        "looks_like_byte_list": false,
+        "has_replacement_char": false,
+        "modulepreload_links": 3,
+        "reflex_ts_occurrences": 6,
+        "x_modified_by": "vite-plugin-safari-cachebust",
+        "content_type": "text/html",
+        "transfer_encoding": "chunked",
+        "content_length": null,
+        "has_cjk": false,
+        "has_emoji": false,
+        "has_accents": false,
+        "status": 200
+      }
+    },
+    "chrome": {
+      "/": {
+        "bytes": 3593,
+        "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+        "is_html": true,
+        "looks_like_byte_list": false,
+        "has_replacement_char": false,
+        "modulepreload_links": 3,
+        "reflex_ts_occurrences": 0,
+        "x_modified_by": null,
+        "content_type": "text/html",
+        "transfer_encoding": "chunked",
+        "content_length": null,
+        "has_cjk": false,
+        "has_emoji": false,
+        "has_accents": false,
+        "status": 200
+      },
+      "/about": {
+        "bytes": 3603,
+        "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+        "is_html": true,
+        "looks_like_byte_list": false,
+        "has_replacement_char": false,
+        "modulepreload_links": 3,
+        "reflex_ts_occurrences": 0,
+        "x_modified_by": null,
+        "content_type": "text/html",
+        "transfer_encoding": "chunked",
+        "content_length": null,
+        "has_cjk": false,
+        "has_emoji": false,
+        "has_accents": false,
+        "status": 200
+      },
+      "/long": {
+        "bytes": 3601,
+        "starts_with": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/>",
+        "is_html": true,
+        "looks_like_byte_list": false,
+        "has_replacement_char": false,
+        "modulepreload_links": 3,
+        "reflex_ts_occurrences": 0,
+        "x_modified_by": null,
+        "content_type": "text/html",
+        "transfer_encoding": "chunked",
+        "content_length": null,
+        "has_cjk": false,
+        "has_emoji": false,
+        "has_accents": false,
+        "status": 200
+      }
+    }
+  },
+  "compare": {
+    "/": {
+      "identical_after_strip": true,
+      "safari_len": 3743,
+      "chrome_len": 3587,
+      "stripped_len": 3587
+    },
+    "/about": {
+      "identical_after_strip": true,
+      "safari_len": 3753,
+      "chrome_len": 3597,
+      "stripped_len": 3597
+    },
+    "/long": {
+      "identical_after_strip": true,
+      "safari_len": 3751,
+      "chrome_len": 3595,
+      "stripped_len": 3595
+    }
+  }
+}

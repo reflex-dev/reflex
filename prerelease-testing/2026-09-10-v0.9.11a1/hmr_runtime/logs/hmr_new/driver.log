@@ -1,0 +1,156 @@
+09:27:44   [ws open] vite ws://localhost:3100/?token=4DqOlHiO-hyV
+09:27:44   [vite] {"type": "connected"}
+09:27:44   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:27:45 initial load: memo-count='Counter: 0' ok=True
+09:27:45 3 clicks: 'Counter: 3' ok=True
+09:27:46 pre-edit snapshot: {"heading": "HMR Runtime App", "memo_count": "Counter: 3", "cond": "count is small", "toggle": "Toggle: ON", "cs_text": "client: cs-changed", "todos": ["first todo", "buy milk"], "bg_ticks": "ticks: 1", "bg_status": "running", "extra": null, "memo_class": "rt-Text rt-r-size-6", "active_element": "bg-start", "marks": {"heading": null, "memo-count": null, "cs-text": null, "todo-list": null}}
+09:27:46 === STEP text (hold_context=False)
+09:27:46 EDIT applied: 'rx.heading("HMR Runtime App", id="heading")' -> 'rx.heading("HMR Runtime App v2", id="heading")'
+09:27:46   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:27:46   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:27:47   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:27:47   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:27:47   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:27:47   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:27:47   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:27:47   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:27:47   [vite] update ['/app/routes/_index.jsx']
+09:27:47   [vite] update ['/app/routes/_index.jsx']
+09:27:47   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:27:52   -> OK: settled=True in 5.34s, clicks=12, count_ok=True (Counter: 15), post_click_ok=True, focus_ok=True, sio_opens=4, vite_frames=['custom', 'custom', 'update', 'update'], state_js_refetch=0, page_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-changed', toggle='Toggle: ON'
+09:27:52   bg after text edit: ticks=ticks: 2 status=running
+09:27:53   bg 1s later: ticks=ticks: 2 status=running
+09:27:53 === STEP default (hold_context=False)
+09:27:53 EDIT applied: 'label: str = "Counter"  # EDIT_DEFAULT' -> 'label: str = "Compteur"  # EDIT_DEFAULT'
+09:27:53   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:27:53   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:27:53   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:27:53   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:27:53   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:27:53   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:27:53   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:27:53   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:27:53   [vite] update ['/utils/context.jsx']
+09:27:53   [vite] update ['/utils/context.jsx']
+09:27:53   [vite] update ['/utils/context.jsx']
+09:27:53   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:27:53   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:28:23   TIMEOUT waiting for #memo-count == 'Compteur: 24'
+09:28:38   TIMEOUT waiting for #memo-count == 'Compteur: 25'
+09:28:38   -> PROBLEM: settled=True in 45.61s, clicks=8, count_ok=False (Compteur: 7), post_click_ok=False, focus_ok=True, sio_opens=4, vite_frames=['custom', 'custom', 'update', 'update', 'update', 'update'], state_js_refetch=0, page_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-changed', toggle='Toggle: ON'
+09:28:38   label after default edit: 'Compteur: 8' (backend state persisted on disk keeps old value?)
+09:28:38 === STEP newvar (hold_context=False)
+09:28:38 EDIT applied: '    # EDIT_NEWVAR' -> '    extra: int = 7\n    # EDIT_NEWVAR'
+09:28:38 EDIT applied: '        counter_display(count=State.count, label=State.label' -> '        counter_display(count=State.count, label=State.label'
+09:28:39   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:28:39   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:28:39   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:28:39   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:28:39   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:28:39   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:28:39   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:28:39   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:28:39   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:28:39   [vite] update ['/utils/context.jsx']
+09:28:39   [vite] update ['/utils/context.jsx']
+09:28:39   [vite] update ['/utils/context.jsx']
+09:28:39   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:28:39   [vite] update ['/app/routes/_index.jsx']
+09:28:39   [vite] update ['/app/routes/_index.jsx']
+09:28:39   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:28:39   [vite] update ['/app/routes/_index.jsx']
+09:28:39   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:29:08   TIMEOUT waiting for #memo-count == 'Compteur: 33'
+09:29:23   TIMEOUT waiting for #memo-count == 'Compteur: 34'
+09:29:23   -> PROBLEM: settled=True in 44.55s, clicks=8, count_ok=False (Compteur: 7), post_click_ok=False, focus_ok=True, sio_opens=3, vite_frames=['custom', 'custom', 'update', 'update', 'custom', 'update', 'update', 'update', 'custom', 'update', 'update', 'update', 'update'], state_js_refetch=0, page_errors=[], marks={'heading': None, 'memo-count': None, 'cs-text': None, 'todo-list': None}, cs='client: cs-changed', toggle='Toggle: ON'
+09:29:23 === STEP handler (hold_context=False)
+09:29:23 EDIT applied: '    # EDIT_HANDLER' -> '    @rx.event\n    def add_ten(self):\n        self.count += 1'
+09:29:23 EDIT applied: '            rx.button("+", on_click=State.increment, id="inc' -> '            rx.button("+", on_click=State.increment, id="inc'
+09:29:23   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:29:23   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:29:23   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:29:23   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:29:23   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:29:23   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:29:24   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:29:24   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:29:24   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:29:24   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:29:24   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:29:24   [vite] update ['/app/routes/_index.jsx']
+09:29:24   [vite] update ['/app/routes/_index.jsx']
+09:29:24   [vite] update ['/app/routes/_index.jsx']
+09:29:24   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:29:52   TIMEOUT waiting for #memo-count == 'Compteur: 42'
+09:30:08   TIMEOUT waiting for #memo-count == 'Compteur: 43'
+09:30:08   -> PROBLEM: settled=True in 44.72s, clicks=8, count_ok=False (Compteur: 16), post_click_ok=False, focus_ok=True, sio_opens=4, vite_frames=['custom', 'custom', 'update', 'update', 'custom', 'update', 'update', 'update'], state_js_refetch=0, page_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-changed', toggle='Toggle: ON'
+09:30:48   TIMEOUT waiting for #memo-count == 'Compteur: 53'
+09:30:48   new handler +10 click: ok=False (Compteur: 27)
+09:30:48 === STEP props (hold_context=False)
+09:30:48 EDIT applied: 'id="memo-count", size="6")  # EDIT_PROPS' -> 'id="memo-count", size="8", color_scheme="red")  # EDIT_PROPS'
+09:30:48   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:30:48   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:30:48   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:30:48   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:30:48   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:30:48   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:30:48   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:30:48   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:30:48   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:30:48   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:30:49   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:31:17   TIMEOUT waiting for #memo-count == 'Compteur: 61'
+09:31:32   TIMEOUT waiting for #memo-count == 'Compteur: 62'
+09:31:33   -> PROBLEM: settled=True in 44.56s, clicks=8, count_ok=False (Compteur: 35), post_click_ok=False, focus_ok=True, sio_opens=4, vite_frames=['custom', 'custom', 'update', 'update'], state_js_refetch=0, page_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-changed', toggle='Toggle: ON'
+09:31:33 === STEP double (hold_context=False)
+09:31:33 EDIT applied: '"HMR Runtime App v2"' -> '"HMR Runtime App v3"'
+09:31:33   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:31:33   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:31:33   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:31:33   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:31:33   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:31:33 EDIT applied: '"HMR Runtime App v3"' -> '"HMR Runtime App v4"'
+09:31:33   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:31:33   [vite] update ['/app/routes/_index.jsx']
+09:31:33   [vite] update ['/app/routes/_index.jsx']
+09:31:33   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:31:33   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:31:33   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:31:33   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:31:33   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:31:33   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:31:33   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:31:33   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:31:33   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:31:34   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:31:34   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:32:16   TIMEOUT waiting for #heading == 'HMR Runtime App v4'
+09:32:43   TIMEOUT waiting for #memo-count == 'Compteur: 72'
+09:32:58   TIMEOUT waiting for #memo-count == 'Compteur: 73'
+09:32:58   -> PROBLEM: settled=False in 85.88s, clicks=10, count_ok=False (Compteur: 46), post_click_ok=False, focus_ok=True, sio_opens=8, vite_frames=['custom', 'custom', 'update', 'update', 'custom'], state_js_refetch=0, page_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-changed', toggle='Toggle: ON'
+09:32:58 === STEP hold (hold_context=True)
+09:32:59 EDIT applied: 'label: str = "Compteur"  # EDIT_DEFAULT' -> 'label: str = "Zaehler"  # EDIT_DEFAULT'
+09:32:59   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:32:59   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:32:59   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:32:59   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:32:59   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:32:59   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:32:59   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:32:59   [console.error] WebSocket connection to 'ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+09:32:59   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:32:59   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:32:59   [vite] update ['/utils/context.jsx']
+09:32:59   [vite] update ['/utils/context.jsx']
+09:32:59   [vite] update ['/utils/context.jsx']
+09:32:59   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:32:59   [vite] update ['/app/routes/_index.jsx']
+09:32:59   [vite] update ['/app/routes/_index.jsx']
+09:32:59   [ws open] socketio ws://localhost:8100/_event/?token=5ee4665f-1101-489b-c077-3be0c27652ca&EIO=4&transport=websocket
+09:33:02   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:33:03   navigated to page3: count text='count: 3'
+09:33:31   TIMEOUT waiting for #memo-count == 'Zaehler: 81'
+09:33:47   TIMEOUT waiting for #memo-count == 'Zaehler: 82'
+09:33:47   -> PROBLEM: settled=True in 48.27s, clicks=8, count_ok=False (Zaehler: 7), post_click_ok=False, focus_ok=True, sio_opens=5, vite_frames=['custom', 'custom', 'update', 'update', 'update', 'custom', 'update', 'update', 'update'], state_js_refetch=0, page_errors=[], marks={'heading': None, 'memo-count': None, 'cs-text': None, 'todo-list': None}, cs='client: cs-changed', toggle='Toggle: ON'
+09:33:48 nav after edits: {'/about': {'ok': True, 'ms': 201}, '/page2': {'ok': True, 'ms': 180}, '/long': {'ok': True, 'ms': 362}, '/': {'ok': True, 'ms': 178}}
+09:33:48 report written to /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/hmr_new/report.json

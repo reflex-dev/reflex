@@ -1,0 +1,109 @@
+09:46:30   [ws open] vite ws://localhost:3101/?token=DrCm23Iv2t2G
+09:46:30   [vite] {"type": "connected"}
+09:46:30 initial load: memo-count='Counter: 0' ok=True
+09:46:31 3 clicks: 'Counter: 3' ok=True
+09:46:32 pre-edit snapshot: {"heading": "HMR Runtime App", "memo_count": "Counter: 3", "cond": "count is small", "toggle": "Toggle: ON", "cs_text": "client: cs-changed", "todos": ["first todo", "buy milk"], "bg_ticks": "ticks: 1", "bg_status": "running", "extra": null, "memo_class": "rt-Text rt-r-size-6", "scratch": "keep-me", "active_element": "bg-start", "marks": {"heading": null, "memo-count": null, "cs-text": null, "todo
+09:46:32 === STEP text (hold_context=False)
+09:46:32 EDIT applied: 'rx.heading("HMR Runtime App", id="heading")' -> 'rx.heading("HMR Runtime App v2", id="heading")'
+09:46:33   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:46:33   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:46:33   [vite] update ['/app/routes/_index.jsx']
+09:46:33   [vite] update ['/app/routes/_index.jsx']
+09:46:37   -> OK: settled=True in 5.33s, clicks=12, count 3->Counter: 15 ok=True reset=False, post_click_ok=True, focus_ok=True, sio_attempts=4 sio_ok=1 (first ok +0.64s), vite_frames=['custom', 'custom', 'update', 'update'] first +0.54s, state_js_refetch=0, page_errors=[], console_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-changed', scratch='keep-me', toggle='Toggle: ON', compiled_heading='HMR Runtime App v2', source_heading='HMR Runtime App v2'
+09:46:37   bg after text edit: ticks=ticks: 2 status=running
+09:46:38   bg 1s later: ticks=ticks: 2 status=running
+09:46:38 === STEP default (hold_context=False)
+09:46:39 EDIT applied: 'label: str = "Counter"  # EDIT_DEFAULT' -> 'label: str = "Compteur"  # EDIT_DEFAULT'
+09:46:39   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:46:39   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:46:39   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app/routes/_index.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:46:39   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app/routes/_index.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:46:39   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app/routes/_index.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:47:04   TIMEOUT waiting for #memo-count == 'Compteur: 24'
+09:47:04   state reset detected (schema change): count 16 -> 6 with 8 clicks during window
+09:47:04   -> OK: settled=True in 25.79s, clicks=8, count 16->Compteur: 6 ok=True reset=True, post_click_ok=True, focus_ok=True, sio_attempts=4 sio_ok=1 (first ok +0.7s), vite_frames=['custom', 'custom', 'update', 'update', 'update'] first +0.56s, state_js_refetch=1, page_errors=[], console_errors=[], marks={'heading': None, 'memo-count': None, 'cs-text': None, 'todo-list': None}, cs='client: cs-initial', scratch='', toggle='Toggle: ON', compiled_heading='HMR Runtime App v2', source_heading='HMR Runtime App v2'
+09:47:04   label after default edit: 'Compteur: 7' (backend state persisted on disk keeps old value?)
+09:47:04 === STEP newvar (hold_context=False)
+09:47:04 EDIT applied: '    # EDIT_NEWVAR' -> '    extra: int = 7\n    # EDIT_NEWVAR'
+09:47:04 EDIT applied: '        counter_display(count=State.count, label=State.label' -> '        counter_display(count=State.count, label=State.label'
+09:47:05   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:47:05   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:47:05   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:47:05   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:47:05   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:47:05   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app/routes/_index.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:47:05   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app/routes/_index.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:47:05   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app/routes/_index.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:47:05   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:47:05   [vite] update ['/app/routes/_index.jsx']
+09:47:05   [vite] update ['/app/routes/_index.jsx']
+09:47:05   [vite] update ['/app/routes/_index.jsx']
+09:47:29   TIMEOUT waiting for #memo-count == 'Compteur: 15'
+09:47:29   state reset detected (schema change): count 7 -> 7 with 8 clicks during window
+09:47:29   -> OK: settled=True in 24.77s, clicks=8, count 7->Compteur: 7 ok=True reset=True, post_click_ok=True, focus_ok=True, sio_attempts=5 sio_ok=2 (first ok +0.73s), vite_frames=['custom', 'custom', 'update', 'update', 'custom', 'update', 'update', 'update', 'custom', 'update', 'update', 'update'] first +0.49s, state_js_refetch=1, page_errors=[], console_errors=[], marks={'heading': None, 'memo-count': None, 'cs-text': None, 'todo-list': None}, cs='client: cs-initial', scratch='', toggle='Toggle: ON', compiled_heading='HMR Runtime App v2', source_heading='HMR Runtime App v2'
+09:47:29 === STEP handler (hold_context=False)
+09:47:29 EDIT applied: '    # EDIT_HANDLER' -> '    @rx.event\n    def add_ten(self):\n        self.count += 1'
+09:47:29 EDIT applied: '            rx.button("+", on_click=State.increment, id="inc' -> '            rx.button("+", on_click=State.increment, id="inc'
+09:47:30   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:47:30   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:47:30   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:47:30   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:47:30   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:47:30   [vite] update ['/app/routes/_index.jsx']
+09:47:30   [vite] update ['/app/routes/_index.jsx']
+09:47:30   [vite] update ['/app/routes/_index.jsx']
+09:47:34   -> OK: settled=True in 4.63s, clicks=8, count 8->Compteur: 16 ok=True reset=False, post_click_ok=True, focus_ok=True, sio_attempts=3 sio_ok=1 (first ok +0.72s), vite_frames=['custom', 'custom', 'update', 'update', 'custom', 'update', 'update', 'update'] first +0.53s, state_js_refetch=0, page_errors=[], console_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-initial', scratch='', toggle='Toggle: ON', compiled_heading='HMR Runtime App v2', source_heading='HMR Runtime App v2'
+09:47:34   new handler +10 click: ok=True (Compteur: 27)
+09:47:34 === STEP props (hold_context=False)
+09:47:34 EDIT applied: 'id="memo-count", size="6")  # EDIT_PROPS' -> 'id="memo-count", size="8", color_scheme="red")  # EDIT_PROPS'
+09:47:34   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:47:35   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:47:35   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:47:35   [vite] update ['/app_components/hmr_app/hmr_app.jsx']
+09:47:39   -> OK: settled=True in 4.64s, clicks=8, count 27->Compteur: 35 ok=True reset=False, post_click_ok=True, focus_ok=True, sio_attempts=4 sio_ok=1 (first ok +0.73s), vite_frames=['custom', 'custom', 'update', 'update'] first +0.5s, state_js_refetch=0, page_errors=[], console_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-initial', scratch='', toggle='Toggle: ON', compiled_heading='HMR Runtime App v2', source_heading='HMR Runtime App v2'
+09:47:39 === STEP double (hold_context=False)
+09:47:39 EDIT applied: '"HMR Runtime App v2"' -> '"HMR Runtime App v3"'
+09:47:39 EDIT applied: '"HMR Runtime App v3"' -> '"HMR Runtime App v4"'
+09:47:39   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:47:39   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:47:39   [vite] update ['/app/routes/_index.jsx']
+09:47:39   [vite] update ['/app/routes/_index.jsx']
+09:47:40   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:48:12   TIMEOUT waiting for #heading == 'HMR Runtime App v4'
+09:48:14   -> PROBLEM: settled=False in 35.85s, clicks=10, count 36->Compteur: 46 ok=True reset=False, post_click_ok=True, focus_ok=True, sio_attempts=6 sio_ok=1 (first ok +1.15s), vite_frames=['custom', 'custom', 'update', 'update', 'custom'] first +0.56s, state_js_refetch=0, page_errors=[], console_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-initial', scratch='', toggle='Toggle: ON', compiled_heading='HMR Runtime App v3', source_heading='HMR Runtime App v4'
+09:48:14 === STEP double_long (hold_context=False)
+09:48:15 EDIT applied: '"HMR Runtime App v4"' -> '"HMR Runtime App v5"'
+09:48:15   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:48:15   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:48:15   [vite] update ['/app/routes/_index.jsx']
+09:48:15   [vite] update ['/app/routes/_index.jsx']
+09:48:17 EDIT applied: '"HMR Runtime App v5"' -> '"HMR Runtime App v6"'
+09:48:18   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:48:18   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": {"id": "routes/_index", "parentId": "root", "index": true, "url": "/app/routes/_index.jsx", "module": "/app/routes/_index.jsx?import",
+09:48:18   [vite] update ['/app/routes/_index.jsx']
+09:48:18   [vite] update ['/app/routes/_index.jsx']
+09:48:22   -> OK: settled=True in 7.79s, clicks=10, count 47->Compteur: 57 ok=True reset=False, post_click_ok=True, focus_ok=True, sio_attempts=7 sio_ok=2 (first ok +0.77s), vite_frames=['custom', 'custom', 'update', 'update', 'custom', 'custom', 'update', 'update'] first +0.53s, state_js_refetch=0, page_errors=[], console_errors=[], marks={'heading': 'stamped', 'memo-count': 'stamped', 'cs-text': 'stamped', 'todo-list': 'stamped'}, cs='client: cs-initial', scratch='', toggle='Toggle: ON', compiled_heading='HMR Runtime App v6', source_heading='HMR Runtime App v6'
+09:48:22 === STEP hold (hold_context=True)
+09:48:22 EDIT applied: 'label: str = "Compteur"  # EDIT_DEFAULT' -> 'label: str = "Zaehler"  # EDIT_DEFAULT'
+09:48:23   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:48:23   [vite] {"type": "custom", "event": "react-router:hmr", "data": {"route": null}}
+09:48:23   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app/routes/_index.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:48:23   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app/routes/_index.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:48:23   [vite] update ['/app/root.jsx', '/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx', '/app_components/reflex/compiler/compiler.jsx', '/app_components/reflex/app.jsx', '/app/routes/_index.jsx', '/app_components/hmr_app/hmr_app.jsx']
+09:48:26   [console.error] Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap
+09:48:26   [console.error] Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin
+09:48:26   [console.error] Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth
+09:48:26   [console.error] %o
+
+%s
+
+%s
+ TypeError: Cannot read properties of null (reading 'count_rx_state_')
+    at Bare (http://localhost:3101/app_components/hmr_app/hmr_app.jsx?t=1789033703460:332:62)
+    at Object.react_stack_bottom_frame (http://localhost:3101/node_modules/.vite/deps/react-dom_client.js?v=5744db2d:12866:1
+09:48:26   navigated to page3: count text='count: 3'
+09:48:50   TIMEOUT waiting for #memo-count == 'Zaehler: 66'
+09:48:50   state reset detected (schema change): count 58 -> 7 with 8 clicks during window
+09:48:50   -> OK: settled=True in 28.09s, clicks=8, count 58->Zaehler: 7 ok=True reset=True, post_click_ok=True, focus_ok=True, sio_attempts=6 sio_ok=2 (first ok +0.67s), vite_frames=['custom', 'custom', 'update', 'update', 'update'] first +0.52s, state_js_refetch=1, page_errors=[], console_errors=['error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap', 'error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin', 'error: Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth'], marks={'heading': None, 'memo-count': None, 'cs-text': None, 'todo-list': None}, cs='client: cs-initial', scratch='', toggle='Toggle: ON', compiled_heading='HMR Runtime App v6', source_heading='HMR Runtime App v6'
+09:48:51 nav after edits: {'/about': {'ok': True, 'ms': 197}, '/page2': {'ok': True, 'ms': 182}, '/long': {'ok': True, 'ms': 335}, '/': {'ok': True, 'ms': 184}}
+09:48:52 report written to /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hmr_runtime/logs/hmr_base/report.json
