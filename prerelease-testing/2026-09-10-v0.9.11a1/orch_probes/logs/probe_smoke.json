@@ -1,0 +1,73 @@
+─────────────────────────────── Initializing app ───────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+{
+ "import_reflex_testing_bare": {
+  "ok": true,
+  "detail": "import ok; AppHarness=True"
+ },
+ "apphamess_missing_deps_error": {
+  "ok": true,
+  "detail": {
+   "raised": "ImportError: AppHarness backend support requires `uvicorn`. Install it with `pip install 'reflex[testing]'`.",
+   "mentions_extra": true
+  }
+ },
+ "rx_model_without_sqlmodel": {
+  "ok": true,
+  "detail": {
+   "raised": "TypeError: _.<locals>.Thing.__init_subclass__() takes no keyword arguments",
+   "mentions_db_extra": false
+  }
+ },
+ "plotly_id_prop_in_render": {
+  "ok": true,
+  "detail": {
+   "construct_error": "ModuleNotFoundError: No module named 'plotly'"
+  }
+ },
+ "cachedvar_attributeerror_masking": {
+  "ok": true,
+  "detail": {
+   "raised": null
+  }
+ },
+ "load_config_deprecation": {
+  "ok": true,
+  "detail": {
+   "_load_config": true,
+   "_get_config": true,
+   "warnings": [],
+   "output": "DeprecationWarning: _load_config() has been deprecated in version 0.9.9.post1. \nUse _get_config() to load a config from disk, or get_config() to read the config\ncached on the current RegistrationContext. It will be completely removed in 1.0.\n(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps\n/orch_probes/probe_offline.py:126)\n"
+  }
+ },
+ "frontend_path_validation": {
+  "ok": true,
+  "detail": {
+   "../x": "ConfigError: frontend_path '/../x' contains '..', which is not a plain directory name (no '.', '..', backslashes, or drive letters).",
+   "a\\b": "ConfigError: frontend_path '/a\\\\b' contains 'a\\\\b', which is not a plain directory name (no '.', '..', backslashes, or drive letters).",
+   "C:foo": "ConfigError: frontend_path '/C:foo' contains 'C:foo', which is not a plain directory name (no '.', '..', backslashes, or drive letters).",
+   "/ok/../x": "ConfigError: frontend_path '/ok/../x' contains '..', which is not a plain directory name (no '.', '..', backslashes, or drive letters).",
+   "//srv": "ACCEPTED",
+   "/app": "accepted -> '/app'",
+   "/a/b": "accepted -> '/a/b'",
+   "(empty)": "accepted -> ''"
+  }
+ },
+ "reserve_stdout": {
+  "ok": false,
+  "exc": "TypeError: 'NoneType' object does not support the context manager protocol",
+  "tb": "Traceback (most recent call last):\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/orch_probes/probe_offline.py\", line 18, in deco\n    out = fn()\n          ^^^^\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/orch_probes/probe_offline.py\", line 161, in _\n    with rlog.reserve_stdout():\nTypeError: 'NoneType' object does not support the context manager protocol\n"
+ },
+ "hosting_cli_version_compare": {
+  "ok": false,
+  "exc": "ModuleNotFoundError: No module named 'reflex_hosting_cli'",
+  "tb": "Traceback (most recent call last):\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/orch_probes/probe_offline.py\", line 18, in deco\n    out = fn()\n          ^^^^\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/orch_probes/probe_offline.py\", line 175, in _\n    import reflex_hosting_cli as rhc\nModuleNotFoundError: No module named 'reflex_hosting_cli'\n"
+ },
+ "otel_inert_in_bare_env": {
+  "ok": true,
+  "detail": {
+   "opentelemetry_modules_imported": [],
+   "otel_enabled": false
+  }
+ }
+}

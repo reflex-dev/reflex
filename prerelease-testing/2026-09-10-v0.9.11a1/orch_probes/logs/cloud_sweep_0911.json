@@ -1,0 +1,1027 @@
+{
+ "leaf_count": 34,
+ "leaves": [
+  "cloud apps build-logs",
+  "cloud apps delete",
+  "cloud apps describe",
+  "cloud apps history",
+  "cloud apps inspect",
+  "cloud apps list",
+  "cloud apps logs",
+  "cloud apps rollback",
+  "cloud apps scale",
+  "cloud apps start",
+  "cloud apps status",
+  "cloud apps stop",
+  "cloud config",
+  "cloud create-token",
+  "cloud gcp-standalone",
+  "cloud project create",
+  "cloud project invite",
+  "cloud project list",
+  "cloud project role-permissions",
+  "cloud project roles",
+  "cloud project select",
+  "cloud project selected",
+  "cloud project users",
+  "cloud providers connections",
+  "cloud providers list",
+  "cloud providers status",
+  "cloud regions",
+  "cloud scan",
+  "cloud secrets delete",
+  "cloud secrets list",
+  "cloud secrets update",
+  "cloud token",
+  "cloud vmtypes",
+  "cloud whoami"
+ ],
+ "checks": {
+  "cloud apps build-logs": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   }
+  },
+  "cloud apps delete": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud apps describe": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   }
+  },
+  "cloud apps history": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud apps inspect": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud apps list": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 2
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 2
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 3
+   }
+  },
+  "cloud apps logs": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud apps rollback": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   }
+  },
+  "cloud apps scale": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud apps start": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud apps status": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_lines": 3
+   }
+  },
+  "cloud apps stop": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud config": {
+   "plain": {
+    "rc": 0,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Please install PyYAML to use this command: pip install pyyaml",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 0,
+    "stdout_lines": 1,
+    "stdout_head": "{\"generated\": false, \"path\": null}",
+    "one_json_doc": true,
+    "json_parse_error": null,
+    "stderr_head": "Please install PyYAML to use this command: pip install pyyaml",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud config [OPTIONS]",
+    "stderr_lines": 3
+   }
+  },
+  "cloud create-token": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_lines": 3
+   }
+  },
+  "cloud gcp-standalone": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_lines": 1
+   }
+  },
+  "cloud project create": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_lines": 3
+   }
+  },
+  "cloud project invite": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_lines": 3
+   }
+  },
+  "cloud project list": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 2
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 2
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 3
+   }
+  },
+  "cloud project role-permissions": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_lines": 3
+   }
+  },
+  "cloud project roles": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud project select": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   }
+  },
+  "cloud project selected": {
+   "plain": {
+    "rc": 0,
+    "stdout_lines": 1,
+    "stdout_head": "Warning: no selected project. run `reflex cloud project select` to set one.",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "",
+    "stderr_lines": 0
+   },
+   "json": {
+    "rc": 0,
+    "stdout_lines": 1,
+    "stdout_head": "{\"project_id\": null, \"name\": null, \"error\": null}",
+    "one_json_doc": true,
+    "json_parse_error": null,
+    "stderr_head": "",
+    "stderr_lines": 0
+   },
+   "json_debug": {
+    "rc": 0,
+    "stdout_lines": 1,
+    "stdout_head": "{\"project_id\": null, \"name\": null, \"error\": null}",
+    "one_json_doc": true,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Unable to read selected project from /root/.local/share/reflex/hosting_v1.json due to: [Errno 2] No such file or directory: '/root/.l",
+    "stderr_lines": 1
+   }
+  },
+  "cloud project users": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud providers connections": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud providers list": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud providers status": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud regions": {
+   "plain": {
+    "rc": 0,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Unable to get regions due to 403 Forbidden.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 0,
+    "stdout_lines": 1,
+    "stdout_head": "[]",
+    "one_json_doc": true,
+    "json_parse_error": null,
+    "stderr_head": "Unable to get regions due to 403 Forbidden.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 0,
+    "stdout_lines": 1,
+    "stdout_head": "[]",
+    "one_json_doc": true,
+    "json_parse_error": null,
+    "stderr_head": "Unable to get regions due to 403 Forbidden.",
+    "stderr_lines": 1
+   }
+  },
+  "cloud scan": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud secrets delete": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_lines": 3
+   }
+  },
+  "cloud secrets list": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud secrets update": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  },
+  "cloud token": {
+   "plain": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_lines": 3
+   },
+   "json": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_lines": 3
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_lines": 3
+   }
+  },
+  "cloud vmtypes": {
+   "plain": {
+    "rc": 0,
+    "stdout_lines": 1,
+    "stdout_head": "[]",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Unable to get vmtypes due to 403 Forbidden.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 0,
+    "stdout_lines": 1,
+    "stdout_head": "[]",
+    "one_json_doc": true,
+    "json_parse_error": null,
+    "stderr_head": "Unable to get vmtypes due to 403 Forbidden.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 0,
+    "stdout_lines": 1,
+    "stdout_head": "[]",
+    "one_json_doc": true,
+    "json_parse_error": null,
+    "stderr_head": "Unable to get vmtypes due to 403 Forbidden.",
+    "stderr_lines": 1
+   }
+  },
+  "cloud whoami": {
+   "plain": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Not logged in. Run `reflex login` to authenticate.",
+    "stderr_lines": 1
+   },
+   "json": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Not logged in. Run `reflex login` to authenticate.",
+    "stderr_lines": 1
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_lines": 0,
+    "stdout_head": "",
+    "one_json_doc": false,
+    "json_parse_error": null,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_lines": 2
+   }
+  }
+ }
+}

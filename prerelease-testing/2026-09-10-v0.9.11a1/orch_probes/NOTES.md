@@ -1,0 +1,82 @@
+# orch_probes — orchestrator's own offline / CLI-only probes (2026-09-10)
+
+Cheap checks the orchestrator ran directly, covering items whose cluster agents had not run yet.
+All PyPI-only venvs (`$SB/envs/smoke` = reflex 0.9.11a1, `$SB/envs/base0910` = 0.9.10.post2),
+every script run from `/tmp` with an `assert "/envs/smoke/" in reflex.__file__` guard.
+
+## Rerun
+
+```
+cd /tmp && $SB/envs/smoke/bin/python <thisdir>/probe_offline.py            # logs/probe_smoke.json
+cd /tmp && $SB/envs/smoke/bin/python <thisdir>/cloud_sweep.py $SB/envs/smoke/bin/reflex   # logs/cloud_sweep_0911.json
+```
+
+## Results
+
+### reflex.testing / AppHarness (#6974/#7008) — FIXED since the 0.9.9a1 campaign
+`import reflex.testing` succeeds in a bare install, and `AppHarness.create(...).__enter__()`
+without the extra raises a directly actionable error:
+
+```
+ImportError: AppHarness backend support requires `uvicorn`. Install it with `pip install 'reflex[testing]'`.
+```
+
+That closes the previous campaign's FINDING-016 (which reported an undeclared dependency).
+
+### `reflex_base.otel` is inert without reflex-otel (#6227) — as documented
+After `import reflex` in the bare smoke venv: zero `opentelemetry*` modules in `sys.modules`
+and `reflex_base.otel.enabled is False`.
+
+### `_load_config()` deprecation (#6933) — works, with a wording nit
+Calling it prints, through the logging pipeline (not the `warnings` module — `catch_warnings`
+records nothing):
+
+```
+DeprecationWarning: _load_config() has been deprecated in version 0.9.9.post1.
+Use _get_config() to load a config from disk, or get_config() to read the config
+cached on the current RegistrationContext. It will be completely removed in 1.0.
+```
+
+The reflex-base 0.9.11a1 changelog files this deprecation under 0.9.11a1 while the message says
+"deprecated in version 0.9.9.post1"; the two disagree about when it started. Cosmetic.
+
+### `reserve_stdout` (#6917) — is a setter, not a context manager
+`reflex_base.utils.log.reserve_stdout(reserved: bool = True)` sets a module global and returns
+`None`, so `with reserve_stdout():` raises `TypeError: 'NoneType' object does not support the
+context manager protocol`. That matches the changelog's "for as long as it is set", but the
+name reads like a context manager and there is no scoped form, so a caller that raises between
+`reserve_stdout(True)` and `reserve_stdout(False)` leaves stdout reserved for the process.
+Observation for the API surface, not a defect.
+
+### `frontend_path` validation (#7044) — rejects what the changelog promises, with gaps
+Rejected with a clear `ConfigError` naming the offending segment: `../x`, `a\b`, `C:foo`,
+`/ok/../x`, `/./x`. Still **accepted**: `//srv` and `/a//b` (empty segments), `/ .` (a segment
+that is a space and a dot), `/a ` (trailing space), `/a%2e%2e`. The validator
+(`packages/reflex-base/src/reflex_base/config.py:612`) skips empty segments and checks the rest
+with `_is_plain_path_segment`. Trailing spaces and dots are exactly the class Win32 trims, which
+is the mechanism the PR cites for the drive-letter/backslash cases, so the guard is narrower
+than its rationale. Low severity, Windows-only impact.
+
+### `rx.Model(table=True)` without sqlmodel — STILL the previous campaign's FINDING-014
+```
+TypeError: Thing.__init_subclass__() takes no keyword arguments
+```
+No mention of `reflex[db]` or sqlmodel. Unchanged from 0.9.9a1; pre-existing, low.
+
+### `reflex cloud` sweep off a TTY (#6917) — clean
+34 leaf commands enumerated from `--help` and run off-TTY with no token, each three ways
+(plain, `--json`, `--json --loglevel debug`), 45 s timeout each:
+
+- **0 hangs.** Every command returns; the pre-#6917 prompt-forever failure mode is gone.
+- **stdout is never polluted**: for every command, `--json` stdout is either empty or exactly
+  one parseable JSON document. Human text (including the debug log records) is on stderr.
+- Auth-required commands exit 1 with `Token is required for non-interactive mode.` on stderr.
+- Commands missing a required argument exit 2 with the usage line on stderr.
+
+One consistency gap, **pre-existing** (identical on 0.9.10.post2): `reflex cloud regions --json`
+and `reflex cloud vmtypes --json` print `[]` and exit **0** while stderr says
+`Unable to get regions due to 403 Forbidden.` An agent that trusts the exit code reads an
+auth failure as "no regions exist". `reflex cloud config --json` likewise exits 0 with
+`{"generated": false, "path": null}` while stderr says PyYAML is missing (PyYAML is not a
+dependency of reflex-hosting-cli). Compare `reflex cloud project selected --json`, which carries
+an explicit `"error": null` field — the pattern the failing commands do not follow.
