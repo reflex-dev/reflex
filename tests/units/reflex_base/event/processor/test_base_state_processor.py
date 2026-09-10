@@ -7,10 +7,12 @@ import logging
 import traceback
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import pytest_asyncio
+from opentelemetry.trace import SpanKind, StatusCode
+from reflex_base import otel
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
@@ -21,7 +23,7 @@ from reflex_base.registry import RegistrationContext
 import reflex as rx
 from reflex import event
 from reflex.app import App
-from reflex.event import Event
+from reflex.event import Event, EventSpec
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -29,6 +31,7 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.middleware.middleware import Middleware
 from reflex.state import BaseState, OnLoadInternalState, State, StateUpdate
+from tests.units.conftest import metric_points
 from tests.units.mock_redis import mock_redis
 
 # Class-level registries on State that registering a substate, or installing a
@@ -1257,3 +1260,81 @@ async def test_routed_event_after_a_routeless_rehydrate_loads_its_page(
 
     async with _read_back(real_base_state_processor, token) as root:
         assert (await root.get_state(MixedOriginState)).loaded == ["b"]
+
+
+async def test_backend_exception_handler_events_parent_under_failed_span(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    otel_exporter,
+):
+    """Events returned by the backend exception handler are children of the failed span.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+
+    class RecoverState(State):
+        @event
+        def fail(self):
+            msg = "boom"
+            raise RuntimeError(msg)
+
+        @event
+        def recover(self):
+            pass
+
+    def recover_from(_ex: Exception) -> EventSpec:
+        return cast("EventSpec", RecoverState.recover())
+
+    real_base_state_processor.backend_exception_handler = recover_from
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(RecoverState.fail())[0])
+        await processor.join(5)
+
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    failed, recovery = spans["fail"], spans["recover"]
+    assert failed.status.status_code == StatusCode.ERROR
+    assert recovery.parent is not None
+    assert recovery.parent.span_id == failed.context.span_id
+    assert recovery.kind == SpanKind.INTERNAL
+    assert failed.attributes is not None
+    assert recovery.attributes is not None
+    assert (
+        recovery.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == failed.attributes[otel.ATTR_EVENT_TXID]
+    )
+
+
+async def test_execute_event_records_state_acquire_duration(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+    otel_metrics,
+):
+    """Executing an event records how long acquiring the session state took.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+        otel_metrics: In-memory metric reader with metrics enabled.
+    """
+
+    class AcquireState(State):
+        @event
+        def noop(self):
+            pass
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, Event.from_event_type(AcquireState.noop())[0])
+        await processor.join(1)
+
+    names = {
+        p.attributes[otel.ATTR_EVENT_NAME]
+        for p in metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
+    }
+    assert Event.from_event_type(AcquireState.noop())[0].name in names
