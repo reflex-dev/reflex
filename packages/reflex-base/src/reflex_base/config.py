@@ -834,10 +834,14 @@ class Config(BaseConfig):
         self._replace_defaults(**kwargs)
 
 
-# Project-local modules first imported while loading rxconfig.py; evicted
-# before the next load so projects don't reuse each other's dependencies.
-# Only mutated under _load_config_lock.
+# Project-local modules first imported while loading rxconfig.py, and the
+# project root they were recorded under. Evicted before a load from a different
+# root so projects don't reuse each other's dependencies. A load from the same
+# root keeps them: re-executing them would create a second copy of every class
+# they define, distinct from the one the app already imported. Only mutated
+# under _load_config_lock.
 _config_module_deps: set[str] = set()
+_config_module_deps_root: Path | None = None
 
 
 class _ImportRecorder:
@@ -942,6 +946,8 @@ def _get_config(project_root: Path | None = None) -> Config:
     Returns:
         The app config.
     """
+    global _config_module_deps_root
+
     project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
         # A fresh str object, so the exact inserted entry can be removed by
@@ -950,16 +956,19 @@ def _get_config(project_root: Path | None = None) -> Config:
         cwd = str(project_root)
         sys.path.insert(0, cwd)
         try:
-            # Never cache rxconfig or its project-local dependencies — each load
-            # goes to disk so different RegistrationContexts hold independent
-            # Config instances resolved against the current project. Evict
-            # before probing: find_spec answers from sys.modules, so modules
-            # left behind by another project directory would fake the existence
-            # check below.
+            # Never cache rxconfig itself — each load goes to disk so different
+            # RegistrationContexts hold independent Config instances.
             sys.modules.pop(constants.Config.MODULE, None)
-            for dep in _config_module_deps:
-                sys.modules.pop(dep, None)
-            _config_module_deps.clear()
+            if _config_module_deps_root != project_root:
+                # Evict the previous project's dependencies before probing:
+                # find_spec answers from sys.modules, so modules left behind by
+                # another project directory would fake the existence check
+                # below. Same-root loads skip this so the modules the app
+                # imported stay the ones rxconfig.py sees.
+                for dep in _config_module_deps:
+                    sys.modules.pop(dep, None)
+                _config_module_deps.clear()
+                _config_module_deps_root = project_root
             # only import the module if it exists. If a module spec exists then
             # the module exists.
             if not find_spec(constants.Config.MODULE):

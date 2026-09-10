@@ -3,6 +3,7 @@ import importlib.util
 import logging
 import multiprocessing
 import os
+import pickle
 import sys
 import textwrap
 import threading
@@ -1096,13 +1097,21 @@ def clean_config_modules() -> Generator[None, None, None]:
     Yields:
         None, once the module table is clean.
     """
-    names = ("rxconfig", "side_module", "chdir_dep_module")
+    names = (
+        "rxconfig",
+        "side_module",
+        "chdir_dep_module",
+        "reload_dep_module",
+        "shared_helper",
+        "config_reload_state_module",
+    )
     try:
         yield
     finally:
         for name in names:
             sys.modules.pop(name, None)
         reflex_base.config._config_module_deps.clear()
+        reflex_base.config._config_module_deps_root = None
 
 
 # Reruns: taking the prepended entry back out is itself a sys.path shrink, so
@@ -1264,6 +1273,141 @@ def test_config_deps_recorded_against_load_root_when_rxconfig_chdirs(
 
     assert config.app_name == "chdirapp"
     assert "chdir_dep_module" in reflex_base.config._config_module_deps
+
+
+def test_same_root_reload_keeps_dependency_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading from the same project keeps rxconfig's project-local modules.
+
+    rxconfig.py itself is re-read from disk, but the modules it imports must
+    stay the objects the app already holds. Re-executing them creates a second
+    copy of every class they define, and pickling an instance of the app's copy
+    then fails because the qualified name resolves to the other class.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "reload_dep_module.py").write_text("class Marker:\n    pass\n")
+    rxconfig_template = textwrap.dedent(
+        """
+        import reload_dep_module  # noqa: F401
+        import reflex as rx
+
+        config = rx.Config(app_name={app_name!r})
+        """
+    )
+    (tmp_path / "rxconfig.py").write_text(rxconfig_template.format(app_name="first"))
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "reload_dep_module", raising=False)
+
+    assert reflex_base.config._get_config().app_name == "first"
+    module = sys.modules["reload_dep_module"]
+    marker = module.Marker()
+
+    (tmp_path / "rxconfig.py").write_text(
+        rxconfig_template.format(app_name="second load")
+    )
+    assert reflex_base.config._get_config().app_name == "second load"
+    assert sys.modules["reload_dep_module"] is module
+    assert type(pickle.loads(pickle.dumps(marker))) is module.Marker
+    assert "reload_dep_module" in reflex_base.config._config_module_deps
+
+
+def test_other_root_load_evicts_dependency_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Loading a different project evicts the previous project's dependencies.
+
+    Two projects with a same-named helper module must each resolve their own
+    copy, in whichever order they are loaded.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    for name, value in (("first", 1), ("second", 2)):
+        project = tmp_path / name
+        project.mkdir()
+        (project / "shared_helper.py").write_text(f"VALUE = {value}\n")
+        (project / "rxconfig.py").write_text(
+            textwrap.dedent(
+                """
+                import shared_helper
+                import reflex as rx
+
+                config = rx.Config(app_name=f"app{shared_helper.VALUE}")
+                """
+            )
+        )
+    monkeypatch.delitem(sys.modules, "shared_helper", raising=False)
+
+    assert reflex_base.config._get_config(tmp_path / "first").app_name == "app1"
+    first_helper = sys.modules["shared_helper"]
+    assert reflex_base.config._get_config(tmp_path / "second").app_name == "app2"
+    assert sys.modules["shared_helper"] is not first_helper
+    assert reflex_base.config._get_config(tmp_path / "first").app_name == "app1"
+    assert sys.modules["shared_helper"] is not first_helper
+    assert sys.modules["shared_helper"].VALUE == 1
+
+
+def test_reload_config_keeps_state_module_registered(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading a config whose rxconfig.py imports a state module does not redefine the state.
+
+    Re-importing the module would run the state class body again and trip the
+    shadowing check for the class still registered in the context. Covers both
+    a plain reload and a reload in a forked context, the shape AppHarness uses.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    (tmp_path / "config_reload_state_module.py").write_text(
+        textwrap.dedent(
+            """
+            import reflex as rx
+
+
+            class ConfigReloadState(rx.State):
+                value: str = ""
+            """
+        )
+    )
+    (tmp_path / "rxconfig.py").write_text(
+        textwrap.dedent(
+            """
+            import config_reload_state_module  # noqa: F401
+            import reflex as rx
+
+            config = rx.Config(app_name="statereload")
+            """
+        )
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "config_reload_state_module", raising=False)
+
+    with RegistrationContext() as ctx:
+        assert reflex_base.config.get_config().app_name == "statereload"
+        state_cls = sys.modules["config_reload_state_module"].ConfigReloadState
+
+        assert reflex_base.config.reload_config().app_name == "statereload"
+        assert sys.modules["config_reload_state_module"].ConfigReloadState is state_cls
+
+        forked = ctx.fork()
+        token = RegistrationContext._context_var.set(forked)
+        try:
+            assert reflex_base.config.reload_config().app_name == "statereload"
+        finally:
+            RegistrationContext._context_var.reset(token)
+        assert sys.modules["config_reload_state_module"].ConfigReloadState is state_cls
 
 
 def test_record_imports_never_rebinds_meta_path():
