@@ -116,9 +116,9 @@ properties to construct a custom node or link.
 Because the component renders inside the SVG element of the chart, you can only
 use `rx.el.svg` components to construct the custom node or link.
 
-The example below also uses `rx.recharts.use_chart_width()` to read the
-rendered chart width and `rx.vars.use_id()` to generate a unique id that links
-each link's gradient definition to the path that references it.
+The example below uses the link `index` to give each link's gradient
+definition an id that the path references. The index is unique within one
+chart, so prefix the id if a page renders several charts with custom links.
 
 ```python demo graphing
 styled_sankey_data = {
@@ -143,10 +143,10 @@ styled_sankey_data = {
 def sankey_custom_render():
     @rx.recharts.sankey_chart.node
     def custom_node(
-        node: rx.Var[rx.recharts.sankey_chart.SankeyNodeProps],
+        node: rx.Var[rx.recharts.SankeyNodeProps],
     ) -> rx.Component:
-        # Determine if the node is at the right edge of the chart to adjust the label position accordingly.
-        is_out = node.x + node.width + 6 > rx.recharts.use_chart_width()
+        # Outcome nodes sit at the right edge, so their label goes on the left.
+        is_out = node.payload.to(dict)["type"] == "outcome"
         return rx.fragment(
             rx.el.svg.text(
                 node.payload.name,
@@ -170,9 +170,9 @@ def sankey_custom_render():
 
     @rx.recharts.sankey_chart.link
     def custom_link(
-        link: rx.Var[rx.recharts.sankey_chart.SankeyLinkProps],
+        link: rx.Var[rx.recharts.SankeyLinkProps],
     ) -> rx.Component:
-        link_id = rx.vars.use_id()
+        link_id = f"sankey-link-{link.index}"
         source = link.payload.source.to(dict)
         target = link.payload.target.to(dict)
         return rx.fragment(

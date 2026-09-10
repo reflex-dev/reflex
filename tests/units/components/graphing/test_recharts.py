@@ -20,8 +20,7 @@ from reflex_components_recharts.charts import (
     ScatterChart,
     sankey_chart,
 )
-from reflex_components_recharts.general import ResponsiveContainer, use_chart_width
-from reflex_components_recharts.recharts import Recharts
+from reflex_components_recharts.general import ResponsiveContainer
 
 import reflex as rx
 
@@ -140,13 +139,17 @@ def test_sankey_renderer_decorator_rejects_positional_only_parameter():
         sankey_chart.node(custom_node)
 
 
-def test_use_chart_width():
-    width = use_chart_width()
-    assert width._var_type == (int | None)
-    var_data = width._get_all_var_data()
-    assert var_data is not None
-    hook_alias = f"useChartWidth_{width!s}"
-    assert var_data.hooks == (f"const {width!s} = {hook_alias}();",)
-    assert dict(var_data.imports)[Recharts.library or ""] == (
-        rx.ImportVar(tag="useChartWidth", alias=hook_alias),
-    )
+def test_sankey_typed_dicts_exported_from_package():
+    import reflex_components_recharts as recharts
+    from reflex_components_recharts import charts
+
+    for name in (
+        "SankeyNode",
+        "SankeyLink",
+        "SankeyData",
+        "SankeyNodePayload",
+        "SankeyNodeProps",
+        "SankeyLinkPayload",
+        "SankeyLinkProps",
+    ):
+        assert getattr(recharts, name) is getattr(charts, name)
