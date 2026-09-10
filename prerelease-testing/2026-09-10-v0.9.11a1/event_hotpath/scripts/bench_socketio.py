@@ -53,6 +53,26 @@ def cpu_tree(root_pid: int) -> tuple[float, int, list[int]]:
     return ticks / os.sysconf("SC_CLK_TCK"), rss, sorted(tree)
 
 
+def cpu_by_pid(root_pid: int) -> dict[int, float]:
+    """Per-pid CPU seconds (user+sys) for root_pid and its descendants."""
+    _, _, pids = cpu_tree(root_pid)
+    out = {}
+    for p in pids:
+        try:
+            with open(f"/proc/{p}/stat") as f:
+                s = f.read()
+        except OSError:
+            continue
+        rest = s[s.rindex(")") + 2:].split()
+        out[p] = (int(rest[11]) + int(rest[12])) / os.sysconf("SC_CLK_TCK")
+    return out
+
+
+def loadavg() -> str:
+    with open("/proc/loadavg") as f:
+        return f.read().split()[0]
+
+
 class Client:
     def __init__(self, url: str, names: dict):
         self.url = url
@@ -146,7 +166,9 @@ async def serial(url, names, n, pid, label) -> dict:
     # reset produces a delta only if count != 0; on a fresh token it is 0 already => no update. Use a probe:
     await c.emit(names["increment"]); await c.wait_count(1)
     lat = []
+    load0 = loadavg()
     cpu0, _, _ = cpu_tree(pid)
+    per0 = cpu_by_pid(pid)
     t0 = time.perf_counter()
     for i in range(2, n + 2):
         s = time.perf_counter()
@@ -157,9 +179,13 @@ async def serial(url, names, n, pid, label) -> dict:
             print(f"  [{label}] serial: {nupd} updates for one event at i={i}", flush=True)
     wall = time.perf_counter() - t0
     cpu1, rss, pids = cpu_tree(pid)
+    per1 = cpu_by_pid(pid)
     final = cnt
     await c.close()
     return {"mode": f"serial_{n}", "label": label, "wall_s": round(wall, 3), "ev_per_s": round(n / wall, 1),
+            "load1_before": load0, "cpu_by_pid_s": {str(k): round(per1.get(k, 0) - per0.get(k, 0), 3) for k in per1},
+            "server_py": next((json.loads(v)["py"] for u in c.raw_first for st in (u.get("delta") or {}).values()
+                               for k, v in st.items() if k.startswith("factory_info")), None),
             "server_cpu_s": round(cpu1 - cpu0, 3), "server_cpu_us_per_event": round((cpu1 - cpu0) / n * 1e6, 1),
             "rss_mb": round(rss / 1e6, 1), "pids": pids, "final_count": final, "expected_count": n + 1,
             "exact": final == n + 1, **stats(lat), "raw_first_update": c.raw_first[:1]}
@@ -181,14 +207,18 @@ async def concurrent(url, names, clients, per_client, pid, label) -> dict:
         finals.append(cnt)
         lat_all.extend(lat)
 
+    load0 = loadavg()
     cpu0, _, _ = cpu_tree(pid)
+    per0 = cpu_by_pid(pid)
     t0 = time.perf_counter()
     await asyncio.gather(*(run(c) for c in cs))
     wall = time.perf_counter() - t0
     cpu1, rss, pids = cpu_tree(pid)
+    per1 = cpu_by_pid(pid)
     await asyncio.gather(*(c.close() for c in cs))
     total = clients * per_client
     return {"mode": f"concurrent_{clients}x{per_client}", "label": label, "wall_s": round(wall, 3),
+            "load1_before": load0, "cpu_by_pid_s": {str(k): round(per1.get(k, 0) - per0.get(k, 0), 3) for k in per1},
             "ev_per_s": round(total / wall, 1), "server_cpu_s": round(cpu1 - cpu0, 3),
             "server_cpu_us_per_event": round((cpu1 - cpu0) / total * 1e6, 1), "rss_mb": round(rss / 1e6, 1),
             "finals": sorted(set(finals)), "exact": all(f == per_client for f in finals) and len(finals) == clients,
@@ -198,7 +228,9 @@ async def concurrent(url, names, clients, per_client, pid, label) -> dict:
 async def pipelined(url, names, n, pid, label) -> dict:
     c = Client(url, names)
     await c.connect()
+    load0 = loadavg()
     cpu0, _, _ = cpu_tree(pid)
+    per0 = cpu_by_pid(pid)
     t0 = time.perf_counter()
     for _ in range(n):
         await c.emit(names["increment"])
@@ -206,8 +238,10 @@ async def pipelined(url, names, n, pid, label) -> dict:
     nupd, cnt = await c.wait_count(n, timeout=120)
     wall = time.perf_counter() - t0
     cpu1, rss, _ = cpu_tree(pid)
+    per1 = cpu_by_pid(pid)
     await c.close()
     return {"mode": f"pipelined_{n}", "label": label, "wall_s": round(wall, 3), "send_s": round(t_sent, 3),
+            "load1_before": load0, "cpu_by_pid_s": {str(k): round(per1.get(k, 0) - per0.get(k, 0), 3) for k in per1},
             "ev_per_s": round(n / wall, 1), "server_cpu_s": round(cpu1 - cpu0, 3),
             "server_cpu_us_per_event": round((cpu1 - cpu0) / n * 1e6, 1), "rss_mb": round(rss / 1e6, 1),
             "updates_received": nupd, "final_count": cnt, "exact": cnt == n and nupd == n}
@@ -237,7 +271,7 @@ async def main():
             res = await fn(a.url, names, *args, a.server_pid, a.label)
             res["round"] = r
             results["runs"].append(res)
-            print(json.dumps({k: v for k, v in res.items() if k not in ("raw_first_update", "pids")}), flush=True)
+            print(json.dumps({k: v for k, v in res.items() if k not in ("raw_first_update", "pids", "cpu_by_pid_s")}), flush=True)
             await asyncio.sleep(0.5)
     json.dump(results, open(a.out, "w"), indent=1, default=str)
     bad = [r for r in results["runs"] if not r["exact"]]

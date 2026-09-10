@@ -1,0 +1,6 @@
+[
+  {
+    "url": "http://localhost:9144/_upload",
+    "status": "FAILED:net::ERR_ABORTED"
+  }
+]

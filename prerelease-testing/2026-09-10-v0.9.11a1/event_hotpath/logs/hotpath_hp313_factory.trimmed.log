@@ -1,0 +1,30 @@
+29:Debug: [Reflex 0.9.11a1 with Python 3.13.12 (PATH: 
+74:Debug: [timing] Compile pages: 0.20s
+75:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 26/25 0:00:00
+162:App running at: http://localhost:3184/
+163:Backend running at: http://0.0.0.0:8184
+166:[Reflex Backend Exception]
+167: Traceback (most recent call last):
+202:    raise ValueError(msg)
+203:ValueError: intentional boom from SlowState.boom
+206:[Reflex Backend Exception]
+207: Traceback (most recent call last):
+242:    raise ValueError(msg)
+243:ValueError: intentional boom from SlowState.boom
+246:[Reflex Backend Exception]
+247: Traceback (most recent call last):
+283:    raise ValueError(msg)
+284:ValueError: intentional async boom from SlowState.boom_async
+287:[Reflex Backend Exception]
+288: Traceback (most recent call last):
+324:    raise ValueError(msg)
+325:ValueError: intentional async boom from SlowState.boom_async
+328:[Reflex Backend Exception]
+329: Traceback (most recent call last):
+364:    raise ValueError(msg)
+365:ValueError: intentional boom from SlowState.boom
+374:Debug: StateManagerDisk._flush_write_queue: writing 1 remaining items to disk
+375:Debug: StateManagerDisk._flush_write_queue: Finished writing 1 items
+376:[ERROR] Unexpected exit from worker-1
+380:Debug: error: script "dev" exited with code 143
+386:error: script "dev" exited with code 143

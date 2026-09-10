@@ -403,3 +403,56 @@ static/zero handlers never run. C dev: e.g. `hydrate` 13:43:48.857, then `tick`,
   (`tests/integration/test_moment.py` currently has zero `on_change` coverage).
 
 All servers/browsers started by this verification were stopped (`ps` shows none on 4600-4603/9600-9603).
+
+### Re-verification pass 2 (same verifier task re-launched; live re-execution, 18:06-18:09 machine time)
+
+The VERIFICATION section above was already complete when this pass started (own venv `$SB/envs/verify_up_counter_todo_clock_0`,
+own app `$SB/apps/verify_up_counter_todo_clock_0/momentapp`, own reports). To not merely trust the earlier logs, both ends of the
+comparison were re-executed live on ports 4600/9600, from the written repro alone, and the source mechanism was re-read:
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad; W=$SB/apps/verify_up_counter_todo_clock_0
+# C (venv already at reflex 0.9.11a1 + reflex-base 0.9.11a1 + reflex-components-moment 0.9.4a1; `uv pip list` checked first):
+cd $W/momentapp && REFLEX_TELEMETRY_ENABLED=false setsid $SB/envs/verify_up_counter_todo_clock_0/bin/reflex run --frontend-port 4600 --backend-port 9600 --loglevel debug > $W/logs/server_0911_moment094a1_dev_rerun.log 2>&1 &
+cd $W && NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python drive_moment.py http://localhost:4600/ shots/0911_moment094a1_dev_rerun logs/0911_moment094a1_dev_rerun-report.json 10
+# A (baseline, downgrade in place — note the explicit moment pin, otherwise the already-installed 0.9.4a1 pre-release is kept):
+cd $SB && uv pip install --python $SB/envs/verify_up_counter_todo_clock_0/bin/python 'reflex==0.9.10.post2' 'reflex-components-moment==0.9.3'
+# then the same reflex run / drive_moment.py with run name 0910_dev_rerun
+```
+
+| run (this pass) | react-moment (`Debug: installed …` in server log) | mode | `#interval` at mount | `#static` at mount | `#zero` (interval=0) at mount | tick/static/zero counters after one load | backend `EVT` lines total (3 mounts) |
+|---|---|---|---|---|---|---|---|
+| `0911_moment094a1_dev_rerun` | 2.0.2 | dev, StrictMode default | **2** (`18:06:11` x2, 91 ms after `hydrate`) | **2** | **2** | **5 / 2 / 2** | **27** = (6 mount + 3 ticks) x 3 |
+| `0910_dev_rerun` | 1.2.2 | dev, StrictMode default | 0 (first `tick` 3.09 s after `hydrate`) | 0 | 0 | 3 / 0 / 0 | 9 = 3 ticks x 3 |
+
+Identical to pass 1 on every count (initial load, hard reload = new `/_event` socket, client-side `/other` -> `/` remount); no
+console errors, no page errors either run. Evidence: `verification/logs/0911_moment094a1_dev_rerun-report.json`,
+`verification/logs/0910_dev_rerun-report.json`, `verification/logs/server_*_rerun.log.trimmed` (every `EVT seq=` line the backend
+printed), `verification/shots/*_rerun-*.png`. `<time datetime>` again epoch-ms on 1.2.2 (`datetime="1789063721436"`) vs ISO on
+2.0.2 (`datetime="2026-09-10T18:06:20.369Z"`).
+
+Additional refutation angles checked this pass:
+- **"Maintainers knowingly accepted it / documented behavior on the reflex side?"** No. PR #7006 ("Migrate react-moment to 2.0.2",
+  merged 2026-09-08) body, Greptile review and the full diff never mention `onChange`/`on_change`; the news fragment
+  `packages/reflex-components-moment/news/7003.bugfix.md` is the one-liner that became the CHANGELOG "Bug Fixes" entry; the new
+  `tests/integration/test_moment.py` (2 tests: `parse=[…]` and `duration`+`trim`) has zero `on_change` coverage; the `on_change`
+  field doc on the release branch is still `"Fires when the date changes."` (`moment.py:115-117`). Issue #7003 (masenf) explicitly
+  scoped the migration as "any that moved or disappeared needs a deprecation path since `rx.moment` is public API" — the changed
+  `on_change` timing is exactly such a public-surface change and was not mapped.
+- **Mechanism re-read (exact lines):** react-moment 1.2.2 `src/index.jsx:303-308` `componentDidMount(){ this.setTimer(); … }` and
+  `:345-354` `setTimer` only arms `setInterval(() => this.update(this.props), interval)` when `interval !== 0`; `onChange` is called
+  solely from `update()` at `:387-395` (`this.setState({content}, () => { onChange(content) })`). react-moment 2.0.2 `dist/index.mjs`
+  `useMomentUpdate` (`function $(t,e){…}`) runs `H(()=>{…(i=r.current)==null||i.call(r,o.current)},[])` = `useEffect(() => onChange(props), [])`
+  unconditionally before the interval effect (`if(n||t.interval===0)return`), so the callback fires on mount even for `interval=0`
+  and for static dates; `dist/types.d.ts:227` documents it ("on mount and after each interval tick"). Reflex wires the prop straight
+  through (`on_change: EventHandler[passthrough_event_spec(str)]`), and `reflex/compiler/compiler.py:1038-1041` wraps the app in
+  `<StrictMode>` when `config.react_strict_mode` (default `True`, `reflex_base/config.py:237`) -> mount effect runs twice in dev.
+- Housekeeping: after this pass the verifier venv is left at the BASELINE (`reflex==0.9.10.post2`, `reflex-components-moment==0.9.3`);
+  re-pin `'reflex==0.9.11a1' 'reflex-components-moment==0.9.4a1' --prerelease=allow` before re-running configuration C. All servers
+  and browsers started by this pass were killed (process-group TERM/KILL + cwd sweep; no process with cwd under the verifier app dir
+  remains, no listener on 4600-4603/9600-9603). `reflex run` processes from OTHER agents (`envs/smoke`, ports 3221/8221/8180) were
+  running concurrently and were left untouched.
+
+**Verdict unchanged: CONFIRMED (genuine behavior regression 0.9.10.post2 -> 0.9.11a1 via reflex-components-moment 0.9.4a1),
+severity low, downstream root cause (react-moment 2.0.x by design), reflex-side gap is missing changelog/docs note (or a wrapper
+that drops the mount callback) — not release-blocking, worth acting on.**

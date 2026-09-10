@@ -11,6 +11,8 @@ API (mounted via api_transformer):
   GET /api/reset                       -> zero counters
   GET /api/enqueue?token=T&event=ping  -> enqueue State.<event>() from the backend (no router_data)
   GET /api/expire?token=T              -> force-evict the token's state from the state manager
+  GET /api/modify?token=T[&field=pings][&legacy=1] -> backend change via `async with app.modify_state(rx.BaseStateToken(ident=T, cls=State))`
+                                          (legacy=1 passes the bare client-token string instead, which is the deprecated form)
   GET /api/keys?token=T                -> list state keys for the token (redis keys+TTL, or in-memory keys)
   GET /api/kick?token=T[&mode=eio|sio] -> drop the client's websocket (eio = transport close, client reconnects)
 """
@@ -152,6 +154,25 @@ async def api_enqueue(request):
     return JSONResponse({"results": results, "runs": RUNS})
 
 
+async def api_modify(request):
+    """Backend-initiated state change via app.modify_state (no event, no router_data)."""
+    token = request.query_params["token"]
+    field = request.query_params.get("field", "pings")
+    try:
+        legacy = request.query_params.get("legacy") == "1"
+        st_token = token if legacy else rx.BaseStateToken(ident=token, cls=State)
+        async with app.modify_state(st_token) as yielded:
+            yielded_cls = type(yielded).get_full_name()
+            state = await yielded.get_state(State)
+            setattr(state, field, getattr(state, field) + 1)
+            _log(f"backend modify_state {field} -> {getattr(state, field)} yielded={yielded_cls} router_data_empty={not state.router_data}")
+            value = getattr(state, field)
+        return JSONResponse({"ok": True, field: value, "yielded": yielded_cls, "runs": RUNS})
+    except Exception as ex:  # noqa: BLE001
+        _log(f"backend modify_state error {type(ex).__name__}: {ex}")
+        return JSONResponse({"ok": False, "error": f"{type(ex).__name__}: {ex}", "runs": RUNS})
+
+
 async def api_expire(request):
     token = request.query_params["token"]
     sm = _sm()
@@ -275,6 +296,7 @@ api = Starlette(
         Route("/api/reset", api_reset),
         Route("/api/enqueue", api_enqueue),
         Route("/api/expire", api_expire),
+        Route("/api/modify", api_modify),
         Route("/api/keys", api_keys),
         Route("/api/kick", api_kick),
         Route("/api/whoami", api_whoami),

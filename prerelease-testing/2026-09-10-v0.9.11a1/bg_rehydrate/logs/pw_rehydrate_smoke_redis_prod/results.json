@@ -7,7 +7,7 @@
  {
   "name": "A.initial_load",
   "status": "pass",
-  "details": "runs={'index': 1, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 0, 'hydrate_seen': 0} snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:00:54', 'clicks': 'clicks=0', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} token=d2dacd82"
+  "details": "runs={'index': 1, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 0, 'hydrate_seen': 0} snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:24:22', 'clicks': 'clicks=0', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} token=4413b9d5"
  },
  {
   "name": "A.state_expired",
@@ -20,7 +20,7 @@
   "details": "enqueue=['done'] runs={'index': 1, 'page-b': 0, 'item': 0, '404': 0, 'ping': 1, 'click': 0, 'hydrate_seen': 0} hydrate_deltas=1 is_hydrated_true_deltas=1 deltas=3 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=', 'loaded_page': 'loaded_page=', 'load_seq': 'load_seq=0', 'loaded_at': 'loaded_at=', 'clicks': 'clicks=0', 'pings': 'pings=1', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
   "deltas": [
    {
-    "t": 8.487,
+    "t": 8.345,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -85,7 +85,7 @@
     }
    },
    {
-    "t": 8.488,
+    "t": 8.345,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -95,7 +95,7 @@
     }
    },
    {
-    "t": 8.488,
+    "t": 8.345,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -112,7 +112,7 @@
   "details": "enqueue=['done', 'done'] runs={'index': 1, 'page-b': 0, 'item': 0, '404': 0, 'ping': 3, 'click': 0, 'hydrate_seen': 0} hydrate_deltas=0 deltas=2 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=', 'loaded_page': 'loaded_page=', 'load_seq': 'load_seq=0', 'loaded_at': 'loaded_at=', 'clicks': 'clicks=0', 'pings': 'pings=3', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
   "deltas": [
    {
-    "t": 10.094,
+    "t": 9.923,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -122,7 +122,7 @@
     }
    },
    {
-    "t": 10.094,
+    "t": 9.923,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -136,10 +136,10 @@
  {
   "name": "A.routed_event_after_routeless_rehydrate_runs_on_load",
   "status": "pass",
-  "details": "runs={'index': 2, 'page-b': 0, 'item': 0, '404': 0, 'ping': 3, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:01:05', 'clicks': 'clicks=1', 'pings': 'pings=3', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
+  "details": "runs={'index': 2, 'page-b': 0, 'item': 0, '404': 0, 'ping': 3, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:24:33', 'clicks': 'clicks=1', 'pings': 'pings=3', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
   "deltas": [
    {
-    "t": 11.188,
+    "t": 10.986,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -147,9 +147,9 @@
        "item_id_rx_state_": "",
        "router_rx_state_": {
         "session": {
-         "client_token": "d2dacd82-c9da-4526-e6f1-eb88054e1307",
+         "client_token": "4413b9d5-96e9-4b09-d438-de620e545254",
          "client_ip": "127.0.0.1",
-         "session_id": "JYXnsIQvgdJ67M9KAAAB"
+         "session_id": "GizfdCHl0sVy5FM_AAAB"
         },
         "headers": {
          "host": "localhost:3223",
@@ -161,7 +161,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "/4elXirjA1Pant8fAu0mlw==",
+         "sec_websocket_key": "hsisZNO5O2xpr7SLnnuRPg==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -175,7 +175,7 @@
           "origin": "http://localhost:3223",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "/4elXirjA1Pant8fAu0mlw==",
+          "sec-websocket-key": "hsisZNO5O2xpr7SLnnuRPg==",
           "sec-websocket-protocol": "0.9.11a1",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -219,7 +219,7 @@
     }
    },
    {
-    "t": 11.189,
+    "t": 10.987,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -229,7 +229,7 @@
     }
    },
    {
-    "t": 11.242,
+    "t": 11.038,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -239,19 +239,19 @@
     }
    },
    {
-    "t": 11.242,
+    "t": 11.038,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "load_seq_rx_state_": 1,
        "loaded_page_rx_state_": "index",
-       "loaded_at_rx_state_": "14:01:05",
-       "load_seq_rx_state_": 1
+       "loaded_at_rx_state_": "18:24:33"
       }
      }
     }
    },
    {
-    "t": 11.242,
+    "t": 11.038,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -270,7 +270,7 @@
  {
   "name": "B.setup",
   "status": "pass",
-  "details": "snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:01:07', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=1', 'item_arg': 'item_arg='} runs={'index': 0, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} localStorage.rh_name='alice' cookie='rh_flavor=mint'"
+  "details": "snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:24:35', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=1', 'item_arg': 'item_arg='} runs={'index': 0, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} localStorage.rh_name='alice' cookie='rh_flavor=mint'"
  },
  {
   "name": "B.state_expired",
@@ -280,10 +280,10 @@
  {
   "name": "B.click_after_eviction_rehydrates_and_reruns_on_load",
   "status": "pass",
-  "details": "runs={'index': 0, 'page-b': 2, 'item': 0, '404': 0, 'ping': 0, 'click': 2, 'hydrate_seen': 0} hydrate_deltas=1 is_hydrated_true=1 deltas=5 snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:01:15', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=1', 'item_arg': 'item_arg='}",
+  "details": "runs={'index': 0, 'page-b': 2, 'item': 0, '404': 0, 'ping': 0, 'click': 2, 'hydrate_seen': 0} hydrate_deltas=1 is_hydrated_true=1 deltas=5 snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:24:43', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=1', 'item_arg': 'item_arg='}",
   "deltas": [
    {
-    "t": 21.585,
+    "t": 21.322,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -291,9 +291,9 @@
        "item_id_rx_state_": "",
        "router_rx_state_": {
         "session": {
-         "client_token": "5351347b-1fc7-42ef-8234-92ab156671a1",
+         "client_token": "77ea9351-f736-4e82-c072-d65bd911b938",
          "client_ip": "127.0.0.1",
-         "session_id": "Qvk8xkq5Iw-T8iOdAAAD"
+         "session_id": "O0k53Z4qqOROrE4fAAAD"
         },
         "headers": {
          "host": "localhost:3223",
@@ -305,7 +305,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "gDHEtjOQhM4Q/XAAxOTSLA==",
+         "sec_websocket_key": "7+fvIerzQh9TIrduLtUDMQ==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -319,7 +319,7 @@
           "origin": "http://localhost:3223",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "gDHEtjOQhM4Q/XAAxOTSLA==",
+          "sec-websocket-key": "7+fvIerzQh9TIrduLtUDMQ==",
           "sec-websocket-protocol": "0.9.11a1",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -363,7 +363,7 @@
     }
    },
    {
-    "t": 21.585,
+    "t": 21.322,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -373,7 +373,7 @@
     }
    },
    {
-    "t": 21.585,
+    "t": 21.323,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -383,19 +383,19 @@
     }
    },
    {
-    "t": 21.585,
+    "t": 21.329,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "load_seq_rx_state_": 1,
        "loaded_page_rx_state_": "page-b",
-       "loaded_at_rx_state_": "14:01:15",
-       "load_seq_rx_state_": 1
+       "loaded_at_rx_state_": "18:24:43"
       }
      }
     }
    },
    {
-    "t": 21.587,
+    "t": 21.331,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -424,10 +424,10 @@
  {
   "name": "B.bump_other_after_rehydrate",
   "status": "pass",
-  "details": "UI other_count='1' hydrate_deltas=0 deltas=1 runs={'index': 0, 'page-b': 2, 'item': 0, '404': 0, 'ping': 0, 'click': 2, 'hydrate_seen': 0} snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:01:15', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=1', 'item_arg': 'item_arg='}",
+  "details": "UI other_count='1' hydrate_deltas=0 deltas=1 runs={'index': 0, 'page-b': 2, 'item': 0, '404': 0, 'ping': 0, 'click': 2, 'hydrate_seen': 0} snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:24:43', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=1', 'item_arg': 'item_arg='}",
   "deltas": [
    {
-    "t": 23.234,
+    "t": 22.969,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____other_state": {
@@ -441,7 +441,7 @@
  {
   "name": "B.client_storage_after_full_reload",
   "status": "pass",
-  "details": "snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=2', 'loaded_at': 'loaded_at=14:01:18', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=1', 'item_arg': 'item_arg='}"
+  "details": "snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=2', 'loaded_at': 'loaded_at=18:24:46', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=1', 'item_arg': 'item_arg='}"
  },
  {
   "name": "C.initial_item_arg",
@@ -456,10 +456,10 @@
  {
   "name": "C.dynamic_route_rehydrate_keeps_arg",
   "status": "pass",
-  "details": "runs={'index': 0, 'page-b': 0, 'item': 2, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 item_arg before=abc after=abc snap={'title': 'item', 'hydrated': 'hydrated=true', 'path': 'path=/item/abc', 'loaded_page': 'loaded_page=item', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:01:27', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg=abc'} log=['14:01:19 on_load item (run #1) path=/item/abc', '14:01:27 click -> clicks=1 path=/item/abc', '14:01:27 on_load item (run #2) path=/item/abc']",
+  "details": "runs={'index': 0, 'page-b': 0, 'item': 2, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 item_arg before=abc after=abc snap={'title': 'item', 'hydrated': 'hydrated=true', 'path': 'path=/item/abc', 'loaded_page': 'loaded_page=item', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:24:55', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg=abc'} log=['18:24:47 on_load item (run #1) path=/item/abc', '18:24:55 click -> clicks=1 path=/item/abc', '18:24:55 on_load item (run #2) path=/item/abc']",
   "deltas": [
    {
-    "t": 33.217,
+    "t": 32.985,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -467,9 +467,9 @@
        "item_id_rx_state_": "abc",
        "router_rx_state_": {
         "session": {
-         "client_token": "56476d74-f051-4adb-8807-b20eafb68f06",
+         "client_token": "669dd2b8-8d7a-4259-dd08-e1d688207347",
          "client_ip": "127.0.0.1",
-         "session_id": "zCP5RCsY-PTP65LeAAAH"
+         "session_id": "aEGQa0g65vu_HRYvAAAH"
         },
         "headers": {
          "host": "localhost:3223",
@@ -481,7 +481,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "WkUK6AH4tdg0oCefmml2lQ==",
+         "sec_websocket_key": "XV3G6/nCnGU0sPhWZC1/ig==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -496,7 +496,7 @@
           "origin": "http://localhost:3223",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "WkUK6AH4tdg0oCefmml2lQ==",
+          "sec-websocket-key": "XV3G6/nCnGU0sPhWZC1/ig==",
           "sec-websocket-protocol": "0.9.11a1",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -542,7 +542,7 @@
     }
    },
    {
-    "t": 33.219,
+    "t": 32.986,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -552,7 +552,7 @@
     }
    },
    {
-    "t": 33.219,
+    "t": 32.986,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -562,20 +562,20 @@
     }
    },
    {
-    "t": 33.221,
+    "t": 32.986,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
-       "loaded_page_rx_state_": "item",
-       "loaded_at_rx_state_": "14:01:27",
        "item_arg_rx_state_": "abc",
-       "load_seq_rx_state_": 1
+       "load_seq_rx_state_": 1,
+       "loaded_page_rx_state_": "item",
+       "loaded_at_rx_state_": "18:24:55"
       }
      }
     }
    },
    {
-    "t": 33.225,
+    "t": 32.986,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -594,10 +594,10 @@
  {
   "name": "D.custom_404_rehydrate_once",
   "status": "pass",
-  "details": "runs before={'index': 0, 'page-b': 0, 'item': 0, '404': 1, 'ping': 0, 'click': 0, 'hydrate_seen': 0} after={'index': 0, 'page-b': 0, 'item': 0, '404': 2, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 snap={'title': 'custom-404', 'hydrated': 'hydrated=true', 'path': 'path=/nope', 'loaded_page': 'loaded_page=404', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:01:35', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
+  "details": "runs before={'index': 0, 'page-b': 0, 'item': 0, '404': 1, 'ping': 0, 'click': 0, 'hydrate_seen': 0} after={'index': 0, 'page-b': 0, 'item': 0, '404': 2, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 snap={'title': 'custom-404', 'hydrated': 'hydrated=true', 'path': 'path=/nope', 'loaded_page': 'loaded_page=404', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:25:04', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
   "deltas": [
    {
-    "t": 41.993,
+    "t": 41.796,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -605,9 +605,9 @@
        "item_id_rx_state_": "",
        "router_rx_state_": {
         "session": {
-         "client_token": "56476d74-f051-4adb-8807-b20eafb68f06",
+         "client_token": "669dd2b8-8d7a-4259-dd08-e1d688207347",
          "client_ip": "127.0.0.1",
-         "session_id": "KqabX6vwsWIKWhGPAAAJ"
+         "session_id": "uNS5uf1f80fDWFxzAAAJ"
         },
         "headers": {
          "host": "localhost:3223",
@@ -619,7 +619,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "xtS5nvIlM9GxhGgkW+jB8Q==",
+         "sec_websocket_key": "5c+sSDscawZ4ZdsJecGbCA==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -634,7 +634,7 @@
           "origin": "http://localhost:3223",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "xtS5nvIlM9GxhGgkW+jB8Q==",
+          "sec-websocket-key": "5c+sSDscawZ4ZdsJecGbCA==",
           "sec-websocket-protocol": "0.9.11a1",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -682,7 +682,7 @@
     }
    },
    {
-    "t": 42.046,
+    "t": 41.796,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -692,7 +692,7 @@
     }
    },
    {
-    "t": 42.046,
+    "t": 41.796,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -702,19 +702,19 @@
     }
    },
    {
-    "t": 42.046,
+    "t": 41.796,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "load_seq_rx_state_": 1,
        "loaded_page_rx_state_": "404",
-       "loaded_at_rx_state_": "14:01:35",
-       "load_seq_rx_state_": 1
+       "loaded_at_rx_state_": "18:25:04"
       }
      }
     }
    },
    {
-    "t": 42.046,
+    "t": 41.796,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -733,10 +733,10 @@
  {
   "name": "E.navigate_during_rehydrate",
   "status": "pass",
-  "details": "runs={'index': 2, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 deltas=9 snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=2', 'loaded_at': 'loaded_at=14:01:46', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} log=['14:01:37 on_load index (run #1) path=/', '14:01:45 click -> clicks=1 path=/', '14:01:45 on_load index (run #2) path=/', '14:01:46 on_load page-b (run #1) path=/page-b']",
+  "details": "runs={'index': 2, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 deltas=9 snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=2', 'loaded_at': 'loaded_at=18:25:13', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} log=['18:25:05 on_load index (run #1) path=/', '18:25:13 click -> clicks=1 path=/', '18:25:13 on_load index (run #2) path=/', '18:25:13 on_load page-b (run #1) path=/page-b']",
   "deltas": [
    {
-    "t": 52.019,
+    "t": 51.601,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -744,9 +744,9 @@
        "item_id_rx_state_": "",
        "router_rx_state_": {
         "session": {
-         "client_token": "52c4b0c5-c79c-4ba8-84d3-a626843548a3",
+         "client_token": "9f5191da-fc45-4b6c-a7e4-d5a25e3244bc",
          "client_ip": "127.0.0.1",
-         "session_id": "ZMyHzO4EuWSjOtulAAAL"
+         "session_id": "6lRzIyQD-aGqG4sFAAAL"
         },
         "headers": {
          "host": "localhost:3223",
@@ -758,7 +758,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "ZL0465kROAp4+l/lVnHBkg==",
+         "sec_websocket_key": "2hpoG+44qGV6K8+8YBSwTw==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -773,7 +773,7 @@
           "origin": "http://localhost:3223",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "ZL0465kROAp4+l/lVnHBkg==",
+          "sec-websocket-key": "2hpoG+44qGV6K8+8YBSwTw==",
           "sec-websocket-protocol": "0.9.11a1",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -817,7 +817,7 @@
     }
    },
    {
-    "t": 52.019,
+    "t": 51.602,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -827,7 +827,7 @@
     }
    },
    {
-    "t": 52.019,
+    "t": 51.602,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -837,19 +837,19 @@
     }
    },
    {
-    "t": 52.019,
+    "t": 51.602,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "load_seq_rx_state_": 1,
        "loaded_page_rx_state_": "index",
-       "loaded_at_rx_state_": "14:01:45",
-       "load_seq_rx_state_": 1
+       "loaded_at_rx_state_": "18:25:13"
       }
      }
     }
    },
    {
-    "t": 52.023,
+    "t": 51.603,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -859,16 +859,15 @@
     }
    },
    {
-    "t": 52.126,
+    "t": 51.684,
     "update": {
      "delta": {
       "reflex___state____state": {
-       "item_id_rx_state_": "",
        "router_rx_state_": {
         "session": {
-         "client_token": "52c4b0c5-c79c-4ba8-84d3-a626843548a3",
+         "client_token": "9f5191da-fc45-4b6c-a7e4-d5a25e3244bc",
          "client_ip": "127.0.0.1",
-         "session_id": "ZMyHzO4EuWSjOtulAAAL"
+         "session_id": "6lRzIyQD-aGqG4sFAAAL"
         },
         "headers": {
          "host": "localhost:3223",
@@ -880,7 +879,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "ZL0465kROAp4+l/lVnHBkg==",
+         "sec_websocket_key": "2hpoG+44qGV6K8+8YBSwTw==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -895,7 +894,7 @@
           "origin": "http://localhost:3223",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "ZL0465kROAp4+l/lVnHBkg==",
+          "sec-websocket-key": "2hpoG+44qGV6K8+8YBSwTw==",
           "sec-websocket-protocol": "0.9.11a1",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -921,18 +920,19 @@
          "href": "http://localhost:3223/page-b"
         },
         "route_id": "/page-b"
-       }
+       },
+       "item_id_rx_state_": ""
       },
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
-       "name_rx_state_": "alice",
        "path_rx_state_": "/page-b",
+       "name_rx_state_": "alice",
        "flavor_rx_state_": "mint"
       }
      }
     }
    },
    {
-    "t": 52.126,
+    "t": 51.684,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -942,19 +942,19 @@
     }
    },
    {
-    "t": 52.126,
+    "t": 51.684,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "load_seq_rx_state_": 2,
        "loaded_page_rx_state_": "page-b",
-       "loaded_at_rx_state_": "14:01:46",
-       "load_seq_rx_state_": 2
+       "loaded_at_rx_state_": "18:25:13"
       }
      }
     }
    },
    {
-    "t": 52.126,
+    "t": 51.684,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -973,10 +973,10 @@
  {
   "name": "F.bg_task_finishes_after_expiry",
   "status": "pass",
-  "details": "bg_status=bg_status=finished clicks_was=0 runs={'index': 1, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 0, 'hydrate_seen': 0} hydrate_deltas=0 deltas=2 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:01:48', 'clicks': 'clicks=100', 'pings': 'pings=0', 'bg_status': 'bg_status=finished clicks_was=0', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
+  "details": "bg_status=bg_status=finished clicks_was=0 runs={'index': 1, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 0, 'hydrate_seen': 0} hydrate_deltas=0 deltas=2 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:25:16', 'clicks': 'clicks=100', 'pings': 'pings=0', 'bg_status': 'bg_status=finished clicks_was=0', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
   "deltas": [
    {
-    "t": 55.031,
+    "t": 54.53,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -986,7 +986,7 @@
     }
    },
    {
-    "t": 67.036,
+    "t": 66.497,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -1001,10 +1001,10 @@
  {
   "name": "F.click_after_bg_wrote_fresh_state",
   "status": "pass",
-  "details": "runs={'index': 2, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:02:02', 'clicks': 'clicks=101', 'pings': 'pings=0', 'bg_status': 'bg_status=finished clicks_was=0', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} log=['14:01:48 on_load index (run #1) path=/', '14:02:02 click -> clicks=101 path=/', '14:02:02 on_load index (run #2) path=/']",
+  "details": "runs={'index': 2, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:25:29', 'clicks': 'clicks=101', 'pings': 'pings=0', 'bg_status': 'bg_status=finished clicks_was=0', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} log=['18:25:16 on_load index (run #1) path=/', '18:25:29 click -> clicks=101 path=/', '18:25:29 on_load index (run #2) path=/']",
   "deltas": [
    {
-    "t": 68.167,
+    "t": 67.613,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -1012,9 +1012,9 @@
        "item_id_rx_state_": "",
        "router_rx_state_": {
         "session": {
-         "client_token": "b8683aa7-b954-460d-8ccd-fb8d43b90151",
+         "client_token": "712e8c63-08aa-4398-ea07-6a0649c3aa69",
          "client_ip": "127.0.0.1",
-         "session_id": "OEVlYT47IxNBH1zyAAAN"
+         "session_id": "N1FiJX30lYr3F1Y3AAAN"
         },
         "headers": {
          "host": "localhost:3223",
@@ -1026,7 +1026,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "jkxQr15ogYXlP1MitfMufA==",
+         "sec_websocket_key": "nuYunTChxmDmdk0KWUC96A==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -1041,7 +1041,7 @@
           "origin": "http://localhost:3223",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "jkxQr15ogYXlP1MitfMufA==",
+          "sec-websocket-key": "nuYunTChxmDmdk0KWUC96A==",
           "sec-websocket-protocol": "0.9.11a1",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -1085,7 +1085,7 @@
     }
    },
    {
-    "t": 68.167,
+    "t": 67.613,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -1095,7 +1095,7 @@
     }
    },
    {
-    "t": 68.167,
+    "t": 67.613,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -1105,19 +1105,19 @@
     }
    },
    {
-    "t": 68.167,
+    "t": 67.613,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "load_seq_rx_state_": 1,
        "loaded_page_rx_state_": "index",
-       "loaded_at_rx_state_": "14:02:02",
-       "load_seq_rx_state_": 1
+       "loaded_at_rx_state_": "18:25:29"
       }
      }
     }
    },
    {
-    "t": 68.167,
+    "t": 67.613,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -1131,17 +1131,17 @@
  {
   "name": "G.second_tab_token",
   "status": "pass",
-  "details": "tab1 token=d5418ae7 tab2 token=3dcc0228 (same=False) runs={'index': 1, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 0, 'hydrate_seen': 0}"
+  "details": "tab1 token=668241d5 tab2 token=ef5fed86 (same=False) runs={'index': 1, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 0, 'hydrate_seen': 0}"
  },
  {
   "name": "G.tab1_rehydrate_isolated_from_tab2",
   "status": "pass",
-  "details": "tab1 deltas=5 hydrate=1 tab2 deltas=0 runs={'index': 2, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} s1={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:02:12', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} s2={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:02:04', 'clicks': 'clicks=0', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}"
+  "details": "tab1 deltas=5 hydrate=1 tab2 deltas=0 runs={'index': 2, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} s1={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:25:40', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} s2={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:25:32', 'clicks': 'clicks=0', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}"
  },
  {
   "name": "G.tab2_rehydrates_own_page",
   "status": "pass",
-  "details": "tab2 deltas=5 hydrate=1 runs={'index': 2, 'page-b': 2, 'item': 0, '404': 0, 'ping': 0, 'click': 2, 'hydrate_seen': 0} s2={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:02:14', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}"
+  "details": "tab2 deltas=5 hydrate=1 runs={'index': 2, 'page-b': 2, 'item': 0, '404': 0, 'ping': 0, 'click': 2, 'hydrate_seen': 0} s2={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:25:41', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}"
  },
  {
   "name": "G.tab2_browser_anomalies",
@@ -1151,7 +1151,7 @@
  {
   "name": "H.backend_event_unknown_token",
   "status": "pass",
-  "details": "took 2.0s enqueue=['done'] runs={'index': 0, 'page-b': 0, 'item': 0, '404': 0, 'ping': 1, 'click': 0, 'hydrate_seen': 0} log=['14:02:15 backend enqueue reflex___state____state.rehydrate_app___rehydrate_app____state.ping token=83467f34 router_data={}', '14:02:15 ping -> pings=1 router_data_empty=True']"
+  "details": "took 2.0s enqueue=['done'] runs={'index': 0, 'page-b': 0, 'item': 0, '404': 0, 'ping': 1, 'click': 0, 'hydrate_seen': 0} log=['18:25:43 backend enqueue reflex___state____state.rehydrate_app___rehydrate_app____state.ping token=794ba1e6 router_data={}', '18:25:43 ping -> pings=1 router_data_empty=True']"
  },
  {
   "name": "H.no_runaway_after_2s",
@@ -1159,15 +1159,429 @@
   "details": "runs 2s later={'index': 0, 'page-b': 0, 'item': 0, '404': 0, 'ping': 1, 'click': 0, 'hydrate_seen': 0}"
  },
  {
+  "name": "J.state_expired",
+  "status": "pass",
+  "details": "waited 7.5s; remaining state keys for token: {}"
+ },
+ {
+  "name": "J.concurrent_routeless_events_hydrate_once",
+  "status": "pass",
+  "details": "enqueue=['queued', 'queued', 'queued'] runs={'index': 1, 'page-b': 0, 'item': 0, '404': 0, 'ping': 3, 'click': 0, 'hydrate_seen': 0} hydrate_deltas=1 is_hydrated_true=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=', 'loaded_page': 'loaded_page=', 'load_seq': 'load_seq=0', 'loaded_at': 'loaded_at=', 'clicks': 'clicks=0', 'pings': 'pings=3', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} log=['18:25:55 backend enqueue reflex___state____state.rehydrate_app___rehydrate_app____state.ping token=c80a17b3 router_data={}', '18:25:55 backend enqueue reflex___state____state.rehydrate_app___rehydrate_app____state.ping token=c80a17b3 router_data={}', '18:25:55 backend enqueue reflex___state____state.rehydrate_app___rehydrate_app____state.ping token=c80a17b3 router_data={}', '18:25:55 ping -> pings=1 router_data_empty=True', '18:25:55 ping -> pings=2 router_data_empty=True', '18:25:55 ping -> pings=3 router_data_empty=True']",
+  "deltas": [
+   {
+    "t": 92.945,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false,
+       "item_id_rx_state_": "",
+       "router_rx_state_": {
+        "session": {
+         "client_token": "",
+         "client_ip": "",
+         "session_id": ""
+        },
+        "headers": {
+         "host": "",
+         "origin": "",
+         "upgrade": "",
+         "connection": "",
+         "cookie": "",
+         "pragma": "",
+         "cache_control": "",
+         "user_agent": "",
+         "sec_websocket_version": "",
+         "sec_websocket_key": "",
+         "sec_websocket_extensions": "",
+         "accept_encoding": "",
+         "accept_language": "",
+         "raw_headers": {}
+        },
+        "page": {
+         "host": "",
+         "path": "",
+         "raw_path": "",
+         "full_path": "",
+         "full_raw_path": "",
+         "params": {}
+        },
+        "url": {
+         "scheme": "",
+         "netloc": "",
+         "origin": "://",
+         "path": "",
+         "query": "",
+         "query_parameters": {},
+         "fragment": "",
+         "href": ""
+        },
+        "route_id": ""
+       }
+      },
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "bg_status_rx_state_": "idle",
+       "clicks_rx_state_": 0,
+       "flavor_rx_state_": "",
+       "item_arg_rx_state_": "",
+       "load_seq_rx_state_": 0,
+       "loaded_at_rx_state_": "",
+       "loaded_page_rx_state_": "",
+       "name_rx_state_": "",
+       "path_rx_state_": "",
+       "pings_rx_state_": 0
+      }
+     }
+    }
+   },
+   {
+    "t": 92.946,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": true
+      }
+     }
+    }
+   },
+   {
+    "t": 92.946,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "pings_rx_state_": 1
+      }
+     }
+    }
+   },
+   {
+    "t": 92.946,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "pings_rx_state_": 2
+      }
+     }
+    }
+   },
+   {
+    "t": 92.958,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "pings_rx_state_": 3
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "name": "J.ui_after_routeless_rehydrate",
+  "status": "anomaly",
+  "details": "after a routeless rehydrate the page shows on_load-derived values reset (loaded_page='', load_seq=0) until the next routed event"
+ },
+ {
+  "name": "J.routed_click_after_concurrent_events",
+  "status": "pass",
+  "details": "runs={'index': 2, 'page-b': 0, 'item': 0, '404': 0, 'ping': 3, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:25:57', 'clicks': 'clicks=1', 'pings': 'pings=3', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
+  "deltas": [
+   {
+    "t": 95.612,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false,
+       "item_id_rx_state_": "",
+       "router_rx_state_": {
+        "session": {
+         "client_token": "c80a17b3-1ff1-4558-e3c6-16632a409714",
+         "client_ip": "127.0.0.1",
+         "session_id": "OX5kdEWH-QKS6NUKAAAT"
+        },
+        "headers": {
+         "host": "localhost:3223",
+         "origin": "http://localhost:3223",
+         "upgrade": "websocket",
+         "connection": "Upgrade",
+         "cookie": "rh_flavor=mint",
+         "pragma": "no-cache",
+         "cache_control": "no-cache",
+         "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+         "sec_websocket_version": "13",
+         "sec_websocket_key": "GVj4IJ6DL8n4AnECai4pWw==",
+         "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+         "accept_encoding": "gzip, deflate, br, zstd",
+         "accept_language": "en-US,en;q=0.9",
+         "raw_headers": {
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "en-US,en;q=0.9",
+          "asgi-scope-client": "127.0.0.1",
+          "cache-control": "no-cache",
+          "connection": "Upgrade",
+          "cookie": "rh_flavor=mint",
+          "host": "localhost:3223",
+          "origin": "http://localhost:3223",
+          "pragma": "no-cache",
+          "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+          "sec-websocket-key": "GVj4IJ6DL8n4AnECai4pWw==",
+          "sec-websocket-protocol": "0.9.11a1",
+          "sec-websocket-version": "13",
+          "upgrade": "websocket",
+          "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+         }
+        },
+        "page": {
+         "host": "http://localhost:3223",
+         "path": "/index",
+         "raw_path": "/",
+         "full_path": "http://localhost:3223/index",
+         "full_raw_path": "http://localhost:3223/",
+         "params": {}
+        },
+        "url": {
+         "scheme": "http",
+         "netloc": "localhost:3223",
+         "origin": "http://localhost:3223",
+         "path": "/",
+         "query": "",
+         "query_parameters": {},
+         "fragment": "",
+         "href": "http://localhost:3223/"
+        },
+        "route_id": "/index"
+       }
+      },
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "bg_status_rx_state_": "idle",
+       "clicks_rx_state_": 0,
+       "flavor_rx_state_": "",
+       "item_arg_rx_state_": "",
+       "load_seq_rx_state_": 0,
+       "loaded_at_rx_state_": "",
+       "loaded_page_rx_state_": "",
+       "name_rx_state_": "",
+       "path_rx_state_": "/",
+       "pings_rx_state_": 3
+      }
+     }
+    }
+   },
+   {
+    "t": 95.613,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false
+      }
+     }
+    }
+   },
+   {
+    "t": 95.613,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "clicks_rx_state_": 1
+      }
+     }
+    }
+   },
+   {
+    "t": 95.613,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "load_seq_rx_state_": 1,
+       "loaded_page_rx_state_": "index",
+       "loaded_at_rx_state_": "18:25:57"
+      }
+     }
+    }
+   },
+   {
+    "t": 95.613,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": true
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "name": "K.state_expired",
+  "status": "pass",
+  "details": "waited 7.5s; remaining state keys for token: {}"
+ },
+ {
+  "name": "K.modify_state_on_expired_state",
+  "status": "pass",
+  "details": "took 2.0s yielded_state_cls=reflex___state____state api={'ok': True, 'pings': 1, 'yielded': 'reflex___state____state', 'runs': {'index': 1, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 0, 'hydrate_seen': 0}} runs={'index': 1, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 0, 'hydrate_seen': 0} hydrate_deltas=0 deltas=1 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:25:59', 'clicks': 'clicks=0', 'pings': 'pings=1', 'bg_status': 'bg_status=idle', 'name': 'name=alice', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} log=['18:25:59 on_load index (run #1) path=/', '18:26:07 backend modify_state pings -> 1 yielded=reflex___state____state router_data_empty=True']",
+  "deltas": [
+   {
+    "t": 104.83,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "pings_rx_state_": 1
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "name": "K.ui_after_modify_state",
+  "status": "pass",
+  "details": "UI after modify_state on a fresh (expired) state: hydrated=true loaded_page='index' clicks=0 (modify_state emits only its own dirty vars; no hydrate)"
+ },
+ {
+  "name": "K.routed_click_after_modify_state",
+  "status": "pass",
+  "details": "runs={'index': 2, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:26:09', 'clicks': 'clicks=1', 'pings': 'pings=1', 'bg_status': 'bg_status=idle', 'name': 'name=', 'flavor': 'flavor=', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}",
+  "deltas": [
+   {
+    "t": 106.899,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false,
+       "item_id_rx_state_": "",
+       "router_rx_state_": {
+        "session": {
+         "client_token": "3d5d09dd-8f09-4c94-88c8-38b20d13065c",
+         "client_ip": "127.0.0.1",
+         "session_id": "H699EjA7acvAGAxYAAAV"
+        },
+        "headers": {
+         "host": "localhost:3223",
+         "origin": "http://localhost:3223",
+         "upgrade": "websocket",
+         "connection": "Upgrade",
+         "cookie": "rh_flavor=mint",
+         "pragma": "no-cache",
+         "cache_control": "no-cache",
+         "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+         "sec_websocket_version": "13",
+         "sec_websocket_key": "AvULvHV8JE3FvfGOQAODDA==",
+         "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+         "accept_encoding": "gzip, deflate, br, zstd",
+         "accept_language": "en-US,en;q=0.9",
+         "raw_headers": {
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "en-US,en;q=0.9",
+          "asgi-scope-client": "127.0.0.1",
+          "cache-control": "no-cache",
+          "connection": "Upgrade",
+          "cookie": "rh_flavor=mint",
+          "host": "localhost:3223",
+          "origin": "http://localhost:3223",
+          "pragma": "no-cache",
+          "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+          "sec-websocket-key": "AvULvHV8JE3FvfGOQAODDA==",
+          "sec-websocket-protocol": "0.9.11a1",
+          "sec-websocket-version": "13",
+          "upgrade": "websocket",
+          "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+         }
+        },
+        "page": {
+         "host": "http://localhost:3223",
+         "path": "/index",
+         "raw_path": "/",
+         "full_path": "http://localhost:3223/index",
+         "full_raw_path": "http://localhost:3223/",
+         "params": {}
+        },
+        "url": {
+         "scheme": "http",
+         "netloc": "localhost:3223",
+         "origin": "http://localhost:3223",
+         "path": "/",
+         "query": "",
+         "query_parameters": {},
+         "fragment": "",
+         "href": "http://localhost:3223/"
+        },
+        "route_id": "/index"
+       }
+      },
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "bg_status_rx_state_": "idle",
+       "clicks_rx_state_": 0,
+       "flavor_rx_state_": "",
+       "item_arg_rx_state_": "",
+       "load_seq_rx_state_": 0,
+       "loaded_at_rx_state_": "",
+       "loaded_page_rx_state_": "",
+       "name_rx_state_": "",
+       "path_rx_state_": "/",
+       "pings_rx_state_": 1
+      }
+     }
+    }
+   },
+   {
+    "t": 106.9,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false
+      }
+     }
+    }
+   },
+   {
+    "t": 106.9,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "clicks_rx_state_": 1
+      }
+     }
+    }
+   },
+   {
+    "t": 106.9,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "load_seq_rx_state_": 1,
+       "loaded_page_rx_state_": "index",
+       "loaded_at_rx_state_": "18:26:09"
+      }
+     }
+    }
+   },
+   {
+    "t": 106.9,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": true
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "name": "K.no_runaway_after_modify_state",
+  "status": "pass",
+  "details": "runs 2s later={'index': 2, 'page-b': 0, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0}"
+ },
+ {
   "name": "I.server_dropped_socket_after_expiry_reconnects",
   "status": "fail",
-  "details": "kicked={'kicked': ['rukF9WhWEc8seHA_AAAT'], 'mode': 'eio'} state keys before kick={} token same=True runs={'index': 0, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=0 deltas=0 client sent=[] snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:02:19', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=bob', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} log=['14:02:19 on_load page-b (run #1) path=/page-b/', '14:02:20 click -> clicks=1 path=/page-b/', \"14:02:27 api kick token=e2ebfb68 mode=eio sids=['rukF9WhWEc8seHA_AAAT']\"]",
+  "details": "kicked={'kicked': ['_NuU8aJqA5gr3C71AAAX'], 'mode': 'eio'} state keys before kick={} token same=True runs={'index': 0, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=0 deltas=0 client sent=[] snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:26:12', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=bob', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='} log=['18:26:12 on_load page-b (run #1) path=/page-b/', '18:26:13 click -> clicks=1 path=/page-b/', \"18:26:20 api kick token=e8143529 mode=eio sids=['_NuU8aJqA5gr3C71AAAX']\"]",
   "deltas": []
  },
  {
   "name": "I.click_after_reconnect_no_extra_rehydrate",
   "status": "anomaly",
-  "details": "runs={'index': 0, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=0 deltas=0 snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=14:02:19', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=bob', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}"
+  "details": "runs={'index': 0, 'page-b': 1, 'item': 0, '404': 0, 'ping': 0, 'click': 1, 'hydrate_seen': 0} hydrate_deltas=0 deltas=0 snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'loaded_at': 'loaded_at=18:26:12', 'clicks': 'clicks=1', 'pings': 'pings=0', 'bg_status': 'bg_status=idle', 'name': 'name=bob', 'flavor': 'flavor=mint', 'other_count': 'other_count=0', 'item_arg': 'item_arg='}"
  },
  {
   "name": "I.ws_lifecycle_after_kick",

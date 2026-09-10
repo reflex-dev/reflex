@@ -1,15 +1,16 @@
 {
  "runs": {
   "index": 0,
-  "page-b": 0,
+  "page-b": 1,
   "item": 0,
   "404": 0,
-  "ping": 1,
-  "click": 0,
+  "ping": 0,
+  "click": 1,
   "hydrate_seen": 0
  },
  "log": [
-  "13:34:59 backend enqueue reflex___state____state.rehydrate_app___rehydrate_app____state.ping token=a9dd4e22 router_data={}",
-  "13:34:59 ping -> pings=1 router_data_empty=True"
+  "18:11:45 on_load page-b (run #1) path=/page-b",
+  "18:11:46 click -> clicks=1 path=/page-b",
+  "18:11:53 api kick token=8607ca4d mode=eio sids=['LptbTGZqtq3-bA8bAAAX']"
  ]
 }

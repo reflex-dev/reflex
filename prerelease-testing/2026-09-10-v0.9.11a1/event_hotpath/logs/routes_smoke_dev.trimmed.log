@@ -1,0 +1,11 @@
+30:Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+74:Debug: [timing] Compile pages: 2.60s
+75:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 326/325 0:00:02
+162:App running at: http://localhost:3186/
+163:Backend running at: http://0.0.0.0:8186
+166:DeprecationWarning: RouterData.page has been deprecated in version 0.8.1. Use 
+170:Debug: StateManagerDisk._flush_write_queue: writing 3 remaining items to disk
+171:Debug: StateManagerDisk._flush_write_queue: Finished writing 3 items
+172:[ERROR] Unexpected exit from worker-1
+173:Debug: error: script "dev" exited with code 143
+179:error: script "dev" exited with code 143

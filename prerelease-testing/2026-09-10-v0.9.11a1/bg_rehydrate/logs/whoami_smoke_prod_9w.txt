@@ -1,4 +1,4 @@
 requests=60 distinct_pids=9 distinct_instance_ids=1 token_manager=RedisTokenManager
-pids: [15571, 15573, 15575, 15577, 15585, 15587, 15592, 15594, 15599]
-instance_ids: ['ee961a88-3a40-479d-89e9-c6b92c670aa1']
-local_tokens per pid: {15573: [], 15575: [], 15587: [], 15599: [], 15592: [], 15585: [], 15577: [], 15571: [], 15594: []}
+pids: [9383, 9385, 9387, 9392, 9397, 9399, 9401, 9403, 9411]
+instance_ids: ['771f7ffd-bb83-46a4-a33b-8f1356af5ee0']
+local_tokens per pid: {9392: [], 9383: [], 9385: [], 9399: [], 9397: [], 9387: [], 9403: [], 9411: [], 9401: []}

@@ -1,0 +1,240 @@
+{
+ "url": "http://localhost:4600/",
+ "wait_seconds": 10.0,
+ "phases": [
+  [
+   "18:08:30",
+   "goto"
+  ],
+  [
+   "18:08:32",
+   "mounted"
+  ],
+  [
+   "18:08:43",
+   "reload"
+  ],
+  [
+   "18:08:43",
+   "remounted"
+  ],
+  [
+   "18:08:53",
+   "nav_to_other"
+  ],
+  [
+   "18:08:56",
+   "nav_back"
+  ],
+  [
+   "18:08:56",
+   "client_remounted"
+  ],
+  [
+   "18:09:06",
+   "done"
+  ]
+ ],
+ "frames": [
+  [
+   "18:08:32.347",
+   "ws#1",
+   "hydrate",
+   null
+  ],
+  [
+   "18:08:32.348",
+   "ws#1",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:08:35.441",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:08:35"
+   }
+  ],
+  [
+   "18:08:38.441",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:08:38"
+   }
+  ],
+  [
+   "18:08:41.439",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:08:41"
+   }
+  ],
+  [
+   "18:08:43.302",
+   "ws#2",
+   "hydrate",
+   null
+  ],
+  [
+   "18:08:43.302",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:08:46.322",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:08:46"
+   }
+  ],
+  [
+   "18:08:49.324",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:08:49"
+   }
+  ],
+  [
+   "18:08:52.322",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:08:52"
+   }
+  ],
+  [
+   "18:08:53.924",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:08:56.485",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:08:59.490",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:08:59"
+   }
+  ],
+  [
+   "18:09:02.489",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:09:02"
+   }
+  ],
+  [
+   "18:09:05.490",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:09:05"
+   }
+  ]
+ ],
+ "counts_after_load": {
+  "tick_count": "tick_count=3",
+  "static_count": "static_count=0",
+  "zero_count": "zero_count=0",
+  "tick_log": "tick_log=18:08:35,18:08:38,18:08:41",
+  "static_log": "static_log=",
+  "zero_log": "zero_log="
+ },
+ "counts_after_reload": {
+  "tick_count": "tick_count=6",
+  "static_count": "static_count=0",
+  "zero_count": "zero_count=0",
+  "tick_log": "tick_log=18:08:35,18:08:38,18:08:41,18:08:46,18:08:49,18:08:52",
+  "static_log": "static_log=",
+  "zero_log": "zero_log="
+ },
+ "counts_after_client_nav": {
+  "tick_count": "tick_count=9",
+  "static_count": "static_count=0",
+  "zero_count": "zero_count=0",
+  "tick_log": "tick_log=18:08:35,18:08:38,18:08:41,18:08:46,18:08:49,18:08:52,18:08:59,18:09:02,18:09:05",
+  "static_log": "static_log=",
+  "zero_log": "zero_log="
+ },
+ "interval_time_outerHTML": "<time datetime=\"1789063721436\">18:08:41</time>",
+ "static_innerHTML": "<time datetime=\"1577934245000\">2020-01-02 03:04</time>",
+ "websockets": [
+  [
+   "open",
+   "18:08:32",
+   "ws://localhost:4600/?token=Uvoz3xOI8a1R"
+  ],
+  [
+   "open",
+   "18:08:32",
+   "ws://localhost:9600/_event/?token=179a5259-40e8-46cd-909b-195e94f31462&EIO=4&transport=websocket"
+  ],
+  [
+   "close",
+   "18:08:43",
+   "ws://localhost:9600/_event/?token=179a5259-40e8-46cd-909b-195e94f31462&EIO=4&transport=websocket"
+  ],
+  [
+   "open",
+   "18:08:43",
+   "ws://localhost:4600/?token=Uvoz3xOI8a1R"
+  ],
+  [
+   "open",
+   "18:08:43",
+   "ws://localhost:9600/_event/?token=179a5259-40e8-46cd-909b-195e94f31462&EIO=4&transport=websocket"
+  ]
+ ],
+ "console": [
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  [
+   "log",
+   "Disconnect websocket on page navigation"
+  ],
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+ ],
+ "page_errors": []
+}

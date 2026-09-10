@@ -1,0 +1,132 @@
+[
+  {
+    "name": "page_title",
+    "status": "pass",
+    "details": "title='Graph Traversal - Reflex'"
+  },
+  {
+    "name": "initial_grid_7x7_1red_1green_3blue",
+    "status": "pass",
+    "details": "{'red': 1, 'green': 1, 'blue': 3, 'yellow': 0, 'other': 44, 'total': 49}"
+  },
+  {
+    "name": "walls_label",
+    "status": "pass",
+    "details": "'3 walls' visible"
+  },
+  {
+    "name": "select_placeholder",
+    "status": "pass",
+    "details": "placeholder shown"
+  },
+  {
+    "name": "slider_keyboard_updates_walls",
+    "status": "pass",
+    "details": "aria-valuenow=5 label 5 walls=True"
+  },
+  {
+    "name": "generate_graph_uses_wall_count",
+    "status": "pass",
+    "details": "{'red': 1, 'green': 1, 'blue': 5, 'yellow': 0, 'other': 42, 'total': 49}"
+  },
+  {
+    "name": "run_without_algorithm_noop",
+    "status": "pass",
+    "details": "toasts=[]"
+  },
+  {
+    "name": "DFS_chain_ends_in_toast",
+    "status": "pass",
+    "details": "toast after 0.3s: [{'text': 'Path found to [2,4]', 'type': 'success', 'x': 'center', 'y': 'top', 'mounted': 'true', 'visible': 'true', 'expanded': 'true', 'styled': 'true'}] yellow_cells=8"
+  },
+  {
+    "name": "DFS_toast_attributes",
+    "status": "pass",
+    "details": "data-type=success (expect success) position=top-center (expect top-center) styled=true mounted=true"
+  },
+  {
+    "name": "DFS_toast_text_format",
+    "status": "pass",
+    "details": "Path found to [2,4]"
+  },
+  {
+    "name": "DFS_yellow_progress_cells",
+    "status": "pass",
+    "details": "{'red': 1, 'green': 1, 'blue': 5, 'yellow': 8, 'other': 34, 'total': 49}"
+  },
+  {
+    "name": "toast_auto_dismisses",
+    "status": "pass",
+    "details": "toasts remaining=[]"
+  },
+  {
+    "name": "clear_resets_grid",
+    "status": "pass",
+    "details": "{'red': 1, 'green': 1, 'blue': 5, 'yellow': 0, 'other': 42, 'total': 49}"
+  },
+  {
+    "name": "BFS_chain_ends_in_toast",
+    "status": "pass",
+    "details": "toast after 1.0s: [{'text': 'Path found to [1,3]', 'type': 'success', 'x': 'center', 'y': 'top', 'mounted': 'true', 'visible': 'true', 'expanded': 'true', 'styled': 'true'}] yellow_cells=29"
+  },
+  {
+    "name": "BFS_toast_attributes",
+    "status": "pass",
+    "details": "data-type=success (expect success) position=top-center (expect top-center) styled=true mounted=true"
+  },
+  {
+    "name": "BFS_toast_text_format",
+    "status": "pass",
+    "details": "Path found to [1,3]"
+  },
+  {
+    "name": "BFS_yellow_progress_cells",
+    "status": "pass",
+    "details": "{'red': 1, 'green': 1, 'blue': 0, 'yellow': 29, 'other': 18, 'total': 49}"
+  },
+  {
+    "name": "bfs_zero_walls_finds_path",
+    "status": "pass",
+    "details": "[{'text': 'Path found to [1,3]', 'type': 'success', 'x': 'center', 'y': 'top', 'mounted': 'true', 'visible': 'true', 'expanded': 'true', 'styled': 'true'}] elapsed=1.0s"
+  },
+  {
+    "name": "two_toasts_stack",
+    "status": "pass",
+    "details": "toasts=[{'text': 'Path found to [1,3]', 'type': 'success', 'x': 'center', 'y': 'top', 'mounted': 'true', 'visible': 'true', 'expanded': 'true', 'styled': 'true'}, {'text': 'Path found to [1,3]', 'type': 'success', 'x': 'center', 'y': 'top', 'mounted': 'true', 'visible': 'true', 'expanded': 'true', 'styled': 'true'}]"
+  },
+  {
+    "name": "toaster_hover_expands",
+    "status": "pass",
+    "details": "data-expanded=['true', 'true']"
+  },
+  {
+    "name": "color_mode_toggle",
+    "status": "pass",
+    "details": "html.class 'light' -> 'dark'"
+  },
+  {
+    "name": "toast_in_dark_mode",
+    "status": "pass",
+    "details": "toast=[{'text': 'Path found to [1,3]', 'type': 'success', 'x': 'center', 'y': 'top', 'mounted': 'true', 'visible': 'true', 'expanded': 'true', 'styled': 'true'}] toaster data-sonner-theme=['dark', 'dark']"
+  },
+  {
+    "name": "toaster_theme_follows_dark_mode",
+    "status": "pass",
+    "details": "data-sonner-theme per <ol>=['dark', 'dark']"
+  },
+  {
+    "name": "sonner_one_ol_per_position",
+    "status": "pass",
+    "details": "2 toaster <ol> elements (default bottom-right + top-center in use)"
+  },
+  {
+    "name": "dark_mode_persists_reload",
+    "status": "pass",
+    "details": "html.class='dark'"
+  },
+  {
+    "name": "sonner_module_urls",
+    "status": "pass",
+    "details": "['http://localhost:4141/node_modules/.vite/deps/sonner.js?v=28d7befb']"
+  }
+]

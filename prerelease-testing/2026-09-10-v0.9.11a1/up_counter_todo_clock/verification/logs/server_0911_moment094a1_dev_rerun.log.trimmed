@@ -1,0 +1,31 @@
+# trimmed: config + react-moment install lines + every EVT line from /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify_up_counter_todo_clock_0/logs/server_0911_moment094a1_dev_rerun.log
+13:Debug: Config: Config(app_name='momentapp', app_module_import=None, 
+115:Debug: installed moment@2.30.1
+120:Debug: installed react-moment@2.0.2
+173:EVT seq=1 kind=interval payload='18:06:11' server_time=18:06:11.369
+174:EVT seq=2 kind=static payload='2020-01-02 03:04' server_time=18:06:11.370
+175:EVT seq=3 kind=interval0 payload='18:06:11' server_time=18:06:11.371
+176:EVT seq=4 kind=interval payload='18:06:11' server_time=18:06:11.372
+177:EVT seq=5 kind=static payload='2020-01-02 03:04' server_time=18:06:11.373
+178:EVT seq=6 kind=interval0 payload='18:06:11' server_time=18:06:11.374
+179:EVT seq=7 kind=interval payload='18:06:14' server_time=18:06:14.370
+180:EVT seq=8 kind=interval payload='18:06:17' server_time=18:06:17.370
+181:EVT seq=9 kind=interval payload='18:06:20' server_time=18:06:20.369
+182:EVT seq=10 kind=interval payload='18:06:22' server_time=18:06:22.209
+183:EVT seq=11 kind=static payload='2020-01-02 03:04' server_time=18:06:22.210
+184:EVT seq=12 kind=interval0 payload='18:06:22' server_time=18:06:22.211
+185:EVT seq=13 kind=interval payload='18:06:22' server_time=18:06:22.213
+186:EVT seq=14 kind=static payload='2020-01-02 03:04' server_time=18:06:22.214
+187:EVT seq=15 kind=interval0 payload='18:06:22' server_time=18:06:22.215
+188:EVT seq=16 kind=interval payload='18:06:25' server_time=18:06:25.206
+189:EVT seq=17 kind=interval payload='18:06:28' server_time=18:06:28.206
+190:EVT seq=18 kind=interval payload='18:06:31' server_time=18:06:31.206
+191:EVT seq=19 kind=interval payload='18:06:35' server_time=18:06:35.339
+192:EVT seq=20 kind=static payload='2020-01-02 03:04' server_time=18:06:35.344
+193:EVT seq=21 kind=interval0 payload='18:06:35' server_time=18:06:35.345
+194:EVT seq=22 kind=interval payload='18:06:35' server_time=18:06:35.345
+195:EVT seq=23 kind=static payload='2020-01-02 03:04' server_time=18:06:35.349
+196:EVT seq=24 kind=interval0 payload='18:06:35' server_time=18:06:35.350
+197:EVT seq=25 kind=interval payload='18:06:38' server_time=18:06:38.340
+198:EVT seq=26 kind=interval payload='18:06:41' server_time=18:06:41.340
+199:EVT seq=27 kind=interval payload='18:06:44' server_time=18:06:44.340

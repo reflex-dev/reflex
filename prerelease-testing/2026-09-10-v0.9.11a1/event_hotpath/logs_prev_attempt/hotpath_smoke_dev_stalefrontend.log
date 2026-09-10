@@ -1,0 +1,325 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='hotpath_app', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/smoke/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3180
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8180
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3180 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3180 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3180 is not in use.
+Debug: Checking if Backend port: 8180 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8180 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8180 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/apps/event_hotpath/hotpath_app/hotpath_app', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/event_hotpath/hotpath_app/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/event_hotpath/hotpath_app/rxconfig.py']
+[INFO] Starting granian (main PID: 2413)
+[INFO] Listening at: http://0.0.0.0:8180
+[INFO] Spawning worker-1 with PID: 2431
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3180/
+App running at: http://localhost:3180/
+Backend running at: http://0.0.0.0:8180
+Debug:   ➜  Network: http://192.0.2.2:3180/  eth0
+Debug: 1:22:47 PM [vite] (ssr) connected.
+Debug: 1:23:12 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+[Reflex Frontend Exception]
+ [SID: Yj9C0Qoox21OWpNjAAAB] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.hotpath_app___hotpath_app____shadow_state, 
+reflex___state____state.hotpath_app___hotpath_app____backend_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+[Reflex Frontend Exception]
+ [SID: 825agIk533OWx8YsAAAD] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.hotpath_app___hotpath_app____shadow_state, 
+reflex___state____state.hotpath_app___hotpath_app____backend_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+Debug: 1:23:45 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+Debug: 1:24:11 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+[Reflex Frontend Exception]
+ [SID: EKz3Gr6ku2Z5Qq7rAAAF] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.hotpath_app___hotpath_app____shadow_state, 
+reflex___state____state.hotpath_app___hotpath_app____backend_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+[Reflex Frontend Exception]
+ [SID: tlQJ5j_CsE4jpi_cAAAH] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.hotpath_app___hotpath_app____shadow_state, 
+reflex___state____state.hotpath_app___hotpath_app____backend_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+Debug: 1:25:02 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+[Reflex Frontend Exception]
+ [SID: yMQZ3_brsdhvbXLgAAAJ] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.hotpath_app___hotpath_app____shadow_state, 
+reflex___state____state.hotpath_app___hotpath_app____backend_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+Debug: 1:25:32 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+[Reflex Frontend Exception]
+ [SID: _ecEueDlaUhJv9hVAAAL] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.hotpath_app___hotpath_app____shadow_state, 
+reflex___state____state.hotpath_app___hotpath_app____backend_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+Debug: 1:26:03 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+Debug: 1:26:04 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+[Reflex Frontend Exception]
+ [SID: h8DZAJ6JySTxRexfAAAN] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.hotpath_app___hotpath_app____shadow_state, 
+reflex___state____state.hotpath_app___hotpath_app____backend_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+[Reflex Frontend Exception]
+ [SID: XuGRlsjclxcmIEimAAAP] State update failed: no dispatch function for 
+substate(s) 'reflex___state____state.hotpath_app___hotpath_app____shadow_state, 
+reflex___state____state.hotpath_app___hotpath_app____backend_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+Debug: 1:27:10 PM [vite] (client) [console.error] Cannot process state update: 
+no dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+Debug: 1:33:54 PM [vite] (client) hmr update 
+/app_components/hotpath_app/hotpath_app.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update 
+/app_components/hotpath_app/hotpath_app.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /utils/context.jsx
+Debug: 1:33:54 PM [vite] (ssr) page reload utils/context.jsx
+Debug: 1:33:54 PM [vite] (ssr) program reload
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/_index.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/[ordering]._index.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/[ordering]._index.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/[hier]._index.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/[hier]._index.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/[interval]._index.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/[interval]._index.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/[slow]._index.jsx
+Debug: 1:33:54 PM [vite] (client) hmr update /app/routes/[slow]._index.jsx
+Debug: 1:33:54 PM [react-router] Config changed.
+Debug: 1:33:54 PM [react-router] Config saved
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:3180/
+  ➜  Network: http://192.0.2.2:3180/  eth0
+1:22:47 PM [vite] (ssr) connected.
+1:23:12 PM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+1:23:45 PM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+1:24:11 PM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+1:25:02 PM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+1:25:32 PM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+1:26:03 PM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+1:26:04 PM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+1:27:10 PM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.hotpath_app___hotpath_app____shadow_state", 
+"reflex___state____state.hotpath_app___hotpath_app____backend_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+1:33:54 PM [vite] (client) hmr update 
+/app_components/hotpath_app/hotpath_app.jsx
+1:33:54 PM [vite] (client) hmr update 
+/app_components/hotpath_app/hotpath_app.jsx
+1:33:54 PM [vite] (client) hmr update /utils/context.jsx
+1:33:54 PM [vite] (client) hmr update /utils/context.jsx
+1:33:54 PM [vite] (client) hmr update /utils/context.jsx
+1:33:54 PM [vite] (ssr) page reload utils/context.jsx
+1:33:54 PM [vite] (ssr) program reload
+1:33:54 PM [vite] (client) hmr update /app/routes/_index.jsx
+1:33:54 PM [vite] (client) hmr update /app/routes/_index.jsx
+1:33:54 PM [vite] (client) hmr update /app/routes/[ordering]._index.jsx
+1:33:54 PM [vite] (client) hmr update /app/routes/[ordering]._index.jsx
+1:33:54 PM [vite] (client) hmr update /app/routes/[hier]._index.jsx
+1:33:54 PM [vite] (client) hmr update /app/routes/[hier]._index.jsx
+1:33:54 PM [vite] (client) hmr update /app/routes/[interval]._index.jsx
+1:33:54 PM [vite] (client) hmr update /app/routes/[interval]._index.jsx
+1:33:54 PM [vite] (client) hmr update /app/routes/[slow]._index.jsx
+1:33:54 PM [vite] (client) hmr update /app/routes/[slow]._index.jsx
+1:33:54 PM [react-router] Config changed.
+1:33:54 PM [react-router] Config saved
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

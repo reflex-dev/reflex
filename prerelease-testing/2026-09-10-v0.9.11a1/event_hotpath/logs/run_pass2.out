@@ -1,0 +1,188 @@
+
+##### 18:26:12 pass2 smoke2
+started smoke hotpath_app fp=3190 bp=8190 pid=11140 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_smoke2.log
+UP http://localhost:3190/ after 0 s
+[PASS   ] ordering.multi_yield: final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']
+[PASS   ] ordering.sync_generator_multi_yield: final=['sy0', 'sy1', 'sy2'] progressive_states=['log=', 'log=4:sy0,5:sy1,6:sy2']
+[PASS   ] ordering.current_task_in_nonsuspending_async_handler: task_info=name=reflex_event|reflex___state____state.hotpath_app___hotpath_app____ordering_state.record_task|e3c2647a-4817-48e9-cac5-2e7f7cf44e28|1789064801.0373235 py=3.11.15
+[PASS   ] ordering.chain_list_of_events: log=log=7:chain-start,9:after-chain other_log=other_log=8:bump:from-chain (expected chain-start < bump:from-chain < after-chain)
+[PASS   ] ordering.yield_other_state_handler: log=log=10:yo-start,11:yo-end other_log=other_log=12:bump:yield-other (expected yo-start < yo-end < bump: yielded event round-trips via client)
+[PASS   ] ordering.yield_sleep_yield: observed=[(0.003, 'log='), (0.036, 'log=13:ysy-a'), (0.405, 'log=13:ysy-a,14:ysy-b'), (0.736, 'log=13:ysy-a,14:ysy-b,15:ysy-c')]
+[PASS   ] ordering.rapid_two_buttons: got 40 entries; match=True; first_diff=None
+[PASS   ] ordering.background_interleave_stateproxy: labels=['bg-start', 'fg:1', 'fg:2', 'fg:3', 'bg-mid other_val=100 gvv=0 parent=State', 'bg-end'] other_val=other_val=100
+[PASS   ] interval.no_recompute_within_interval: after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} ticks ticks=1789064806.086->ticks=1789064806.086 td ticks_td=1789064806.086->ticks_td=1789064806.086 mixi
+[PASS   ] interval.recompute_after_expiry_only_interval_vars: recompute deltas {'ticks': 1, 'ticks_td': 1, 'mixin_ticks': 1, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064806.086->ticks=1789064808.071; td ticks_td=1789064806.086->ticks_td=1789064808.071; mixin mixin_ticks=1789064806.086->mixin_ticks=1789064808.070; cached_plain cached_plain=0->cached_plain=0
+[PASS   ] interval.cached_var_recomputes_once_on_dep_change: cached_plain=2 cached_plain recomputes 1->2 (ticks 8->8)
+[PASS   ] interval.stateproxy_background_read: bg_log=bg t0=1789064809.404 counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 9, "ticks": 9, "ticks_td": 9} | bg t1=1789064811.242 changed=True counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 9, "ticks": 10, "ticks_td": 9}
+[INFO   ] interval.component_state_refresh_on_unrelated_event: after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064805.427->clock_a=1789064805.427)
+[PASS   ] interval.component_state_interval_var_refresh_on_own_event: clock_a clock_a=1789064805.427->clock_a=1789064814.221; clock_b clock_b=1789064805.427->clock_b=1789064805.427 (b changed=False)
+[PASS   ] interval.component_state_second_instance_refresh: clock_b clock_b=1789064805.427->clock_b=1789064815.802
+[INFO   ] interval.component_state_recompute_counts: counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 1, 'clock_x': 4, 'mixin_ticks': 13, 'ticks': 13, 'ticks_td': 13}
+[PASS   ] shadow.var_named_get_state: get_state=shadow-initial -> get_state=set-1789064816; note=fast=['dirty_vars', 'get_delta']; toasts=[]
+[FAIL   ] shadow.var_named_get_delta: get_delta=0; toasts=[]
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY smoke2: 19 entries, 1 fail
+stopped hotpath_smoke2 (pid 11140 pgid 11140)
+--- server log scan (logs3/hotpath_smoke2.log):
+163: Traceback (most recent call last):
+214:[ERROR] Unexpected exit from worker-1
+
+##### 18:27:04 pass2 hp3132
+started hp313 hotpath_app_313 fp=3191 bp=8191 pid=11576 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_hp3132.log
+UP http://localhost:3191/ after 1 s
+[PASS   ] ordering.multi_yield: final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']
+[PASS   ] ordering.sync_generator_multi_yield: final=['sy0', 'sy1', 'sy2'] progressive_states=['log=', 'log=4:sy0,5:sy1,6:sy2']
+[PASS   ] ordering.current_task_in_nonsuspending_async_handler: task_info=name=reflex_event|reflex___state____state.hotpath_app___hotpath_app____ordering_state.record_task|58f19034-cb45-4dd1-b49e-f3facca517f5|1789064853.0518544 py=3.13.12
+[PASS   ] ordering.chain_list_of_events: log=log=7:chain-start,9:after-chain other_log=other_log=8:bump:from-chain (expected chain-start < bump:from-chain < after-chain)
+[PASS   ] ordering.yield_other_state_handler: log=log=10:yo-start,11:yo-end other_log=other_log=12:bump:yield-other (expected yo-start < yo-end < bump: yielded event round-trips via client)
+[PASS   ] ordering.yield_sleep_yield: observed=[(0.002, 'log='), (0.034, 'log=13:ysy-a'), (0.429, 'log=13:ysy-a,14:ysy-b'), (0.721, 'log=13:ysy-a,14:ysy-b,15:ysy-c')]
+[PASS   ] ordering.rapid_two_buttons: got 40 entries; match=True; first_diff=None
+[PASS   ] ordering.background_interleave_stateproxy: labels=['bg-start', 'fg:1', 'fg:2', 'fg:3', 'bg-mid other_val=100 gvv=0 parent=State', 'bg-end'] other_val=other_val=100
+[PASS   ] interval.no_recompute_within_interval: after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} ticks ticks=1789064858.197->ticks=1789064858.197 td ticks_td=1789064858.197->ticks_td=1789064858.197 mixi
+[PASS   ] interval.recompute_after_expiry_only_interval_vars: recompute deltas {'ticks': 1, 'ticks_td': 1, 'mixin_ticks': 1, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064858.197->ticks=1789064860.133; td ticks_td=1789064858.197->ticks_td=1789064860.133; mixin mixin_ticks=1789064858.197->mixin_ticks=1789064860.133; cached_plain cached_plain=0->cached_plain=0
+[PASS   ] interval.cached_var_recomputes_once_on_dep_change: cached_plain=2 cached_plain recomputes 1->2 (ticks 8->8)
+[PASS   ] interval.stateproxy_background_read: bg_log=bg t0=1789064861.467 counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 9, "ticks": 9, "ticks_td": 9} | bg t1=1789064863.288 changed=True counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 9, "ticks": 10, "ticks_td": 9}
+[INFO   ] interval.component_state_refresh_on_unrelated_event: after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064857.269->clock_a=1789064857.269)
+[PASS   ] interval.component_state_interval_var_refresh_on_own_event: clock_a clock_a=1789064857.269->clock_a=1789064866.268; clock_b clock_b=1789064857.268->clock_b=1789064857.268 (b changed=False)
+[PASS   ] interval.component_state_second_instance_refresh: clock_b clock_b=1789064857.268->clock_b=1789064867.850
+[INFO   ] interval.component_state_recompute_counts: counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 1, 'clock_x': 4, 'mixin_ticks': 12, 'ticks': 13, 'ticks_td': 13}
+[PASS   ] shadow.var_named_get_state: get_state=shadow-initial -> get_state=set-1789064868; note=fast=['dirty_vars', 'get_delta']; toasts=[]
+[FAIL   ] shadow.var_named_get_delta: get_delta=0; toasts=[]
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY hp3132: 19 entries, 1 fail
+stopped hotpath_hp3132 (pid 11576 pgid 11576)
+--- server log scan (logs3/hotpath_hp3132.log):
+164: Traceback (most recent call last):
+221:[ERROR] Unexpected exit from worker-1
+
+##### 18:27:56 pass2 base2
+started base0910 hotpath_app_base fp=3192 bp=8192 pid=12155 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_base2.log
+UP http://localhost:3192/ after 1 s
+[PASS   ] ordering.multi_yield: final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']
+[PASS   ] ordering.sync_generator_multi_yield: final=['sy0', 'sy1', 'sy2'] progressive_states=['log=', 'log=4:sy0,5:sy1,6:sy2']
+[PASS   ] ordering.current_task_in_nonsuspending_async_handler: task_info=name=reflex_event|reflex___state____state.hotpath_app___hotpath_app____ordering_state.record_task|2f5710ed-5c86-4cb0-8509-817a7108fb68|1789064905.030738 py=3.11.15
+[PASS   ] ordering.chain_list_of_events: log=log=7:chain-start,9:after-chain other_log=other_log=8:bump:from-chain (expected chain-start < bump:from-chain < after-chain)
+[PASS   ] ordering.yield_other_state_handler: log=log=10:yo-start,11:yo-end other_log=other_log=12:bump:yield-other (expected yo-start < yo-end < bump: yielded event round-trips via client)
+[PASS   ] ordering.yield_sleep_yield: observed=[(0.002, 'log='), (0.036, 'log=13:ysy-a'), (0.406, 'log=13:ysy-a,14:ysy-b'), (0.707, 'log=13:ysy-a,14:ysy-b,15:ysy-c')]
+[PASS   ] ordering.rapid_two_buttons: got 40 entries; match=True; first_diff=None
+[PASS   ] ordering.background_interleave_stateproxy: labels=['bg-start', 'fg:1', 'fg:2', 'fg:3', 'bg-mid other_val=100 gvv=0 parent=State', 'bg-end'] other_val=other_val=100
+[PASS   ] interval.no_recompute_within_interval: after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} ticks ticks=1789064910.264->ticks=1789064910.264 td ticks_td=1789064910.264->ticks_td=1789064910.264 mixi
+[PASS   ] interval.recompute_after_expiry_only_interval_vars: recompute deltas {'ticks': 1, 'ticks_td': 1, 'mixin_ticks': 1, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064910.264->ticks=1789064912.214; td ticks_td=1789064910.264->ticks_td=1789064912.214; mixin mixin_ticks=1789064910.264->mixin_ticks=1789064912.214; cached_plain cached_plain=0->cached_plain=0
+[PASS   ] interval.cached_var_recomputes_once_on_dep_change: cached_plain=2 cached_plain recomputes 1->2 (ticks 8->8)
+[PASS   ] interval.stateproxy_background_read: bg_log=bg t0=1789064913.532 counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 9, "ticks": 9, "ticks_td": 9} | bg t1=1789064915.369 changed=True counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 9, "ticks": 10, "ticks_td": 9}
+[INFO   ] interval.component_state_refresh_on_unrelated_event: after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064909.316->clock_a=1789064909.316)
+[PASS   ] interval.component_state_interval_var_refresh_on_own_event: clock_a clock_a=1789064909.316->clock_a=1789064918.382; clock_b clock_b=1789064909.316->clock_b=1789064909.316 (b changed=False)
+[PASS   ] interval.component_state_second_instance_refresh: clock_b clock_b=1789064909.316->clock_b=1789064919.966
+[INFO   ] interval.component_state_recompute_counts: counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 1, 'clock_x': 4, 'mixin_ticks': 12, 'ticks': 12, 'ticks_td': 13}
+[PASS   ] shadow.var_named_get_state: get_state=shadow-initial -> get_state=set-1789064920; note=fast=[]; toasts=[]
+[FAIL   ] shadow.var_named_get_delta: get_delta=0; toasts=[]
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY base2: 19 entries, 1 fail
+stopped hotpath_base2 (pid 12155 pgid 12155)
+--- server log scan (logs3/hotpath_base2.log):
+169: Traceback (most recent call last):
+221:[ERROR] Unexpected exit from worker-1
+
+##### 18:28:48 pass2 base3132
+started hp313_base hotpath_app_313_base fp=3193 bp=8193 pid=12385 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_base3132.log
+UP http://localhost:3193/ after 1 s
+[PASS   ] ordering.multi_yield: final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']
+[PASS   ] ordering.sync_generator_multi_yield: final=['sy0', 'sy1', 'sy2'] progressive_states=['log=', 'log=4:sy0,5:sy1,6:sy2']
+[PASS   ] ordering.current_task_in_nonsuspending_async_handler: task_info=name=reflex_event|reflex___state____state.hotpath_app___hotpath_app____ordering_state.record_task|070fa396-059f-41be-c3fe-5817f34dde1d|1789064957.3965056 py=3.13.12
+[PASS   ] ordering.chain_list_of_events: log=log=7:chain-start,9:after-chain other_log=other_log=8:bump:from-chain (expected chain-start < bump:from-chain < after-chain)
+[PASS   ] ordering.yield_other_state_handler: log=log=10:yo-start,11:yo-end other_log=other_log=12:bump:yield-other (expected yo-start < yo-end < bump: yielded event round-trips via client)
+[PASS   ] ordering.yield_sleep_yield: observed=[(0.003, 'log='), (0.036, 'log=13:ysy-a'), (0.403, 'log=13:ysy-a,14:ysy-b'), (0.709, 'log=13:ysy-a,14:ysy-b,15:ysy-c')]
+[PASS   ] ordering.rapid_two_buttons: got 40 entries; match=True; first_diff=None
+[PASS   ] ordering.background_interleave_stateproxy: labels=['bg-start', 'fg:1', 'fg:2', 'fg:3', 'bg-mid other_val=100 gvv=0 parent=State', 'bg-end'] other_val=other_val=100
+[PASS   ] interval.no_recompute_within_interval: after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} ticks ticks=1789064962.680->ticks=1789064962.680 td ticks_td=1789064962.680->ticks_td=1789064962.680 mixi
+[PASS   ] interval.recompute_after_expiry_only_interval_vars: recompute deltas {'ticks': 1, 'ticks_td': 1, 'mixin_ticks': 1, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064962.680->ticks=1789064964.648; td ticks_td=1789064962.680->ticks_td=1789064964.648; mixin mixin_ticks=1789064962.680->mixin_ticks=1789064964.648; cached_plain cached_plain=0->cached_plain=0
+[PASS   ] interval.cached_var_recomputes_once_on_dep_change: cached_plain=2 cached_plain recomputes 1->2 (ticks 8->8)
+[PASS   ] interval.stateproxy_background_read: bg_log=bg t0=1789064965.946 counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 9, "ticks": 9, "ticks_td": 9} | bg t1=1789064967.767 changed=True counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 9, "ticks": 10, "ticks_td": 9}
+[INFO   ] interval.component_state_refresh_on_unrelated_event: after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064961.738->clock_a=1789064961.738)
+[PASS   ] interval.component_state_interval_var_refresh_on_own_event: clock_a clock_a=1789064961.738->clock_a=1789064970.730; clock_b clock_b=1789064961.739->clock_b=1789064961.739 (b changed=False)
+[PASS   ] interval.component_state_second_instance_refresh: clock_b clock_b=1789064961.739->clock_b=1789064972.312
+[INFO   ] interval.component_state_recompute_counts: counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 1, 'clock_x': 4, 'mixin_ticks': 12, 'ticks': 13, 'ticks_td': 13}
+[PASS   ] shadow.var_named_get_state: get_state=shadow-initial -> get_state=set-1789064973; note=fast=[]; toasts=[]
+[FAIL   ] shadow.var_named_get_delta: get_delta=0; toasts=[]
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY base3132: 19 entries, 1 fail
+stopped hotpath_base3132 (pid 12385 pgid 12385)
+--- server log scan (logs3/hotpath_base3132.log):
+169: Traceback (most recent call last):
+225:[ERROR] Unexpected exit from worker-1
+
+##### 18:29:40 nocompile repro smoke
+### smoke: reflex 0.9.11a1 in hotpath_app
+step1 marker before backend-only run: absent
+step1 marker while backend-only server runs: -rw-r--r-- 1 root root 0 Sep 10 18:29 .web/nocompile
+step1 marker after backend-only server stopped: -rw-r--r-- 1 root root 0 Sep 10 18:29 .web/nocompile   <-- LEAK if present
+step2 deleted compiled page .web/app/routes/[404]._index.jsx; now a full dev run:
+error: list of process IDs must follow -p
+
+Usage:
+ ps [options]
+
+ Try 'ps --help <simple|list|output|threads|misc|all>'
+  or 'ps --help <s|l|o|t|m|a>'
+ for additional help text.
+
+For more details see ps(1).
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/scripts/repro_nocompile.sh: line 27: syntax error near unexpected token `('
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/scripts/repro_nocompile.sh: line 27: `echo "step2 marker during full run: $(ls .web/nocompile 2>/dev/null || echo absent (consumed))"'
+
+##### 18:33:21 nocompile repro base0910
+### base0910: reflex 0.9.10.post2 in hotpath_app_base
+step1 marker before backend-only run: absent
+step1 marker while backend-only server runs: -rw-r--r-- 1 root root 0 Sep 10 18:33 .web/nocompile
+step1 marker after backend-only server stopped: -rw-r--r-- 1 root root 0 Sep 10 18:33 .web/nocompile   <-- LEAK if present
+step2 deleted compiled page .web/app/routes/[404]._index.jsx; now a full dev run:
+error: list of process IDs must follow -p
+
+Usage:
+ ps [options]
+
+ Try 'ps --help <simple|list|output|threads|misc|all>'
+  or 'ps --help <s|l|o|t|m|a>'
+ for additional help text.
+
+For more details see ps(1).
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/scripts/repro_nocompile.sh: line 27: syntax error near unexpected token `('
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/scripts/repro_nocompile.sh: line 27: `echo "step2 marker during full run: $(ls .web/nocompile 2>/dev/null || echo absent (consumed))"'
+
+##### 18:37:03 gwt disk smoke
+### gwt_disk smoke (smoke): one bump_hidden event, then idle 7 s
+  t=0.013 delta[reflex___state____state.hotpath_app___hotpath_app____backend_state] keys=['shown_rx_state_']
+  {'t': 7.017, 'event': 'ping', 'args': ('pong',)}
+periodic-flush errors while running: 2
+Error processing write queue: TypeError("'int' object is not callable")
+Error processing write queue: TypeError("'int' object is not callable")
+shutdown-flush TypeError: 2
+### gwt_disk smoke done
+
+##### 18:37:16 gwt disk base0910
+### gwt_disk base0910 (base0910): one bump_hidden event, then idle 7 s
+  t=0.013 delta[reflex___state____state.hotpath_app___hotpath_app____backend_state] keys=['shown_rx_state_']
+  {'t': 7.013, 'event': 'ping', 'args': ('pong',)}
+periodic-flush errors while running: 2
+Error processing write queue: TypeError("'int' object is not callable")
+Error processing write queue: TypeError("'int' object is not callable")
+shutdown-flush TypeError: 2
+### gwt_disk base0910 done
+
+PASS2 DONE 18:37:30

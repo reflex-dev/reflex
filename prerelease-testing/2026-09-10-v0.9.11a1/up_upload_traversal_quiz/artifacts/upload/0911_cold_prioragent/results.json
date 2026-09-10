@@ -1,0 +1,192 @@
+[
+  {
+    "name": "initial_no_files_selected",
+    "status": "pass",
+    "details": "placeholder text visible"
+  },
+  {
+    "name": "file_chooser_opens_multiple",
+    "status": "pass",
+    "details": "chooser.is_multiple=True"
+  },
+  {
+    "name": "chooser_selected_files_displayed",
+    "status": "pass",
+    "details": "hello.txt + tiny.png shown after chooser selection"
+  },
+  {
+    "name": "reselect_replaces_selection",
+    "status": "pass",
+    "details": "unicode name shown=True, old selection cleared=True"
+  },
+  {
+    "name": "drag_drop_selects_file",
+    "status": "pass",
+    "details": "dropped.txt shown in selected list after synthetic drop=True"
+  },
+  {
+    "name": "drag_drop_upload_lands",
+    "status": "pass",
+    "details": "dropped.txt on disk=True, content ok=True, upload responses=[]"
+  },
+  {
+    "name": "files_land_on_disk",
+    "status": "pass",
+    "details": "{\"hello.txt\": true, \"tiny.png\": true, \"héllo wörld 测试 файл.txt\": true} responses=[]"
+  },
+  {
+    "name": "uploaded_content_matches",
+    "status": "pass",
+    "details": "hello.txt content roundtrip"
+  },
+  {
+    "name": "png_bytes_match",
+    "status": "pass",
+    "details": "tiny.png byte roundtrip"
+  },
+  {
+    "name": "unicode_filename_content_matches",
+    "status": "pass",
+    "details": "héllo wörld 测试 файл.txt content roundtrip"
+  },
+  {
+    "name": "uploaded_files_listed_in_ui",
+    "status": "anomaly",
+    "details": "listed_without_reload=False, listed_after_reload=False (cached dependency-less @rx.var never recomputes in-session: known app quirk)"
+  },
+  {
+    "name": "odd_filename['./plain_dot_slash.txt']",
+    "status": "pass",
+    "details": "expected='plain_dot_slash.txt' landed=True escaped_outside_upload_dir=[] responses=[]"
+  },
+  {
+    "name": "odd_filename['../../escape_traversal.txt']",
+    "status": "pass",
+    "details": "expected='escape_traversal.txt' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['sub/dir/nested.txt']",
+    "status": "pass",
+    "details": "expected='nested.txt' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['/etc/abs_path.txt']",
+    "status": "pass",
+    "details": "expected='abs_path.txt' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['..\\\\..\\\\backslash_traversal.txt']",
+    "status": "pass",
+    "details": "expected='backslash_traversal.txt' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['C:\\\\Users\\\\victim\\\\drive_letter.txt']",
+    "status": "pass",
+    "details": "expected='drive_letter.txt' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['..']",
+    "status": "pass",
+    "details": "expected='upload' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['.. ']",
+    "status": "pass",
+    "details": "expected='upload' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['./../. ']",
+    "status": "pass",
+    "details": "expected='upload' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['.hidden_dotfile']",
+    "status": "pass",
+    "details": "expected='.hidden_dotfile' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['punct #1 (copy) [x] &=+;,\\'\"!.txt']",
+    "status": "pass",
+    "details": "expected=\"punct #1 (copy) [x] &=+;,'%22!.txt\" landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['colon:semi;pipe|q?.txt']",
+    "status": "pass",
+    "details": "expected='colon:semi;pipe|q?.txt' landed=True escaped_outside_upload_dir=[] responses=[(200, '')]"
+  },
+  {
+    "name": "odd_filename['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.txt']",
+    "status": "pass",
+    "details": "expected='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.txt' landed=True escaped_outside_upload_dir=[] responses=[]"
+  },
+  {
+    "name": "no_file_escaped_upload_dir",
+    "status": "pass",
+    "details": "found_outside_or_nested=[]"
+  },
+  {
+    "name": "uploading_indicator_shown",
+    "status": "pass",
+    "details": "Uploading... text + cancel link appeared"
+  },
+  {
+    "name": "upload_progress_updates",
+    "status": "pass",
+    "details": "aria-valuenow=7 during throttled upload"
+  },
+  {
+    "name": "cancel_upload_aborts",
+    "status": "pass",
+    "details": "bigfile.bin on disk after cancel: False"
+  },
+  {
+    "name": "upload_after_cancel_works",
+    "status": "pass",
+    "details": "'after cancel ok.txt' (space in name) landed=True"
+  },
+  {
+    "name": "files_listed_fresh_session",
+    "status": "pass",
+    "details": "{\"hello.txt\": true, \"tiny.png\": true, \"héllo wörld 测试 файл.txt\": true, \"dropped.txt\": true, \"escape_traversal.txt\": true, \"upload\": true}"
+  },
+  {
+    "name": "upload_url_serves[hello.txt]",
+    "status": "pass",
+    "details": "href=http://localhost:9140/_upload/hello.txt status=200 match=True"
+  },
+  {
+    "name": "upload_url_serves[héllo wörld 测试 файл.txt]",
+    "status": "pass",
+    "details": "href=http://localhost:9140/_upload/héllo wörld 测试 файл.txt status=200 match=True"
+  },
+  {
+    "name": "upload_url_serves[tiny.png]",
+    "status": "pass",
+    "details": "href=http://localhost:9140/_upload/tiny.png status=200 match=True"
+  },
+  {
+    "name": "upload_url_serves[after cancel ok.txt]",
+    "status": "pass",
+    "details": "href=http://localhost:9140/_upload/after cancel ok.txt status=200 match=True"
+  },
+  {
+    "name": "upload_mount_traversal[../rxconfig.py]",
+    "status": "pass",
+    "details": "status=404 leaked_rxconfig=False"
+  },
+  {
+    "name": "upload_mount_traversal[..%2Frxconfig.py]",
+    "status": "pass",
+    "details": "status=404 leaked_rxconfig=False"
+  },
+  {
+    "name": "upload_mount_traversal[%2e%2e/rxconfig.py]",
+    "status": "pass",
+    "details": "status=404 leaked_rxconfig=False"
+  },
+  {
+    "name": "upload_mount_traversal[sub/../hello.txt]",
+    "status": "pass",
+    "details": "status=200 leaked_rxconfig=False"
+  }
+]

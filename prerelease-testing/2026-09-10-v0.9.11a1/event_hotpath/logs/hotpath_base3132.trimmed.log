@@ -1,0 +1,13 @@
+29:Debug: [Reflex 0.9.10.post2 with Python 3.13.12 (PATH: 
+78:Debug: [timing] Compile pages: 0.19s
+79:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 26/25 0:00:00
+164:App running at: http://localhost:3193/
+165:Backend running at: http://0.0.0.0:8193
+168:[Reflex Backend Exception]
+169: Traceback (most recent call last):
+219:TypeError: 'int' object is not callable
+223:Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+224:Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+225:[ERROR] Unexpected exit from worker-1
+229:Debug: error: script "dev" exited with code 143
+235:error: script "dev" exited with code 143

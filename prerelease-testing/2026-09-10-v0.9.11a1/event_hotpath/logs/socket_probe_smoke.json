@@ -1,0 +1,83 @@
+[
+ {
+  "t": 0.03,
+  "event": "event",
+  "args": [
+   {
+    "delta": {
+     "reflex___state____state": {
+      "router_rx_state_": {
+       "session": {
+        "client_token": "ca66051e-aba1-456c-9e14-96e183db8d26",
+        "client_ip": "127.0.0.1",
+        "session_id": "McIzVaF312vopEKWAAAB"
+       },
+       "headers": {
+        "host": "localhost:8180",
+        "origin": "",
+        "upgrade": "websocket",
+        "connection": "Upgrade",
+        "cookie": "",
+        "pragma": "",
+        "cache_control": "",
+        "user_agent": "Python/3.11 aiohttp/3.14.3",
+        "sec_websocket_version": "13",
+        "sec_websocket_key": "XZpjymxshXSOy/jAf0tgoA==",
+        "sec_websocket_extensions": "",
+        "accept_encoding": "gzip, deflate",
+        "accept_language": "",
+        "raw_headers": {
+         "accept": "*/*",
+         "accept-encoding": "gzip, deflate",
+         "asgi-scope-client": "127.0.0.1",
+         "connection": "Upgrade",
+         "host": "localhost:8180",
+         "sec-websocket-key": "XZpjymxshXSOy/jAf0tgoA==",
+         "sec-websocket-version": "13",
+         "upgrade": "websocket",
+         "user-agent": "Python/3.11 aiohttp/3.14.3"
+        }
+       },
+       "page": {
+        "host": "",
+        "path": "/index",
+        "raw_path": "/",
+        "full_path": "/index",
+        "full_raw_path": "/",
+        "params": {}
+       },
+       "url": {
+        "scheme": "",
+        "netloc": "",
+        "origin": "://",
+        "path": "/",
+        "query": "",
+        "query_parameters": {},
+        "fragment": "",
+        "href": "/"
+       },
+       "route_id": "/index"
+      }
+     },
+     "reflex___state____state.hotpath_app___hotpath_app____counter_state": {
+      "factory_info_rx_state_": "{\"py\": \"3.11.15\", \"installed\": false, \"n\": 0, \"loop_factory\": false}",
+      "count_rx_state_": 1
+     },
+     "reflex___state____state.hotpath_app___hotpath_app____interval_state": {
+      "ticks_td_rx_state_": "1789063717.392",
+      "mixin_ticks_rx_state_": "1789063717.392",
+      "counts_rx_state_": "{\"cached_plain\": 0, \"clock_a\": 0, \"clock_b\": 0, \"mixin_ticks\": 1, \"ticks\": 0, \"ticks_td\": 1}",
+      "ticks_rx_state_": "1789063717.392"
+     }
+    }
+   }
+  ]
+ },
+ {
+  "t": 2.027,
+  "event": "ping",
+  "args": [
+   "pong"
+  ]
+ }
+]

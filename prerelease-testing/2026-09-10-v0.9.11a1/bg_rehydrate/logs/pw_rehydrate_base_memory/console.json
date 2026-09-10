@@ -176,11 +176,31 @@
   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
  },
  {
-  "type": "error",
-  "text": "WebSocket connection to 'ws://localhost:8226/_event/?token=c23919cf-e457-4803-8847-f87a5d470cd1&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  "type": "log",
+  "text": "Disconnect websocket on page navigation"
+ },
+ {
+  "type": "log",
+  "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+ },
+ {
+  "type": "debug",
+  "text": "[vite] connecting..."
+ },
+ {
+  "type": "info",
+  "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+ },
+ {
+  "type": "debug",
+  "text": "[vite] connected."
  },
  {
   "type": "error",
-  "text": "WebSocket connection to 'ws://localhost:8226/_event/?token=c23919cf-e457-4803-8847-f87a5d470cd1&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  "text": "WebSocket connection to 'ws://localhost:8226/_event/?token=2d2b693a-1887-407b-f574-2a4f12c481a4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+ },
+ {
+  "type": "error",
+  "text": "WebSocket connection to 'ws://localhost:8226/_event/?token=2d2b693a-1887-407b-f574-2a4f12c481a4&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
  }
 ]

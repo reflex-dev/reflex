@@ -1,17 +1,17 @@
 {
  "runs": {
-  "index": 0,
-  "page-b": 2,
+  "index": 2,
+  "page-b": 0,
   "item": 0,
   "404": 0,
   "ping": 0,
-  "click": 2,
+  "click": 1,
   "hydrate_seen": 0
  },
  "log": [
-  "13:37:48 on_load page-b (run #1) path=/page-b",
-  "13:37:49 click -> clicks=1 path=/page-b",
-  "13:38:00 click -> clicks=1 path=/page-b",
-  "13:38:00 on_load page-b (run #2) path=/page-b"
+  "18:29:30 on_load index (run #1) path=/",
+  "18:29:38 backend modify_state pings -> 1 yielded=reflex___state____state router_data_empty=True",
+  "18:29:40 click -> clicks=1 path=/",
+  "18:29:40 on_load index (run #2) path=/"
  ]
 }

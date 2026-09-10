@@ -1,0 +1,22 @@
+[
+ {
+  "name": "backend.backend_vars_read_write_inplace",
+  "status": "pass",
+  "details": "shown=hidden=1 items=[1] gwt=8 keys=['_get_was_touched', '_hidden', '_items'] -> shown=hidden=2 items=[1, 2] gwt=9 keys=['_get_was_touched', '_hidden', '_items']"
+ },
+ {
+  "name": "backend.backend_var_named__get_was_touched",
+  "status": "pass",
+  "details": "shown=hidden=2 items=[1, 2] gwt=9 keys=['_get_was_touched', '_hidden', '_items']"
+ },
+ {
+  "name": "backend.backend_vars_survive_reload",
+  "status": "pass",
+  "details": "shown=hidden=3 items=[1, 2, 3] gwt=10 keys=['_get_was_touched', '_hidden', '_items']"
+ },
+ {
+  "name": "browser_capture",
+  "status": "info",
+  "details": "{\"label\": \"base0910-gwt\", \"console_err_warn\": [], \"page_errors\": [], \"failed_requests\": [], \"http_4xx_5xx\": [], \"dialogs\": []}"
+ }
+]

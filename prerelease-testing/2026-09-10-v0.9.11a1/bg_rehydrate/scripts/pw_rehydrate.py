@@ -318,6 +318,59 @@ def main() -> int:
             r2 = runs()
             rec("H.no_runaway_after_2s", "pass" if r2 == r else "fail", f"runs 2s later={r2}")
 
+        # ---------------------------------------------------------------- J: several routeless backend events racing on expired state
+        if "backend_event" not in args.skip:
+            snap0 = load("/", "index")
+            tok = token_of(page)
+            expire(tok, "J")
+            fi = len(cap.ws_frames)
+            res = http_json(f"{api}/api/enqueue?token={tok}&event=ping&n=3&wait=0")
+            pump(2.5)
+            s = snapshot(page, IDS); r = runs(); d = cap.deltas(fi); hd = hydrate_deltas(d)
+            ok = (r["ping"] == 3 and r["index"] == 1 and r["404"] == 0 and len(hd) == 1 and val(s, "pings") == "3"
+                  and val(s, "hydrated") == "true" and len(is_true_deltas(d)) >= 1)
+            rec("J.concurrent_routeless_events_hydrate_once", "pass" if ok else "fail",
+                f"enqueue={res['results']} runs={r} hydrate_deltas={len(hd)} is_hydrated_true={len(is_true_deltas(d))} deltas={len(d)} snap={s} log={log_tail()[-6:]}", deltas=d)
+            rec("J.ui_after_routeless_rehydrate", "anomaly" if val(s, "loaded_page") == "" else "pass",
+                f"after a routeless rehydrate the page shows on_load-derived values reset (loaded_page={val(s, 'loaded_page')!r}, load_seq={val(s, 'load_seq')}) until the next routed event")
+            page.screenshot(path=str(shots / "J_concurrent_backend_events.png"))
+            fi = len(cap.ws_frames)
+            page.click("#b-click")
+            wait_text(page, "#loaded_page", lambda t: t == "loaded_page=index", 8)
+            pump(1.0)
+            s = snapshot(page, IDS); r = runs(); d = cap.deltas(fi); hd = hydrate_deltas(d)
+            rec("J.routed_click_after_concurrent_events", "pass" if r["index"] == 2 and r["404"] == 0 and len(hd) == 1 and val(s, "clicks") == "1" and val(s, "pings") == "3" else "fail",
+                f"runs={r} hydrate_deltas={len(hd)} deltas={len(d)} snap={s}", deltas=d)
+
+        # ---------------------------------------------------------------- K: backend change via app.modify_state on expired state
+        if "modify_state" not in args.skip:
+            snap0 = load("/", "index")
+            tok = token_of(page)
+            expire(tok, "K")
+            fi = len(cap.ws_frames)
+            t0 = time.time()
+            try:
+                res = http_json(f"{api}/api/modify?token={tok}&field=pings", timeout=20)
+            except Exception as ex:  # noqa: BLE001
+                res = {"ok": False, "error": f"http {type(ex).__name__}: {ex}"}
+            pump(2.0)
+            s = snapshot(page, IDS); r = runs(); d = cap.deltas(fi); hd = hydrate_deltas(d)
+            ok = res.get("ok") and val(s, "pings") == "1" and r["index"] == 1 and r["404"] == 0
+            rec("K.modify_state_on_expired_state", "pass" if ok else "fail",
+                f"took {time.time() - t0:.1f}s yielded_state_cls={res.get('yielded')} api={res} runs={r} hydrate_deltas={len(hd)} deltas={len(d)} snap={s} log={log_tail()[-4:]}", deltas=d)
+            rec("K.ui_after_modify_state", "anomaly" if val(s, "hydrated") != "true" or val(s, "loaded_page") == "" else "pass",
+                f"UI after modify_state on a fresh (expired) state: hydrated={val(s, 'hydrated')} loaded_page={val(s, 'loaded_page')!r} clicks={val(s, 'clicks')} (modify_state emits only its own dirty vars; no hydrate)")
+            fi = len(cap.ws_frames)
+            page.click("#b-click")
+            wait_text(page, "#loaded_page", lambda t: t == "loaded_page=index", 8)
+            pump(1.0)
+            s = snapshot(page, IDS); r = runs(); d = cap.deltas(fi); hd = hydrate_deltas(d)
+            rec("K.routed_click_after_modify_state", "pass" if r["index"] == 2 and r["404"] == 0 and len(hd) == 1 and val(s, "clicks") == "1" and val(s, "pings") == "1" and val(s, "hydrated") == "true" else "fail",
+                f"runs={r} hydrate_deltas={len(hd)} deltas={len(d)} snap={s}", deltas=d)
+            pump(2.0)
+            r2 = runs()
+            rec("K.no_runaway_after_modify_state", "pass" if r2 == r else "fail", f"runs 2s later={r2}")
+
         # ---------------------------------------------------------------- I: websocket dropped by the server after the state expired
         if "reconnect" not in args.skip:
             snap0 = load("/page-b", "page-b")

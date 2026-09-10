@@ -1,0 +1,182 @@
+[
+  {
+    "name": "page_title",
+    "status": "pass",
+    "details": "title='Quiz - Reflex'"
+  },
+  {
+    "name": "heading",
+    "status": "pass",
+    "details": "Python Quiz heading"
+  },
+  {
+    "name": "heading_1",
+    "status": "pass",
+    "details": "Question #1"
+  },
+  {
+    "name": "heading_2",
+    "status": "pass",
+    "details": "Question #2"
+  },
+  {
+    "name": "heading_3",
+    "status": "pass",
+    "details": "Question #3"
+  },
+  {
+    "name": "code_block_text",
+    "status": "pass",
+    "details": "text='a = [10, 20]\\nb = a\\nb += [30, 40]\\nprint(a)'"
+  },
+  {
+    "name": "code_block_shiki_tokens",
+    "status": "pass",
+    "details": "spans=16 distinct_colors=4 tag=PRE class=''"
+  },
+  {
+    "name": "code_block_light_theme_bg",
+    "status": "pass",
+    "details": "bg=rgb(250, 250, 250) fg=rgb(56, 58, 66) style='background: rgb(250, 250, 250); color: rgb(56, 58, 66); font-family: \"Fira Code\", \"Fira Mono\", Menlo, Consolas, \"DejaVu Sans Mono\", monospace; direction: ltr; text-align: left; white-space: pre; word-spacing: normal; word-break: normal; line-height: 1.5; tab-size: 2; hyphens: none; padding: 1em; margin: 0.5em 0px; overflow: auto; border-radius: 0.3em;'"
+  },
+  {
+    "name": "radio_count",
+    "status": "pass",
+    "details": "radios=4"
+  },
+  {
+    "name": "checkbox_count",
+    "status": "pass",
+    "details": "checkboxes=5"
+  },
+  {
+    "name": "checkboxes_checked",
+    "status": "pass",
+    "details": "states=['false', 'false', 'true', 'true', 'true']"
+  },
+  {
+    "name": "submit_redirects_to_result",
+    "status": "pass",
+    "details": "url=http://localhost:4142/result"
+  },
+  {
+    "name": "result_page_title",
+    "status": "pass",
+    "details": "title='Quiz Results'"
+  },
+  {
+    "name": "score_100_percent",
+    "status": "pass",
+    "details": "heading 100%=1 progress aria-valuenow=100"
+  },
+  {
+    "name": "table_rows_all_check_icons",
+    "status": "pass",
+    "details": "rows=[{'cells': ['1', '', '\"False\"', '\"False\"'], 'icon': 'lucide lucide-check css-bjcoli'}, {'cells': ['2', '', '\"[10, 20, 30, 40]\"', '\"[10, 20, 30, 40]\"'], 'icon': 'lucide lucide-check css-bjcoli'}, {'cells': ['3', '', '[false,false,true,true,true]', '[false,false,true,true,true]'], 'icon': 'lucide lucide-check css-bjcoli'}]"
+  },
+  {
+    "name": "table_answer_texts",
+    "status": "pass",
+    "details": "cells=[['1', '', '\"False\"', '\"False\"'], ['2', '', '\"[10, 20, 30, 40]\"', '\"[10, 20, 30, 40]\"'], ['3', '', '[false,false,true,true,true]', '[false,false,true,true,true]']]"
+  },
+  {
+    "name": "quiz_again_radios_unchecked_ui",
+    "status": "pass",
+    "details": "radio aria-checked=['false', 'false', 'false', 'false'] (uncontrolled radix radios: UI state may not reset)"
+  },
+  {
+    "name": "onload_reset_gives_0_percent",
+    "status": "pass",
+    "details": "progress=0 rows=[{'cells': ['1', '', 'null', '\"False\"'], 'icon': 'lucide lucide-x css-tokvmb'}, {'cells': ['2', '', 'null', '\"[10, 20, 30, 40]\"'], 'icon': 'lucide lucide-x css-tokvmb'}, {'cells': ['3', '', '[false,false,false,false,false]', '[false,false,true,true,true]'], 'icon': 'lucide lucide-x css-tokvmb'}]"
+  },
+  {
+    "name": "table_rows_all_x_icons",
+    "status": "pass",
+    "details": "icons=['lucide lucide-x css-tokvmb', 'lucide lucide-x css-tokvmb', 'lucide lucide-x css-tokvmb']"
+  },
+  {
+    "name": "partial_score_33",
+    "status": "pass",
+    "details": "progress=33 rows=[{'cells': ['1', '', '\"False\"', '\"False\"'], 'icon': 'lucide lucide-check css-bjcoli'}, {'cells': ['2', '', 'null', '\"[10, 20, 30, 40]\"'], 'icon': 'lucide lucide-x css-tokvmb'}, {'cells': ['3', '', '[false,false,false,false,false]', '[false,false,true,true,true]'], 'icon': 'lucide lucide-x css-tokvmb'}]"
+  },
+  {
+    "name": "color_mode_toggle",
+    "status": "pass",
+    "details": "html.class='dark'"
+  },
+  {
+    "name": "code_block_dark_theme_switch",
+    "status": "pass",
+    "details": "bg rgb(250, 250, 250) -> rgb(40, 44, 52) fg rgb(56, 58, 66) -> rgb(171, 178, 191)"
+  },
+  {
+    "name": "direct_result_load",
+    "status": "anomaly",
+    "details": "rows=[]"
+  },
+  {
+    "name": "shiki_module_urls",
+    "status": "pass",
+    "details": "[]"
+  },
+  {
+    "name": "shiki_blocks_highlighted",
+    "status": "pass",
+    "details": "A=('shiki one-light', 28, 7) B=('shiki github-dark', 26) C=('shiki one-light', 28)"
+  },
+  {
+    "name": "shiki_transformers_notation",
+    "status": "anomaly",
+    "details": "applied=False lines=8 highlighted=0 diff_add=0 diff_remove=0 marker_left_in_text=True compiled_block_a_transformers_prop='[]' (use_transformers=True drops the shikijs transformer fns -> transformers:[] in compiled output; notation not applied. Compare across versions.)"
+  },
+  {
+    "name": "shiki_line_numbers_css_counter",
+    "status": "pass",
+    "details": "::before content='counter(step)' width=16px"
+  },
+  {
+    "name": "shiki_default_theme_light",
+    "status": "pass",
+    "details": "class='shiki one-light' bg=rgb(250, 250, 250) fg=rgb(56, 58, 66)"
+  },
+  {
+    "name": "shiki_explicit_theme_github_dark",
+    "status": "pass",
+    "details": "class='shiki github-dark' bg=rgb(36, 41, 46) lines=8 (notation markers kept as text: True)"
+  },
+  {
+    "name": "shiki_page_table_rows",
+    "status": "pass",
+    "details": "rows=3"
+  },
+  {
+    "name": "shiki_copy_button_clipboard",
+    "status": "pass",
+    "details": "clipboard='def greet(name: str) -> str:\\n    \"\"\"Say hello.\"\"\"  \\n    return f\"Hello, {name}!\"\\n\\n\\nprint(greet(\"reflex\"))  \\nprint(greet(\"shiki\"))  \\n'"
+  },
+  {
+    "name": "shiki_dynamic_code_rehighlights",
+    "status": "pass",
+    "details": "extra_lines_text='extra lines: 1' lines 8->9 last_code_line='print(0)'"
+  },
+  {
+    "name": "shiki_language_switch",
+    "status": "pass",
+    "details": "language_text='language: javascript' spans=18 lines=5"
+  },
+  {
+    "name": "shiki_default_theme_follows_dark_mode",
+    "status": "pass",
+    "details": "class='shiki one-dark-pro' bg=rgb(40, 44, 52) html.class='dark'"
+  },
+  {
+    "name": "shiki_explicit_theme_unaffected_by_dark_mode",
+    "status": "pass",
+    "details": "class='shiki github-dark' bg=rgb(36, 41, 46)"
+  },
+  {
+    "name": "installed_npm_versions",
+    "status": "pass",
+    "details": "{\"shiki\": \"4.3.1\", \"@shikijs/transformers\": null, \"@shikijs/core\": \"4.3.1\", \"react-syntax-highlighter\": \"16.1.1\", \"sonner\": \"2.0.7\", \"@radix-ui/themes\": \"3.3.0\", \"react-router\": \"8.3.0\", \"vite\": \"8.2.0\", \"react\": \"19.2.8\", \"lucide-react\": \"1.26.0\"}"
+  }
+]

@@ -1,0 +1,40 @@
+{
+ "label": "hp313",
+ "checks": [
+  {
+   "name": "socket.ping_baseline",
+   "status": "pass",
+   "details": "pong latencies ms=[0.96, 0.75, 0.91, 0.58, 0.67]"
+  },
+  {
+   "name": "socket.ping_while_slow_handler_same_socket",
+   "status": "pass",
+   "details": "pong latencies during slow handler ms=[1.45, 1.75, 1.65, 1.58, 1.35]"
+  },
+  {
+   "name": "socket.other_client_not_blocked",
+   "status": "pass",
+   "details": "client B fast delta after 3.0 ms (1 updates)"
+  },
+  {
+   "name": "socket.same_client_order_after_slow",
+   "status": "pass",
+   "details": "updates(slow_done,fast_count)=[(1, None), (None, 1), (None, 2), (None, 3)] total 5.01s"
+  },
+  {
+   "name": "socket.pre_exception_mutation",
+   "status": "info",
+   "details": "no delta at all within 2.5 s after the raising handler (pre-raise mutation dropped)"
+  },
+  {
+   "name": "socket.exception_then_next_event",
+   "status": "pass",
+   "details": "boom delta then fast_count=4 after 2.3 ms; boom updates carried events=[]"
+  },
+  {
+   "name": "socket.ping_after_exception",
+   "status": "pass",
+   "details": "1.04 ms"
+  }
+ ]
+}

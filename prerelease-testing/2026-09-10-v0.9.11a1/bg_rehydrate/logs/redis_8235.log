@@ -1,9 +1,11 @@
-5551:C 10 Sep 2026 13:27:38.668 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
-5551:C 10 Sep 2026 13:27:38.668 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=5551, just started
-5551:C 10 Sep 2026 13:27:38.668 # Configuration loaded
-5551:M 10 Sep 2026 13:27:38.668 * monotonic clock: POSIX clock_gettime
-5551:M 10 Sep 2026 13:27:38.668 # Warning: Could not create server TCP listening socket ::*:8235: unable to bind socket, errno: 97
-5551:M 10 Sep 2026 13:27:38.675 * Running mode=standalone, port=8235.
-5551:M 10 Sep 2026 13:27:38.675 # Server initialized
-5551:M 10 Sep 2026 13:27:38.675 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
-5551:M 10 Sep 2026 13:27:38.726 * Ready to accept connections
+1966:C 10 Sep 2026 18:06:03.947 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+1966:C 10 Sep 2026 18:06:03.947 # Redis version=7.0.15, bits=64, commit=00000000, modified=0, pid=1966, just started
+1966:C 10 Sep 2026 18:06:03.947 # Configuration loaded
+1966:M 10 Sep 2026 18:06:03.950 * monotonic clock: POSIX clock_gettime
+1966:M 10 Sep 2026 18:06:03.952 # Warning: Could not create server TCP listening socket ::*:8235: unable to bind socket, errno: 97
+1966:M 10 Sep 2026 18:06:03.954 * Running mode=standalone, port=8235.
+1966:M 10 Sep 2026 18:06:03.954 # Server initialized
+1966:M 10 Sep 2026 18:06:03.954 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+1966:M 10 Sep 2026 18:06:03.956 * Ready to accept connections
+1966:M 10 Sep 2026 18:30:36.840 # User requested shutdown...
+1966:M 10 Sep 2026 18:30:36.841 # Redis is now ready to exit, bye bye...

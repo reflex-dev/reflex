@@ -1,0 +1,400 @@
+10:Backend running at: http://0.0.0.0:8189
+15:[Reflex Backend Exception]
+16: Traceback (most recent call last):
+51:    raise ValueError(msg)
+52:ValueError: intentional boom from SlowState.boom
+55:Warning: Received event data as a string. This generally should not happen and 
+57:message async handler error
+58:Traceback (most recent call last):
+68:    raise JSONDecodeError("Expecting value", s, err.value) from None
+69:json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+73:Traceback (most recent call last):
+93:    raise exceptions.EventDeserializationError(msg) from ex
+94:reflex_base.utils.exceptions.EventDeserializationError: Failed to deserialize event data: this is not json.
+95:Warning: Received event data as a string. This generally should not happen and 
+97:message async handler error
+98:Traceback (most recent call last):
+118:    raise exceptions.EventDeserializationError(msg)
+119:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+120:message async handler error
+121:Traceback (most recent call last):
+141:    raise exceptions.EventDeserializationError(msg)
+142:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+143:message async handler error
+144:Traceback (most recent call last):
+164:    raise exceptions.EventDeserializationError(msg)
+165:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received 42 of type <class 'int'>.
+166:message async handler error
+167:Traceback (most recent call last):
+186:TypeError: EventNamespace.on_event() missing 1 required positional argument: 'data'
+187:message async handler error
+188:Traceback (most recent call last):
+191:TypeError: Event.__init__() missing 1 required positional argument: 'name'
+195:Traceback (most recent call last):
+215:    raise exceptions.EventDeserializationError(msg) from ex
+216:reflex_base.utils.exceptions.EventDeserializationError: Failed to deserialize event data: {}.
+217:message async handler error
+218:Traceback (most recent call last):
+221:TypeError: Event.__init__() missing 1 required positional argument: 'name'
+225:Traceback (most recent call last):
+245:    raise exceptions.EventDeserializationError(msg) from ex
+246:reflex_base.utils.exceptions.EventDeserializationError: Failed to deserialize event data: {'token': '338feccd-4781-40bd-911b-7039408be78d', 'payload': {}, 'router_data': {}}.
+247:Error processing event queue entry for Event(name='no.such.state.handler', 
+255:Traceback (most recent call last):
+263:KeyError: 'no.such.state.handler'
+267:Traceback (most recent call last):
+269:    raise KeyError(msg) from ke
+270:KeyError: 'No registered handler found for event: no.such.state.handler'
+271:Warning: Error transforming event payload for handler CounterState.increment: 
+273:[Reflex Backend Exception]
+274: Traceback (most recent call last):
+305:TypeError: functools.partial(<function CounterState.increment at 
+313:[Reflex Backend Exception]
+314: Traceback (most recent call last):
+345:TypeError: CounterState.increment() got an unexpected keyword argument 'bogus'
+348:message async handler error
+349:Traceback (most recent call last):
+371:AttributeError: 'str' object has no attribute 'update'
+372:message async handler error
+373:Traceback (most recent call last):
+395:AttributeError: 'NoneType' object has no attribute 'update'
+396:message async handler error
+397:Traceback (most recent call last):
+416:TypeError: EventNamespace.on_event() missing 1 required positional argument: 'data'
+417:message async handler error
+418:Traceback (most recent call last):
+438:    raise exceptions.EventDeserializationError(msg)
+439:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+440:message async handler error
+441:Traceback (most recent call last):
+461:    raise exceptions.EventDeserializationError(msg)
+462:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+463:message async handler error
+464:Traceback (most recent call last):
+484:    raise exceptions.EventDeserializationError(msg)
+485:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+486:message async handler error
+487:Traceback (most recent call last):
+507:    raise exceptions.EventDeserializationError(msg)
+508:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+509:message async handler error
+510:Traceback (most recent call last):
+530:    raise exceptions.EventDeserializationError(msg)
+531:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+532:message async handler error
+533:Traceback (most recent call last):
+553:    raise exceptions.EventDeserializationError(msg)
+554:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+555:message async handler error
+556:Traceback (most recent call last):
+576:    raise exceptions.EventDeserializationError(msg)
+577:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+578:message async handler error
+579:Traceback (most recent call last):
+599:    raise exceptions.EventDeserializationError(msg)
+600:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+601:message async handler error
+602:Traceback (most recent call last):
+622:    raise exceptions.EventDeserializationError(msg)
+623:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+624:message async handler error
+625:Traceback (most recent call last):
+645:    raise exceptions.EventDeserializationError(msg)
+646:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+647:message async handler error
+648:Traceback (most recent call last):
+668:    raise exceptions.EventDeserializationError(msg)
+669:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+670:message async handler error
+671:Traceback (most recent call last):
+691:    raise exceptions.EventDeserializationError(msg)
+692:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+693:message async handler error
+694:Traceback (most recent call last):
+714:    raise exceptions.EventDeserializationError(msg)
+715:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+716:message async handler error
+717:Traceback (most recent call last):
+737:    raise exceptions.EventDeserializationError(msg)
+738:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+739:message async handler error
+740:Traceback (most recent call last):
+760:    raise exceptions.EventDeserializationError(msg)
+761:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+762:message async handler error
+763:Traceback (most recent call last):
+783:    raise exceptions.EventDeserializationError(msg)
+784:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+785:message async handler error
+786:Traceback (most recent call last):
+806:    raise exceptions.EventDeserializationError(msg)
+807:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+808:message async handler error
+809:Traceback (most recent call last):
+829:    raise exceptions.EventDeserializationError(msg)
+830:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+831:message async handler error
+832:Traceback (most recent call last):
+852:    raise exceptions.EventDeserializationError(msg)
+853:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+854:message async handler error
+855:Traceback (most recent call last):
+875:    raise exceptions.EventDeserializationError(msg)
+876:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+877:message async handler error
+878:Traceback (most recent call last):
+898:    raise exceptions.EventDeserializationError(msg)
+899:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+900:message async handler error
+901:Traceback (most recent call last):
+921:    raise exceptions.EventDeserializationError(msg)
+922:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+923:message async handler error
+924:Traceback (most recent call last):
+944:    raise exceptions.EventDeserializationError(msg)
+945:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+946:message async handler error
+947:Traceback (most recent call last):
+967:    raise exceptions.EventDeserializationError(msg)
+968:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+969:message async handler error
+970:Traceback (most recent call last):
+990:    raise exceptions.EventDeserializationError(msg)
+991:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+992:message async handler error
+993:Traceback (most recent call last):
+1013:    raise exceptions.EventDeserializationError(msg)
+1014:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1015:message async handler error
+1016:Traceback (most recent call last):
+1036:    raise exceptions.EventDeserializationError(msg)
+1037:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1038:message async handler error
+1039:Traceback (most recent call last):
+1059:    raise exceptions.EventDeserializationError(msg)
+1060:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1061:message async handler error
+1062:Traceback (most recent call last):
+1082:    raise exceptions.EventDeserializationError(msg)
+1083:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1084:message async handler error
+1085:Traceback (most recent call last):
+1105:    raise exceptions.EventDeserializationError(msg)
+1106:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1107:message async handler error
+1108:Traceback (most recent call last):
+1128:    raise exceptions.EventDeserializationError(msg)
+1129:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1130:message async handler error
+1131:Traceback (most recent call last):
+1151:    raise exceptions.EventDeserializationError(msg)
+1152:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1153:message async handler error
+1154:Traceback (most recent call last):
+1174:    raise exceptions.EventDeserializationError(msg)
+1175:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1176:message async handler error
+1177:Traceback (most recent call last):
+1197:    raise exceptions.EventDeserializationError(msg)
+1198:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1199:message async handler error
+1200:Traceback (most recent call last):
+1220:    raise exceptions.EventDeserializationError(msg)
+1221:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1222:message async handler error
+1223:Traceback (most recent call last):
+1243:    raise exceptions.EventDeserializationError(msg)
+1244:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1245:message async handler error
+1246:Traceback (most recent call last):
+1266:    raise exceptions.EventDeserializationError(msg)
+1267:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1268:message async handler error
+1269:Traceback (most recent call last):
+1289:    raise exceptions.EventDeserializationError(msg)
+1290:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1291:message async handler error
+1292:Traceback (most recent call last):
+1312:    raise exceptions.EventDeserializationError(msg)
+1313:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1314:message async handler error
+1315:Traceback (most recent call last):
+1335:    raise exceptions.EventDeserializationError(msg)
+1336:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1337:message async handler error
+1338:Traceback (most recent call last):
+1358:    raise exceptions.EventDeserializationError(msg)
+1359:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1360:message async handler error
+1361:Traceback (most recent call last):
+1381:    raise exceptions.EventDeserializationError(msg)
+1382:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1383:message async handler error
+1384:Traceback (most recent call last):
+1404:    raise exceptions.EventDeserializationError(msg)
+1405:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1406:message async handler error
+1407:Traceback (most recent call last):
+1427:    raise exceptions.EventDeserializationError(msg)
+1428:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1429:message async handler error
+1430:Traceback (most recent call last):
+1450:    raise exceptions.EventDeserializationError(msg)
+1451:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1452:message async handler error
+1453:Traceback (most recent call last):
+1473:    raise exceptions.EventDeserializationError(msg)
+1474:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1475:message async handler error
+1476:Traceback (most recent call last):
+1496:    raise exceptions.EventDeserializationError(msg)
+1497:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1498:message async handler error
+1499:Traceback (most recent call last):
+1519:    raise exceptions.EventDeserializationError(msg)
+1520:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1521:message async handler error
+1522:Traceback (most recent call last):
+1542:    raise exceptions.EventDeserializationError(msg)
+1543:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1544:message async handler error
+1545:Traceback (most recent call last):
+1565:    raise exceptions.EventDeserializationError(msg)
+1566:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1567:message async handler error
+1568:Traceback (most recent call last):
+1588:    raise exceptions.EventDeserializationError(msg)
+1589:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1590:message async handler error
+1591:Traceback (most recent call last):
+1611:    raise exceptions.EventDeserializationError(msg)
+1612:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1613:message async handler error
+1614:Traceback (most recent call last):
+1634:    raise exceptions.EventDeserializationError(msg)
+1635:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1636:message async handler error
+1637:Traceback (most recent call last):
+1657:    raise exceptions.EventDeserializationError(msg)
+1658:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1659:message async handler error
+1660:Traceback (most recent call last):
+1680:    raise exceptions.EventDeserializationError(msg)
+1681:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1682:message async handler error
+1683:Traceback (most recent call last):
+1703:    raise exceptions.EventDeserializationError(msg)
+1704:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1705:message async handler error
+1706:Traceback (most recent call last):
+1726:    raise exceptions.EventDeserializationError(msg)
+1727:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1728:message async handler error
+1729:Traceback (most recent call last):
+1749:    raise exceptions.EventDeserializationError(msg)
+1750:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1751:message async handler error
+1752:Traceback (most recent call last):
+1772:    raise exceptions.EventDeserializationError(msg)
+1773:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1774:message async handler error
+1775:Traceback (most recent call last):
+1795:    raise exceptions.EventDeserializationError(msg)
+1796:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1797:message async handler error
+1798:Traceback (most recent call last):
+1818:    raise exceptions.EventDeserializationError(msg)
+1819:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1820:message async handler error
+1821:Traceback (most recent call last):
+1841:    raise exceptions.EventDeserializationError(msg)
+1842:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1843:message async handler error
+1844:Traceback (most recent call last):
+1864:    raise exceptions.EventDeserializationError(msg)
+1865:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1866:message async handler error
+1867:Traceback (most recent call last):
+1887:    raise exceptions.EventDeserializationError(msg)
+1888:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1889:message async handler error
+1890:Traceback (most recent call last):
+1910:    raise exceptions.EventDeserializationError(msg)
+1911:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1912:message async handler error
+1913:Traceback (most recent call last):
+1933:    raise exceptions.EventDeserializationError(msg)
+1934:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1935:message async handler error
+1936:Traceback (most recent call last):
+1956:    raise exceptions.EventDeserializationError(msg)
+1957:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1958:message async handler error
+1959:Traceback (most recent call last):
+1979:    raise exceptions.EventDeserializationError(msg)
+1980:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1981:message async handler error
+1982:Traceback (most recent call last):
+2002:    raise exceptions.EventDeserializationError(msg)
+2003:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2004:message async handler error
+2005:Traceback (most recent call last):
+2025:    raise exceptions.EventDeserializationError(msg)
+2026:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2027:message async handler error
+2028:Traceback (most recent call last):
+2048:    raise exceptions.EventDeserializationError(msg)
+2049:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2050:message async handler error
+2051:Traceback (most recent call last):
+2071:    raise exceptions.EventDeserializationError(msg)
+2072:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2073:message async handler error
+2074:Traceback (most recent call last):
+2094:    raise exceptions.EventDeserializationError(msg)
+2095:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2096:message async handler error
+2097:Traceback (most recent call last):
+2117:    raise exceptions.EventDeserializationError(msg)
+2118:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2119:message async handler error
+2120:Traceback (most recent call last):
+2140:    raise exceptions.EventDeserializationError(msg)
+2141:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2142:message async handler error
+2143:Traceback (most recent call last):
+2163:    raise exceptions.EventDeserializationError(msg)
+2164:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2165:message async handler error
+2166:Traceback (most recent call last):
+2186:    raise exceptions.EventDeserializationError(msg)
+2187:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2188:message async handler error
+2189:Traceback (most recent call last):
+2209:    raise exceptions.EventDeserializationError(msg)
+2210:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2211:message async handler error
+2212:Traceback (most recent call last):
+2232:    raise exceptions.EventDeserializationError(msg)
+2233:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2234:message async handler error
+2235:Traceback (most recent call last):
+2255:    raise exceptions.EventDeserializationError(msg)
+2256:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2257:message async handler error
+2258:Traceback (most recent call last):
+2278:    raise exceptions.EventDeserializationError(msg)
+2279:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2280:message async handler error
+2281:Traceback (most recent call last):
+2301:    raise exceptions.EventDeserializationError(msg)
+2302:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2303:message async handler error
+2304:Traceback (most recent call last):
+2324:    raise exceptions.EventDeserializationError(msg)
+2325:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2326:message async handler error
+2327:Traceback (most recent call last):
+2347:    raise exceptions.EventDeserializationError(msg)
+2348:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+2349:message async handler error

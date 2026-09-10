@@ -1,0 +1,522 @@
+
+##### 18:14:23 hotpath smoke py3.11 dev
+started smoke hotpath_app fp=3180 bp=8180 pid=5659 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_smoke.log
+UP http://localhost:3180/ after 0 s
+[PASS   ] ordering.multi_yield: final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']
+[FAIL   ] ordering.EXC: TimeoutError: Page.click: Timeout 30000ms exceeded.
+[PASS   ] hier.read_via_parent_state_3deep: report=leaf=100 mid=10 root=1 inh_mid=10 inh_root=1 pname=hotpath_app___hotpath_app____mid3 gpname=hotpath_app___hotpath_app____root3 full=reflex___state____state.hotpath_app___hotpath_app____root3.hotpath_app___hotpath_app____mid3.hotpath_app___hotpath_app____leaf3
+[PASS   ] hier.write_via_parent_state_delta: mid_val=11 root_val=2 leaf_inh_root=2
+[PASS   ] hier.write_inherited_vars: mid_val=12 root_val=3
+[PASS   ] hier.background_parent_state_read: report=bg leaf=100 mid=12 root=3 dirty=[] leaf_val=101
+[FAIL   ] interval.no_recompute_within_interval: after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 3, 'ticks': 3, 'ticks_td': 3} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 3, 'ticks': 3, 'ticks_td': 3} ticks ticks=1789064121.505->ticks=1789064122.631 td ticks_td=1789064121.505->ticks_td=1789064122.631 mixi
+[PASS   ] interval.recompute_after_expiry_only_interval_vars: recompute deltas {'ticks': 2, 'ticks_td': 2, 'mixin_ticks': 2, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064122.631->ticks=1789064124.212; td ticks_td=1789064122.631->ticks_td=1789064124.212; mixin mixin_ticks=1789064122.631->mixin_ticks=1789064124.212; cached_plain cached_plain=0->cached_plain=0
+[PASS   ] interval.cached_var_recomputes_once_on_dep_change: cached_plain=2 cached_plain recomputes 1->2 (ticks 5->5)
+[PASS   ] interval.stateproxy_background_read: bg_log=bg t0=1789064125.530 counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 6, "ticks": 6, "ticks_td": 6} | bg t1=1789064127.348 changed=True counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 6, "ticks": 7, "ticks_td": 6}
+[INFO   ] interval.component_state_refresh_on_unrelated_event: after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064121.505->clock_a=1789064121.505)
+[PASS   ] interval.component_state_interval_var_refresh_on_own_event: clock_a clock_a=1789064121.505->clock_a=1789064130.363; clock_b clock_b=1789064121.505->clock_b=1789064121.505 (b changed=False)
+[PASS   ] interval.component_state_second_instance_refresh: clock_b clock_b=1789064121.505->clock_b=1789064131.946
+[INFO   ] interval.component_state_recompute_counts: counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 1, 'clock_x': 4, 'mixin_ticks': 9, 'ticks': 9, 'ticks_td': 9}
+[PASS   ] backend.backend_vars_read_write_inplace: shown=hidden=1 items=[1] gwt=n/a keys=['_hidden', '_items'] -> shown=hidden=2 items=[1, 2] gwt=n/a keys=['_hidden', '_items']
+[PASS   ] backend.backend_vars_survive_reload: shown=hidden=3 items=[1, 2, 3] gwt=n/a keys=['_hidden', '_items']
+[PASS   ] shadow.var_named_get_state: get_state=shadow-initial -> get_state=set-1789064133; note=fast=['dirty_vars', 'get_delta']; toasts=[]
+[FAIL   ] shadow.var_named_get_delta: get_delta=0; toasts=[]
+[PASS   ] slow.other_client_not_blocked: client2 fast_count after 0.07s: fast_count=1
+[PASS   ] slow.same_client_events_queued_in_order: fast_count during slow=fast_count=0; slow_done after 5.05s=slow_done=1; then fast_count=3
+[PASS   ] slow.exception_does_not_wedge_socket: after boom: boom_count=0; then fast_count=4
+[INFO   ] slow.pre_exception_mutation_delivered: boom_count after handler raised (mutation happened before raise): boom_count=0
+[PASS   ] slow.second_exception_then_event: boom_count=2 fast_count=5
+[PASS   ] slow.async_exception_before_first_await_then_event: boom_count=3 fast_count=6
+[PASS   ] slow.rapid_exceptions_and_events: boom_count=5 fast_count=8
+[PASS   ] hammer.100_rapid_clicks_exact: clicks took 3.38s; final=count=100 (recheck count=100); total 3.93s
+[PASS   ] hammer.100_sync_js_clicks_exact: final=count=100
+[PASS   ] hammer.100_async_noawait_clicks_exact: final=count=100
+[PASS   ] hammer.100_mixed_sync_async_exact: final=count=100
+[INFO   ] hammer.factory_info: factory={"py": "3.11.15", "installed": false, "n": 0, "loop_factory": false}
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY smoke: 32 entries, 3 fail
+stopped hotpath_smoke (pid 5659 pgid 5659)
+--- server log scan (logs3/hotpath_smoke.log):
+100: Traceback (most recent call last):
+149: Traceback (most recent call last):
+185: Traceback (most recent call last):
+221: Traceback (most recent call last):
+258: Traceback (most recent call last):
+295: Traceback (most recent call last):
+333:[ERROR] Unexpected exit from worker-1
+
+##### 18:16:00 hotpath 0.9.11a1 py3.13 dev
+started hp313 hotpath_app_313 fp=3181 bp=8181 pid=5988 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_hp313.log
+UP http://localhost:3181/ after 2 s
+[PASS   ] ordering.multi_yield: final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']
+[FAIL   ] ordering.EXC: TimeoutError: Page.click: Timeout 30000ms exceeded.
+[PASS   ] hier.read_via_parent_state_3deep: report=leaf=100 mid=10 root=1 inh_mid=10 inh_root=1 pname=hotpath_app___hotpath_app____mid3 gpname=hotpath_app___hotpath_app____root3 full=reflex___state____state.hotpath_app___hotpath_app____root3.hotpath_app___hotpath_app____mid3.hotpath_app___hotpath_app____leaf3
+[PASS   ] hier.write_via_parent_state_delta: mid_val=11 root_val=2 leaf_inh_root=2
+[PASS   ] hier.write_inherited_vars: mid_val=12 root_val=3
+[PASS   ] hier.background_parent_state_read: report=bg leaf=100 mid=12 root=3 dirty=[] leaf_val=101
+[FAIL   ] interval.no_recompute_within_interval: after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 3, 'ticks': 3, 'ticks_td': 3} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 3, 'ticks': 3, 'ticks_td': 3} ticks ticks=1789064219.420->ticks=1789064220.508 td ticks_td=1789064219.420->ticks_td=1789064220.508 mixi
+[PASS   ] interval.recompute_after_expiry_only_interval_vars: recompute deltas {'ticks': 2, 'ticks_td': 2, 'mixin_ticks': 2, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064220.508->ticks=1789064222.093; td ticks_td=1789064220.508->ticks_td=1789064222.093; mixin mixin_ticks=1789064220.508->mixin_ticks=1789064222.093; cached_plain cached_plain=0->cached_plain=0
+[PASS   ] interval.cached_var_recomputes_once_on_dep_change: cached_plain=2 cached_plain recomputes 1->2 (ticks 5->5)
+[PASS   ] interval.stateproxy_background_read: bg_log=bg t0=1789064223.408 counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 6, "ticks": 6, "ticks_td": 6} | bg t1=1789064225.227 changed=True counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 6, "ticks": 7, "ticks_td": 6}
+[INFO   ] interval.component_state_refresh_on_unrelated_event: after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064219.421->clock_a=1789064219.421)
+[PASS   ] interval.component_state_interval_var_refresh_on_own_event: clock_a clock_a=1789064219.421->clock_a=1789064228.243; clock_b clock_b=1789064219.421->clock_b=1789064219.421 (b changed=False)
+[PASS   ] interval.component_state_second_instance_refresh: clock_b clock_b=1789064219.421->clock_b=1789064229.828
+[INFO   ] interval.component_state_recompute_counts: counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 9, 'ticks': 9, 'ticks_td': 9}
+[PASS   ] backend.backend_vars_read_write_inplace: shown=hidden=1 items=[1] gwt=n/a keys=['_hidden', '_items'] -> shown=hidden=2 items=[1, 2] gwt=n/a keys=['_hidden', '_items']
+[PASS   ] backend.backend_vars_survive_reload: shown=hidden=3 items=[1, 2, 3] gwt=n/a keys=['_hidden', '_items']
+[PASS   ] shadow.var_named_get_state: get_state=shadow-initial -> get_state=set-1789064231; note=fast=['dirty_vars', 'get_delta']; toasts=[]
+[FAIL   ] shadow.var_named_get_delta: get_delta=0; toasts=[]
+[PASS   ] slow.other_client_not_blocked: client2 fast_count after 0.08s: fast_count=1
+[PASS   ] slow.same_client_events_queued_in_order: fast_count during slow=fast_count=0; slow_done after 5.04s=slow_done=1; then fast_count=3
+[PASS   ] slow.exception_does_not_wedge_socket: after boom: boom_count=0; then fast_count=4
+[INFO   ] slow.pre_exception_mutation_delivered: boom_count after handler raised (mutation happened before raise): boom_count=0
+[PASS   ] slow.second_exception_then_event: boom_count=2 fast_count=5
+[PASS   ] slow.async_exception_before_first_await_then_event: boom_count=3 fast_count=6
+[PASS   ] slow.rapid_exceptions_and_events: boom_count=5 fast_count=8
+[PASS   ] hammer.100_rapid_clicks_exact: clicks took 3.37s; final=count=100 (recheck count=100); total 3.93s
+[PASS   ] hammer.100_sync_js_clicks_exact: final=count=100
+[PASS   ] hammer.100_async_noawait_clicks_exact: final=count=100
+[PASS   ] hammer.100_mixed_sync_async_exact: final=count=100
+[INFO   ] hammer.factory_info: factory={"py": "3.13.12", "installed": false, "n": 0, "loop_factory": false}
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY hp313: 32 entries, 3 fail
+stopped hotpath_hp313 (pid 5988 pgid 5988)
+--- server log scan (logs3/hotpath_hp313.log):
+100: Traceback (most recent call last):
+155: Traceback (most recent call last):
+195: Traceback (most recent call last):
+235: Traceback (most recent call last):
+276: Traceback (most recent call last):
+317: Traceback (most recent call last):
+359:[ERROR] Unexpected exit from worker-1
+
+##### 18:17:38 hotpath 0.9.10.post2 py3.11 dev
+started base0910 hotpath_app_base fp=3182 bp=8182 pid=6497 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_base.log
+UP http://localhost:3182/ after 1 s
+[PASS   ] ordering.multi_yield: final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']
+[FAIL   ] ordering.EXC: TimeoutError: Page.click: Timeout 30000ms exceeded.
+[PASS   ] hier.read_via_parent_state_3deep: report=leaf=100 mid=10 root=1 inh_mid=10 inh_root=1 pname=hotpath_app___hotpath_app____mid3 gpname=hotpath_app___hotpath_app____root3 full=reflex___state____state.hotpath_app___hotpath_app____root3.hotpath_app___hotpath_app____mid3.hotpath_app___hotpath_app____leaf3
+[PASS   ] hier.write_via_parent_state_delta: mid_val=11 root_val=2 leaf_inh_root=2
+[PASS   ] hier.write_inherited_vars: mid_val=12 root_val=3
+[PASS   ] hier.background_parent_state_read: report=bg leaf=100 mid=12 root=3 dirty=[] leaf_val=101
+[FAIL   ] interval.no_recompute_within_interval: after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 3, 'ticks': 3, 'ticks_td': 3} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 4, 'ticks': 3, 'ticks_td': 4} ticks ticks=1789064316.589->ticks=1789064317.738 td ticks_td=1789064316.589->ticks_td=1789064317.738 mixi
+[PASS   ] interval.recompute_after_expiry_only_interval_vars: recompute deltas {'ticks': 2, 'ticks_td': 1, 'mixin_ticks': 1, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064317.738->ticks=1789064319.322; td ticks_td=1789064317.738->ticks_td=1789064319.322; mixin mixin_ticks=1789064317.738->mixin_ticks=1789064319.322; cached_plain cached_plain=0->cached_plain=0
+[PASS   ] interval.cached_var_recomputes_once_on_dep_change: cached_plain=2 cached_plain recomputes 1->2 (ticks 5->5)
+[PASS   ] interval.stateproxy_background_read: bg_log=bg t0=1789064320.639 counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 6, "ticks": 6, "ticks_td": 6} | bg t1=1789064322.476 changed=True counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 6, "ticks": 7, "ticks_td": 6}
+[INFO   ] interval.component_state_refresh_on_unrelated_event: after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064316.590->clock_a=1789064316.590)
+[PASS   ] interval.component_state_interval_var_refresh_on_own_event: clock_a clock_a=1789064316.590->clock_a=1789064325.456; clock_b clock_b=1789064316.590->clock_b=1789064316.590 (b changed=False)
+[PASS   ] interval.component_state_second_instance_refresh: clock_b clock_b=1789064316.590->clock_b=1789064327.040
+[INFO   ] interval.component_state_recompute_counts: counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 10, 'ticks': 9, 'ticks_td': 10}
+[PASS   ] backend.backend_vars_read_write_inplace: shown=hidden=1 items=[1] gwt=n/a keys=['_hidden', '_items'] -> shown=hidden=2 items=[1, 2] gwt=n/a keys=['_hidden', '_items']
+[PASS   ] backend.backend_vars_survive_reload: shown=hidden=3 items=[1, 2, 3] gwt=n/a keys=['_hidden', '_items']
+[PASS   ] shadow.var_named_get_state: get_state=shadow-initial -> get_state=set-1789064328; note=fast=[]; toasts=[]
+[FAIL   ] shadow.var_named_get_delta: get_delta=0; toasts=[]
+[PASS   ] slow.other_client_not_blocked: client2 fast_count after 0.09s: fast_count=1
+[PASS   ] slow.same_client_events_queued_in_order: fast_count during slow=fast_count=0; slow_done after 5.05s=slow_done=1; then fast_count=3
+[PASS   ] slow.exception_does_not_wedge_socket: after boom: boom_count=0; then fast_count=4
+[INFO   ] slow.pre_exception_mutation_delivered: boom_count after handler raised (mutation happened before raise): boom_count=0
+[PASS   ] slow.second_exception_then_event: boom_count=2 fast_count=5
+[PASS   ] slow.async_exception_before_first_await_then_event: boom_count=3 fast_count=6
+[PASS   ] slow.rapid_exceptions_and_events: boom_count=5 fast_count=8
+[PASS   ] hammer.100_rapid_clicks_exact: clicks took 3.37s; final=count=100 (recheck count=100); total 3.93s
+[PASS   ] hammer.100_sync_js_clicks_exact: final=count=100
+[PASS   ] hammer.100_async_noawait_clicks_exact: final=count=100
+[PASS   ] hammer.100_mixed_sync_async_exact: final=count=100
+[INFO   ] hammer.factory_info: factory={"py": "3.11.15", "installed": false, "n": 0, "loop_factory": false}
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY base: 32 entries, 3 fail
+stopped hotpath_base (pid 6497 pgid 6497)
+--- server log scan (logs3/hotpath_base.log):
+104: Traceback (most recent call last):
+154: Traceback (most recent call last):
+192: Traceback (most recent call last):
+230: Traceback (most recent call last):
+268: Traceback (most recent call last):
+306: Traceback (most recent call last):
+346:[ERROR] Unexpected exit from worker-1
+
+##### 18:19:15 hotpath 0.9.10.post2 py3.13 dev
+started hp313_base hotpath_app_313_base fp=3183 bp=8183 pid=6997 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_base313.log
+UP http://localhost:3183/ after 1 s
+[PASS   ] ordering.multi_yield: final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']
+[FAIL   ] ordering.EXC: TimeoutError: Page.click: Timeout 30000ms exceeded.
+[PASS   ] hier.read_via_parent_state_3deep: report=leaf=100 mid=10 root=1 inh_mid=10 inh_root=1 pname=hotpath_app___hotpath_app____mid3 gpname=hotpath_app___hotpath_app____root3 full=reflex___state____state.hotpath_app___hotpath_app____root3.hotpath_app___hotpath_app____mid3.hotpath_app___hotpath_app____leaf3
+[PASS   ] hier.write_via_parent_state_delta: mid_val=11 root_val=2 leaf_inh_root=2
+[PASS   ] hier.write_inherited_vars: mid_val=12 root_val=3
+[PASS   ] hier.background_parent_state_read: report=bg leaf=100 mid=12 root=3 dirty=[] leaf_val=101
+[PASS   ] interval.no_recompute_within_interval: after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 4, 'ticks': 4, 'ticks_td': 4} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 4, 'ticks': 4, 'ticks_td': 4} ticks ticks=1789064414.736->ticks=1789064414.736 td ticks_td=1789064414.736->ticks_td=1789064414.736 mixi
+[PASS   ] interval.recompute_after_expiry_only_interval_vars: recompute deltas {'ticks': 1, 'ticks_td': 1, 'mixin_ticks': 1, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064414.736->ticks=1789064416.701; td ticks_td=1789064414.736->ticks_td=1789064416.701; mixin mixin_ticks=1789064414.736->mixin_ticks=1789064416.701; cached_plain cached_plain=0->cached_plain=0
+[PASS   ] interval.cached_var_recomputes_once_on_dep_change: cached_plain=2 cached_plain recomputes 1->2 (ticks 5->5)
+[PASS   ] interval.stateproxy_background_read: bg_log=bg t0=1789064418.019 counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 6, "ticks": 6, "ticks_td": 6} | bg t1=1789064419.838 changed=True counts={"cached_plain": 2, "clock_a": 0, "clock_b": 0, "clock_x": 4, "mixin_ticks": 6, "ticks": 7, "ticks_td": 6}
+[INFO   ] interval.component_state_refresh_on_unrelated_event: after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064413.643->clock_a=1789064413.643)
+[PASS   ] interval.component_state_interval_var_refresh_on_own_event: clock_a clock_a=1789064413.643->clock_a=1789064422.819; clock_b clock_b=1789064413.643->clock_b=1789064413.643 (b changed=False)
+[PASS   ] interval.component_state_second_instance_refresh: clock_b clock_b=1789064413.643->clock_b=1789064424.402
+[INFO   ] interval.component_state_recompute_counts: counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 9, 'ticks': 10, 'ticks_td': 10}
+[PASS   ] backend.backend_vars_read_write_inplace: shown=hidden=1 items=[1] gwt=n/a keys=['_hidden', '_items'] -> shown=hidden=2 items=[1, 2] gwt=n/a keys=['_hidden', '_items']
+[PASS   ] backend.backend_vars_survive_reload: shown=hidden=3 items=[1, 2, 3] gwt=n/a keys=['_hidden', '_items']
+[PASS   ] shadow.var_named_get_state: get_state=shadow-initial -> get_state=set-1789064426; note=fast=[]; toasts=[]
+[FAIL   ] shadow.var_named_get_delta: get_delta=0; toasts=[]
+[PASS   ] slow.other_client_not_blocked: client2 fast_count after 0.07s: fast_count=1
+[PASS   ] slow.same_client_events_queued_in_order: fast_count during slow=fast_count=0; slow_done after 5.05s=slow_done=1; then fast_count=3
+[PASS   ] slow.exception_does_not_wedge_socket: after boom: boom_count=0; then fast_count=4
+[INFO   ] slow.pre_exception_mutation_delivered: boom_count after handler raised (mutation happened before raise): boom_count=0
+[PASS   ] slow.second_exception_then_event: boom_count=2 fast_count=5
+[PASS   ] slow.async_exception_before_first_await_then_event: boom_count=3 fast_count=6
+[PASS   ] slow.rapid_exceptions_and_events: boom_count=5 fast_count=8
+[PASS   ] hammer.100_rapid_clicks_exact: clicks took 3.43s; final=count=100 (recheck count=100); total 3.99s
+[PASS   ] hammer.100_sync_js_clicks_exact: final=count=100
+[PASS   ] hammer.100_async_noawait_clicks_exact: final=count=100
+[PASS   ] hammer.100_mixed_sync_async_exact: final=count=100
+[INFO   ] hammer.factory_info: factory={"py": "3.13.12", "installed": false, "n": 0, "loop_factory": false}
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY base313: 32 entries, 2 fail
+stopped hotpath_base313 (pid 6997 pgid 6997)
+--- server log scan (logs3/hotpath_base313.log):
+106: Traceback (most recent call last):
+160: Traceback (most recent call last):
+199: Traceback (most recent call last):
+238: Traceback (most recent call last):
+278: Traceback (most recent call last):
+318: Traceback (most recent call last):
+359:[ERROR] Unexpected exit from worker-1
+
+##### 18:20:53 hotpath py3.13 + custom task factory
+started hp313 hotpath_app_313 fp=3184 bp=8184 pid=8074 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_hp313_factory.log
+UP http://localhost:3184/ after 1 s
+[PASS   ] ordering.multi_yield: final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']
+[PASS   ] ordering.sync_generator_multi_yield: final=['sy0', 'sy1', 'sy2'] progressive_states=['log=', 'log=4:sy0,5:sy1,6:sy2']
+[PASS   ] ordering.current_task_in_nonsuspending_async_handler: task_info=name=reflex_event|reflex___state____state.hotpath_app___hotpath_app____ordering_state.record_task|cbf109b8-5eb0-4ae1-a120-9a9de9fdd4b8|1789064482.1507251 py=3.13.12
+[PASS   ] ordering.chain_list_of_events: log=log=7:chain-start,9:after-chain other_log=other_log=8:bump:from-chain (expected chain-start < bump:from-chain < after-chain)
+[PASS   ] ordering.yield_other_state_handler: log=log=10:yo-start,11:yo-end other_log=other_log=12:bump:yield-other (expected yo-start < yo-end < bump: yielded event round-trips via client)
+[PASS   ] ordering.yield_sleep_yield: observed=[(0.003, 'log='), (0.036, 'log=13:ysy-a'), (0.402, 'log=13:ysy-a,14:ysy-b'), (0.737, 'log=13:ysy-a,14:ysy-b,15:ysy-c')]
+[PASS   ] ordering.rapid_two_buttons: got 40 entries; match=True; first_diff=None
+[PASS   ] ordering.background_interleave_stateproxy: labels=['bg-start', 'fg:1', 'fg:2', 'fg:3', 'bg-mid other_val=100 gvv=0 parent=State', 'bg-end'] other_val=other_val=100
+[PASS   ] hier.read_via_parent_state_3deep: report=leaf=100 mid=10 root=1 inh_mid=10 inh_root=1 pname=hotpath_app___hotpath_app____mid3 gpname=hotpath_app___hotpath_app____root3 full=reflex___state____state.hotpath_app___hotpath_app____root3.hotpath_app___hotpath_app____mid3.hotpath_app___hotpath_app____leaf3
+[PASS   ] hier.write_via_parent_state_delta: mid_val=11 root_val=2 leaf_inh_root=2
+[PASS   ] hier.write_inherited_vars: mid_val=12 root_val=3
+[PASS   ] hier.background_parent_state_read: report=bg leaf=100 mid=12 root=3 dirty=[] leaf_val=101
+[PASS   ] slow.other_client_not_blocked: client2 fast_count after 0.08s: fast_count=1
+[PASS   ] slow.same_client_events_queued_in_order: fast_count during slow=fast_count=0; slow_done after 5.05s=slow_done=1; then fast_count=3
+[PASS   ] slow.exception_does_not_wedge_socket: after boom: boom_count=0; then fast_count=4
+[INFO   ] slow.pre_exception_mutation_delivered: boom_count after handler raised (mutation happened before raise): boom_count=0
+[PASS   ] slow.second_exception_then_event: boom_count=2 fast_count=5
+[PASS   ] slow.async_exception_before_first_await_then_event: boom_count=3 fast_count=6
+[PASS   ] slow.rapid_exceptions_and_events: boom_count=5 fast_count=8
+[PASS   ] hammer.100_rapid_clicks_exact: clicks took 3.35s; final=count=100 (recheck count=100); total 3.91s
+[PASS   ] hammer.100_sync_js_clicks_exact: final=count=100
+[PASS   ] hammer.100_async_noawait_clicks_exact: final=count=100
+[PASS   ] hammer.100_mixed_sync_async_exact: final=count=100
+[INFO   ] hammer.factory_info: factory={"py": "3.13.12", "installed": true, "n": 1556, "loop_factory": true}
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY hp313_factory: 26 entries, 0 fail
+stopped hotpath_hp313_factory (pid 8074 pgid 8074)
+--- server log scan (logs3/hotpath_hp313_factory.log):
+167: Traceback (most recent call last):
+207: Traceback (most recent call last):
+247: Traceback (most recent call last):
+288: Traceback (most recent call last):
+329: Traceback (most recent call last):
+376:[ERROR] Unexpected exit from worker-1
+
+##### 18:21:49 hotpath smoke + backend var _get_was_touched
+started smoke hotpath_app fp=3185 bp=8185 pid=8555 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/hotpath_smoke_gwt.log
+UP http://localhost:3185/ after 0 s
+[PASS   ] backend.backend_vars_read_write_inplace: shown=hidden=1 items=[1] gwt=8 keys=['_get_was_touched', '_hidden', '_items'] -> shown=hidden=2 items=[1, 2] gwt=9 keys=['_get_was_touched', '_hidden', '_items']
+[PASS   ] backend.backend_var_named__get_was_touched: shown=hidden=2 items=[1, 2] gwt=9 keys=['_get_was_touched', '_hidden', '_items']
+[PASS   ] backend.backend_vars_survive_reload: shown=hidden=3 items=[1, 2, 3] gwt=10 keys=['_get_was_touched', '_hidden', '_items']
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+SUMMARY smoke_gwt: 4 entries, 0 fail
+stopped hotpath_smoke_gwt (pid 8555 pgid 8555)
+--- server log scan (logs3/hotpath_smoke_gwt.log):
+164:[ERROR] Traceback (most recent call last):
+176:Traceback (most recent call last):
+199:[ERROR] Unexpected exit from worker-1
+
+##### 18:22:19 routes smoke dev
+started smoke routes_app fp=3186 bp=8186 pid=8822 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/routes_smoke_dev.log
+UP http://localhost:3186/ after 1 s
+30:Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+75:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 326/325 0:00:02
+[PASS   ] routes.initial_load_index: last=1|path=/index|raw=/|full=http://localhost:3186/index|params="{}"|route_id=/index
+[PASS   ] routes.client_nav./item/1: expected n=2 path=/item/[id] raw~/item/1 params⊇{'id': '1'}; got last=2|path=/item/[id]|raw=/item/1|full=http://localhost:3186/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./item/2: expected n=3 path=/item/[id] raw~/item/2 params⊇{'id': '2'}; got last=3|path=/item/[id]|raw=/item/2|full=http://localhost:3186/item/[id]|params="{'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./item/2?q=x&z=9#frag: expected n=4 path=/item/[id] raw~/item/2?q=x&z=9#frag params⊇{'id': '2', 'q': 'x', 'z': '9'}; got last=4|path=/item/[id]|raw=/item/2?q=x&z=9#frag|full=http://localhost:3186/item/[id]|params="{'q': 'x', 'z': '9', 'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./docs: expected n=5 path=/docs/[[...splat]] raw~/docs params⊇{}; got last=5|path=/docs/[[...splat]]|raw=/docs|full=http://localhost:3186/docs/[[...splat]]|params="{}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.client_nav./docs/a/b: expected n=6 path=/docs/[[...splat]] raw~/docs/a/b params⊇{'splat': ['a', 'b']}; got last=6|path=/docs/[[...splat]]|raw=/docs/a/b|full=http://localhost:3186/docs/[[...splat]]|params="{'splat': ['a', 'b']}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.client_nav./posts/all/7: expected n=7 path=/posts/all/[x] raw~/posts/all/7 params⊇{'x': '7'}; got last=7|path=/posts/all/[x]|raw=/posts/all/7|full=http://localhost:3186/posts/all/[x]|params="{'x': '7'}"|route_id=/posts/all/[x]
+[PASS   ] routes.client_nav./posts/all: expected n=8 path=/posts/[id] raw~/posts/all params⊇{'id': 'all'}; got last=8|path=/posts/[id]|raw=/posts/all|full=http://localhost:3186/posts/[id]|params="{'id': 'all'}"|route_id=/posts/[id]
+[PASS   ] routes.client_nav./posts/42: expected n=9 path=/posts/[id] raw~/posts/42 params⊇{'id': '42'}; got last=9|path=/posts/[id]|raw=/posts/42|full=http://localhost:3186/posts/[id]|params="{'id': '42'}"|route_id=/posts/[id]
+[PASS   ] routes.client_nav./static-0: expected n=10 path=/static-0 raw~/static-0 params⊇{}; got last=10|path=/static-0|raw=/static-0|full=http://localhost:3186/static-0|params="{}"|route_id=/static-0
+[PASS   ] routes.client_nav./static-149: expected n=11 path=/static-149 raw~/static-149 params⊇{}; got last=11|path=/static-149|raw=/static-149|full=http://localhost:3186/static-149|params="{}"|route_id=/static-149
+[PASS   ] routes.client_nav./apple: expected n=12 path=/apple raw~/apple params⊇{}; got last=12|path=/apple|raw=/apple|full=http://localhost:3186/apple|params="{}"|route_id=/apple
+[PASS   ] routes.client_nav./app: expected n=13 path=/app raw~/app params⊇{}; got last=13|path=/app|raw=/app|full=http://localhost:3186/app|params="{}"|route_id=/app
+[PASS   ] routes.client_nav./item/1: expected n=14 path=/item/[id] raw~/item/1 params⊇{'id': '1'}; got last=14|path=/item/[id]|raw=/item/1|full=http://localhost:3186/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./: expected n=15 path=/ raw~/ params⊇{}; got last=15|path=/index|raw=/|full=http://localhost:3186/index|params="{}"|route_id=/index
+[PASS   ] routes.direct_load./item/1: expected n=16 path=/item/[id] raw~/item/1 params⊇{'id': '1'}; got last=16|path=/item/[id]|raw=/item/1|full=http://localhost:3186/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./item/2: expected n=17 path=/item/[id] raw~/item/2 params⊇{'id': '2'}; got last=17|path=/item/[id]|raw=/item/2|full=http://localhost:3186/item/[id]|params="{'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./item/2?q=x&z=9#frag: expected n=18 path=/item/[id] raw~/item/2?q=x&z=9#frag params⊇{'id': '2', 'q': 'x', 'z': '9'}; got last=18|path=/item/[id]|raw=/item/2?q=x&z=9#frag|full=http://localhost:3186/item/[id]|params="{'q': 'x', 'z': '9', 'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./docs: expected n=19 path=/docs/[[...splat]] raw~/docs params⊇{}; got last=19|path=/docs/[[...splat]]|raw=/docs|full=http://localhost:3186/docs/[[...splat]]|params="{}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.direct_load./docs/a/b: expected n=20 path=/docs/[[...splat]] raw~/docs/a/b params⊇{'splat': ['a', 'b']}; got last=20|path=/docs/[[...splat]]|raw=/docs/a/b|full=http://localhost:3186/docs/[[...splat]]|params="{'splat': ['a', 'b']}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.direct_load./posts/all/7: expected n=21 path=/posts/all/[x] raw~/posts/all/7 params⊇{'x': '7'}; got last=21|path=/posts/all/[x]|raw=/posts/all/7|full=http://localhost:3186/posts/all/[x]|params="{'x': '7'}"|route_id=/posts/all/[x]
+[PASS   ] routes.direct_load./posts/all: expected n=22 path=/posts/[id] raw~/posts/all params⊇{'id': 'all'}; got last=22|path=/posts/[id]|raw=/posts/all|full=http://localhost:3186/posts/[id]|params="{'id': 'all'}"|route_id=/posts/[id]
+[PASS   ] routes.direct_load./posts/42: expected n=23 path=/posts/[id] raw~/posts/42 params⊇{'id': '42'}; got last=23|path=/posts/[id]|raw=/posts/42|full=http://localhost:3186/posts/[id]|params="{'id': '42'}"|route_id=/posts/[id]
+[PASS   ] routes.direct_load./static-0: expected n=24 path=/static-0 raw~/static-0 params⊇{}; got last=24|path=/static-0|raw=/static-0|full=http://localhost:3186/static-0|params="{}"|route_id=/static-0
+[PASS   ] routes.direct_load./static-149: expected n=25 path=/static-149 raw~/static-149 params⊇{}; got last=25|path=/static-149|raw=/static-149|full=http://localhost:3186/static-149|params="{}"|route_id=/static-149
+[PASS   ] routes.direct_load./apple: expected n=26 path=/apple raw~/apple params⊇{}; got last=26|path=/apple|raw=/apple|full=http://localhost:3186/apple|params="{}"|route_id=/apple
+[PASS   ] routes.direct_load./app: expected n=27 path=/app raw~/app params⊇{}; got last=27|path=/app|raw=/app|full=http://localhost:3186/app|params="{}"|route_id=/app
+[PASS   ] routes.direct_load./item/1: expected n=28 path=/item/[id] raw~/item/1 params⊇{'id': '1'}; got last=28|path=/item/[id]|raw=/item/1|full=http://localhost:3186/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./: expected n=29 path=/ raw~/ params⊇{}; got last=29|path=/index|raw=/|full=http://localhost:3186/index|params="{}"|route_id=/index
+[PASS   ] routes.direct_only./item/a%20b: expected n=30 path=/item/[id] raw~/item/a params⊇{}; got last=30|path=/item/[id]|raw=/item/a%20b|full=http://localhost:3186/item/[id]|params="{'id': 'a b'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/h%C3%A9llo: expected n=31 path=/item/[id] raw~/item/h params⊇{}; got last=31|path=/item/[id]|raw=/item/h%C3%A9llo|full=http://localhost:3186/item/[id]|params="{'id': 'h\u00e9llo'}"|route_id=/item/[id]
+[FAIL   ] routes.direct_only./docs/x/y/z/: expected n=32 path=/docs/[[...splat]] raw~/docs/x/y/z params⊇{'splat': ['x', 'y', 'z']}; got last=32|path=/docs/[[...splat]]|raw=/docs/x/y/z/|full=http://localhost:3186/docs/[[...splat]]|params="{'splat': ['x', 'y', 'z', '']}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.direct_only./item/100: expected n=33 path=/item/[id] raw~/item/100 params⊇{'id': '100'}; got last=33|path=/item/[id]|raw=/item/100|full=http://localhost:3186/item/[id]|params="{'id': '100'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/101: expected n=34 path=/item/[id] raw~/item/101 params⊇{'id': '101'}; got last=34|path=/item/[id]|raw=/item/101|full=http://localhost:3186/item/[id]|params="{'id': '101'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/102: expected n=35 path=/item/[id] raw~/item/102 params⊇{'id': '102'}; got last=35|path=/item/[id]|raw=/item/102|full=http://localhost:3186/item/[id]|params="{'id': '102'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/103: expected n=36 path=/item/[id] raw~/item/103 params⊇{'id': '103'}; got last=36|path=/item/[id]|raw=/item/103|full=http://localhost:3186/item/[id]|params="{'id': '103'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/104: expected n=37 path=/item/[id] raw~/item/104 params⊇{'id': '104'}; got last=37|path=/item/[id]|raw=/item/104|full=http://localhost:3186/item/[id]|params="{'id': '104'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/105: expected n=38 path=/item/[id] raw~/item/105 params⊇{'id': '105'}; got last=38|path=/item/[id]|raw=/item/105|full=http://localhost:3186/item/[id]|params="{'id': '105'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/106: expected n=39 path=/item/[id] raw~/item/106 params⊇{'id': '106'}; got last=39|path=/item/[id]|raw=/item/106|full=http://localhost:3186/item/[id]|params="{'id': '106'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/107: expected n=40 path=/item/[id] raw~/item/107 params⊇{'id': '107'}; got last=40|path=/item/[id]|raw=/item/107|full=http://localhost:3186/item/[id]|params="{'id': '107'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/108: expected n=41 path=/item/[id] raw~/item/108 params⊇{'id': '108'}; got last=41|path=/item/[id]|raw=/item/108|full=http://localhost:3186/item/[id]|params="{'id': '108'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/109: expected n=42 path=/item/[id] raw~/item/109 params⊇{'id': '109'}; got last=42|path=/item/[id]|raw=/item/109|full=http://localhost:3186/item/[id]|params="{'id': '109'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./item/5/: expected path=/item/[id]; got last=43|path=/item/[id]|raw=/item/5/|full=http://localhost:3186/item/[id]|params="{'id': '5'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./static-7/: expected path=/static-7; got last=44|path=/static-7|raw=/static-7/|full=http://localhost:3186/static-7|params="{}"|route_id=/static-7
+[ANOMALY] routes.direct_load./index: frontend rendered 404 (body='404: Page not found') but the backend fired an on_load for it: 45|path=/index|raw=/index|full=http://localhost:3186/index|params="{'splat': ['index']}"|route_id=/index
+[PASS   ] routes.total_on_load_count: expected n_loads=47, got n_loads=47
+ "console_err_warn": [],
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+WS pathnames sent: [('/', '/'), ('/app', '/app'), ('/apple', '/apple'), ('/docs', '/docs'), ('/docs/a/b', '/docs/a/b'), ('/docs/x/y/z/', '/docs/x/y/z/'), ('/index', '/index'), ('/item/1', '/item/1'), ('/item/100', '/item/100'), ('/item/101', '/item/101'), ('/item/102', '/item/102'), ('/item/103', '/item/103'), ('/item/104', '/it
+SUMMARY smoke_dev: 48 entries, 1 fail
+stopped routes_smoke_dev (pid 8822 pgid 8822)
+
+##### 18:23:14 routes smoke dev frontend_path=/app
+started smoke routes_app fp=3187 bp=8187 pid=9461 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/routes_smoke_dev_fp.log
+UP http://localhost:3187/app/ after 1 s
+30:Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+75:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 326/325 0:00:03
+[PASS   ] routes.initial_load_index: last=1|path=/index|raw=/app/|full=http://localhost:3187/index|params="{}"|route_id=/index
+[PASS   ] routes.client_nav./item/1: expected n=2 path=/item/[id] raw~/app/item/1 params⊇{'id': '1'}; got last=2|path=/item/[id]|raw=/app/item/1|full=http://localhost:3187/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./item/2: expected n=3 path=/item/[id] raw~/app/item/2 params⊇{'id': '2'}; got last=3|path=/item/[id]|raw=/app/item/2|full=http://localhost:3187/item/[id]|params="{'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./item/2?q=x&z=9#frag: expected n=4 path=/item/[id] raw~/app/item/2?q=x&z=9#frag params⊇{'id': '2', 'q': 'x', 'z': '9'}; got last=4|path=/item/[id]|raw=/app/item/2?q=x&z=9#frag|full=http://localhost:3187/item/[id]|params="{'q': 'x', 'z': '9', 'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./docs: expected n=5 path=/docs/[[...splat]] raw~/app/docs params⊇{}; got last=5|path=/docs/[[...splat]]|raw=/app/docs|full=http://localhost:3187/docs/[[...splat]]|params="{}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.client_nav./docs/a/b: expected n=6 path=/docs/[[...splat]] raw~/app/docs/a/b params⊇{'splat': ['a', 'b']}; got last=6|path=/docs/[[...splat]]|raw=/app/docs/a/b|full=http://localhost:3187/docs/[[...splat]]|params="{'splat': ['a', 'b']}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.client_nav./posts/all/7: expected n=7 path=/posts/all/[x] raw~/app/posts/all/7 params⊇{'x': '7'}; got last=7|path=/posts/all/[x]|raw=/app/posts/all/7|full=http://localhost:3187/posts/all/[x]|params="{'x': '7'}"|route_id=/posts/all/[x]
+[PASS   ] routes.client_nav./posts/all: expected n=8 path=/posts/[id] raw~/app/posts/all params⊇{'id': 'all'}; got last=8|path=/posts/[id]|raw=/app/posts/all|full=http://localhost:3187/posts/[id]|params="{'id': 'all'}"|route_id=/posts/[id]
+[PASS   ] routes.client_nav./posts/42: expected n=9 path=/posts/[id] raw~/app/posts/42 params⊇{'id': '42'}; got last=9|path=/posts/[id]|raw=/app/posts/42|full=http://localhost:3187/posts/[id]|params="{'id': '42'}"|route_id=/posts/[id]
+[PASS   ] routes.client_nav./static-0: expected n=10 path=/static-0 raw~/app/static-0 params⊇{}; got last=10|path=/static-0|raw=/app/static-0|full=http://localhost:3187/static-0|params="{}"|route_id=/static-0
+[PASS   ] routes.client_nav./static-149: expected n=11 path=/static-149 raw~/app/static-149 params⊇{}; got last=11|path=/static-149|raw=/app/static-149|full=http://localhost:3187/static-149|params="{}"|route_id=/static-149
+[FAIL   ] routes.client_nav./apple: expected n=12 path=/apple raw~/app/apple params⊇{}; got last=12|path=/404|raw=/app/apple|full=http://localhost:3187/404|params="{}"|route_id=/404  <-- WRONG ROUTE MATCH: /404
+[FAIL   ] routes.client_nav./app: expected n=13 path=/app raw~/app/app params⊇{}; got last=13|path=/index|raw=/app/app|full=http://localhost:3187/index|params="{}"|route_id=/index  <-- WRONG ROUTE MATCH: /index
+[PASS   ] routes.client_nav./item/1: expected n=14 path=/item/[id] raw~/app/item/1 params⊇{'id': '1'}; got last=14|path=/item/[id]|raw=/app/item/1|full=http://localhost:3187/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./: expected n=15 path=/ raw~/app/ params⊇{}; got last=15|path=/index|raw=/app/|full=http://localhost:3187/index|params="{}"|route_id=/index
+[PASS   ] routes.direct_load./item/1: expected n=16 path=/item/[id] raw~/app/item/1 params⊇{'id': '1'}; got last=16|path=/item/[id]|raw=/app/item/1|full=http://localhost:3187/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./item/2: expected n=17 path=/item/[id] raw~/app/item/2 params⊇{'id': '2'}; got last=17|path=/item/[id]|raw=/app/item/2|full=http://localhost:3187/item/[id]|params="{'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./item/2?q=x&z=9#frag: expected n=18 path=/item/[id] raw~/app/item/2?q=x&z=9#frag params⊇{'id': '2', 'q': 'x', 'z': '9'}; got last=18|path=/item/[id]|raw=/app/item/2?q=x&z=9#frag|full=http://localhost:3187/item/[id]|params="{'q': 'x', 'z': '9', 'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./docs: expected n=19 path=/docs/[[...splat]] raw~/app/docs params⊇{}; got last=19|path=/docs/[[...splat]]|raw=/app/docs|full=http://localhost:3187/docs/[[...splat]]|params="{}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.direct_load./docs/a/b: expected n=20 path=/docs/[[...splat]] raw~/app/docs/a/b params⊇{'splat': ['a', 'b']}; got last=20|path=/docs/[[...splat]]|raw=/app/docs/a/b|full=http://localhost:3187/docs/[[...splat]]|params="{'splat': ['a', 'b']}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.direct_load./posts/all/7: expected n=21 path=/posts/all/[x] raw~/app/posts/all/7 params⊇{'x': '7'}; got last=21|path=/posts/all/[x]|raw=/app/posts/all/7|full=http://localhost:3187/posts/all/[x]|params="{'x': '7'}"|route_id=/posts/all/[x]
+[PASS   ] routes.direct_load./posts/all: expected n=22 path=/posts/[id] raw~/app/posts/all params⊇{'id': 'all'}; got last=22|path=/posts/[id]|raw=/app/posts/all|full=http://localhost:3187/posts/[id]|params="{'id': 'all'}"|route_id=/posts/[id]
+[PASS   ] routes.direct_load./posts/42: expected n=23 path=/posts/[id] raw~/app/posts/42 params⊇{'id': '42'}; got last=23|path=/posts/[id]|raw=/app/posts/42|full=http://localhost:3187/posts/[id]|params="{'id': '42'}"|route_id=/posts/[id]
+[PASS   ] routes.direct_load./static-0: expected n=24 path=/static-0 raw~/app/static-0 params⊇{}; got last=24|path=/static-0|raw=/app/static-0|full=http://localhost:3187/static-0|params="{}"|route_id=/static-0
+[PASS   ] routes.direct_load./static-149: expected n=25 path=/static-149 raw~/app/static-149 params⊇{}; got last=25|path=/static-149|raw=/app/static-149|full=http://localhost:3187/static-149|params="{}"|route_id=/static-149
+[FAIL   ] routes.direct_load./apple: expected n=26 path=/apple raw~/app/apple params⊇{}; got last=26|path=/404|raw=/app/apple|full=http://localhost:3187/404|params="{}"|route_id=/404  <-- WRONG ROUTE MATCH: /404
+[FAIL   ] routes.direct_load./app: expected n=27 path=/app raw~/app/app params⊇{}; got last=27|path=/index|raw=/app/app|full=http://localhost:3187/index|params="{}"|route_id=/index  <-- WRONG ROUTE MATCH: /index
+[PASS   ] routes.direct_load./item/1: expected n=28 path=/item/[id] raw~/app/item/1 params⊇{'id': '1'}; got last=28|path=/item/[id]|raw=/app/item/1|full=http://localhost:3187/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./: expected n=29 path=/ raw~/app/ params⊇{}; got last=29|path=/index|raw=/app/|full=http://localhost:3187/index|params="{}"|route_id=/index
+[PASS   ] routes.direct_only./item/a%20b: expected n=30 path=/item/[id] raw~/app/item/a params⊇{}; got last=30|path=/item/[id]|raw=/app/item/a%20b|full=http://localhost:3187/item/[id]|params="{'id': 'a b'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/h%C3%A9llo: expected n=31 path=/item/[id] raw~/app/item/h params⊇{}; got last=31|path=/item/[id]|raw=/app/item/h%C3%A9llo|full=http://localhost:3187/item/[id]|params="{'id': 'h\u00e9llo'}"|route_id=/item/[id]
+[FAIL   ] routes.direct_only./docs/x/y/z/: expected n=32 path=/docs/[[...splat]] raw~/app/docs/x/y/z params⊇{'splat': ['x', 'y', 'z']}; got last=32|path=/docs/[[...splat]]|raw=/app/docs/x/y/z/|full=http://localhost:3187/docs/[[...splat]]|params="{'splat': ['x', 'y', 'z', '']}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.direct_only./item/100: expected n=33 path=/item/[id] raw~/app/item/100 params⊇{'id': '100'}; got last=33|path=/item/[id]|raw=/app/item/100|full=http://localhost:3187/item/[id]|params="{'id': '100'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/101: expected n=34 path=/item/[id] raw~/app/item/101 params⊇{'id': '101'}; got last=34|path=/item/[id]|raw=/app/item/101|full=http://localhost:3187/item/[id]|params="{'id': '101'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/102: expected n=35 path=/item/[id] raw~/app/item/102 params⊇{'id': '102'}; got last=35|path=/item/[id]|raw=/app/item/102|full=http://localhost:3187/item/[id]|params="{'id': '102'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/103: expected n=36 path=/item/[id] raw~/app/item/103 params⊇{'id': '103'}; got last=36|path=/item/[id]|raw=/app/item/103|full=http://localhost:3187/item/[id]|params="{'id': '103'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/104: expected n=37 path=/item/[id] raw~/app/item/104 params⊇{'id': '104'}; got last=37|path=/item/[id]|raw=/app/item/104|full=http://localhost:3187/item/[id]|params="{'id': '104'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/105: expected n=38 path=/item/[id] raw~/app/item/105 params⊇{'id': '105'}; got last=38|path=/item/[id]|raw=/app/item/105|full=http://localhost:3187/item/[id]|params="{'id': '105'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/106: expected n=39 path=/item/[id] raw~/app/item/106 params⊇{'id': '106'}; got last=39|path=/item/[id]|raw=/app/item/106|full=http://localhost:3187/item/[id]|params="{'id': '106'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/107: expected n=40 path=/item/[id] raw~/app/item/107 params⊇{'id': '107'}; got last=40|path=/item/[id]|raw=/app/item/107|full=http://localhost:3187/item/[id]|params="{'id': '107'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/108: expected n=41 path=/item/[id] raw~/app/item/108 params⊇{'id': '108'}; got last=41|path=/item/[id]|raw=/app/item/108|full=http://localhost:3187/item/[id]|params="{'id': '108'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/109: expected n=42 path=/item/[id] raw~/app/item/109 params⊇{'id': '109'}; got last=42|path=/item/[id]|raw=/app/item/109|full=http://localhost:3187/item/[id]|params="{'id': '109'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./item/5/: expected path=/item/[id]; got last=43|path=/item/[id]|raw=/app/item/5/|full=http://localhost:3187/item/[id]|params="{'id': '5'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./static-7/: expected path=/static-7; got last=44|path=/static-7|raw=/app/static-7/|full=http://localhost:3187/static-7|params="{}"|route_id=/static-7
+[ANOMALY] routes.direct_load./index: frontend rendered 404 (body='404: Page not found') but the backend fired an on_load for it: 45|path=/index|raw=/app/index|full=http://localhost:3187/index|params="{'splat': ['index']}"|route_id=/index
+[PASS   ] routes.total_on_load_count: expected n_loads=47, got n_loads=47
+ "console_err_warn": [
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+WS pathnames sent: [('/', '/'), ('/app', '/app'), ('/apple', '/apple'), ('/docs', '/docs'), ('/docs/a/b', '/docs/a/b'), ('/docs/x/y/z/', '/docs/x/y/z/'), ('/index', '/index'), ('/item/1', '/item/1'), ('/item/100', '/item/100'), ('/item/101', '/item/101'), ('/item/102', '/item/102'), ('/item/103', '/item/103'), ('/item/104', '/it
+SUMMARY smoke_dev_fp: 48 entries, 5 fail
+stopped routes_smoke_dev_fp (pid 9461 pgid 9461)
+
+##### 18:24:09 routes base dev frontend_path=/app
+started base0910 routes_app_base fp=3188 bp=8188 pid=10218 log=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/event_hotpath/logs3/routes_base_dev_fp.log
+UP http://localhost:3188/app/ after 2 s
+30:Debug: [Reflex 0.9.10.post2 with Python 3.11.15 (PATH: 
+80:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 326/325 0:00:02
+[PASS   ] routes.initial_load_index: last=1|path=/index|raw=/app/|full=http://localhost:3188/index|params="{}"|route_id=/index
+[PASS   ] routes.client_nav./item/1: expected n=2 path=/item/[id] raw~/app/item/1 params⊇{'id': '1'}; got last=2|path=/item/[id]|raw=/app/item/1|full=http://localhost:3188/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./item/2: expected n=3 path=/item/[id] raw~/app/item/2 params⊇{'id': '2'}; got last=3|path=/item/[id]|raw=/app/item/2|full=http://localhost:3188/item/[id]|params="{'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./item/2?q=x&z=9#frag: expected n=4 path=/item/[id] raw~/app/item/2?q=x&z=9#frag params⊇{'id': '2', 'q': 'x', 'z': '9'}; got last=4|path=/item/[id]|raw=/app/item/2?q=x&z=9#frag|full=http://localhost:3188/item/[id]|params="{'q': 'x', 'z': '9', 'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./docs: expected n=5 path=/docs/[[...splat]] raw~/app/docs params⊇{}; got last=5|path=/docs/[[...splat]]|raw=/app/docs|full=http://localhost:3188/docs/[[...splat]]|params="{}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.client_nav./docs/a/b: expected n=6 path=/docs/[[...splat]] raw~/app/docs/a/b params⊇{'splat': ['a', 'b']}; got last=6|path=/docs/[[...splat]]|raw=/app/docs/a/b|full=http://localhost:3188/docs/[[...splat]]|params="{'splat': ['a', 'b']}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.client_nav./posts/all/7: expected n=7 path=/posts/all/[x] raw~/app/posts/all/7 params⊇{'x': '7'}; got last=7|path=/posts/all/[x]|raw=/app/posts/all/7|full=http://localhost:3188/posts/all/[x]|params="{'x': '7'}"|route_id=/posts/all/[x]
+[PASS   ] routes.client_nav./posts/all: expected n=8 path=/posts/[id] raw~/app/posts/all params⊇{'id': 'all'}; got last=8|path=/posts/[id]|raw=/app/posts/all|full=http://localhost:3188/posts/[id]|params="{'id': 'all'}"|route_id=/posts/[id]
+[PASS   ] routes.client_nav./posts/42: expected n=9 path=/posts/[id] raw~/app/posts/42 params⊇{'id': '42'}; got last=9|path=/posts/[id]|raw=/app/posts/42|full=http://localhost:3188/posts/[id]|params="{'id': '42'}"|route_id=/posts/[id]
+[PASS   ] routes.client_nav./static-0: expected n=10 path=/static-0 raw~/app/static-0 params⊇{}; got last=10|path=/static-0|raw=/app/static-0|full=http://localhost:3188/static-0|params="{}"|route_id=/static-0
+[PASS   ] routes.client_nav./static-149: expected n=11 path=/static-149 raw~/app/static-149 params⊇{}; got last=11|path=/static-149|raw=/app/static-149|full=http://localhost:3188/static-149|params="{}"|route_id=/static-149
+[FAIL   ] routes.client_nav./apple: expected n=12 path=/apple raw~/app/apple params⊇{}; got last=12|path=/404|raw=/app/apple|full=http://localhost:3188/404|params="{}"|route_id=/404  <-- WRONG ROUTE MATCH: /404
+[FAIL   ] routes.client_nav./app: expected n=13 path=/app raw~/app/app params⊇{}; got last=13|path=/index|raw=/app/app|full=http://localhost:3188/index|params="{}"|route_id=/index  <-- WRONG ROUTE MATCH: /index
+[PASS   ] routes.client_nav./item/1: expected n=14 path=/item/[id] raw~/app/item/1 params⊇{'id': '1'}; got last=14|path=/item/[id]|raw=/app/item/1|full=http://localhost:3188/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.client_nav./: expected n=15 path=/ raw~/app/ params⊇{}; got last=15|path=/index|raw=/app/|full=http://localhost:3188/index|params="{}"|route_id=/index
+[PASS   ] routes.direct_load./item/1: expected n=16 path=/item/[id] raw~/app/item/1 params⊇{'id': '1'}; got last=16|path=/item/[id]|raw=/app/item/1|full=http://localhost:3188/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./item/2: expected n=17 path=/item/[id] raw~/app/item/2 params⊇{'id': '2'}; got last=17|path=/item/[id]|raw=/app/item/2|full=http://localhost:3188/item/[id]|params="{'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./item/2?q=x&z=9#frag: expected n=18 path=/item/[id] raw~/app/item/2?q=x&z=9#frag params⊇{'id': '2', 'q': 'x', 'z': '9'}; got last=18|path=/item/[id]|raw=/app/item/2?q=x&z=9#frag|full=http://localhost:3188/item/[id]|params="{'q': 'x', 'z': '9', 'id': '2'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./docs: expected n=19 path=/docs/[[...splat]] raw~/app/docs params⊇{}; got last=19|path=/docs/[[...splat]]|raw=/app/docs|full=http://localhost:3188/docs/[[...splat]]|params="{}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.direct_load./docs/a/b: expected n=20 path=/docs/[[...splat]] raw~/app/docs/a/b params⊇{'splat': ['a', 'b']}; got last=20|path=/docs/[[...splat]]|raw=/app/docs/a/b|full=http://localhost:3188/docs/[[...splat]]|params="{'splat': ['a', 'b']}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.direct_load./posts/all/7: expected n=21 path=/posts/all/[x] raw~/app/posts/all/7 params⊇{'x': '7'}; got last=21|path=/posts/all/[x]|raw=/app/posts/all/7|full=http://localhost:3188/posts/all/[x]|params="{'x': '7'}"|route_id=/posts/all/[x]
+[PASS   ] routes.direct_load./posts/all: expected n=22 path=/posts/[id] raw~/app/posts/all params⊇{'id': 'all'}; got last=22|path=/posts/[id]|raw=/app/posts/all|full=http://localhost:3188/posts/[id]|params="{'id': 'all'}"|route_id=/posts/[id]
+[PASS   ] routes.direct_load./posts/42: expected n=23 path=/posts/[id] raw~/app/posts/42 params⊇{'id': '42'}; got last=23|path=/posts/[id]|raw=/app/posts/42|full=http://localhost:3188/posts/[id]|params="{'id': '42'}"|route_id=/posts/[id]
+[PASS   ] routes.direct_load./static-0: expected n=24 path=/static-0 raw~/app/static-0 params⊇{}; got last=24|path=/static-0|raw=/app/static-0|full=http://localhost:3188/static-0|params="{}"|route_id=/static-0
+[PASS   ] routes.direct_load./static-149: expected n=25 path=/static-149 raw~/app/static-149 params⊇{}; got last=25|path=/static-149|raw=/app/static-149|full=http://localhost:3188/static-149|params="{}"|route_id=/static-149
+[FAIL   ] routes.direct_load./apple: expected n=26 path=/apple raw~/app/apple params⊇{}; got last=26|path=/404|raw=/app/apple|full=http://localhost:3188/404|params="{}"|route_id=/404  <-- WRONG ROUTE MATCH: /404
+[FAIL   ] routes.direct_load./app: expected n=27 path=/app raw~/app/app params⊇{}; got last=27|path=/index|raw=/app/app|full=http://localhost:3188/index|params="{}"|route_id=/index  <-- WRONG ROUTE MATCH: /index
+[PASS   ] routes.direct_load./item/1: expected n=28 path=/item/[id] raw~/app/item/1 params⊇{'id': '1'}; got last=28|path=/item/[id]|raw=/app/item/1|full=http://localhost:3188/item/[id]|params="{'id': '1'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./: expected n=29 path=/ raw~/app/ params⊇{}; got last=29|path=/index|raw=/app/|full=http://localhost:3188/index|params="{}"|route_id=/index
+[PASS   ] routes.direct_only./item/a%20b: expected n=30 path=/item/[id] raw~/app/item/a params⊇{}; got last=30|path=/item/[id]|raw=/app/item/a%20b|full=http://localhost:3188/item/[id]|params="{'id': 'a b'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/h%C3%A9llo: expected n=31 path=/item/[id] raw~/app/item/h params⊇{}; got last=31|path=/item/[id]|raw=/app/item/h%C3%A9llo|full=http://localhost:3188/item/[id]|params="{'id': 'h\u00e9llo'}"|route_id=/item/[id]
+[FAIL   ] routes.direct_only./docs/x/y/z/: expected n=32 path=/docs/[[...splat]] raw~/app/docs/x/y/z params⊇{'splat': ['x', 'y', 'z']}; got last=32|path=/docs/[[...splat]]|raw=/app/docs/x/y/z/|full=http://localhost:3188/docs/[[...splat]]|params="{'splat': ['x', 'y', 'z', '']}"|route_id=/docs/[[...splat]]
+[PASS   ] routes.direct_only./item/100: expected n=33 path=/item/[id] raw~/app/item/100 params⊇{'id': '100'}; got last=33|path=/item/[id]|raw=/app/item/100|full=http://localhost:3188/item/[id]|params="{'id': '100'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/101: expected n=34 path=/item/[id] raw~/app/item/101 params⊇{'id': '101'}; got last=34|path=/item/[id]|raw=/app/item/101|full=http://localhost:3188/item/[id]|params="{'id': '101'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/102: expected n=35 path=/item/[id] raw~/app/item/102 params⊇{'id': '102'}; got last=35|path=/item/[id]|raw=/app/item/102|full=http://localhost:3188/item/[id]|params="{'id': '102'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/103: expected n=36 path=/item/[id] raw~/app/item/103 params⊇{'id': '103'}; got last=36|path=/item/[id]|raw=/app/item/103|full=http://localhost:3188/item/[id]|params="{'id': '103'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/104: expected n=37 path=/item/[id] raw~/app/item/104 params⊇{'id': '104'}; got last=37|path=/item/[id]|raw=/app/item/104|full=http://localhost:3188/item/[id]|params="{'id': '104'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/105: expected n=38 path=/item/[id] raw~/app/item/105 params⊇{'id': '105'}; got last=38|path=/item/[id]|raw=/app/item/105|full=http://localhost:3188/item/[id]|params="{'id': '105'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/106: expected n=39 path=/item/[id] raw~/app/item/106 params⊇{'id': '106'}; got last=39|path=/item/[id]|raw=/app/item/106|full=http://localhost:3188/item/[id]|params="{'id': '106'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/107: expected n=40 path=/item/[id] raw~/app/item/107 params⊇{'id': '107'}; got last=40|path=/item/[id]|raw=/app/item/107|full=http://localhost:3188/item/[id]|params="{'id': '107'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/108: expected n=41 path=/item/[id] raw~/app/item/108 params⊇{'id': '108'}; got last=41|path=/item/[id]|raw=/app/item/108|full=http://localhost:3188/item/[id]|params="{'id': '108'}"|route_id=/item/[id]
+[PASS   ] routes.direct_only./item/109: expected n=42 path=/item/[id] raw~/app/item/109 params⊇{'id': '109'}; got last=42|path=/item/[id]|raw=/app/item/109|full=http://localhost:3188/item/[id]|params="{'id': '109'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./item/5/: expected path=/item/[id]; got last=43|path=/item/[id]|raw=/app/item/5/|full=http://localhost:3188/item/[id]|params="{'id': '5'}"|route_id=/item/[id]
+[PASS   ] routes.direct_load./static-7/: expected path=/static-7; got last=44|path=/static-7|raw=/app/static-7/|full=http://localhost:3188/static-7|params="{}"|route_id=/static-7
+[ANOMALY] routes.direct_load./index: frontend rendered 404 (body='404: Page not found') but the backend fired an on_load for it: 45|path=/index|raw=/app/index|full=http://localhost:3188/index|params="{'splat': ['index']}"|route_id=/index
+[PASS   ] routes.total_on_load_count: expected n_loads=47, got n_loads=47
+ "console_err_warn": [
+ "page_errors": [],
+ "failed_requests": [],
+ "http_4xx_5xx": [],
+ "dialogs": []
+WS pathnames sent: [('/', '/'), ('/app', '/app'), ('/apple', '/apple'), ('/docs', '/docs'), ('/docs/a/b', '/docs/a/b'), ('/docs/x/y/z/', '/docs/x/y/z/'), ('/index', '/index'), ('/item/1', '/item/1'), ('/item/100', '/item/100'), ('/item/101', '/item/101'), ('/item/102', '/item/102'), ('/item/103', '/item/103'), ('/item/104', '/it
+SUMMARY base_dev_fp: 48 entries, 5 fail
+stopped routes_base_dev_fp (pid 10218 pgid 10218)
+
+##### 18:25:05 socket hp313
+=== socket tests hp313 (hp313/hotpath_app_313) pid=10713
+[PASS] socket.ping_baseline: pong latencies ms=[0.96, 0.75, 0.91, 0.58, 0.67]
+[PASS] socket.ping_while_slow_handler_same_socket: pong latencies during slow handler ms=[1.45, 1.75, 1.65, 1.58, 1.35]
+[PASS] socket.other_client_not_blocked: client B fast delta after 3.0 ms (1 updates)
+[PASS] socket.same_client_order_after_slow: updates(slow_done,fast_count)=[(1, None), (None, 1), (None, 2), (None, 3)] total 5.01s
+[INFO] socket.pre_exception_mutation: no delta at all within 2.5 s after the raising handler (pre-raise mutation dropped)
+[PASS] socket.exception_then_next_event: boom delta then fast_count=4 after 2.3 ms; boom updates carried events=[]
+[PASS] socket.ping_after_exception: 1.04 ms
+DONE hp313: 0 fail
+[PASS] malformed.burst_200_bad_200_good: final count 221 (expected 221) in 0.36s
+[PASS] malformed.ping_after_all: pong 0.6 ms; disconnected=False
+DONE hp313: 0 fail / 19
+--- server log scan:
+16: Traceback (most recent call last):
+55:Warning: Received event data as a string. This generally should not happen and 
+58:Traceback (most recent call last):
+73:Traceback (most recent call last):
+93:    raise exceptions.EventDeserializationError(msg) from ex
+94:reflex_base.utils.exceptions.EventDeserializationError: Failed to deserialize event data: this is not json.
+95:Warning: Received event data as a string. This generally should not happen and 
+98:Traceback (most recent call last):
+118:    raise exceptions.EventDeserializationError(msg)
+119:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+121:Traceback (most recent call last):
+141:    raise exceptions.EventDeserializationError(msg)
+intentional-boom tracebacks: 1
+
+##### 18:25:27 socket base313
+=== socket tests base313 (hp313_base/hotpath_app_313_base) pid=10795
+[PASS] socket.ping_baseline: pong latencies ms=[0.94, 0.77, 0.73, 0.67, 0.63]
+[PASS] socket.ping_while_slow_handler_same_socket: pong latencies during slow handler ms=[1.6, 1.67, 1.6, 1.7, 1.64]
+[PASS] socket.other_client_not_blocked: client B fast delta after 3.2 ms (1 updates)
+[PASS] socket.same_client_order_after_slow: updates(slow_done,fast_count)=[(1, None), (None, 1), (None, 2), (None, 3)] total 5.01s
+[INFO] socket.pre_exception_mutation: no delta at all within 2.5 s after the raising handler (pre-raise mutation dropped)
+[PASS] socket.exception_then_next_event: boom delta then fast_count=4 after 2.4 ms; boom updates carried events=[]
+[PASS] socket.ping_after_exception: 0.93 ms
+DONE base313: 0 fail
+[PASS] malformed.burst_200_bad_200_good: final count 221 (expected 221) in 0.35s
+[PASS] malformed.ping_after_all: pong 0.7 ms; disconnected=False
+DONE base313: 0 fail / 19
+--- server log scan:
+16: Traceback (most recent call last):
+54:Warning: Received event data as a string. This generally should not happen and 
+57:future: <Task finished name='Task-78' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib
+58:Traceback (most recent call last):
+73:Traceback (most recent call last):
+84:    raise exceptions.EventDeserializationError(msg) from ex
+85:reflex_base.utils.exceptions.EventDeserializationError: Failed to deserialize event data: this is not json.
+86:Warning: Received event data as a string. This generally should not happen and 
+89:future: <Task finished name='Task-83' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib
+90:Traceback (most recent call last):
+101:    raise exceptions.EventDeserializationError(msg)
+102:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+intentional-boom tracebacks: 1
+
+##### 18:25:48 socket smoke
+=== socket tests smoke (smoke/hotpath_app) pid=10878
+[PASS] socket.ping_baseline: pong latencies ms=[0.97, 0.77, 0.79, 0.76, 0.78]
+[PASS] socket.ping_while_slow_handler_same_socket: pong latencies during slow handler ms=[1.49, 2.16, 1.48, 2.2, 1.82]
+[PASS] socket.other_client_not_blocked: client B fast delta after 3.2 ms (1 updates)
+[PASS] socket.same_client_order_after_slow: updates(slow_done,fast_count)=[(1, None), (None, 1), (None, 2), (None, 3)] total 5.01s
+[INFO] socket.pre_exception_mutation: no delta at all within 2.5 s after the raising handler (pre-raise mutation dropped)
+[PASS] socket.exception_then_next_event: boom delta then fast_count=4 after 2.0 ms; boom updates carried events=[]
+[PASS] socket.ping_after_exception: 0.71 ms
+DONE smoke: 0 fail
+[PASS] malformed.burst_200_bad_200_good: final count 221 (expected 221) in 0.31s
+[PASS] malformed.ping_after_all: pong 0.8 ms; disconnected=False
+DONE smoke: 0 fail / 19
+--- server log scan:
+16: Traceback (most recent call last):
+51:Warning: Received event data as a string. This generally should not happen and 
+54:Traceback (most recent call last):
+70:Traceback (most recent call last):
+88:    raise exceptions.EventDeserializationError(msg) from ex
+89:reflex_base.utils.exceptions.EventDeserializationError: Failed to deserialize event data: this is not json.
+90:Warning: Received event data as a string. This generally should not happen and 
+93:Traceback (most recent call last):
+111:    raise exceptions.EventDeserializationError(msg)
+112:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+114:Traceback (most recent call last):
+132:    raise exceptions.EventDeserializationError(msg)
+intentional-boom tracebacks: 1
+
+ALL PW DONE 18:26:10

@@ -9,7 +9,7 @@
   "hydrate_seen": 0
  },
  "log": [
-  "13:50:28 on_load page-b (run #1) path=/page-b",
-  "13:50:32 click -> clicks=1 path=/page-b"
+  "18:22:29 on_load page-b (run #1) path=/page-b",
+  "18:22:32 click -> clicks=1 path=/page-b"
  ]
 }

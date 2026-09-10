@@ -1,0 +1,98 @@
+[
+ {
+  "name": "ordering.multi_yield",
+  "status": "pass",
+  "details": "final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']"
+ },
+ {
+  "name": "ordering.sync_generator_multi_yield",
+  "status": "pass",
+  "details": "final=['sy0', 'sy1', 'sy2'] progressive_states=['log=', 'log=4:sy0,5:sy1,6:sy2']"
+ },
+ {
+  "name": "ordering.current_task_in_nonsuspending_async_handler",
+  "status": "pass",
+  "details": "task_info=name=reflex_event|reflex___state____state.hotpath_app___hotpath_app____ordering_state.record_task|2f5710ed-5c86-4cb0-8509-817a7108fb68|1789064905.030738 py=3.11.15"
+ },
+ {
+  "name": "ordering.chain_list_of_events",
+  "status": "pass",
+  "details": "log=log=7:chain-start,9:after-chain other_log=other_log=8:bump:from-chain (expected chain-start < bump:from-chain < after-chain)"
+ },
+ {
+  "name": "ordering.yield_other_state_handler",
+  "status": "pass",
+  "details": "log=log=10:yo-start,11:yo-end other_log=other_log=12:bump:yield-other (expected yo-start < yo-end < bump: yielded event round-trips via client)"
+ },
+ {
+  "name": "ordering.yield_sleep_yield",
+  "status": "pass",
+  "details": "observed=[(0.002, 'log='), (0.036, 'log=13:ysy-a'), (0.406, 'log=13:ysy-a,14:ysy-b'), (0.707, 'log=13:ysy-a,14:ysy-b,15:ysy-c')]"
+ },
+ {
+  "name": "ordering.rapid_two_buttons",
+  "status": "pass",
+  "details": "got 40 entries; match=True; first_diff=None"
+ },
+ {
+  "name": "ordering.background_interleave_stateproxy",
+  "status": "pass",
+  "details": "labels=['bg-start', 'fg:1', 'fg:2', 'fg:3', 'bg-mid other_val=100 gvv=0 parent=State', 'bg-end'] other_val=other_val=100"
+ },
+ {
+  "name": "interval.no_recompute_within_interval",
+  "status": "pass",
+  "details": "after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 7, 'ticks': 7, 'ticks_td': 7} ticks ticks=1789064910.264->ticks=1789064910.264 td ticks_td=1789064910.264->ticks_td=1789064910.264 mixin mixin_ticks=1789064910.264->mixin_ticks=1789064910.264"
+ },
+ {
+  "name": "interval.recompute_after_expiry_only_interval_vars",
+  "status": "pass",
+  "details": "recompute deltas {'ticks': 1, 'ticks_td': 1, 'mixin_ticks': 1, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064910.264->ticks=1789064912.214; td ticks_td=1789064910.264->ticks_td=1789064912.214; mixin mixin_ticks=1789064910.264->mixin_ticks=1789064912.214; cached_plain cached_plain=0->cached_plain=0"
+ },
+ {
+  "name": "interval.cached_var_recomputes_once_on_dep_change",
+  "status": "pass",
+  "details": "cached_plain=2 cached_plain recomputes 1->2 (ticks 8->8)"
+ },
+ {
+  "name": "interval.stateproxy_background_read",
+  "status": "pass",
+  "details": "bg_log=bg t0=1789064913.532 counts={\"cached_plain\": 2, \"clock_a\": 0, \"clock_b\": 0, \"clock_x\": 4, \"mixin_ticks\": 9, \"ticks\": 9, \"ticks_td\": 9} | bg t1=1789064915.369 changed=True counts={\"cached_plain\": 2, \"clock_a\": 0, \"clock_b\": 0, \"clock_x\": 4, \"mixin_ticks\": 9, \"ticks\": 10, \"ticks_td\": 9}",
+  "note": "changed=True means an expired interval var recomputes on read inside `async with self`; changed=False is also legal"
+ },
+ {
+  "name": "interval.component_state_refresh_on_unrelated_event",
+  "status": "info",
+  "details": "after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064909.316->clock_a=1789064909.316)"
+ },
+ {
+  "name": "interval.component_state_interval_var_refresh_on_own_event",
+  "status": "pass",
+  "details": "clock_a clock_a=1789064909.316->clock_a=1789064918.382; clock_b clock_b=1789064909.316->clock_b=1789064909.316 (b changed=False)"
+ },
+ {
+  "name": "interval.component_state_second_instance_refresh",
+  "status": "pass",
+  "details": "clock_b clock_b=1789064909.316->clock_b=1789064919.966"
+ },
+ {
+  "name": "interval.component_state_recompute_counts",
+  "status": "info",
+  "details": "counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 1, 'clock_x': 4, 'mixin_ticks': 12, 'ticks': 12, 'ticks_td': 13}"
+ },
+ {
+  "name": "shadow.var_named_get_state",
+  "status": "pass",
+  "details": "get_state=shadow-initial -> get_state=set-1789064920; note=fast=[]; toasts=[]"
+ },
+ {
+  "name": "shadow.var_named_get_delta",
+  "status": "fail",
+  "details": "get_delta=0; toasts=[]"
+ },
+ {
+  "name": "browser_capture",
+  "status": "info",
+  "details": "{\"label\": \"base2\", \"console_err_warn\": [], \"page_errors\": [], \"failed_requests\": [], \"http_4xx_5xx\": [], \"dialogs\": []}"
+ }
+]

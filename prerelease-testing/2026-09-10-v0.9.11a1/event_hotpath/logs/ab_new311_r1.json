@@ -1,0 +1,257 @@
+{
+ "label": "new311_r1",
+ "url": "http://localhost:8180",
+ "names": {
+  "version": "0.9.11a1",
+  "counter": "reflex___state____state.hotpath_app___hotpath_app____counter_state",
+  "increment": "reflex___state____state.hotpath_app___hotpath_app____counter_state.increment",
+  "reset_count": "reflex___state____state.hotpath_app___hotpath_app____counter_state.reset_count",
+  "slow_state": "reflex___state____state.hotpath_app___hotpath_app____slow_state",
+  "slow": "reflex___state____state.hotpath_app___hotpath_app____slow_state.slow",
+  "fast": "reflex___state____state.hotpath_app___hotpath_app____slow_state.fast",
+  "boom": "reflex___state____state.hotpath_app___hotpath_app____slow_state.boom"
+ },
+ "runs": [
+  {
+   "mode": "serial_2000",
+   "label": "new311_r1",
+   "wall_s": 2.367,
+   "ev_per_s": 845.1,
+   "load1_before": "1.15",
+   "cpu_by_pid_s": {
+    "4415": 0.01,
+    "4419": 1.97
+   },
+   "server_py": "3.11.15",
+   "server_cpu_s": 1.98,
+   "server_cpu_us_per_event": 990.0,
+   "rss_mb": 115.0,
+   "pids": [
+    4415,
+    4419
+   ],
+   "final_count": 2001,
+   "expected_count": 2001,
+   "exact": true,
+   "n": 2000,
+   "p50_ms": 1.097,
+   "p90_ms": 1.442,
+   "p99_ms": 2.549,
+   "max_ms": 5.755,
+   "mean_ms": 1.183,
+   "raw_first_update": [
+    {
+     "delta": {
+      "reflex___state____state": {
+       "router_rx_state_": {
+        "session": {
+         "client_token": "2ea8b1d3-a8ea-4cc4-b16c-24e139b48e6b",
+         "client_ip": "127.0.0.1",
+         "session_id": "gv4YQneA_9CUesWQAAAD"
+        },
+        "headers": {
+         "host": "localhost:8180",
+         "origin": "",
+         "upgrade": "websocket",
+         "connection": "Upgrade",
+         "cookie": "",
+         "pragma": "",
+         "cache_control": "",
+         "user_agent": "Python/3.11 aiohttp/3.14.3",
+         "sec_websocket_version": "13",
+         "sec_websocket_key": "uoVKbbkmsMjtrN2sY+9ozw==",
+         "sec_websocket_extensions": "",
+         "accept_encoding": "gzip, deflate",
+         "accept_language": "",
+         "raw_headers": {
+          "accept": "*/*",
+          "accept-encoding": "gzip, deflate",
+          "asgi-scope-client": "127.0.0.1",
+          "connection": "Upgrade",
+          "host": "localhost:8180",
+          "sec-websocket-key": "uoVKbbkmsMjtrN2sY+9ozw==",
+          "sec-websocket-version": "13",
+          "upgrade": "websocket",
+          "user-agent": "Python/3.11 aiohttp/3.14.3"
+         }
+        },
+        "page": {
+         "host": "",
+         "path": "/index",
+         "raw_path": "/",
+         "full_path": "/index",
+         "full_raw_path": "/",
+         "params": {}
+        },
+        "url": {
+         "scheme": "",
+         "netloc": "",
+         "origin": "://",
+         "path": "/",
+         "query": "",
+         "query_parameters": {},
+         "fragment": "",
+         "href": "/"
+        },
+        "route_id": "/index"
+       }
+      },
+      "reflex___state____state.hotpath_app___hotpath_app____counter_state": {
+       "factory_info_rx_state_": "{\"py\": \"3.11.15\", \"installed\": false, \"n\": 0, \"loop_factory\": false}",
+       "count_rx_state_": 0
+      },
+      "reflex___state____state.hotpath_app___hotpath_app____interval_state": {
+       "counts_rx_state_": "{\"cached_plain\": 0, \"clock_a\": 0, \"clock_b\": 0, \"mixin_ticks\": 1, \"ticks\": 1, \"ticks_td\": 1}",
+       "mixin_ticks_rx_state_": "1789063889.834",
+       "ticks_rx_state_": "1789063889.834",
+       "ticks_td_rx_state_": "1789063889.834"
+      }
+     }
+    }
+   ],
+   "round": 0
+  },
+  {
+   "mode": "concurrent_20x100",
+   "label": "new311_r1",
+   "wall_s": 1.363,
+   "load1_before": "1.15",
+   "cpu_by_pid_s": {
+    "4415": 0.0,
+    "4419": 1.49
+   },
+   "ev_per_s": 1467.2,
+   "server_cpu_s": 1.49,
+   "server_cpu_us_per_event": 745.0,
+   "rss_mb": 120.3,
+   "finals": [
+    100
+   ],
+   "exact": true,
+   "n": 2000,
+   "p50_ms": 13.439,
+   "p90_ms": 17.843,
+   "p99_ms": 26.247,
+   "max_ms": 42.017,
+   "mean_ms": 13.448,
+   "round": 0
+  },
+  {
+   "mode": "pipelined_2000",
+   "label": "new311_r1",
+   "wall_s": 1.827,
+   "send_s": 0.023,
+   "load1_before": "1.22",
+   "cpu_by_pid_s": {
+    "4415": 0.0,
+    "4419": 2.03
+   },
+   "ev_per_s": 1094.8,
+   "server_cpu_s": 2.03,
+   "server_cpu_us_per_event": 1015.0,
+   "rss_mb": 120.1,
+   "updates_received": 2000,
+   "final_count": 2000,
+   "exact": true,
+   "round": 0
+  }
+ ],
+ "warmup": {
+  "mode": "serial_200",
+  "label": "new311_r1-warmup",
+  "wall_s": 0.228,
+  "ev_per_s": 877.3,
+  "load1_before": "1.15",
+  "cpu_by_pid_s": {
+   "4415": 0.0,
+   "4419": 0.2
+  },
+  "server_py": "3.11.15",
+  "server_cpu_s": 0.2,
+  "server_cpu_us_per_event": 1000.0,
+  "rss_mb": 114.8,
+  "pids": [
+   4415,
+   4419
+  ],
+  "final_count": 201,
+  "expected_count": 201,
+  "exact": true,
+  "n": 200,
+  "p50_ms": 1.07,
+  "p90_ms": 1.331,
+  "p99_ms": 2.723,
+  "max_ms": 5.573,
+  "mean_ms": 1.14,
+  "raw_first_update": [
+   {
+    "delta": {
+     "reflex___state____state": {
+      "router_rx_state_": {
+       "session": {
+        "client_token": "43c960ad-aff0-4545-853b-c20c4604a64a",
+        "client_ip": "127.0.0.1",
+        "session_id": "J-Hrna_dGwLPnWMiAAAB"
+       },
+       "headers": {
+        "host": "localhost:8180",
+        "origin": "",
+        "upgrade": "websocket",
+        "connection": "Upgrade",
+        "cookie": "",
+        "pragma": "",
+        "cache_control": "",
+        "user_agent": "Python/3.11 aiohttp/3.14.3",
+        "sec_websocket_version": "13",
+        "sec_websocket_key": "9t0KVioXdxN3SkCvZp+zQA==",
+        "sec_websocket_extensions": "",
+        "accept_encoding": "gzip, deflate",
+        "accept_language": "",
+        "raw_headers": {
+         "accept": "*/*",
+         "accept-encoding": "gzip, deflate",
+         "asgi-scope-client": "127.0.0.1",
+         "connection": "Upgrade",
+         "host": "localhost:8180",
+         "sec-websocket-key": "9t0KVioXdxN3SkCvZp+zQA==",
+         "sec-websocket-version": "13",
+         "upgrade": "websocket",
+         "user-agent": "Python/3.11 aiohttp/3.14.3"
+        }
+       },
+       "page": {
+        "host": "",
+        "path": "/index",
+        "raw_path": "/",
+        "full_path": "/index",
+        "full_raw_path": "/",
+        "params": {}
+       },
+       "url": {
+        "scheme": "",
+        "netloc": "",
+        "origin": "://",
+        "path": "/",
+        "query": "",
+        "query_parameters": {},
+        "fragment": "",
+        "href": "/"
+       },
+       "route_id": "/index"
+      }
+     },
+     "reflex___state____state.hotpath_app___hotpath_app____counter_state": {
+      "factory_info_rx_state_": "{\"py\": \"3.11.15\", \"installed\": false, \"n\": 0, \"loop_factory\": false}",
+      "count_rx_state_": 0
+     },
+     "reflex___state____state.hotpath_app___hotpath_app____interval_state": {
+      "counts_rx_state_": "{\"cached_plain\": 0, \"clock_a\": 0, \"clock_b\": 0, \"mixin_ticks\": 0, \"ticks\": 0, \"ticks_td\": 0}",
+      "mixin_ticks_rx_state_": "1789063889.588",
+      "ticks_rx_state_": "1789063889.588",
+      "ticks_td_rx_state_": "1789063889.588"
+     }
+    }
+   }
+  ]
+ }
+}

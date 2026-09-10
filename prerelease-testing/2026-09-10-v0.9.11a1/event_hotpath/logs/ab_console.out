@@ -1,0 +1,83 @@
+=== round 1 new311 (smoke/hotpath_app) pid=4415 pgid=4415 load=1.15 18:11:29
+warmup {"ev_per_s": 877.3, "p50_ms": 1.07, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "43c960ad-aff0-4545-853b-c20c4604a64a", "client_ip": "127.0.0.1", "session_id": "J-Hrna_dGwLP
+{"mode": "serial_2000", "label": "new311_r1", "wall_s": 2.367, "ev_per_s": 845.1, "load1_before": "1.15", "server_py": "3.11.15", "server_cpu_s": 1.98, "server_cpu_us_per_event": 990.0, "rss_mb": 115.0, "final_count": 2001, "expected_count": 2001, "exact": tru
+{"mode": "concurrent_20x100", "label": "new311_r1", "wall_s": 1.363, "load1_before": "1.15", "ev_per_s": 1467.2, "server_cpu_s": 1.49, "server_cpu_us_per_event": 745.0, "rss_mb": 120.3, "finals": [100], "exact": true, "n": 2000, "p50_ms": 13.439, "p90_ms": 17.
+{"mode": "pipelined_2000", "label": "new311_r1", "wall_s": 1.827, "send_s": 0.023, "load1_before": "1.22", "ev_per_s": 1094.8, "server_cpu_s": 2.03, "server_cpu_us_per_event": 1015.0, "rss_mb": 120.1, "updates_received": 2000, "final_count": 2000, "exact": tru
+DONE new311_r1: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+=== round 1 old311 (base0910/hotpath_app_base) pid=4486 pgid=4486 load=1.12 18:11:41
+warmup {"ev_per_s": 795.0, "p50_ms": 1.195, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "f777d902-2008-4602-ab25-a9d38a0f3647", "client_ip": "127.0.0.1", "session_id": "PWQ9QIfsmLF
+{"mode": "serial_2000", "label": "old311_r1", "wall_s": 2.379, "ev_per_s": 840.6, "load1_before": "1.12", "server_py": "3.11.15", "server_cpu_s": 2.13, "server_cpu_us_per_event": 1065.0, "rss_mb": 130.1, "final_count": 2001, "expected_count": 2001, "exact": tr
+{"mode": "concurrent_20x100", "label": "old311_r1", "wall_s": 1.755, "load1_before": "1.11", "ev_per_s": 1139.8, "server_cpu_s": 1.73, "server_cpu_us_per_event": 865.0, "rss_mb": 135.2, "finals": [100], "exact": true, "n": 2000, "p50_ms": 15.566, "p90_ms": 22.
+{"mode": "pipelined_2000", "label": "old311_r1", "wall_s": 1.879, "send_s": 0.024, "load1_before": "1.11", "ev_per_s": 1064.5, "server_cpu_s": 2.04, "server_cpu_us_per_event": 1020.0, "rss_mb": 133.0, "updates_received": 2000, "final_count": 2000, "exact": tru
+DONE old311_r1: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+=== round 1 new313 (hp313/hotpath_app_313) pid=4536 pgid=4536 load=1.17 18:11:56
+warmup {"ev_per_s": 923.2, "p50_ms": 1.064, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "9b26adb8-09a4-4e4d-9a3b-7ce23e81c47e", "client_ip": "127.0.0.1", "session_id": "d1smOiS188F
+{"mode": "serial_2000", "label": "new313_r1", "wall_s": 2.115, "ev_per_s": 945.5, "load1_before": "1.17", "server_py": "3.13.12", "server_cpu_s": 1.87, "server_cpu_us_per_event": 935.0, "rss_mb": 117.9, "final_count": 2001, "expected_count": 2001, "exact": tru
+{"mode": "concurrent_20x100", "label": "new313_r1", "wall_s": 1.112, "load1_before": "1.15", "ev_per_s": 1798.1, "server_cpu_s": 1.23, "server_cpu_us_per_event": 615.0, "rss_mb": 122.8, "finals": [100], "exact": true, "n": 2000, "p50_ms": 10.966, "p90_ms": 14.
+{"mode": "pipelined_2000", "label": "new313_r1", "wall_s": 1.732, "send_s": 0.026, "load1_before": "1.15", "ev_per_s": 1154.5, "server_cpu_s": 1.91, "server_cpu_us_per_event": 955.0, "rss_mb": 122.6, "updates_received": 2000, "final_count": 2000, "exact": true
+DONE new313_r1: 3 runs, 0 inexact
+=== round 1 old313 (hp313_base/hotpath_app_313_base) pid=4584 pgid=4584 load=0.97 18:12:09
+warmup {"ev_per_s": 975.9, "p50_ms": 1.006, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "d1c8ea2a-755b-418d-829b-baa9ef7bf49a", "client_ip": "127.0.0.1", "session_id": "JkWwR7OcIix
+{"mode": "serial_2000", "label": "old313_r1", "wall_s": 2.061, "ev_per_s": 970.2, "load1_before": "0.97", "server_py": "3.13.12", "server_cpu_s": 1.92, "server_cpu_us_per_event": 960.0, "rss_mb": 153.9, "final_count": 2001, "expected_count": 2001, "exact": tru
+{"mode": "concurrent_20x100", "label": "old313_r1", "wall_s": 1.346, "load1_before": "0.97", "ev_per_s": 1486.2, "server_cpu_s": 1.47, "server_cpu_us_per_event": 735.0, "rss_mb": 158.0, "finals": [100], "exact": true, "n": 2000, "p50_ms": 13.4, "p90_ms": 16.77
+{"mode": "pipelined_2000", "label": "old313_r1", "wall_s": 1.966, "send_s": 0.025, "load1_before": "0.98", "ev_per_s": 1017.1, "server_cpu_s": 2.11, "server_cpu_us_per_event": 1055.0, "rss_mb": 158.0, "updates_received": 2000, "final_count": 2000, "exact": tru
+DONE old313_r1: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+=== round 2 new311 (smoke/hotpath_app) pid=4639 pgid=4639 load=0.90 18:12:21
+warmup {"ev_per_s": 962.5, "p50_ms": 1.007, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "35ed3974-0cd3-407f-8607-ffea37bf8eb5", "client_ip": "127.0.0.1", "session_id": "wQY2n0HWHbr
+{"mode": "serial_2000", "label": "new311_r2", "wall_s": 2.065, "ev_per_s": 968.6, "load1_before": "0.90", "server_py": "3.11.15", "server_cpu_s": 1.8, "server_cpu_us_per_event": 900.0, "rss_mb": 114.7, "final_count": 2001, "expected_count": 2001, "exact": true
+{"mode": "concurrent_20x100", "label": "new311_r2", "wall_s": 1.181, "load1_before": "0.91", "ev_per_s": 1694.1, "server_cpu_s": 1.3, "server_cpu_us_per_event": 650.0, "rss_mb": 119.9, "finals": [100], "exact": true, "n": 2000, "p50_ms": 11.609, "p90_ms": 15.3
+{"mode": "pipelined_2000", "label": "new311_r2", "wall_s": 1.8, "send_s": 0.025, "load1_before": "0.91", "ev_per_s": 1111.3, "server_cpu_s": 1.97, "server_cpu_us_per_event": 985.0, "rss_mb": 119.0, "updates_received": 2000, "final_count": 2000, "exact": true, 
+DONE new311_r2: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+=== round 2 old311 (base0910/hotpath_app_base) pid=4728 pgid=4728 load=0.83 18:12:32
+warmup {"ev_per_s": 855.6, "p50_ms": 1.108, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "04c8b2db-2d24-48bd-a8f2-086511d234f2", "client_ip": "127.0.0.1", "session_id": "BqIfwVYLYuu
+{"mode": "serial_2000", "label": "old311_r2", "wall_s": 2.571, "ev_per_s": 777.8, "load1_before": "0.85", "server_py": "3.11.15", "server_cpu_s": 2.08, "server_cpu_us_per_event": 1040.0, "rss_mb": 129.5, "final_count": 2001, "expected_count": 2001, "exact": tr
+{"mode": "concurrent_20x100", "label": "old311_r2", "wall_s": 1.596, "load1_before": "0.85", "ev_per_s": 1253.4, "server_cpu_s": 1.75, "server_cpu_us_per_event": 875.0, "rss_mb": 134.6, "finals": [100], "exact": true, "n": 2000, "p50_ms": 15.634, "p90_ms": 19.
+{"mode": "pipelined_2000", "label": "old311_r2", "wall_s": 2.096, "send_s": 0.024, "load1_before": "0.86", "ev_per_s": 954.3, "server_cpu_s": 2.11, "server_cpu_us_per_event": 1055.0, "rss_mb": 134.3, "updates_received": 2000, "final_count": 2000, "exact": true
+DONE old311_r2: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+=== round 2 new313 (hp313/hotpath_app_313) pid=4993 pgid=4993 load=0.79 18:12:45
+warmup {"ev_per_s": 952.4, "p50_ms": 1.022, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "08f95eb7-89d8-4873-bcc5-8bf4113e5c37", "client_ip": "127.0.0.1", "session_id": "QQq8cZkC2E0
+{"mode": "serial_2000", "label": "new313_r2", "wall_s": 2.107, "ev_per_s": 949.1, "load1_before": "0.79", "server_py": "3.13.12", "server_cpu_s": 1.9, "server_cpu_us_per_event": 950.0, "rss_mb": 116.8, "final_count": 2001, "expected_count": 2001, "exact": true
+{"mode": "concurrent_20x100", "label": "new313_r2", "wall_s": 1.252, "load1_before": "0.81", "ev_per_s": 1597.6, "server_cpu_s": 1.38, "server_cpu_us_per_event": 690.0, "rss_mb": 121.9, "finals": [100], "exact": true, "n": 2000, "p50_ms": 12.418, "p90_ms": 16.
+{"mode": "pipelined_2000", "label": "new313_r2", "wall_s": 1.763, "send_s": 0.028, "load1_before": "0.81", "ev_per_s": 1134.7, "server_cpu_s": 1.95, "server_cpu_us_per_event": 975.0, "rss_mb": 121.9, "updates_received": 2000, "final_count": 2000, "exact": true
+DONE new313_r2: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+=== round 2 old313 (hp313_base/hotpath_app_313_base) pid=5044 pgid=5044 load=0.74 18:12:57
+warmup {"ev_per_s": 872.9, "p50_ms": 1.094, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "dfa33774-4b1c-4787-98d4-9996817a8ac4", "client_ip": "127.0.0.1", "session_id": "qOvMUjmU0es
+{"mode": "serial_2000", "label": "old313_r2", "wall_s": 2.089, "ev_per_s": 957.4, "load1_before": "0.74", "server_py": "3.13.12", "server_cpu_s": 1.96, "server_cpu_us_per_event": 980.0, "rss_mb": 132.0, "final_count": 2001, "expected_count": 2001, "exact": tru
+{"mode": "concurrent_20x100", "label": "old313_r2", "wall_s": 1.28, "load1_before": "0.92", "ev_per_s": 1562.4, "server_cpu_s": 1.39, "server_cpu_us_per_event": 695.0, "rss_mb": 137.4, "finals": [100], "exact": true, "n": 2000, "p50_ms": 12.748, "p90_ms": 16.2
+{"mode": "pipelined_2000", "label": "old313_r2", "wall_s": 1.93, "send_s": 0.028, "load1_before": "0.92", "ev_per_s": 1036.3, "server_cpu_s": 2.12, "server_cpu_us_per_event": 1060.0, "rss_mb": 136.9, "updates_received": 2000, "final_count": 2000, "exact": true
+DONE old313_r2: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+=== round 3 new311 (smoke/hotpath_app) pid=5088 pgid=5088 load=0.86 18:13:09
+warmup {"ev_per_s": 800.9, "p50_ms": 1.233, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "039fe81a-4128-49a8-9958-157f38dd9cc0", "client_ip": "127.0.0.1", "session_id": "yAzmATJNFza
+{"mode": "serial_2000", "label": "new311_r3", "wall_s": 2.3, "ev_per_s": 869.5, "load1_before": "0.86", "server_py": "3.11.15", "server_cpu_s": 2.0, "server_cpu_us_per_event": 1000.0, "rss_mb": 114.7, "final_count": 2001, "expected_count": 2001, "exact": true,
+{"mode": "concurrent_20x100", "label": "new311_r3", "wall_s": 1.508, "load1_before": "0.86", "ev_per_s": 1326.7, "server_cpu_s": 1.66, "server_cpu_us_per_event": 830.0, "rss_mb": 119.8, "finals": [100], "exact": true, "n": 2000, "p50_ms": 14.744, "p90_ms": 19.
+{"mode": "pipelined_2000", "label": "new311_r3", "wall_s": 1.779, "send_s": 0.03, "load1_before": "0.95", "ev_per_s": 1124.5, "server_cpu_s": 1.91, "server_cpu_us_per_event": 955.0, "rss_mb": 117.5, "updates_received": 2000, "final_count": 2000, "exact": true,
+DONE new311_r3: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+=== round 3 old311 (base0910/hotpath_app_base) pid=5258 pgid=5258 load=1.19 18:13:21
+warmup {"ev_per_s": 722.0, "p50_ms": 1.341, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "9c822059-95f9-4292-b367-21d0c79d2578", "client_ip": "127.0.0.1", "session_id": "G-YAeXFKpmz
+{"mode": "serial_2000", "label": "old311_r3", "wall_s": 2.675, "ev_per_s": 747.7, "load1_before": "1.19", "server_py": "3.11.15", "server_cpu_s": 2.05, "server_cpu_us_per_event": 1025.0, "rss_mb": 129.9, "final_count": 2001, "expected_count": 2001, "exact": tr
+{"mode": "concurrent_20x100", "label": "old311_r3", "wall_s": 1.469, "load1_before": "1.26", "ev_per_s": 1361.4, "server_cpu_s": 1.59, "server_cpu_us_per_event": 795.0, "rss_mb": 135.2, "finals": [100], "exact": true, "n": 2000, "p50_ms": 14.418, "p90_ms": 18.
+{"mode": "pipelined_2000", "label": "old311_r3", "wall_s": 1.948, "send_s": 0.024, "load1_before": "1.26", "ev_per_s": 1026.5, "server_cpu_s": 2.13, "server_cpu_us_per_event": 1065.0, "rss_mb": 134.7, "updates_received": 2000, "final_count": 2000, "exact": tru
+DONE old311_r3: 3 runs, 0 inexact
+=== round 3 new313 (hp313/hotpath_app_313) pid=5396 pgid=5396 load=1.21 18:13:34
+warmup {"ev_per_s": 950.0, "p50_ms": 1.037, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "55323423-6e1d-4bab-a18d-7446b057f546", "client_ip": "127.0.0.1", "session_id": "txx8y4w5mC8
+{"mode": "serial_2000", "label": "new313_r3", "wall_s": 1.968, "ev_per_s": 1016.1, "load1_before": "1.21", "server_py": "3.13.12", "server_cpu_s": 1.75, "server_cpu_us_per_event": 875.0, "rss_mb": 117.0, "final_count": 2001, "expected_count": 2001, "exact": tr
+{"mode": "concurrent_20x100", "label": "new313_r3", "wall_s": 1.107, "load1_before": "1.21", "ev_per_s": 1807.5, "server_cpu_s": 1.21, "server_cpu_us_per_event": 605.0, "rss_mb": 122.2, "finals": [100], "exact": true, "n": 2000, "p50_ms": 10.805, "p90_ms": 14.
+{"mode": "pipelined_2000", "label": "new313_r3", "wall_s": 1.583, "send_s": 0.026, "load1_before": "1.43", "ev_per_s": 1263.4, "server_cpu_s": 1.73, "server_cpu_us_per_event": 865.0, "rss_mb": 122.0, "updates_received": 2000, "final_count": 2000, "exact": true
+DONE new313_r3: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+=== round 3 old313 (hp313_base/hotpath_app_313_base) pid=5460 pgid=5460 load=1.32 18:13:46
+warmup {"ev_per_s": 885.1, "p50_ms": 1.119, "exact": true, "raw_first_update": [{"delta": {"reflex___state____state": {"router_rx_state_": {"session": {"client_token": "749b3e6a-1d9a-439a-bf7c-5950c5fa8868", "client_ip": "127.0.0.1", "session_id": "6Ol5Q4AxJdM
+{"mode": "serial_2000", "label": "old313_r3", "wall_s": 2.222, "ev_per_s": 900.2, "load1_before": "1.32", "server_py": "3.13.12", "server_cpu_s": 2.06, "server_cpu_us_per_event": 1030.0, "rss_mb": 132.1, "final_count": 2001, "expected_count": 2001, "exact": tr
+{"mode": "concurrent_20x100", "label": "old313_r3", "wall_s": 1.431, "load1_before": "1.29", "ev_per_s": 1397.8, "server_cpu_s": 1.57, "server_cpu_us_per_event": 785.0, "rss_mb": 137.3, "finals": [100], "exact": true, "n": 2000, "p50_ms": 14.23, "p90_ms": 17.8
+{"mode": "pipelined_2000", "label": "old313_r3", "wall_s": 1.963, "send_s": 0.027, "load1_before": "1.29", "ev_per_s": 1018.7, "server_cpu_s": 2.15, "server_cpu_us_per_event": 1075.0, "rss_mb": 136.6, "updates_received": 2000, "final_count": 2000, "exact": tru
+DONE old313_r3: 3 runs, 0 inexact
+[ERROR] Unexpected exit from worker-1
+AB DONE 18:13:55

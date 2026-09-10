@@ -1,0 +1,28 @@
+10,11c10,11
+<     "@react-router/node": "8.3.0",
+<     "isbot": "5.2.1",
+---
+>     "@react-router/node": "8.3.1",
+>     "isbot": "5.2.2",
+17c17
+<     "react-router": "8.3.0",
+---
+>     "react-router": "8.3.1",
+19c19
+<     "sonner": "2.0.7",
+---
+>     "sonner": "2.0.8",
+24,25c24,25
+<     "@react-router/dev": "8.3.0",
+<     "@react-router/fs-routes": "8.3.0",
+---
+>     "@react-router/dev": "8.3.1",
+>     "@react-router/fs-routes": "8.3.1",
+27,29c27,29
+<     "postcss": "8.5.23",
+<     "postcss-import": "16.1.1",
+<     "vite": "8.2.0"
+---
+>     "postcss": "8.5.26",
+>     "postcss-import": "17.0.0",
+>     "vite": "8.2.2"

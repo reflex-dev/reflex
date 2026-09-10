@@ -1,0 +1,1 @@
+requests=10 distinct_pids=1 distinct_instance_ids=1 token_manager=RedisTokenManager

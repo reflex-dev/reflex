@@ -9,8 +9,8 @@
   "hydrate_seen": 0
  },
  "log": [
-  "14:02:19 on_load page-b (run #1) path=/page-b/",
-  "14:02:20 click -> clicks=1 path=/page-b/",
-  "14:02:27 api kick token=e2ebfb68 mode=eio sids=['rukF9WhWEc8seHA_AAAT']"
+  "18:26:12 on_load page-b (run #1) path=/page-b/",
+  "18:26:13 click -> clicks=1 path=/page-b/",
+  "18:26:20 api kick token=e8143529 mode=eio sids=['_NuU8aJqA5gr3C71AAAX']"
  ]
 }

@@ -2,16 +2,10 @@
  {
   "name": "MW.three_backend_events_after_expiry",
   "status": "fail",
-  "details": "keys before={'manager': 'StateManagerRedis', 'keys': {'token_manager_socket_record_6959ecbd-0b0f-4a8d-a7c3-0caf8f63c63d': 2}} enqueue=[['queued'], ['queued'], ['queued']] hydrate_deltas=0 deltas=0 before={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'clicks': 'clicks=0', 'pings': 'pings=0', 'name': 'name=', 'other_count': 'other_count=0'} after={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'clicks': 'clicks=0', 'pings': 'pings=0', 'name': 'name=', 'other_count': 'other_count=0'}",
-  "deltas": []
- },
- {
-  "name": "MW.routed_click_reruns_on_load",
-  "status": "pass",
-  "details": "hydrate_deltas=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'clicks': 'clicks=1', 'pings': 'pings=3', 'name': 'name=', 'other_count': 'other_count=0'}",
+  "details": "keys before={'manager': 'StateManagerRedis', 'keys': {'token_manager_socket_record_c1fc9833-623f-4157-e876-9237be312de0': 2}} enqueue=[['queued'], ['queued'], ['queued']] hydrate_deltas=1 deltas=3 before={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'clicks': 'clicks=0', 'pings': 'pings=0', 'name': 'name=', 'other_count': 'other_count=0'} after={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=', 'loaded_page': 'loaded_page=', 'load_seq': 'load_seq=0', 'clicks': 'clicks=0', 'pings': 'pings=1', 'name': 'name=', 'other_count': 'other_count=0'}",
   "deltas": [
    {
-    "t": 10.49,
+    "t": 7.848,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -19,9 +13,101 @@
        "item_id_rx_state_": "",
        "router_rx_state_": {
         "session": {
-         "client_token": "6959ecbd-0b0f-4a8d-a7c3-0caf8f63c63d",
+         "client_token": "",
+         "client_ip": "",
+         "session_id": ""
+        },
+        "headers": {
+         "host": "",
+         "origin": "",
+         "upgrade": "",
+         "connection": "",
+         "cookie": "",
+         "pragma": "",
+         "cache_control": "",
+         "user_agent": "",
+         "sec_websocket_version": "",
+         "sec_websocket_key": "",
+         "sec_websocket_extensions": "",
+         "accept_encoding": "",
+         "accept_language": "",
+         "raw_headers": {}
+        },
+        "page": {
+         "host": "",
+         "path": "",
+         "raw_path": "",
+         "full_path": "",
+         "full_raw_path": "",
+         "params": {}
+        },
+        "url": {
+         "scheme": "",
+         "netloc": "",
+         "origin": "://",
+         "path": "",
+         "query": "",
+         "query_parameters": {},
+         "fragment": "",
+         "href": ""
+        },
+        "route_id": ""
+       }
+      },
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "bg_status_rx_state_": "idle",
+       "clicks_rx_state_": 0,
+       "flavor_rx_state_": "",
+       "item_arg_rx_state_": "",
+       "load_seq_rx_state_": 0,
+       "loaded_at_rx_state_": "",
+       "loaded_page_rx_state_": "",
+       "name_rx_state_": "",
+       "path_rx_state_": "",
+       "pings_rx_state_": 0
+      }
+     }
+    }
+   },
+   {
+    "t": 7.849,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": true
+      }
+     }
+    }
+   },
+   {
+    "t": 7.851,
+    "update": {
+     "delta": {
+      "reflex___state____state.rehydrate_app___rehydrate_app____state": {
+       "pings_rx_state_": 1
+      }
+     }
+    }
+   }
+  ]
+ },
+ {
+  "name": "MW.routed_click_reruns_on_load",
+  "status": "pass",
+  "details": "hydrate_deltas=1 deltas=5 snap={'title': 'index', 'hydrated': 'hydrated=true', 'path': 'path=/', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=1', 'clicks': 'clicks=1', 'pings': 'pings=3', 'name': 'name=', 'other_count': 'other_count=0'}",
+  "deltas": [
+   {
+    "t": 10.446,
+    "update": {
+     "delta": {
+      "reflex___state____state": {
+       "is_hydrated_rx_state_": false,
+       "item_id_rx_state_": "",
+       "router_rx_state_": {
+        "session": {
+         "client_token": "c1fc9833-623f-4157-e876-9237be312de0",
          "client_ip": "127.0.0.1",
-         "session_id": "XJjhE5DQ1j7cpk_iAAAB"
+         "session_id": "Lw8lNZRc94PnUNVjAAAB"
         },
         "headers": {
          "host": "localhost:3223",
@@ -33,7 +119,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "ekt3C5RPpbeAHEWoCVtqPw==",
+         "sec_websocket_key": "kFqufd7lGUH+59kxiWL5Tw==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -47,7 +133,7 @@
           "origin": "http://localhost:3223",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "ekt3C5RPpbeAHEWoCVtqPw==",
+          "sec-websocket-key": "kFqufd7lGUH+59kxiWL5Tw==",
           "sec-websocket-protocol": "0.9.11a1",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -91,7 +177,7 @@
     }
    },
    {
-    "t": 10.49,
+    "t": 10.446,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -101,7 +187,7 @@
     }
    },
    {
-    "t": 10.494,
+    "t": 10.447,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -111,19 +197,19 @@
     }
    },
    {
-    "t": 10.495,
+    "t": 10.447,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
-       "loaded_page_rx_state_": "index",
+       "loaded_at_rx_state_": "18:23:35",
        "load_seq_rx_state_": 1,
-       "loaded_at_rx_state_": "13:53:59"
+       "loaded_page_rx_state_": "index"
       }
      }
     }
    },
    {
-    "t": 10.5,
+    "t": 10.447,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -140,7 +226,7 @@
   "details": "hydrate_deltas=1 deltas=5 snap={'title': 'page-b', 'hydrated': 'hydrated=true', 'path': 'path=/page-b/', 'loaded_page': 'loaded_page=page-b', 'load_seq': 'load_seq=1', 'clicks': 'clicks=1', 'pings': 'pings=0', 'name': 'name=', 'other_count': 'other_count=0'}",
   "deltas": [
    {
-    "t": 20.04,
+    "t": 19.789,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -148,9 +234,9 @@
        "item_id_rx_state_": "",
        "router_rx_state_": {
         "session": {
-         "client_token": "91bbf532-f4c3-4721-ecce-2d4d585eed9b",
+         "client_token": "5e639d62-cc74-47c1-bd1d-c90d181f2781",
          "client_ip": "127.0.0.1",
-         "session_id": "YravpxQ1YpVmFYwdAAAB"
+         "session_id": "orFqZA4T1gEdivw6AAAD"
         },
         "headers": {
          "host": "localhost:3223",
@@ -162,7 +248,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "YR8RBZSnLc8jRdqwcGQcSg==",
+         "sec_websocket_key": "ZKBhBeHXYaJHiU6u545EAQ==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -176,7 +262,7 @@
           "origin": "http://localhost:3223",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "YR8RBZSnLc8jRdqwcGQcSg==",
+          "sec-websocket-key": "ZKBhBeHXYaJHiU6u545EAQ==",
           "sec-websocket-protocol": "0.9.11a1",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -220,7 +306,7 @@
     }
    },
    {
-    "t": 20.041,
+    "t": 19.79,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -230,7 +316,7 @@
     }
    },
    {
-    "t": 20.041,
+    "t": 19.79,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
@@ -240,19 +326,19 @@
     }
    },
    {
-    "t": 20.044,
+    "t": 19.79,
     "update": {
      "delta": {
       "reflex___state____state.rehydrate_app___rehydrate_app____state": {
-       "loaded_page_rx_state_": "page-b",
+       "loaded_at_rx_state_": "18:23:44",
        "load_seq_rx_state_": 1,
-       "loaded_at_rx_state_": "13:54:09"
+       "loaded_page_rx_state_": "page-b"
       }
      }
     }
    },
    {
-    "t": 20.047,
+    "t": 19.79,
     "update": {
      "delta": {
       "reflex___state____state": {

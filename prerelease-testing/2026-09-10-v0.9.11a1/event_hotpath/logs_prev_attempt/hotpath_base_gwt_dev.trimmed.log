@@ -1,0 +1,6 @@
+169:Debug: StateManagerDisk._flush_write_queue: writing 3 remaining items to disk
+170:[ERROR] Traceback (most recent call last):
+178:asyncio.exceptions.CancelledError
+182:Traceback (most recent call last):
+201:    was_touched = state._get_was_touched()
+203:TypeError: 'int' object is not callable

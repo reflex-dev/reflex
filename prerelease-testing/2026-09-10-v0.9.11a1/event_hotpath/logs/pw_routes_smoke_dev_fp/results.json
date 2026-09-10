@@ -1,0 +1,242 @@
+[
+ {
+  "name": "routes.initial_load_index",
+  "status": "pass",
+  "details": "last=1|path=/index|raw=/app/|full=http://localhost:3187/index|params=\"{}\"|route_id=/index"
+ },
+ {
+  "name": "routes.client_nav./item/1",
+  "status": "pass",
+  "details": "expected n=2 path=/item/[id] raw~/app/item/1 params\u2287{'id': '1'}; got last=2|path=/item/[id]|raw=/app/item/1|full=http://localhost:3187/item/[id]|params=\"{'id': '1'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.client_nav./item/2",
+  "status": "pass",
+  "details": "expected n=3 path=/item/[id] raw~/app/item/2 params\u2287{'id': '2'}; got last=3|path=/item/[id]|raw=/app/item/2|full=http://localhost:3187/item/[id]|params=\"{'id': '2'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.client_nav./item/2?q=x&z=9#frag",
+  "status": "pass",
+  "details": "expected n=4 path=/item/[id] raw~/app/item/2?q=x&z=9#frag params\u2287{'id': '2', 'q': 'x', 'z': '9'}; got last=4|path=/item/[id]|raw=/app/item/2?q=x&z=9#frag|full=http://localhost:3187/item/[id]|params=\"{'q': 'x', 'z': '9', 'id': '2'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.client_nav./docs",
+  "status": "pass",
+  "details": "expected n=5 path=/docs/[[...splat]] raw~/app/docs params\u2287{}; got last=5|path=/docs/[[...splat]]|raw=/app/docs|full=http://localhost:3187/docs/[[...splat]]|params=\"{}\"|route_id=/docs/[[...splat]]"
+ },
+ {
+  "name": "routes.client_nav./docs/a/b",
+  "status": "pass",
+  "details": "expected n=6 path=/docs/[[...splat]] raw~/app/docs/a/b params\u2287{'splat': ['a', 'b']}; got last=6|path=/docs/[[...splat]]|raw=/app/docs/a/b|full=http://localhost:3187/docs/[[...splat]]|params=\"{'splat': ['a', 'b']}\"|route_id=/docs/[[...splat]]"
+ },
+ {
+  "name": "routes.client_nav./posts/all/7",
+  "status": "pass",
+  "details": "expected n=7 path=/posts/all/[x] raw~/app/posts/all/7 params\u2287{'x': '7'}; got last=7|path=/posts/all/[x]|raw=/app/posts/all/7|full=http://localhost:3187/posts/all/[x]|params=\"{'x': '7'}\"|route_id=/posts/all/[x]"
+ },
+ {
+  "name": "routes.client_nav./posts/all",
+  "status": "pass",
+  "details": "expected n=8 path=/posts/[id] raw~/app/posts/all params\u2287{'id': 'all'}; got last=8|path=/posts/[id]|raw=/app/posts/all|full=http://localhost:3187/posts/[id]|params=\"{'id': 'all'}\"|route_id=/posts/[id]"
+ },
+ {
+  "name": "routes.client_nav./posts/42",
+  "status": "pass",
+  "details": "expected n=9 path=/posts/[id] raw~/app/posts/42 params\u2287{'id': '42'}; got last=9|path=/posts/[id]|raw=/app/posts/42|full=http://localhost:3187/posts/[id]|params=\"{'id': '42'}\"|route_id=/posts/[id]"
+ },
+ {
+  "name": "routes.client_nav./static-0",
+  "status": "pass",
+  "details": "expected n=10 path=/static-0 raw~/app/static-0 params\u2287{}; got last=10|path=/static-0|raw=/app/static-0|full=http://localhost:3187/static-0|params=\"{}\"|route_id=/static-0"
+ },
+ {
+  "name": "routes.client_nav./static-149",
+  "status": "pass",
+  "details": "expected n=11 path=/static-149 raw~/app/static-149 params\u2287{}; got last=11|path=/static-149|raw=/app/static-149|full=http://localhost:3187/static-149|params=\"{}\"|route_id=/static-149"
+ },
+ {
+  "name": "routes.client_nav./apple",
+  "status": "fail",
+  "details": "expected n=12 path=/apple raw~/app/apple params\u2287{}; got last=12|path=/404|raw=/app/apple|full=http://localhost:3187/404|params=\"{}\"|route_id=/404  <-- WRONG ROUTE MATCH: /404"
+ },
+ {
+  "name": "routes.client_nav./app",
+  "status": "fail",
+  "details": "expected n=13 path=/app raw~/app/app params\u2287{}; got last=13|path=/index|raw=/app/app|full=http://localhost:3187/index|params=\"{}\"|route_id=/index  <-- WRONG ROUTE MATCH: /index"
+ },
+ {
+  "name": "routes.client_nav./item/1",
+  "status": "pass",
+  "details": "expected n=14 path=/item/[id] raw~/app/item/1 params\u2287{'id': '1'}; got last=14|path=/item/[id]|raw=/app/item/1|full=http://localhost:3187/item/[id]|params=\"{'id': '1'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.client_nav./",
+  "status": "pass",
+  "details": "expected n=15 path=/ raw~/app/ params\u2287{}; got last=15|path=/index|raw=/app/|full=http://localhost:3187/index|params=\"{}\"|route_id=/index"
+ },
+ {
+  "name": "routes.direct_load./item/1",
+  "status": "pass",
+  "details": "expected n=16 path=/item/[id] raw~/app/item/1 params\u2287{'id': '1'}; got last=16|path=/item/[id]|raw=/app/item/1|full=http://localhost:3187/item/[id]|params=\"{'id': '1'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_load./item/2",
+  "status": "pass",
+  "details": "expected n=17 path=/item/[id] raw~/app/item/2 params\u2287{'id': '2'}; got last=17|path=/item/[id]|raw=/app/item/2|full=http://localhost:3187/item/[id]|params=\"{'id': '2'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_load./item/2?q=x&z=9#frag",
+  "status": "pass",
+  "details": "expected n=18 path=/item/[id] raw~/app/item/2?q=x&z=9#frag params\u2287{'id': '2', 'q': 'x', 'z': '9'}; got last=18|path=/item/[id]|raw=/app/item/2?q=x&z=9#frag|full=http://localhost:3187/item/[id]|params=\"{'q': 'x', 'z': '9', 'id': '2'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_load./docs",
+  "status": "pass",
+  "details": "expected n=19 path=/docs/[[...splat]] raw~/app/docs params\u2287{}; got last=19|path=/docs/[[...splat]]|raw=/app/docs|full=http://localhost:3187/docs/[[...splat]]|params=\"{}\"|route_id=/docs/[[...splat]]"
+ },
+ {
+  "name": "routes.direct_load./docs/a/b",
+  "status": "pass",
+  "details": "expected n=20 path=/docs/[[...splat]] raw~/app/docs/a/b params\u2287{'splat': ['a', 'b']}; got last=20|path=/docs/[[...splat]]|raw=/app/docs/a/b|full=http://localhost:3187/docs/[[...splat]]|params=\"{'splat': ['a', 'b']}\"|route_id=/docs/[[...splat]]"
+ },
+ {
+  "name": "routes.direct_load./posts/all/7",
+  "status": "pass",
+  "details": "expected n=21 path=/posts/all/[x] raw~/app/posts/all/7 params\u2287{'x': '7'}; got last=21|path=/posts/all/[x]|raw=/app/posts/all/7|full=http://localhost:3187/posts/all/[x]|params=\"{'x': '7'}\"|route_id=/posts/all/[x]"
+ },
+ {
+  "name": "routes.direct_load./posts/all",
+  "status": "pass",
+  "details": "expected n=22 path=/posts/[id] raw~/app/posts/all params\u2287{'id': 'all'}; got last=22|path=/posts/[id]|raw=/app/posts/all|full=http://localhost:3187/posts/[id]|params=\"{'id': 'all'}\"|route_id=/posts/[id]"
+ },
+ {
+  "name": "routes.direct_load./posts/42",
+  "status": "pass",
+  "details": "expected n=23 path=/posts/[id] raw~/app/posts/42 params\u2287{'id': '42'}; got last=23|path=/posts/[id]|raw=/app/posts/42|full=http://localhost:3187/posts/[id]|params=\"{'id': '42'}\"|route_id=/posts/[id]"
+ },
+ {
+  "name": "routes.direct_load./static-0",
+  "status": "pass",
+  "details": "expected n=24 path=/static-0 raw~/app/static-0 params\u2287{}; got last=24|path=/static-0|raw=/app/static-0|full=http://localhost:3187/static-0|params=\"{}\"|route_id=/static-0"
+ },
+ {
+  "name": "routes.direct_load./static-149",
+  "status": "pass",
+  "details": "expected n=25 path=/static-149 raw~/app/static-149 params\u2287{}; got last=25|path=/static-149|raw=/app/static-149|full=http://localhost:3187/static-149|params=\"{}\"|route_id=/static-149"
+ },
+ {
+  "name": "routes.direct_load./apple",
+  "status": "fail",
+  "details": "expected n=26 path=/apple raw~/app/apple params\u2287{}; got last=26|path=/404|raw=/app/apple|full=http://localhost:3187/404|params=\"{}\"|route_id=/404  <-- WRONG ROUTE MATCH: /404"
+ },
+ {
+  "name": "routes.direct_load./app",
+  "status": "fail",
+  "details": "expected n=27 path=/app raw~/app/app params\u2287{}; got last=27|path=/index|raw=/app/app|full=http://localhost:3187/index|params=\"{}\"|route_id=/index  <-- WRONG ROUTE MATCH: /index"
+ },
+ {
+  "name": "routes.direct_load./item/1",
+  "status": "pass",
+  "details": "expected n=28 path=/item/[id] raw~/app/item/1 params\u2287{'id': '1'}; got last=28|path=/item/[id]|raw=/app/item/1|full=http://localhost:3187/item/[id]|params=\"{'id': '1'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_load./",
+  "status": "pass",
+  "details": "expected n=29 path=/ raw~/app/ params\u2287{}; got last=29|path=/index|raw=/app/|full=http://localhost:3187/index|params=\"{}\"|route_id=/index"
+ },
+ {
+  "name": "routes.direct_only./item/a%20b",
+  "status": "pass",
+  "details": "expected n=30 path=/item/[id] raw~/app/item/a params\u2287{}; got last=30|path=/item/[id]|raw=/app/item/a%20b|full=http://localhost:3187/item/[id]|params=\"{'id': 'a b'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/h%C3%A9llo",
+  "status": "pass",
+  "details": "expected n=31 path=/item/[id] raw~/app/item/h params\u2287{}; got last=31|path=/item/[id]|raw=/app/item/h%C3%A9llo|full=http://localhost:3187/item/[id]|params=\"{'id': 'h\\u00e9llo'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./docs/x/y/z/",
+  "status": "fail",
+  "details": "expected n=32 path=/docs/[[...splat]] raw~/app/docs/x/y/z params\u2287{'splat': ['x', 'y', 'z']}; got last=32|path=/docs/[[...splat]]|raw=/app/docs/x/y/z/|full=http://localhost:3187/docs/[[...splat]]|params=\"{'splat': ['x', 'y', 'z', '']}\"|route_id=/docs/[[...splat]]"
+ },
+ {
+  "name": "routes.direct_only./item/100",
+  "status": "pass",
+  "details": "expected n=33 path=/item/[id] raw~/app/item/100 params\u2287{'id': '100'}; got last=33|path=/item/[id]|raw=/app/item/100|full=http://localhost:3187/item/[id]|params=\"{'id': '100'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/101",
+  "status": "pass",
+  "details": "expected n=34 path=/item/[id] raw~/app/item/101 params\u2287{'id': '101'}; got last=34|path=/item/[id]|raw=/app/item/101|full=http://localhost:3187/item/[id]|params=\"{'id': '101'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/102",
+  "status": "pass",
+  "details": "expected n=35 path=/item/[id] raw~/app/item/102 params\u2287{'id': '102'}; got last=35|path=/item/[id]|raw=/app/item/102|full=http://localhost:3187/item/[id]|params=\"{'id': '102'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/103",
+  "status": "pass",
+  "details": "expected n=36 path=/item/[id] raw~/app/item/103 params\u2287{'id': '103'}; got last=36|path=/item/[id]|raw=/app/item/103|full=http://localhost:3187/item/[id]|params=\"{'id': '103'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/104",
+  "status": "pass",
+  "details": "expected n=37 path=/item/[id] raw~/app/item/104 params\u2287{'id': '104'}; got last=37|path=/item/[id]|raw=/app/item/104|full=http://localhost:3187/item/[id]|params=\"{'id': '104'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/105",
+  "status": "pass",
+  "details": "expected n=38 path=/item/[id] raw~/app/item/105 params\u2287{'id': '105'}; got last=38|path=/item/[id]|raw=/app/item/105|full=http://localhost:3187/item/[id]|params=\"{'id': '105'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/106",
+  "status": "pass",
+  "details": "expected n=39 path=/item/[id] raw~/app/item/106 params\u2287{'id': '106'}; got last=39|path=/item/[id]|raw=/app/item/106|full=http://localhost:3187/item/[id]|params=\"{'id': '106'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/107",
+  "status": "pass",
+  "details": "expected n=40 path=/item/[id] raw~/app/item/107 params\u2287{'id': '107'}; got last=40|path=/item/[id]|raw=/app/item/107|full=http://localhost:3187/item/[id]|params=\"{'id': '107'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/108",
+  "status": "pass",
+  "details": "expected n=41 path=/item/[id] raw~/app/item/108 params\u2287{'id': '108'}; got last=41|path=/item/[id]|raw=/app/item/108|full=http://localhost:3187/item/[id]|params=\"{'id': '108'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_only./item/109",
+  "status": "pass",
+  "details": "expected n=42 path=/item/[id] raw~/app/item/109 params\u2287{'id': '109'}; got last=42|path=/item/[id]|raw=/app/item/109|full=http://localhost:3187/item/[id]|params=\"{'id': '109'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_load./item/5/",
+  "status": "pass",
+  "details": "expected path=/item/[id]; got last=43|path=/item/[id]|raw=/app/item/5/|full=http://localhost:3187/item/[id]|params=\"{'id': '5'}\"|route_id=/item/[id]"
+ },
+ {
+  "name": "routes.direct_load./static-7/",
+  "status": "pass",
+  "details": "expected path=/static-7; got last=44|path=/static-7|raw=/app/static-7/|full=http://localhost:3187/static-7|params=\"{}\"|route_id=/static-7"
+ },
+ {
+  "name": "routes.direct_load./index",
+  "status": "anomaly",
+  "details": "frontend rendered 404 (body='404: Page not found') but the backend fired an on_load for it: 45|path=/index|raw=/app/index|full=http://localhost:3187/index|params=\"{'splat': ['index']}\"|route_id=/index"
+ },
+ {
+  "name": "routes.total_on_load_count",
+  "status": "pass",
+  "details": "expected n_loads=47, got n_loads=47"
+ },
+ {
+  "name": "browser_capture",
+  "status": "info",
+  "details": "{\"label\": \"smoke_dev_fp\", \"console_err_warn\": [{\"type\": \"error\", \"text\": \"Failed to load resource: the server responded with a status of 404 (Not Found)\"}], \"page_errors\": [], \"failed_requests\": [], \"http_4xx_5xx\": [], \"dialogs\": []}"
+ },
+ {
+  "name": "ws_router_data_sent",
+  "status": "info",
+  "details": "distinct (pathname, asPath) the client sent: [('/', '/'), ('/app', '/app'), ('/apple', '/apple'), ('/docs', '/docs'), ('/docs/a/b', '/docs/a/b'), ('/docs/x/y/z/', '/docs/x/y/z/'), ('/index', '/index'), ('/item/1', '/item/1'), ('/item/100', '/item/100'), ('/item/101', '/item/101'), ('/item/102', '/item/102'), ('/item/103', '/item/103'), ('/item/104', '/item/104'), ('/item/105', '/item/105'), ('/item/106', '/item/106'), ('/item/107', '/item/107'), ('/item/108', '/item/108'), ('/item/109', '/item/109'), ('/item/2', '/item/2'), ('/item/2', '/item/2?q=x&z=9#frag'), ('/item/5/', '/item/5/'), ('/item/a%20b', '/item/a%20b'), ('/item/h%C3%A9llo', '/item/h%C3%A9llo'), ('/posts/42', '/posts/42'), ('/posts/all', '/posts/all'), ('/posts/all/7', '/posts/all/7'), ('/static-0', '/static-0'), ('/static-149', '/static-149'), ('/static-7/', '/static-7/')]"
+ }
+]

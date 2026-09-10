@@ -1,0 +1,31 @@
+29:Debug: [Reflex 0.9.10.post2 with Python 3.11.15 (PATH: 
+99:App running at: http://localhost:3182/
+100:Backend running at: http://0.0.0.0:8182
+103:[Reflex Backend Exception]
+104: Traceback (most recent call last):
+150:TypeError: 'int' object is not callable
+153:[Reflex Backend Exception]
+154: Traceback (most recent call last):
+187:    raise ValueError(msg)
+188:ValueError: intentional boom from SlowState.boom
+191:[Reflex Backend Exception]
+192: Traceback (most recent call last):
+225:    raise ValueError(msg)
+226:ValueError: intentional boom from SlowState.boom
+229:[Reflex Backend Exception]
+230: Traceback (most recent call last):
+263:    raise ValueError(msg)
+264:ValueError: intentional async boom from SlowState.boom_async
+267:[Reflex Backend Exception]
+268: Traceback (most recent call last):
+301:    raise ValueError(msg)
+302:ValueError: intentional async boom from SlowState.boom_async
+305:[Reflex Backend Exception]
+306: Traceback (most recent call last):
+339:    raise ValueError(msg)
+340:ValueError: intentional boom from SlowState.boom
+344:Debug: StateManagerDisk._flush_write_queue: writing 1 remaining items to disk
+345:Debug: StateManagerDisk._flush_write_queue: Finished writing 1 items
+346:[ERROR] Unexpected exit from worker-1
+347:Debug: error: script "dev" exited with code 143
+353:error: script "dev" exited with code 143

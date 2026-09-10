@@ -58,6 +58,12 @@ CASES = [
     ("l-item1", "/item/1", "/item/[id]", "/item/1", {"id": "1"}),  # revisit: cache hit
     ("l-home", "/", "/", "/", {}),
 ]
+# direct-load only: url-encoded / unicode dynamic segments, deep splat with trailing slash, many distinct ids (cache growth)
+DIRECT_ONLY = [
+    ("/item/a%20b", "/item/[id]", "/item/a", {}),
+    ("/item/h%C3%A9llo", "/item/[id]", "/item/h", {}),
+    ("/docs/x/y/z/", "/docs/[[...splat]]", "/docs/x/y/z", {"splat": ["x", "y", "z"]}),
+] + [(f"/item/{i}", "/item/[id]", f"/item/{i}", {"id": str(i)}) for i in range(100, 110)]
 
 
 def expect(page, case, n_expected, mode, fp):
@@ -131,6 +137,13 @@ def main():
                 except Exception as e:  # noqa: BLE001
                     rec(f"routes.direct_load.{case[1]}.goto", "fail", f"{type(e).__name__}: {e}"); continue
                 expect(page, case, n, "direct_load", fp)
+            for case in DIRECT_ONLY:
+                n += 1
+                try:
+                    page.goto(base + case[0]); page.wait_for_selector("#last", timeout=15000)
+                except Exception as e:  # noqa: BLE001
+                    rec(f"routes.direct_only.{case[0]}.goto", "fail", f"{type(e).__name__}: {e}"); continue
+                expect(page, (None, *case), n, "direct_only", fp)
             # trailing slash + index alias direct loads
             for path, route in (("/item/5/", "/item/[id]"), ("/static-7/", "/static-7"), ("/index", "/")):
                 n += 1
@@ -141,9 +154,22 @@ def main():
                     ok = d.get("path") == route or (route == "/" and d.get("path") == "/index")
                     rec(f"routes.direct_load.{path}", "pass" if ok else "anomaly" if d.get("n") == n else "fail", f"expected path={route}; got {last}")
                 except Exception as e:  # noqa: BLE001
-                    n -= 1
                     body = page.locator("body").inner_text()[:200].replace("\n", " ")
-                    rec(f"routes.direct_load.{path}", "anomaly", f"no on_load / page did not render #last: {type(e).__name__}; body={body!r}")
+                    # the frontend shows the 404 page; check whether the backend still ran an on_load for this URL
+                    page.goto(base + "/"); page.wait_for_selector("#last")
+                    n += 1
+                    last = wait_text(page, "#last", lambda t: parse_last(t).get("n") == n, 10)
+                    prev = ""
+                    try:
+                        vis = text_of(page, "#visits").split(" ;; ")
+                        prev = next((v for v in vis if v.startswith(f"{n-1}|")), "")
+                    except Exception:  # noqa: BLE001
+                        pass
+                    if prev:
+                        rec(f"routes.direct_load.{path}", "anomaly", f"frontend rendered 404 (body={body!r}) but the backend fired an on_load for it: {prev}")
+                    else:
+                        n -= 1
+                        rec(f"routes.direct_load.{path}", "anomaly", f"frontend rendered 404 (body={body!r}); no backend on_load recorded either")
             page.goto(base + "/"); page.wait_for_selector("#last"); n += 1
             wait_text(page, "#last", lambda t: parse_last(t).get("n") == n, 10)
             total = text_of(page, "#n_loads")

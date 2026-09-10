@@ -1,0 +1,100 @@
+{
+ "label": "smoke",
+ "checks": [
+  {
+   "name": "malformed.string_not_json",
+   "status": "pass",
+   "details": "count=2 after 504 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.string_json_list",
+   "status": "pass",
+   "details": "count=3 after 504 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.list_not_dict",
+   "status": "pass",
+   "details": "count=4 after 508 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.int",
+   "status": "pass",
+   "details": "count=5 after 503 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.none",
+   "status": "pass",
+   "details": "count=6 after 504 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.empty_dict",
+   "status": "pass",
+   "details": "count=7 after 504 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.missing_name",
+   "status": "pass",
+   "details": "count=8 after 503 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.unknown_handler",
+   "status": "pass",
+   "details": "count=9 after 504 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.payload_not_dict",
+   "status": "pass",
+   "details": "count=10 after 509 ms; bad msg applied_increment=False produced 1 update(s): [{\"events\": \"[{'name': '_call_function', 'router_data': {}, 'payload': {'function': '(() => (isTrue(refs[\\\\'__toast\\\\']) ? (refs[\\\\'__toast\\\\']?.[\\\"error\\\"](\\\"An error occurred.\\\", \"}]"
+  },
+  {
+   "name": "malformed.payload_extra_arg",
+   "status": "pass",
+   "details": "count=11 after 507 ms; bad msg applied_increment=False produced 1 update(s): [{\"events\": \"[{'name': '_call_function', 'router_data': {}, 'payload': {'function': '(() => (isTrue(refs[\\\\'__toast\\\\']) ? (refs[\\\\'__toast\\\\']?.[\\\"error\\\"](\\\"An error occurred.\\\", \"}]"
+  },
+  {
+   "name": "malformed.router_data_not_dict",
+   "status": "pass",
+   "details": "count=12 after 503 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.router_data_none",
+   "status": "pass",
+   "details": "count=13 after 503 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.token_mismatch",
+   "status": "pass",
+   "details": "count=15 after 505 ms; bad msg applied_increment=True produced 1 update(s): [{\"delta\": \"{'reflex___state____state': {'router_rx_state_': {'session': {'client_token': '63bcff74-9203-4258-a721-7bb0b6ef35b2', 'client_ip': '127.0.0.1', 'session_id': 'I\"}]"
+  },
+  {
+   "name": "malformed.no_token",
+   "status": "pass",
+   "details": "count=17 after 505 ms; bad msg applied_increment=True produced 1 update(s): [{\"delta\": \"{'reflex___state____state': {'router_rx_state_': {'session': {'client_token': '63bcff74-9203-4258-a721-7bb0b6ef35b2', 'client_ip': '127.0.0.1', 'session_id': 'I\"}]"
+  },
+  {
+   "name": "malformed.extra_fields",
+   "status": "pass",
+   "details": "count=19 after 505 ms; bad msg applied_increment=True produced 1 update(s): [{\"delta\": \"{'reflex___state____state': {'router_rx_state_': {'session': {'client_token': '63bcff74-9203-4258-a721-7bb0b6ef35b2', 'client_ip': '127.0.0.1', 'session_id': 'I\"}]"
+  },
+  {
+   "name": "malformed.unknown_socket_event",
+   "status": "pass",
+   "details": "count=20 after 503 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.no_args_event",
+   "status": "pass",
+   "details": "count=21 after 503 ms; bad msg applied_increment=False produced 0 update(s): []"
+  },
+  {
+   "name": "malformed.burst_200_bad_200_good",
+   "status": "pass",
+   "details": "final count 221 (expected 221) in 0.31s"
+  },
+  {
+   "name": "malformed.ping_after_all",
+   "status": "pass",
+   "details": "pong 0.8 ms; disconnected=False"
+  }
+ ]
+}

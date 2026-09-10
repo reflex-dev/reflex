@@ -1,0 +1,163 @@
+[
+ {
+  "name": "ordering.multi_yield",
+  "status": "pass",
+  "details": "final=['my0', 'my1', 'my2'] progressive_states=['log=', 'log=1:my0', 'log=1:my0,2:my1', 'log=1:my0,2:my1,3:my2']"
+ },
+ {
+  "name": "ordering.EXC",
+  "status": "fail",
+  "details": "TimeoutError: Page.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"#sync_my\")\n"
+ },
+ {
+  "name": "hier.read_via_parent_state_3deep",
+  "status": "pass",
+  "details": "report=leaf=100 mid=10 root=1 inh_mid=10 inh_root=1 pname=hotpath_app___hotpath_app____mid3 gpname=hotpath_app___hotpath_app____root3 full=reflex___state____state.hotpath_app___hotpath_app____root3.hotpath_app___hotpath_app____mid3.hotpath_app___hotpath_app____leaf3"
+ },
+ {
+  "name": "hier.write_via_parent_state_delta",
+  "status": "pass",
+  "details": "mid_val=11 root_val=2 leaf_inh_root=2"
+ },
+ {
+  "name": "hier.write_inherited_vars",
+  "status": "pass",
+  "details": "mid_val=12 root_val=3"
+ },
+ {
+  "name": "hier.background_parent_state_read",
+  "status": "pass",
+  "details": "report=bg leaf=100 mid=12 root=3 dirty=[] leaf_val=101"
+ },
+ {
+  "name": "interval.no_recompute_within_interval",
+  "status": "fail",
+  "details": "after_poke1={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 3, 'ticks': 3, 'ticks_td': 3} after_poke2(+0.35s)={'cached_plain': 1, 'clock_a': 0, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 4, 'ticks': 3, 'ticks_td': 4} ticks ticks=1789064316.589->ticks=1789064317.738 td ticks_td=1789064316.589->ticks_td=1789064317.738 mixin mixin_ticks=1789064316.589->mixin_ticks=1789064317.738"
+ },
+ {
+  "name": "interval.recompute_after_expiry_only_interval_vars",
+  "status": "pass",
+  "details": "recompute deltas {'ticks': 2, 'ticks_td': 1, 'mixin_ticks': 1, 'cached_plain': 0} (expect interval vars +1, cached_plain +0); ticks ticks=1789064317.738->ticks=1789064319.322; td ticks_td=1789064317.738->ticks_td=1789064319.322; mixin mixin_ticks=1789064317.738->mixin_ticks=1789064319.322; cached_plain cached_plain=0->cached_plain=0"
+ },
+ {
+  "name": "interval.cached_var_recomputes_once_on_dep_change",
+  "status": "pass",
+  "details": "cached_plain=2 cached_plain recomputes 1->2 (ticks 5->5)"
+ },
+ {
+  "name": "interval.stateproxy_background_read",
+  "status": "pass",
+  "details": "bg_log=bg t0=1789064320.639 counts={\"cached_plain\": 2, \"clock_a\": 0, \"clock_b\": 0, \"clock_x\": 4, \"mixin_ticks\": 6, \"ticks\": 6, \"ticks_td\": 6} | bg t1=1789064322.476 changed=True counts={\"cached_plain\": 2, \"clock_a\": 0, \"clock_b\": 0, \"clock_x\": 4, \"mixin_ticks\": 6, \"ticks\": 7, \"ticks_td\": 6}",
+  "note": "changed=True means an expired interval var recomputes on read inside `async with self`; changed=False is also legal"
+ },
+ {
+  "name": "interval.component_state_refresh_on_unrelated_event",
+  "status": "info",
+  "details": "after 1.2 s + IntervalState.poke: clock_a changed=False clock_b changed=False (clock_a=1789064316.590->clock_a=1789064316.590)"
+ },
+ {
+  "name": "interval.component_state_interval_var_refresh_on_own_event",
+  "status": "pass",
+  "details": "clock_a clock_a=1789064316.590->clock_a=1789064325.456; clock_b clock_b=1789064316.590->clock_b=1789064316.590 (b changed=False)"
+ },
+ {
+  "name": "interval.component_state_second_instance_refresh",
+  "status": "pass",
+  "details": "clock_b clock_b=1789064316.590->clock_b=1789064327.040"
+ },
+ {
+  "name": "interval.component_state_recompute_counts",
+  "status": "info",
+  "details": "counts: {'cached_plain': 2, 'clock_a': 1, 'clock_b': 0, 'clock_x': 4, 'mixin_ticks': 10, 'ticks': 9, 'ticks_td': 10}"
+ },
+ {
+  "name": "backend.backend_vars_read_write_inplace",
+  "status": "pass",
+  "details": "shown=hidden=1 items=[1] gwt=n/a keys=['_hidden', '_items'] -> shown=hidden=2 items=[1, 2] gwt=n/a keys=['_hidden', '_items']"
+ },
+ {
+  "name": "backend.backend_vars_survive_reload",
+  "status": "pass",
+  "details": "shown=hidden=3 items=[1, 2, 3] gwt=n/a keys=['_hidden', '_items']"
+ },
+ {
+  "name": "shadow.var_named_get_state",
+  "status": "pass",
+  "details": "get_state=shadow-initial -> get_state=set-1789064328; note=fast=[]; toasts=[]"
+ },
+ {
+  "name": "shadow.var_named_get_delta",
+  "status": "fail",
+  "details": "get_delta=0; toasts=[]"
+ },
+ {
+  "name": "slow.other_client_not_blocked",
+  "status": "pass",
+  "details": "client2 fast_count after 0.09s: fast_count=1"
+ },
+ {
+  "name": "slow.same_client_events_queued_in_order",
+  "status": "pass",
+  "details": "fast_count during slow=fast_count=0; slow_done after 5.05s=slow_done=1; then fast_count=3"
+ },
+ {
+  "name": "slow.exception_does_not_wedge_socket",
+  "status": "pass",
+  "details": "after boom: boom_count=0; then fast_count=4"
+ },
+ {
+  "name": "slow.pre_exception_mutation_delivered",
+  "status": "info",
+  "details": "boom_count after handler raised (mutation happened before raise): boom_count=0"
+ },
+ {
+  "name": "slow.second_exception_then_event",
+  "status": "pass",
+  "details": "boom_count=2 fast_count=5"
+ },
+ {
+  "name": "slow.async_exception_before_first_await_then_event",
+  "status": "pass",
+  "details": "boom_count=3 fast_count=6"
+ },
+ {
+  "name": "slow.rapid_exceptions_and_events",
+  "status": "pass",
+  "details": "boom_count=5 fast_count=8"
+ },
+ {
+  "name": "slow.client2_capture",
+  "status": "info",
+  "details": "{\"label\": \"client2\", \"console_err_warn\": [], \"page_errors\": [], \"failed_requests\": [], \"http_4xx_5xx\": [], \"dialogs\": []}"
+ },
+ {
+  "name": "hammer.100_rapid_clicks_exact",
+  "status": "pass",
+  "details": "clicks took 3.37s; final=count=100 (recheck count=100); total 3.93s"
+ },
+ {
+  "name": "hammer.100_sync_js_clicks_exact",
+  "status": "pass",
+  "details": "final=count=100"
+ },
+ {
+  "name": "hammer.100_async_noawait_clicks_exact",
+  "status": "pass",
+  "details": "final=count=100"
+ },
+ {
+  "name": "hammer.100_mixed_sync_async_exact",
+  "status": "pass",
+  "details": "final=count=100"
+ },
+ {
+  "name": "hammer.factory_info",
+  "status": "info",
+  "details": "factory={\"py\": \"3.11.15\", \"installed\": false, \"n\": 0, \"loop_factory\": false}"
+ },
+ {
+  "name": "browser_capture",
+  "status": "info",
+  "details": "{\"label\": \"base\", \"console_err_warn\": [], \"page_errors\": [], \"failed_requests\": [], \"http_4xx_5xx\": [], \"dialogs\": []}"
+ }
+]

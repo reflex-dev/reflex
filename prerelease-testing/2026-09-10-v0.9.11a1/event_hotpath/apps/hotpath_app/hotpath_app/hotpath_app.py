@@ -103,6 +103,22 @@ class OrderingState(rx.State):
         await asyncio.sleep(0.3)
         self.log.append(tag("ysy-c"))
 
+    task_info: str = ""
+
+    @rx.event
+    def sync_multi_yield(self):
+        # sync generator handler: 3 progressive deltas, no awaits in between
+        for i in range(3):
+            self.log.append(tag(f"sy{i}"))
+            yield
+
+    @rx.event
+    async def record_task(self):
+        # eager_start (3.12+) runs this body synchronously inside the dispatcher; the current task must still be the
+        # reflex_event task and the delta must arrive even though the coroutine never suspends
+        t = asyncio.current_task()
+        self.task_info = f"name={t.get_name() if t else None} py={sys.version.split()[0]}"
+
     @rx.event
     def click_a(self):
         self.log.append(tag("A"))
@@ -364,6 +380,8 @@ def ordering() -> rx.Component:
             rx.button("chain", on_click=OrderingState.chain, id="chain"),
             rx.button("yield_other", on_click=OrderingState.yield_other, id="yield_other"),
             rx.button("ysy", on_click=OrderingState.yield_sleep_yield, id="ysy"),
+            rx.button("sync_multi_yield", on_click=OrderingState.sync_multi_yield, id="sync_my"),
+            rx.button("record_task", on_click=OrderingState.record_task, id="rec_task"),
             rx.button("A", on_click=OrderingState.click_a, id="a"),
             rx.button("B", on_click=OrderingState.click_b, id="b"),
             rx.button("bg", on_click=OrderingState.bg_task, id="bg"),
@@ -374,6 +392,7 @@ def ordering() -> rx.Component:
             wrap="wrap",
         ),
         rx.text("log=", OrderingState.log.join(","), id="log"),
+        rx.text("task_info=", OrderingState.task_info, id="task_info"),
         rx.text("other_val=", OtherState.other_val, id="other_val"),
         rx.text("other_log=", OtherState.other_log.join(","), id="other_log"),
     )

@@ -1,0 +1,5 @@
+22:Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 26/25 0:00:00
+32:App running at: http://localhost:3195/
+33:Backend running at: http://0.0.0.0:8195
+34:[ERROR] Unexpected exit from worker-1
+40:error: script "dev" exited with code 143

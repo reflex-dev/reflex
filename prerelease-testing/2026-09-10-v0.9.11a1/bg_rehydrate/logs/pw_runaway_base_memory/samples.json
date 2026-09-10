@@ -1,0 +1,158 @@
+[
+ {
+  "t": 0.5,
+  "runs": {
+   "index": 161,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 140
+ },
+ {
+  "t": 1.0,
+  "runs": {
+   "index": 309,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 277
+ },
+ {
+  "t": 1.5,
+  "runs": {
+   "index": 465,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 427
+ },
+ {
+  "t": 2.0,
+  "runs": {
+   "index": 624,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 591
+ },
+ {
+  "t": 2.5,
+  "runs": {
+   "index": 771,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 762
+ },
+ {
+  "t": 3.0,
+  "runs": {
+   "index": 900,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 923
+ },
+ {
+  "t": 3.6,
+  "runs": {
+   "index": 1059,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 1079
+ },
+ {
+  "t": 4.1,
+  "runs": {
+   "index": 1219,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 1200
+ },
+ {
+  "t": 4.6,
+  "runs": {
+   "index": 1374,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 1335
+ },
+ {
+  "t": 5.1,
+  "runs": {
+   "index": 1540,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 1443
+ },
+ {
+  "t": 5.6,
+  "runs": {
+   "index": 1693,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 1579
+ },
+ {
+  "t": 6.1,
+  "runs": {
+   "index": 1842,
+   "page-b": 0,
+   "item": 0,
+   "404": 0,
+   "ping": 1,
+   "click": 0,
+   "hydrate_seen": 0
+  },
+  "ws_frames_received": 1738
+ }
+]

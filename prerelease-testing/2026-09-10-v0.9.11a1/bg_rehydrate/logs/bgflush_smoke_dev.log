@@ -14,8 +14,8 @@ cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True,
 frontend_compression_formats=['gzip'], frontend_packages=[], 
 state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
 redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
-_non_default_attributes={'plugins', 'telemetry_enabled', 'loglevel', 
-'app_name'}, env_file=None, state_auto_setters=False, 
+_non_default_attributes={'app_name', 'loglevel', 'telemetry_enabled', 
+'plugins'}, env_file=None, state_auto_setters=False, 
 default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
 extra_overlay_function=None, hydrate_fallback=None, 
 plugins=[SitemapPlugin(trailing_slash='preserve'), 
@@ -55,63 +55,64 @@ Debug: Checking if Backend port: 8220 is in use for families:
 [<AddressFamily.AF_INET: 2>].
 Debug: Backend port: 8220 is not in use.
 Debug: Registered lifespan task: _setup_event_processor
-Debug: [timing] Compile pages: 0.11s
+Debug: [timing] Compile pages: 0.12s
 Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 19/18 0:00:00
 Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
 '--legacy-peer-deps', '--frozen-lockfile']
 Debug: Installing base frontend packages
 Debug: bun install v1.4.0 (34cbb9a40)
 Debug: 
-Debug: Checked 225 installs across 248 packages (no changes) [9.00ms]
+Debug: Checked 225 installs across 248 packages (no changes) [226.00ms]
 Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
-'--legacy-peer-deps', '-d', '@react-router/dev@8.3.1', 'autoprefixer@10.5.4', 
-'@emotion/react@11.14.0', 'postcss-import@17.0.0', 'vite@8.2.2', 
-'postcss@8.5.26', '@react-router/fs-routes@8.3.1']
+'--legacy-peer-deps', '-d', 'vite@8.2.2', '@react-router/fs-routes@8.3.1', 
+'@react-router/dev@8.3.1', 'postcss-import@17.0.0', '@emotion/react@11.14.0', 
+'autoprefixer@10.5.4', 'postcss@8.5.26']
 Debug: Installing frontend development dependencies
 Debug: bun add v1.4.0 (34cbb9a40)
 Debug: 
-Debug: installed @react-router/dev@8.3.1 with binaries:
-Debug:  - react-router
-Debug: installed autoprefixer@10.5.4 with binaries:
-Debug:  - autoprefixer
-Debug: installed @emotion/react@11.14.0
-Debug: installed postcss-import@17.0.0
 Debug: installed vite@8.2.2 with binaries:
 Debug:  - vite
-Debug: installed postcss@8.5.26
 Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: installed postcss-import@17.0.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
 Debug: 
-Debug: [11.00ms] done
+Debug: [25.00ms] done
 Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
-'--legacy-peer-deps', 'react-helmet@6.1.0', 'react-error-boundary@6.1.2', 
-'react@19.2.8', 'socket.io-client@4.8.3', 'sonner@2.0.8', 'react-router@8.3.1', 
-'lucide-react@1.26.0', 'universal-cookie@8.1.2', '@radix-ui/themes@3.3.0', 
-'react-dom@19.2.8', 'isbot@5.2.2', '@react-router/node@8.3.1']
+'--legacy-peer-deps', 'react-router@8.3.1', 'react-dom@19.2.8', 'react@19.2.8', 
+'isbot@5.2.2', 'sonner@2.0.8', '@react-router/node@8.3.1', 
+'socket.io-client@4.8.3', 'react-error-boundary@6.1.2', 
+'@radix-ui/themes@3.3.0', 'universal-cookie@8.1.2', 'lucide-react@1.26.0', 
+'react-helmet@6.1.0']
 Debug: Installing frontend packages
 Debug: bun add v1.4.0 (34cbb9a40)
 Debug: 
-Debug: installed react-helmet@6.1.0
-Debug: installed react-error-boundary@6.1.2
-Debug: installed react@19.2.8
-Debug: installed socket.io-client@4.8.3
-Debug: installed sonner@2.0.8
 Debug: installed react-router@8.3.1
-Debug: installed lucide-react@1.26.0
-Debug: installed universal-cookie@8.1.2
-Debug: installed @radix-ui/themes@3.3.0
 Debug: installed react-dom@19.2.8
+Debug: installed react@19.2.8
 Debug: installed isbot@5.2.2
+Debug: installed sonner@2.0.8
 Debug: installed @react-router/node@8.3.1
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-error-boundary@6.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-helmet@6.1.0
 Debug: 
-Debug: [11.00ms] done
+Debug: [8.00ms] done
 Debug: Copying .web/bun.lock to 
 /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
 apps/bg_rehydrate/bgflush_app/reflex.lock/bun.lock
 Debug: Copying .web/package.json to 
 /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
 apps/bg_rehydrate/bgflush_app/reflex.lock/package.json
-Debug: [timing] Install Frontend Packages: 0.06s
-Debug: [timing] Write to Disk: 0.00s
+Debug: [timing] Install Frontend Packages: 0.29s
+Debug: [timing] Write to Disk: 0.02s
 ───────────────────────────────── App Running ──────────────────────────────────
 Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
 Debug: Starting frontend
@@ -124,9 +125,9 @@ d/apps/bg_rehydrate/bgflush_app/bgflush_app',
 /apps/bg_rehydrate/bgflush_app/requirements.txt', 
 '/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
 /apps/bg_rehydrate/bgflush_app/rxconfig.py']
-[INFO] Starting granian (main PID: 4153)
+[INFO] Starting granian (main PID: 1984)
 [INFO] Listening at: http://0.0.0.0:8220
-[INFO] Spawning worker-1 with PID: 4191
+[INFO] Spawning worker-1 with PID: 2053
 Debug: Registered lifespan task: _setup_event_processor
 Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
 [INFO] Started worker-1
@@ -134,7 +135,7 @@ Debug:   ➜  Local:   http://localhost:3220/
 App running at: http://localhost:3220/
 Backend running at: http://0.0.0.0:8220
 Debug:   ➜  Network: http://192.0.2.2:3220/  eth0
-Debug: 1:25:13 PM [vite] (ssr) connected.
+Debug: 6:06:11 PM [vite] (ssr) connected.
 Error flushing delta after background handler State.bg_flush_fails raised:
 Traceback (most recent call last):
   File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py", line 481, in _execute_event
@@ -179,20 +180,21 @@ Traceback (most recent call last):
     raise ValueError(msg)
 ValueError: flush boom (uncached var raised during delta resolution)
 [INFO] Stopping worker-1
-[INFO] Shutting down granian
 Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
 Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
-[INFO] Stopped worker-1
-[INFO] Granian shutdown completed, see ya!
+[ERROR] Unexpected exit from worker-1
 Debug: error: script "dev" exited with code 143
 Starting frontend failed with exit code 143
 $ react-router dev --host
   ➜  Local:   http://localhost:3220/
   ➜  Network: http://192.0.2.2:3220/  eth0
-1:25:13 PM [vite] (ssr) connected.
+6:06:11 PM [vite] (ssr) connected.
 error: script "dev" exited with code 143
 
 
 
 Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
 Info: Reflex app stopped.

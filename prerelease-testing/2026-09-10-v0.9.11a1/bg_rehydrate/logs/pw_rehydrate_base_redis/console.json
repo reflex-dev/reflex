@@ -48,6 +48,46 @@
   "text": "[vite] connecting..."
  },
  {
+  "type": "debug",
+  "text": "[vite] connected."
+ },
+ {
+  "type": "info",
+  "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+ },
+ {
+  "type": "log",
+  "text": "Disconnect websocket on page navigation"
+ },
+ {
+  "type": "log",
+  "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+ },
+ {
+  "type": "debug",
+  "text": "[vite] connecting..."
+ },
+ {
+  "type": "debug",
+  "text": "[vite] connected."
+ },
+ {
+  "type": "info",
+  "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+ },
+ {
+  "type": "log",
+  "text": "Disconnect websocket on page navigation"
+ },
+ {
+  "type": "log",
+  "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+ },
+ {
+  "type": "debug",
+  "text": "[vite] connecting..."
+ },
+ {
   "type": "info",
   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
  },
@@ -108,12 +148,12 @@
   "text": "[vite] connecting..."
  },
  {
-  "type": "debug",
-  "text": "[vite] connected."
- },
- {
   "type": "info",
   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+ },
+ {
+  "type": "debug",
+  "text": "[vite] connected."
  },
  {
   "type": "log",
@@ -148,12 +188,12 @@
   "text": "[vite] connecting..."
  },
  {
-  "type": "info",
-  "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
- },
- {
   "type": "debug",
   "text": "[vite] connected."
+ },
+ {
+  "type": "info",
+  "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
  },
  {
   "type": "log",
@@ -197,10 +237,10 @@
  },
  {
   "type": "error",
-  "text": "WebSocket connection to 'ws://localhost:8225/_event/?token=92fe4d10-dd98-4f72-e9dd-b04aee278143&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  "text": "WebSocket connection to 'ws://localhost:8225/_event/?token=37e5c94b-ae01-4b79-dd3a-7c1e124de3ba&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
  },
  {
   "type": "error",
-  "text": "WebSocket connection to 'ws://localhost:8225/_event/?token=92fe4d10-dd98-4f72-e9dd-b04aee278143&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
+  "text": "WebSocket connection to 'ws://localhost:8225/_event/?token=37e5c94b-ae01-4b79-dd3a-7c1e124de3ba&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED"
  }
 ]

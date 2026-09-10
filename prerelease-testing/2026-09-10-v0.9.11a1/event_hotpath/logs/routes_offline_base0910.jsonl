@@ -1,0 +1,61 @@
+{"path": "/", "fp": "", "route": "index"}
+{"path": "", "fp": "", "route": "index"}
+{"path": "/index", "fp": "", "route": "index"}
+{"path": "/index/", "fp": "", "route": "index"}
+{"path": "//", "fp": "", "route": "index"}
+{"path": "/item/1", "fp": "", "route": "item/[id]"}
+{"path": "/item/1/", "fp": "", "route": "item/[id]"}
+{"path": "/item/2", "fp": "", "route": "item/[id]"}
+{"path": "/item/a%20b", "fp": "", "route": "item/[id]"}
+{"path": "/item/héllo", "fp": "", "route": "item/[id]"}
+{"path": "/item/a.b", "fp": "", "route": "item/[id]"}
+{"path": "/item/1/2", "fp": "", "route": null}
+{"path": "/item", "fp": "", "route": null}
+{"path": "/posts/all", "fp": "", "route": "posts/[id]"}
+{"path": "/posts/all/", "fp": "", "route": "posts/[id]"}
+{"path": "/posts/all/7", "fp": "", "route": "posts/all/[x]"}
+{"path": "/posts/42", "fp": "", "route": "posts/[id]"}
+{"path": "/posts/all/7/8", "fp": "", "route": null}
+{"path": "/docs", "fp": "", "route": "docs/[[...splat]]"}
+{"path": "/docs/", "fp": "", "route": "docs/[[...splat]]"}
+{"path": "/docs/a", "fp": "", "route": "docs/[[...splat]]"}
+{"path": "/docs/a/b/c/", "fp": "", "route": "docs/[[...splat]]"}
+{"path": "/static-0", "fp": "", "route": "static-0"}
+{"path": "/static-149", "fp": "", "route": "static-149"}
+{"path": "/static-150", "fp": "", "route": null}
+{"path": "/apple", "fp": "", "route": "apple"}
+{"path": "/app", "fp": "", "route": "app"}
+{"path": "/app/apple", "fp": "", "route": null}
+{"path": "/app/app", "fp": "", "route": null}
+{"path": "/404", "fp": "", "route": "404"}
+{"path": "/nonexistent", "fp": "", "route": null}
+{"path": "/a.b/x", "fp": "", "route": "a.b/[c]"}
+{"path": "/A.B/x", "fp": "", "route": null}
+{"path": "/Item/1", "fp": "", "route": null}
+{"path": "/x/y/z", "fp": "", "route": null}
+{"path": "/static-7?q=1", "fp": "", "route": null}
+{"path": "/item/1#frag", "fp": "", "route": "item/[id]"}
+{"path": "/item/%2F", "fp": "", "route": "item/[id]"}
+{"path": "/item/ ", "fp": "", "route": "item/[id]"}
+{"path": "/app/item/1", "fp": "/app", "route": "item/[id]"}
+{"path": "/app/apple", "fp": "/app", "route": "apple"}
+{"path": "/app/app", "fp": "/app", "route": "app"}
+{"path": "/apple", "fp": "/app", "route": null}
+{"path": "/app", "fp": "/app", "route": "index"}
+{"path": "/item/1", "fp": "/app", "route": "item/[id]"}
+{"path": "/app/", "fp": "/app", "route": "index"}
+{"path": "/app", "fp": "/app", "route": "index"}
+{"path": "/app/index", "fp": "/app", "route": "index"}
+{"path": "/app/static-3", "fp": "/app", "route": "static-3"}
+{"path": "/apple", "fp": "(reset)", "route": "apple"}
+{"path": "/app", "fp": "(reset)", "route": "app"}
+{"path": "/item/1", "fp": "(reset)", "route": "item/[id]"}
+{"path": "/", "fp": "(after 5000 distinct)", "route": "index"}
+{"path": "/item/1", "fp": "(after 5000 distinct)", "route": "item/[id]"}
+{"path": "/posts/all", "fp": "(after 5000 distinct)", "route": "posts/[id]"}
+{"path": "/posts/all/7", "fp": "(after 5000 distinct)", "route": "posts/all/[x]"}
+{"path": "/docs/a/b", "fp": "(after 5000 distinct)", "route": "docs/[[...splat]]"}
+{"path": "/apple", "fp": "(after 5000 distinct)", "route": "apple"}
+{"path": "/app", "fp": "(after 5000 distinct)", "route": "app"}
+{"path": "/static-149", "fp": "(after 5000 distinct)", "route": "static-149"}
+{"path": "/nonexistent", "fp": "(after 5000 distinct)", "route": null}

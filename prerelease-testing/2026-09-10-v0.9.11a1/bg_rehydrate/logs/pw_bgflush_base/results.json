@@ -10,7 +10,7 @@
   "details": "fg event refreshed beat | before={'beat': 'beat=3', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} after={'beat': 'beat=4', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} | deltas=1 with_beat=1 events_only=0 | new_exc=[]",
   "deltas": [
    {
-    "t": 3.446,
+    "t": 6.646,
     "update": {
      "delta": {
       "reflex___state____state.bgflush_app___bgflush_app____state": {
@@ -28,7 +28,7 @@
   "details": "bg no-ctx normal return refreshed beat | before={'beat': 'beat=4', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} after={'beat': 'beat=5', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} | deltas=1 with_beat=1 events_only=0 | new_exc=[]",
   "deltas": [
    {
-    "t": 11.653,
+    "t": 10.792,
     "update": {
      "delta": {
       "reflex___state____state.bgflush_app___bgflush_app____state": {
@@ -46,7 +46,7 @@
   "details": "expect beat refreshed AND handler got RuntimeError: boom-noctx | before={'beat': 'beat=5', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} after={'beat': 'beat=5', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} | deltas=1 with_beat=0 events_only=1 | new_exc=['RuntimeError: boom-noctx']",
   "deltas": [
    {
-    "t": 12.865,
+    "t": 12.0,
     "update": {
      "events": [
       {
@@ -76,19 +76,19 @@
   "details": "count+1, note updated, exc handled | before={'beat': 'beat=5', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} after={'beat': 'beat=6', 'count': 'count=1', 'note': 'note=after-ctx: mutated, about to raise outside ctx', 'where': 'where=path=/ q='} | deltas=2 with_beat=1 events_only=1 | new_exc=['RuntimeError: boom-after-ctx']",
   "deltas": [
    {
-    "t": 13.976,
+    "t": 13.078,
     "update": {
      "delta": {
       "reflex___state____state.bgflush_app___bgflush_app____state": {
-       "beat_rx_state_": 6,
        "note_rx_state_": "after-ctx: mutated, about to raise outside ctx",
-       "count_rx_state_": 1
+       "count_rx_state_": 1,
+       "beat_rx_state_": 6
       }
      }
     }
    },
    {
-    "t": 13.976,
+    "t": 13.079,
     "update": {
      "events": [
       {
@@ -113,19 +113,19 @@
   "details": "exc handled; count changed by 1 (mutation before raise inside ctx) | before={'beat': 'beat=6', 'count': 'count=1', 'note': 'note=after-ctx: mutated, about to raise outside ctx', 'where': 'where=path=/ q='} after={'beat': 'beat=7', 'count': 'count=2', 'note': 'note=inside-ctx: mutated, raising inside ctx', 'where': 'where=path=/ q='} | deltas=2 with_beat=1 events_only=1 | new_exc=['RuntimeError: boom-inside-ctx']",
   "deltas": [
    {
-    "t": 15.078,
+    "t": 14.162,
     "update": {
      "delta": {
       "reflex___state____state.bgflush_app___bgflush_app____state": {
-       "beat_rx_state_": 7,
        "note_rx_state_": "inside-ctx: mutated, raising inside ctx",
-       "count_rx_state_": 2
+       "count_rx_state_": 2,
+       "beat_rx_state_": 7
       }
      }
     }
    },
    {
-    "t": 15.079,
+    "t": 14.163,
     "update": {
      "events": [
       {
@@ -150,7 +150,7 @@
   "details": "beat refreshed + exc handled | before={'beat': 'beat=7', 'count': 'count=2', 'note': 'note=inside-ctx: mutated, raising inside ctx', 'where': 'where=path=/ q='} after={'beat': 'beat=7', 'count': 'count=2', 'note': 'note=inside-ctx: mutated, raising inside ctx', 'where': 'where=path=/ q='} | deltas=2 with_beat=0 events_only=2 | new_exc=['RuntimeError: boom-after-yield']",
   "deltas": [
    {
-    "t": 16.282,
+    "t": 15.364,
     "update": {
      "events": [
       {
@@ -165,7 +165,7 @@
     }
    },
    {
-    "t": 16.282,
+    "t": 15.364,
     "update": {
      "events": [
       {
@@ -195,18 +195,18 @@
   "details": "yielded state event ran, beat refreshed, exc handled | before={'beat': 'beat=7', 'count': 'count=2', 'note': 'note=inside-ctx: mutated, raising inside ctx', 'where': 'where=path=/ q='} after={'beat': 'beat=8', 'count': 'count=2', 'note': 'note=bump_note ran', 'where': 'where=path=/ q='} | deltas=2 with_beat=1 events_only=1 | new_exc=['RuntimeError: boom-after-yield-state-event']",
   "deltas": [
    {
-    "t": 17.516,
+    "t": 16.563,
     "update": {
      "delta": {
       "reflex___state____state.bgflush_app___bgflush_app____state": {
-       "beat_rx_state_": 8,
-       "note_rx_state_": "bump_note ran"
+       "note_rx_state_": "bump_note ran",
+       "beat_rx_state_": 8
       }
      }
     }
    },
    {
-    "t": 17.516,
+    "t": 16.564,
     "update": {
      "events": [
       {
@@ -231,7 +231,7 @@
   "details": "handler's RuntimeError delivered (not the ValueError from the failing flush) | before={'beat': 'beat=8', 'count': 'count=2', 'note': 'note=bump_note ran', 'where': 'where=path=/ q='} after={'beat': 'beat=8', 'count': 'count=2', 'note': 'note=bump_note ran', 'where': 'where=path=/ q='} | deltas=1 with_beat=0 events_only=1 | new_exc=['RuntimeError: boom-flush-fails']",
   "deltas": [
    {
-    "t": 18.627,
+    "t": 17.662,
     "update": {
      "events": [
       {
@@ -256,12 +256,12 @@
   "details": "cleared | before={'beat': 'beat=8', 'count': 'count=2', 'note': 'note=bump_note ran', 'where': 'where=path=/ q='} after={'beat': 'beat=9', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/ q='} | deltas=1 with_beat=1 events_only=0 | new_exc=[]",
   "deltas": [
    {
-    "t": 22.839,
+    "t": 21.804,
     "update": {
      "delta": {
       "reflex___state____state.bgflush_app___bgflush_app____state": {
-       "beat_rx_state_": 9,
-       "note_rx_state_": "flush_fail cleared"
+       "note_rx_state_": "flush_fail cleared",
+       "beat_rx_state_": 9
       }
      }
     }
@@ -280,7 +280,7 @@
   "details": "beat refreshed on /other, where intact | before={'beat': 'beat=10', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/other q=x=1'} after={'beat': 'beat=10', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/other q=x=1'} | deltas=1 with_beat=0 events_only=1 | new_exc=['RuntimeError: boom-noctx']",
   "deltas": [
    {
-    "t": 24.18,
+    "t": 23.145,
     "update": {
      "events": [
       {
@@ -305,15 +305,16 @@
   "details": "on_load bg raise: exc=['RuntimeError: boom-noctx'] is_hydrated_true_deltas=1 deltas=3 snap={'beat': 'beat=12', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/onload-bg q='}",
   "deltas": [
    {
-    "t": 24.33,
+    "t": 23.333,
     "update": {
      "delta": {
       "reflex___state____state": {
+       "is_hydrated_rx_state_": false,
        "router_rx_state_": {
         "session": {
-         "client_token": "28b5b5a6-3b50-490a-b5b0-5b7033adcca9",
+         "client_token": "003283bd-5890-4cdb-decf-be1da27df702",
          "client_ip": "127.0.0.1",
-         "session_id": "7FzUGNpFsRQQXkEHAAAB"
+         "session_id": "FF2yFyjQWz22RlLHAAAB"
         },
         "headers": {
          "host": "localhost:8224",
@@ -325,7 +326,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "bpsrLK7UEINHziKGiF5qkA==",
+         "sec_websocket_key": "qMNA7y8cWwYtOpbGrSzodQ==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -339,7 +340,7 @@
           "origin": "http://localhost:3224",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "bpsrLK7UEINHziKGiF5qkA==",
+          "sec-websocket-key": "qMNA7y8cWwYtOpbGrSzodQ==",
           "sec-websocket-protocol": "0.9.10.post2",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -365,8 +366,7 @@
          "href": "http://localhost:3224/onload-bg"
         },
         "route_id": "/onload-bg"
-       },
-       "is_hydrated_rx_state_": false
+       }
       },
       "reflex___state____state.bgflush_app___bgflush_app____state": {
        "where_rx_state_": "path=/onload-bg q=",
@@ -376,7 +376,7 @@
     }
    },
    {
-    "t": 24.33,
+    "t": 23.333,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -389,7 +389,7 @@
     }
    },
    {
-    "t": 25.438,
+    "t": 24.338,
     "update": {
      "events": [
       {
@@ -408,19 +408,19 @@
  {
   "name": "bgflush.onload_bg_raise_fullreload",
   "status": "pass",
-  "details": "full reload: exc=['RuntimeError: boom-noctx'] is_hydrated_true_deltas=1 deltas=4 snap={'beat': 'beat=16', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/onload-bg q='}",
+  "details": "full reload: exc=['RuntimeError: boom-noctx'] is_hydrated_true_deltas=1 deltas=5 snap={'beat': 'beat=16', 'count': 'count=2', 'note': 'note=flush_fail cleared', 'where': 'where=path=/onload-bg q='}",
   "deltas": [
    {
-    "t": 25.784,
+    "t": 24.6,
     "update": {
      "delta": {
       "reflex___state____state": {
        "is_hydrated_rx_state_": false,
        "router_rx_state_": {
         "session": {
-         "client_token": "28b5b5a6-3b50-490a-b5b0-5b7033adcca9",
+         "client_token": "003283bd-5890-4cdb-decf-be1da27df702",
          "client_ip": "127.0.0.1",
-         "session_id": "95bt1LyZdi1hgQcXAAAD"
+         "session_id": "FvsbbQkBcAucglLQAAAD"
         },
         "headers": {
          "host": "localhost:8224",
@@ -432,7 +432,7 @@
          "cache_control": "no-cache",
          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
          "sec_websocket_version": "13",
-         "sec_websocket_key": "MTTPawksfx2RtK0dr6nlLg==",
+         "sec_websocket_key": "Hrg6yzyQURuCh3lXcLYOQg==",
          "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
          "accept_encoding": "gzip, deflate, br, zstd",
          "accept_language": "en-US,en;q=0.9",
@@ -446,7 +446,7 @@
           "origin": "http://localhost:3224",
           "pragma": "no-cache",
           "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
-          "sec-websocket-key": "MTTPawksfx2RtK0dr6nlLg==",
+          "sec-websocket-key": "Hrg6yzyQURuCh3lXcLYOQg==",
           "sec-websocket-protocol": "0.9.10.post2",
           "sec-websocket-version": "13",
           "upgrade": "websocket",
@@ -474,10 +474,10 @@
         "route_id": "/onload-bg"
        }
       },
-      "reflex___state____state.reflex___istate___shared____shared_state_base_internal": {},
-      "reflex___state____state.reflex___state____update_vars_internal_state": {},
       "reflex___state____state.reflex___state____frontend_event_exception_state": {},
+      "reflex___state____state.reflex___state____update_vars_internal_state": {},
       "reflex___state____state.reflex___state____on_load_internal_state": {},
+      "reflex___state____state.reflex___istate___shared____shared_state_base_internal": {},
       "reflex___state____state.bgflush_app___bgflush_app____state": {
        "beat_rx_state_": 13,
        "count_rx_state_": 2,
@@ -488,7 +488,7 @@
     }
    },
    {
-    "t": 25.784,
+    "t": 24.601,
     "update": {
      "delta": {
       "reflex___state____state.bgflush_app___bgflush_app____state": {
@@ -498,7 +498,7 @@
     }
    },
    {
-    "t": 25.785,
+    "t": 24.601,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -511,7 +511,7 @@
     }
    },
    {
-    "t": 25.785,
+    "t": 24.601,
     "update": {
      "delta": {
       "reflex___state____state": {
@@ -521,6 +521,21 @@
        "beat_rx_state_": 16
       }
      }
+    }
+   },
+   {
+    "t": 24.646,
+    "update": {
+     "events": [
+      {
+       "name": "_call_function",
+       "router_data": {},
+       "payload": {
+        "function": "(() => (refs['__toast']?.[\"error\"](\"handled: RuntimeError: boom-noctx\", ({ [\"id\"] : \"bexc\" }))))",
+        "callback": null
+       }
+      }
+     ]
     }
    }
   ]

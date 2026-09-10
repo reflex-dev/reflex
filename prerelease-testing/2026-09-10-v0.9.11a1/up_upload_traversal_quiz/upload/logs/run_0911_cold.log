@@ -1,0 +1,375 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_upload_traversal_quiz/upload/rxconfig.py'
+Debug: Config: UploadConfig(app_name='upload', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4
+dc3b5b67/scratchpad/reflex_dirs/upload/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'env', 'loglevel', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: 
+[PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67
+/scratchpad/reflex_dirs/upload/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/up_upload_traversal_quiz_upload/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+reflex_dirs/upload/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/reflex_dirs/upload/bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: 
+[['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchp
+ad/reflex_dirs/upload/bun/bin/bun'], ['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_upload_traversal_quiz/upload/rxconfig.py'
+Debug: Config: UploadConfig(app_name='upload', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4
+dc3b5b67/scratchpad/reflex_dirs/upload/bun/bin/bun'), frozen_lockfile=True, 
+static_page_generation_timeout=60, cors_allowed_origins=('*',), 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'env', 'loglevel', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: 
+[PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67
+/scratchpad/reflex_dirs/upload/bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/up_upload_traversal_quiz_upload/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+reflex_dirs/upload/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/reflex_dirs/upload/bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: 
+[['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchp
+ad/reflex_dirs/upload/bun/bin/bun'], ['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing upload ──────────────────────────────
+Debug: Creating 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+reflex_dirs/upload
+Debug: Ensuring reflex installation id.
+Debug: Creating 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+reflex_dirs/upload
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: 
+[PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67
+/scratchpad/reflex_dirs/upload/bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/up_upload_traversal_quiz_upload/lib/python3.11/site-packages/reflex_base/.t
+emplates/web to .web
+Debug: Restoring lockfiles.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_upload_traversal_quiz/upload/reflex.lock/bun.lock to .web/bun.lock
+Debug: Initializing the web directory.
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_upload_traversal_quiz/upload/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_upload_traversal_quiz/upload/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 94901453444948678694744118640303197522.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.038 seconds
+Debug: Latest version of reflex: 0.9.10.post2
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized upload. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=4144
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9144
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 4144 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 4144 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 4144 is not in use.
+Debug: Checking if Backend port: 9144 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9144 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9144 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.04s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/reflex_dirs/upload/bun/bin/bun', 'install', '--legacy-peer-deps', 
+'--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: + @emotion/react@11.14.0
+Debug: + @react-router/dev@8.3.1
+Debug: + @react-router/fs-routes@8.3.1
+Debug: + autoprefixer@10.5.4
+Debug: + postcss@8.5.26
+Debug: + postcss-import@17.0.0
+Debug: + vite@8.2.2
+Debug: + @radix-ui/themes@3.3.0
+Debug: + @react-router/node@8.3.1
+Debug: + isbot@5.2.2
+Debug: + lucide-react@1.26.0
+Debug: + react@19.2.8
+Debug: + react-dom@19.2.8
+Debug: + react-dropzone@15.0.0
+Debug: + react-error-boundary@6.1.2
+Debug: + react-helmet@6.1.0
+Debug: + react-router@8.3.1
+Debug: + socket.io-client@4.8.3
+Debug: + sonner@2.0.8
+Debug: + universal-cookie@8.1.2
+Debug: 
+Debug: 227 packages installed [280.00ms]
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/reflex_dirs/upload/bun/bin/bun', 'add', '--legacy-peer-deps', '-d', 
+'@react-router/dev@8.3.1', '@emotion/react@11.14.0', 'vite@8.2.2', 
+'@react-router/fs-routes@8.3.1', 'postcss-import@17.0.0', 'autoprefixer@10.5.4',
+'postcss@8.5.26']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed postcss-import@17.0.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: 
+Debug: [9.00ms] done
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/reflex_dirs/upload/bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-helmet@6.1.0', 'universal-cookie@8.1.2', '@react-router/node@8.3.1', 
+'react-dropzone@15.0.0', 'react-error-boundary@6.1.2', 'react-router@8.3.1', 
+'socket.io-client@4.8.3', 'sonner@2.0.8', 'react@19.2.8', 'lucide-react@1.26.0',
+'isbot@5.2.2', 'react-dom@19.2.8', '@radix-ui/themes@3.3.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed react-helmet@6.1.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed react-dropzone@15.0.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-router@8.3.1
+Debug: installed socket.io-client@4.8.3
+Debug: installed sonner@2.0.8
+Debug: installed react@19.2.8
+Debug: installed lucide-react@1.26.0
+Debug: installed isbot@5.2.2
+Debug: installed react-dom@19.2.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: 
+Debug: [8.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_upload_traversal_quiz/upload/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_upload_traversal_quiz/upload/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.32s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/reflex_dirs/upload/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/apps/up_upload_traversal_quiz/upload/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_upload_traversal_quiz/upload/assets', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_upload_traversal_quiz/upload/upload', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_upload_traversal_quiz/upload/logs', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_upload_traversal_quiz/upload/rxconfig.py']
+[INFO] Starting granian (main PID: 9817)
+[INFO] Listening at: http://0.0.0.0:9144
+[INFO] Spawning worker-1 with PID: 9868
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:4144/
+App running at: http://localhost:4144/
+Backend running at: http://0.0.0.0:9144
+Debug:   ➜  Network: http://192.0.2.2:4144/  eth0
+Debug: 6:23:44 PM [vite] (client) [optimizer] bundling dependencies...
+Debug: 6:23:46 PM [vite] (ssr) connected.
+Got progress {'loaded': 234, 'total': 234, 'progress': 1}
+Got progress {'loaded': 656, 'total': 656, 'progress': 1}
+Got progress {'loaded': 244, 'total': 244, 'progress': 1}
+Got progress {'loaded': 254, 'total': 254, 'progress': 1}
+Got progress {'loaded': 238, 'total': 238, 'progress': 1}
+Got progress {'loaded': 236, 'total': 236, 'progress': 1}
+Got progress {'loaded': 260, 'total': 260, 'progress': 1}
+Got progress {'loaded': 266, 'total': 266, 'progress': 1}
+Got progress {'loaded': 206, 'total': 206, 'progress': 1}
+Got progress {'loaded': 208, 'total': 208, 'progress': 1}
+Got progress {'loaded': 216, 'total': 216, 'progress': 1}
+Got progress {'loaded': 232, 'total': 232, 'progress': 1}
+Got progress {'loaded': 268, 'total': 268, 'progress': 1}
+Got progress {'loaded': 246, 'total': 246, 'progress': 1}
+Got progress {'loaded': 610, 'total': 610, 'progress': 1}
+Got progress {'loaded': 32768, 'total': 5243082, 'progress': 0.006249759206512506}
+Got progress {'loaded': 65536, 'total': 5243082, 'progress': 0.012499518413025011}
+Got progress {'loaded': 98304, 'total': 5243082, 'progress': 0.018749277619537517}
+Got progress {'loaded': 131072, 'total': 5243082, 'progress': 0.024999036826050022}
+Got progress {'loaded': 180224, 'total': 5243082, 'progress': 0.03437367563581878}
+Got progress {'loaded': 212992, 'total': 5243082, 'progress': 0.04062343484233129}
+Got progress {'loaded': 245760, 'total': 5243082, 'progress': 0.04687319404884379}
+Got progress {'loaded': 278528, 'total': 5243082, 'progress': 0.0531229532553563}
+Got progress {'loaded': 311296, 'total': 5243082, 'progress': 0.0593727124618688}
+Got progress {'loaded': 360448, 'total': 5243082, 'progress': 0.06874735127163756}
+Got progress {'loaded': 393216, 'total': 5243082, 'progress': 0.07499711047815007}
+Got progress {'loaded': 425984, 'total': 5243082, 'progress': 0.08124686968466258}
+Got progress {'loaded': 458752, 'total': 5243082, 'progress': 0.08749662889117507}
+Got progress {'loaded': 236, 'total': 236, 'progress': 1}
+Got progress {'loaded': 32768, 'total': 5243081, 'progress': 0.006249760398513775}
+Got progress {'loaded': 65536, 'total': 5243081, 'progress': 0.01249952079702755}
+Got progress {'loaded': 98304, 'total': 5243081, 'progress': 0.018749281195541322}
+Got progress {'loaded': 131072, 'total': 5243081, 'progress': 0.0249990415940551}
+Got progress {'loaded': 163840, 'total': 5243081, 'progress': 0.031248801992568874}
+Got progress {'loaded': 212992, 'total': 5243081, 'progress': 0.04062344259033954}
+Got progress {'loaded': 245760, 'total': 5243081, 'progress': 0.04687320298885331}
+Got progress {'loaded': 278528, 'total': 5243081, 'progress': 0.053122963387367085}
+Got progress {'loaded': 311296, 'total': 5243081, 'progress': 0.059372723785880856}
+Got progress {'loaded': 32768, 'total': 5243081, 'progress': 0.006249760398513775}
+Got progress {'loaded': 65536, 'total': 5243081, 'progress': 0.01249952079702755}
+Got progress {'loaded': 98304, 'total': 5243081, 'progress': 0.018749281195541322}
+Got progress {'loaded': 131072, 'total': 5243081, 'progress': 0.0249990415940551}
+Got progress {'loaded': 163840, 'total': 5243081, 'progress': 0.031248801992568874}
+Got progress {'loaded': 212992, 'total': 5243081, 'progress': 0.04062344259033954}
+Got progress {'loaded': 245760, 'total': 5243081, 'progress': 0.04687320298885331}
+Got progress {'loaded': 278528, 'total': 5243081, 'progress': 0.053122963387367085}
+Got progress {'loaded': 311296, 'total': 5243081, 'progress': 0.059372723785880856}
+Got progress {'loaded': 32768, 'total': 5243081, 'progress': 0.006249760398513775}
+Got progress {'loaded': 65536, 'total': 5243081, 'progress': 0.01249952079702755}
+Got progress {'loaded': 98304, 'total': 5243081, 'progress': 0.018749281195541322}
+Got progress {'loaded': 131072, 'total': 5243081, 'progress': 0.0249990415940551}
+Got progress {'loaded': 163840, 'total': 5243081, 'progress': 0.031248801992568874}
+Got progress {'loaded': 212992, 'total': 5243081, 'progress': 0.04062344259033954}
+Got progress {'loaded': 245760, 'total': 5243081, 'progress': 0.04687320298885331}
+Got progress {'loaded': 278528, 'total': 5243081, 'progress': 0.053122963387367085}
+Got progress {'loaded': 311296, 'total': 5243081, 'progress': 0.059372723785880856}
+Got progress {'loaded': 32768, 'total': 5243081, 'progress': 0.006249760398513775}
+Got progress {'loaded': 65536, 'total': 5243081, 'progress': 0.01249952079702755}
+Got progress {'loaded': 98304, 'total': 5243081, 'progress': 0.018749281195541322}
+Got progress {'loaded': 131072, 'total': 5243081, 'progress': 0.0249990415940551}
+Got progress {'loaded': 180224, 'total': 5243081, 'progress': 0.03437368219182576}
+Got progress {'loaded': 212992, 'total': 5243081, 'progress': 0.04062344259033954}
+Got progress {'loaded': 245760, 'total': 5243081, 'progress': 0.04687320298885331}
+Got progress {'loaded': 278528, 'total': 5243081, 'progress': 0.053122963387367085}
+Got progress {'loaded': 311296, 'total': 5243081, 'progress': 0.059372723785880856}
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:4144/
+  ➜  Network: http://192.0.2.2:4144/  eth0
+6:23:44 PM [vite] (client) [optimizer] bundling dependencies...
+6:23:46 PM [vite] (ssr) connected.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

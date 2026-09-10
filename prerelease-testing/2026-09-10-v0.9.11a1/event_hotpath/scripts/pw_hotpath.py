@@ -62,6 +62,21 @@ def test_ordering(page, url, out):
         f"final={labels} progressive_states={distinct}")
     page.screenshot(path=f"{out}/ordering_multi_yield.png")
 
+    # 1b. sync generator handler with 3 yields and no awaits (eager start runs the first step inline on 3.12+)
+    page.click("#clear")
+    wait_text(page, "#log", lambda t: t == "log=", 5)
+    page.click("#sync_my")
+    changes = watch_changes(page, "#log", 1.0)
+    final = text_of(page, "#log")
+    labels = seqs(final)
+    rec("ordering.sync_generator_multi_yield", "pass" if labels == ["sy0", "sy1", "sy2"] else "fail",
+        f"final={labels} progressive_states={[c[1] for c in changes]}")
+
+    # 1c. async handler that never suspends: current task name + delta delivery
+    page.click("#rec_task")
+    ti = wait_text(page, "#task_info", lambda t: t.startswith("task_info=name="), 5)
+    rec("ordering.current_task_in_nonsuspending_async_handler", "pass" if "name=reflex_event|" in ti else "fail", ti)
+
     # 2. handler returning list of events (chain across states)
     page.click("#clear")
     wait_text(page, "#log", lambda t: t == "log=", 5)
@@ -219,10 +234,16 @@ def test_interval(page, url, out):
     page.goto(f"{url}/interval")
     page.wait_for_selector("#counts")
     wait_text(page, "#ticks", lambda t: re.match(r"ticks=\d+\.\d+", t) is not None, 15)
+    # align to a fresh expiry: poke until the interval var value changes, so the 2-poke window below starts right after
+    # a recompute (otherwise the 1 s boundary can fall between the two pokes and the check flakes)
+    for _ in range(10):
+        v = text_of(page, "#ticks"); page.click("#poke"); time.sleep(0.25)
+        if text_of(page, "#ticks") != v:
+            break
     # A. two pokes within the interval: nothing recomputes between them
-    page.click("#poke"); time.sleep(0.35)
+    page.click("#poke"); time.sleep(0.15)
     c0 = counts(page); t0 = text_of(page, "#ticks"); td0 = text_of(page, "#ticks_td"); m0 = text_of(page, "#mixin_ticks"); cp0 = text_of(page, "#cached_plain")
-    page.click("#poke"); time.sleep(0.35)
+    page.click("#poke"); time.sleep(0.25)
     c1 = counts(page); t1 = text_of(page, "#ticks"); td1 = text_of(page, "#ticks_td"); m1 = text_of(page, "#mixin_ticks")
     ok = t1 == t0 and td1 == td0 and m1 == m0 and all(c1[k] == c0[k] for k in ("ticks", "ticks_td", "mixin_ticks", "cached_plain"))
     rec("interval.no_recompute_within_interval", "pass" if ok else "fail",

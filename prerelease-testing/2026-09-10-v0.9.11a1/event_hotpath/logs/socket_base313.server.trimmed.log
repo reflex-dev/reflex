@@ -1,0 +1,400 @@
+10:Backend running at: http://0.0.0.0:8189
+15:[Reflex Backend Exception]
+16: Traceback (most recent call last):
+50:    raise ValueError(msg)
+51:ValueError: intentional boom from SlowState.boom
+54:Warning: Received event data as a string. This generally should not happen and 
+57:future: <Task finished name='Task-78' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError('Failed to deserialize event data: this is not json.')>
+58:Traceback (most recent call last):
+68:    raise JSONDecodeError("Expecting value", s, err.value) from None
+69:json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+73:Traceback (most recent call last):
+84:    raise exceptions.EventDeserializationError(msg) from ex
+85:reflex_base.utils.exceptions.EventDeserializationError: Failed to deserialize event data: this is not json.
+86:Warning: Received event data as a string. This generally should not happen and 
+89:future: <Task finished name='Task-83' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+90:Traceback (most recent call last):
+101:    raise exceptions.EventDeserializationError(msg)
+102:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+104:future: <Task finished name='Task-88' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+105:Traceback (most recent call last):
+116:    raise exceptions.EventDeserializationError(msg)
+117:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+119:future: <Task finished name='Task-93' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received 42 of type <class 'int'>.")>
+120:Traceback (most recent call last):
+131:    raise exceptions.EventDeserializationError(msg)
+132:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received 42 of type <class 'int'>.
+134:future: <Task finished name='Task-98' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=TypeError("EventNamespace.on_event() missing 1 required positional argument: 'data'")>
+135:Traceback (most recent call last):
+145:TypeError: EventNamespace.on_event() missing 1 required positional argument: 'data'
+147:future: <Task finished name='Task-103' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError('Failed to deserialize event data: {}.')>
+148:Traceback (most recent call last):
+151:TypeError: Event.__init__() missing 1 required positional argument: 'name'
+155:Traceback (most recent call last):
+166:    raise exceptions.EventDeserializationError(msg) from ex
+167:reflex_base.utils.exceptions.EventDeserializationError: Failed to deserialize event data: {}.
+169:future: <Task finished name='Task-108' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Failed to deserialize event data: {'token': '9158971b-a46c-48ed-b292-2540bb403ccb', 'payload': {}, 'router_data': {}}.")>
+170:Traceback (most recent call last):
+173:TypeError: Event.__init__() missing 1 required positional argument: 'name'
+177:Traceback (most recent call last):
+188:    raise exceptions.EventDeserializationError(msg) from ex
+189:reflex_base.utils.exceptions.EventDeserializationError: Failed to deserialize event data: {'token': '9158971b-a46c-48ed-b292-2540bb403ccb', 'payload': {}, 'router_data': {}}.
+190:Error processing event queue entry for Event(name='no.such.state.handler', 
+198:Traceback (most recent call last):
+206:KeyError: 'no.such.state.handler'
+210:Traceback (most recent call last):
+212:    raise KeyError(msg) from ke
+213:KeyError: 'No registered handler found for event: no.such.state.handler'
+214:Warning: Error transforming event payload for handler CounterState.increment: 
+216:[Reflex Backend Exception]
+217: Traceback (most recent call last):
+247:TypeError: functools.partial(<function CounterState.increment at 
+255:[Reflex Backend Exception]
+256: Traceback (most recent call last):
+286:TypeError: CounterState.increment() got an unexpected keyword argument 'bogus'
+290:future: <Task finished name='Task-130' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=AttributeError("'str' object has no attribute 'update'")>
+291:Traceback (most recent call last):
+304:AttributeError: 'str' object has no attribute 'update'
+306:future: <Task finished name='Task-135' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=AttributeError("'NoneType' object has no attribute 'update'")>
+307:Traceback (most recent call last):
+320:AttributeError: 'NoneType' object has no attribute 'update'
+322:future: <Task finished name='Task-163' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=TypeError("EventNamespace.on_event() missing 1 required positional argument: 'data'")>
+323:Traceback (most recent call last):
+333:TypeError: EventNamespace.on_event() missing 1 required positional argument: 'data'
+335:future: <Task finished name='Task-168' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+336:Traceback (most recent call last):
+347:    raise exceptions.EventDeserializationError(msg)
+348:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+350:future: <Task finished name='Task-173' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+351:Traceback (most recent call last):
+362:    raise exceptions.EventDeserializationError(msg)
+363:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+365:future: <Task finished name='Task-178' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+366:Traceback (most recent call last):
+377:    raise exceptions.EventDeserializationError(msg)
+378:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+380:future: <Task finished name='Task-183' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+381:Traceback (most recent call last):
+392:    raise exceptions.EventDeserializationError(msg)
+393:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+395:future: <Task finished name='Task-188' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+396:Traceback (most recent call last):
+407:    raise exceptions.EventDeserializationError(msg)
+408:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+410:future: <Task finished name='Task-193' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+411:Traceback (most recent call last):
+422:    raise exceptions.EventDeserializationError(msg)
+423:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+425:future: <Task finished name='Task-198' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+426:Traceback (most recent call last):
+437:    raise exceptions.EventDeserializationError(msg)
+438:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+440:future: <Task finished name='Task-203' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+441:Traceback (most recent call last):
+452:    raise exceptions.EventDeserializationError(msg)
+453:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+455:future: <Task finished name='Task-208' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+456:Traceback (most recent call last):
+467:    raise exceptions.EventDeserializationError(msg)
+468:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+470:future: <Task finished name='Task-213' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+471:Traceback (most recent call last):
+482:    raise exceptions.EventDeserializationError(msg)
+483:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+485:future: <Task finished name='Task-218' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+486:Traceback (most recent call last):
+497:    raise exceptions.EventDeserializationError(msg)
+498:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+500:future: <Task finished name='Task-223' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+501:Traceback (most recent call last):
+512:    raise exceptions.EventDeserializationError(msg)
+513:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+515:future: <Task finished name='Task-228' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+516:Traceback (most recent call last):
+527:    raise exceptions.EventDeserializationError(msg)
+528:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+530:future: <Task finished name='Task-233' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+531:Traceback (most recent call last):
+542:    raise exceptions.EventDeserializationError(msg)
+543:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+545:future: <Task finished name='Task-238' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+546:Traceback (most recent call last):
+557:    raise exceptions.EventDeserializationError(msg)
+558:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+560:future: <Task finished name='Task-243' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+561:Traceback (most recent call last):
+572:    raise exceptions.EventDeserializationError(msg)
+573:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+575:future: <Task finished name='Task-248' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+576:Traceback (most recent call last):
+587:    raise exceptions.EventDeserializationError(msg)
+588:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+590:future: <Task finished name='Task-253' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+591:Traceback (most recent call last):
+602:    raise exceptions.EventDeserializationError(msg)
+603:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+605:future: <Task finished name='Task-258' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+606:Traceback (most recent call last):
+617:    raise exceptions.EventDeserializationError(msg)
+618:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+620:future: <Task finished name='Task-263' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+621:Traceback (most recent call last):
+632:    raise exceptions.EventDeserializationError(msg)
+633:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+635:future: <Task finished name='Task-268' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+636:Traceback (most recent call last):
+647:    raise exceptions.EventDeserializationError(msg)
+648:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+650:future: <Task finished name='Task-273' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+651:Traceback (most recent call last):
+662:    raise exceptions.EventDeserializationError(msg)
+663:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+665:future: <Task finished name='Task-278' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+666:Traceback (most recent call last):
+677:    raise exceptions.EventDeserializationError(msg)
+678:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+680:future: <Task finished name='Task-283' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+681:Traceback (most recent call last):
+692:    raise exceptions.EventDeserializationError(msg)
+693:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+695:future: <Task finished name='Task-288' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+696:Traceback (most recent call last):
+707:    raise exceptions.EventDeserializationError(msg)
+708:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+710:future: <Task finished name='Task-293' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+711:Traceback (most recent call last):
+722:    raise exceptions.EventDeserializationError(msg)
+723:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+725:future: <Task finished name='Task-298' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+726:Traceback (most recent call last):
+737:    raise exceptions.EventDeserializationError(msg)
+738:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+740:future: <Task finished name='Task-303' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+741:Traceback (most recent call last):
+752:    raise exceptions.EventDeserializationError(msg)
+753:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+755:future: <Task finished name='Task-308' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+756:Traceback (most recent call last):
+767:    raise exceptions.EventDeserializationError(msg)
+768:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+770:future: <Task finished name='Task-313' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+771:Traceback (most recent call last):
+782:    raise exceptions.EventDeserializationError(msg)
+783:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+785:future: <Task finished name='Task-318' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+786:Traceback (most recent call last):
+797:    raise exceptions.EventDeserializationError(msg)
+798:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+800:future: <Task finished name='Task-323' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+801:Traceback (most recent call last):
+812:    raise exceptions.EventDeserializationError(msg)
+813:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+815:future: <Task finished name='Task-328' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+816:Traceback (most recent call last):
+827:    raise exceptions.EventDeserializationError(msg)
+828:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+830:future: <Task finished name='Task-333' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+831:Traceback (most recent call last):
+842:    raise exceptions.EventDeserializationError(msg)
+843:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+845:future: <Task finished name='Task-338' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+846:Traceback (most recent call last):
+857:    raise exceptions.EventDeserializationError(msg)
+858:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+860:future: <Task finished name='Task-343' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+861:Traceback (most recent call last):
+872:    raise exceptions.EventDeserializationError(msg)
+873:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+875:future: <Task finished name='Task-348' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+876:Traceback (most recent call last):
+887:    raise exceptions.EventDeserializationError(msg)
+888:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+890:future: <Task finished name='Task-353' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+891:Traceback (most recent call last):
+902:    raise exceptions.EventDeserializationError(msg)
+903:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+905:future: <Task finished name='Task-358' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+906:Traceback (most recent call last):
+917:    raise exceptions.EventDeserializationError(msg)
+918:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+920:future: <Task finished name='Task-363' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+921:Traceback (most recent call last):
+932:    raise exceptions.EventDeserializationError(msg)
+933:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+935:future: <Task finished name='Task-368' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+936:Traceback (most recent call last):
+947:    raise exceptions.EventDeserializationError(msg)
+948:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+950:future: <Task finished name='Task-373' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+951:Traceback (most recent call last):
+962:    raise exceptions.EventDeserializationError(msg)
+963:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+965:future: <Task finished name='Task-378' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+966:Traceback (most recent call last):
+977:    raise exceptions.EventDeserializationError(msg)
+978:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+980:future: <Task finished name='Task-383' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+981:Traceback (most recent call last):
+992:    raise exceptions.EventDeserializationError(msg)
+993:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+995:future: <Task finished name='Task-388' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+996:Traceback (most recent call last):
+1007:    raise exceptions.EventDeserializationError(msg)
+1008:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1010:future: <Task finished name='Task-393' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1011:Traceback (most recent call last):
+1022:    raise exceptions.EventDeserializationError(msg)
+1023:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1025:future: <Task finished name='Task-398' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1026:Traceback (most recent call last):
+1037:    raise exceptions.EventDeserializationError(msg)
+1038:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1040:future: <Task finished name='Task-403' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1041:Traceback (most recent call last):
+1052:    raise exceptions.EventDeserializationError(msg)
+1053:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1055:future: <Task finished name='Task-408' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1056:Traceback (most recent call last):
+1067:    raise exceptions.EventDeserializationError(msg)
+1068:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1070:future: <Task finished name='Task-413' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1071:Traceback (most recent call last):
+1082:    raise exceptions.EventDeserializationError(msg)
+1083:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1085:future: <Task finished name='Task-418' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1086:Traceback (most recent call last):
+1097:    raise exceptions.EventDeserializationError(msg)
+1098:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1100:future: <Task finished name='Task-423' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1101:Traceback (most recent call last):
+1112:    raise exceptions.EventDeserializationError(msg)
+1113:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1115:future: <Task finished name='Task-428' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1116:Traceback (most recent call last):
+1127:    raise exceptions.EventDeserializationError(msg)
+1128:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1130:future: <Task finished name='Task-433' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1131:Traceback (most recent call last):
+1142:    raise exceptions.EventDeserializationError(msg)
+1143:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1145:future: <Task finished name='Task-438' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1146:Traceback (most recent call last):
+1157:    raise exceptions.EventDeserializationError(msg)
+1158:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1160:future: <Task finished name='Task-443' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1161:Traceback (most recent call last):
+1172:    raise exceptions.EventDeserializationError(msg)
+1173:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1175:future: <Task finished name='Task-448' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1176:Traceback (most recent call last):
+1187:    raise exceptions.EventDeserializationError(msg)
+1188:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1190:future: <Task finished name='Task-453' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1191:Traceback (most recent call last):
+1202:    raise exceptions.EventDeserializationError(msg)
+1203:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1205:future: <Task finished name='Task-458' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1206:Traceback (most recent call last):
+1217:    raise exceptions.EventDeserializationError(msg)
+1218:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1220:future: <Task finished name='Task-463' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1221:Traceback (most recent call last):
+1232:    raise exceptions.EventDeserializationError(msg)
+1233:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1235:future: <Task finished name='Task-468' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1236:Traceback (most recent call last):
+1247:    raise exceptions.EventDeserializationError(msg)
+1248:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1250:future: <Task finished name='Task-473' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1251:Traceback (most recent call last):
+1262:    raise exceptions.EventDeserializationError(msg)
+1263:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1265:future: <Task finished name='Task-478' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1266:Traceback (most recent call last):
+1277:    raise exceptions.EventDeserializationError(msg)
+1278:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1280:future: <Task finished name='Task-483' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1281:Traceback (most recent call last):
+1292:    raise exceptions.EventDeserializationError(msg)
+1293:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1295:future: <Task finished name='Task-488' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1296:Traceback (most recent call last):
+1307:    raise exceptions.EventDeserializationError(msg)
+1308:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1310:future: <Task finished name='Task-493' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1311:Traceback (most recent call last):
+1322:    raise exceptions.EventDeserializationError(msg)
+1323:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1325:future: <Task finished name='Task-498' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1326:Traceback (most recent call last):
+1337:    raise exceptions.EventDeserializationError(msg)
+1338:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1340:future: <Task finished name='Task-503' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1341:Traceback (most recent call last):
+1352:    raise exceptions.EventDeserializationError(msg)
+1353:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1355:future: <Task finished name='Task-508' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1356:Traceback (most recent call last):
+1367:    raise exceptions.EventDeserializationError(msg)
+1368:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1370:future: <Task finished name='Task-513' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1371:Traceback (most recent call last):
+1382:    raise exceptions.EventDeserializationError(msg)
+1383:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1385:future: <Task finished name='Task-518' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1386:Traceback (most recent call last):
+1397:    raise exceptions.EventDeserializationError(msg)
+1398:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1400:future: <Task finished name='Task-523' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1401:Traceback (most recent call last):
+1412:    raise exceptions.EventDeserializationError(msg)
+1413:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1415:future: <Task finished name='Task-528' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1416:Traceback (most recent call last):
+1427:    raise exceptions.EventDeserializationError(msg)
+1428:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1430:future: <Task finished name='Task-533' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1431:Traceback (most recent call last):
+1442:    raise exceptions.EventDeserializationError(msg)
+1443:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1445:future: <Task finished name='Task-538' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1446:Traceback (most recent call last):
+1457:    raise exceptions.EventDeserializationError(msg)
+1458:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1460:future: <Task finished name='Task-543' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1461:Traceback (most recent call last):
+1472:    raise exceptions.EventDeserializationError(msg)
+1473:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1475:future: <Task finished name='Task-548' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1476:Traceback (most recent call last):
+1487:    raise exceptions.EventDeserializationError(msg)
+1488:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1490:future: <Task finished name='Task-553' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1491:Traceback (most recent call last):
+1502:    raise exceptions.EventDeserializationError(msg)
+1503:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1505:future: <Task finished name='Task-558' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1506:Traceback (most recent call last):
+1517:    raise exceptions.EventDeserializationError(msg)
+1518:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1520:future: <Task finished name='Task-563' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1521:Traceback (most recent call last):
+1532:    raise exceptions.EventDeserializationError(msg)
+1533:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1535:future: <Task finished name='Task-568' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1536:Traceback (most recent call last):
+1547:    raise exceptions.EventDeserializationError(msg)
+1548:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1550:future: <Task finished name='Task-573' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1551:Traceback (most recent call last):
+1562:    raise exceptions.EventDeserializationError(msg)
+1563:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1565:future: <Task finished name='Task-578' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1566:Traceback (most recent call last):
+1577:    raise exceptions.EventDeserializationError(msg)
+1578:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1580:future: <Task finished name='Task-583' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>
+1581:Traceback (most recent call last):
+1592:    raise exceptions.EventDeserializationError(msg)
+1593:reflex_base.utils.exceptions.EventDeserializationError: Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.
+1595:future: <Task finished name='Task-588' coro=<AsyncServer._handle_event_internal() done, defined at /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/hp313_base/lib/python3.13/site-packages/socketio/async_server.py:619> exception=EventDeserializationError("Event data must be a dictionary, but received [1, 2, 3] of type <class 'list'>.")>

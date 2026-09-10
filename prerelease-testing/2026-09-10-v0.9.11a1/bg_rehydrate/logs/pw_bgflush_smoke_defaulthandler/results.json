@@ -1,0 +1,27 @@
+[
+ {
+  "name": "bgflush_default.noctx_raise_flushes_delta",
+  "status": "pass",
+  "details": "before={'beat': 'beat=3', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} after={'beat': 'beat=4', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} deltas=2 toasts=['An error occurred.\\nRuntimeError: boom-noctx\\nSee logs for details.']"
+ },
+ {
+  "name": "bgflush_default.default_handler_toast",
+  "status": "pass",
+  "details": "toasts rendered by the default handler: ['An error occurred.\\nRuntimeError: boom-noctx\\nSee logs for details.']"
+ },
+ {
+  "name": "bgflush_default.flush_fails_variant",
+  "status": "pass",
+  "details": "after={'beat': 'beat=4', 'count': 'count=0', 'note': 'note=-', 'where': 'where=path=/ q='} deltas=1 toasts=['An error occurred.\\nRuntimeError: boom-flush-fails\\nSee logs for details.']"
+ },
+ {
+  "name": "bgflush_default.browser_anomalies",
+  "status": "pass",
+  "details": "{'label': 'default_handler', 'console_err_warn': [], 'page_errors': [], 'failed_requests': [], 'http_4xx_5xx': []}"
+ },
+ {
+  "name": "bgflush_default.server_log",
+  "status": "pass",
+  "details": "new log lines=116 tracebacks=4 'Task exception was never retrieved'=0 'Error flushing delta'=1 boom-noctx=1 boom-flush-fails=2"
+ }
+]

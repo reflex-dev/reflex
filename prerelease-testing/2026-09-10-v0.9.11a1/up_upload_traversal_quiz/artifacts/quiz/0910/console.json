@@ -1,0 +1,94 @@
+[
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "warning",
+    "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+  },
+  {
+    "type": "warning",
+    "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+  },
+  {
+    "type": "warning",
+    "text": "Checkbox is changing from uncontrolled to controlled. Components should not switch from controlled to uncontrolled (or vice versa). Decide between using a controlled or uncontrolled value for the lifetime of the component."
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+  },
+  {
+    "type": "log",
+    "text": "[ctx2] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[ctx2] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[ctx2] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[ctx2] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[ctx2] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[ctx2] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[ctx2] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[ctx2] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[ctx2] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[ctx2] Disconnect websocket on pagehide"
+  },
+  {
+    "type": "log",
+    "text": "[shiki] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[shiki] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[shiki] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[shiki] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[shiki] Disconnect websocket on pagehide"
+  }
+]

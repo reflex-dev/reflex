@@ -16,8 +16,8 @@ cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True,
 frontend_compression_formats=['gzip'], frontend_packages=[], 
 state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
 redis_lock_warning_threshold=1000, redis_token_expiration=5, 
-_non_default_attributes={'loglevel', 'plugins', 'telemetry_enabled', 
-'redis_token_expiration', 'app_name'}, env_file=None, state_auto_setters=False, 
+_non_default_attributes={'plugins', 'app_name', 'redis_token_expiration', 
+'telemetry_enabled', 'loglevel'}, env_file=None, state_auto_setters=False, 
 default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
 extra_overlay_function=None, hydrate_fallback=None, 
 plugins=[SitemapPlugin(trailing_slash='preserve'), 
@@ -57,62 +57,63 @@ Debug: Checking if Backend port: 8222 is in use for families:
 [<AddressFamily.AF_INET: 2>].
 Debug: Backend port: 8222 is not in use.
 Debug: Registered lifespan task: _setup_event_processor
-Debug: [timing] Compile pages: 0.15s
+Debug: [timing] Compile pages: 0.11s
 Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 19/18 0:00:00
 Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
 '--legacy-peer-deps', '--frozen-lockfile']
 Debug: Installing base frontend packages
 Debug: bun install v1.4.0 (34cbb9a40)
 Debug: 
-Debug: Checked 225 installs across 248 packages (no changes) [12.00ms]
+Debug: Checked 225 installs across 248 packages (no changes) [8.00ms]
 Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
-'--legacy-peer-deps', '-d', '@react-router/fs-routes@8.3.1', 
-'postcss-import@17.0.0', 'autoprefixer@10.5.4', 'postcss@8.5.26', 'vite@8.2.2', 
-'@emotion/react@11.14.0', '@react-router/dev@8.3.1']
+'--legacy-peer-deps', '-d', 'postcss@8.5.26', 'postcss-import@17.0.0', 
+'@react-router/fs-routes@8.3.1', 'autoprefixer@10.5.4', 
+'@react-router/dev@8.3.1', '@emotion/react@11.14.0', 'vite@8.2.2']
 Debug: Installing frontend development dependencies
 Debug: bun add v1.4.0 (34cbb9a40)
 Debug: 
-Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed postcss@8.5.26
 Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/fs-routes@8.3.1
 Debug: installed autoprefixer@10.5.4 with binaries:
 Debug:  - autoprefixer
-Debug: installed postcss@8.5.26
-Debug: installed vite@8.2.2 with binaries:
-Debug:  - vite
-Debug: installed @emotion/react@11.14.0
 Debug: installed @react-router/dev@8.3.1 with binaries:
 Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
 Debug: 
-Debug: [13.00ms] done
+Debug: [7.00ms] done
 Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
-'--legacy-peer-deps', 'react-error-boundary@6.1.2', 'sonner@2.0.8', 
-'@react-router/node@8.3.1', 'react-dom@19.2.8', 'react-router@8.3.1', 
-'react-helmet@6.1.0', 'isbot@5.2.2', 'react@19.2.8', 'universal-cookie@8.1.2', 
-'lucide-react@1.26.0', '@radix-ui/themes@3.3.0', 'socket.io-client@4.8.3']
+'--legacy-peer-deps', 'react-router@8.3.1', 'sonner@2.0.8', 
+'@radix-ui/themes@3.3.0', 'isbot@5.2.2', 'socket.io-client@4.8.3', 
+'react-error-boundary@6.1.2', 'universal-cookie@8.1.2', 'react-dom@19.2.8', 
+'@react-router/node@8.3.1', 'lucide-react@1.26.0', 'react@19.2.8', 
+'react-helmet@6.1.0']
 Debug: Installing frontend packages
 Debug: bun add v1.4.0 (34cbb9a40)
 Debug: 
-Debug: installed react-error-boundary@6.1.2
-Debug: installed sonner@2.0.8
-Debug: installed @react-router/node@8.3.1
-Debug: installed react-dom@19.2.8
 Debug: installed react-router@8.3.1
-Debug: installed react-helmet@6.1.0
-Debug: installed isbot@5.2.2
-Debug: installed react@19.2.8
-Debug: installed universal-cookie@8.1.2
-Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.8
 Debug: installed @radix-ui/themes@3.3.0
+Debug: installed isbot@5.2.2
 Debug: installed socket.io-client@4.8.3
+Debug: installed react-error-boundary@6.1.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-dom@19.2.8
+Debug: installed @react-router/node@8.3.1
+Debug: installed lucide-react@1.26.0
+Debug: installed react@19.2.8
+Debug: installed react-helmet@6.1.0
 Debug: 
-Debug: [10.00ms] done
+Debug: [7.00ms] done
 Debug: Copying .web/bun.lock to 
 /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
 apps/bg_rehydrate/rehydrate_app/reflex.lock/bun.lock
 Debug: Copying .web/package.json to 
 /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
 apps/bg_rehydrate/rehydrate_app/reflex.lock/package.json
-Debug: [timing] Install Frontend Packages: 0.06s
+Debug: [timing] Install Frontend Packages: 0.04s
 Debug: [timing] Write to Disk: 0.00s
 ───────────────────────────────── App Running ──────────────────────────────────
 Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
@@ -126,9 +127,9 @@ d/apps/bg_rehydrate/rehydrate_app/requirements.txt',
 /apps/bg_rehydrate/rehydrate_app/rehydrate_app', 
 '/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
 /apps/bg_rehydrate/rehydrate_app/rxconfig.py']
-[INFO] Starting granian (main PID: 8110)
+[INFO] Starting granian (main PID: 11962)
 [INFO] Listening at: http://0.0.0.0:8222
-[INFO] Spawning worker-1 with PID: 8148
+[INFO] Spawning worker-1 with PID: 12000
 Debug: Registered lifespan task: _setup_event_processor
 Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
 [INFO] Started worker-1
@@ -136,17 +137,16 @@ Debug:   ➜  Local:   http://localhost:3222/
 App running at: http://localhost:3222/
 Backend running at: http://0.0.0.0:8222
 Debug:   ➜  Network: http://192.0.2.2:3222/  eth0
-Debug: 1:36:01 PM [vite] (ssr) connected.
+Debug: 6:27:50 PM [vite] (ssr) connected.
 Warning: Attempting to send delta to disconnected client 
-'c1067e08-bc43-4d06-b2e9-2fd21253b55f'
+'4175a1f7-b619-4d29-a621-bb2c4a2447cc'
 Warning: Attempting to send delta to disconnected client 
-'c1067e08-bc43-4d06-b2e9-2fd21253b55f'
+'4175a1f7-b619-4d29-a621-bb2c4a2447cc'
 Warning: Attempting to send delta to disconnected client 
-'c1067e08-bc43-4d06-b2e9-2fd21253b55f'
+'4175a1f7-b619-4d29-a621-bb2c4a2447cc'
 [INFO] Stopping worker-1
 Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
 Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
-[ERROR] Unexpected exit from worker-1
 [INFO] Shutting down granian
 [INFO] Stopped worker-1
 [INFO] Granian shutdown completed, see ya!
@@ -155,7 +155,7 @@ Starting frontend failed with exit code 143
 $ react-router dev --host
   ➜  Local:   http://localhost:3222/
   ➜  Network: http://192.0.2.2:3222/  eth0
-1:36:01 PM [vite] (ssr) connected.
+6:27:50 PM [vite] (ssr) connected.
 error: script "dev" exited with code 143
 
 

@@ -1,0 +1,14 @@
+# trimmed: config + react-moment install lines + every EVT line from /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify_up_counter_todo_clock_0/logs/server_0910_dev_rerun.log
+13:Debug: Config: Config(app_name='momentapp', app_module_import=None, 
+49:Debug: Config: Config(app_name='momentapp', app_module_import=None, 
+226:Debug: installed react-moment@1.2.2
+230:Debug: installed moment@2.30.1
+286:EVT seq=1 kind=interval payload='18:08:35' server_time=18:08:35.441
+287:EVT seq=2 kind=interval payload='18:08:38' server_time=18:08:38.438
+288:EVT seq=3 kind=interval payload='18:08:41' server_time=18:08:41.438
+289:EVT seq=4 kind=interval payload='18:08:46' server_time=18:08:46.323
+290:EVT seq=5 kind=interval payload='18:08:49' server_time=18:08:49.324
+291:EVT seq=6 kind=interval payload='18:08:52' server_time=18:08:52.322
+292:EVT seq=7 kind=interval payload='18:08:59' server_time=18:08:59.489
+293:EVT seq=8 kind=interval payload='18:09:02' server_time=18:09:02.489
+294:EVT seq=9 kind=interval payload='18:09:05' server_time=18:09:05.489

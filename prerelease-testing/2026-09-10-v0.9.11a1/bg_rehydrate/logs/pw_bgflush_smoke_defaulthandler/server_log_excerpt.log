@@ -1,0 +1,116 @@
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_proce
+ssor.py", line 857, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_proce
+ssor.py", line 848, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_proce
+ssor.py", line 645, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/base_state_
+processor.py", line 481, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/base_state_
+processor.py", line 305, in process_event
+    events = await fn(**payload)
+             ^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/bg_rehydrate/bgflush_app/bgflush_app/bgflush_app.py", line 50, in 
+bg_raises_noctx
+    raise RuntimeError(msg)
+RuntimeError: boom-noctx
+
+
+Error flushing delta after background handler State.bg_flush_fails raised:
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py", line 481, in _execute_event
+    await process_event(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py", line 305, in process_event
+    events = await fn(**payload)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/bg_rehydrate/bgflush_app/bgflush_app/bgflush_app.py", line 89, in bg_flush_fails
+    raise RuntimeError(msg)
+RuntimeError: boom-flush-fails
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py", line 506, in _execute_event
+    await chain_updates(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py", line 227, in chain_updates
+    delta = await root_state._get_resolved_delta()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 2058, in _get_resolved_delta
+    return await _resolve_delta(self.get_delta())
+                                ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 2047, in get_delta
+    delta.update(substates[substate].get_delta())
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 2035, in get_delta
+    subdelta: dict[str, Any] = {
+                               ^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 2036, in <dictcomp>
+    prop + FIELD_MARKER: self.get_value(prop)
+                         ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 2130, in get_value
+    if isinstance(val := getattr(self, key), MutableProxy):
+                         ^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 1620, in _get_attribute
+    value = super().__getattribute__(name)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2595, in __get__
+    value = self.fget(instance)
+            ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/bg_rehydrate/bgflush_app/bgflush_app/bgflush_app.py", line 37, in beat
+    raise ValueError(msg)
+ValueError: flush boom (uncached var raised during delta resolution)
+[Reflex Backend Exception]
+ Traceback (most recent call last):
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_proce
+ssor.py", line 857, in _resolve_future
+    future.result()
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_proce
+ssor.py", line 848, in _resolve_future
+    result = task.result()
+             ^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/event_proce
+ssor.py", line 645, in _process_event_queue_entry
+    await self._execute_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/base_state_
+processor.py", line 481, in _execute_event
+    await process_event(
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/event/processor/base_state_
+processor.py", line 305, in process_event
+    events = await fn(**payload)
+             ^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/bg_rehydrate/bgflush_app/bgflush_app/bgflush_app.py", line 89, in 
+bg_flush_fails
+    raise RuntimeError(msg)
+RuntimeError: boom-flush-fails
+
