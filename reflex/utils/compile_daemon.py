@@ -702,12 +702,16 @@ def _pid_alive(pid: int) -> bool:
 
         kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
         # PROCESS_QUERY_LIMITED_INFORMATION; os.kill(pid, 0) would *terminate*
-        # the process on Windows.
+        # the process on Windows. OpenProcess still succeeds on an exited
+        # process while any handle to it stays open (e.g. a parent's Popen), so
+        # the exit code decides: STILL_ACTIVE (259) means running.
         handle = kernel32.OpenProcess(0x1000, False, pid)
         if not handle:
             return False
+        exit_code = ctypes.c_ulong()
+        queried = kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code))
         kernel32.CloseHandle(handle)
-        return True
+        return bool(queried) and exit_code.value == 259
     try:
         os.kill(pid, 0)
     except ProcessLookupError:

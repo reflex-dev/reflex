@@ -578,8 +578,9 @@ def test_file_validator_is_stat_first(tmp_path, monkeypatch):
     assert reads == 1
     assert v.refreshed[str(f)][1] == bumped
 
-    # Same size, different content: the hash decides.
+    # Same size, different content, distinct mtime: the hash decides.
     f.write_text("x = 2\n")
+    os.utime(f, ns=(bumped, bumped))
     v = page_cache.FileValidator(files)
     assert v.changed(str(f)) is True
     # Unknown or missing files always count as changed.
@@ -631,7 +632,10 @@ def test_first_party_roots_include_hot_reload_include_paths(tmp_path, monkeypatc
 
     sibling = tmp_path / "sibling_pkg"
     sibling.mkdir()
-    monkeypatch.setenv(environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.name, str(sibling))
+    # Relative to cwd: the env var's ":" delimiter cannot carry a Windows
+    # drive-letter path.
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv(environment.REFLEX_HOT_RELOAD_INCLUDE_PATHS.name, sibling.name)
     roots = page_cache.first_party_roots(tmp_path)
     assert roots == (tmp_path.resolve(), sibling.resolve())
 
