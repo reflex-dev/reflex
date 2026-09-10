@@ -214,6 +214,22 @@ class Plugin:
 
 ### Creating Custom Plugins
 
+Frontend dependencies are installed for the plugin, but unused named exports can
+be removed from the generated application bundle. Apps that render backend-generated
+`Component` values retain full library namespaces so later events can introduce
+new component types.
+
+If a plugin or custom JavaScript needs a complete library namespace through
+`window.__reflex`, explicitly register it with
+`bundle_library()` during app initialization. Explicit registrations retain the
+full namespace across recompiles:
+
+```python
+from reflex_base.components.dynamic import bundle_library
+
+bundle_library("my-custom-package@1.0.0")
+```
+
 You can create custom plugins by inheriting from the base `Plugin` class:
 
 ```python

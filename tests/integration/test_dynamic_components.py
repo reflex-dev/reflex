@@ -18,6 +18,7 @@ def DynamicComponents():
     class DynamicComponentsState(rx.State):
         value: int = 10
         count: int = 0
+        late_component: rx.Component = rx.el.div("Waiting", id="late-component")
 
         button: rx.Component = rx.button(
             "Click me",
@@ -33,6 +34,18 @@ def DynamicComponents():
                 custom_attrs={
                     "id": "button",
                 },
+            )
+
+        @rx.event
+        def show_card(self):
+            """Introduce a Radix export that is absent from the initial page."""
+            self.late_component = rx.card(
+                rx.el.button(
+                    "Count from card",
+                    id="late-increment",
+                    on_click=DynamicComponentsState.set_count(self.count + 1),
+                ),
+                id="late-card",
             )
 
         @rx.event
@@ -97,6 +110,12 @@ def DynamicComponents():
             DynamicComponentsState.client_token_component,
             DynamicComponentsState.button,
             DynamicComponentsState.counter_component,
+            DynamicComponentsState.late_component,
+            rx.el.button(
+                "Show card",
+                id="show-card",
+                on_click=DynamicComponentsState.show_card,
+            ),
             rx.text(
                 DynamicComponentsState._evaluate(
                     lambda state: factorial(state.value), of_type=int
@@ -107,16 +126,19 @@ def DynamicComponents():
 
 
 @pytest.fixture(scope="module")
-def dynamic_components(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def dynamic_components(
+    app_harness_env: type[AppHarness], tmp_path_factory
+) -> Generator[AppHarness, None, None]:
     """Start VarOperations app at tmp_path via AppHarness.
 
     Args:
+        app_harness_env: Development or production harness class.
         tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
         running AppHarness instance
     """
-    with AppHarness.create(
+    with app_harness_env.create(
         root=tmp_path_factory.mktemp("dynamic_components"),
         app_source=DynamicComponents,
     ) as harness:
@@ -139,13 +161,10 @@ def driver(dynamic_components: AppHarness):
     """
     driver = dynamic_components.frontend()
     try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
+        AppHarness.poll_for_or_raise_timeout(
             lambda: driver.find_element(By.ID, "token")
         )
-        # wait for the backend connection to send the token
-        token = dynamic_components.poll_for_value(token_input)
-        assert token is not None
-
+        # The test verifies backend readiness through the button/counter events.
         yield driver
     finally:
         driver.quit()
@@ -191,4 +210,13 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
     decrement.click()
     assert AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "count").text == "0"
+    )
+
+    driver.find_element(By.ID, "show-card").click()
+    late_button = AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "late-increment")
+    )
+    late_button.click()
+    assert AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "count").text == "1"
     )

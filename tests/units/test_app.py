@@ -2094,6 +2094,31 @@ EVENT_LOOP_CONTEXT_HOOK = (
 )
 
 
+def test_compile_preserves_explicit_bundled_libraries_across_recompiles(
+    compilable_app: tuple[App, Path], mocker: MockerFixture
+):
+    """Compiler-owned plugin registrations must not replace explicit bundles.
+
+    Args:
+        compilable_app: Isolated app and generated web directory.
+        mocker: Pytest mocker fixture.
+    """
+    from reflex_base.components.dynamic import bundle_library
+
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app.add_page(lambda: rx.el.div("Static page"), route="/")
+    bundle_library("some-widget@1.0.0")
+
+    for _ in range(2):
+        app._compile()
+        root = (
+            web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+        ).read_text()
+        assert 'import * as __reflex_4_some_widget from "some-widget";' in root
+        assert root.count('"some-widget": __reflex_4_some_widget') == 1
+
+
 def _find_error_boundary_memo_tag(app_root_code: str) -> str:
     """Extract the memoized default-ErrorBoundary wrapper tag from app-root JS.
 

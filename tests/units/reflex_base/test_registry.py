@@ -418,6 +418,21 @@ def test_bundled_libraries_isolated_between_contexts():
         bundle_library("some-extra-lib")
         assert "some-extra-lib" in ctx_a.bundled_libraries
         assert len(ctx_a.bundled_libraries) == initial_len + 1
+        assert ctx_a._explicit_bundled_libraries == ["some-extra-lib"]
 
     with RegistrationContext() as ctx_b:
         assert "some-extra-lib" not in ctx_b.bundled_libraries
+        assert not ctx_b._explicit_bundled_libraries
+
+
+def test_fork_preserves_explicit_bundling_without_sharing_mutations():
+    """Resetting a fork must not remove its parent's explicit registrations."""
+    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+
+    with RegistrationContext() as parent:
+        bundle_library("some-extra-lib@1.0.0")
+        with parent.fork() as child:
+            assert child._explicit_bundled_libraries == ["some-extra-lib"]
+            reset_bundled_libraries()
+            assert not child._explicit_bundled_libraries
+        assert parent._explicit_bundled_libraries == ["some-extra-lib"]
