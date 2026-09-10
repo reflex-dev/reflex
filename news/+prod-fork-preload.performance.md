@@ -1,0 +1,1 @@
+Production backend workers on Linux are now forked from a supervisor that has already imported the app, so framework and app code are shared copy-on-write instead of re-imported per worker. A 4-worker blank app drops from about 720 MB to about 220 MB of proportional set size and starts faster. Set `REFLEX_BACKEND_START_METHOD=spawn` for apps that are not fork-safe.

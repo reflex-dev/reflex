@@ -496,6 +496,16 @@ def _get_telemetry_executor() -> ThreadPoolExecutor:
     return _executor
 
 
+def _reset_executor_after_fork() -> None:
+    """Drop the inherited executor; its worker thread does not exist in the child."""
+    global _executor
+    _executor = None
+
+
+if hasattr(os, "register_at_fork"):
+    os.register_at_fork(after_in_child=_reset_executor_after_fork)
+
+
 def _current_registration_context() -> RegistrationContext | None:
     """Return the caller's RegistrationContext, or None if none is attached.
 

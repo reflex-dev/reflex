@@ -801,3 +801,14 @@ def test_flush_returns_false_when_worker_does_not_drain_in_time():
     finally:
         release.set()
         blocker.result(timeout=5)
+
+
+def test_executor_is_recreated_after_fork():
+    """A forked child drops the inherited pool, whose thread it does not own."""
+    inherited = telemetry._get_telemetry_executor()
+
+    telemetry._reset_executor_after_fork()
+
+    fresh = telemetry._get_telemetry_executor()
+    assert fresh is not inherited
+    assert fresh.submit(lambda: 1).result(timeout=5) == 1

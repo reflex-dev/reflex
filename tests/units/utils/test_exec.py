@@ -1,5 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
+import gc
+import multiprocessing
 import os
 from pathlib import Path
 
@@ -8,6 +10,7 @@ from pytest_mock import MockerFixture
 from reflex_base.environment import environment
 
 from reflex.utils import exec as exec_utils
+from reflex.utils import prerequisites
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
@@ -116,3 +119,97 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
 
     assert exec_utils.arbitrate_ssr(True) is False
+
+
+def _fake_granian_prod(mocker: MockerFixture, calls: list[str]):
+    """Patch granian and the prod launcher's collaborators, recording call order."""
+    granian_server = pytest.importorskip("granian.server")
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def serve(self):
+            calls.append("serve")
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+    mocker.patch.object(
+        prerequisites, "get_app", side_effect=lambda: calls.append("preload")
+    )
+    mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
+
+
+def test_run_granian_backend_prod_preloads_app_before_forking(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """With fork, the app is imported and the heap frozen before workers start."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == ["start:fork", "preload", "freeze", "serve"]
+
+
+def test_run_granian_backend_prod_spawn_skips_preload(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """Spawned workers re-import the app, so the supervisor does not load it."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "spawn")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == ["start:spawn", "serve"]
+
+
+def test_run_granian_backend_prod_custom_target_only_freezes(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """A non-reflex target lives in an already-imported module."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, "fork")
+    calls: list[str] = []
+    _fake_granian_prod(mocker, calls)
+
+    exec_utils.run_granian_backend_prod(
+        host="0.0.0.0",
+        port=8000,
+        loglevel=exec_utils.LogLevel.INFO,
+        app_target="reflex.utils.exec:_frontend_prod_app",
+    )
+
+    assert calls == ["start:fork", "freeze", "serve"]
+
+
+@pytest.mark.parametrize(
+    ("default_method", "expected"),
+    [("fork", "fork"), ("forkserver", "fork"), ("spawn", None)],
+)
+def test_backend_start_method_follows_platform_default(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    default_method: str,
+    expected: str | None,
+):
+    """Fork is forced only where the interpreter already defaults to forking."""
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
+    mocker.patch.object(
+        multiprocessing, "get_start_method", return_value=default_method
+    )
+
+    assert exec_utils._backend_start_method() == expected
