@@ -9,7 +9,7 @@ import threading
 import urllib.parse
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from importlib.util import find_spec
+from importlib.machinery import PathFinder
 from pathlib import Path, PureWindowsPath
 from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
@@ -177,6 +177,7 @@ class BaseConfig:
         react_strict_mode: Whether to use React strict mode.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
+        frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Defaults to False for compatibility with scripts that read window.__reflex directly.
         state_manager_mode: Indicate which type of state manager to use.
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
@@ -242,6 +243,8 @@ class BaseConfig:
     ] = dataclasses.field(default_factory=lambda: ["gzip"])
 
     frontend_packages: list[str] = dataclasses.field(default_factory=list)
+
+    frontend_lazy_bundled_libraries: bool = False
 
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
 
@@ -953,18 +956,15 @@ def _get_config(project_root: Path | None = None) -> Config:
             # Never cache rxconfig or its project-local dependencies — each load
             # goes to disk so different RegistrationContexts hold independent
             # Config instances resolved against the current project. Evict
-            # before probing: find_spec answers from sys.modules, so modules
-            # left behind by another project directory would fake the existence
-            # check below.
+            # before importing so an earlier project cannot supply the module.
             sys.modules.pop(constants.Config.MODULE, None)
             for dep in _config_module_deps:
                 sys.modules.pop(dep, None)
             _config_module_deps.clear()
-            # only import the module if it exists. If a module spec exists then
-            # the module exists.
-            if not find_spec(constants.Config.MODULE):
-                # we need this condition to ensure that a ModuleNotFound error is not thrown when
-                # running unit/integration tests or during `reflex init`.
+            # Only the requested project may supply rxconfig; searching all of
+            # sys.path can pick up an unrelated editable app during reflex init.
+            # PathFinder also supports a project-local rxconfig package.
+            if PathFinder.find_spec(constants.Config.MODULE, [cwd]) is None:
                 return Config(app_name="", _skip_plugins_checks=True)
             with _record_imports() as recorder:
                 try:

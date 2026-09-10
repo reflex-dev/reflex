@@ -182,6 +182,53 @@ def docpage_footer(path: rx.Var[str], edit_href: rx.Var[str]) -> rx.Component:
 LLMS_FULL_TXT_PATH = "/llms-full.txt"
 
 
+def breadcrumb_data(path: str, title: str) -> dict:
+    """Build structured breadcrumbs using the visible navigation's route resolver.
+
+    Args:
+        path: The app-relative documentation path.
+        title: The current page's name.
+
+    Returns:
+        A schema.org BreadcrumbList with canonical public URLs.
+    """
+    base = "https://reflex.dev/docs"
+    canonical = base + _normalize_doc_route(path)
+    items = [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Documentation",
+            "item": base + "/",
+        }
+    ]
+    seen = {base + "/", canonical}
+    segments = path.strip("/").split("/")
+    for index, segment in enumerate(segments[:-1], 1):
+        href = _resolve_breadcrumb_href("/" + "/".join(segments[:index]))
+        if href is None or base + href in seen:
+            continue
+        label = to_title_case(to_snake_case(segment), sep=" ")
+        items.append({
+            "@type": "ListItem",
+            "position": len(items) + 1,
+            "name": _BREADCRUMB_LABEL_OVERRIDES.get(label, label),
+            "item": base + href,
+        })
+        seen.add(base + href)
+    items.append({
+        "@type": "ListItem",
+        "position": len(items) + 1,
+        "name": title,
+        "item": canonical,
+    })
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": items,
+    }
+
+
 def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = None):
     from reflex_docs.components.docpage.navbar.buttons.sidebar import (
         docs_sidebar_drawer,
@@ -243,12 +290,15 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
     return rx.box(
         docs_sidebar_drawer(
             nav_sidebar,
-            trigger=rx.box(
-                class_name="absolute inset-0 bg-transparent z-[1] lg:hidden flex",
+            trigger=rx.el.button(
+                type="button",
+                aria_label="Open documentation navigation",
+                class_name="absolute inset-0 bg-transparent z-[1] lg:hidden flex focus-visible:outline-2 focus-visible:outline-primary-9",
             ),
         ),
-        rx.box(
+        rx.el.nav(
             *breadcrumbs,
+            aria_label="Breadcrumb",
             class_name="flex flex-row items-center gap-[5px] lg:gap-4 overflow-hidden",
         ),
         rx.box(
@@ -467,52 +517,11 @@ def docpage(
                 on_mount=rx.call_script(right_sidebar_item_highlight()),
             )
 
-        # Section is the first path segment (these routes are mounted under
-        # /docs at runtime, so the path itself has no "docs" prefix).
-        segments = [c for c in path.split("/") if c]
-        section = segments[0] if len(segments) > 1 else None
-        category = (
-            " ".join(word.capitalize() for word in section.replace("-", " ").split())
-            if section
-            else None
-        )
-        # Drop the section if it just repeats the page title (avoids titles like
-        # "Introduction · Introduction · Reflex Docs").
-        if category and category.lower() == title.lower():
-            category = None
+        from reflex_docs.pages.docs.metadata import docs_metadata
 
-        # Build a descriptive, length-appropriate <title>. Nested docs pages
-        # previously used the bare title (e.g. "Styling"), which is too short
-        # for search engines; suffix the section and site so every doc title is
-        # unique and substantial, dropping the section if it would push the
-        # title past the ~60 char SERP truncation point.
+        seo_title, seo_description = docs_metadata(path, title, description)
         if page_title:
             seo_title = page_title
-        else:
-            with_category = (
-                f"{title} · {category} · Reflex Docs"
-                if category
-                else f"{title} · Reflex Docs"
-            )
-            fallback = f"{title} · Reflex Docs"
-            seo_title = (
-                with_category
-                if len(with_category) <= 60
-                else (fallback if len(fallback) <= 60 else title)
-            )
-
-        # Always provide a non-empty, page-specific meta description. Real
-        # descriptions come from the doc (see make_docpage); otherwise fall back
-        # to a concise, title-derived sentence so the page is never description-less.
-        from reflex_docs.pages.docs.metadata import truncate_meta_description
-
-        seo_description = truncate_meta_description(
-            description
-            or (
-                f"{title} — Reflex docs. Reflex is the open-source Python framework "
-                "for building full-stack web apps and internal tools."
-            )
-        )
 
         return Route(
             path=path,

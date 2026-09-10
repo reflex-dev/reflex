@@ -189,7 +189,7 @@ column_defs = [
 ]
 ```
 
-Enterprise filters may require loading their modules explicitly via the `enterprise_modules` prop — for example `SetFilterModule` for `agSetColumnFilter`, `MultiFilterModule` for `agMultiColumnFilter`, and `FiltersToolPanelModule` for the filter tool panel (shown with `side_bar=True`). See [Functionality you need is not available/working in Reflex](#functionality-you-need-is-not-availableworking-in-reflex) below.
+Enterprise filters may require loading their modules explicitly via the `enterprise_modules` prop — for example `SetFilterModule` for `agSetColumnFilter`, `MultiFilterModule` for `agMultiColumnFilter`, and `FiltersToolPanelModule` for the filter tool panel (shown with `side_bar=True`). See [Functionality you need is not available/working in Reflex](#functionality-you-need-is-not-available/working-in-reflex) below.
 
 ## Row Sorting
 

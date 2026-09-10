@@ -6,6 +6,8 @@ from agent_files import AgentFilesPlugin
 config = rx.Config(
     app_name="reflex_docs",
     frontend_path="/docs",
+    deploy_url="https://reflex.dev",
+    frontend_lazy_bundled_libraries=True,
     frontend_packages=[
         "tailwindcss-animated@2.1.0",
         "tailwindcss-scroll-mask@0.0.5",

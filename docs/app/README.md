@@ -40,3 +40,21 @@ WHITELISTED_PAGES = [
 - Paths are prefix-matched, so `"/components"` will include all pages under that section.
 
 After editing the whitelist, restart the dev server for changes to take effect.
+
+## Production quality checks
+
+Build the complete documentation app before auditing SEO or load performance:
+
+```bash
+uv run reflex export --no-zip
+node --test tests/frontend_quality.test.mjs
+uv run pytest tests
+```
+
+If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable to the Node tests too. The frontend tests use the build's installed React and bundler to check server-rendered code and removal of unused components.
+
+The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Reflex backend serves the frontend. If HTML is hosted separately on a CDN, configure those same redirects at the edge using the `redirects` list in `reflex_docs/reflex_docs.py`. Static redirect pages also contain a canonical link, noindex directive, immediate refresh, and a usable destination link.
+
+Docs pages intentionally omit the marketing site's pixels and session recording scripts. Search, examples, newsletter signup, and status information remain available.
+
+The docs config enables `frontend_lazy_bundled_libraries`. Optional libraries registered for dynamic components load on the first dynamic-component evaluation, while React and the shared runtime stay available immediately. This prevents the full Radix namespace from being imported on every page. The framework default remains `False`; custom scripts that read optional libraries from `window.__reflex` directly should retain that default or await `window.__reflex_load()` first.

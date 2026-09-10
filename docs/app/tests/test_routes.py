@@ -325,3 +325,18 @@ def test_docs_do_not_link_to_retired_demo_apps():
             offenders[virtual] = found
 
     assert offenders == {}, f"Docs link to retired demo apps: {offenders}"
+
+
+def test_docs_titles_and_descriptions_are_unique(routes_fixture):
+    """Search snippets distinguish pages in different product sections."""
+    for attr in ("title", "description"):
+        values = [
+            (route.seo_title or route.title) if attr == "title" else route.description
+            for route in routes_fixture
+        ]
+        duplicates = {
+            value: count
+            for value, count in Counter(values).items()
+            if value and count > 1
+        }
+        assert duplicates == {}, (attr, duplicates)

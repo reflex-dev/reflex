@@ -60,3 +60,27 @@ def test_resolve_breadcrumb_href_returns_none_for_missing_route():
         docpage_module._resolve_breadcrumb_href("/hosting", {"/hosting/deploy/"})
         is None
     )
+
+
+def test_structured_breadcrumbs_use_real_canonical_routes(monkeypatch):
+    """Structured navigation names existing pages and includes the docs root."""
+    docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    monkeypatch.setattr(
+        docpage_module,
+        "_REGISTERED_DOC_ROUTES",
+        {
+            "/enterprise/overview/",
+            "/enterprise/auth/overview/",
+            "/enterprise/auth/testing/",
+        },
+    )
+    data = docpage_module.breadcrumb_data("/enterprise/auth/testing/", "Testing")
+    assert data["@type"] == "BreadcrumbList"
+    items = data["itemListElement"]
+    assert [item["position"] for item in items] == list(range(1, len(items) + 1))
+    assert [item["item"] for item in items] == [
+        "https://reflex.dev/docs/",
+        "https://reflex.dev/docs/enterprise/overview/",
+        "https://reflex.dev/docs/enterprise/auth/overview/",
+        "https://reflex.dev/docs/enterprise/auth/testing/",
+    ]

@@ -19,6 +19,7 @@ from urllib.parse import urlparse
 from reflex_base import constants
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.components.memo import (
+    DEFAULT_MEMO_WRAPPER,
     MemoComponentDefinition,
     MemoFunctionDefinition,
     MemoParamKind,
@@ -463,6 +464,8 @@ def compile_experimental_component_memo(
                 rest=rest_param.placeholder_name if rest_param is not None else None,
             ).to_javascript(),
             "wrapper": str(wrapper) if wrapper is not None else None,
+            "pure_wrapper": wrapper is not None
+            and wrapper.equals(DEFAULT_MEMO_WRAPPER),
             "render": rendered,
             "hooks": hooks,
             "custom_code": custom_code,
@@ -630,22 +633,26 @@ def create_document_root(
             ):
                 existing_meta_types.add("viewport")
 
+    global_styles_href = Var(
+        "reflexGlobalStyles",
+        _var_data=VarData(
+            imports={
+                "$/styles/__reflex_global_styles.css?url": [
+                    ImportVar(tag="reflexGlobalStyles", is_default=True)
+                ]
+            }
+        ),
+    )
     # Always include the framework meta and link tags.
     always_head_components = [
         ReactMeta.create(),
         Link.create(
+            rel="preload", custom_attrs={"as": "style"}, href=global_styles_href
+        ),
+        Link.create(
             rel="stylesheet",
             type="text/css",
-            href=Var(
-                "reflexGlobalStyles",
-                _var_data=VarData(
-                    imports={
-                        "$/styles/__reflex_global_styles.css?url": [
-                            ImportVar(tag="reflexGlobalStyles", is_default=True)
-                        ]
-                    }
-                ),
-            ),
+            href=global_styles_href,
         ),
         Links.create(),
     ]
