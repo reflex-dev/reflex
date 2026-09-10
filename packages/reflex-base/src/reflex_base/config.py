@@ -920,13 +920,12 @@ _config_load: ContextVar[_ConfigLoad | None] = ContextVar("_config_load", defaul
 
 
 def _get_state_flag(name: str) -> bool:
-    """Resolve a boolean State-class creation flag without loading rxconfig.
+    """Resolve a boolean State-class creation flag.
 
-    Uses the Config of the in-progress rxconfig.py import if there is one, else
-    the Config loaded on the active RegistrationContext. Before either exists
-    (e.g. a State defined in rxconfig.py ahead of its Config), falls back to the
-    REFLEX_<NAME> env var, then the default (False). This never calls
-    get_config() or imports rxconfig, so it cannot re-enter config loading.
+    Outside an rxconfig.py import, reads the context's Config, loading it on demand
+    (backend workers define user States before anything calls get_config()). During
+    the import, uses the Config built so far, else the REFLEX_<NAME> env var, then
+    False, so config loading is never re-entered.
 
     Args:
         name: The config field name.
@@ -935,13 +934,10 @@ def _get_state_flag(name: str) -> bool:
         The resolved flag value.
     """
     load = _config_load.get()
-    config = (
-        load.config
-        if load is not None
-        else RegistrationContext.ensure_context()._config
-    )
-    if config is not None:
-        return getattr(config, name)
+    if load is None:
+        return getattr(get_config(), name)
+    if load.config is not None:
+        return getattr(load.config, name)
     env_val = os.environ.get(Config._prefixes[0] + name.upper())
     if env_val and env_val.strip():
         return interpret_env_var_value(env_val, bool, name)

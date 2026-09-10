@@ -4058,6 +4058,33 @@ config = rx.Config(
         assert "on_load_internal" in OnLoadInternalState.event_handlers
 
 
+def test_state_flags_load_config_on_demand(tmp_path):
+    """A State defined before any config load resolves its flags from rxconfig.py.
+
+    Backend workers import the app module in a fresh process, so user States are
+    created before anything calls get_config().
+    """
+    proj_root = tmp_path / "project1"
+    proj_root.mkdir()
+    (proj_root / "rxconfig.py").write_text(
+        dedent(
+            """
+            import reflex as rx
+            config = rx.Config(app_name="project1", state_explicit_event_handlers=True)
+            """
+        )
+    )
+
+    with chdir(proj_root), RegistrationContext():
+
+        class LazyConfigState(State):
+            def helper(self):
+                pass
+
+        assert "helper" not in LazyConfigState.event_handlers
+    del sys.modules[constants.Config.MODULE]
+
+
 def test_reload_config_resets_state_flags(tmp_path, forked_registration_context):
     """Reloading a project does not leak the previous project's State-class flags.
 
