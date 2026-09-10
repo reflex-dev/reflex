@@ -7,6 +7,18 @@ from pathlib import Path
 import pytest
 import reflex as rx
 
+from reflex_docs.pages.docs.metadata import docs_metadata
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [("Cli", "CLI"), ("Api Reference", "API Reference"), ("rx.html", "rx.html")],
+)
+def test_metadata_preserves_acronyms_and_code_identifiers(title, expected):
+    """Normalize standalone acronyms without rewriting component names."""
+    seo_title, _ = docs_metadata("/api-reference/cli/", title, None)
+    assert seo_title.startswith(expected + " · ")
+
 
 @pytest.fixture
 def routes_fixture():

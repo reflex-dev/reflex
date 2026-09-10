@@ -11,20 +11,104 @@ const root = fileURLToPath(new URL("../../../", import.meta.url));
 const web = process.env.REFLEX_WEB_WORKDIR || path.join(root, "docs/app/.web");
 const require = createRequire(path.join(web, "package.json"));
 const resolve = (name) => pathToFileURL(require.resolve(name)).href;
+const moduleUrl = (source) => "data:text/javascript;base64," + Buffer.from(source).toString("base64");
 
 // Use the exact React and production bundler versions installed by Reflex.
 test("Shiki server rendering includes escaped, readable code", async () => {
   const { createElement } = await import(resolve("react"));
   const { renderToStaticMarkup } = await import(resolve("react-dom/server"));
   const filename = path.join(root, "packages/reflex-base/src/reflex_base/.templates/web/components/shiki/code.js");
+  // Effects do not run during SSR; this checks React's escaped fallback only.
   const source = (await readFile(filename, "utf8"))
-    .replaceAll('from "react"', `from "${resolve("react")}"`)
-    .replaceAll('from "shiki"', `from "${resolve("shiki")}"`);
-  const { Code } = await import("data:text/javascript;base64," + Buffer.from(source).toString("base64"));
+    .replaceAll('from "react"', `from "${resolve("react")}"`);
+  const { Code } = await import(moduleUrl(source));
   const html = renderToStaticMarkup(createElement(Code, {code: 'print("<hello>")\n', language: "python", theme: "one-light"}));
   assert.match(html, /<pre/);
   assert.match(html, /&lt;hello&gt;/);
   assert.match(html, /class="line"/);
+});
+
+test("Shiki invalidates every highlight input and ignores replaced work", async (t) => {
+  // Hook doubles expose the actual component's render/effect boundary without a DOM.
+  const hooksUrl = moduleUrl(`
+    export { createElement } from ${JSON.stringify(resolve("react"))};
+    let state = null;
+    export let effect;
+    export const useState = () => [state, value => { state = value; }];
+    export const useRef = () => ({current: {}});
+    export const useEffect = callback => { effect = callback; };
+    export const reset = () => { state = null; };
+  `);
+  const highlighterUrl = moduleUrl(`
+    export let request;
+    export const codeToHtml = () => new Promise((resolve, reject) => { request = {resolve, reject}; });
+  `);
+  const hooks = await import(hooksUrl);
+  const highlighter = await import(highlighterUrl);
+  const filename = path.join(root, "packages/reflex-base/src/reflex_base/.templates/web/components/shiki/code.js");
+  const source = (await readFile(filename, "utf8"))
+    .replaceAll('from "react"', `from "${hooksUrl}"`)
+    .replaceAll('import("shiki")', `import("${highlighterUrl}")`);
+  const { Code } = await import(moduleUrl(source));
+  const { renderToStaticMarkup } = await import(resolve("react-dom/server"));
+  const previousWindow = globalThis.window;
+  const scheduled = [];
+  globalThis.window = {setTimeout: callback => scheduled.push(callback), clearTimeout() {}};
+  const warnings = t.mock.method(console, "warn", () => {});
+  const start = async () => {
+    const finished = scheduled.shift()();
+    await new Promise(setImmediate);
+    return {finished, request: highlighter.request};
+  };
+  const initial = {code: "print(1)", language: "python", theme: "github-light"};
+  try {
+    for (const change of [
+      {code: "print(2)"}, {theme: "github-dark"}, {language: "javascript"},
+      {themes: {light: "github-light", dark: "github-dark"}},
+      {transformers: [{pre() {}}]}, {decorations: [{start: 0, end: 1}]},
+    ]) {
+      const label = Object.keys(change)[0];
+      hooks.reset();
+      Code(initial);
+      const cleanup = hooks.effect();
+      const first = await start();
+      first.request.resolve("<pre>original highlighting</pre>");
+      await first.finished;
+      assert.equal(Code(initial).props.dangerouslySetInnerHTML.__html, "<pre>original highlighting</pre>");
+      cleanup();
+
+      const changed = {...initial, ...change};
+      const fallback = Code(changed);
+      assert.equal(fallback.props.dangerouslySetInnerHTML, undefined, `${label} invalidates cached HTML immediately`);
+      assert.match(renderToStaticMarkup(fallback), /print\([12]\)/);
+      const cleanupChanged = hooks.effect();
+      const replacement = await start();
+      replacement.request.reject(new Error("Highlight failed"));
+      await replacement.finished;
+      assert.equal(Code(changed).props.dangerouslySetInnerHTML, undefined, `${label} failure keeps readable fallback`);
+      cleanupChanged();
+    }
+    assert.equal(warnings.mock.callCount(), 6);
+
+    hooks.reset();
+    Code(initial);
+    const cleanupOld = hooks.effect();
+    const old = await start();
+    cleanupOld();
+    const current = {...initial, theme: "github-dark"};
+    Code(current);
+    const cleanupCurrent = hooks.effect();
+    const latest = await start();
+    latest.request.resolve("<pre>current highlighting</pre>");
+    await latest.finished;
+    old.request.resolve("<pre>obsolete highlighting</pre>");
+    await old.finished;
+    assert.equal(Code(current).props.dangerouslySetInnerHTML.__html, "<pre>current highlighting</pre>");
+    cleanupCurrent();
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
 });
 
 test("bundles discard unused memos and preserve custom wrapper side effects", async () => {
@@ -69,8 +153,13 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
       .replace(/^export /gm, "")
       .replace('import("quality-lazy-fixture")', 'loadFixture()'));
   const stateSource = await readFile(path.join(root, "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"), "utf8");
-  const evaluateSource = stateSource.split("export const evalReactComponent = ")[1].split("\n};")[0] + "\n}";
-  const evaluate = new Function(`return (${evaluateSource});`)();
+  // Parse the complete module so nested statements cannot truncate the export.
+  const { parseAst } = await import(resolve("rolldown/parseAst"));
+  const stateModule = parseAst(stateSource);
+  const evaluateExport = stateModule.body.find(node => node.type === "ExportNamedDeclaration" &&
+    node.declaration?.declarations?.some(declaration => declaration.id.name === "evalReactComponent"));
+  assert(evaluateExport, "state.js exports evalReactComponent");
+  const { evalReactComponent: evaluate } = await import(moduleUrl(stateSource.slice(evaluateExport.start, evaluateExport.end)));
   const previousWindow = globalThis.window;
   const react = {quality: "same React instance"};
   try {

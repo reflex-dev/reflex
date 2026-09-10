@@ -51,7 +51,7 @@ node --test tests/frontend_quality.test.mjs
 uv run pytest tests
 ```
 
-If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable to the Node tests too. The frontend tests use the build's installed React and bundler to check server-rendered code and removal of unused components.
+If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable to both test commands. The Python link validator reads that build's sitemap. The frontend tests use the build's installed React and bundler to check server-rendered code, highlight invalidation, and removal of unused components.
 
 The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Reflex backend serves the frontend. If HTML is hosted separately on a CDN, configure those same redirects at the edge using the `redirects` list in `reflex_docs/reflex_docs.py`. Static redirect pages also contain a canonical link, noindex directive, immediate refresh, and a usable destination link.
 

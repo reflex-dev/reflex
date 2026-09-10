@@ -50,6 +50,7 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
             acronyms.get(word, word.capitalize())
             for word in path.strip("/").split("/")[-1].split("-")
         )
+    title = " ".join(acronyms.get(word.lower(), word) for word in title.split())
     context = [
         parent for parent in reversed(parents) if parent.lower() != title.lower()
     ]

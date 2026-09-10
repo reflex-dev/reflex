@@ -27,7 +27,17 @@ export function Code({
             transformers,
             decorations,
           });
-          if (active) setHighlighted({ code, html });
+          if (active) {
+            setHighlighted({
+              code,
+              language,
+              theme,
+              themes,
+              transformers,
+              decorations,
+              html,
+            });
+          }
         } catch (error) {
           // Unsupported grammars or a failed download must leave code readable.
           console.warn("Unable to highlight code block", error);
@@ -61,7 +71,14 @@ export function Code({
     };
   }, [code, language, theme, themes, transformers, decorations]);
 
-  if (highlighted?.code === code) {
+  if (
+    highlighted?.code === code &&
+    highlighted.language === language &&
+    highlighted.theme === theme &&
+    highlighted.themes === themes &&
+    highlighted.transformers === transformers &&
+    highlighted.decorations === decorations
+  ) {
     return createElement("div", {
       ...divProps,
       ref: container,

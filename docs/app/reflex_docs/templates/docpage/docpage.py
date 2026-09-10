@@ -216,12 +216,13 @@ def breadcrumb_data(path: str, title: str) -> dict:
             "item": base + href,
         })
         seen.add(base + href)
-    items.append({
-        "@type": "ListItem",
-        "position": len(items) + 1,
-        "name": title,
-        "item": canonical,
-    })
+    if canonical != base + "/":
+        items.append({
+            "@type": "ListItem",
+            "position": len(items) + 1,
+            "name": title,
+            "item": canonical,
+        })
     return {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",

@@ -3,6 +3,7 @@
 import reflex as rx
 
 from reflex_docs.pages.docs.source import stacked_description_rows
+from reflex_docs.pages.docs_landing.views.ai_builder import card
 from reflex_docs.pages.docs_landing.views.link_item import link_item
 from reflex_docs.templates.docpage.docpage import breadcrumb
 
@@ -17,6 +18,13 @@ def test_landing_card_link_has_an_accessible_name():
     """Overlay links remain understandable without the surrounding visual card."""
     rendered = str(link_item("BookOpen01Icon", "Learn Reflex", "Start here", "/intro/"))
     assert "aria-label" in rendered and "Learn Reflex" in rendered
+
+
+def test_ai_card_focus_outline_is_inside_the_clipped_card():
+    """The overlay's focus indicator must fit within the rounded clipping box."""
+    rendered = str(card("AI Builder", "Build an app", "Preview", "/ai/"))
+    assert "focus-visible:-outline-offset-4" in rendered
+    assert "focus-visible:outline-offset-4" not in rendered
 
 
 def test_responsive_description_is_rendered_once():

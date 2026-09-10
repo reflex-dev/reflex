@@ -1189,6 +1189,7 @@ def test_component_memo_default_wrapper():
     files, imports = compiler.compile_memo_components((definition,))
     code = "\n".join(c for _, c in files)
     sym = memo_paths.mirrored_symbol("DefaultWrapped", __name__)
+    assert f"export const {sym} = /*#__PURE__*/ (() => {{" in code
     assert f"const {sym} = memo(({{label:labelRxMemo}}) => {{" in code
     assert any(imp.tag == "memo" for imp in imports.get("react", []))
 

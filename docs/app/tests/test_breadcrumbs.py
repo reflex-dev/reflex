@@ -2,6 +2,7 @@
 
 import importlib
 
+import pytest
 import reflex as rx
 
 
@@ -83,4 +84,19 @@ def test_structured_breadcrumbs_use_real_canonical_routes(monkeypatch):
         "https://reflex.dev/docs/enterprise/overview/",
         "https://reflex.dev/docs/enterprise/auth/overview/",
         "https://reflex.dev/docs/enterprise/auth/testing/",
+    ]
+
+
+@pytest.mark.parametrize("path", ["/", ""])
+def test_root_breadcrumb_has_one_location(path):
+    """The docs root must not repeat itself as the current location."""
+    docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    items = docpage_module.breadcrumb_data(path, "Documentation")["itemListElement"]
+    assert items == [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Documentation",
+            "item": "https://reflex.dev/docs/",
+        }
     ]
