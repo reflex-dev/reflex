@@ -57,6 +57,8 @@ config = rx.Config(
 
 This also applies to states from third-party packages, so they must decorate their event handlers for the option to be usable in your app.
 
+The option is applied when a state class is created. `reflex run` forwards it to its backend workers; other entry points that import your state modules before the config is loaded, such as a test suite, can set the `REFLEX_STATE_EXPLICIT_EVENT_HANDLERS` environment variable instead.
+
 ## What's in this section?
 
 In the event section of the documentation, you will explore the different types of events supported by Reflex, along with the different ways to call them.
