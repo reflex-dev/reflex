@@ -11,7 +11,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Coroutine
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from reflex.istate.manager.redis import enable_keyspace_notifications
 from reflex.state import StateUpdate
@@ -246,7 +246,7 @@ class RedisTokenManager(LocalTokenManager):
             cursor=cursor, match=self._get_redis_key("*")
         ):
             cursor = int(scan_result[0])
-            for key in scan_result[1]:
+            for key in cast("list[bytes]", scan_result[1]):
                 yield key.decode().replace(self._token_socket_record_prefix, "")
             if not cursor:
                 break
@@ -486,7 +486,9 @@ class RedisTokenManager(LocalTokenManager):
         Returns:
             The refreshed socket record, or None if the token has no live socket.
         """
-        record_pkl = await self.redis.get(self._get_redis_key(token))
+        record_pkl = cast(
+            "bytes | None", await self.redis.get(self._get_redis_key(token))
+        )
         if not record_pkl:
             return None
         socket_record = pickle.loads(record_pkl)
