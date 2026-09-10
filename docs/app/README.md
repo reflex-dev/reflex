@@ -53,7 +53,11 @@ uv run pytest tests
 
 If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable to both test commands. The Python link validator reads that build's sitemap. The frontend tests use the build's installed React and bundler to check server-rendered code, highlight invalidation, and removal of unused components.
 
-The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Reflex backend serves the frontend. If HTML is hosted separately on a CDN, configure those same redirects at the edge using the `redirects` list in `reflex_docs/reflex_docs.py`. Static redirect pages also contain a canonical link, noindex directive, immediate refresh, and a usable destination link.
+The `reflex-docs` integration CI jobs run the frontend tests after building the production site, using the installed React and bundler dependencies.
+
+Breadcrumbs and canonical URLs use `deploy_url` and `frontend_path` from the app config. Set `REFLEX_DEPLOY_URL` to your local or staging origin when previewing that environment.
+
+The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Reflex backend serves the frontend. In development or when HTML is hosted separately, requests reach the frontend instead: the redirect pages retain client navigation and prerendered HTML includes an immediate refresh, canonical link, noindex directive, and a usable destination link. That fallback navigates readers but returns HTTP 200. For HTTP 301 semantics on a separate frontend/CDN, configure redirects at that host's edge using the `redirects` list in `reflex_docs/reflex_docs.py`; backend middleware alone cannot redirect requests it never receives.
 
 Docs pages intentionally omit the marketing site's pixels and session recording scripts. Search, examples, newsletter signup, and status information remain available.
 

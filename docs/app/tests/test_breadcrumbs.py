@@ -1,6 +1,7 @@
 """Tests for docs breadcrumbs."""
 
 import importlib
+from types import SimpleNamespace
 
 import pytest
 import reflex as rx
@@ -63,9 +64,28 @@ def test_resolve_breadcrumb_href_returns_none_for_missing_route():
     )
 
 
-def test_structured_breadcrumbs_use_real_canonical_routes(monkeypatch):
+@pytest.mark.parametrize(
+    "deploy_url,frontend_path,base",
+    [
+        ("https://reflex.dev", "/docs", "https://reflex.dev/docs"),
+        ("http://localhost:3000", "/docs", "http://localhost:3000/docs"),
+        (
+            "https://staging.example.com/",
+            "/preview/docs/",
+            "https://staging.example.com/preview/docs",
+        ),
+        ("https://docs.example.com/", "", "https://docs.example.com"),
+    ],
+)
+def test_structured_breadcrumbs_use_real_canonical_routes(
+    monkeypatch, deploy_url, frontend_path, base
+):
     """Structured navigation names existing pages and includes the docs root."""
     docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    monkeypatch.setattr(
+        "reflex_site_shared.utils.url.get_config",
+        lambda: SimpleNamespace(deploy_url=deploy_url, frontend_path=frontend_path),
+    )
     monkeypatch.setattr(
         docpage_module,
         "_REGISTERED_DOC_ROUTES",
@@ -80,10 +100,10 @@ def test_structured_breadcrumbs_use_real_canonical_routes(monkeypatch):
     items = data["itemListElement"]
     assert [item["position"] for item in items] == list(range(1, len(items) + 1))
     assert [item["item"] for item in items] == [
-        "https://reflex.dev/docs/",
-        "https://reflex.dev/docs/enterprise/overview/",
-        "https://reflex.dev/docs/enterprise/auth/overview/",
-        "https://reflex.dev/docs/enterprise/auth/testing/",
+        base + "/",
+        base + "/enterprise/overview/",
+        base + "/enterprise/auth/overview/",
+        base + "/enterprise/auth/testing/",
     ]
 
 

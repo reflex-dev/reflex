@@ -26,6 +26,7 @@ from reflex_site_shared.components.marketing_button import button as marketing_b
 from reflex_site_shared.route import Route, get_path
 from reflex_site_shared.templates.docs import docs_layout_shell
 from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
+from reflex_site_shared.utils.url import public_url
 
 _REGISTERED_DOC_ROUTES: set[str] = set()
 
@@ -192,7 +193,7 @@ def breadcrumb_data(path: str, title: str) -> dict:
     Returns:
         A schema.org BreadcrumbList with canonical public URLs.
     """
-    base = "https://reflex.dev/docs"
+    base = public_url()
     canonical = base + _normalize_doc_route(path)
     items = [
         {
