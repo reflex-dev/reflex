@@ -165,6 +165,7 @@ def get_sidebar_items_backend():
                 state_structure.component_state,
                 state_structure.mixins,
                 state_structure.shared_state,
+                state_structure.scaling_state,
             ],
         ),
         create_item(
