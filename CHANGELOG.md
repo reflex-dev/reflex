@@ -1,3 +1,35 @@
+## v0.9.11a1 (2026-09-10)
+
+### Features
+
+- Propagate a frontend `traceparent` into event spans, count websocket connections and message sizes, and wrap the ASGI app when the `reflex-otel` instrumentor is active. ([#6227](https://github.com/reflex-dev/reflex/issues/6227))
+
+### Bug Fixes
+
+- A backend var whose name is annotated on a state now takes the default declared by a `field()` on a base class instead of silently becoming `None`, and an error raised by that field's `default_factory` surfaces instead of being swallowed. ([#6812](https://github.com/reflex-dev/reflex/issues/6812))
+- State classes no longer resolve descriptors while being constructed, so a hybrid property's frontend var is no longer built against a half-built class. ([#6812](https://github.com/reflex-dev/reflex/issues/6812))
+- Assigning to a state attribute backed by a property (including a `hybrid_property`) now runs its setter instead of raising `SetUndefinedStateVarError`. ([#6812](https://github.com/reflex-dev/reflex/issues/6812))
+- Telemetry events are now collected under the submitting thread's registration context, so the background worker reuses the config the app already loaded instead of re-importing `rxconfig.py` (and mutating `sys.path`) off-thread. ([#6960](https://github.com/reflex-dev/reflex/issues/6960))
+- Make `reflex.testing` importable without test-only dependencies and provide a `testing` extra for `AppHarness`. ([#6974](https://github.com/reflex-dev/reflex/issues/6974))
+- Mutable proxies over dataclass state values now carry the wrapped type's `__dataclass_params__` and `__match_args__` on their class alongside `__dataclass_fields__`, so code that inspects a dataclass through the class — reading the `frozen`/`eq` flags or the positional field names after `dataclasses.is_dataclass` — no longer raises `AttributeError` on a proxied value. ([#7014](https://github.com/reflex-dev/reflex/issues/7014))
+- `AdminDash` now works with starlette-admin 1.0, which renamed the SQLAlchemy `Admin(engine=...)` argument to `session_provider`. Both starlette-admin 0.x and 1.x are supported. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+- Compiling an app from several processes against one working directory — pytest-xdist workers, parallel builds, or containers sharing a bind mount — no longer aborts with `FileNotFoundError` or `FileExistsError` while linking a `rx.asset(shared=True)` file into `assets/external/`. A shared asset whose link already points at a different file is repointed at the asset rather than left alone. ([#7039](https://github.com/reflex-dev/reflex/issues/7039))
+- `reflex run --env prod` and `reflex export` no longer fail with `FileNotFoundError` when `frontend_path` is set and route prerendering is disabled (`REFLEX_SSR=false`), and no longer fail on Windows with `cannot instantiate 'PosixPath'` whenever `frontend_path` is set. ([#7044](https://github.com/reflex-dev/reflex/issues/7044))
+- Generate the frontend context module as `utils/context.jsx` so `reflex run` hot updates keep the state providers mounted; a stale `utils/context.js` is removed on the next compile. ([#7071](https://github.com/reflex-dev/reflex/issues/7071))
+
+### Performance
+
+- Clear auto-memoization naming caches after compiling app. ([#6947](https://github.com/reflex-dev/reflex/issues/6947))
+- New opt-in dev-server knobs: `REFLEX_DEV_PROD_REACT=1` serves React's production build under the Vite dev server (navigation CPU on a large app 54 → 36 ms, prod build 24 ms; edits become a full reload since Fast Refresh needs dev React), and `REFLEX_VITE_WARMUP_ROUTES=1` pre-transforms route modules at startup so the first visit to a page no longer waits on Vite (105–131 → 43–69 ms, or 20–32 ms with both). ([#7021](https://github.com/reflex-dev/reflex/issues/7021))
+- Trimmed the framework overhead around every event handler: the state fast-paths its own bookkeeping attributes, foreground handler tasks start eagerly on Python 3.12+, the computed-var expiry check only looks at interval vars, route matching is memoized per path, and socket.io handlers run inline. About 28% less CPU per trivial event and 20% more events per second per worker under concurrent load. ([#7025](https://github.com/reflex-dev/reflex/issues/7025))
+- Reduce CLI startup time by loading component and cloud command implementations only when invoked, and avoid frontend package reinstalls after backend-only config changes. ([#7050](https://github.com/reflex-dev/reflex/issues/7050))
+- Avoid repeated PyPI requests by caching successful latest-version checks for 24 hours and throttling failed checks for one hour. ([#7050](https://github.com/reflex-dev/reflex/issues/7050))
+
+### Miscellaneous
+
+- Allow `wrapt` 2.2 and 2.3. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
 ## v0.9.10 (2026-09-01)
 
 ### Bug Fixes

@@ -1,3 +1,10 @@
+## v0.9.6a1 (2026-09-10)
+
+### Miscellaneous
+
+- Bump `react-plotly.js` to 4.1.0. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
 ## v0.9.5 (2026-08-28)
 
 ### Features

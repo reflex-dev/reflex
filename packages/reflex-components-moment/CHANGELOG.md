@@ -1,3 +1,14 @@
+## v0.9.4a1 (2026-09-10)
+
+### Bug Fixes
+
+- Migrate `rx.moment` to `react-moment` 2.0.2 and include its duration-format dependency. ([#7003](https://github.com/reflex-dev/reflex/issues/7003))
+
+### Miscellaneous
+
+- Bump `moment-timezone` to 0.6.3. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
 ## v0.9.3 (2026-08-04)
 
 ### Bug Fixes

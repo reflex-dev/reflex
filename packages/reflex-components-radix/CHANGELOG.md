@@ -1,3 +1,10 @@
+## v0.9.9a1 (2026-09-10)
+
+### Miscellaneous
+
+- Bump the Radix primitives: `@radix-ui/react-accordion` 1.2.20, `@radix-ui/react-dialog` 1.1.23, and `@radix-ui/react-form` 0.1.16. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
 ## v0.9.8 (2026-08-28)
 
 ### Bug Fixes
