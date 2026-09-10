@@ -1000,18 +1000,15 @@ def _get_config(project_root: Path | None = None) -> Config:
             with _record_imports() as recorder:
                 try:
                     rxconfig = importlib.import_module(constants.Config.MODULE)
-                except BaseException:
-                    # The recorder only sees modules this attempt imported
-                    # fresh, so nothing here is in use yet. Drop them so the
-                    # retry re-imports them; modules from an earlier successful
-                    # load are untouched since the running app may hold them.
-                    for name in _project_local_modules(recorder.names, project_root):
-                        sys.modules.pop(name, None)
-                        _config_module_deps.discard(name)
-                    raise
-            _config_module_deps.update(
-                _project_local_modules(recorder.names, project_root)
-            )
+                finally:
+                    # Record even on failure so a later load from another root
+                    # evicts what this one imported. Nothing is evicted here:
+                    # Python already drops a module whose execution failed, and
+                    # one that imported completely may be held by another
+                    # thread, so it is kept like on any same-root reload.
+                    _config_module_deps.update(
+                        _project_local_modules(recorder.names, project_root)
+                    )
             return rxconfig.config
         finally:
             for i, entry in enumerate(sys.path):

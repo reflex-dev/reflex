@@ -1319,58 +1319,57 @@ def test_same_root_reload_keeps_dependency_modules(
     assert "reload_dep_module" in reflex_base.config._config_module_deps
 
 
-def test_retry_after_failed_load_evicts_dependency_modules(
+def test_failed_load_records_dependencies_for_other_root_eviction(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
-    """A failed load drops the modules it imported so a retry re-imports them.
+    """A failed load still records its imports so another project evicts them.
 
-    Nothing a failed load imported for the first time is in use anywhere, so
-    the retry must not keep a helper module the developer fixed in the meantime.
+    Nothing is evicted at failure time: a module that imported completely may
+    already be held elsewhere. It is recorded, so a load from a different root
+    drops it like any other dependency of the previous project.
 
     Args:
         tmp_path: The pytest tmp_path fixture.
         monkeypatch: The pytest monkeypatch fixture.
         clean_config_modules: Cleanup for modules left behind by the load.
     """
-    helper = tmp_path / "failing_dep_module.py"
-    helper.write_text("VALUE = 1\n")
-    (tmp_path / "rxconfig.py").write_text(
+    broken = tmp_path / "broken"
+    broken.mkdir()
+    (broken / "failing_dep_module.py").write_text("VALUE = 1\n")
+    (broken / "rxconfig.py").write_text(
         textwrap.dedent(
             """
-            import os
+            import failing_dep_module  # noqa: F401
 
-            import failing_dep_module
-            import reflex as rx
-
-            if os.environ.get("RX_TEST_FAIL_LOAD"):
-                raise RuntimeError("broken rxconfig")
-            config = rx.Config(app_name=f"app{failing_dep_module.VALUE}")
+            raise RuntimeError("broken rxconfig")
             """
         )
     )
-    monkeypatch.chdir(tmp_path)
+    other = tmp_path / "other"
+    other.mkdir()
+    (other / "rxconfig.py").write_text(
+        "import reflex as rx\n\nconfig = rx.Config(app_name='other')\n"
+    )
     monkeypatch.delitem(sys.modules, "failing_dep_module", raising=False)
 
-    monkeypatch.setenv("RX_TEST_FAIL_LOAD", "1")
     with pytest.raises(RuntimeError, match="broken rxconfig"):
-        reflex_base.config._get_config()
+        reflex_base.config._get_config(broken)
+    assert "failing_dep_module" in sys.modules
+    assert "failing_dep_module" in reflex_base.config._config_module_deps
+
+    assert reflex_base.config._get_config(other).app_name == "other"
     assert "failing_dep_module" not in sys.modules
     assert "failing_dep_module" not in reflex_base.config._config_module_deps
-
-    monkeypatch.delenv("RX_TEST_FAIL_LOAD")
-    helper.write_text("VALUE = 22\n")
-    assert reflex_base.config._get_config().app_name == "app22"
-    assert "failing_dep_module" in reflex_base.config._config_module_deps
 
 
 def test_failed_reload_keeps_modules_from_last_good_load(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
 ):
-    """A failed same-root reload drops only what it imported itself.
+    """A failed same-root reload leaves the last good load's modules alone.
 
     The running app may hold classes from the last successful load, so those
-    modules must survive both the failure and the retry after it. A module the
-    failed attempt imported for the first time is not in use and is dropped.
+    modules must survive both the failure and the retry after it. What the
+    failed attempt imported is recorded alongside them.
 
     Args:
         tmp_path: The pytest tmp_path fixture.
@@ -1408,8 +1407,7 @@ def test_failed_reload_keeps_modules_from_last_good_load(
     with pytest.raises(RuntimeError, match="broken rxconfig"):
         reflex_base.config._get_config()
     assert sys.modules["kept_helper"] is kept
-    assert "failed_only_helper" not in sys.modules
-    assert "failed_only_helper" not in reflex_base.config._config_module_deps
+    assert "failed_only_helper" in reflex_base.config._config_module_deps
 
     (tmp_path / "rxconfig.py").write_text(good_rxconfig)
     assert reflex_base.config._get_config().app_name == "good"
