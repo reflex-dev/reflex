@@ -108,9 +108,13 @@ def test_structured_breadcrumbs_use_real_canonical_routes(
 
 
 @pytest.mark.parametrize("path", ["/", ""])
-def test_root_breadcrumb_has_one_location(path):
+def test_root_breadcrumb_has_one_location(path, monkeypatch):
     """The docs root must not repeat itself as the current location."""
     docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    monkeypatch.setattr(
+        "reflex_site_shared.utils.url.get_config",
+        lambda: SimpleNamespace(deploy_url="https://reflex.dev", frontend_path="/docs"),
+    )
     items = docpage_module.breadcrumb_data(path, "Documentation")["itemListElement"]
     assert items == [
         {

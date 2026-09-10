@@ -179,6 +179,8 @@ doc_markdown_sources: dict[str, str] = {}
 
 
 manual_titles = {
+    "docs/ai_builder/apis.md": "APIs",
+    "docs/ai_builder/urls.md": "URLs",
     "docs/database/overview.md": "Database Overview",
     "docs/custom-components/overview.md": "Custom Components Overview",
     "docs/custom-components/command-reference.md": "Custom Component CLI Reference",
