@@ -1367,19 +1367,24 @@ def compile_app(
 
     # Experimental incremental compile cache: in a fresh process, recompile only
     # the pages whose source changed and reuse the rest from the on-disk
-    # manifest. Falls back to a full compile on any unsafe condition.
+    # manifest. Falls back to a full compile on any unsafe condition; pages the
+    # attempt already compiled before falling back are adopted, not redone.
+    evaluated: CompileContext | None = None
     if cache_on:
         from reflex.compiler import disk_cache, page_cache
 
         page_cache.enable_read_tracking()
         outputs: dict[Path, str] = {}
-        if disk_cache.try_incremental_rebuild(
+        rebuilt = disk_cache.try_incremental_rebuild(
             app,
             compiler_plugins=compiler_plugins,
             prerender_routes=prerender_routes,
             use_rich=use_rich,
             outputs=outputs,
-        ):
+        )
+        if isinstance(rebuilt, CompileContext):
+            evaluated = rebuilt
+        elif rebuilt:
             try:
                 save_tasks, modify_tasks = _plugin_output_tasks(
                     config.plugins,
@@ -1419,22 +1424,30 @@ def compile_app(
 
     progress = make_compile_progress(use_rich)
     fixed_steps = 7
-    reset_bundled_libraries()
-    # Drop cached memo wrapper classes so each compile recomputes a memo's
-    # ``library`` from the current module layout (handles a module flipping to
-    # a package across hot reloads).
-    reset_memo_component_classes()
-    for plugin in compiler_plugins:
-        for dependency in plugin.get_frontend_dependencies():
-            bundle_library(dependency)
-    base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
+    all_pages = list(app._unevaluated_pages.values())
+    if evaluated is None:
+        pages_to_compile = all_pages
+        reset_bundled_libraries()
+        # Drop cached memo wrapper classes so each compile recomputes a memo's
+        # ``library`` from the current module layout (handles a module flipping
+        # to a package across hot reloads).
+        reset_memo_component_classes()
+        for plugin in compiler_plugins:
+            for dependency in plugin.get_frontend_dependencies():
+                bundle_library(dependency)
+    else:
+        # The incremental attempt already did the resets above and bundled what
+        # its pages registered; only the pages it never touched remain.
+        pages_to_compile = [
+            page for page in all_pages if page.route not in evaluated.compiled_pages
+        ]
+    base_total = (len(pages_to_compile) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
-    all_pages = list(app._unevaluated_pages.values())
 
     compile_ctx = CompileContext(
         app=app,
-        pages=all_pages,
+        pages=pages_to_compile,
         hooks=CompilerHooks(
             plugins=default_page_plugins(style=app.style, plugins=compiler_plugins)
         ),
@@ -1449,6 +1462,8 @@ def compile_app(
             evaluate_progress=lambda: progress.advance(task),
             render_progress=lambda: progress.advance(task),
         )
+    if evaluated is not None:
+        compile_ctx.absorb(evaluated, all_pages)
 
     _register_compiled_pages(app, compile_ctx.compiled_pages)
     app._stateful_pages.update(dict.fromkeys(compile_ctx.stateful_routes))

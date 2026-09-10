@@ -922,6 +922,26 @@ class CompileContext(BaseContext):
         reset_unique_variable_names()
         return self.compiled_pages
 
+    def absorb(self, other: CompileContext, pages: Sequence[PageDefinition]) -> None:
+        """Adopt the pages another context compiled, so none is compiled twice.
+
+        Merges the other context's per-page results and app-wide accumulations
+        into this one and orders the compiled pages by ``pages``, which becomes
+        this context's page list.
+
+        Args:
+            other: A context that compiled a disjoint set of pages.
+            pages: The complete page list, in compile order.
+        """
+        compiled = {**self.compiled_pages, **other.compiled_pages}
+        self.pages = pages
+        self.compiled_pages = {page.route: compiled[page.route] for page in pages}
+        self.all_imports = merge_imports(self.all_imports, other.all_imports)
+        self.app_wrap_components.update(other.app_wrap_components)
+        self.stateful_routes.update(other.stateful_routes)
+        self.memoize_wrappers.update(other.memoize_wrappers)
+        self.auto_memo_components.update(other.auto_memo_components)
+
 
 __all__ = [
     "BaseContext",

@@ -12,12 +12,14 @@ from typing import Any, cast
 
 import pytest
 from reflex_base.components.component import Component
+from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks
 from reflex_base.utils.imports import ImportVar
 
 import reflex as rx
 from reflex.compiler import disk_cache, page_cache
 from reflex.compiler.plugins import default_page_plugins
+from reflex.state import BaseState
 
 
 @dataclasses.dataclass(slots=True)
@@ -79,7 +81,7 @@ def _compile(pages: Sequence[Any], app: Any = None) -> CompileContext:
     return ctx
 
 
-def _unregister_state(cls: type[rx.State]) -> None:
+def _unregister_state(cls: type[BaseState]) -> None:
     """Drop a state class from the registries, like the daemon registry reset.
 
     Lets a page evaluation re-define the same-named class in this process,
@@ -233,6 +235,7 @@ def _manifest(pages: dict[str, dict], **overrides) -> dict:
     base = {
         "schema": disk_cache._SCHEMA,
         "reflex_version": page_cache._reflex_version(),
+        "mode": environment.REFLEX_ENV_MODE.get().value,
         "files": {},
         "globals": {"reflex": page_cache._reflex_version()},
         "globals_absent": [],
@@ -289,6 +292,27 @@ def test_globals_mismatch_names_the_changed_input(tmp_path):
     )
     assert reason is not None
     assert "0.0.0-old" in reason
+
+
+def test_globals_mismatch_names_a_compile_mode_change(tmp_path, monkeypatch):
+    """A development build's output must never be reused by a production build.
+
+    Rendered files differ by mode (e.g. ``isDevMode`` in the contexts file), so
+    the mode is part of the cache identity.
+    """
+    m = _manifest({"/a": {}})
+    assert (
+        disk_cache.globals_mismatch(
+            m, routes={"/a"}, validator=_validator(m), root=tmp_path
+        )
+        is None
+    )
+    monkeypatch.setenv("REFLEX_ENV_MODE", "prod")
+    reason = disk_cache.globals_mismatch(
+        m, routes={"/a"}, validator=_validator(m), root=tmp_path
+    )
+    assert reason is not None
+    assert "dev -> prod" in reason
 
 
 def test_globals_mismatch_validates_stored_inputs_only(tmp_path):
@@ -386,6 +410,7 @@ def test_write_and_load_manifest(tmp_path, monkeypatch):
     manifest = disk_cache.load_manifest()
     assert manifest is not None
     assert manifest["schema"] == disk_cache._SCHEMA
+    assert manifest["mode"] == "dev"
     assert set(manifest["pages"]) == {"/a", "/b", "/c"}
     for route in ("/a", "/b", "/c"):
         entry = manifest["pages"][route]
@@ -516,6 +541,68 @@ def _stub_externals(app, monkeypatch):
     monkeypatch.setattr(fs, "update_react_router_config", lambda **k: None)
     monkeypatch.setattr(fs, "update_entry_client", lambda *a, **k: None)
     monkeypatch.setattr(fs, "initialize_vite_config", lambda: None)
+
+
+def _page_local_state() -> Component:
+    class CacheLocalState(rx.State):
+        value: int = 0
+
+    return rx.el.div(CacheLocalState.value)
+
+
+def test_post_evaluation_fallback_hands_over_the_evaluated_pages(tmp_path, monkeypatch):
+    """A fallback decided after evaluating miss pages returns those pages.
+
+    Evaluating a page registers the states it defines. Re-evaluating it in the
+    same process (as an in-process full compile would) registers a locally
+    defined state under a collision suffix (``CacheLocalState_0``) while the
+    backend, which evaluates the page once, knows it as ``CacheLocalState``.
+    The full compile therefore has to reuse this evaluation, not repeat it.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    import reflex.istate.dynamic as istate_dynamic
+
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_a, route="/a")
+    app.add_page(_page_local_state, route="/s")
+    _stub_externals(app, monkeypatch)
+    pages = list(app._unevaluated_pages.values())
+    route_s = pages[1].route
+    ctx = _compile(pages, app)
+    defined = ctx.stateful_routes[route_s]
+    assert defined[0].endswith("cache_local_state")
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+
+    def forget_local_states() -> None:
+        """Drop the page-defined states, as the daemon's child reset does."""
+        registry = RegistrationContext.ensure_context()
+        for name in defined:
+            cls = registry.base_states.get(name)
+            if cls is not None:
+                _unregister_state(cls)
+                if getattr(istate_dynamic, cls.__name__, None) is cls:
+                    delattr(istate_dynamic, cls.__name__)
+
+    forget_local_states()
+    try:
+        # The manifest recorded /s as stateless; its evaluation now flips
+        # statefulness, which only a full compile can resolve.
+        manifest_path = web / disk_cache._MANIFEST_FILE
+        manifest = json.loads(manifest_path.read_text())
+        manifest["pages"][route_s]["is_stateful"] = False
+        _stale_dep(manifest, route_s, str(tmp_path / "demo.md"))
+        manifest_path.write_text(json.dumps(manifest))
+
+        result = disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        assert isinstance(result, CompileContext)
+        assert set(result.compiled_pages) == {route_s}
+        assert result.stateful_routes[route_s] == defined
+    finally:
+        forget_local_states()
 
 
 def test_incremental_rebuild_all_hits(tmp_path, monkeypatch):

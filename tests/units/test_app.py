@@ -4612,3 +4612,96 @@ def test_compile_emits_stage_spans(
         parent = spans[name].parent
         assert parent is not None
         assert parent.span_id == root.get_span_context().span_id
+
+
+def test_should_compile_consumes_the_nocompile_marker_under_a_daemon(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A backend worker consumes its ``nocompile`` marker even while a daemon owns .web.
+
+    Otherwise the marker outlives the worker and the daemon's next compile
+    child finds it, consumes it and skips the compile, so the first edit never
+    reaches the browser. Daemon processes never touch the marker at all.
+    """
+    from reflex.utils import compile_daemon
+
+    web_dir = tmp_path / ".web"
+    web_dir.mkdir()
+    monkeypatch.setattr("reflex.utils.prerequisites.get_web_dir", lambda: web_dir)
+    monkeypatch.setattr(
+        compile_daemon, "_daemon_marker_path", lambda: tmp_path / "daemon.pid"
+    )
+    monkeypatch.delenv(environment.REFLEX_SKIP_COMPILE.name, raising=False)
+    monkeypatch.delenv(environment.REFLEX_COMPILE_DAEMON.name, raising=False)
+    compile_daemon.mark_daemon_active()
+    marker = web_dir / constants.NOCOMPILE_FILE
+    marker.touch()
+    app = App()
+
+    # The worker stands down and takes its marker with it.
+    assert app._should_compile() is False
+    assert not marker.exists()
+
+    # The daemon (and its compile children) compile regardless of the marker.
+    marker.touch()
+    monkeypatch.setenv(environment.REFLEX_COMPILE_DAEMON.name, "1")
+    assert app._should_compile() is True
+    assert marker.exists()
+
+
+def test_compile_reuses_pages_the_incremental_attempt_already_evaluated(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A post-evaluation cache fallback must not evaluate a page twice.
+
+    Evaluating a page registers the states it defines; a second evaluation in
+    the same process renames a locally defined state (``LocalState_0``) while
+    the backend, which evaluates the page once, knows it as ``LocalState``. The
+    full compile therefore adopts the pages the incremental attempt compiled.
+    """
+    from reflex.compiler import disk_cache
+    from reflex.compiler.plugins import default_page_plugins
+
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    evaluations: list[str] = []
+
+    def local_state_page():
+        evaluations.append("local")
+
+        class AdoptedLocalState(rx.State):
+            value: int = 0
+
+        return rx.el.div(AdoptedLocalState.value)
+
+    def other_page():
+        evaluations.append("other")
+        return rx.el.div("other")
+
+    app.add_page(local_state_page, route="local")
+    app.add_page(other_page, route="other")
+
+    # What the incremental attempt did before deciding it must fall back.
+    evaluated = CompileContext(
+        app=app,
+        pages=[app._unevaluated_pages["local"]],
+        hooks=CompilerHooks(plugins=default_page_plugins(style=app.style)),
+    )
+    with evaluated:
+        evaluated.compile()
+    registered = evaluated.stateful_routes["local"]
+    mocker.patch.object(disk_cache, "try_incremental_rebuild", return_value=evaluated)
+
+    app._compile()
+
+    assert evaluations == ["local", "other"]
+    assert app._stateful_pages.keys() >= {"local"}
+    assert set(app._pages) >= {"local", "other"}
+    routes_dir = web_dir / constants.Dirs.PAGES / constants.Dirs.ROUTES
+    assert (routes_dir / "[local]._index.jsx").exists()
+    assert (routes_dir / "[other]._index.jsx").exists()
+    assert registered[0].endswith("adopted_local_state")
+    assert all(not name.endswith("_0") for name in registered)

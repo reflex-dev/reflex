@@ -1587,23 +1587,19 @@ class App(MiddlewareMixin, LifespanMixin):
         if environment.REFLEX_SKIP_COMPILE.get():
             return False
 
+        # The nocompile marker is the backend's: its first worker consumes it
+        # and stands down. The compile daemon and its children never read it.
+        if not environment.REFLEX_COMPILE_DAEMON.get():
+            nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
+            if nocompile.exists():
+                nocompile.unlink(missing_ok=True)
+                return False
+
         # A running compile daemon owns .web; backend workers only evaluate
         # pages to register state.
         from reflex.utils import compile_daemon
 
-        if not compile_daemon.owns_compilation():
-            return False
-
-        nocompile = prerequisites.get_web_dir() / constants.NOCOMPILE_FILE
-
-        # Check the nocompile file.
-        if nocompile.exists():
-            # Delete the nocompile file
-            nocompile.unlink(missing_ok=True)
-            return False
-
-        # By default, compile the app.
-        return True
+        return compile_daemon.owns_compilation()
 
     def _setup_sticky_badge(self):
         """Add the sticky badge to the app."""

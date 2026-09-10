@@ -986,11 +986,16 @@ def _serve() -> None:
         return os.getppid() == parent_pid
 
     pending: set[Path] = set()
+    # Changes a failed compile never applied. The manifest only moves on a
+    # successful compile, so they stay in the changed hint until one succeeds;
+    # otherwise the hint's stat-free hit shortcut would reuse their pages.
+    unapplied: set[Path] = set()
     while alive():
         changed = pending or _next_changes(state, alive)
         pending = set()
         if not changed:
             break
+        changed = changed | unapplied
         from reflex.compiler.disk_cache import format_path_list
 
         console.info(
@@ -1014,6 +1019,7 @@ def _serve() -> None:
         state.roots = roots = _reload_roots()
         with _compile_lock(root):
             ok = _compile_once(roots, prerender_routes, changed)
+        unapplied = set() if ok else changed
         if not ok:
             console.error("Compile failed; keeping the last good build.")
         # Refresh what is watched from the new manifest so a newly-referenced

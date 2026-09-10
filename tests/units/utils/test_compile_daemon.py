@@ -687,3 +687,49 @@ def test_watcher_reconciles_edits_after_an_idle_batch(tmp_path, monkeypatch):
 
     monkeypatch.setattr(watchfiles, "watch", watch)
     assert compile_daemon._next_changes(state, lambda: True) == {first, second}
+
+
+def test_serve_keeps_failed_changes_pending_until_a_compile_succeeds(
+    tmp_path, monkeypatch
+):
+    """Paths from a failed compile are re-reported with the next change batch.
+
+    The manifest is only refreshed by a successful compile, so a path that
+    missed a failed build is still a stale dependency: dropping it from the
+    changed hint would let the stat-free hit shortcut reuse its page.
+    """
+    from reflex.utils import prerequisites
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(compile_daemon, "_lock_path", lambda: tmp_path / "lock")
+    monkeypatch.setattr(compile_daemon, "_reload_roots", lambda: [tmp_path])
+    monkeypatch.setattr(compile_daemon, "_prepare_fork_parent", lambda roots: None)
+    monkeypatch.setattr(prerequisites, "get_app", lambda **kwargs: None)
+    monkeypatch.setenv("REFLEX_COMPILE_DAEMON_PRECOMPILED", "1")
+    monkeypatch.setattr(
+        compile_daemon._WatchState,
+        "build",
+        lambda *args: compile_daemon._WatchState([tmp_path], tmp_path),
+    )
+    a, b = tmp_path / "a.py", tmp_path / "b.py"
+    batches = iter([{a, b}, {b}, {a}, None])
+    monkeypatch.setattr(compile_daemon, "_next_changes", lambda *args: next(batches))
+    compiles: list[set[Path]] = []
+
+    def compile_once(roots, prerender_routes, changed=None):
+        """Fail the first compile, succeed afterwards.
+
+        Args:
+            roots: The reload roots.
+            prerender_routes: Whether to prerender routes.
+            changed: The changed-path hint handed to the compile.
+
+        Returns:
+            Whether the simulated compile succeeded.
+        """
+        compiles.append(set(changed or ()))
+        return len(compiles) > 1
+
+    monkeypatch.setattr(compile_daemon, "_compile_once", compile_once)
+    compile_daemon._serve()
+    assert compiles == [{a, b}, {a, b}, {a}]

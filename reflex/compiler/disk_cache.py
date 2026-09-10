@@ -11,6 +11,15 @@ Validation is stat-first (see :class:`page_cache.FileValidator`): an unchanged
 file is recognised from ``(mtime_ns, size)`` without being read, and when the
 watcher reports which paths changed, pages depending on none of them are hits
 without even a stat.
+
+TODO(state-default names): a page's ``state_slice`` is taken from a second
+``compile_state`` call, so its generated component-default names (``ref_*``)
+never match the contexts file on disk. ``_changed_state_config_route`` then
+compares unequal names on content-only edits and rebuilds contexts at random,
+and a rebuild can give a live state the same name a hit page's stored state
+holds (reproduced: two ``rx.auto_scroll`` defaults sharing one ref/id). Fix by
+scoping default-name generation per state, then slicing the same
+``compile_state`` result that is written to disk.
 """
 
 from __future__ import annotations
@@ -24,6 +33,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants
+from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks
 from reflex_base.utils.format import json_dumps
 from reflex_base.utils.imports import ImportVar, merge_imports
@@ -41,7 +51,7 @@ if TYPE_CHECKING:
     from reflex.app import App
 
 #: Bump when the manifest layout changes (old manifests are then ignored).
-_SCHEMA = 11
+_SCHEMA = 12
 #: Manifest filename under the web directory.
 _MANIFEST_FILE = "reflex_compile_cache.json"
 
@@ -471,6 +481,7 @@ def write_manifest(
             "schema": _SCHEMA,
             "plugin_sources": plugin_sources or {},
             "reflex_version": page_cache._reflex_version(),
+            "mode": _compile_mode(),
             "files": files,
             # Per-input labels (not one combined digest) so a later mismatch
             # can name the exact global input that changed.
@@ -486,6 +497,15 @@ def write_manifest(
             f"Compile cache: could not save manifest ({exc!r}). "
             "The next reload may need a full compile."
         )
+
+
+def _compile_mode() -> str:
+    """The compile mode the rendered output is specific to (``dev``/``prod``).
+
+    Returns:
+        The current ``REFLEX_ENV_MODE`` value.
+    """
+    return environment.REFLEX_ENV_MODE.get().value
 
 
 def _imported_state_files(compile_ctx: CompileContext, root: Path | None) -> set[str]:
@@ -551,6 +571,9 @@ def globals_mismatch(
         return (
             f"reflex version changed ({old_version} -> {page_cache._reflex_version()})"
         )
+    old_mode = manifest.get("mode")
+    if old_mode != _compile_mode():
+        return f"compile mode changed ({old_mode} -> {_compile_mode()})"
     old_routes = set(manifest.get("pages", {}))
     if old_routes != routes:
         parts = []
@@ -950,12 +973,17 @@ def try_incremental_rebuild(
     root: Path | None = None,
     use_rich: bool = True,
     outputs: dict[Path, str] | None = None,
-) -> bool:
+) -> bool | CompileContext:
     """Attempt a disk-cache-assisted partial rebuild; report whether it ran.
 
     Returns False (so the caller does a full compile) whenever anything is
-    unsafe to reuse: no/old manifest, a changed global input, a route change, or
-    a miss page that altered its app-wrap set or stateful flag.
+    unsafe to reuse: no/old manifest, a changed global input or a route change.
+    When a miss page turns out to have altered its app-wrap set or stateful
+    flag, the miss pages are already evaluated and rendered. A page is never
+    evaluated twice in one process (its locally defined states would register
+    under collision-suffixed names the backend does not use), so the context
+    holding those compiled pages is returned instead of False, for the full
+    compile to adopt (see ``CompileContext.absorb``).
 
     User-memo output files are reconciled against the manifest's stored memo
     record (see :func:`_current_memo_state`): files whose record differs are
@@ -982,8 +1010,9 @@ def try_incremental_rebuild(
         outputs: Stage generated files here for plugin processing instead of writing.
 
     Returns:
-        True if the partial rebuild completed (the caller should return), else
-        False (the caller should run a full compile).
+        True if the partial rebuild completed (the caller should return), False
+        for a full compile, or the context of the pages already compiled here
+        for a full compile that adopts them.
     """
     manifest = load_manifest()
     if manifest is None:
@@ -1109,17 +1138,17 @@ def try_incremental_rebuild(
                 or page_ctx.output_path is None
             ):
                 _log_fallback(f"page {page.route!r} produced no output")
-                return False
+                return miss_ctx
             entry = manifest["pages"][page.route]
             if (
                 _wrap_key_strs(page_ctx.app_wrap_components.keys())
                 != entry["app_wrap_keys"]
             ):
                 _log_fallback(f"page {page.route!r} changed its app-wrap set")
-                return False
+                return miss_ctx
             if (page.route in miss_ctx.stateful_routes) != entry["is_stateful"]:
                 _log_fallback(f"page {page.route!r} changed statefulness")
-                return False
+                return miss_ctx
 
     from reflex.compiler import compiler
 
@@ -1137,7 +1166,7 @@ def try_incremental_rebuild(
                 output_code = page_ctx.output_code
                 if output_path is None or output_code is None:
                     _log_fallback(f"page {page.route!r} lost its output before write")
-                    return False
+                    return miss_ctx
                 _save_incremental_output(output_path, output_code, outputs)
                 memo_contributions.update(page_ctx.memo_contributions)
                 miss_imports.append(page_ctx.frontend_imports)
