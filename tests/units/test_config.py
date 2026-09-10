@@ -191,6 +191,59 @@ def test_invalid_frontend_compression_formats(base_config_values: dict[str, Any]
 
 
 @pytest.mark.parametrize(
+    "frontend_path",
+    [
+        "/..",
+        "..",
+        "/../other",
+        "/app/../other",
+        "app/..",
+        "/./app",
+        "/..\\escaped",
+        "/app\\..\\other",
+        "/C:/other",
+        "/D:other",
+        "/\\\\",
+        "/app/\\",
+        "\\\\server\\share",
+    ],
+)
+def test_frontend_path_rejects_unsafe_segments(
+    base_config_values: dict[str, Any], frontend_path: str
+):
+    """A segment that is not a plain directory name could escape the build output.
+
+    Args:
+        base_config_values: Minimal valid Config kwargs.
+        frontend_path: A frontend_path with a traversal, backslash, or drive segment.
+    """
+    with pytest.raises(ConfigError, match="is not a plain directory name"):
+        rx.Config(**base_config_values, frontend_path=frontend_path)
+
+
+@pytest.mark.parametrize(
+    ("frontend_path", "expected"),
+    [
+        ("v1.2/..app/.hidden", "/v1.2/..app/.hidden"),
+        ("/app//sub", "/app//sub"),
+        ("/v1:beta", "/v1:beta"),
+    ],
+)
+def test_frontend_path_allows_plain_names(
+    base_config_values: dict[str, Any], frontend_path: str, expected: str
+):
+    """Names merely containing dots or colons, and empty segments, are not traversal.
+
+    Args:
+        base_config_values: Minimal valid Config kwargs.
+        frontend_path: A frontend_path made of plain directory names.
+        expected: The normalized frontend_path.
+    """
+    config = rx.Config(**base_config_values, frontend_path=frontend_path)
+    assert config.frontend_path == expected
+
+
+@pytest.mark.parametrize(
     ("kwargs", "expected"),
     [
         (
@@ -867,11 +920,17 @@ def test_get_config_loads_once_for_shared_context(monkeypatch: pytest.MonkeyPatc
     n_threads = 8
     load_count = 0
     count_lock = threading.Lock()
+    # Only count loads made by this test's worker threads: unrelated background
+    # threads (e.g. the telemetry worker, which has no RegistrationContext of its
+    # own) may call get_config() while the patch below is installed and would
+    # otherwise be counted as a duplicate load of the shared context.
+    under_test = threading.local()
 
     def slow_load() -> rx.Config:
         nonlocal load_count
-        with count_lock:
-            load_count += 1
+        if getattr(under_test, "active", False):
+            with count_lock:
+                load_count += 1
         # Widen the check-to-set window so an unserialized load path races.
         time.sleep(0.05)
         return rx.Config(app_name="shared")
@@ -883,6 +942,7 @@ def test_get_config_loads_once_for_shared_context(monkeypatch: pytest.MonkeyPatc
     results: list[rx.Config | None] = [None] * n_threads
 
     def worker(i: int) -> None:
+        under_test.active = True
         RegistrationContext._context_var.set(ctx)
         barrier.wait()
         results[i] = reflex_base.config.get_config()

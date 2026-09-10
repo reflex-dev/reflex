@@ -9,7 +9,6 @@ done from the Reflex Cloud dashboard (Organization → Cloud Providers).
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 
@@ -18,6 +17,7 @@ import click
 from reflex_cli import constants
 from reflex_cli.utils import console, log
 from reflex_cli.utils.exceptions import NotAuthenticatedError
+from reflex_cli.utils.output import interactive_option, json_option, print_json
 
 logger = logging.getLogger(__name__)
 
@@ -200,20 +200,8 @@ def _connection_row(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def providers_status(
     org_id: str | None,
     token: str | None,
@@ -245,7 +233,7 @@ def providers_status(
             raise click.exceptions.Exit(1) from ex
 
         if as_json:
-            console.print(json.dumps(status))
+            print_json(status)
             return
 
         configured = status.get("configured")
@@ -306,20 +294,8 @@ def providers_status(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def providers_list(
     org_id: str | None,
     token: str | None,
@@ -381,7 +357,7 @@ def providers_list(
             runtime_service_accounts = None
 
         if as_json:
-            console.print(json.dumps(connections))
+            print_json(connections)
             return
         if not connections:
             console.print(

@@ -10,7 +10,7 @@ import urllib.parse
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from importlib.util import find_spec
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
@@ -285,6 +285,22 @@ class BaseConfig:
 _PLUGINS_ENABLED_BY_DEFAULT = [
     SitemapPlugin,
 ]
+
+
+def _is_plain_path_segment(segment: str) -> bool:
+    """Whether a URL path segment maps to a single directory name on every platform.
+
+    Args:
+        segment: One slash-delimited, non-empty segment of a configured path prefix.
+
+    Returns:
+        False for ``.`` and ``..``, and for anything Windows would treat as a
+        separator, drive, or root: backslashes, ``C:``-style prefixes, UNC paths.
+    """
+    if segment == "..":
+        return False
+    windows = PureWindowsPath(segment)
+    return not windows.anchor and windows.parts == (segment,)
 
 
 @dataclasses.dataclass(kw_only=True, init=False)
@@ -583,9 +599,24 @@ class Config(BaseConfig):
         self.frontend_compression_formats = normalized
 
     def _normalize_paths(self):
-        """Ensure frontend and backend paths start with a slash if provided."""
+        """Ensure frontend and backend paths start with a slash if provided.
+
+        Raises:
+            ConfigError: If a frontend_path segment is not a plain directory name.
+        """
         if self.frontend_path and not self.frontend_path.startswith("/"):
             self.frontend_path = f"/{self.frontend_path}"
+        # frontend_path also names the directory below the build output that the
+        # built frontend is relocated into and served from, so every segment must
+        # be a plain directory name on POSIX and Windows alike.
+        for segment in self.frontend_path.split("/"):
+            if segment and not _is_plain_path_segment(segment):
+                msg = (
+                    f"frontend_path {self.frontend_path!r} contains {segment!r}, "
+                    "which is not a plain directory name "
+                    "(no '.', '..', backslashes, or drive letters)."
+                )
+                raise ConfigError(msg)
 
         if self.backend_path and not self.backend_path.startswith("/"):
             self.backend_path = f"/{self.backend_path}"

@@ -41,10 +41,16 @@ class State5(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
     users_for_graph: list[dict] = []
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
+        self.add_user_dialog_open = False
 
         return rx.toast.info(
             f"User {form_data['name']} has been added.",
@@ -109,9 +115,7 @@ def add_customer_button5() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -123,6 +127,8 @@ def add_customer_button5() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State5.add_user_dialog_open,
+        on_open_change=State5.set_add_user_dialog_open,
     )
 
 
@@ -645,7 +651,7 @@ rx.dialog.trigger(
 )
 ```
 
-After the trigger we have the `rx.dialog.content` which contains everything within our dialog, including a title, a description and our form. The first way to close the dialog is without submitting the form and the second way is to close the dialog by submitting the form as shown below. This requires two `rx.dialog.close` components within the dialog.
+After the trigger we have the `rx.dialog.content` which contains everything within our dialog, including a title, a description and our form. The Cancel button uses `rx.dialog.close`. The Submit button stays inside the form, and the `on_submit` handler closes the controlled dialog only after the required fields validate.
 
 ```python
 (
@@ -657,9 +663,31 @@ After the trigger we have the `rx.dialog.content` which contains everything with
         ),
     ),
 )
-rx.dialog.close(
-    rx.button("Submit", type="submit"),
-)
+rx.button("Submit", type="submit")
+```
+
+To close the dialog after a valid submission, add a dialog-specific state class. The browser will not call `add_user` while a required field is empty, so the dialog remains open for native validation in that case.
+
+```python exec
+class DialogState3(rx.State):
+    users: list[User] = [
+        User(name="Danilo Sousa", email="danilo@example.com", gender="Male"),
+        User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
+    ]
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
+
+    def add_user(self, form_data: dict):
+        self.users.append(User(**form_data))
+        self.add_user_dialog_open = False
+
+        return rx.toast.info(
+            f"User has been added: {form_data}.",
+            position="bottom-right",
+        )
 ```
 
 The total code for the dialog with the form in it is below.
@@ -700,21 +728,21 @@ rx.dialog.root(
                             color_scheme="gray",
                         ),
                     ),
-                    rx.dialog.close(
-                        rx.button("Submit", type="submit"),
-                    ),
+                    rx.button("Submit", type="submit"),
                     spacing="3",
                     justify="end",
                 ),
                 direction="column",
                 spacing="4",
             ),
-            on_submit=State3.add_user,
+            on_submit=DialogState3.add_user,
             reset_on_submit=False,
         ),
         # max_width is used to limit the width of the dialog
         max_width="450px",
     ),
+    open=DialogState3.add_user_dialog_open,
+    on_open_change=DialogState3.set_add_user_dialog_open,
 )
 ```
 
@@ -756,20 +784,20 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
                     direction="column",
                     spacing="4",
                 ),
-                on_submit=State3.add_user,
+                on_submit=DialogState3.add_user,
                 reset_on_submit=False,
             ),
             max_width="450px",
         ),
+        open=DialogState3.add_user_dialog_open,
+        on_open_change=DialogState3.set_add_user_dialog_open,
     )
 ```
 
@@ -785,7 +813,7 @@ rx.vstack(
             ),
         ),
         rx.table.body(
-            rx.foreach(State3.users, show_user),
+            rx.foreach(DialogState3.users, show_user),
         ),
         variant="surface",
         size="3",
@@ -812,9 +840,15 @@ class State(rx.State):
         User(name="Danilo Sousa", email="danilo@example.com", gender="Male"),
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
+        self.add_user_dialog_open = False
 
 
 def show_user(user: User):
@@ -861,9 +895,7 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -875,6 +907,8 @@ def add_customer_button() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State.add_user_dialog_open,
+        on_open_change=State.set_add_user_dialog_open,
     )
 
 
@@ -968,10 +1002,16 @@ class State4(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
     users_for_graph: list[dict] = []
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
+        self.add_user_dialog_open = False
 
         return rx.toast.info(
             f"User {form_data['name']} has been added.",
@@ -1025,9 +1065,7 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -1039,6 +1077,8 @@ def add_customer_button() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State4.add_user_dialog_open,
+        on_open_change=State4.set_add_user_dialog_open,
     )
 
 
@@ -1092,10 +1132,16 @@ class State(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
     users_for_graph: list[dict] = []
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
+        self.add_user_dialog_open = False
 
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
@@ -1153,9 +1199,7 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -1167,6 +1211,8 @@ def add_customer_button() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State.add_user_dialog_open,
+        on_open_change=State.set_add_user_dialog_open,
     )
 
 
@@ -1360,10 +1406,16 @@ class State(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
     users_for_graph: list[dict] = []
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
+        self.add_user_dialog_open = False
 
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
@@ -1423,9 +1475,7 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -1437,6 +1487,8 @@ def add_customer_button() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State.add_user_dialog_open,
+        on_open_change=State.set_add_user_dialog_open,
     )
 
 
