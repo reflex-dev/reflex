@@ -1,0 +1,19 @@
+{
+  "url": "http://localhost:3050/",
+  "title": "SmokeApp | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 1500",
+    "expect_text: 'Welcome to Reflex'",
+    "screenshot: 'shots/index.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "Welcome to Reflex!\n\nGet started by editing smoke_app/smoke_app.py\n\nCheck out our docs!"
+}

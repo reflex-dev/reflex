@@ -1,0 +1,23 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+pyi packaging audit — 17 package(s)
+
+  OK reflex                          0.9.11a1     stubs=3 (manifest: 3)
+  OK reflex-base                     0.9.11a1     stubs=0 (manifest: 0)
+  OK reflex-components-code          0.9.5a1      stubs=2 (manifest: 2)
+  OK reflex-components-core          0.9.9        stubs=36 (manifest: 36)
+  OK reflex-components-dataeditor    0.9.2        stubs=1 (manifest: 1)
+  OK reflex-components-lucide        1.0.4        stubs=1 (manifest: 1)
+  OK reflex-components-markdown      0.9.3        stubs=1 (manifest: 1)
+  OK reflex-components-moment        0.9.4a1      stubs=1 (manifest: 1)
+  OK reflex-components-plotly        0.9.6a1      stubs=1 (manifest: 1)
+  OK reflex-components-radix         0.9.9a1      stubs=65 (manifest: 65)
+  OK reflex-components-react-player  0.9.2        stubs=3 (manifest: 3)
+  OK reflex-components-recharts      0.9.3a1      stubs=6 (manifest: 6)
+  OK reflex-components-sonner        0.9.3a1      stubs=1 (manifest: 1)
+  OK reflex-docgen                   0.9.5        stubs=0 (manifest: 0)
+  OK reflex-hosting-cli              0.1.72a1     stubs=0 (manifest: 0)
+  OK reflex-otel                     0.1.0a1      stubs=0 (manifest: 0)
+  OK reflex-release                  0.1.1a1      stubs=0 (manifest: 0)
+
+PASS: 121 stubs ship correctly in both wheel and sdist; no foreign stubs.

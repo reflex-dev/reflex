@@ -115,7 +115,8 @@ findings have surfaced first as an unexplained warning.
 1. Copy reusable artifacts into the repo (plain `cp`/`rsync`, no git):
    `DEST=/home/user/reflex/prerelease-testing/2026-09-10-v0.9.11a1/<cluster>/`
    - the app source dir(s) — EXCLUDING `.web/`, `node_modules/`, `.states/`, `assets/external/`,
-     `*.db`, venvs (`rsync -a --exclude .web --exclude node_modules --exclude .states --exclude 'assets/external' --exclude '*.db' appdir $DEST/`)
+     `*.db`, venvs. `rsync` is NOT installed here — use tar:
+     `mkdir -p $DEST && tar -C $SB/apps/<cluster> --exclude=.web --exclude=node_modules --exclude=.states --exclude='assets/external' --exclude='*.db' --exclude=venv --exclude='*.pyc' -cf - appdir | tar -C $DEST -xf -`
    - your Playwright/repro scripts, logs (trimmed to what matters), screenshots
    - `NOTES.md`: what you tested, exact rerun commands, what you observed (including benign
      quirks), and for every issue: repro steps, evidence file paths, regression status.

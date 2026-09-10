@@ -1,0 +1,25 @@
+[tool.uv.sources]
+hatch-reflex-pyi.workspace = true
+reflex-base.workspace = true
+reflex-components-code.workspace = true
+reflex-components-core.workspace = true
+reflex-components-dataeditor.workspace = true
+reflex-components-gridjs.workspace = true
+reflex-components-lucide.workspace = true
+reflex-components-markdown.workspace = true
+reflex-components-moment.workspace = true
+reflex-components-plotly.workspace = true
+reflex-components-radix.workspace = true
+reflex-components-react-player.workspace = true
+reflex-components-recharts.workspace = true
+reflex-components-sonner.workspace = true
+reflex-docgen.workspace = true
+reflex-release.workspace = true
+reflex-hosting-cli.workspace = true
+reflex-otel.workspace = true
+reflex-components-internal.workspace = true
+reflex-site-shared.workspace = true
+reflex-integrations-docs.workspace = true
+reflex.workspace = true
+
+[tool.uv.workspace]
