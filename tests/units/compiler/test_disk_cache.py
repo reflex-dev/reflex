@@ -1240,6 +1240,26 @@ def test_update_manifest_for_misses_keeps_complete_imports(tmp_path, monkeypatch
     assert disk_cache._deserialize_imports(written["all_imports"]) == complete_imports
 
 
+def test_update_manifest_refreshes_imports_without_misses(tmp_path, monkeypatch):
+    """A memo-only rewrite that adds a package must reach the manifest."""
+    web = _use_tmp_web_dir(tmp_path, monkeypatch)
+    manifest = _manifest({}, all_imports={"old-lib": [{"tag": "Old"}]})
+    memo_imports = {"old-lib": [ImportVar("Old")], "memo-lib": [ImportVar("Memo")]}
+
+    disk_cache._update_manifest_for_misses(
+        manifest,
+        None,
+        [],
+        memo_imports,
+        root=tmp_path,
+        memo_state={},
+        memo_file_entries={},
+    )
+
+    written = json.loads((web / disk_cache._MANIFEST_FILE).read_text())
+    assert disk_cache._deserialize_imports(written["all_imports"]) == memo_imports
+
+
 def _page_loop_a() -> Component:
     return rx.el.ul(rx.foreach(["a", "b"], lambda item: rx.el.li(item)))
 

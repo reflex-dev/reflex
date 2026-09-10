@@ -1307,7 +1307,7 @@ def _update_manifest_for_misses(
         manifest: The loaded manifest (mutated and rewritten).
         miss_ctx: The compile context of the recompiled pages, if any.
         miss_pages: The recompiled page definitions.
-        all_imports: The complete frontend import set after recompiling misses.
+        all_imports: The complete frontend import set after this rebuild.
         root: Project root for dependency discovery. Defaults to cwd.
         contexts_snapshot: The app's ``_contexts_snapshot`` for slicing
             stateful pages, or None when no miss page was stateful.
@@ -1344,7 +1344,10 @@ def _update_manifest_for_misses(
                     ),
                     root=root,
                 )
-            manifest["all_imports"] = _serialize_imports(all_imports)
+            dirty = True
+        # A memo-only rewrite can add packages with no page recompiled.
+        if (imports := _serialize_imports(all_imports)) != manifest["all_imports"]:
+            manifest["all_imports"] = imports
             dirty = True
         if dirty:
             _write(manifest)
