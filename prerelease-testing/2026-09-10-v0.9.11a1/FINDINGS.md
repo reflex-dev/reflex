@@ -60,6 +60,7 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - FINDING-013: AttributeError inside a cached var computation is still masked as `Attribute _cached_get_all_var_data not found` (MEDIUM, pre-existing, previous campaign's FINDING-024)
 - FINDING-014: `frontend_path` validation accepts segments Win32 trims (trailing space or dot) and empty segments (LOW, gap in #7044)
 - FINDING-015: `reflex cloud regions/vmtypes --json` exit 0 with `[]` after a 403 (LOW, pre-existing, agent-usability gap)
+- FINDING-016: `reflex run --json` stdout still carries 9 plain-text granian lines, breaking strict JSON-lines parsing (LOW, pre-existing, previous campaign's FINDING-013)
 
 ## FINDING-001: reflex-otel 0.1.0a1 not published by the release run (PROCESS, resolved)
 
@@ -217,6 +218,18 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - Evidence: `orch_probes/logs/cloud_sweep_0911.json`, `orch_probes/NOTES.md`.
 
 (Findings 003–005 carry full detail in their clusters' NOTES.md; remaining clusters are appended as they finish.)
+
+## FINDING-016: `reflex run --json` stdout is not strict JSON-lines (LOW, pre-existing)
+
+- Cluster: `orch_probes` | Regression vs 0.9.10.post2: no (9 non-JSON lines on both) | Previous
+  campaign's FINDING-013, still open.
+- Repro: `reflex run --backend-only --json --loglevel debug --backend-port 8055 > out 2> err`, wait
+  for `/ping`, stop it, then `json.loads` every non-empty line of `out`: nine granian lifecycle lines
+  (`[INFO] Starting granian ...` through `Granian shutdown completed, see ya!`) are plain text among
+  the JSON records, and stderr is empty.
+- Contrast: `reflex cloud --json` is clean in this same train thanks to #6917's `reserve_stdout`;
+  `reflex run --json` has not had the same treatment.
+- Evidence: `orch_probes/logs/json_backend_0911a1.out`, `orch_probes/logs/json_backend_0910.out`.
 
 ## Cluster summaries (interim)
 

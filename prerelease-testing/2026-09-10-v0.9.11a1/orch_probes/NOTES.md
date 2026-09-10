@@ -107,3 +107,34 @@ uv venv envs/pyrightNNN --python 3.11
 uv pip install --python envs/pyrightNNN/bin/python --prerelease=allow 'reflex==0.9.11a1' 'pyright==1.1.NNN'
 PATH=/opt/node22/bin:$PATH envs/pyrightNNN/bin/pyright --pythonpath envs/pyrightNNN/bin/python --outputjson <thisdir>/hp_types.py
 ```
+
+## `reflex run --json` stdout is still not strict JSON-lines (previous campaign's FINDING-013) — STILL OPEN
+
+```
+cd <app dir>
+REFLEX_TELEMETRY_ENABLED=false <venv>/bin/reflex run --backend-only --json --loglevel debug --backend-port 8055 > out 2> err
+# wait for /ping, then stop; parse every non-empty stdout line with json.loads
+```
+
+| version | stdout lines | non-JSON lines | stderr |
+|---|---|---|---|
+| 0.9.11a1 | 34 | **9** | 0 |
+| 0.9.10.post2 | 41 | **9** | 0 |
+
+The nine are granian's own lifecycle messages, which bypass the reflex logging pipeline:
+
+```
+[INFO] Starting granian (main PID: 5115)
+[INFO] Listening at: http://0.0.0.0:8055
+[INFO] Spawning worker-1 with PID: 5122
+[INFO] Started worker-1
+[INFO] Stopping worker-1
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+```
+
+Unchanged from 0.9.10.post2, so pre-existing, not a regression of this train. Note the contrast
+with `reflex cloud --json`, where #6917's `reserve_stdout` keeps stdout clean: the same treatment
+has not reached `reflex run`. Evidence: `logs/json_backend_0911a1.out`, `logs/json_backend_0910.out`.
