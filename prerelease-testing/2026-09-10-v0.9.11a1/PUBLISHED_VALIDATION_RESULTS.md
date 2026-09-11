@@ -104,7 +104,7 @@ reload with the same session token, click once more.
 | Stack | Observation | Verdict |
 | --- | --- | --- |
 | reflex 0.9.11a1 + rxe 0.9.5 | counter reaches 3; **reload shows 0** with `on_load-ran` and `hydrated`; the next click shows **4** | **still reproduces** — exactly the failure signature the handoff describes |
-| **reflex 0.9.11a2 + rxe 0.9.5** | **the app never starts**: worker-1 exits during startup and the backend never binds, so the page cannot hydrate at all | **still reproduces, and the failure mode is worse — a new regression** |
+| **reflex 0.9.11a2 + rxe 0.9.5** | **the app never starts**: worker-1 exits during startup and the backend never binds, so the page cannot hydrate at all | **still reproduces, with the failure moved to compile time** |
 
 The a2 crash is deterministic (reproduced twice, the second time after `rm -rf .web`):
 
@@ -122,6 +122,17 @@ On a1 the **same** `ValueError` appears twice in the log but the worker survives
 serves (the error is swallowed per-delta — the original 018 mechanism). On a2 it is raised while the
 worker is loading the app and kills it. Frontend still serves (`5512` → 200); backend `9922` → 000.
 
+Maintainer's read, which this review agrees with: **raising at compile time is the better failure
+mode**, so this is a step in the right direction rather than something to revert — the silent packet
+loss is gone and the problem is loud and immediate. What remains is that the app still cannot run,
+and the error's advice cannot be followed from where it is raised (the value is a state field's
+default, and the exception happens while the worker is importing the app module). Root cause and a
+suggested direction are recorded on [#7096](https://github.com/reflex-dev/reflex/issues/7096):
+the `serialize_initial_value` hook #7109 added in `reflex/compiler/utils.py::_compile_initial_state`
+bundles only when `isinstance(value, Component)`, so a callable that reflex-enterprise turns into a
+`LiteralLambdaVar` — whose component is reachable only through the Var's `_get_all_var_data()` —
+is never seen.
+
 Evidence: `out/f018_a1_dev.json`, `out/f018_a2_dev.json`, `logs/minrx_a1_dev.tail.log`,
 `logs/minrx_a2_clean.tail.log`, driver `scripts/drive_018.py`.
 
@@ -134,8 +145,9 @@ serializer-error isolation is claimed.
 
 ## Claimed fixes that fail, with the smallest reproduction
 
-**One.** Nothing in the nine claimed fixes fails. The failure is the adjacent 018 check, and it is a
-**new regression in a2** rather than an unfixed claim.
+**One.** Nothing in the nine claimed fixes fails. The remaining failure is the adjacent 018 check:
+still open, with its failure moved from a silently dropped delta to a compile-time raise that stops
+the app from starting.
 
 Smallest reproduction — three files, published packages only, no checkout:
 
