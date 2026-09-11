@@ -1,0 +1,21 @@
+{
+  "url": "http://localhost:5880/",
+  "title": "Verifyapp | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "click: '#inc'",
+    "expect_text: '1'",
+    "click: '#inc'",
+    "expect_text: '2'",
+    "wait: 2500"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "verify2 otel\n\n2\n\ninc"
+}

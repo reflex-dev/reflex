@@ -1,0 +1,6 @@
+6 spans exported to the collector with OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf:
+   ('myapp', 'HTTP /_event/', 'SPAN_KIND_SERVER')
+   ('myapp', 'reflex.compile', 'SPAN_KIND_INTERNAL')
+   ('myapp', 'reflex___state____state.hydrate', 'SPAN_KIND_CONSUMER')
+   ('myapp', 'reflex___state____state.reflex___state____on_load_internal_state.on_load_internal', 'SPAN_KIND_CONSUMER')
+   ('myapp', 'reflex___state____state.verifyapp___verifyapp____state.inc', 'SPAN_KIND_CONSUMER')

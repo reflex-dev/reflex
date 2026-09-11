@@ -1,0 +1,10 @@
+reflex: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/reflex/__init__.py
+before: enabled= False provider= ProxyTracerProvider
+after : enabled= True provider= TracerProvider
+asgi_middleware: <function ReflexInstrumentor._instrument.<locals>.asgi_middleware at 0x7fcdeadd5a80>
+span recording: True _Span
+WARNING opentelemetry.exporter.otlp.proto.http.trace_exporter: Transient error HTTPConnectionPool(host='localhost', port=10283): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError("HTTPConnection(host='localhost', port=10283): Failed to establish a new connection: [Errno 111] Connection refused")) encountered while exporting span batch, retrying in 0.83s.
+WARNING opentelemetry.exporter.otlp.proto.http.trace_exporter: Transient error HTTPConnectionPool(host='localhost', port=10283): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError("HTTPConnection(host='localhost', port=10283): Failed to establish a new connection: [Errno 111] Connection refused")) encountered while exporting span batch, retrying in 1.65s.
+WARNING opentelemetry.exporter.otlp.proto.http.trace_exporter: Transient error HTTPConnectionPool(host='localhost', port=10283): Max retries exceeded with url: /v1/traces (Caused by NewConnectionError("HTTPConnection(host='localhost', port=10283): Failed to establish a new connection: [Errno 111] Connection refused")) encountered while exporting span batch, retrying in 4.35s.
+ERROR opentelemetry.exporter.otlp.proto.http.trace_exporter: Failed to export span batch due to timeout, max retries or shutdown.
+force_flush: ok

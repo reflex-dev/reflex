@@ -1,0 +1,30 @@
+reflex: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/reflex/__init__.py
+before: enabled= False provider= ProxyTracerProvider
+ERROR reflex_otel.instrumentor: Configuring the OpenTelemetry SDK from the environment failed:
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/opentelemetry/sdk/_configuration/__init__.py", line 130, in _import_config_components
+    next(
+StopIteration
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/reflex_otel/instrumentor.py", line 86, in _configure_sdk_from_environment
+    _OTelSDKConfigurator().configure()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/opentelemetry/sdk/_configuration/__init__.py", line 694, in configure
+    self._configure(**kwargs)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/opentelemetry/sdk/_configuration/__init__.py", line 740, in _configure
+    _initialize_components(**kwargs)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/opentelemetry/sdk/_configuration/__init__.py", line 603, in _initialize_components
+    span_exporters, metric_exporters, log_exporters = _import_exporters(
+                                                      ^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/opentelemetry/sdk/_configuration/__init__.py", line 440, in _import_exporters
+    ) in _import_config_components(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/opentelemetry/sdk/_configuration/__init__.py", line 145, in _import_config_components
+    raise RuntimeError(
+RuntimeError: Requested component 'otlp_proto_grpc' not found in entry point 'opentelemetry_traces_exporter'
+after : enabled= True provider= ProxyTracerProvider
+asgi_middleware: <function ReflexInstrumentor._instrument.<locals>.asgi_middleware at 0x7f56e9b368e0>
+span recording: False NonRecordingSpan
+force_flush: AttributeError 'ProxyTracerProvider' object has no attribute 'force_flush'

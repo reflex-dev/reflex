@@ -418,3 +418,153 @@ Regression: no. Downstream: no (packaging metadata of the new package).
 Every reflex/granian/vite/bun/redis/chromium/collector process started here was killed; verified
 with `ps -eo pid,cmd` at the end of the session (no matches for `otelapp`, `otlp_receiver`,
 `redis-server`, ports 518x/958x/9590/9591/9595).
+
+---
+
+## VERIFICATION: reflex-otel's documented env-var setup exports nothing and prints a traceback (missing OTEL_EXPORTER_OTLP_PROTOCOL)
+
+Independent adversarial verification of ISSUE-1 by a second agent, reproduced from the written
+repro alone in `$SB/apps/verify2_otel_0/` with a freshly written minimal app (NOT the `otelapp`
+multi-mode app) plus a purely in-process repro. Ports 5880 (frontend), 10280 (backend), 10283 /
+10282 (collectors).
+
+**VERDICT: CONFIRMED — genuine defect, severity MEDIUM, not a regression, not downstream-breaking.**
+Both halves of the claim reproduce exactly, and the defect is *worse* than reported: the
+documented example is broken with **either** OTLP exporter package installed (see step 5).
+
+### What was checked, and what it rules out
+
+| refutation attempted | outcome |
+| --- | --- |
+| environment quirk (proxy / NO_PROXY / port / cwd shadowing) | ruled out — the identical command with one extra variable exports fine on the same ports, same `NO_PROXY`, same collector; every process asserted it ran the `$SB/envs/otel` interpreter |
+| API misuse by the claimant's app | ruled out — reproduced with a 20-line app containing only the two lines the docs print, and again with no reflex app at all (in-process script) |
+| documented/expected behaviour | ruled out — `OTEL_EXPORTER_OTLP_PROTOCOL` appears **nowhere** on the release branch: `git grep -l OTEL_EXPORTER_OTLP_PROTOCOL origin/r/pre-2026.09.10-34457666442` → no hits |
+| pre-existing on 0.9.10.post2 | n/a — `reflex_base.otel` does not exist there (`ModuleNotFoundError: No module named 'reflex_base.otel'` in `$SB/envs/base0910`), so this is new-feature-only, not a regression |
+| demo/example-app bug | ruled out — minimal app, no plugins, stock `rx.Config` |
+| flaky | ruled out — deterministic, 2/2 app runs and 3/3 in-process runs |
+
+### Exact commands (all run from `$SB/apps/verify2_otel_0/`, `$SB` = the scratchpad root)
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+D=$SB/apps/verify2_otel_0            # copied to ./verification/verify2_otel_0/
+
+# 1. in-process minimal repro, documented install set ($SB/envs/otel), no protocol variable
+cd $D && $SB/envs/otel/bin/python min_repro.py --noproto
+#  -> enabled= True   provider= ProxyTracerProvider   span recording: False
+#     + the reflex_otel traceback ending in
+#     RuntimeError: Requested component 'otlp_proto_grpc' not found in entry point 'opentelemetry_traces_exporter'
+
+# 2. same, with the one missing variable
+cd $D && $SB/envs/otel/bin/python min_repro.py --proto
+#  -> enabled= True   provider= TracerProvider   span recording: True   (real SDK, exports)
+
+# 3. end-to-end, the documented recipe verbatim (collector on 10283)
+cd $D && setsid $SB/envs/otel/bin/python otlp_receiver.py 10283 $D/recv/runA &
+cd $D/verifyapp && REFLEX_TELEMETRY_ENABLED=false NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 \
+  OTEL_SERVICE_NAME=myapp OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp \
+  OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:10283 \
+  $SB/envs/otel/bin/reflex run --frontend-port 5880 --backend-port 10280
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python \
+  /home/user/reflex/.claude/skills/prerelease-test/scripts/drive_app.py http://localhost:5880/ \
+  --actions '[{"click":"#inc"},{"expect_text":"1"},{"click":"#inc"},{"expect_text":"2"},{"wait":1500}]'
+
+# 4. identical, plus OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf (and BSP/metric delays for speed)
+
+# 5. the other plausible install: the full exporter meta-package instead of the -proto-http one
+uv venv $SB/envs/verify2_otel_0 --python 3.11
+uv pip install --python $SB/envs/verify2_otel_0/bin/python --prerelease=allow \
+  'reflex==0.9.11a1' 'reflex-otel==0.1.0a1' opentelemetry-sdk opentelemetry-exporter-otlp
+cd $D && $SB/envs/verify2_otel_0/bin/python min_repro_grpc.py     # same docs env, grpc available
+```
+
+### Observed
+
+* **Step 3 (documented recipe):** the `reflex run` terminal prints the full SDK traceback **twice**
+  (compile process + backend worker) under the single line `Configuring the OpenTelemetry SDK from
+  the environment failed:`, ending in `RuntimeError: Requested component 'otlp_proto_grpc' not
+  found in entry point 'opentelemetry_traces_exporter'`. The app starts and works normally
+  (Playwright clicked the counter to 2, `RESULT: clean`, zero console errors), but the collector is
+  **never contacted at all** — its access log contains only the "listening" line, no `POST`.
+  Evidence: `verification/verify2_otel_0/runA-noprotocol-server.log`,
+  `runA-receiver-access-EMPTY.log`, `runA-drive.json`, `runA.png`.
+* **Step 4 (one variable added):** zero tracebacks, 11 OTLP POSTs, 6 spans in one trace
+  (`reflex.compile`, `HTTP /_event/`, `...hydrate`, `...on_load_internal`, `...State.inc`) plus
+  metrics. Evidence: `runB-receiver-access.log`, `runB-exported-spans.txt`,
+  `runB-protocol-server-grep.txt`, `runB-drive.json`.
+  → the entire difference is `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`.
+* **Step 1/2 (in-process):** `min_repro-NOPROTOCOL.txt` vs `min_repro-WITH-http-protobuf.txt`.
+  The no-protocol run ends with `enabled= True`, `provider= ProxyTracerProvider`,
+  `span recording: False`, and `force_flush: AttributeError 'ProxyTracerProvider' object has no
+  attribute 'force_flush'` — the trace points are on, the ASGI middleware factory is installed, and
+  every span is a `NonRecordingSpan`. Contrast the with-protocol run against a dead collector: the
+  user gets loud, repeated, actionable `Transient error ... Connection refused` lines. The broken
+  configuration is the *quiet* one.
+* **Step 5 (NEW — beyond the original claim):** with `opentelemetry-exporter-otlp` (grpc + http)
+  installed instead, the docs' example does not fail at startup — it resolves to `otlp_proto_grpc`
+  and then speaks gRPC to the HTTP endpoint the same example gives (`:4318`, here `:10283`):
+  `StatusCode.UNAVAILABLE ... Failed parsing HTTP/2 (Expected SETTINGS frame as the first frame,
+  got frame type 79)`, collector receives nothing. Evidence:
+  `verification/verify2_otel_0/min_repro-full-otlp-exporter-grpc.txt`.
+  **So the documented recipe exports nothing under both plausible installs**; only the missing
+  `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf` (or `OTEL_TRACES_EXPORTER=otlp_proto_http`) fixes it.
+
+### Mechanism (file:line, installed 0.1.0a1 wheel == release branch)
+
+1. `docs/api-reference/observability.md:11` installs `opentelemetry-exporter-otlp-proto-http`
+   only; `:29-30` (and `packages/reflex-otel/README.md:22-23`) then use `OTEL_TRACES_EXPORTER=otlp`
+   with an `http://collector:4318` endpoint and no protocol variable.
+2. `opentelemetry/sdk/_configuration/__init__.py:188-190` — with no
+   `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`/`OTEL_EXPORTER_OTLP_PROTOCOL`, the alias `otlp` resolves to
+   `otlp_proto_grpc` (Python SDK 1.44.0 default; the OTel spec's http/protobuf default was never
+   adopted here). `:145` raises `RuntimeError: Requested component 'otlp_proto_grpc' not found ...`
+   because that entry point is absent (`entry_points('opentelemetry_traces_exporter')` →
+   `['console', 'otlp_proto_http']`).
+3. `reflex_otel/instrumentor.py:85-90` — `_OTelSDKConfigurator().configure()` inside
+   `except Exception: logger.exception(...)`, which dumps the whole traceback and swallows the
+   failure; the function returns `None`, so the caller cannot tell.
+4. `reflex_otel/instrumentor.py:196-199` calls it and ignores the outcome, then `:229-233`
+   `otel.enable(tracer_provider=None, meter_provider=None, asgi_middleware_factory=...)` runs
+   unconditionally → the framework trace points are enabled against the API's
+   `ProxyTracerProvider`, i.e. permanently non-recording, with the ASGI middleware installed.
+   (`ProxyTracerProvider` never re-resolves here because nothing ever calls `set_tracer_provider`.)
+5. For contrast, upstream's own loader logs *and re-raises* on the same failure
+   (`opentelemetry/instrumentation/auto_instrumentation/_load.py:176-178`), so
+   `opentelemetry-instrument` + `opentelemetry-distro` would abort rather than run blind. Swallowing
+   is a deliberate reflex-otel choice; the problem is that it swallows into a state that looks
+   instrumented (`reflex_base.otel.enabled is True`) and reports nothing afterwards.
+   Note also that in this venv (`opentelemetry-instrumentation` without `opentelemetry-distro`)
+   there is no registered `opentelemetry_configurator`, so even the "zero-code"
+   `opentelemetry-instrument reflex run` path goes through reflex-otel's fallback and fails the
+   same way without the protocol variable — verified.
+
+### Judgement
+
+* **confirmed: yes.** A documented, copy-pasteable quickstart for a package whose only purpose is
+  telemetry produces zero telemetry, a scary double traceback, and an app that reports itself as
+  instrumented. Two independent agents, two different apps.
+* **severity: medium** (agreeing with the claimant). No crash, no data loss, the app is unaffected,
+  and the RuntimeError does name the missing component — but the fix is undiscoverable from the
+  docs (the variable is not mentioned anywhere in the repo), and the failure mode is silence.
+  Cheap to fix before the release: add `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf` to both
+  examples (or switch them to `OTEL_TRACES_EXPORTER=otlp_proto_http`
+  `OTEL_METRICS_EXPORTER=otlp_proto_http`), and make `_configure_sdk_from_environment` log one
+  actionable line (naming the variable) instead of `logger.exception`, and/or skip
+  `otel.enable()` when the requested SDK configuration failed.
+* **regression: no.** `reflex_base.otel` does not exist in reflex-base 0.9.10.post2; reflex-otel is
+  new in this train.
+* **downstream: no.** New optional package at 0.1.0a1; nothing existing breaks.
+
+### Artifacts
+
+`verification/verify2_otel_0/` — `min_repro.py`, `min_repro_grpc.py`, the minimal app
+(`verifyapp/`), `runA-noprotocol-server.log`, `runA-receiver-access-EMPTY.log`, `runA-drive.json`,
+`runA.png`, `runB-receiver-access.log`, `runB-exported-spans.txt`, `runB-protocol-server-grep.txt`,
+`runB-drive.json`, `runB.png`, `min_repro-NOPROTOCOL.txt`, `min_repro-WITH-http-protobuf.txt`,
+`min_repro-full-otlp-exporter-grpc.txt`.
+The collector used is the claimant's `scripts/otlp_receiver.py` (copied verbatim, it is a test
+tool, not part of the system under test).
+
+Cleanliness: every process started for this verification (2 `reflex run` servers, 1 warm-up server,
+4 collector instances, Playwright Chromium) was killed; `ps -eo pid,cmd | grep -E
+'verifyapp|otlp_receiver|granian|vite|chrom'` is empty.

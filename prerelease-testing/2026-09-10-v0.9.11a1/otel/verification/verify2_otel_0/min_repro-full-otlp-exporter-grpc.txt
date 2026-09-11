@@ -1,0 +1,6 @@
+entry points: ['console', 'otlp', 'otlp_proto_grpc', 'otlp_proto_http']
+enabled= True provider= TracerProvider
+span recording: True
+WARNING opentelemetry.exporter.otlp.proto.grpc.exporter: Transient error StatusCode.UNAVAILABLE encountered while exporting traces to localhost:10283, retrying in 1.10s. Error details: failed to connect to all addresses; last error: UNAVAILABLE: ipv4:127.0.0.1:10283: Failed parsing HTTP/2 (Expected SETTINGS frame as the first frame, got frame type 79)
+ERROR opentelemetry.exporter.otlp.proto.grpc.exporter: Failed to export traces to localhost:10283, error code: StatusCode.UNAVAILABLE, error details: failed to connect to all addresses; last error: UNAVAILABLE: ipv4:127.0.0.1:10283: Failed parsing HTTP/2 (Expected SETTINGS frame as the first frame, got frame type 79)
+flushed
