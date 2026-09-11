@@ -1,0 +1,71 @@
+{
+ "app": "local_component",
+ "steps": [
+  {
+   "step": "load",
+   "counts": {
+    "svg": 2,
+    "buttons": 2,
+    "rows": 0,
+    "inputs": 0,
+    "recharts": 0,
+    "plotly": 0,
+    "text_len": 66
+   },
+   "head": "Local Component Example\nHello world!\nBuilt with\nScroll to Greeting"
+  },
+  {
+   "step": "greeting_initial",
+   "greeting": "Hello world!",
+   "bg": "rgb(255, 239, 213)"
+  },
+  {
+   "step": "popover_open",
+   "inputs": 1
+  },
+  {
+   "step": "typed",
+   "greeting": "Hello reflex-qa!"
+  },
+  {
+   "step": "submitted",
+   "greeting": "Hello reflex-qa!"
+  },
+  {
+   "step": "right_click_console",
+   "console_logs": [
+    "Yes we pass events through"
+   ]
+  },
+  {
+   "step": "scrolled",
+   "y": 352
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Yes we pass events through"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "console_errors": []
+}

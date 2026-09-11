@@ -1,0 +1,262 @@
+{
+  "page": "plotly",
+  "base": "http://localhost:5220",
+  "elapsed_s": 24.6,
+  "driver_error": null,
+  "results": {
+    "plot_divs": 4,
+    "main_has_id_attr": 0,
+    "plotly_div_ids": [
+      "",
+      "",
+      "",
+      ""
+    ],
+    "modebar": 4,
+    "logo_btns": 0,
+    "probe_initial": [
+      {
+        "layout_title": "{\"text\":\"points=10\"}",
+        "full_title": "points=10",
+        "paper": "white",
+        "w": 748.797,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "\"layout-from-state\"",
+        "full_title": "Click to enter Plot title",
+        "paper": "white",
+        "w": 500,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"select me\"}",
+        "full_title": "select me",
+        "paper": "white",
+        "w": 500,
+        "h": 280,
+        "dragmode": "select",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"static bar\"}",
+        "full_title": "static bar",
+        "paper": "white",
+        "w": 400,
+        "h": 250,
+        "dragmode": "zoom",
+        "id": ""
+      }
+    ],
+    "marker_count": 10,
+    "last_hover": "[{'x': 5, 'y': 8, 'curveNumber': 0, 'pointNumber': 5, 'pointIndex': 5, 'bbox': {'x0': 416.53, 'x1': 422.53, 'y0': 309, 'y1': 315, 'z0': 309, 'z1': 315}}]",
+    "last_click": "[{'x': 5, 'y': 8, 'curveNumber': 0, 'pointNumber': 5, 'pointIndex': 5, 'bbox': {'x0': 416.53, 'x1': 422.53, 'y0': 309, 'y1': 315, 'z0': 309, 'z1': 315}}]",
+    "select_drag_layer_found": true,
+    "select_drag_bbox": {
+      "x": 96,
+      "y": 400,
+      "width": 340,
+      "height": 100
+    },
+    "last_select_after_drag": "[{'x': 1, 'y': 2, 'curveNumber': 0, 'pointNumber': 0, 'pointIndex': 0}, {'x': 2, 'y': 4, 'curveNumber': 0, 'pointNumber': 1, 'pointIndex': 1}, {'x': 3, 'y': 3, 'curveNumber': 0, 'pointNumber': 2, 'pointIndex': 2}, {'x': 4, 'y': 5, 'curveNumber': 0, 'pointNumber': 3, 'pointIndex': 3}, {'x': 5, 'y': 1, 'curveNumber': 0, 'pointNumber': 4, 'pointIndex': 4}]",
+    "deselects": "1",
+    "probe_after_more": [
+      {
+        "layout_title": "{\"text\":\"points=15\"}",
+        "full_title": "points=15",
+        "paper": "white",
+        "w": 748.797,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "\"layout-from-state\"",
+        "full_title": "Click to enter Plot title",
+        "paper": "white",
+        "w": 500,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"select me\"}",
+        "full_title": "select me",
+        "paper": "white",
+        "w": 500,
+        "h": 280,
+        "dragmode": "select",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"static bar\"}",
+        "full_title": "static bar",
+        "paper": "white",
+        "w": 400,
+        "h": 250,
+        "dragmode": "zoom",
+        "id": ""
+      }
+    ],
+    "probe_after_layout": [
+      {
+        "layout_title": "{\"text\":\"points=15\"}",
+        "full_title": "points=15",
+        "paper": "white",
+        "w": 748.797,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "\"layout v15\"",
+        "full_title": "Click to enter Plot title",
+        "paper": "#fee",
+        "w": 500,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"select me\"}",
+        "full_title": "select me",
+        "paper": "white",
+        "w": 500,
+        "h": 280,
+        "dragmode": "select",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"static bar\"}",
+        "full_title": "static bar",
+        "paper": "white",
+        "w": 400,
+        "h": 250,
+        "dragmode": "zoom",
+        "id": ""
+      }
+    ],
+    "probe_after_layout2": [
+      {
+        "layout_title": "{\"text\":\"points=15\"}",
+        "full_title": "points=15",
+        "paper": "white",
+        "w": 748.797,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "\"layout v16\"",
+        "full_title": "Click to enter Plot title",
+        "paper": "#fee",
+        "w": 500,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"select me\"}",
+        "full_title": "select me",
+        "paper": "white",
+        "w": 500,
+        "h": 280,
+        "dragmode": "select",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"static bar\"}",
+        "full_title": "static bar",
+        "paper": "white",
+        "w": 400,
+        "h": 250,
+        "dragmode": "zoom",
+        "id": ""
+      }
+    ],
+    "probe_after_resize": [
+      {
+        "layout_title": "{\"text\":\"points=15\"}",
+        "full_title": "points=15",
+        "paper": "white",
+        "w": 400.797,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "\"layout v16\"",
+        "full_title": "Click to enter Plot title",
+        "paper": "#fee",
+        "w": 500,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"select me\"}",
+        "full_title": "select me",
+        "paper": "white",
+        "w": 500,
+        "h": 280,
+        "dragmode": "select",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"static bar\"}",
+        "full_title": "static bar",
+        "paper": "white",
+        "w": 400,
+        "h": 250,
+        "dragmode": "zoom",
+        "id": ""
+      }
+    ],
+    "probe_after_resize_back": [
+      {
+        "layout_title": "{\"text\":\"points=15\"}",
+        "full_title": "points=15",
+        "paper": "white",
+        "w": 748.797,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "\"layout v16\"",
+        "full_title": "Click to enter Plot title",
+        "paper": "#fee",
+        "w": 500,
+        "h": 300,
+        "dragmode": "zoom",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"select me\"}",
+        "full_title": "select me",
+        "paper": "white",
+        "w": 500,
+        "h": 280,
+        "dragmode": "select",
+        "id": ""
+      },
+      {
+        "layout_title": "{\"text\":\"static bar\"}",
+        "full_title": "static bar",
+        "paper": "white",
+        "w": 400,
+        "h": 250,
+        "dragmode": "zoom",
+        "id": ""
+      }
+    ]
+  },
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+}

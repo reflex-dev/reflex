@@ -1,0 +1,78 @@
+{
+  "page": "code",
+  "base": "http://localhost:5222",
+  "elapsed_s": 11.2,
+  "driver_error": null,
+  "results": {
+    "cb-python": {
+      "text_head": "1def greet(name: str) -> str:\n2    \"\"\"Say hello.\"\"\"\n3    return f\"hello {name}\"\n4",
+      "colored_spans": 20,
+      "pre_count": 1
+    },
+    "cb-state": {
+      "text_head": "print('initial')",
+      "colored_spans": 4,
+      "pre_count": 1
+    },
+    "xcb-python": {
+      "text_head": "def greet(name: str) -> str:\n    \"\"\"Say hello.\"\"\"\n    return f\"hello {name}\"",
+      "colored_spans": 15,
+      "pre_count": 1
+    },
+    "xcb-ts": {
+      "text_head": "type User = { id: number; name: string };\nexport const users: User[] = [{ id: 1, name: \"ada\" }];",
+      "colored_spans": 28,
+      "pre_count": 1
+    },
+    "xcb-sql": {
+      "text_head": "SELECT id, name FROM users WHERE id > 10 ORDER BY name;",
+      "colored_spans": 12,
+      "pre_count": 1
+    },
+    "xcb-rust": {
+      "text_head": "fn main() {\n    let xs: Vec<i32> = (0..10).map(|i| i * i).collect();\n    println!(\"{:?}\", xs);\n}",
+      "colored_spans": 41,
+      "pre_count": 1
+    },
+    "xcb-bash": {
+      "text_head": "echo hello && ls -la | grep py",
+      "colored_spans": 8,
+      "pre_count": 1
+    },
+    "xcb-state": {
+      "text_head": "print('initial')",
+      "colored_spans": 4,
+      "pre_count": 1
+    },
+    "xcb-long": {
+      "text_head": "line_0 = 0 * 2  # a fairly long trailing comment used to force horizontal overflow\nline_1 = 1 * 2  # a fairly long trailing comment used to force horizontal ove",
+      "colored_spans": 2400,
+      "pre_count": 1
+    },
+    "cb-markdown": {
+      "text_head": "markdown heading\n\nSome text with inline code and a fenced block:\n\nimport reflex as rx\n\napp = rx.App()\n\nand another one:\n\nconst x = [1, 2, 3].map((n) => n * 2);",
+      "colored_spans": 25,
+      "pre_count": 2
+    },
+    "shiki_bg": "rgb(36, 41, 46)",
+    "shiki_ts_bg": "rgb(40, 44, 52)",
+    "line_numbers_css": "grid",
+    "copy_buttons": 1,
+    "cb_state_after_update": "# update 1\nprint('updated 1')",
+    "xcb_state_after_update": "# update 1\nprint('updated 1')",
+    "xcb_state_bg_after_theme": "rgb(40, 44, 52)",
+    "markdown_code_langs": [
+      "import reflex as rx\n\napp = rx.App()",
+      "const x = [1, 2, 3].map((n) => n * 2);"
+    ]
+  },
+  "console": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+}

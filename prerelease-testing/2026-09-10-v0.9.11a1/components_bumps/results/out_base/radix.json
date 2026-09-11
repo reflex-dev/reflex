@@ -1,0 +1,110 @@
+{
+  "page": "radix",
+  "base": "http://localhost:5222",
+  "elapsed_s": 21.7,
+  "driver_error": null,
+  "results": {
+    "acc_value_initial": "item-1",
+    "acc_states_initial": [
+      "open",
+      "open",
+      "open",
+      "open",
+      "closed",
+      "closed",
+      "closed",
+      "closed"
+    ],
+    "single_after_open": [
+      "open",
+      "open",
+      "closed",
+      "closed"
+    ],
+    "single_content_visible": 4,
+    "single_after_switch": [
+      "closed",
+      "closed",
+      "open",
+      "open"
+    ],
+    "single_after_collapse": [
+      "closed",
+      "closed",
+      "closed",
+      "closed"
+    ],
+    "acc_value_after_b": "item-2",
+    "acc_states_after_b": [
+      "closed",
+      "closed",
+      "open",
+      "open"
+    ],
+    "acc_value_after_click_a": "item-1",
+    "multi_states": [
+      "open",
+      "open",
+      "open",
+      "open",
+      "closed",
+      "closed"
+    ],
+    "dialog_body": "outer dialog body",
+    "nested_body": "nested body",
+    "dialogs_open": 2,
+    "dialogs_after_nested_close": 1,
+    "outer_still_open": "outer dialog body",
+    "after_escape": 0,
+    "client_dialog_body": "client-state controlled body",
+    "client_dialog_closed": 0,
+    "dialog_form_result": "hello from the dialog",
+    "dialog_form_closed": 0,
+    "email_input_attrs": {
+      "type": "email",
+      "required": true,
+      "name": "email"
+    },
+    "msgs_after_empty_submit": [
+      "form-msg-required:email is required",
+      "form-msg-nomatch:nickname rejected (force_match only)"
+    ],
+    "count_after_empty_submit": "0",
+    "msgs_after_bad_email": [
+      "form-msg-type:must be an email",
+      "form-msg-server:rejected by the server",
+      "form-msg-nomatch:nickname rejected (force_match only)"
+    ],
+    "count_after_bad_email": "0",
+    "count_after_good": "1",
+    "form_data": "{\"email\":\"user@example.com\",\"nickname\":\"\",\"age\":\"42\",\"form_email\":\"user@example.com\",\"form_msg_required\":null,\"form_msg_type\":null,\"form_msg_server\":null,\"form_nick\":null,\"form_msg_nomatch\":null,\"form_age\":\"42\",\"form_msg_range\":null,\"form_submit\":null}",
+    "msgs_after_good": [
+      "form-msg-nomatch:nickname rejected (force_match only)"
+    ]
+  },
+  "console": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "error",
+      "text": "React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element. forceMatch forcematch"
+    },
+    {
+      "type": "error",
+      "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+    },
+    {
+      "type": "error",
+      "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+    },
+    {
+      "type": "error",
+      "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+}

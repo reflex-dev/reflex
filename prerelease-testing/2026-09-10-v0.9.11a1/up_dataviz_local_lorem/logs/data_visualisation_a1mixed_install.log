@@ -1,0 +1,26 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/up2_data_visualisation
+Resolved 40 packages in 255ms
+Prepared 10 packages in 1ms
+Uninstalled 10 packages in 13ms
+Installed 10 packages in 6ms
+ - reflex==0.9.10.post2
+ + reflex==0.9.11a1
+ - reflex-base==0.9.10.post2
+ + reflex-base==0.9.11a1
+ - reflex-components-code==0.9.4
+ + reflex-components-code==0.9.5a1
+ - reflex-components-moment==0.9.3
+ + reflex-components-moment==0.9.4a1
+ - reflex-components-plotly==0.9.5
+ + reflex-components-plotly==0.9.6a1
+ - reflex-components-radix==0.9.8
+ + reflex-components-radix==0.9.9a1
+ - reflex-components-recharts==0.9.2
+ + reflex-components-recharts==0.9.3a1
+ - reflex-components-sonner==0.9.2
+ + reflex-components-sonner==0.9.3a1
+ - reflex-hosting-cli==0.1.71
+ + reflex-hosting-cli==0.1.72a1
+ - wrapt==2.1.2
+ + wrapt==2.3.0

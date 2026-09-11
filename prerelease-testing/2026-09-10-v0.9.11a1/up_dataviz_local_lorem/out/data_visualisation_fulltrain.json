@@ -1,0 +1,108 @@
+{
+ "app": "data_visualisation",
+ "steps": [
+  {
+   "step": "load",
+   "counts": {
+    "svg": 39,
+    "buttons": 75,
+    "rows": 36,
+    "inputs": 0,
+    "recharts": 0,
+    "plotly": 0,
+    "text_len": 3983
+   },
+   "head": "Data App\nAdd New Item\nTG\nTotal: 36 Items\nSort By: Name\nIcon\tstate\tzone\ttotal_cases\tactive\tdischarged\tdeaths\tactive_ratio\tdischarge_ratio\tdischarge_avg\tdeath_ratio\tdeath_avg\tpopulation\tEdit\tDelete\n\nDA\n"
+  },
+  {
+   "step": "table",
+   "counts": {
+    "svg": 39,
+    "buttons": 75,
+    "rows": 36,
+    "inputs": 0,
+    "recharts": 0,
+    "plotly": 0,
+    "text_len": 3983
+   }
+  },
+  {
+   "step": "columns",
+   "columns": [
+    "Icon",
+    "state",
+    "zone",
+    "total_cases",
+    "active",
+    "discharged",
+    "deaths",
+    "active_ratio",
+    "discharge_ratio",
+    "discharge_avg",
+    "death_ratio",
+    "death_avg"
+   ]
+  },
+  {
+   "step": "first_row",
+   "row": "DA\n\tAndaman and Nicobar\tSouth\t7670\t7\t7534\t129\t0.09\t98.23\tBelow Average\t1.68\tAbove Average\t399001\t\n\tDelete"
+  },
+  {
+   "step": "controls",
+   "selects": 1,
+   "buttons": 75
+  },
+  {
+   "step": "sort_opened",
+   "body": "Data App\nAdd New Item\nTG\nTotal: 36 Items\nSort By: Name\nIcon\tstate\tzone\ttotal_cases\tactive\tdischarged\tdeaths\tactive_ratio\tdischarge_ratio\tdischarge_avg\tdeath_rat"
+  },
+  {
+   "step": "final",
+   "counts": {
+    "svg": 39,
+    "buttons": 75,
+    "rows": 36,
+    "inputs": 0,
+    "recharts": 0,
+    "plotly": 0,
+    "text_len": 3983
+   }
+  }
+ ],
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [
+  {
+   "url": "https://fonts.googleapis.com/css?family=Inter",
+   "err": "net::ERR_CONNECTION_RESET"
+  }
+ ],
+ "http_errors": [],
+ "console_errors": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_CONNECTION_RESET"
+  }
+ ]
+}

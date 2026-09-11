@@ -1,0 +1,39 @@
+{
+  "console": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reac",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "warning: Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for c",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reac",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "warning: Deprecation warning: use moment.updateLocale(localeName, config) to change an existing locale. moment.defineLocale(localeName, config) should only be used for c"
+  ],
+  "initial": {
+    "plain": "Thursday 14 March 2024",
+    "fromnow": "7 years ago",
+    "french": "jeudi 14 mars 2024",
+    "stateloc": "jeudi 14 mars 2024"
+  },
+  "after_next_locale": {
+    "plain": "Thursday 14 March 2024",
+    "fromnow": "7 years ago",
+    "french": "jeudi 14 mars 2024",
+    "stateloc": "jueves 14 marzo 2024"
+  },
+  "after_next_locale_2": {
+    "plain": "Thursday 14 March 2024",
+    "fromnow": "7 years ago",
+    "french": "jeudi 14 mars 2024",
+    "stateloc": "Donnerstag 14 M\u00e4rz 2024"
+  },
+  "after_reload": {
+    "plain": "Thursday 14 March 2024",
+    "fromnow": "7 years ago",
+    "french": "jeudi 14 mars 2024",
+    "stateloc": "Donnerstag 14 M\u00e4rz 2024"
+  }
+}

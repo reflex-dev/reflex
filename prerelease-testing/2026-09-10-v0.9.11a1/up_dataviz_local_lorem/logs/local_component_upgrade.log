@@ -1,0 +1,9 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.12.3 environment at: envs/up2_local_component
+Resolved 40 packages in 13ms
+Uninstalled 2 packages in 7ms
+Installed 2 packages in 5ms
+ - reflex==0.9.10.post2
+ + reflex==0.9.11a1
+ - reflex-base==0.9.10.post2
+ + reflex-base==0.9.11a1

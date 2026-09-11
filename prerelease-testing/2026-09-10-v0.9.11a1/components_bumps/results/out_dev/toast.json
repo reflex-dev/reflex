@@ -1,0 +1,186 @@
+{
+  "page": "toast",
+  "base": "http://localhost:5220",
+  "elapsed_s": 18.1,
+  "driver_error": null,
+  "results": {
+    "onload_count": "1",
+    "onload_toast_text": [
+      "on_load toast",
+      "on_load toast"
+    ],
+    "toaster_present": 3,
+    "toaster_position": "bottom/right",
+    "toaster_rich_colors": "None",
+    "toast_info": [
+      {
+        "t": "info",
+        "txt": "info toast"
+      },
+      {
+        "t": "info",
+        "txt": "info toast"
+      }
+    ],
+    "toast_success": [
+      {
+        "t": "success",
+        "txt": "success toast"
+      },
+      {
+        "t": "info",
+        "txt": "info toast"
+      },
+      {
+        "t": "success",
+        "txt": "success toast"
+      },
+      {
+        "t": "info",
+        "txt": "info toast"
+      }
+    ],
+    "toast_error": [
+      {
+        "t": "error",
+        "txt": "error toast\nsomething went wrong"
+      },
+      {
+        "t": "success",
+        "txt": "success toast"
+      },
+      {
+        "t": "info",
+        "txt": "info toast"
+      },
+      {
+        "t": "error",
+        "txt": "error toast\nsomething went wrong"
+      },
+      {
+        "t": "success",
+        "txt": "success toast"
+      },
+      {
+        "t": "info",
+        "txt": "info toast"
+      }
+    ],
+    "toast_warning": [
+      {
+        "t": "warning",
+        "txt": "warning toast"
+      },
+      {
+        "t": "error",
+        "txt": "error toast\nsomething went wrong"
+      },
+      {
+        "t": "success",
+        "txt": "success toast"
+      },
+      {
+        "t": "info",
+        "txt": "info toast"
+      },
+      {
+        "t": "warning",
+        "txt": "warning toast"
+      },
+      {
+        "t": "error",
+        "txt": "error toast\nsomething went wrong"
+      },
+      {
+        "t": "success",
+        "txt": "success toast"
+      },
+      {
+        "t": "info",
+        "txt": "info toast"
+      }
+    ],
+    "visible_after_four": 8,
+    "toast_attrs": [
+      {
+        "type": "warning",
+        "rich": "true",
+        "close": true,
+        "bg": "rgb(255, 252, 240)"
+      },
+      {
+        "type": "error",
+        "rich": "true",
+        "close": false,
+        "bg": "rgb(255, 240, 240)"
+      },
+      {
+        "type": "success",
+        "rich": "true",
+        "close": false,
+        "bg": "rgb(236, 253, 243)"
+      },
+      {
+        "type": "info",
+        "rich": "true",
+        "close": false,
+        "bg": "rgb(240, 248, 255)"
+      },
+      {
+        "type": "warning",
+        "rich": "true",
+        "close": true,
+        "bg": "rgb(255, 252, 240)"
+      },
+      {
+        "type": "error",
+        "rich": "true",
+        "close": true,
+        "bg": "rgb(255, 240, 240)"
+      },
+      {
+        "type": "success",
+        "rich": "true",
+        "close": true,
+        "bg": "rgb(236, 253, 243)"
+      },
+      {
+        "type": "info",
+        "rich": "true",
+        "close": true,
+        "bg": "rgb(240, 248, 255)"
+      }
+    ],
+    "toaster_roots": [
+      "bottom-right",
+      "top-center",
+      "top-right",
+      "top-center"
+    ],
+    "after_dismiss_all": 0,
+    "loading_toast": [
+      "loading",
+      "loading"
+    ],
+    "after_dismiss_by_id": 0,
+    "action_toast": [
+      "toast with action\ndo it",
+      "toast with action\ndo it"
+    ],
+    "action_button_found": true,
+    "action_clicks": "1",
+    "bg_count": "3",
+    "bg_toasts": [
+      "background toast 2",
+      "background toast 1",
+      "background toast 0",
+      "background toast 2",
+      "background toast 1",
+      "background toast 0"
+    ]
+  },
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+}

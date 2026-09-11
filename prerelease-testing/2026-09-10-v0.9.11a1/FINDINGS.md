@@ -605,3 +605,55 @@ Repro: `ent_mcp_oidc/scripts/mcp_auth_probe.py <backend_port>` against `apps/aut
 `logs/a1_mcp_auth.log` (`queue authapp___authapp____public_state.poison_field` shows the delta
 carrying the filtered `"secret_note": "top-secret"`, then `read secret_note` returns the same).
 Identical on 0.9.10.post2 (`logs/0910_mcp_auth.log`) — pre-existing, enterprise-side.
+
+## FINDING-033: one `rx.moment(locale=...)` changes the language of every other `rx.moment` on the page (MEDIUM, **regression**, reflex-components-moment 0.9.4a1)
+
+`reflex-components-moment` 0.9.4a1 bumps `react-moment` 1.2.2 → 2.0.2, and with it a literal
+`locale=` on one component now sets the language for every moment on the page that does not name
+its own locale.
+
+```python
+rx.moment("2024-03-14T15:09:26", format="dddd D MMMM YYYY", id="plain")    # no locale prop
+rx.moment("2020-01-01T00:00:00", from_now=True, id="fromnow")              # no locale prop
+rx.moment("2024-03-14T15:09:26", format="dddd D MMMM YYYY", locale="fr", id="french")
+```
+
+| stack | `plain` | `fromnow` |
+| --- | --- | --- |
+| 0.9.11a1 + components-moment **0.9.4a1** | `jeudi 14 mars 2024` | `il y a 7 ans` |
+| 0.9.10.post2 + components-moment 0.9.3 | `Thursday 14 March 2024` | `7 years ago` |
+
+Bisected to the component bump alone: reflex **0.9.11a1 core with components-moment 0.9.3** does
+not leak (`components_bumps/results/out_mixed/moment.json`). Reproduced in dev *and* prod, and it
+survives a reload.
+
+Mechanism: for a literal `locale=` the wrapper emits a side-effect `import "moment/locale/fr"`,
+and moment's `defineLocale` makes that locale the process-wide default. Both react-moment versions
+fall back to `moment.locale()` for a component with no `locale` prop, but under 1.2.2 the app-wide
+default was still `en` at render time and under 2.0.2 it is `fr`.
+
+It depends on import order, which is why it looks random: with a **Var** locale the wrapper pulls
+in `moment/min/locales`, whose bundle ends by restoring `en`, and the same page does not leak — so
+an app can start leaking by adding or removing an unrelated moment component.
+
+Repro: `components_bumps/leakapp2/` plus `components_bumps/scripts/drive_leak.py`; evidence
+`components_bumps/results/out_dev/moment.json` vs `results/out_base/moment.json`, screenshots
+`components_bumps/shots/`. Suggested direction: stop relying on the global — pass an explicit
+locale per component (or react-moment 2.x's `<MomentProvider locale=...>`), or restore the previous
+default after importing a locale file.
+
+## FINDING-034: seven pre-existing component-library rough edges surfaced by the bump sweep (LOW, all pre-existing)
+
+Found while exercising the six bumped component libraries; every one reproduces identically on
+0.9.10.post2, so none is a regression. Full detail and repros in `components_bumps/NOTES.md`
+(ISSUE-2 … ISSUE-10).
+
+* `rx.form.message(force_match=...)` without `match` is always visible and logs a React DOM error
+  (upstream radix).
+* Three emotion `":first-child" ... server-side rendering` console errors on the radix page in dev.
+* Moment locale imports log a `defineLocale` deprecation warning in the browser *and* the server log.
+* Unsupported `rx.moment` props are silently turned into CSS (by design, but silent).
+* plotly `layout={"title": "..."}` as a plain string renders no title (upstream plotly.js 3.x).
+* recharts axes have no `tick_formatter`; the unsupported prop is swallowed as a style.
+* Adding `rx.toast.provider` to a page renders every toast twice; `ToastAction` is not importable
+  from `rx`; `on_submit` form data includes every child `id=` as a null key.

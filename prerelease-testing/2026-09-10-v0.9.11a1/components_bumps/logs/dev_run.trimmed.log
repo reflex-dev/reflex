@@ -1,0 +1,120 @@
+Debug: installed rehype-katex@7.0.1
+Debug: installed lucide-react@1.26.0
+Debug: installed rehype-raw@7.0.0
+Debug: installed react-router@8.3.1
+Debug: 
+Debug: [23.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/components_bumps/cbapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/components_bumps/cbapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.11s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+/app_components/cbapp/radix_page.jsx
+/app_components/cbapp/radix_page.jsx
+`forceMatch` prop on a DOM element. If you intentionally want it to appear in 
+the DOM as a custom attribute, spell it as lowercase `forcematch` instead. If 
+you accidentally passed it from a parent component, remove it from the DOM 
+element.
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+`forceMatch` prop on a DOM element. If you intentionally want it to appear in 
+the DOM as a custom attribute, spell it as lowercase `forcematch` instead. If 
+you accidentally passed it from a parent component, remove it from the DOM 
+element.
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:5220/
+  ➜  Network: http://192.0.2.2:5220/  eth0
+2:11:44 AM [vite] (client) [optimizer] bundling dependencies...
+2:11:55 AM [vite] (ssr) connected.
+2:12:04 AM [vite] (client) [console.warn] Deprecation warning: use 
+moment.updateLocale(localeName, config) to change an existing locale. 
+moment.defineLocale(localeName, config) should only be used for creating a new 
+locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.
+2:16:23 AM [vite] (client) hmr update /app_components/cbapp/plotly_page.jsx
+2:16:23 AM [vite] (client) hmr update /app_components/cbapp/plotly_page.jsx
+2:16:23 AM [vite] (client) hmr update /app_components/cbapp/recharts_page.jsx
+2:16:23 AM [vite] (client) hmr update /app_components/cbapp/recharts_page.jsx
+2:16:23 AM [vite] (client) hmr update /utils/context.jsx
+2:16:23 AM [vite] (client) hmr update /utils/context.jsx
+2:16:23 AM [vite] (client) hmr update /utils/context.jsx
+2:16:23 AM [vite] (ssr) page reload utils/context.jsx
+2:16:23 AM [vite] (ssr) program reload
+2:16:23 AM [vite] (client) hmr update /app/routes/[plotly]._index.jsx
+2:16:23 AM [vite] (client) hmr update /app/routes/[plotly]._index.jsx
+2:16:23 AM [vite] (client) hmr update /app/routes/[recharts]._index.jsx
+2:16:23 AM [vite] (client) hmr update /app/routes/[recharts]._index.jsx
+2:20:00 AM [vite] (client) [console.error] React does not recognize the 
+`forceMatch` prop on a DOM element. If you intentionally want it to appear in 
+the DOM as a custom attribute, spell it as lowercase `forcematch` instead. If 
+you accidentally passed it from a parent component, remove it from the DOM 
+element.
+2:20:00 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:20:00 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:20:00 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:22:56 AM [vite] (client) hmr update /app_components/cbapp/radix_page.jsx
+2:22:56 AM [vite] (client) hmr update /app_components/cbapp/radix_page.jsx
+2:22:56 AM [vite] (client) hmr update /app/routes/[radix]._index.jsx
+2:22:56 AM [vite] (client) hmr update /app/routes/[radix]._index.jsx
+2:23:18 AM [vite] (client) [console.error] React does not recognize the 
+`forceMatch` prop on a DOM element. If you intentionally want it to appear in 
+the DOM as a custom attribute, spell it as lowercase `forcematch` instead. If 
+you accidentally passed it from a parent component, remove it from the DOM 
+element.
+2:23:18 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:23:18 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:23:18 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:23:48 AM [vite] (client) [console.error] React does not recognize the 
+`forceMatch` prop on a DOM element. If you intentionally want it to appear in 
+the DOM as a custom attribute, spell it as lowercase `forcematch` instead. If 
+you accidentally passed it from a parent component, remove it from the DOM 
+element.
+2:23:48 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:23:48 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:23:48 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

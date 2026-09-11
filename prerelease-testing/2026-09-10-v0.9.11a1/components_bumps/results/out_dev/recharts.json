@@ -1,0 +1,113 @@
+{
+  "page": "recharts",
+  "base": "http://localhost:5220",
+  "elapsed_s": 12.6,
+  "driver_error": null,
+  "results": {
+    "rc-line": {
+      "svgs": 3,
+      "paths": 4,
+      "legend": 2,
+      "ticks": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "0u",
+        "350u",
+        "700u"
+      ]
+    },
+    "rc-bar": {
+      "svgs": 3,
+      "paths": 12,
+      "legend": 2,
+      "ticks": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "0k",
+        "250k",
+        "500k"
+      ]
+    },
+    "rc-area": {
+      "svgs": 1,
+      "paths": 2,
+      "legend": 0,
+      "ticks": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "0",
+        "100",
+        "200"
+      ]
+    },
+    "rc-pie": {
+      "svgs": 4,
+      "paths": 9,
+      "legend": 3,
+      "ticks": []
+    },
+    "rc-composed": {
+      "svgs": 4,
+      "paths": 11,
+      "legend": 3,
+      "ticks": [
+        "p0",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "0",
+        "250",
+        "500"
+      ]
+    },
+    "line_d_before": [
+      "M65,101.571C109.167,106.524,153.333,111.476,197.5,116.429C24",
+      "M65,125.343C109.167,132.846,153.333,140.349,197.5,140.349C24"
+    ],
+    "line_d_after": [
+      "M65,75.373C109.167,105.967,153.333,136.56,197.5,136.56C241.6",
+      "M65,9.16C109.167,53.447,153.333,97.733,197.5,97.733C241.667,"
+    ],
+    "line_changed": true,
+    "ticks_after_add": [
+      "p0",
+      "p1",
+      "p2",
+      "p3",
+      "p4",
+      "p5",
+      "0u",
+      "300u",
+      "600u",
+      "900u"
+    ],
+    "pie_sectors": 3,
+    "pie_labels": [
+      "450",
+      "400",
+      "450"
+    ],
+    "tooltip": [
+      "p0\n\npv : 876\nuv : 494"
+    ]
+  },
+  "console": [
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+}

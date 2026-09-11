@@ -1,0 +1,120 @@
+Debug: installed rehype-katex@7.0.1
+Debug: installed isbot@5.2.1
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-markdown@10.1.0
+Debug: installed shiki@4.3.1
+Debug: installed react-plotly.js@4.0.0
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: installed react-helmet@6.1.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed recharts@3.8.1
+Debug: installed react-error-boundary@6.1.2
+Debug: installed moment@2.30.1
+Debug: installed @radix-ui/react-form@0.1.14
+Debug: installed remark-gfm@4.0.1
+Debug: installed react@19.2.8
+Debug: installed react-moment@1.2.2
+Debug: installed react-dom@19.2.8
+Debug: installed rehype-raw@7.0.0
+Debug: installed mergician@2.0.2
+Debug: installed rehype-unwrap-images@1.0.0
+Debug: installed @radix-ui/react-accordion@1.2.18
+Debug: installed remark-math@6.0.0
+Debug: installed @react-router/node@8.3.0
+Debug: installed plotly.js@3.7.0
+Debug: installed react-router@8.3.0
+Debug: installed sonner@2.0.7
+Debug: 
+Debug: 50 packages installed [3.77s]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/components_bumps/cbapp_base/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/components_bumps/cbapp_base/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 5.71s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/apps/components_bumps/cbapp_base/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/components_bumps/cbapp_base/cbapp', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/components_bumps/cbapp_base/rxconfig.py']
+[INFO] Starting granian (main PID: 28290)
+[INFO] Listening at: http://0.0.0.0:9622
+[INFO] Spawning worker-1 with PID: 28351
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: BE Evaluating stateful page: moment
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:5222/
+App running at: http://localhost:5222/
+Backend running at: http://0.0.0.0:9622
+Debug:   ➜  Network: http://192.0.2.2:5222/  eth0
+moment.updateLocale(localeName, config) to change an existing locale. 
+moment.defineLocale(localeName, config) should only be used for creating a new 
+locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.
+`forceMatch` prop on a DOM element. If you intentionally want it to appear in 
+the DOM as a custom attribute, spell it as lowercase `forcematch` instead. If 
+you accidentally passed it from a parent component, remove it from the DOM 
+element.
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+":first-child" is potentially unsafe when doing server-side rendering. Try 
+changing it to ":first-of-type".
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:5222/
+  ➜  Network: http://192.0.2.2:5222/  eth0
+2:43:41 AM [vite] (client) [optimizer] bundling dependencies...
+2:44:08 AM [vite] (ssr) connected.
+2:44:12 AM [vite] (client) [console.warn] Deprecation warning: use 
+moment.updateLocale(localeName, config) to change an existing locale. 
+moment.defineLocale(localeName, config) should only be used for creating a new 
+locale See http://momentjs.com/guides/#/warnings/define-locale/ for more info.
+2:45:32 AM [vite] (client) [console.error] React does not recognize the 
+`forceMatch` prop on a DOM element. If you intentionally want it to appear in 
+the DOM as a custom attribute, spell it as lowercase `forcematch` instead. If 
+you accidentally passed it from a parent component, remove it from the DOM 
+element.
+2:45:32 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:45:32 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+2:45:32 AM [vite] (client) [console.error] The pseudo class ":first-child" is 
+potentially unsafe when doing server-side rendering. Try changing it to 
+":first-of-type".
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.
