@@ -206,6 +206,13 @@ def test_invalid_frontend_compression_formats(base_config_values: dict[str, Any]
         "/\\\\",
         "/app/\\",
         "\\\\server\\share",
+        "/app.",
+        "/app ",
+        "/ .",
+        "/.. ",
+        "/app./sub",
+        "//srv",
+        "/app//sub",
     ],
 )
 def test_frontend_path_rejects_unsafe_segments(
@@ -225,14 +232,17 @@ def test_frontend_path_rejects_unsafe_segments(
     ("frontend_path", "expected"),
     [
         ("v1.2/..app/.hidden", "/v1.2/..app/.hidden"),
-        ("/app//sub", "/app//sub"),
+        ("", ""),
+        ("/", "/"),
+        ("/app/", "/app/"),
+        ("/my app", "/my app"),
         ("/v1:beta", "/v1:beta"),
     ],
 )
 def test_frontend_path_allows_plain_names(
     base_config_values: dict[str, Any], frontend_path: str, expected: str
 ):
-    """Names merely containing dots or colons, and empty segments, are not traversal.
+    """Plain names and an optional trailing slash remain supported.
 
     Args:
         base_config_values: Minimal valid Config kwargs.
