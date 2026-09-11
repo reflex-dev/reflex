@@ -110,7 +110,10 @@ class Moment(NoSSRComponent, MemoizationLeaf):
 
     tz: Var[str] = field(doc="Display the date in the given timezone.")
 
-    locale: Var[str] = field(doc="The locale to use when rendering.")
+    locale: Var[str] = field(
+        default=Var.create("en"),
+        doc="The locale for this component. Defaults to English independently of other Moment components.",
+    )
 
     on_change: EventHandler[passthrough_event_spec(str)] = field(
         doc="Fires when the component mounts and when the date changes, including when interval is 0. React Strict Mode can invoke the mount event twice in development."
@@ -125,7 +128,9 @@ class Moment(NoSSRComponent, MemoizationLeaf):
         imports = {}
 
         if isinstance(self.locale, LiteralVar):
-            imports[""] = f"moment/locale/{self.locale._var_value}"
+            # English is built into Moment and has no separate locale module.
+            if self.locale._var_value != "en":
+                imports[""] = f"moment/locale/{self.locale._var_value}"
         elif self.locale is not None:
             # If the user is using a variable for the locale, we can't know the
             # value at compile time so import all locales available.
