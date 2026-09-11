@@ -1,5 +1,6 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
+import dataclasses
 import threading
 import traceback
 import typing
@@ -9,10 +10,12 @@ import pytest
 from reflex_base.utils import serializers
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
+    CachedVarOperation,
     EvenMoreBasicBaseState,
     LiteralVar,
     Var,
     _linearize_bases,
+    cached_property_no_lock,
     field,
 )
 from reflex_base.vars.object import ObjectVar
@@ -278,3 +281,23 @@ def test_serializer_attribute_error_is_not_masked() -> None:
     assert isinstance(cause, AttributeError)
     assert "'label'" in str(cause)
     assert traceback.extract_tb(cause.__traceback__)[-1].name == "serialize_point"
+
+
+def test_cached_var_attribute_error_is_chained() -> None:
+    """An AttributeError raised in a cached var computation surfaces as the cause."""
+
+    @dataclasses.dataclass(eq=False, frozen=True, slots=True)
+    class BrokenVar(CachedVarOperation, Var):
+        @cached_property_no_lock
+        def _cached_var_name(self) -> str:
+            return "broken"
+
+        @cached_property_no_lock
+        def _cached_get_all_var_data(self):
+            msg = "the real error message"
+            raise AttributeError(msg)
+
+    with pytest.raises(RuntimeError, match="the real error message") as exc_info:
+        BrokenVar(_js_expr="")._get_all_var_data()
+    assert isinstance(exc_info.value.__cause__, AttributeError)
+    assert str(exc_info.value.__cause__) == "the real error message"
