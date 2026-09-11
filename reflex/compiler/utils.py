@@ -412,6 +412,40 @@ def _app_style() -> ComponentStyle | Style:
     return app.style if app is not None else {}
 
 
+def _splice_transparent_root_props(
+    rest_name: str | None, rendered: dict, imports: ParsedImportDict
+) -> str:
+    """Make a memo wrapper transparent to props its parent injects at runtime.
+
+    The wrapper's rest param collects everything the parent passes but the
+    signature does not name, including ``ref`` under React 19 ref-as-prop. The
+    root renders ``mergeSlotProps(rest, {...own})``, which applies Radix
+    ``Slot`` semantics (own props win, ``on*`` handlers and refs compose,
+    ``className`` concatenates, object-valued props deep-merge), so a Slot
+    parent cloning the wrapper behaves as if it had cloned the root element.
+
+    Args:
+        rest_name: The rest param the definition declares, or ``None`` to
+            synthesize one.
+        rendered: The root's rendered tag, whose ``props`` are replaced in place.
+        imports: The memo module's imports, extended with the helper import.
+
+    Returns:
+        The rest param name the wrapper signature must declare.
+    """
+    if rest_name is None:
+        rest_name = "rest"
+    rendered["props"] = [
+        f"...mergeSlotProps({rest_name}, ({{ {', '.join(rendered['props'])} }}))"
+    ]
+    # The call is spliced into the rendered props rather than carried by any
+    # Var, so its import is merged explicitly.
+    imports.setdefault(f"$/{constants.Dirs.STATE_PATH}", []).append(
+        ImportVar(tag="mergeSlotProps")
+    )
+    return rest_name
+
+
 def compile_experimental_component_memo(
     definition: MemoComponentDefinition,
 ) -> tuple[dict, ParsedImportDict]:
@@ -458,31 +492,6 @@ def compile_experimental_component_memo(
         dynamic_imports = render._get_all_dynamic_imports()
         all_imports = render._get_all_imports()
 
-    # The rest param collects everything the parent passes but the signature
-    # does not name — including ``ref``, a regular prop under React 19. A
-    # definition that declares its own rest param owns the name; a transparent
-    # wrapper that doesn't gets one synthesized for the merge below.
-    rest_param = next(
-        (p for p in definition.params if p.kind is MemoParamKind.REST), None
-    )
-    if rest_param is not None:
-        rest_name = rest_param.placeholder_name
-    elif definition.forward_root_props:
-        rest_name = "rest"
-    else:
-        rest_name = None
-
-    if definition.forward_root_props:
-        # Make the wrapper transparent: merge the runtime-injected props with
-        # the root's compiled-in props. ``mergeSlotProps`` applies Radix
-        # ``Slot`` semantics — own props win, ``on*`` handlers compose, refs
-        # compose, ``className`` concatenates, object-valued props deep-merge
-        # — so a Slot parent cloning the wrapper behaves as if it had cloned
-        # the root element directly.
-        rendered["props"] = [
-            f"...mergeSlotProps({rest_name}, ({{ {', '.join(rendered['props'])} }}))"
-        ]
-
     # Each un-mirrored memo lives in ``web/utils/components/<name>.jsx`` and is
     # imported from ``$/utils/components/<name>``. Strip a self-import so a memo
     # body that references its own specifier doesn't recurse.
@@ -501,12 +510,12 @@ def compile_experimental_component_memo(
         for lib, fields in wrapper_var_data.imports:
             imports.setdefault(lib, []).extend(fields)
 
-    # The ``mergeSlotProps`` call is spliced into the rendered props rather
-    # than carried by any Var, so its import is merged explicitly.
+    rest_param = next(
+        (p for p in definition.params if p.kind is MemoParamKind.REST), None
+    )
+    rest_name = rest_param.placeholder_name if rest_param is not None else None
     if definition.forward_root_props:
-        imports.setdefault(f"$/{constants.Dirs.STATE_PATH}", []).append(
-            ImportVar(tag="mergeSlotProps")
-        )
+        rest_name = _splice_transparent_root_props(rest_name, rendered, imports)
 
     signature_fields = [
         field
