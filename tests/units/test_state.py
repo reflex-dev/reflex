@@ -917,6 +917,277 @@ def test_setting_inherited_backend_var_does_not_mark_child_touched(
     assert not child_touched
 
 
+class _LinkedStatePatchRoot(BaseState):
+    """Root state for testing linked-state dirty propagation."""
+
+    value: int = 0
+
+
+class _LinkedStatePatchShared(_LinkedStatePatchRoot):
+    """Substate used to exercise _patch_state without full SharedState setup."""
+
+    counter: int = 0
+
+    @rx.var
+    def root_value(self) -> int:
+        return self.value
+
+
+class _LinkedStatePatchIntervalRoot(BaseState):
+    """Root state for testing interval computed refreshes during patching."""
+
+    value: int = 0
+
+
+class _LinkedStatePatchIntervalShared(_LinkedStatePatchIntervalRoot):
+    """Substate used to exercise interval computed refreshes."""
+
+    counter: int = 0
+
+    @rx.var(interval=60)
+    def interval_value(self) -> int:
+        return self.value
+
+
+@pytest.mark.asyncio
+async def test_linked_state_event_does_not_dirty_root_state():
+    """Linked-state events should not leak temporary router dirtiness."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    assert isinstance(private_state, _LinkedStatePatchShared)
+    assert isinstance(linked_state, _LinkedStatePatchShared)
+
+    private_tree._clean()
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        linked_state.counter = 1
+
+    assert "router" not in private_tree.dirty_vars
+    assert constants.ROUTER_DATA not in private_tree.dirty_vars
+    assert private_tree.get_full_name() not in private_tree.get_delta()
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_restores_root_dirty_state_on_resolve_error(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Temporary root dirtiness should be cleaned if delta resolution fails."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    assert isinstance(private_state, _LinkedStatePatchShared)
+    assert isinstance(linked_state, _LinkedStatePatchShared)
+
+    private_tree.value = 1
+    private_tree.dirty_substates.add("existing")
+    original_dirty_vars = set(private_tree.dirty_vars)
+    original_dirty_substates = set(private_tree.dirty_substates)
+
+    async def raise_resolve_error():
+        await asyncio.sleep(0)
+        msg = "delta resolution failed"
+        raise RuntimeError(msg)
+
+    object.__setattr__(private_tree, "_get_resolved_delta", raise_resolve_error)
+
+    with pytest.raises(RuntimeError, match="delta resolution failed"):
+        async with _patch_state(private_state, linked_state, full_delta=False):
+            pass
+
+    assert private_tree.dirty_vars == original_dirty_vars
+    assert private_tree.dirty_substates == original_dirty_substates
+    assert private_tree.substates[shared_state_name] is private_state
+    assert linked_state.parent_state is linked_tree
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_restores_descendant_dirty_state_on_resolve_error():
+    """Temporary descendant dirtiness should be cleaned on resolution failure."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    async def raise_resolve_error():
+        await asyncio.sleep(0)
+        linked_state.dirty_vars.add("temporary")
+        linked_state._mark_dirty()
+        msg = "descendant delta resolution failed"
+        raise RuntimeError(msg)
+
+    object.__setattr__(private_tree, "_get_resolved_delta", raise_resolve_error)
+
+    with pytest.raises(RuntimeError, match="descendant delta resolution failed"):
+        async with _patch_state(private_state, linked_state, full_delta=False):
+            pass
+
+    assert linked_state.dirty_vars == set()
+    assert linked_state.dirty_substates == set()
+    assert private_tree.dirty_substates == set()
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_restores_descendant_dirty_state_after_resolve():
+    """Temporary descendant dirtiness should be cleaned after resolution."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    async def resolve_with_temporary_dirty_state():
+        await asyncio.sleep(0)
+        linked_state.dirty_vars.add("temporary")
+        linked_state._mark_dirty()
+        return {}
+
+    object.__setattr__(
+        private_tree, "_get_resolved_delta", resolve_with_temporary_dirty_state
+    )
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        assert private_tree.substates[shared_state_name] is linked_state
+
+    assert linked_state.dirty_vars == set()
+    assert linked_state.dirty_substates == set()
+    assert private_tree.dirty_substates == set()
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_preserves_interval_computed_refresh():
+    """Interval computed vars refreshed during patching must be emitted."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchIntervalRoot()
+    linked_tree = _LinkedStatePatchIntervalRoot()
+
+    shared_state_name = _LinkedStatePatchIntervalShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    private_tree._clean()
+
+    resolve_delta = private_tree._get_resolved_delta
+
+    async def resolve_with_dirty_child():
+        linked_state._mark_dirty()
+        return await resolve_delta()
+
+    object.__setattr__(private_tree, "_get_resolved_delta", resolve_with_dirty_child)
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        assert private_tree.substates[shared_state_name] is linked_state
+        interval_delta = private_tree.get_delta()
+
+    assert "interval_value" in linked_state.dirty_vars
+    assert private_tree.dirty_substates == {linked_state.get_name()}
+    assert (
+        "interval_value" + FIELD_MARKER in interval_delta[linked_state.get_full_name()]
+    )
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_preserves_root_dependent_computed_refresh():
+    """Computed vars invalidated through the root must remain in the delta."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchRoot()
+    linked_tree = _LinkedStatePatchRoot()
+
+    shared_state_name = _LinkedStatePatchShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+
+    private_tree._clean()
+
+    resolve_delta = private_tree._get_resolved_delta
+
+    async def resolve_with_root_change():
+        private_tree.value = 1
+        return await resolve_delta()
+
+    object.__setattr__(private_tree, "_get_resolved_delta", resolve_with_root_change)
+
+    async with _patch_state(private_state, linked_state, full_delta=False):
+        assert private_tree.substates[shared_state_name] is linked_state
+        root_dependent_delta = private_tree.get_delta()
+
+    assert "root_value" in linked_state.dirty_vars
+    assert private_tree.dirty_substates == {linked_state.get_name()}
+    assert (
+        "root_value" + FIELD_MARKER
+        in root_dependent_delta[linked_state.get_full_name()]
+    )
+
+
+@pytest.mark.asyncio
+async def test_linked_state_patch_restores_computed_cache_on_resolve_error():
+    """Failed resolution should not hide a partially refreshed computed value."""
+    from reflex.istate.shared import _patch_state
+
+    private_tree = _LinkedStatePatchIntervalRoot()
+    linked_tree = _LinkedStatePatchIntervalRoot()
+
+    shared_state_name = _LinkedStatePatchIntervalShared.get_name()
+    private_state = private_tree.substates[shared_state_name]
+    linked_state = linked_tree.substates[shared_state_name]
+    computed_var = _LinkedStatePatchIntervalShared.computed_vars["interval_value"]
+    cache_attr = computed_var._cache_attr
+    last_updated_attr = computed_var._last_updated_attr
+    cache_before = (
+        hasattr(linked_state, cache_attr),
+        getattr(linked_state, cache_attr, None),
+        hasattr(linked_state, last_updated_attr),
+        getattr(linked_state, last_updated_attr, None),
+    )
+    was_touched_before = linked_state._was_touched
+
+    private_tree._clean()
+    resolve_delta = private_tree._get_resolved_delta
+
+    async def resolve_then_fail():
+        linked_state._mark_dirty()
+        linked_state._was_touched = True
+        await resolve_delta()
+        msg = "computed refresh failed"
+        raise RuntimeError(msg)
+
+    object.__setattr__(private_tree, "_get_resolved_delta", resolve_then_fail)
+
+    with pytest.raises(RuntimeError, match="computed refresh failed"):
+        async with _patch_state(private_state, linked_state, full_delta=False):
+            assert private_tree.substates[shared_state_name] is linked_state
+
+    assert linked_state.dirty_vars == set()
+    assert linked_state._was_touched is was_touched_before
+    assert (
+        hasattr(linked_state, cache_attr),
+        getattr(linked_state, cache_attr, None),
+        hasattr(linked_state, last_updated_attr),
+        getattr(linked_state, last_updated_attr, None),
+    ) == cache_before
+
+
 @pytest.mark.asyncio
 async def test_process_event_simple(
     token: str,
