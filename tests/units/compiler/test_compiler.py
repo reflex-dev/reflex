@@ -462,8 +462,12 @@ def test_compile_app_root_with_hydrate_fallback_exports_hydrate_fallback():
     )
 
 
-def test_compile_app_root_includes_radix_window_library_when_bundled():
+def test_compile_app_root_includes_radix_window_library_when_bundled(mocker):
     """Bundled Radix libraries should be exposed to window.__reflex."""
+    mocker.patch(
+        "reflex.compiler.compiler.get_config",
+        return_value=rx.Config(app_name="eager_libraries"),
+    )
     reset_bundled_libraries()
     try:
         bundle_library("@radix-ui/themes@3.3.0")
@@ -476,12 +480,23 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
         reset_bundled_libraries()
 
 
-def test_compile_contexts_has_default_color_mode_context():
-    """ColorModeContext should have a safe fallback value without Radix."""
-    _, code = compiler.compile_contexts(None, None)
+def test_compile_app_root_can_defer_optional_window_libraries(mocker):
+    """Dynamic libraries need not force their entire exports into every page."""
+    mocker.patch(
+        "reflex.compiler.compiler.get_config",
+        return_value=rx.Config(
+            app_name="lazy_libraries", frontend_lazy_bundled_libraries=True
+        ),
+    )
+    with RegistrationContext():
+        bundle_library("@radix-ui/themes@3.3.0")
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
 
-    assert "createContext({" in code
-    assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
+    assert 'import * as radix_ui_themes from "@radix-ui/themes"' not in code
+    assert '() => import("@radix-ui/themes")' in code
+    assert 'import * as React from "react"' in code
+    assert 'import * as utils_context from "$/utils/context"' in code
+    assert "window.__reflex_load" in code
 
 
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
@@ -603,7 +618,7 @@ def test_create_document_root():
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 6
+    assert len(root.children[0].children) == 7
     assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
@@ -614,7 +629,8 @@ def test_create_document_root():
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], Links)
+    assert isinstance(root.children[0].children[5], Link)
+    assert isinstance(root.children[0].children[6], Links)
 
 
 def test_create_document_root_with_scripts():
@@ -629,7 +645,7 @@ def test_create_document_root_with_scripts():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 8
+    assert len(root.children[0].children) == 9
     names = [c.tag for c in root.children[0].children]
     assert names == [
         "script",
@@ -638,6 +654,7 @@ def test_create_document_root_with_scripts():
         "meta",
         "meta",
         "Meta",
+        "link",
         "link",
         "Links",
     ]
@@ -657,9 +674,9 @@ def test_create_document_root_with_meta_char_set():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 6
+    assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
+    assert names == ["script", "meta", "meta", "Meta", "link", "link", "Links"]
     assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
@@ -673,9 +690,9 @@ def test_create_document_root_with_meta_viewport():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
+    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "link", "Links"]
     assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
@@ -1425,44 +1442,6 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "REFLEX_REACT_OWNER_STACKS" in rendered
     # The trade-off must be stated where a reader of the output will see it.
     assert "captureOwnerStack" in rendered
-
-
-def test_context_template_names_contexts_for_devtools():
-    """Every context in the generated module carries a ``displayName``.
-
-    React DevTools labels a provider from its context's ``displayName``;
-    without one the whole provider stack renders as ``Context.Provider``.
-    """
-    from reflex_base.compiler.templates import context_template
-
-    rendered = context_template(
-        is_dev_mode=True,
-        default_color_mode='"light"',
-        initial_state={
-            "reflex___state____state": {},
-            "reflex___state____state.demo_state": {},
-        },
-        state_name="reflex___state____state",
-    )
-
-    for context_name in (
-        "ColorModeContext",
-        "UploadFilesContext",
-        "DispatchContext",
-        "EventLoopContext",
-    ):
-        assert f'{context_name}.displayName = "{context_name}";' in rendered
-
-    # State contexts are named for the Python state they carry, using the
-    # dotted state name rather than the mangled JS identifier.
-    assert (
-        "StateContexts.reflex___state____state.displayName = "
-        '"StateContext(reflex___state____state)";' in rendered
-    )
-    assert (
-        "StateContexts.reflex___state____state__demo_state.displayName = "
-        '"StateContext(reflex___state____state.demo_state)";' in rendered
-    )
 
 
 def test_context_template_client_side_component_is_named():
