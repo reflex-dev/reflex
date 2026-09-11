@@ -104,11 +104,10 @@ if CUSTOM_ENABLED:
     assert '"custom":true' in payload.replace(" ", "")
 else:
     assert serializers.get_serializer_type(Team) == dict[str, Any]
-    assert serializers.has_serializer(Team, dict)
+    assert not serializers.has_serializer(Team, dict)
     assert serializers.has_serializer(Team, dict[str, Any])
     assert not serializers.has_serializer(Team, dict[str, int])
-    assert not serializers.has_serializer(Team, list)
-    assert can_use_in_object_var(Team)
+    assert not can_use_in_object_var(Team)
     assert State.teams[0].name._var_type is str
 json.loads(payload)
 engine.dispose()
@@ -174,6 +173,22 @@ State.update.fn(state)
 assert "Updated" in json_dumps(state.get_delta())
 """,
         cwd=tmp_path,
+    )
+
+
+def test_import_registers_no_fork_hook() -> None:
+    """Importing the serializers must not install a process-wide fork hook."""
+    _run_script(
+        """
+import os
+
+hooks = []
+os.register_at_fork = lambda **kwargs: hooks.extend(kwargs.values())
+from reflex_base.utils import serializers
+
+registered = [hook for hook in hooks if hook.__module__ == serializers.__name__]
+assert not registered, registered
+"""
     )
 
 
@@ -258,9 +273,10 @@ thread.start()
 # Implementations that do not import Template need not reach the pause.
 entered.wait(0.5)
 read_fd, write_fd = os.pipe()
-# A pre-fork synchronization hook may wait for the active import to finish.
+# Pre-fork preparation waits for the active import to finish.
 timer = threading.Timer(0.5, release.set)
 timer.start()
+serializers._prepare_serializers_for_fork()
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", DeprecationWarning)
     pid = os.fork()

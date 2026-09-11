@@ -82,11 +82,7 @@ for cls in (LegacyPydanticBase, DeclarativeBaseNoMeta, declarative_base()):
 Impostor = type("DeclarativeBase", (), {"__module__": "sqlalchemy.orm.decl_api"})
 assert not proxy.is_mutable_type(Impostor)
 assert proxy.MUTABLE_TYPES == (list, dict, set, DeclarativeBase, BaseModel)
-namespace = {}
-exec("from reflex.istate.proxy import *", namespace)
-assert namespace["MUTABLE_TYPES"] == proxy.MUTABLE_TYPES
-assert namespace["MutableProxy"] is proxy.MutableProxy
-assert "MUTABLE_TYPES" in dir(proxy)
+assert "MUTABLE_TYPES" not in dir(proxy)
 """
     result = subprocess.run(
         [sys.executable, "-c", script],

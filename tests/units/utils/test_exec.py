@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base.environment import environment
+from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
 
@@ -34,10 +35,12 @@ def test_run_backend_skips_app_preload_for_spawn(
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", import_without_app_preload)
+    prepare_fork = mocker.patch.object(serializers, "_prepare_serializers_for_fork")
 
     exec_utils.run_backend("127.0.0.1", 8000)
 
     run_granian.assert_called_once()
+    prepare_fork.assert_not_called()
 
 
 def test_run_backend_preloads_app_for_fork(
@@ -60,10 +63,12 @@ def test_run_backend_preloads_app_for_fork(
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", track_app_preload)
+    prepare_fork = mocker.patch.object(serializers, "_prepare_serializers_for_fork")
 
     exec_utils.run_backend("127.0.0.1", 8000)
 
     assert imported == ["reflex.app"]
+    prepare_fork.assert_called_once_with()
 
 
 def test_run_uvicorn_backend_sets_reload_env_var_and_clears_marker(

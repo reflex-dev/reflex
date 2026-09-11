@@ -1,1 +1,1 @@
-Reduce development startup and reload memory by deferring unused database and admin integrations and avoiding redundant app preloads in spawned Granian supervisors.
+Reduce development startup and reload time and memory by deferring unused database, admin, and compiler imports in the backend launcher and state mutation tracking, and by avoiding redundant app preloads in spawned Granian supervisors.

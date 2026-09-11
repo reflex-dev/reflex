@@ -10,7 +10,6 @@ import inspect
 import io
 import json
 import logging
-import os
 import sys
 import uuid
 import warnings
@@ -210,6 +209,47 @@ def serialize(
     return serialized
 
 
+def _find_optional_base(
+    type_: type,
+    registry: dict[type, _REGISTRY_VALUE],
+    optional_defaults: dict[str, _REGISTRY_VALUE],
+) -> tuple[_REGISTRY_VALUE | None, int]:
+    """Resolve the highest-priority optional base class in the MRO.
+
+    Args:
+        type_: The type to find a serializer for.
+        registry: Explicit registrations for functions or output types.
+        optional_defaults: Defaults for the corresponding optional types.
+
+    Returns:
+        The matching registration and its priority, or None and -1.
+    """
+    best: _REGISTRY_VALUE | None = None
+    best_priority = -1
+    for base in getattr(type_, "__mro__", ()):
+        if name := _get_optional_type_name(base):
+            priority = _OPTIONAL_SERIALIZER_ORDER[name]
+            if priority > best_priority:
+                best = registry.get(base, optional_defaults[name])
+                best_priority = priority
+    return best, best_priority
+
+
+def _registered_priority(registered_type: type) -> int | None:
+    """Get the default precedence of a registered type.
+
+    Args:
+        registered_type: A key of a serializer registry.
+
+    Returns:
+        The default priority, or None for a user registration.
+    """
+    priority = _DEFAULT_SERIALIZER_ORDER.get(id(registered_type))
+    if priority is None and (name := _get_optional_type_name(registered_type)):
+        priority = _OPTIONAL_SERIALIZER_ORDER[name]
+    return priority
+
+
 def _find_serializer(
     type_: type,
     registry: dict[type, _REGISTRY_VALUE],
@@ -227,24 +267,14 @@ def _find_serializer(
     """
     if (registered := registry.get(type_)) is not None:
         return registered
+    if name := _get_optional_type_name(type_):
+        return optional_defaults[name]
 
-    best: _REGISTRY_VALUE | None = None
-    best_priority = -1
-    for base in getattr(type_, "__mro__", ()):
-        if name := _get_optional_type_name(base):
-            value = registry.get(base, optional_defaults[name])
-            if base is type_:
-                return value
-            priority = _OPTIONAL_SERIALIZER_ORDER[name]
-            if priority > best_priority:
-                best, best_priority = value, priority
-
+    best, best_priority = _find_optional_base(type_, registry, optional_defaults)
     # A private copy permits concurrent/reentrant registration without a lock
     # around user-defined hash or subclass callbacks, or destructive reordering.
     for registered_type, value in reversed(registry.copy().items()):
-        priority = _DEFAULT_SERIALIZER_ORDER.get(id(registered_type))
-        if priority is None and (name := _get_optional_type_name(registered_type)):
-            priority = _OPTIONAL_SERIALIZER_ORDER[name]
+        priority = _registered_priority(registered_type)
         if (priority is None or priority > best_priority) and issubclass(
             type_, registered_type
         ):
@@ -286,18 +316,14 @@ def has_serializer(type_: type, into_type: type | None = None) -> bool:
 
     Args:
         type_: The type to check.
-        into_type: The type to serialize into, including a generic type's origin.
+        into_type: The type to serialize into.
 
     Returns:
         Whether there is a serializer for the type.
     """
-    if get_serializer(type_) is None:
-        return False
-    if into_type is None:
-        return True
-    serializer_type = get_serializer_type(type_)
-    return (
-        serializer_type == into_type or types.get_origin(serializer_type) == into_type
+    serializer_for_type = get_serializer(type_)
+    return serializer_for_type is not None and (
+        into_type is None or get_serializer_type(type_) == into_type
     )
 
 
@@ -622,6 +648,3 @@ _OPTIONAL_SERIALIZER_ORDER = {
     name: len(_INITIAL_SERIALIZER_TYPES) + index
     for index, name in enumerate(_OPTIONAL_SERIALIZERS)
 }
-
-if hasattr(os, "register_at_fork"):
-    os.register_at_fork(before=_prepare_serializers_for_fork)

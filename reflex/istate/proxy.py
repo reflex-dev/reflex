@@ -428,15 +428,6 @@ _MUTABLE_MODEL_BASES = (
 )
 
 
-def __dir__() -> list[str]:
-    """Include the lazily resolved mutable-types tuple in module discovery.
-
-    Returns:
-        The available module attribute names.
-    """
-    return sorted(globals().keys() | {"MUTABLE_TYPES"})
-
-
 def __getattr__(name: str) -> Any:
     """Resolve the legacy mutable-types tuple only when explicitly requested.
 
@@ -444,13 +435,11 @@ def __getattr__(name: str) -> Any:
         name: The module attribute to resolve.
 
     Returns:
-        The model base types, or the names exported by a wildcard import.
+        The mutable builtin and model base types.
 
     Raises:
         AttributeError: If the requested attribute is unknown.
     """
-    if name == "__all__":
-        return [export for export in __dir__() if not export.startswith("_")]
     if name == "MUTABLE_TYPES":
         return _MUTABLE_BUILTIN_TYPES + tuple(
             getattr(import_module(module_name), base_name)

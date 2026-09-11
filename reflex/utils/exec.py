@@ -505,7 +505,11 @@ def run_backend(
             import multiprocessing
 
             if multiprocessing.get_start_method() == "fork":
+                from reflex_base.utils import serializers
+
                 import reflex.app  # noqa: F401
+
+                serializers._prepare_serializers_for_fork()
 
         run_granian_backend(host, port, loglevel)
     else:
