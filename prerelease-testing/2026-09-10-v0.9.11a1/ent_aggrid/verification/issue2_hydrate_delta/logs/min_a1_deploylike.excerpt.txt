@@ -1,0 +1,122 @@
+### min_a1_deploylike.log — first 'Reflex Backend Exception' block (count: 2)
+13:[Reflex Backend Exception]
+14- Traceback (most recent call last):
+15-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 857, in _resolve_future
+16-    future.result()
+17-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 848, in _resolve_future
+18-    result = task.result()
+19-             ^^^^^^^^^^^^^
+20-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 645, in _process_event_queue_entry
+21-    await self._execute_event(
+22-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py", line 463, in _execute_event
+23-    await process_event(
+24-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py", line 305, in process_event
+25-    events = await fn(**payload)
+26-             ^^^^^^^^^^^^^^^^^^^
+27-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/state.py", line 2463, in hydrate
+28-    await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+29-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/context.py", line 138, in emit_delta
+30-    await self.emit_delta_impl(self.token, delta)
+31-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 177, in emit_delta
+32-    await event_namespace.emit_update(
+33-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/app.py", line 2136, in emit_update
+34-    await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
+35-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/socketio/async_namespace.py", line 71, in emit
+36-    return await self.server.emit(event, data=data, to=to, room=room,
+37-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+38-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/socketio/async_server.py", line 180, in emit
+39-    await self.manager.emit(event, data, namespace, room=room,
+40-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/socketio/async_manager.py", line 40, in emit
+41-    encoded_packet = pkt.encode()
+42-                     ^^^^^^^^^^^^
+43-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/socketio/packet.py", line 64, in encode
+44-    encoded_packet += self.json.dumps(data, separators=(',', ':'))
+45-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+46-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/app.py", line 1975, in _sio_dumps
+47-    data = format.json_dumps(obj, **kwargs)
+48-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+49-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/utils/format.py", line 734, in json_dumps
+50-    return json.dumps(obj, **kwargs)
+51-           ^^^^^^^^^^^^^^^^^^^^^^^^^
+52-  File "/usr/lib/python3.11/json/__init__.py", line 238, in dumps
+53-    **kw).encode(obj)
+54-          ^^^^^^^^^^^
+55-  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+56-    chunks = self.iterencode(o, _one_shot=True)
+57-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+58-  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+59-    return _iterencode(o, 0)
+60-           ^^^^^^^^^^^^^^^^^
+61-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/utils/serializers.py", line 176, in serialize
+62-    serialized = serializer(value)
+63-                 ^^^^^^^^^^^^^^^^^
+64-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 284, in serialize_lambda
+65-    return serialize_lambda_var(LiteralLambdaVar.create(func))
+66-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+67-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 244, in create
+68-    return_expr = cls._validate_and_extend_return_expr(
+69-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+70-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+71-    raise ValueError(
+72-ValueError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@radix-ui/themes') to enable it it.
+73-
+74-
+75-[Reflex Backend Exception]
+76- Traceback (most recent call last):
+77-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 857, in _resolve_future
+78-    future.result()
+79-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 848, in _resolve_future
+80-    result = task.result()
+81-             ^^^^^^^^^^^^^
+82-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 645, in _process_event_queue_entry
+83-    await self._execute_event(
+84-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py", line 463, in _execute_event
+85-    await process_event(
+86-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/base_state_processor.py", line 305, in process_event
+87-    events = await fn(**payload)
+88-             ^^^^^^^^^^^^^^^^^^^
+89-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/state.py", line 2463, in hydrate
+90-    await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+91-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/context.py", line 138, in emit_delta
+92-    await self.emit_delta_impl(self.token, delta)
+93-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_processor.py", line 177, in emit_delta
+94-    await event_namespace.emit_update(
+95-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/app.py", line 2136, in emit_update
+96-    await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
+97-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/socketio/async_namespace.py", line 71, in emit
+98-    return await self.server.emit(event, data=data, to=to, room=room,
+99-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+100-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/socketio/async_server.py", line 180, in emit
+101-    await self.manager.emit(event, data, namespace, room=room,
+102-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/socketio/async_manager.py", line 40, in emit
+103-    encoded_packet = pkt.encode()
+104-                     ^^^^^^^^^^^^
+105-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/socketio/packet.py", line 64, in encode
+106-    encoded_packet += self.json.dumps(data, separators=(',', ':'))
+107-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+108-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/app.py", line 1975, in _sio_dumps
+109-    data = format.json_dumps(obj, **kwargs)
+110-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+111-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/utils/format.py", line 734, in json_dumps
+112-    return json.dumps(obj, **kwargs)
+113-           ^^^^^^^^^^^^^^^^^^^^^^^^^
+114-  File "/usr/lib/python3.11/json/__init__.py", line 238, in dumps
+115-    **kw).encode(obj)
+116-          ^^^^^^^^^^^
+117-  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+118-    chunks = self.iterencode(o, _one_shot=True)
+119-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+120-  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+121-    return _iterencode(o, 0)
+122-           ^^^^^^^^^^^^^^^^^
+123-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_base/utils/serializers.py", line 176, in serialize
+124-    serialized = serializer(value)
+125-                 ^^^^^^^^^^^^^^^^^
+126-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 284, in serialize_lambda
+127-    return serialize_lambda_var(LiteralLambdaVar.create(func))
+128-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+129-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 244, in create
+130-    return_expr = cls._validate_and_extend_return_expr(
+131-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+132-  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+133-    raise ValueError(

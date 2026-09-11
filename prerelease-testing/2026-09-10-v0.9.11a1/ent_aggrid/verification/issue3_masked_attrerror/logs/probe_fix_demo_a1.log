@@ -1,0 +1,19 @@
+reflex: 0.9.11a1 | reflex-base: 0.9.11a1
+=== foreach_render ===
+  CachedComputationError: Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'label'
+  __cause__: AttributeError("'Point' object has no attribute 'label'")
+  real error 'has no attribute \'label\'' visible: True
+  user file serialize_point in traceback: True
+
+=== var_create_list_str ===
+  CachedComputationError: Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'label'
+  __cause__: AttributeError("'Point' object has no attribute 'label'")
+  real error 'has no attribute \'label\'' visible: True
+  user file serialize_point in traceback: True
+
+=== custom_attrs_list ===
+  CachedComputationError: Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'label'
+  __cause__: AttributeError("'Point' object has no attribute 'label'")
+  real error 'has no attribute \'label\'' visible: True
+  user file serialize_point in traceback: True
+

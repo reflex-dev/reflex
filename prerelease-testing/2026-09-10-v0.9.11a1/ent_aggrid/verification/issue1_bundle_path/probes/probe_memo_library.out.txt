@@ -1,0 +1,6 @@
+type(row_counter) = <class 'reflex_base.components.memo._MemoComponentWrapper'>
+row_counter.library = <no attr>
+type(inst) = <class 'reflex_base.components.memo.MemoComponent_RowCounter'>
+inst.library = $/utils/components/RowCounter
+bundled before: ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+bundled after bundle_library(inst): ['react', '@emotion/react', '$/utils/context', '$/utils/state', '$/utils/components/RowCounter']

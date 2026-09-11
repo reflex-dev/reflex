@@ -1,0 +1,24 @@
+reflex: 0.9.11a1 | reflex-base: 0.9.11a1
+module: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py
+
+=== direct_literalvar_create ===
+  builtins.AttributeError: 'Thing' object has no attribute 'name'
+  __cause__: None
+  real AttributeError visible in traceback: True
+
+=== nested_in_dict_str ===
+  builtins.TypeError: __str__ returned non-string (type ObjectItemOperation)
+  __cause__: None
+  real AttributeError visible in traceback: False
+
+=== nested_in_list_str ===
+  reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+  __cause__: None
+  real AttributeError visible in traceback: False
+
+=== component_prop_render ===
+  builtins.AttributeError: 'Thing' object has no attribute 'name'
+  __cause__: None
+  real AttributeError visible in traceback: True
+
+wrote out/realistic_a1.json

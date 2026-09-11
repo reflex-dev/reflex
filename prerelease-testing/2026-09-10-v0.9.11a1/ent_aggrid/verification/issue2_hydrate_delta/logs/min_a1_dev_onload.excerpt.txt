@@ -1,0 +1,122 @@
+### min_a1_dev_onload.log — first 'Reflex Backend Exception' block (count: 1)
+154:[Reflex Backend Exception]
+155- Traceback (most recent call last):
+156-  File 
+157-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+158-/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_process
+159-or.py", line 857, in _resolve_future
+160-    future.result()
+161-  File 
+162-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+163-/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_process
+164-or.py", line 848, in _resolve_future
+165-    result = task.result()
+166-             ^^^^^^^^^^^^^
+167-  File 
+168-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+169-/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_process
+170-or.py", line 645, in _process_event_queue_entry
+171-    await self._execute_event(
+172-  File 
+173-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+174-/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/base_state_pr
+175-ocessor.py", line 463, in _execute_event
+176-    await process_event(
+177-  File 
+178-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+179-/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/base_state_pr
+180-ocessor.py", line 305, in process_event
+181-    events = await fn(**payload)
+182-             ^^^^^^^^^^^^^^^^^^^
+183-  File 
+184-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+185-/envs/ent/lib/python3.11/site-packages/reflex/state.py", line 2463, in hydrate
+186-    await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+187-  File 
+188-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+189-/envs/ent/lib/python3.11/site-packages/reflex_base/event/context.py", line 138, 
+190-in emit_delta
+191-    await self.emit_delta_impl(self.token, delta)
+192-  File 
+193-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+194-/envs/ent/lib/python3.11/site-packages/reflex_base/event/processor/event_process
+195-or.py", line 177, in emit_delta
+196-    await event_namespace.emit_update(
+197-  File 
+198-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+199-/envs/ent/lib/python3.11/site-packages/reflex/app.py", line 2136, in emit_update
+200-    await self.emit(str(constants.SocketEvent.EVENT), update, 
+201-to=socket_record.sid)
+202-  File 
+203-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+204-/envs/ent/lib/python3.11/site-packages/socketio/async_namespace.py", line 71, in
+205-emit
+206-    return await self.server.emit(event, data=data, to=to, room=room,
+207-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+208-  File 
+209-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+210-/envs/ent/lib/python3.11/site-packages/socketio/async_server.py", line 180, in 
+211-emit
+212-    await self.manager.emit(event, data, namespace, room=room,
+213-  File 
+214-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+215-/envs/ent/lib/python3.11/site-packages/socketio/async_manager.py", line 40, in 
+216-emit
+217-    encoded_packet = pkt.encode()
+218-                     ^^^^^^^^^^^^
+219-  File 
+220-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+221-/envs/ent/lib/python3.11/site-packages/socketio/packet.py", line 64, in encode
+222-    encoded_packet += self.json.dumps(data, separators=(',', ':'))
+223-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+224-  File 
+225-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+226-/envs/ent/lib/python3.11/site-packages/reflex/app.py", line 1975, in _sio_dumps
+227-    data = format.json_dumps(obj, **kwargs)
+228-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+229-  File 
+230-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+231-/envs/ent/lib/python3.11/site-packages/reflex_base/utils/format.py", line 734, 
+232-in json_dumps
+233-    return json.dumps(obj, **kwargs)
+234-           ^^^^^^^^^^^^^^^^^^^^^^^^^
+235-  File "/usr/lib/python3.11/json/__init__.py", line 238, in dumps
+236-    **kw).encode(obj)
+237-          ^^^^^^^^^^^
+238-  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+239-    chunks = self.iterencode(o, _one_shot=True)
+240-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+241-  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+242-    return _iterencode(o, 0)
+243-           ^^^^^^^^^^^^^^^^^
+244-  File 
+245-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+246-/envs/ent/lib/python3.11/site-packages/reflex_base/utils/serializers.py", line 
+247-176, in serialize
+248-    serialized = serializer(value)
+249-                 ^^^^^^^^^^^^^^^^^
+250-  File 
+251-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+252-/envs/ent/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 284, in 
+253-serialize_lambda
+254-    return serialize_lambda_var(LiteralLambdaVar.create(func))
+255-                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+256-  File 
+257-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+258-/envs/ent/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 244, in 
+259-create
+260-    return_expr = cls._validate_and_extend_return_expr(
+261-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+262-  File 
+263-"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+264-/envs/ent/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 166, in 
+265-_validate_and_extend_return_expr
+266-    raise ValueError(
+267-ValueError: Library @radix-ui/themes is not bundled. Use `from 
+268-reflex.components.dynamic import bundle_library; 
+269-bundle_library('@radix-ui/themes') to enable it it.
+270-
+271-
+272-Debug: error: script "dev" was terminated by signal SIGKILL (Forced quit)
+273-Starting frontend failed with exit code -9
+274-$ react-router dev --host

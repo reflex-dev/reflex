@@ -1,0 +1,13 @@
+reflex: 0.9.10.post2 | reflex-base: 0.9.10.post2
+MASKED  custom_attrs_list: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+MASKED  custom_attrs_dict: builtins.RecursionError: maximum recursion depth exceeded in comparison
+ok      style_list: builtins.AttributeError: 'Point' object has no attribute 'label'
+MASKED  foreach_literal_list: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+MASKED  var_create_list_str: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+ok      var_create_list_json: builtins.AttributeError: 'Point' object has no attribute 'label'
+MASKED  var_create_nested_list_str: builtins.TypeError: __str__ returned non-string (type ArrayCastedVar)
+MASKED  var_create_tuple_str: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+MASKED  cond_list: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+no-exc  state_default_list: None: 
+MASKED  state_setvar_list: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+wrote out/app_shapes_0910.json

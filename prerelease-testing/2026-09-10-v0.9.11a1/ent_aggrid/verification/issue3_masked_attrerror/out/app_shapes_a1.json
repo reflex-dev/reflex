@@ -1,0 +1,69 @@
+{
+  "reflex": "0.9.11a1",
+  "results": {
+    "custom_attrs_list": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_var_name not found.",
+      "cause": "None",
+      "real_error_visible": false
+    },
+    "custom_attrs_dict": {
+      "raised": "builtins.RecursionError",
+      "msg": "maximum recursion depth exceeded in comparison",
+      "cause": "None",
+      "real_error_visible": false
+    },
+    "style_list": {
+      "raised": "builtins.AttributeError",
+      "msg": "'Point' object has no attribute 'label'",
+      "cause": "None",
+      "real_error_visible": true
+    },
+    "foreach_literal_list": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_var_name not found.",
+      "cause": "None",
+      "real_error_visible": false
+    },
+    "var_create_list_str": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_var_name not found.",
+      "cause": "None",
+      "real_error_visible": false
+    },
+    "var_create_list_json": {
+      "raised": "builtins.AttributeError",
+      "msg": "'Point' object has no attribute 'label'",
+      "cause": "None",
+      "real_error_visible": true
+    },
+    "var_create_nested_list_str": {
+      "raised": "builtins.TypeError",
+      "msg": "__str__ returned non-string (type ArrayCastedVar)",
+      "cause": "None",
+      "real_error_visible": false
+    },
+    "var_create_tuple_str": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_var_name not found.",
+      "cause": "None",
+      "real_error_visible": false
+    },
+    "cond_list": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_var_name not found.",
+      "cause": "None",
+      "real_error_visible": false
+    },
+    "state_default_list": {
+      "raised": null,
+      "returned": "'reflex___state____state____main______list_state.pts_rx_state_'"
+    },
+    "state_setvar_list": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_var_name not found.",
+      "cause": "None",
+      "real_error_visible": false
+    }
+  }
+}

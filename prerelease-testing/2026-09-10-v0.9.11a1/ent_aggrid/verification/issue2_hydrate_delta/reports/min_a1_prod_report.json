@@ -1,0 +1,13 @@
+{
+  "console": [
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "log: Disconnect websocket on page navigation",
+    "log: Disconnect websocket on pagehide"
+  ],
+  "page_errors": [],
+  "initial": "0",
+  "after_3_clicks": "3",
+  "after_reload": "3",
+  "body_text_after_reload": "min hydrate repro HMR\n3\n\non_load-ran\n\nhydrated\n\nBuilt with Reflex",
+  "after_reload_plus_one_click": "4"
+}

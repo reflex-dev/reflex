@@ -436,3 +436,306 @@ shots/dev_a1  dev_0910  prod_a1  prod_0910  fin_a1  fin_0910
                              hydrate_report2.json / finance_report.json per configuration
 artifacts/                   tracebacks, .web/package.json for both versions and their diff
 ```
+
+## VERIFICATION: Shipped reflex-enterprise ag_grid demo cannot start: formatters.py bundles the stale pre-0.9.8 path "$/utils/components"
+
+Independent adversarial verification (verifier agent, 2026-09-11). Reproduced from the
+written repro alone in a fresh working dir with fresh PyPI-only venvs; the claimant's
+app copies, venvs and running processes were not used.
+
+- Working dir: `$SB/apps/verify2_ent_aggrid_0/`
+- Venvs (mine, PyPI only): `$SB/envs/verify2_ent_aggrid_0` (reflex 0.9.11a1 + reflex-base 0.9.11a1
+  + reflex-enterprise 0.9.5, Python 3.11) and `$SB/envs/verify2_ent_aggrid_0_b0910`
+  (reflex 0.9.10.post2 + reflex-base 0.9.10.post2 + reflex-enterprise 0.9.5)
+- Ports 5800-5803 / 10200-10203. All processes killed afterwards.
+- Artifacts: `verification/issue1_bundle_path/`
+
+### VERDICT: CONFIRMED as a real, reproducible defect — but it is a reflex-enterprise **demo** bug, not a reflex release issue, and three details of the claim are wrong.
+
+| claim | verdict |
+|---|---|
+| Unpatched demo exits 1 at "Compile pages" on reflex 0.9.11a1 | **CONFIRMED**, byte-for-byte the stated error |
+| Identical on reflex 0.9.10.post2, i.e. not a regression | **CONFIRMED** by my own baseline run |
+| Downstream (reflex-enterprise) | **CONFIRMED**, and still unfixed on the rxe default branch |
+| "stale **pre-0.9.8** path" | **WRONG** — stale since reflex **0.9.2** |
+| fix needs `bundle_library()` **BOTH** at import time and in `formatter_page()` | **WRONG** — the page-eval call alone is sufficient |
+| "**Shipped**" demo | **OVERSTATED** — demos are not in the published `reflex_enterprise` wheel |
+
+### Reproduction (mine, from the written repro)
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+W=$SB/apps/verify2_ent_aggrid_0
+mkdir -p $W/logs && cp -r /home/user/reflex-enterprise/demos/ag_grid $W/shipped_a1
+cd $W && uv venv $SB/envs/verify2_ent_aggrid_0 --python 3.11
+UV_HTTP_TIMEOUT=180 uv pip install --python $SB/envs/verify2_ent_aggrid_0/bin/python \
+    --prerelease=allow 'reflex==0.9.11a1' 'reflex-enterprise==0.9.5' \
+    faker==36.2.2 pandas==2.2.3 aiosqlite greenlet          # cwd is $W, never /home/user/reflex
+cd $W/shipped_a1
+sed -i 's|^sqlalchemy.url = .*|sqlalchemy.url = sqlite:///reflex.db|' alembic.ini
+CI=1 $SB/envs/verify2_ent_aggrid_0/bin/alembic upgrade head
+CI=1 REFLEX_TELEMETRY_ENABLED=false $SB/envs/verify2_ent_aggrid_0/bin/reflex run \
+    --frontend-port 5800 --backend-port 10200            # exit 1
+```
+
+Exit 1 during `Compile pages`, ending in
+
+```
+File ".../site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+ValueError: Library $/app_components/ag_grid/formatters is not bundled. Use `from
+reflex.components.dynamic import bundle_library; bundle_library('$/app_components/ag_grid/formatters')
+to enable it it.
+```
+
+Baseline, same steps, `$SB/envs/verify2_ent_aggrid_0_b0910` (reflex 0.9.10.post2, **no**
+`--prerelease=allow`), `$W/shipped_0910`, ports 5803/10203 → **identical exit 1 and identical
+ValueError**. Not a regression of this release train.
+
+Evidence: `verification/issue1_bundle_path/logs/shipped_a1_unpatched.trimmed.log`,
+`.../shipped_0910_unpatched.trimmed.log`.
+
+### Correction 1 — the path went stale at reflex 0.9.2, not 0.9.8
+
+`bundle_library("$/utils/components")` names the *single shared memo module* that reflex
+emitted up to and including 0.9.1. Greps of the published wheels
+(`$W/histcheck/<ver>`, installed with `uv pip install --no-deps --target`):
+
+| reflex | memo `Component.library` |
+|---|---|
+| 0.9.0, 0.9.1 | `$/utils/components` (bare — the demo's string), `reflex/compiler/utils.py:403,452` |
+| 0.9.2 – 0.9.5 | `$/utils/components/<ExportName>` (per memo), `utils.py:474/426` |
+| 0.9.6 – 0.9.11a1 | `$/app_components/<dotted module path>` mirrored, with the per-name path only as a fallback for `__main__`/unsafe names (`reflex_base/utils/memo_paths.py:library_for`) |
+
+reflex-enterprise 0.9.5 declares `Requires-Dist: reflex[db]>=0.9.6`, so **the demo cannot
+start on any reflex version rxe 0.9.5 permits** — it has been dead for the whole 0.9.6+ range,
+across at least six reflex releases, not since 0.9.8.
+
+Confirmed unfixed upstream: `reflex-dev/reflex-enterprise` default branch
+`demos/ag_grid/ag_grid/formatters.py:16` (blob sha `fbd343d6`, commit `592d5cc1`) still reads
+`dynamic.bundle_library("$/utils/components")`.
+
+There is also a path-agnostic way to write the call that would never have gone stale —
+`bundle_library()` accepts a Component and reads `.library`:
+`probes/probe_memo_library.py` shows `row_counter(rowid="").library` is the live specifier and
+`bundle_library(row_counter(rowid=""))` registers exactly it
+(`verification/issue1_bundle_path/probes/probe_memo_library.out.txt`).
+
+### Correction 2 — page-eval call alone is sufficient; import-time alone is not
+
+Three variants of the demo, same venv, same everything else:
+
+| variant | where `bundle_library("$/app_components/ag_grid/formatters")` is called | result |
+|---|---|---|
+| A | module import time only | **exit 1**, same ValueError (`logs/variantA_importtime_only_a1.trimmed.log`) |
+| B | import time **and** inside `formatter_page()` | serves, `/formatters` HTTP 200 (`logs/variantB_import_plus_pageeval_a1.summary.txt`) |
+| C | inside `formatter_page()` only | serves, `/formatters` HTTP 200 (`logs/variantC_pageeval_only_a1.summary.txt`) |
+
+So the claim's "BOTH ... import-time only still fails" is half right: import-time only does fail,
+but the import-time call contributes nothing to the compile. (It may still matter for the dev
+granian worker, which never runs `compile_app()` — that is NOTES ISSUE 2's territory and was
+not tested here.) Patched sources: `formatters_variant{A,B,C}_*.py`.
+
+### The one reflex-side defect worth acting on (framework, pre-existing, not a regression)
+
+`compile_app()` calls `reset_bundled_libraries()` **after** the app module has been imported —
+`reflex/compiler/compiler.py:1212` in 0.9.11a1 (`:1209` in 0.9.10.post2) — so a user
+`bundle_library()` at module scope is discarded before any page is evaluated. The remedy the
+error message itself prints is therefore ineffective wherever a user would naturally put it,
+and `bundle_library` is undocumented (no hit in `docs/`), so there is no written guidance to
+fall back on. The only user-reachable place that survives is inside the page function.
+
+Minimal repro, **pure reflex, no reflex-enterprise**
+(`verification/issue1_bundle_path/minrepro_bundle_reset/`):
+
+```bash
+cd $W/minrepro_bundle_reset      # rxconfig.py + minapp/minapp.py, 40 lines
+REFLEX_TELEMETRY_ENABLED=false $SB/envs/verify2_ent_aggrid_0/bin/reflex run \
+    --frontend-port 5800 --backend-port 10200
+# exit 1: RuntimeError: REPRO: '$/app_components/minapp/minapp' was bundled at import time
+#         but is missing during page evaluation.
+#         bundled_libraries=['react', '@emotion/react', '$/utils/context', '$/utils/state']
+```
+
+`bundle_reset_report_a1.json` / `bundle_reset_report_0910.json` record the list at both moments;
+they are identical on 0.9.11a1 and 0.9.10.post2, so this too is pre-existing. `reset_bundled_libraries()`
+has been inside `compile_app()` since reflex 0.9.2 (absent in 0.9.0) — the same release that moved the
+memo path, which is why the two failures have always travelled together.
+
+The rxe-side validation itself is **correct**, not over-eager: `reflex_base/components/dynamic.py`
+`make_component` rewrites every `$/…` import in an eval'd renderer to
+`window['__reflex'][<lib>]`, and `_compile_app` (`reflex/compiler/compiler.py:150`) populates
+`window.__reflex` from `bundled_libraries` alone. An unbundled memo module would be `undefined`
+at runtime, so refusing to compile is the right call — only the suggested fix is unusable.
+
+### Refutations ruled out
+
+- Environment/proxy/ports/cwd shadowing: the failure is offline and deterministic, happens during
+  `Compile pages` before any network or bun install, from my own dirs with venv-absolute
+  interpreters (`reflex.__file__` asserted under `$SB/envs/verify2_ent_aggrid_0`); ports were free.
+- Flaky: 5/5 deterministic failures across two reflex versions and two app copies.
+- Documented behaviour / API misuse by the tester: no — the demo source itself is what is stale.
+- Pre-existing rather than new: **yes**, confirmed by my own 0.9.10.post2 baseline, and in fact
+  pre-existing for the whole reflex 0.9.6+ range.
+
+### Severity (my judgement)
+
+- **reflex 0.9.11a1 release: not a blocker, not a regression.** Nothing in this train caused or
+  worsened it.
+- **reflex-enterprise: medium.** A repo demo that cannot start on any supported reflex is a bad
+  first impression, and it is a one-line fix (`bundle_library(row_counter(rowid=""))` inside
+  `formatter_page()`).
+- **reflex: low-medium, separate ticket.** `bundle_library()` at import time being silently reset
+  by `compile_app()` is a genuine framework usability defect with a 40-line pure-reflex repro; it
+  is what makes the enterprise error message a dead end.
+
+## VERIFICATION: Dev mode: one unserializable state var (rxe python-callable column defs) drops the ENTIRE hydrate delta on every page load — session state silently reverts and a raw internal ValueError is shown to the user
+
+Independent adversarial verification (second agent, own working dir
+`$SB/apps/verify2_ent_aggrid_1`, own baseline venv
+`$SB/envs/verify2_ent_aggrid_1_b0910` = reflex 0.9.10.post2 + rxe 0.9.5, ports 5804-5807 /
+10204-10207). Reproduced from the written repro only, then reduced to a 40-line app.
+Artifacts: `verification/issue2_hydrate_delta/`.
+
+### Verdict: CONFIRMED — genuine defect, but the report needs four corrections
+
+**CONFIRMED (reproduced independently, then minimized):** a state var holding a plain python
+callable that returns a Radix component makes every hydrate delta fail to encode; the whole
+delta is dropped, and the session's server-side state is invisible to the UI until each var
+changes again. No ag_grid, no `@rx.memo`, no `bundle_library` patch and none of the demo's
+17 routes are needed — so this is *not* an artifact of the demo patch and not a demo bug.
+
+Minimal repro (`verification/issue2_hydrate_delta/app/`, 40 lines):
+
+```python
+def cell_renderer(params: rx.Var) -> rx.Component:
+    return rx.text("cell")            # any @radix-ui/themes component
+
+class MinState(rx.State):
+    count: int = 0
+    col_defs: list[dict] = [{"field": "name", "cell_renderer": cell_renderer}]
+```
+
+```bash
+V=$SB/apps/verify2_ent_aggrid_1
+cd $V/minrx && CI=1 REFLEX_TELEMETRY_ENABLED=false $SB/envs/ent/bin/reflex run \
+    --loglevel debug --frontend-port 5804 --backend-port 10204 > $V/logs/min_a1_dev.log 2>&1 &
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $V/drive_min.py \
+    http://localhost:5804 $V/shots min_a1_dev
+```
+
+Result on reflex 0.9.11a1 + rxe 0.9.5 (`reports/min_a1_dev_report.json`):
+`initial "0"` → 3 clicks `"3"` → reload `"0"` → one more click `"4"`, plus
+`"An error occurred. ValueError: Library @radix-ui/themes is not bundled…"` in the page body
+(`shots/min_a1_dev_afterreload.png`), and one `[Reflex Backend Exception]` per page load with
+exactly the reported stack (`logs/min_a1_dev.excerpt.txt`):
+`reflex/state.py:2463 hydrate` → `emit_delta` → `reflex/app.py:1975 _sio_dumps` →
+`reflex_base/utils/format.py:734 json_dumps` → `reflex_base/utils/serializers.py:176` →
+`reflex_enterprise/vars.py:284 serialize_lambda` → `:244 create` → `:166 raise ValueError`.
+
+**Not a regression — confirmed independently.** Same app, own venv with reflex 0.9.10.post2 +
+rxe 0.9.5, ports 5805/10205: byte-identical outcome (`reports/min_0910_dev_report.json`
+`"after_reload": "0"`, `"after_reload_plus_one_click": "4"`, 2 exceptions for 2 page loads,
+`logs/min_0910_dev.excerpt.txt`). The claim's `regression: false` stands.
+
+### Correction 1 (makes it WORSE) — this is not dev-only; a production configuration is affected
+
+The real trigger is "the process serving the websocket never ran a real compile", not "dev".
+Reflex itself spawns the **uvicorn/gunicorn production backend** as a separate process with
+`__REFLEX_SKIP_COMPILE=true` (`reflex/utils/exec.py:783`), and any container that runs
+`reflex export` in one step and serves the ASGI app in another does the same.
+
+Demonstrated live against the *production build* of the minimal app, served by a separate
+non-compiling backend process (`verification/issue2_hydrate_delta/serve_deploy_like.py`,
+port 5807, `__REFLEX_SKIP_COMPILE=true` + `__REFLEX_MOUNT_FRONTEND_COMPILED_APP=true`,
+`REFLEX_ENV_MODE=prod`):
+
+```bash
+cd $V/minrx && $SB/envs/ent/bin/python $V/serve_deploy_like.py 5807 > $V/logs/min_a1_deploylike.log 2>&1 &
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $V/drive_min.py http://localhost:5807 $V/shots deploylike
+```
+
+`reports/deploylike_report.json`: reload → `"0"`, next click → `"4"`, 2 backend exceptions
+(`logs/min_a1_deploylike.excerpt.txt`), and the end user sees
+**"An error occurred. Contact the website administrator."** on every page load
+(`shots/deploylike_afterreload.png`). `reflex run --env prod` is clean
+(`reports/min_a1_prod_report.json`, 0 exceptions) only because `run_granian_backend_prod`
+(`reflex/utils/exec.py:789`) serves in the very process that just compiled;
+`should_use_granian()` (`exec.py:412`) picks uvicorn instead whenever uvicorn *and* gunicorn
+are installed or `REFLEX_USE_GRANIAN=0`, and that path is broken in production.
+
+### Correction 2 — "a single unserializable var takes down the entire delta" is not reflex behavior
+
+Reflex tolerates unserializable state vars: `format.json_dumps` passes
+`serializers.serialize` as the `default=` hook (`reflex_base/utils/format.py:730`), and that
+returns `None` for a type with no serializer (`serializers.py:167`), so the value is encoded
+as `null` and **the delta is still delivered**. Control app with no reflex-enterprise at all
+(`verification/issue2_hydrate_delta/purerx/`, a state var holding an object with no
+serializer, reflex 0.9.11a1 from `$SB/envs/smoke`, port 5806): 0 exceptions, state survives
+the reload (`reports/purerx_report.json` → `"after_reload": "3"`).
+The delta dies here only because rxe's registered serializer **raises**. That half of the
+attribution belongs to reflex-enterprise, not to reflex.
+
+### Correction 3 — the raw error text in dev is intended behavior, not part of the bug
+
+`default_backend_exception_handler` (`reflex/app.py:133-165`) deliberately shows
+`f"{type(exception).__name__}: {exception}"` when `not is_prod_mode()` and
+"Contact the website administrator." otherwise. Showing the ValueError to the developer in
+`reflex run` is the designed dev experience; the finding is the dropped delta, not the toast.
+
+### Correction 4 — blast radius is narrower than stated, and it self-heals in dev
+
+- `on_load` handlers still run and `is_hydrated` still becomes `true` during the failed
+  hydrate (`reports/onload_a1_dev_onload.json`: `loaded = "on_load-ran"`,
+  `is_hydrated = "hydrated"`), so only the hydrate delta itself is lost. That matters on
+  reload/reconnect of an existing session, not on a first visit where the client already
+  holds the defaults.
+- In dev it cures itself after the **first** hot reload, as the report says: edit any app
+  source file, and from then on 0 exceptions and the reload test returns `"3"`
+  (`reports/pre_hmr_report.json` vs `reports/post_hmr_report.json`). Cause: the `.nocompile`
+  marker (`reflex/utils/exec.py:494`) is deleted when it is read (`reflex/app.py:1591-1593`),
+  so the reloaded worker performs a full compile. Dev impact window = server start → first
+  source edit.
+- **One-line workaround, verified:** `dynamic.bundle_library("@radix-ui/themes")` at app
+  module import time → 0 exceptions, state survives the reload
+  (`reports/workaround_report.json`, `logs/min_a1_dev_workaround.excerpt.txt`). It survives in
+  a non-compiling worker precisely because that worker never calls
+  `reset_bundled_libraries()`. (In the compiling process the same call is wiped — that is
+  ISSUE 1's `compiler.py:1212` reset — but there the radix plugin bundles it anyway.)
+
+### Mechanism, named at file:line (installed 0.9.11a1 wheel; identical on the release branch)
+
+1. `reflex_components_radix/plugin.py:70` — `@radix-ui/themes` is registered **only** from
+   `RadixThemesPlugin.enter_component`, i.e. inside the full compile walk.
+2. `reflex/compiler/compiler.py:1174-1203` — when `app._should_compile()` is false,
+   `compile_app()` re-evaluates pages and returns **before** the registry setup at
+   `compiler.py:1212-1219` (`reset_bundled_libraries()` + `bundle_library(dep)` for every
+   plugin frontend dependency). So a non-compiling worker keeps only
+   `_default_bundled_libraries()`.
+3. Proved offline with `verification/issue2_hydrate_delta/probe_registry.py` (run from the app
+   dir): with `__REFLEX_SKIP_COMPILE=true` →
+   `["react", "@emotion/react", "$/utils/context", "$/utils/state"]`; with a real compile →
+   the same list **plus `@radix-ui/themes`**. The library *is* in the shipped frontend bundle
+   either way, so the error is a false negative about the worker's own build.
+4. `reflex_enterprise/vars.py:166` reads that compile-time, process-local registry at
+   **websocket serialization time** and raises `ValueError` from inside `json.dumps`, which
+   aborts encoding of the whole packet (`socketio/packet.py:64` → `reflex/app.py:1975`).
+
+### Attribution and severity (my judgement)
+
+Root cause is reflex-enterprise: `serialize_lambda` performs compile-time validation during
+runtime serialization and raises inside a JSON `default=` hook. Fixing either half is enough
+— rxe skipping/soft-failing the bundle check when no compile context exists, or reflex making
+the registry reflect the actual build in non-compiling processes (populate plugin frontend
+dependencies on the backend-only paths of `compile_app`, or persist the bundled set into
+`.web` next to the stateful-pages marker and load it there).
+
+Severity **medium** for this release train (claim said high): not a regression, root cause
+downstream, one-line workaround, and the default `reflex run --env prod` path is clean.
+It is *not* release-blocking for reflex 0.9.11a1. For reflex-enterprise it is the most
+user-visible open bug in this cluster, and correction 1 (silent state loss plus an error
+banner for end users on the uvicorn prod backend) makes it worth fixing on both sides rather
+than only in dev-mode terms. No matching issue found in reflex-dev/reflex.
+
+Processes started for this verification (all killed): dev servers on 5804/10204 (0.9.11a1)
+and 5805/10205 (0.9.10.post2), pure-reflex control on 5806/10206, prod + deploy-like backend
+on 5807.

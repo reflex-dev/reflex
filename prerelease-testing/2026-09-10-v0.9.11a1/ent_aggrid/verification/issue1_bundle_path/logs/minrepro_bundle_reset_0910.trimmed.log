@@ -1,0 +1,33 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Initializing minapp ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized minapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_ent_aggrid_0_b0910/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 367, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_ent_aggrid_0_b0910/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 279, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_ent_aggrid_0_b0910/lib/python3.11/site-packages/reflex/app.py", line 1662, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_ent_aggrid_0_b0910/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1229, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_ent_aggrid_0_b0910/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 809, in compile
+    page_ctx = self.hooks.eval_page(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_ent_aggrid_0_b0910/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 271, in eval_page
+    result = hook_impl(page_fn, page=page, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_ent_aggrid_0_b0910/lib/python3.11/site-packages/reflex/compiler/plugins/builtin.py", line 182, in eval_page
+    component = compiler.into_component(page_fn)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_ent_aggrid_0_b0910/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 913, in into_component
+    component_called = component()
+                       ^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_ent_aggrid_0/minrepro_bundle_reset_0910/minapp/minapp.py", line 46, in index
+    raise RuntimeError(msg)
+RuntimeError: REPRO: '$/app_components/minapp/minapp' was bundled at import time but is missing during page evaluation. bundled_libraries=['react', '@emotion/react', '$/utils/context', '$/utils/state']
+Happened while evaluating page 'index'

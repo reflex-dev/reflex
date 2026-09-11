@@ -1,0 +1,20 @@
+{
+  "console": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on pagehide"
+  ],
+  "page_errors": [],
+  "initial": "0",
+  "after_3_clicks": "3",
+  "after_reload": "0",
+  "body_text_after_reload": "An error occurred.\nValueError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@radix-ui/themes') to enable it it.\nSee logs for details.\nmin hydrate repro\n0",
+  "after_reload_plus_one_click": "4"
+}

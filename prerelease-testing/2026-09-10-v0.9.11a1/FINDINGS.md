@@ -272,7 +272,14 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 ## FINDING-018: one unserializable state var drops the whole hydrate delta in dev (HIGH, pre-existing)
 
 - Cluster: `ent_aggrid` | Regression vs 0.9.10.post2: no (identical counts and messages) |
-  Trigger: downstream (reflex-enterprise python-callable column defs) | Mechanism: reflex-side
+  Trigger: downstream (reflex-enterprise python-callable column defs) | Mechanism: reflex-side |
+  Verifier: CONFIRMED and widened — a 40-line app with one state var holding a python-callable
+  column def reproduces it with no ag_grid, no `@rx.memo`, no demo patch and none of the demo's
+  routes, so it is not an artifact of the demo. The serializer raises inside the `json.dumps`
+  default hook, which aborts encoding of the entire socket.io packet; and the bundled-library
+  registry it validates against is only populated by a *compiling* process, so any worker started
+  with `.nocompile` or `__REFLEX_SKIP_COMPILE=true` (which includes the prod backend path) sees only
+  the four defaults even though the library is in the shipped bundle.
 - In dev the granian worker never runs `compile_app`, so reflex-enterprise's lambda-serialization
   validation raises while the hydrate delta is being encoded. The delta is then dropped **entirely**:
   one bad var takes every other var in the state with it.
@@ -291,9 +298,17 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 
 - Cluster: `ent_aggrid` | Regression: no (all identical on 0.9.10.post2) | Downstream: yes — these
   belong on the reflex-enterprise tracker, not this repo's.
-1. The shipped `ag_grid` demo cannot start unpatched: `formatters.py` bundles the pre-0.9.8 path
-   `$/utils/components`, so compile exits 1 with `ValueError: Library ... is not bundled`. (The error
-   is at least a clean ValueError now, where 0.9.9a1 masked it as a `VarAttributeError`.)
+1. The shipped `ag_grid` demo cannot start unpatched: `formatters.py` bundles `$/utils/components`,
+   so compile exits 1 with `ValueError: Library $/app_components/ag_grid/formatters is not bundled`.
+   (The error is at least a clean ValueError now, where 0.9.9a1 masked it as a `VarAttributeError`.)
+   Verifier correction: that path stopped being the memo library in reflex **0.9.2**, not 0.9.8 —
+   0.9.2–0.9.5 used `$/utils/components/<ExportName>` and 0.9.6+ uses `$/app_components/<module>`, so
+   the demo cannot start on any reflex that reflex-enterprise 0.9.5 permits (`reflex[db]>=0.9.6`).
+   The verifier also found a **framework-side** half worth acting on: `compile_app()` calls
+   `reset_bundled_libraries()` *after* the app module is imported (`reflex/compiler/compiler.py:1212`),
+   so a user's module-scope `bundle_library()` — exactly the remedy the error message prints — is
+   discarded before pages are evaluated. Present since 0.9.2; this is the previous campaign's
+   FINDING-017 seen from another angle.
 2. `ModelWrapper`'s datasource URL percent-encodes the `?`, so `/model`, `/model-auth` and
    `/model-ssrm` fetch `...%3FstartRow=0...` and 404 with an empty grid.
 3. reflex-enterprise pins ag-grid 34.3.1 against ag-charts-enterprise 11.2.4, which AG Grid rejects,

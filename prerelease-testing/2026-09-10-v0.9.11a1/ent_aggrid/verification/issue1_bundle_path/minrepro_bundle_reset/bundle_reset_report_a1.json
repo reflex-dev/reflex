@@ -1,0 +1,18 @@
+{
+  "marker": "$/app_components/minapp/minapp",
+  "at_import_time": [
+    "react",
+    "@emotion/react",
+    "$/utils/context",
+    "$/utils/state",
+    "$/app_components/minapp/minapp"
+  ],
+  "at_page_eval": [
+    "react",
+    "@emotion/react",
+    "$/utils/context",
+    "$/utils/state"
+  ],
+  "marker_present_at_import": true,
+  "marker_present_at_page_eval": false
+}

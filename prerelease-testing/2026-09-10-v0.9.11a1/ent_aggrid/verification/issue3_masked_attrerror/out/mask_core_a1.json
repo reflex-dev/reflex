@@ -1,0 +1,111 @@
+{
+  "reflex": "0.9.11a1",
+  "reflex_base": "0.9.11a1",
+  "results": {
+    "A_claim_get_all_var_data": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_get_all_var_data not found.",
+      "cause": "None",
+      "context": "None",
+      "real_error_visible": false,
+      "tb_tail": [
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2120, in __getattr__",
+        "    return next_class.__getattr__(self, name)",
+        "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 1471, in __getattr__",
+        "    raise VarAttributeError(msg)",
+        "reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found."
+      ]
+    },
+    "B_cached_var_name_str": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_var_name not found.",
+      "cause": "None",
+      "context": "None",
+      "real_error_visible": false,
+      "tb_tail": [
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2120, in __getattr__",
+        "    return next_class.__getattr__(self, name)",
+        "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 1471, in __getattr__",
+        "    raise VarAttributeError(msg)",
+        "reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found."
+      ]
+    },
+    "B2_cached_var_name_attr": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_var_name not found.",
+      "cause": "None",
+      "context": "None",
+      "real_error_visible": false,
+      "tb_tail": [
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2120, in __getattr__",
+        "    return next_class.__getattr__(self, name)",
+        "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 1471, in __getattr__",
+        "    raise VarAttributeError(msg)",
+        "reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found."
+      ]
+    },
+    "C_removed_module_attr": {
+      "raised": "reflex_base.utils.exceptions.VarAttributeError",
+      "msg": "Attribute _cached_get_all_var_data not found.",
+      "cause": "None",
+      "context": "None",
+      "real_error_visible": false,
+      "tb_tail": [
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2120, in __getattr__",
+        "    return next_class.__getattr__(self, name)",
+        "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 1471, in __getattr__",
+        "    raise VarAttributeError(msg)",
+        "reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found."
+      ]
+    },
+    "D_valueerror_control": {
+      "raised": "builtins.ValueError",
+      "msg": "REAL ERROR: module 'x' has no attribute 'y'",
+      "cause": "None",
+      "context": "None",
+      "real_error_visible": true,
+      "tb_tail": [
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2075, in __get__",
+        "    GLOBAL_CACHE[unique_id] = self._func(instance)",
+        "                              ^^^^^^^^^^^^^^^^^^^^",
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_ent_aggrid_2/probes/probe_mask_core.py\", line 132, in _cached_get_all_var_data",
+        "    raise ValueError(REAL)",
+        "ValueError: REAL ERROR: module 'x' has no attribute 'y'"
+      ]
+    },
+    "E1_plain_no_getattr": {
+      "raised": "builtins.AttributeError",
+      "msg": "REAL ERROR: module 'x' has no attribute 'y'",
+      "cause": "None",
+      "context": "None",
+      "real_error_visible": true,
+      "tb_tail": [
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_ent_aggrid_2/probes/probe_mask_core.py\", line 159, in <lambda>",
+        "    report(\"E1_plain_no_getattr\", lambda: PlainNoGetattr().prop)",
+        "                                          ^^^^^^^^^^^^^^^^^^^^^",
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_ent_aggrid_2/probes/probe_mask_core.py\", line 144, in prop",
+        "    raise AttributeError(REAL)",
+        "AttributeError: REAL ERROR: module 'x' has no attribute 'y'"
+      ]
+    },
+    "E2_plain_with_getattr": {
+      "raised": "builtins.AttributeError",
+      "msg": "Attribute prop not found.",
+      "cause": "None",
+      "context": "None",
+      "real_error_visible": false,
+      "tb_tail": [
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_ent_aggrid_2/probes/probe_mask_core.py\", line 160, in <lambda>",
+        "    report(\"E2_plain_with_getattr\", lambda: PlainWithGetattr().prop)",
+        "                                            ^^^^^^^^^^^^^^^^^^^^^^^",
+        "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_ent_aggrid_2/probes/probe_mask_core.py\", line 156, in __getattr__",
+        "    raise AttributeError(msg)",
+        "AttributeError: Attribute prop not found."
+      ]
+    }
+  }
+}

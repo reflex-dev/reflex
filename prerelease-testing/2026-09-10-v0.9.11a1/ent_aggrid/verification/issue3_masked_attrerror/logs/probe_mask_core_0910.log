@@ -1,0 +1,48 @@
+reflex module : /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py
+reflex        : 0.9.10.post2
+reflex-base   : 0.9.10.post2
+python        : 3.11.15
+
+=== A_claim_get_all_var_data ===
+  reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found.
+  __cause__   : None
+  __context__ : None
+  real error text anywhere in traceback: False
+
+=== B_cached_var_name_str ===
+  reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+  __cause__   : None
+  __context__ : None
+  real error text anywhere in traceback: False
+
+=== B2_cached_var_name_attr ===
+  reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+  __cause__   : None
+  __context__ : None
+  real error text anywhere in traceback: False
+
+=== C_removed_module_attr ===
+  reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found.
+  __cause__   : None
+  __context__ : None
+  real error text anywhere in traceback: False
+
+=== D_valueerror_control ===
+  builtins.ValueError: REAL ERROR: module 'x' has no attribute 'y'
+  __cause__   : None
+  __context__ : None
+  real error text anywhere in traceback: True
+
+=== E1_plain_no_getattr ===
+  builtins.AttributeError: REAL ERROR: module 'x' has no attribute 'y'
+  __cause__   : None
+  __context__ : None
+  real error text anywhere in traceback: True
+
+=== E2_plain_with_getattr ===
+  builtins.AttributeError: Attribute prop not found.
+  __cause__   : None
+  __context__ : None
+  real error text anywhere in traceback: False
+
+wrote out/mask_core_0910.json
