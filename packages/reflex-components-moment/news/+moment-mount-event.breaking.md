@@ -1,1 +1,0 @@
-`rx.moment` now fires `on_change` on mount and remount, including for static dates and `interval=0`. Handlers with side effects should account for the initial call and for React Strict Mode invoking it twice in development.
