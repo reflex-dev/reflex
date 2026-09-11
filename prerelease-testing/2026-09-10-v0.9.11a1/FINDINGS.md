@@ -793,3 +793,38 @@ It matters because `REFLEX_SSR=false` is exactly the configuration #7044 makes u
 uptime checks and CDNs will treat live pages as errors, and `curl` gives no way to tell a real route
 from a dead one. Serving the fallback document with 200 for a known route (and keeping 404 for
 genuinely unknown paths) would fix it.
+
+
+## FINDING-038: MCP `search_events` advertises a `rest_path` that 404s without `EventHandlerAPIPlugin` (LOW, pre-existing, reflex-enterprise)
+
+Every `search_events` result carries `"rest_path": "/_reflex/event/<state>/<handler>"`, built
+unconditionally by `reflex_enterprise/plugins/event_handler_api.py:507 describe_event_handler`,
+which the MCP plugin reuses. With `rxe.MCPPlugin()` alone — the configuration the MCP docs show —
+that route is not mounted, so an agent that follows the advertised path gets a bare `404 Not Found`
+with nothing saying the REST surface is disabled.
+
+Repro: `ent_mcp_oidc/apps/authapp` plus `ent_mcp_oidc/scripts/mcp_extra_probe.py <backend_port>`;
+evidence `ent_mcp_oidc/logs/mcp_extra_a1.json` (`rest_event_path` → 404 with and without a valid
+bearer) and `logs/mcp_extra_0910.json`, identical on reflex 0.9.10.post2 — a property of the
+reflex-enterprise 0.9.5 wheel, not a regression. Omitting `rest_path` (or marking it unavailable)
+when the REST plugin is not mounted would fix it.
+
+## FINDING-039: logout from an iframed app never reaches the IdP's `end_session_endpoint` (LOW-MEDIUM, pre-existing, reflex-enterprise)
+
+In the popup (iframed) logout flow the provider session is never ended, so single sign-out does not
+happen: the local session is cleared and the popup closes, but the IdP is never told, and clicking
+login again silently re-authenticates from the surviving IdP session.
+
+Mechanism (`reflex_enterprise/auth/oidc/state.py`, `redirect_to_logout`): when `_use_popup_flow()`
+is true the opener yields `redirect_to_logout_popup` and then **immediately** awaits
+`self._reset_session()`. The popup's `/popup-logout` page runs `set_from_popup(True)` +
+`redirect_to_logout` on load, by which time the shared cookies are gone, so `has_any_token` is
+false and it takes the "Re-entry after provider logout completed; just close" branch — `CLOSE_POPUP`,
+no IdP round trip. The server log shows `Processing logout flow (from_popup=False)` followed by
+`(from_popup=True)`.
+
+Repro: run the shipped `reflex-enterprise/demos/oidc` against `ent_mcp_oidc/idp/fake_idp2.py`, then
+`ent_mcp_oidc/scripts/drive_popup_logout.py <frontend_port>`; the IdP's `/_log` shows the
+`GET /authorize` of the login but **no `GET /logout`**, while the non-iframed logout in
+`scripts/drive_oidc_demo.py` does produce `GET /logout` with `id_token_hint` and
+`post_logout_redirect_uri`. Reproduced identically on reflex 0.9.10.post2 — pre-existing.

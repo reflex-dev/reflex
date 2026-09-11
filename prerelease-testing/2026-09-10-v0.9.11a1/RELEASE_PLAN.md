@@ -98,6 +98,10 @@ identical against a live OIDC provider; and all four 0.9.9a1 enterprise breakage
   the fix is one dependency line.
 - **FINDING-036**: every page of an enterprise app logs two `no dispatch function for substate(s)`
   console errors for the OIDC states that merely importing `reflex_enterprise` defines. Pre-existing.
+- **FINDING-038 / FINDING-039**: MCP `search_events` advertises a `rest_path` that 404s unless the
+  REST plugin is also enabled, and logout from an iframed app never reaches the IdP's
+  `end_session_endpoint`, so single sign-out silently does not happen. Both pre-existing in 0.9.5.
+  The previous campaign's `/_reflex/cookies/sync` 404 (2026-08-27 FINDING-026) is also still open.
 - **FINDING-031 / FINDING-032**: two MCP-resource quirks in reflex-enterprise 0.9.5, both
   pre-existing. `reflex://state/events/<unknown state>` answers `{"events": []}` where the sibling
   `state/vars` resource errors helpfully, and the `state` name `search_events` hands the caller is
@@ -158,6 +162,9 @@ Recorded so the next campaign knows what was already exercised and can spend its
   invented-bearer rejection, tools, every `reflex://` resource, plain / arg-taking / background /
   sibling-substate / nested-substate `queue_event`, and — with `AuthPlugin` — OAuth 2.1 metadata,
   401 + `WWW-Authenticate`, and an anonymous session correctly scoped to `auth=False` handlers.
+- **The shipped `demos/oidc` app** against a full fake IdP on both reflex versions (12/12 driver
+  steps each), including proactive access-token refresh over `offline_access` with 70-second
+  tokens, and the MCP **OAuth 2.1 + human consent** path driven by the real `mcp` SDK client.
 - **reflex-enterprise OIDC** end to end against a local provider: discovery, PKCE S256 (verified by
   the provider), callback, userinfo, guarded pages and handlers (foreground and background),
   protected-value withholding, reload and second-tab persistence, and RP-initiated logout.
