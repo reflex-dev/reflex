@@ -374,3 +374,174 @@ logs/                      server logs (trimmed), gate outputs, probe outputs
 shots/                     screenshots + capture.json / results*.json per run
 pkgjson/                   .web/package.json per app + the cross-train dependency diff
 ```
+
+## VERIFICATION: bundle_library() called at app-module import time is silently discarded before pages are evaluated, so the documented dynamic-import path fails with an error telling you to do what you already did
+
+Independent adversarial verification (2026-09-11, second agent, own working dir
+`$SB/apps/verify2_ent_map_dnd_flow_0/`, own repro apps written from the claim text —
+the claimant's `bundlectx/` / `bundlectx_dnd/` sources were read but not executed and
+none of their processes were used).
+
+**VERDICT: CONFIRMED — genuine reflex-core defect, reproduced independently on two
+surfaces. Severity MEDIUM. NOT a regression of the 0.9.11a1 train (identical on
+0.9.10.post2). NOT downstream (root cause is `reflex/compiler/compiler.py`).
+Three corrections to the claim, all sharpening rather than refuting it — see below.**
+
+### What I reproduced myself
+
+Both repro apps are under
+`verification/bundle_library_reset/` and both start with
+`assert "/envs/" in rx.__file__` so the venv under test is named in the log
+(no `/home/user/reflex` shadowing; no network, ports or proxy are involved —
+every failure below is a compile-time Python exception raised before anything is served).
+
+**(1) PURE REFLEX, no reflex-enterprise — `verification/bundle_library_reset/probe1/`.**
+`bundle_library("d3-format")` at module scope plus a var-returning `@rx.memo` whose JS
+imports `format` from `d3-format`. `BUNDLE_WHERE=page` repeats the same call inside the
+page function.
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+cd <probe1> && BUNDLE_WHERE=module REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/smoke/bin/reflex export --frontend-only --no-zip     # reflex 0.9.11a1 -> exit 1
+cd <probe1> && BUNDLE_WHERE=page   REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/smoke/bin/reflex export --frontend-only --no-zip     # -> exit 0
+cd <probe1_b0910> && BUNDLE_WHERE=module REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/base0910/bin/reflex export --frontend-only --no-zip  # reflex 0.9.10.post2 -> exit 1
+```
+
+`logs/probe1_module_0911a1.log` (reflex 0.9.11a1, exit 1):
+
+```
+PROBE import     ctx=0x7f33c6ffb520 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+PROBE after_app  ctx=0x7f33c6ffb520 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+PROBE page_eval  ctx=0x7f33c6ffb520 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'react']
+TypeError: Var-returning `@rx.memo` `fmt_label` cannot import `d3-format` because it is
+not bundled. Use a component-returning `@rx.memo` instead.
+```
+
+`logs/probe1_module_0910post2.log` (reflex 0.9.10.post2): byte-identical probe lines and
+the same `TypeError`. `logs/probe1_page_0911a1.log` (workaround): `page_eval` still holds
+`d3-format`, exit 0, and the built `.web/app/root.jsx` then really does carry
+`import * as d3_format from "d3-format";` / `"d3-format": d3_format,` in the
+`window.__reflex` map — i.e. the lost registration is a real loss of the frontend bundle
+entry, not merely a validator complaint.
+
+**(2) reflex-enterprise dnd surface — `verification/bundle_library_reset/dndbundle/`.**
+Non-`@rxe.static` `can_drop` returning a `Var` with `imports={"d3-format": [...]}`,
+`bundle_library("d3-format")` at module scope only.
+
+```bash
+cd <dndbundle> && CI=1 BUNDLE_WHERE=module REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/ent/bin/reflex run --frontend-port 5840 --backend-port 10240      # exit 1
+cd <dndbundle> && CI=1 BUNDLE_WHERE=page   REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/ent/bin/reflex run --frontend-port 5840 --backend-port 10240      # "App running"
+cd <dndbundle_b0910> && CI=1 BUNDLE_WHERE=module REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/entbase/bin/reflex run --frontend-port 5841 --backend-port 10241  # exit 1
+```
+
+`logs/dndbundle_module_0911a1.log` (reflex 0.9.11a1 + rxe 0.9.5) reproduces the claimed
+traceback verbatim, doubled typo included:
+
+```
+ValueError: Library d3-format is not bundled. Use `from reflex.components.dynamic import
+bundle_library; bundle_library('d3-format') to enable it it.
+Happened while evaluating page 'index'
+```
+
+`logs/dndbundle_module_0910post2.log` (reflex 0.9.10.post2 + rxe 0.9.5): identical.
+`logs/dndbundle_page_0911a1.log`: with the call moved into the page function the app
+compiles and reaches `App running at: http://localhost:5840/`, and `root.jsx` gains the
+`d3-format` window entry. Server killed; ports 5840/10240 free.
+
+### Mechanism (read on `origin/r/pre-2026.09.10-34457666442`, matches the installed wheel)
+
+* `reflex/compiler/compiler.py:1212` — `compile_app()` calls `reset_bundled_libraries()`.
+* `reflex/compiler/compiler.py:1217-1219` — it then re-adds **only**
+  `plugin.get_frontend_dependencies()`.
+* `reflex/compiler/compiler.py:1236` — `compile_ctx.compile()` evaluates the pages, i.e.
+  after the reset.
+* `packages/reflex-base/src/reflex_base/components/dynamic.py:72-75` —
+  `reset_bundled_libraries()` does `bundled[:] = _default_bundled_libraries()`, an
+  in-place slice assignment on `RegistrationContext.ensure_context().bundled_libraries`,
+  which is why the context `id()` is unchanged while the entry vanishes.
+* Consumers that then raise: `packages/reflex-base/src/reflex_base/components/memo.py:819-831`
+  (pure reflex, var-returning `@rx.memo`) and `reflex_enterprise/vars.py:163-168`
+  (`LambdaVar._validate_and_extend_return_expr`). The silent consumer is
+  `reflex_base/components/dynamic.py:140-147`, which falls back to a jsdelivr CDN URL for
+  any import whose library is no longer in the registry, and
+  `reflex/compiler/compiler.py:149-153`, which builds `window.__reflex` from the same list.
+
+The framework's own supported registration point is *inside* the compile:
+`reflex_components_radix/plugin.py:70` calls `bundle_library()` from `enter_component`,
+which runs during page compilation — after the reset. Module scope is the only place a
+plain app can call it, and it is exactly the place that is wiped.
+
+### Corrections to the claim (none of them refute it)
+
+1. **"documented dynamic-import path" overstates it.** `bundle_library` has *zero*
+   occurrences anywhere in `docs/` (`grep -rn bundle_library docs/` -> 0 files); the
+   claimant says this too, later in their own write-up, but the issue title contradicts
+   it. The path is recommended only by reflex-enterprise's runtime error message. Worth
+   keeping the observation, not the word "documented".
+2. **The changelog attribution is slightly off.** The claim points at #6382 (the move of
+   the list onto `RegistrationContext`, reflex-base 0.9.9). The reset predates that:
+   `git log -S "reset_bundled_libraries"` shows it first introduced by **#6260**
+   ("Add compiler plugin hooks and plugins and move compilation pipeline out of App",
+   86382e2f9, 2026-04-30), whose first tag is `reflex-base-v0.9.2a1`. #6382 only relocated
+   the storage. So the behaviour dates to **0.9.2**, not to this train and not to 0.9.9.
+   Confirmed at the tags: `git grep -n reset_bundled_libraries v0.9.1` returns nothing
+   (the symbol did not exist, so a module-scope registration survived to page evaluation),
+   while `git show v0.9.2:reflex/compiler/compiler.py | grep -n reset_bundled_libraries`
+   gives line 1047. No changelog entry announced the change. (A runtime cross-check on a
+   reflex 0.9.1 venv was attempted twice; both PyPI installs died on the sandbox proxy
+   (`Failed to fetch .../reflex-0.9.1-py3-none-any.whl.metadata ... operation timed out`),
+   so the boundary rests on the tag-level source evidence -- conclusive for a static code
+   question -- plus the maintainer's own report below recording 0.9.8 as byte-identical.)
+3. **This is already filed and tracked — the claim is genuine but not novel.**
+   [reflex-dev/reflex#6975](https://github.com/reflex-dev/reflex/issues/6975)
+   ("compile_app() discards user bundle_library() registrations, and the dynamic
+   serializer never rewrites subpath imports of bundled libs"), opened 2026-08-28 by
+   masenf, label `bug`, **still open**, Linear ENG-11814. It was filed out of the previous
+   (0.9.9a1) campaign's `registration_context` cluster and states defect (1) in the same
+   terms, assessing it "Severity: low. Not a regression — behavior is byte-identical on
+   0.9.8." So: the correct release action is "still open, not fixed in 0.9.11a1", not
+   "new finding".
+
+   #6975 also records an asymmetry neither this cluster nor `ent_aggrid` mentions, and the
+   release source confirms it by inspection: the backend-only paths of `compile_app()`
+   return at `compiler.py:1186` and `:1204`, **before** the reset at `:1212`, so the
+   backend worker keeps the user's registration while the frontend compile drops it —
+   frontend bundle and backend registry can end up permanently out of sync in a run that
+   does *not* hard-fail.
+
+### Judgement
+
+* `confirmed`: **true**. Not an environment quirk (no network/ports/cwd involvement;
+  venv asserted in-process), not API misuse (`bundle_library` is public, has no other
+  app-level call site, and the maintainer's own issue calls the module-scope call a
+  defect), not a demo bug (reproduced in a 30-line pure-reflex app), not flaky
+  (deterministic, 6/6 runs).
+* `severity`: **medium**, one notch above #6975's "low", because the two surfaces exercised
+  here abort the compile outright rather than degrading silently, and because the
+  reflex-enterprise message instructs the user to perform the exact call they already made.
+  It is **not a 0.9.11 release blocker**: pre-existing since 0.9.2, already tracked, and
+  worked around by one line (call `bundle_library()` inside the page function).
+* `regression`: **false** — verified by running the baseline myself
+  (`logs/probe1_module_0910post2.log`, `logs/dndbundle_module_0910post2.log`).
+* `downstream`: **false** — the fix belongs in `reflex/compiler/compiler.py`. The two
+  downstream nits are real but separate: rxe's `"to enable it it"` typo and its message
+  not saying *where* to call `bundle_library` (`reflex_enterprise/vars.py:166`).
+
+### Evidence paths
+
+```
+verification/bundle_library_reset/probe1/          pure-reflex repro (BUNDLE_WHERE=module|page)
+verification/bundle_library_reset/dndbundle/       rxe dnd repro (BUNDLE_WHERE=module|page)
+verification/bundle_library_reset/logs/probe1_module_0911a1.log     TypeError, 0.9.11a1
+verification/bundle_library_reset/logs/probe1_page_0911a1.log       workaround, exit 0
+verification/bundle_library_reset/logs/probe1_module_0910post2.log  baseline, identical
+verification/bundle_library_reset/logs/dndbundle_module_0911a1.log  ValueError, 0.9.11a1
+verification/bundle_library_reset/logs/dndbundle_page_0911a1.log    workaround, App running
+verification/bundle_library_reset/logs/dndbundle_module_0910post2.log  baseline, identical
+```

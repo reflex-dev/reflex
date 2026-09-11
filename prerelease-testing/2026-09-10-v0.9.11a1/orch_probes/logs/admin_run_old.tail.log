@@ -1,0 +1,120 @@
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+App running at: http://localhost:3067/
+Backend running at: http://0.0.0.0:4067
+[ERROR] Application callable raised an exception
+Traceback (most recent call last):
+  File "<sp>/granian/_futures.py", line 15, in future_watcher
+    await inner(watcher.scope, watcher.proto)
+  File "<sp>/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "<sp>/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "<sp>/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "<sp>/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "<sp>/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<sp>/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<sp>/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 455, in handle
+    await self.app(scope, receive, send)
+  File "<sp>/reflex/app.py", line 715, in context_middleware
+    await app(scope, receive, send)
+  File "<sp>/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "<sp>/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "<sp>/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "<sp>/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "<sp>/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<sp>/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<sp>/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 455, in handle
+    await self.app(scope, receive, send)
+  File "<sp>/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "<sp>/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "<sp>/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/contrib/sqla/middleware.py", line 28, in dispatch
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "<sp>/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "<sp>/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "<sp>/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<sp>/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<sp>/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 65, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "<sp>/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<sp>/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<sp>/starlette/routing.py", line 62, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/base.py", line 300, in wrapper
+    return await custom_view.render(request, self.templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/views.py", line 169, in render
+    return templates.TemplateResponse(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/templating.py", line 149, in TemplateResponse
+    return _TemplateResponse(
+           ^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/templating.py", line 43, in __init__
+    content = template.render(context)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+  File "<sp>/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "<sp>/starlette_admin/templates/index.html", line 1, in top-level template code
+    {% extends "layout.html" %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/templates/layout.html", line 7, in top-level template code
+    {% set app_title = config.app_title if config and config.app_title else app_title %}
+^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/templates/base.html", line 12, in top-level template code
+    <link rel="stylesheet" href="{{ url_for(__name__ ~ ':statics', path='css/tabler.min-1.1.0.css') }}">
+^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/templating.py", line 110, in url_for
+    return request.url_for(name, **path_params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/requests.py", line 202, in url_for
+    url_path = url_path_provider.url_path_for(name, **path_params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/routing.py", line 637, in url_path_for
+    raise NoMatchFound(name, path_params)
+NoMatchFound: No route exists for name "admin:statics" and params "path".

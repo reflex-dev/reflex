@@ -176,3 +176,35 @@ Fresh blank app, three consecutive runs in the same directory (`logs/npm_run.tri
   `REFLEX_USE_NPM=1` run converts the project to npm permanently. Run 2 used npm with no env var and
   nothing announcing it. A user who tries npm once silently keeps npm — and never gets the Bun 1.4
   lockfile behaviour this train is about. Deleting the npm lockfile is the undocumented remedy.
+
+## `rx.AdminDash`: every `/admin` route returns HTTP 500 on both versions
+
+The reflex 0.9.11a1 changelog says "AdminDash now works with starlette-admin 1.0, which renamed the
+SQLAlchemy `Admin(engine=...)` argument to `session_provider`. Both starlette-admin 0.x and 1.x are
+supported." The rename is indeed handled (reflex passes the engine positionally,
+`reflex/app.py:1443`), but the dashboard itself does not serve.
+
+App: `adminapp/` here — one `rx.Model(table=True)`, `rx.App(admin_dash=rx.AdminDash(models=[Widget]))`,
+`reflex db init && reflex db makemigrations && reflex db migrate`, then `reflex run`.
+
+| reflex | starlette-admin | `/ping` | `/admin/` | error |
+|---|---|---|---|---|
+| 0.9.11a1 | 1.0.1 | 200 | **500** | `NoMatchFound: No route exists for name "admin:list" and params "key"` |
+| 0.9.11a1 | 1.0.0 | 200 | **500** | same shape |
+| 0.9.11a1 | 0.17.1 | 200 | **500** | `NoMatchFound` |
+| 0.9.10.post2 | 0.17.1 | 200 | **500** | `NoMatchFound: No route exists for name "admin:statics" and params "path"` |
+
+Every sub-path fails too (`/admin/widget/list`, `/admin/login`, even `/admin/statics/...`), so this is
+not a dashboard-index-only problem. **Pre-existing, not a regression of this train.**
+
+Isolation (`admin_isolate.py`, starlette 1.6.0 + starlette-admin 0.17.1, no reflex): the identical
+`Admin(engine)` with the same `ModelView`, mounted with `mount_to()` on a plain Starlette app —
+and again on a sub-app mounted at `/` — returns **200** for `/admin/` and `/admin/widget/list`. So
+neither starlette 1.6 nor an extra mount level explains it; the breakage is in how reflex sets the
+admin app up (`reflex/app.py:1428-1453`, mounted onto `self._api`, with the request reaching it
+through `reflex/app.py:715 context_middleware`).
+
+Consequence for this release: the changelog's AdminDash line is not observable end to end. The
+`engine` → `session_provider` change is necessary but not sufficient — `/admin` is 500 either way.
+Logs: `logs/admin_run_new.tail.log` (1.0.1), `admin_run_100.tail.log`, `admin_run_old.tail.log`,
+`admin_run_base.tail.log` (0.9.10.post2).

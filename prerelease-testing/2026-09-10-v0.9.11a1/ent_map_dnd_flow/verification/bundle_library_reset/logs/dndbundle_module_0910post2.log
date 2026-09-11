@@ -1,0 +1,65 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+──────────────────────────── Initializing dndbundle ────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized dndbundle. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+PROBE venv reflex= /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex/__init__.py
+PROBE import     ctx=0x7f3e4539d9c0 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+PROBE after_app  ctx=0x7f3e4539d9c0 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+PROBE page_eval  ctx=0x7f3e4539d9c0 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'react']
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 367, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 279, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex/app.py", line 1662, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1229, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 809, in compile
+    page_ctx = self.hooks.eval_page(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 271, in eval_page
+    result = hook_impl(page_fn, page=page, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex/compiler/plugins/builtin.py", line 182, in eval_page
+    component = compiler.into_component(page_fn)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 913, in into_component
+    component_called = component()
+                       ^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_ent_map_dnd_flow_0/dndbundle_b0910/dndbundle/dndbundle.py", line 54, in index
+    return rxe.dnd.drop_target(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex_enterprise/components/dnd/dnd.py", line 660, in create
+    ) = use_drop(
+        ^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex_enterprise/components/dnd/dnd.py", line 563, in use_drop
+    spec["canDrop"] = Var.create(can_drop)
+                      ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex_base/vars/base.py", line 924, in create
+    return LiteralVar.create(value, _var_data=_var_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1682, in _create_literal_var
+    return literal_subclass.create(value, _var_data=_var_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 244, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/entbase/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library d3-format is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('d3-format') to enable it it.
+Happened while evaluating page 'index'

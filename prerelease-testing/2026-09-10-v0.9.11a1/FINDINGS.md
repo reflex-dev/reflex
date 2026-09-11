@@ -65,6 +65,7 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - FINDING-016: `reflex run --json` stdout still carries 9 plain-text granian lines, breaking strict JSON-lines parsing (LOW, pre-existing, previous campaign's FINDING-013)
 - FINDING-017: `rx.plotly` still emits `id` rather than `divId`, so the id never reaches the DOM, unchanged by the react-plotly.js 4.1.0 bump (LOW, pre-existing, previous campaign's FINDING-020)
 - FINDING-018: dev mode: one unserializable state var drops the ENTIRE hydrate delta on every page load, silently reverting session state and showing a raw internal ValueError to the user (HIGH, pre-existing, triggered downstream) — claimed
+- FINDING-025: `rx.AdminDash` serves HTTP 500 on every `/admin` route on both versions and both starlette-admin generations, so this train's AdminDash changelog line is not observable end to end (MEDIUM-HIGH impact, pre-existing) — isolated against a plain Starlette app
 - FINDING-022: `bundle_library()` at app-module scope is discarded before pages are evaluated, and the error tells you to do what you already did (MEDIUM, pre-existing) — seen independently by three clusters
 - FINDING-023: a hook-bearing component used directly inside `rx.foreach` compiles silently, then throws `ReferenceError` and blanks the page (MEDIUM, pre-existing)
 - FINDING-024: reflex's own error boundary logs three React "Invalid DOM property" errors every time it renders (LOW, pre-existing)
@@ -366,6 +367,30 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
   attributes passed through `custom_attrs` at `reflex_components_core/base/error_boundary.py:85`.
   They appear *above* the real exception in the console, so the first thing a user debugging a crash
   reads is three framework warnings.
+
+## FINDING-025: `rx.AdminDash` returns HTTP 500 on every `/admin` route (MEDIUM-HIGH, pre-existing)
+
+- Cluster: `orch_probes` | Regression vs 0.9.10.post2: no (broken there too) | Verifier: isolated by
+  the orchestrator against a plain Starlette app
+- reflex 0.9.11a1 changelog: "AdminDash now works with starlette-admin 1.0 ... Both starlette-admin
+  0.x and 1.x are supported." The `engine` → `session_provider` rename is handled, but the dashboard
+  never serves: `/admin/`, `/admin/widget/list`, `/admin/login` and even `/admin/statics/...` all
+  return 500 with `NoMatchFound: No route exists for name "admin:list"` (0.9.11a1) or
+  `"admin:statics"` (0.9.10.post2).
+
+| reflex | starlette-admin | `/admin/` |
+|---|---|---|
+| 0.9.11a1 | 1.0.1 / 1.0.0 / 0.17.1 | 500 |
+| 0.9.10.post2 | 0.17.1 | 500 |
+
+- Isolation: the same `Admin(engine)` + `ModelView` mounted with `mount_to()` on a plain Starlette
+  1.6 app returns 200, and still 200 when that app is itself mounted at `/`. So neither starlette 1.6
+  nor mount nesting explains it; the fault is in reflex's admin setup
+  (`reflex/app.py:1428-1453`, mounted onto `self._api`; requests arrive via `app.py:715`).
+- Repro, table and isolation script: `orch_probes/NOTES.md`, `orch_probes/adminapp/`,
+  `orch_probes/admin_isolate.py`, `orch_probes/logs/admin_run_*.tail.log`.
+- Maintainer decision: the AdminDash changelog entry claims a working state that no supported
+  starlette-admin version delivers. Either the entry needs qualifying or `/admin` needs fixing.
 
 ## Cluster summaries (interim)
 

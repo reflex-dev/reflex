@@ -1,0 +1,42 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+PROBE venv reflex= /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/__init__.py
+PROBE import     ctx=0x7f910616b8e0 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+PROBE after_app  ctx=0x7f910616b8e0 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+PROBE page_eval  ctx=0x7f910616b8e0 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+PROBE venv reflex= /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/__init__.py
+PROBE import     ctx=0x7f910616b8e0 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+PROBE after_app  ctx=0x7f910616b8e0 bundled=['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+App running at: http://localhost:5840/
+Backend running at: http://0.0.0.0:10240
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:5840/
+  ➜  Network: http://192.0.2.2:5840/  eth0
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

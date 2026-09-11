@@ -1,0 +1,120 @@
+    raise exc
+  File "<sp>/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<sp>/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 455, in handle
+    await self.app(scope, receive, send)
+  File "<sp>/reflex/app.py", line 715, in context_middleware
+    await app(scope, receive, send)
+  File "<sp>/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "<sp>/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "<sp>/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "<sp>/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "<sp>/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<sp>/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<sp>/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 455, in handle
+    await self.app(scope, receive, send)
+  File "<sp>/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "<sp>/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "<sp>/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/contrib/sqla/middleware.py", line 54, in dispatch
+    return await self._dispatch_sync(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/contrib/sqla/middleware.py", line 126, in _dispatch_sync
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "<sp>/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "<sp>/starlette_admin/i18n.py", line 333, in __call__
+    await self.app(scope, receive, send)
+  File "<sp>/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/flash.py", line 41, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "<sp>/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "<sp>/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/security/csrf.py", line 99, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "<sp>/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "<sp>/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "<sp>/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<sp>/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<sp>/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "<sp>/starlette/routing.py", line 65, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "<sp>/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "<sp>/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "<sp>/starlette/routing.py", line 62, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/base.py", line 873, in wrapper
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/views.py", line 452, in index
+    widget = await self._resolve_widget(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/views.py", line 442, in _resolve_widget
+    return await result
+           ^^^^^^^^^^^^
+  File "<sp>/starlette_admin/views.py", line 3171, in _build_widget
+    panels: list[BaseWidget] = [
+                               ^
+  File "<sp>/starlette_admin/views.py", line 3172, in <listcomp>
+    await self._build_view_panel(request, view) for view in accessible
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/views.py", line 3180, in _build_view_panel
+    list_href = _view_list_url(request, cast(str, view.key))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette_admin/helpers.py", line 243, in view_list_url
+    return str(request.url_for(route_name + ":list", key=key))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/requests.py", line 202, in url_for
+    url_path = url_path_provider.url_path_for(name, **path_params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<sp>/starlette/routing.py", line 637, in url_path_for
+    raise NoMatchFound(name, path_params)
+NoMatchFound: No route exists for name "admin:list" and params "key".
