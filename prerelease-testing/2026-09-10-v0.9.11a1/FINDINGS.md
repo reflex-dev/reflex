@@ -71,6 +71,7 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - FINDING-016: `reflex run --json` stdout still carries 9 plain-text granian lines, breaking strict JSON-lines parsing (LOW, pre-existing, previous campaign's FINDING-013)
 - FINDING-017: `rx.plotly` still emits `id` rather than `divId`, so the id never reaches the DOM, unchanged by the react-plotly.js 4.1.0 bump (LOW, pre-existing, previous campaign's FINDING-020)
 - FINDING-018: dev mode: one unserializable state var drops the ENTIRE hydrate delta on every page load, silently reverting session state and showing a raw internal ValueError to the user (HIGH, pre-existing, triggered downstream) — claimed
+- FINDING-026: `add_custom_code` JS touching `window` fails `reflex export` with an opaque prerender 500 that never names the offending code (LOW, pre-existing)
 - FINDING-025: `rx.AdminDash` serves HTTP 500 on every `/admin` route on both versions and both starlette-admin generations, so this train's AdminDash changelog line is not observable end to end (MEDIUM-HIGH impact, pre-existing) — isolated against a plain Starlette app
 - FINDING-022: `bundle_library()` at app-module scope is discarded before pages are evaluated, and the error tells you to do what you already did (MEDIUM, pre-existing) — seen independently by three clusters
 - FINDING-023: a hook-bearing component used directly inside `rx.foreach` compiles silently, then throws `ReferenceError` and blanks the page (MEDIUM, pre-existing)
@@ -397,6 +398,20 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
   `orch_probes/admin_isolate.py`, `orch_probes/logs/admin_run_*.tail.log`.
 - Maintainer decision: the AdminDash changelog entry claims a working state that no supported
   starlette-admin version delivers. Either the entry needs qualifying or `/admin` needs fixing.
+
+## FINDING-026: custom code touching `window` breaks `reflex export` with an opaque error (LOW, pre-existing)
+
+- Cluster: `orch_probes` | Regression vs 0.9.10.post2: no (identical failure)
+- A component whose `add_custom_code()` returns `window.__x = 1;` has that statement emitted at
+  module scope of the generated route, which the prerender step executes in Node. `reflex export`
+  then fails with `Prerender: Request failed for /: ... Received a 500 status code from
+  entry.server.tsx`, echoing an HTML error page into the build log. Nothing names the custom code,
+  the component, or `window`. Guarding with `typeof window !== 'undefined'` fixes it immediately,
+  which isolates the cause.
+- The compiler knows which component contributed each block, so a diagnostic is cheap.
+- Repro and logs: `orch_probes/NOTES.md`, `orch_probes/memoapp/`,
+  `orch_probes/logs/memo_export_new.tail.log` (0.9.11a1) and `memo_export_base_window.tail.log`
+  (0.9.10.post2).
 
 ## Cluster summaries (interim)
 

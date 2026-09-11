@@ -1,0 +1,40 @@
+Error: Prerender: Request failed for /: Prerender (html): Received a 500 status 
+code from `entry.server.tsx` while prerendering the `/` path.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Internal Server Error</pre>
+</body>
+</html>
+
+    at defaultHandleError 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/orch_memo/memoapp/.web/node_modules/@react-router/dev/dist/vite.js:
+887:8)
+    at attempt 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/orch_memo/memoapp/.web/node_modules/@react-router/dev/dist/vite.js:
+835:11)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:103:5)
+    at async prerender 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/orch_memo/memoapp/.web/node_modules/@react-router/dev/dist/vite.js:
+842:64)
+    at async default.concurrency.concurrency 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/orch_memo/memoapp/.web/node_modules/@react-router/dev/dist/vite.js:
+859:9)
+    at async 
+file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scra
+tchpad/apps/orch_memo/memoapp/.web/node_modules/p-map/index.js:122:20
+error: script "export" exited with code 1
+
+
+
+Run with --loglevel debug  for the full log.
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03

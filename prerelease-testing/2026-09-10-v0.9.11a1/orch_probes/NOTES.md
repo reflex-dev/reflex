@@ -233,3 +233,43 @@ Two API-friction notes found while writing the test (not defects, recorded for d
   `TypeError: StateToken.__init__() takes 1 positional argument but 3 were given`, which does not
   name the expected keywords.
 - `StateManager.state` is deprecated with a clear pointer to `reflex.state.State`.
+
+## `add_custom_code` JS runs during prerender, so anything touching `window` fails `reflex export`
+
+Found while building the memo-collision probe (`memoapp/` here). A component whose
+`add_custom_code()` returns a plain statement gets it emitted at **module scope** of the generated
+route (`.web/app/routes/_index.jsx` line 9), which the prerender step executes in Node:
+
+```python
+class CustomA(rx.Fragment):
+    def add_custom_code(self) -> list[str]:
+        return ["window.__memo_probe_a = 'A';"]
+```
+
+```
+reflex export --frontend-only --no-zip
+-> Creating Production Build failed with exit code 1
+   Error: Prerender: Request failed for /: Prerender (html): Received a 500 status code from
+   `entry.server.tsx` while prerendering the `/` path.
+   <pre>Internal Server Error</pre>
+```
+
+The message never names the custom code, the component, or `window`; the user gets an HTML error
+page echoed into the build log. Guarding the statement
+(`if (typeof window !== 'undefined') { ... }`) makes the export succeed immediately, which isolates
+the cause. **Identical on 0.9.10.post2** (`logs/memo_export_base_window.tail.log`) — pre-existing,
+not a regression, but worth a diagnostic: the compiler knows which component contributed the code.
+
+## Memo-name collisions (#6947), compile-level checks
+
+`memoapp/` renders two `@rx.memo card` components defined in different modules (`pkg/a.py`,
+`pkg/b.py`) plus two components differing only in `add_custom_code`, dataclasses of the same shape
+but different types, and an `IntEnum` member.
+
+- With **identical** renders in different modules, 0.9.11a1 emits both bodies, in
+  `app_components/memoapp/pkg/a.jsx` and `.../b.jsx` — the property #6947 promises.
+- Both `add_custom_code` blocks reach the route module (2 of 2).
+- 0.9.10.post2 behaves the same **for this shape**, so this probe does not exhibit the collision the
+  PR fixes; a targeted reproduction needs the exact artifact combinations from the PR's table, which
+  the `memo_hash` cluster brief carries. Recorded so the next campaign does not mistake this for
+  full coverage of #6947.
