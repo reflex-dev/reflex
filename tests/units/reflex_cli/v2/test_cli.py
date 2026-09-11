@@ -1463,8 +1463,78 @@ def test_resolve_deploy_provider_explicit_gcp_switches(mocker: MockFixture):
     )
     assert result == "gcp"
     mock_set.assert_called_once_with(
-        "app-1", "gcp", client=client, provider_account_id=None
+        "app-1", "gcp", client=client, provider_account_id=None, service_name=None
     )
+
+
+def test_resolve_deploy_provider_hostname_names_the_gcp_service(
+    mocker: MockFixture,
+):
+    """On the deploy that first lands on GCP, --hostname doubles as the service name."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    result = cli._resolve_deploy_provider(
+        app,
+        "gcp",
+        interactive=False,
+        app_was_created=True,
+        client=client,
+        hostname="Sales-Dashboard",
+    )
+    assert result == "gcp"
+    # Lowercased into the service-name grammar before it is sent.
+    mock_set.assert_called_once_with(
+        "app-1",
+        "gcp",
+        client=client,
+        provider_account_id=None,
+        service_name="sales-dashboard",
+    )
+
+
+def test_resolve_deploy_provider_unusable_hostname_lets_the_server_mint(
+    mocker: MockFixture,
+):
+    """A hostname the service-name grammar refuses is skipped, not fatal."""
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    result = cli._resolve_deploy_provider(
+        app,
+        "gcp",
+        interactive=False,
+        app_was_created=True,
+        client=client,
+        # Valid DNS label, invalid Cloud Run service name (leading digit).
+        hostname="2048game",
+    )
+    assert result == "gcp"
+    mock_set.assert_called_once_with(
+        "app-1", "gcp", client=client, provider_account_id=None, service_name=None
+    )
+
+
+def test_gcp_service_name_from_hostname_grammar():
+    """Only hostnames Cloud Run would accept as service names pass through."""
+    assert cli._gcp_service_name_from_hostname("sales-dashboard") == "sales-dashboard"
+    assert cli._gcp_service_name_from_hostname("MyApp") == "myapp"
+    assert cli._gcp_service_name_from_hostname(None) is None
+    assert cli._gcp_service_name_from_hostname("") is None
+    assert cli._gcp_service_name_from_hostname("2048game") is None
+    assert cli._gcp_service_name_from_hostname("-dash") is None
+    assert cli._gcp_service_name_from_hostname("dash-") is None
+    assert cli._gcp_service_name_from_hostname("a" * 50) is None
+    # The derived-name namespace of apps that store no name is reserved.
+    assert (
+        cli._gcp_service_name_from_hostname("app-8b2f4a1c-1234-5678-9abc-def012345678")
+        is None
+    )
+    assert cli._gcp_service_name_from_hostname("app-metrics") == "app-metrics"
 
 
 def test_resolve_deploy_provider_reflex_cloud_no_switch(mocker: MockFixture):
@@ -1616,7 +1686,7 @@ def test_resolve_deploy_provider_named_connection_is_pinned(mocker: MockFixture)
 
     assert result == "gcp"
     mock_set.assert_called_once_with(
-        "app-1", "gcp", client=client, provider_account_id="conn-2"
+        "app-1", "gcp", client=client, provider_account_id="conn-2", service_name=None
     )
 
 
@@ -1645,7 +1715,41 @@ def test_resolve_deploy_provider_repoints_without_a_provider_switch(
 
     assert result == "gcp"
     mock_set.assert_called_once_with(
-        "app-1", "gcp", client=client, provider_account_id="conn-2"
+        "app-1", "gcp", client=client, provider_account_id="conn-2", service_name=None
+    )
+
+
+def test_resolve_deploy_provider_gcp_redeploy_keeps_the_pinned_name(
+    mocker: MockFixture,
+):
+    """An app already on GCP never re-sends a service name.
+
+    The name is pinned to a live service by then, so a --hostname on a later
+    deploy must not reach the server as a rename request.
+    """
+    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    mocker.patch(
+        "reflex_cli.utils.hosting.list_gcp_connections",
+        return_value=[{"id": "conn-2", "name": "eu-prod"}],
+    )
+    mock_set = mocker.patch(
+        "reflex_cli.utils.hosting.set_app_provider", return_value="gcp"
+    )
+    app = {"id": "app-1", "name": "myapp", "provider": "gcp"}
+
+    result = cli._resolve_deploy_provider(
+        app,
+        "gcp",
+        interactive=False,
+        app_was_created=False,
+        client=client,
+        gcp_connection="eu-prod",
+        hostname="sales-dashboard",
+    )
+
+    assert result == "gcp"
+    mock_set.assert_called_once_with(
+        "app-1", "gcp", client=client, provider_account_id="conn-2", service_name=None
     )
 
 

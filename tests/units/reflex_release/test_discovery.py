@@ -10,10 +10,14 @@ from reflex_release.actions import ReleaseError
 from reflex_release.changelog import DEFAULT_TITLE_FORMAT
 from reflex_release.config import Config, load_config
 from reflex_release.discovery import (
+    alpha_train_packages,
     associate_orphan_fragments,
+    changelog_packages,
     fragment_types,
     orphan_prefix,
+    pending_fragment_packages,
     pull_request_number,
+    releasable_packages,
     split_fragment_name,
     title_format,
 )
@@ -322,3 +326,58 @@ def test_associate_is_a_no_op_when_orphans_are_disabled(
 
     assert associate_orphan_fragments(reloaded, "widget-core") == []
     assert (reloaded.news_dir("widget-core") / "+a-thing.feature.md").is_file()
+
+
+def never_publish(repo: Path, package: str) -> Config:
+    """Mark a package as never published and reload the configuration.
+
+    Args:
+        repo: The repository root.
+        package: The package to list in ``never-publish-packages``.
+
+    Returns:
+        The reloaded configuration.
+    """
+    pyproject = repo / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text(encoding="utf-8").replace(
+            'packages-dir = "packages"',
+            f'packages-dir = "packages"\nnever-publish-packages = ["{package}"]',
+        ),
+        encoding="utf-8",
+    )
+    return load_config(repo)
+
+
+def test_never_published_packages_are_not_releasable(
+    config: Config, repo: Path
+) -> None:
+    assert releasable_packages(config) == ["mypkg", "widget-core"]
+    assert releasable_packages(never_publish(repo, "widget-core")) == ["mypkg"]
+
+
+def test_never_published_packages_are_never_auto_selected(
+    config: Config, repo: Path
+) -> None:
+    reloaded = never_publish(repo, "widget-core")
+    (reloaded.news_dir("widget-core") / "1.feature.md").write_text(
+        "Something.\n", encoding="utf-8"
+    )
+    assert pending_fragment_packages(reloaded) == []
+
+
+def test_never_published_packages_are_not_publish_triggers(
+    config: Config, repo: Path
+) -> None:
+    """A changelog in a package that never ships must not start a release.
+
+    Detection reads changelogs, not the release selection, so excluding the
+    package from the selection alone would leave a stray or leftover
+    CHANGELOG.md publishing it on the next push.
+    """
+    reloaded = never_publish(repo, "widget-core")
+    reloaded.changelog_path("widget-core").write_text(
+        "## v1.0.0a1 (2026-01-01)\n\nNo significant changes.\n", encoding="utf-8"
+    )
+    assert changelog_packages(reloaded) == []
+    assert alpha_train_packages(reloaded) == []

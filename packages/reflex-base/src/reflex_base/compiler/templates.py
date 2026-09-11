@@ -173,6 +173,7 @@ def app_root_template(
     render: dict[str, Any],
     dynamic_imports: set[str],
     hydrate_fallback_export: str | None = None,
+    lazy_window_libraries: list[tuple[str, str]] | None = None,
 ):
     """Template for the App root.
 
@@ -184,6 +185,7 @@ def app_root_template(
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo module to re-export as ``HydrateFallback``, or None for no fallback.
+        lazy_window_libraries: Optional libraries loaded before evaluating a dynamic component.
 
     Returns:
         Rendered App root component as string.
@@ -209,6 +211,44 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
+    window_imports_effect = f"""useEffect(() => {{
+    // Make contexts and state objects available globally for dynamic eval'd components
+    window.__reflex = {{
+      {window_imports_str}
+    }};
+  }}, []);"""
+    lazy_imports_setup = ""
+    if lazy_window_libraries:
+        loaders = "\n".join(
+            f"    {json.dumps(lib_path)}: () => import({json.dumps(lib_path)}),"
+            for _, lib_path in lazy_window_libraries
+        )
+        # Register before child effects run, including an initially mounted
+        # dynamic component. Optional namespaces stay out of the initial graph.
+        window_imports_effect = ""
+        lazy_imports_setup = f"""
+if (typeof window !== "undefined") {{
+  window.__reflex = {{ ...window.__reflex,
+    {window_imports_str}
+  }};
+  const loaders = {{
+{loaders}
+  }};
+  let pending;
+  window.__reflex_load = () => {{
+    if (!pending) {{
+      pending = Promise.all(Object.entries(loaders).map(async ([name, load]) => {{
+        window.__reflex[name] = await load();
+      }})).catch((error) => {{
+        pending = undefined;
+        throw error;
+      }});
+    }}
+    return pending;
+  }};
+}}
+"""
+
     return f"""
 {imports_str}
 {dynamic_imports_str}
@@ -217,17 +257,12 @@ import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
 {import_window_libraries}
+{lazy_imports_setup}
 
 {custom_code_str}
 
 function ReflexProviders({{children}}) {{
-  useEffect(() => {{
-    // Make contexts and state objects available globally for dynamic eval'd components
-    let windowImports = {{
-      {window_imports_str}
-    }};
-    window["__reflex"] = windowImports;
-  }}, []);
+  {window_imports_effect}
 
   return jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
     jsx(AppWrap, {{}}, children)
@@ -275,6 +310,7 @@ def context_template(
     is_dev_mode: bool,
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
+    initial_state_json: str | None = None,
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
@@ -283,6 +319,7 @@ def context_template(
 
     Args:
         initial_state: The initial state for the context.
+        initial_state_json: Initial state JSON already serialized by the compiler.
         state_name: The name of the state.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
@@ -295,8 +332,12 @@ def context_template(
         Rendered context file content as string.
     """
     initial_state = initial_state or {}
+    if initial_state_json is None:
+        initial_state_json = json_dumps(initial_state)
+    # Context objects come from the static registry so they survive hot
+    # updates of this module; only the lookup table is generated here.
     state_contexts_str = "".join([
-        f"{format_state_name(state_name)}: createContext(null),"
+        f'{format_state_name(state_name)}: getStateContext("{state_name}"),'
         for state_name in initial_state
     ])
 
@@ -390,45 +431,41 @@ if (typeof window !== "undefined") {
         else ""
     )
 
-    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ createContext, useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
+    return rf"""import {"React, " if disable_react_owner_stacks else ""}{{ useContext, useMemo, useReducer, useState, createElement, useEffect }} from "react"
 import {{ applyDelta, ReflexEvent, hydrateClientStorage, useEventLoop, refs }} from "$/utils/state"
+import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext, getStateContext, registerApp, eventLoop }} from "$/utils/context-registry"
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
-export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
+export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
+export const initialState = {initial_state_json}
 
 export const defaultColorMode = {default_color_mode}
-export const ColorModeContext = createContext({{
-  colorMode: defaultColorMode,
-  resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light",
-  toggleColorMode: () => {{}},
-  setColorMode: () => {{}},
-}});
-export const UploadFilesContext = createContext(null);
-export const DispatchContext = createContext(null);
 export const StateContexts = {{{state_contexts_str}}};
-export const EventLoopContext = createContext(null);
 export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
 
 {state_str}
 
 export const isDevMode = {json.dumps(is_dev_mode)};
 
-// Module-level event dispatchers populated by ``EventLoopProvider`` on each
-// render. Components reach addEvents/connectErrors via this import instead of
-// hoisting ``useContext(EventLoopContext)`` so JSX literals (e.g.
-// ``ErrorBoundary.onError``) constructed in any JS scope can dispatch events
-// without depending on lexical hook hoisting.
-let _addEventsImpl = (events, args, event_actions) => {{
-  console.warn("addEvents called before EventLoopProvider mounted", events);
-}};
-let _connectErrorsImpl = [];
+// The static runtime reads these through the registry, so this module is the
+// only one Vite re-executes when they change.
+registerApp({{
+  initialState,
+  clientStorage,
+  state_name,
+  exception_state_name,
+  onLoadInternalEvent,
+  initialEvents,
+  isDevMode,
+  defaultColorMode,
+}});
 
 export function addEvents(events, args, event_actions) {{
-  return _addEventsImpl(events, args, event_actions);
+  return eventLoop.addEvents(events, args, event_actions);
 }}
 
 export function getConnectErrors() {{
-  return _connectErrorsImpl;
+  return eventLoop.connectErrors;
 }}
 
 export function UploadFilesProvider({{ children }}) {{
@@ -445,8 +482,10 @@ export function UploadFilesProvider({{ children }}) {{
   );
 }}
 
-export function ClientSide(component) {{
-  return ({{ children, ...props }}) => {{
+// ``displayName`` is what React DevTools shows for the wrapper; without it
+// every client-only component in the tree renders as ``Anonymous``.
+export function ClientSide(component, name) {{
+  function ClientSideComponent({{ children, ...props }}) {{
     const [Component, setComponent] = useState(null);
     useEffect(() => {{
       async function load() {{
@@ -456,7 +495,9 @@ export function ClientSide(component) {{
       load();
     }}, []);
     return Component ? jsx(Component, props, children) : null;
-  }};
+  }}
+  ClientSideComponent.displayName = name ? `ClientSide(${{name}})` : "ClientSide";
+  return ClientSideComponent;
 }}
 
 export function EventLoopProvider({{ children }}) {{
@@ -466,11 +507,10 @@ export function EventLoopProvider({{ children }}) {{
     initialEvents,
     clientStorage,
   )
-  // Populate the module-level dispatchers so JSX literals constructed
-  // outside the React-tree path (e.g. ``ErrorBoundary.onError``) can call
-  // ``addEvents`` without needing the events hook hoisted in their scope.
-  _addEventsImpl = addEventsLocal;
-  _connectErrorsImpl = connectErrors;
+  // Publish the dispatchers so JSX literals constructed outside the
+  // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
+  eventLoop.addEvents = addEventsLocal;
+  eventLoop.connectErrors = connectErrors;
   return createElement(
     EventLoopContext.Provider,
     {{ value: [addEventsLocal, connectErrors] }},
@@ -512,8 +552,22 @@ def page_template(
     custom_codes: Iterable[str],
     hooks: dict[str, VarData | None],
     render: dict[str, Any],
+    route: str = "",
 ):
     """Template for a single react page.
+
+    Every page compiles to a component named ``Component``, so the route is
+    carried in its ``displayName`` — otherwise React DevTools shows the same
+    ``Component`` label for whichever page is mounted.
+
+    The function is declared, named, and only then exported. React Router's
+    ``decorateComponentExportsWithProps`` rewrites an exported function
+    *declaration* into a function *expression* wrapped in
+    ``UNSAFE_withComponentProps``, leaving no module-scope binding behind: a
+    trailing ``Component.displayName = ...`` would then throw
+    ``ReferenceError: Component is not defined`` when the route module loads.
+    Exporting the identifier instead keeps the declaration in module scope, and
+    the wrapper renders ``Component`` as a child, so the name still shows.
 
     Args:
         imports: List of import statements.
@@ -521,6 +575,11 @@ def page_template(
         custom_codes: List of custom code snippets.
         hooks: Dictionary of hooks.
         render: Render function for the component.
+        route: The route this page is compiled for, used as its display name.
+            Defaults to empty, which omits the ``displayName`` assignment
+            entirely — ``page_template`` ships in ``reflex-base``, so an
+            out-of-tree caller predating the parameter keeps working and gets
+            the pre-existing unnamed ``Component``.
 
     Returns:
         Rendered React page component as string.
@@ -530,19 +589,27 @@ def page_template(
     dynamic_imports_str = "\n".join(dynamic_imports)
 
     hooks_str = _render_hooks(hooks)
+    display_name_str = (
+        f"Component.displayName = {json.dumps(f'Component({route})')};\n"
+        if route
+        else ""
+    )
     return f"""{imports_str}
 
 {dynamic_imports_str}
 
 {custom_code_str}
 
-export default function Component() {{
+function Component() {{
 {hooks_str}
 
   return (
     {_RenderUtils.render(render)}
   )
-}}"""
+}}
+{display_name_str}
+export default Component;
+"""
 
 
 def package_json_template(
@@ -585,6 +652,8 @@ def vite_config_template(
     sourcemap: bool | Literal["inline", "hidden"],
     minify: bool = True,
     allowed_hosts: bool | list[str] = False,
+    prod_react: bool = False,
+    warmup_routes: bool = False,
 ):
     """Template for vite.config.js.
 
@@ -596,6 +665,10 @@ def vite_config_template(
         sourcemap: The sourcemap configuration.
         minify: Whether to minify the build output.
         allowed_hosts: Allow all hosts (True), specific hosts (list of strings), or only localhost (False).
+        prod_react: Prebundle the browser's React from its production build
+            (dev server only; see REFLEX_DEV_PROD_REACT).
+        warmup_routes: Pre-transform every route module when the dev server
+            starts, so the first visit to a page does not wait on Vite.
 
     Returns:
         Rendered vite.config.js content as string.
@@ -606,10 +679,96 @@ def vite_config_template(
         allowed_hosts_line = f"\n    allowedHosts: {json.dumps(allowed_hosts)},"
     else:
         allowed_hosts_line = ""
+    # Dev-only: prebundle the browser's React from React's production files
+    # so the dev server renders with production React (no per-element dev
+    # validation, no StrictMode double-render). This is scoped to the
+    # dependency optimizer (`optimizeDeps` is a client-environment option),
+    # so SSR keeps resolving React from Node and every other dependency
+    # (react-refresh, the router, radix, emotion) keeps its development
+    # build. A `resolve.alias` would not do: Vite refuses to externalize any
+    # SSR import matching an alias, which breaks the server renderer. JSX is
+    # compiled with the non-dev runtime so nothing imports `jsxDEV`, which the
+    # production jsx-dev-runtime does not export. Fast Refresh cannot patch a
+    # production renderer, so this mode pairs with fullReload(). Absolute
+    # paths: React's package `exports` map does not expose ./cjs/*.
+    prod_react_str = (
+        """
+  oxc: {
+    jsx: { development: false },
+  },
+  optimizeDeps: {
+    rolldownOptions: {
+      // Not part of the optimizer's cache key (plugins are excluded), so the
+      // define below is what invalidates prebundled deps when this toggles.
+      transform: { define: { "process.env.REFLEX_DEV_PROD_REACT": '"1"' } },
+      plugins: [prodReactPrebundle()],
+    },
+  },"""
+        if prod_react
+        else ""
+    )
+    prod_react_plugin_str = (
+        """
+import path from "path";
+import { createRequire } from "module";
+
+function prodReactPrebundle() {
+  // Resolve each package the way Node does from where it is actually used,
+  // so a nested install (e.g. react-dom/node_modules/scheduler) still works.
+  const packageRoot = (name, from) =>
+    path.dirname(createRequire(from).resolve(name + "/package.json"));
+  const reactRoot = packageRoot("react", import.meta.url);
+  const reactDomRoot = packageRoot("react-dom", import.meta.url);
+  const schedulerRoot = packageRoot("scheduler", path.join(reactDomRoot, "package.json"));
+  const production = {
+    react: path.join(reactRoot, "cjs/react.production.js"),
+    "react/jsx-runtime": path.join(reactRoot, "cjs/react-jsx-runtime.production.js"),
+    "react/jsx-dev-runtime": path.join(reactRoot, "cjs/react-jsx-dev-runtime.production.js"),
+    "react-dom": path.join(reactDomRoot, "cjs/react-dom.production.js"),
+    "react-dom/client": path.join(reactDomRoot, "cjs/react-dom-client.production.js"),
+    scheduler: path.join(schedulerRoot, "cjs/scheduler.production.js"),
+  };
+  // Optimizer entries arrive as the packages' resolved entry files (with the
+  // platform's separators, hence the normalization).
+  const key = (file) => {
+    const normalized = path.normalize(file);
+    return process.platform === "win32" ? normalized.toLowerCase() : normalized;
+  };
+  const entryFiles = Object.fromEntries(
+    Object.entries({
+      react: path.join(reactRoot, "index.js"),
+      "react/jsx-runtime": path.join(reactRoot, "jsx-runtime.js"),
+      "react/jsx-dev-runtime": path.join(reactRoot, "jsx-dev-runtime.js"),
+      "react-dom": path.join(reactDomRoot, "index.js"),
+      "react-dom/client": path.join(reactDomRoot, "client.js"),
+      scheduler: path.join(schedulerRoot, "index.js"),
+    }).map(([bare, file]) => [key(file), bare]),
+  );
+  return {
+    name: "reflex-prod-react-prebundle",
+    resolveId(id) {
+      if (id in production) return production[id];
+      const bare = entryFiles[key(id)];
+      return bare ? production[bare] : null;
+    },
+  };
+}
+"""
+        if prod_react
+        else ""
+    )
+    warmup_str = (
+        """
+    warmup: {
+      clientFiles: ["./app/routes/**/*.jsx"],
+    },"""
+        if warmup_routes
+        else ""
+    )
     return rf"""import {{ fileURLToPath, URL }} from "url";
 import {{ reactRouter }} from "@react-router/dev/vite";
 import {{ defineConfig }} from "vite";
-import safariCacheBustPlugin from "./vite-plugin-safari-cachebust";
+import safariCacheBustPlugin from "./vite-plugin-safari-cachebust.js";
 
 // Ensure that bun always uses the react-dom/server.node functions.
 function alwaysUseReactDomServerNode() {{
@@ -617,21 +776,24 @@ function alwaysUseReactDomServerNode() {{
     name: "vite-plugin-always-use-react-dom-server-node",
     enforce: "pre",
 
-    resolveId(source, importer) {{
-      if (
-        typeof importer === "string" &&
-        importer.endsWith("/entry.server.node.tsx") &&
-        source.includes("react-dom/server")
-      ) {{
-        return this.resolve("react-dom/server.node", importer, {{
-          skipSelf: true,
-        }});
-      }}
-      return null;
+    resolveId: {{
+      filter: {{ id: /react-dom\/server/ }},
+      handler(source, importer) {{
+        if (
+          typeof importer === "string" &&
+          importer.endsWith("/entry.server.node.tsx")
+        ) {{
+          return this.resolve("react-dom/server.node", importer, {{
+            skipSelf: true,
+          }});
+        }}
+        return null;
+      }},
     }},
   }};
 }}
 
+{prod_react_plugin_str}
 function fullReload() {{
   return {{
     name: "full-reload",
@@ -687,9 +849,8 @@ export default defineConfig((config) => ({{
         if (warning.code === "EVAL" && warning.id && warning.id.endsWith("state.js")) return;
         warn(warning);
       }},
-      jsx: {{}},
       output: {{
-        advancedChunks: {{
+        codeSplitting: {{
           groups: [
             {{
               test: /env.json/,
@@ -703,10 +864,10 @@ export default defineConfig((config) => ({{
   experimental: {{
     enableNativePlugin: false,
     hmr: {"true" if experimental_hmr else "false"},
-  }},
+  }},{prod_react_str}
   server: {{
     port: process.env.PORT,{allowed_hosts_line}
-    hmr: {"true" if hmr else "false"},
+    hmr: {"true" if hmr else "false"},{warmup_str}
     watch: {{
       ignored: [
         "**/.web/backend/**",
@@ -790,10 +951,16 @@ _MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 def _render_memo_component(component: dict[str, Any]) -> str:
     """Render the ``export const`` statement for one memoized component.
 
+    The exported symbol carries a ``displayName`` so React DevTools labels the
+    memo with the name of the Python component it came from. Without it, the
+    wrapped arrow function is anonymous and every memo in the tree shows up as
+    ``Anonymous``; ``memo()`` also drops the inferred name of the function it
+    wraps, so the assignment is needed even for readable symbols.
+
     Args:
-        component: The component render dict (name, signature, render, hooks,
-            and the optional ``wrapper`` JS expression the function component
-            is wrapped in).
+        component: The component render dict (name, display_name, signature,
+            render, hooks, and the optional ``wrapper`` JS expression the
+            function component is wrapped in).
 
     Returns:
         Rendered component export as string.
@@ -808,7 +975,25 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
         wrapper = f"({wrapper})"
     export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
-    return f"\nexport const {component['name']} = {export_expr};\n"
+    name = component["name"]
+    # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),
+    # which is the layer that knows the memo's clean export name — the JS symbol
+    # here carries a module hash and would make a poor label.
+    display_name = json.dumps(component["display_name"])
+    if component.get("pure_wrapper"):
+        # Keep the label assignment inside the pure initializer, so bundlers
+        # can remove the entire unused export from a shared component module.
+        return (
+            f"\nexport const {name} = /*#__PURE__*/ (() => {{\n"
+            f"const {name} = {export_expr};\n"
+            f"{name}.displayName = {display_name};\n"
+            f"return {name};\n"
+            "})();\n"
+        )
+    return (
+        f"\nexport const {name} = {export_expr};\n"
+        f"{name}.displayName = {display_name};\n"
+    )
 
 
 def memo_components_template(

@@ -7,9 +7,10 @@ import os
 import sys
 import threading
 import urllib.parse
-from collections.abc import Sequence
-from importlib.util import find_spec
-from pathlib import Path
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from importlib.machinery import PathFinder
+from pathlib import Path, PureWindowsPath
 from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
 
@@ -176,6 +177,7 @@ class BaseConfig:
         react_strict_mode: Whether to use React strict mode.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
+        frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Defaults to False for compatibility with scripts that read window.__reflex directly.
         state_manager_mode: Indicate which type of state manager to use.
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
@@ -242,6 +244,8 @@ class BaseConfig:
 
     frontend_packages: list[str] = dataclasses.field(default_factory=list)
 
+    frontend_lazy_bundled_libraries: bool = False
+
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
 
     redis_lock_expiration: int = constants.Expiration.LOCK
@@ -284,6 +288,22 @@ class BaseConfig:
 _PLUGINS_ENABLED_BY_DEFAULT = [
     SitemapPlugin,
 ]
+
+
+def _is_plain_path_segment(segment: str) -> bool:
+    """Whether a URL path segment maps to a single directory name on every platform.
+
+    Args:
+        segment: One slash-delimited, non-empty segment of a configured path prefix.
+
+    Returns:
+        False for empty segments, trailing dots or spaces, and anything Windows
+        would treat as a separator, drive, or root.
+    """
+    if segment.endswith((".", " ")):
+        return False
+    windows = PureWindowsPath(segment)
+    return not windows.anchor and windows.parts == (segment,)
 
 
 @dataclasses.dataclass(kw_only=True, init=False)
@@ -582,9 +602,28 @@ class Config(BaseConfig):
         self.frontend_compression_formats = normalized
 
     def _normalize_paths(self):
-        """Ensure frontend and backend paths start with a slash if provided."""
+        """Ensure frontend and backend paths start with a slash if provided.
+
+        Raises:
+            ConfigError: If a frontend_path segment is not a plain directory name.
+        """
         if self.frontend_path and not self.frontend_path.startswith("/"):
             self.frontend_path = f"/{self.frontend_path}"
+        # frontend_path also names the directory below the build output that the
+        # built frontend is relocated into and served from, so every segment must
+        # be a plain directory name on POSIX and Windows alike.
+        if self.frontend_path not in ("", "/"):
+            for segment in (
+                self.frontend_path.removeprefix("/").removesuffix("/").split("/")
+            ):
+                if not _is_plain_path_segment(segment):
+                    msg = (
+                        f"frontend_path {self.frontend_path!r} contains {segment!r}, "
+                        "which is not a plain directory name "
+                        "(no empty segments, trailing dots or spaces, backslashes, "
+                        "or drive letters)."
+                    )
+                    raise ConfigError(msg)
 
         if self.backend_path and not self.backend_path.startswith("/"):
             self.backend_path = f"/{self.backend_path}"
@@ -808,41 +847,63 @@ class Config(BaseConfig):
 _config_module_deps: set[str] = set()
 
 
-def _get_config() -> Config:
-    """Import rxconfig.py fresh and return its config object.
+class _ImportRecorder:
+    """Meta-path finder that records import attempts made on one thread.
 
-    Returns:
-        The app config.
+    Never resolves anything. Recording per thread keeps imports other threads
+    happen to make during the window out of the rxconfig dep set, which a plain
+    sys.modules diff cannot tell apart from rxconfig's own imports.
     """
-    # only import the module if it exists. If a module spec exists then
-    # the module exists.
-    spec = find_spec(constants.Config.MODULE)
-    if not spec:
-        # we need this condition to ensure that a ModuleNotFound error is not thrown when
-        # running unit/integration tests or during `reflex init`.
-        return Config(app_name="", _skip_plugins_checks=True)
-    # Never cache rxconfig or its project-local dependencies — each load goes
-    # to disk so different RegistrationContexts hold independent Config
-    # instances resolved against the current project.
-    sys.modules.pop(constants.Config.MODULE, None)
-    for dep in _config_module_deps:
-        sys.modules.pop(dep, None)
-    _config_module_deps.clear()
-    before = set(sys.modules)
+
+    def __init__(self) -> None:
+        """Initialize the recorder as inactive."""
+        self._thread: int | None = None
+        self.names: set[str] = set()
+
+    def start(self) -> None:
+        """Start recording imports made on the current thread."""
+        self.names.clear()
+        self._thread = threading.get_ident()
+
+    def stop(self) -> None:
+        """Stop recording; names stay readable."""
+        self._thread = None
+
+    def find_spec(self, fullname: str, path: Any = None, target: Any = None) -> None:
+        """Record the import attempt without resolving it.
+
+        Args:
+            fullname: The module being imported.
+            path: Unused.
+            target: Unused.
+        """
+        if self._thread is not None and self._thread == threading.get_ident():
+            self.names.add(fullname)
+
+
+_import_recorder = _ImportRecorder()
+
+
+@contextmanager
+def _record_imports() -> Iterator[_ImportRecorder]:
+    """Record imports made on the current thread while rxconfig loads.
+
+    Yields:
+        The recorder, readable after the block.
+    """
+    # Installed in place and never removed. Both ways of taking it back out are
+    # unsafe: importlib._find_spec iterates the list object it read from
+    # sys.meta_path (it only copies it since 3.14), so an in-place removal can
+    # make a concurrent lookup skip a real finder, and rebinding the list drops
+    # whatever another thread inserted meanwhile — reflex.components installs a
+    # redirect finder on first import, and losing it is permanent.
+    if _import_recorder not in sys.meta_path:
+        sys.meta_path.insert(0, _import_recorder)
+    _import_recorder.start()
     try:
-        rxconfig = importlib.import_module(constants.Config.MODULE)
+        yield _import_recorder
     finally:
-        # Record even on failure so a retry evicts partially-imported deps.
-        project_root = Path.cwd()
-        for name in set(sys.modules) - before:
-            origin = getattr(sys.modules[name], "__file__", None)
-            if (
-                origin
-                and (path := Path(origin)).is_relative_to(project_root)
-                and "site-packages" not in path.parts
-            ):
-                _config_module_deps.add(name)
-    return rxconfig.config
+        _import_recorder.stop()
 
 
 # Protect sys.path from concurrent modification during config loading.
@@ -871,49 +932,117 @@ def get_state_auto_setters() -> bool:
     return False
 
 
-def _load_config() -> Config:
-    """Load the config from rxconfig.py with cwd on sys.path.
+def _get_config(project_root: Path | None = None) -> Config:
+    """Import rxconfig.py fresh from the project root and return its config.
+
+    The project root is prepended to sys.path for the duration of the import so
+    rxconfig.py and its project-local imports resolve ahead of installed
+    packages. Prepending (not replacing sys.path) keeps concurrent imports in
+    other threads working.
+
+    Args:
+        project_root: Directory to load the config from. Defaults to the
+            current working directory, resolved once up front so an rxconfig.py
+            that changes the cwd cannot move the root that the sys.path entry
+            and the dependency classification below are based on.
 
     Returns:
         The app config.
     """
+    project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
-        orig_sys_path = sys.path.copy()
-        sys.path.clear()
-        sys.path.append(str(Path.cwd()))
+        # A fresh str object, so the exact inserted entry can be removed by
+        # identity: rxconfig.py may itself add or remove equal cwd entries,
+        # which removal by value could confuse with caller-owned ones.
+        cwd = str(project_root)
+        sys.path.insert(0, cwd)
         try:
-            return _get_config()
-        except Exception:
-            # If the module import fails, try to import with the original sys.path.
-            sys.path.extend(orig_sys_path)
-            return _get_config()
+            # Never cache rxconfig or its project-local dependencies — each load
+            # goes to disk so different RegistrationContexts hold independent
+            # Config instances resolved against the current project. Evict
+            # before importing so an earlier project cannot supply the module.
+            sys.modules.pop(constants.Config.MODULE, None)
+            for dep in _config_module_deps:
+                sys.modules.pop(dep, None)
+            _config_module_deps.clear()
+            # Only the requested project may supply rxconfig; searching all of
+            # sys.path can pick up an unrelated editable app during reflex init.
+            # PathFinder also supports a project-local rxconfig package.
+            if PathFinder.find_spec(constants.Config.MODULE, [cwd]) is None:
+                return Config(app_name="", _skip_plugins_checks=True)
+            with _record_imports() as recorder:
+                try:
+                    rxconfig = importlib.import_module(constants.Config.MODULE)
+                finally:
+                    # Record even on failure so a retry evicts partially-imported deps.
+                    for name in recorder.names:
+                        origin = getattr(sys.modules.get(name), "__file__", None)
+                        if (
+                            origin
+                            and (path := Path(origin)).is_relative_to(project_root)
+                            and "site-packages" not in path.parts
+                        ):
+                            _config_module_deps.add(name)
+            return rxconfig.config
         finally:
-            # Find any entries added to sys.path by rxconfig.py itself.
-            extra_paths = [
-                p for p in sys.path if p not in orig_sys_path and p != str(Path.cwd())
-            ]
-            # Restore the original sys.path.
-            sys.path.clear()
-            sys.path.extend(extra_paths)
-            sys.path.extend(orig_sys_path)
+            for i, entry in enumerate(sys.path):
+                if entry is cwd:
+                    del sys.path[i]
+                    break
 
 
-def get_config() -> Config:
+if TYPE_CHECKING:
+    from typing_extensions import deprecated
+
+    @deprecated("Use _get_config() to load a config, or get_config() to read it")
+    def _load_config() -> Config: ...
+
+else:
+
+    def _load_config() -> Config:
+        """Load the config for the current working directory (deprecated).
+
+        Returns:
+            The app config.
+        """
+        console.deprecate(
+            feature_name="_load_config()",
+            reason="Use _get_config() to load a config from disk, or get_config() to read the config cached on the current RegistrationContext",
+            deprecation_version="0.9.9.post1",
+            removal_version="1.0",
+        )
+        return _get_config()
+
+
+def get_config(reload: bool = False) -> Config:
     """Get the app config from the current RegistrationContext.
 
     The config is loaded from rxconfig.py once per RegistrationContext and
     cached on the context thereafter. If no context is currently attached,
     one is created and attached automatically.
 
+    Args:
+        reload: Deprecated; force a fresh load of the config. Use
+            reload_config() instead.
+
     Returns:
         The app config.
     """
+    if reload:
+        console.deprecate(
+            feature_name="get_config(reload=True)",
+            reason="Use reload_config() to force a fresh load of the config",
+            deprecation_version="0.9.9",
+            removal_version="1.0",
+        )
+        with _load_config_lock:
+            return reload_config()
     ctx = RegistrationContext.ensure_context()
     if ctx._config is None:
         # Serialize check/load/set so threads sharing a context load once.
         with _load_config_lock:
             if ctx._config is None:
-                ctx._set_config(_load_config())
+                ctx._set_config(_get_config())
     return ctx.config
 
 
@@ -927,6 +1056,6 @@ def reload_config() -> Config:
         The freshly loaded app config.
     """
     ctx = RegistrationContext.ensure_context()
-    config = _load_config()
+    config = _get_config()
     ctx._set_config(config)
     return config

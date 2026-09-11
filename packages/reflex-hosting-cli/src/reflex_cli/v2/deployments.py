@@ -12,7 +12,9 @@ import click
 from packaging import version
 
 from reflex_cli import constants
+from reflex_cli.utils.output import reserve_stdout_for_argv
 from reflex_cli.v2.apps import apps_cli
+from reflex_cli.v2.auth import token_command, whoami_command
 from reflex_cli.v2.gcp import deploy_command as gcp_deploy_command
 from reflex_cli.v2.project import project_cli
 from reflex_cli.v2.providers import providers_cli
@@ -35,6 +37,11 @@ def hosting_cli(ctx: click.Context) -> None:
     It provides commands for managing apps, projects, secrets, and VM types/regions.
 
     """
+    # Before anything below can speak: this callback runs ahead of the
+    # subcommand's own option parsing, so its --json is not known yet and a
+    # warning from here would land on stdout in front of the document.
+    reserve_stdout_for_argv(ctx=ctx)
+
     if _reflex_version is None:
         ctx.fail("Reflex is not installed. Install it with `pip install reflex`.")
     if _reflex_version < constants.ReflexHostingCli.MINIMUM_REFLEX_VERSION:
@@ -93,6 +100,14 @@ hosting_cli.add_command(
 hosting_cli.add_command(
     scan_command,
     name="scan",
+)
+hosting_cli.add_command(
+    whoami_command,
+    name="whoami",
+)
+hosting_cli.add_command(
+    token_command,
+    name="token",
 )
 for name, command in vm_types_regions_cli.commands.items():
     # Add the command to the hosting CLI

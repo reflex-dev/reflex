@@ -96,3 +96,9 @@ def test_frontmatter_description_is_truncated_to_max_len():
     assert result is not None
     assert len(result) <= 155
     assert result.endswith("…")
+
+
+def test_concise_prose_is_kept_instead_of_generic_framework_description():
+    """Useful short summaries should not be discarded to meet an arbitrary floor."""
+    summary = "Configure authentication providers and sign-in flows for Reflex Enterprise apps."
+    assert extract_doc_description(summary) == summary
