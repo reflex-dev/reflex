@@ -1,0 +1,78 @@
+{
+  "initial_rows": 1,
+  "headers": [
+    "Ticker",
+    "Date",
+    "Open",
+    "High",
+    "Low",
+    "Close",
+    "Volume"
+  ],
+  "rows_after_fetch": 20,
+  "first_row_cells": [
+    "MSFT",
+    "2026-09-10",
+    "165.7",
+    "168.82",
+    "163.55",
+    "166.67",
+    "1775000"
+  ],
+  "paging_panel": "Page Size: 20 1 to 20 of 645 Page 1 of 33",
+  "paging_after_next": "Page Size: 20 21 to 40 of 645 Page 2 of 33",
+  "rows_page2": 20,
+  "page2_first_cells": [
+    "MSFT",
+    "2026-09-04",
+    "167.74"
+  ],
+  "rows_after_pagesize_50": 23,
+  "rows_filter_AAPL": 23,
+  "filtered_tickers": [
+    "AAPL"
+  ],
+  "close_sort": {
+    "before": [
+      "130.95",
+      "130.98",
+      "130.8"
+    ],
+    "after": [
+      "95.11",
+      "95.13",
+      "95.27"
+    ],
+    "changed": true
+  },
+  "chart_svg": 0,
+  "heading_company": "Stock Market Data with AG Grid in Reflex",
+  "error_bars": 0,
+  "themes": {
+    "balham": [
+      "ag-root-wrapper",
+      "ag-ltr",
+      "ag-layout-normal"
+    ],
+    "alpine": [
+      "ag-root-wrapper",
+      "ag-ltr",
+      "ag-layout-normal"
+    ],
+    "material": [
+      "ag-root-wrapper",
+      "ag-ltr",
+      "ag-layout-normal"
+    ],
+    "quartz": [
+      "ag-root-wrapper",
+      "ag-ltr",
+      "ag-layout-normal"
+    ]
+  },
+  "console": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  "pageerrors": [],
+  "failed": []
+}

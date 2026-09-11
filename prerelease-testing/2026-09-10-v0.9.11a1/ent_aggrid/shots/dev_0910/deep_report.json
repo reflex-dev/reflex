@@ -1,0 +1,88 @@
+{
+  "integrated_charts": {
+    "range_cells": 2,
+    "context_menu_open": 1,
+    "menu_items": [
+      "Cut",
+      "Copy",
+      "Copy with Headers",
+      "Copy with Group Headers",
+      "Paste",
+      "Chart Range",
+      "Export"
+    ],
+    "chart_wrappers": 0,
+    "console": [
+      "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "error: AG Grid: AG Grid version 34.3.1 and AG Charts version 11.2.4 is not supported. AG Grid version 34.3.x should be used with AG Chart 12.3.x. Please see https://www.ag-grid.com/javascript-data-grid/modules/ for more information."
+    ],
+    "license_noise": 14,
+    "pageerrors": [
+      "Cannot assign to read only property 'api' of object '#<Object>'"
+    ],
+    "failed": []
+  },
+  "fill_handle": {
+    "gold_cells": 10,
+    "fill_handle_present": 1,
+    "gold_before": [
+      "8",
+      "6",
+      "4",
+      "1"
+    ],
+    "gold_after": [
+      "8",
+      "8",
+      "8",
+      "8"
+    ],
+    "fill_applied": true,
+    "console": [
+      "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    "pageerrors": [],
+    "failed": []
+  },
+  "aligned_grids": {
+    "roots": 2,
+    "scrollLeft_before": [
+      0,
+      0
+    ],
+    "scrollLeft_after": [
+      0,
+      0
+    ],
+    "synced": false,
+    "console": [
+      "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    "pageerrors": [],
+    "failed": []
+  },
+  "editable_more": {
+    "age_after": "999",
+    "toasts": 2,
+    "toast_texts": [
+      "Cell value changed: age = 999",
+      "An error occurred.\nValueError: Library @radix-ui/themes is not bundled. Use `fro"
+    ],
+    "source_tab_code_len": 40,
+    "console": [
+      "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    "pageerrors": [],
+    "failed": []
+  },
+  "selected_items_more": {
+    "initial_panel": "Selected Items (0)",
+    "after_Select_All": "Selected Items (128)",
+    "after_Deselect_All": "Selected Items (0)",
+    "console": [
+      "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    ],
+    "pageerrors": [],
+    "failed": []
+  }
+}

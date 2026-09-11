@@ -1,0 +1,2570 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_aggrid/venv_0910/lib/python3.11/site-packages/reflex_enterprise/config
+.py:22)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_aggrid/venv_0910/lib/python3.11/site-packages/reflex_enterprise/config
+.py'
+Debug: Config: ConfigEnterprise(app_name='ag_grid', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url='sqlite+aiosqlite:///reflex.db', redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'disable_plugins', 'app_name', 
+'telemetry_enabled', 'async_db_url'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=True)
+'--version']
+Debug: [Reflex 0.9.10.post2 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/ent_aggrid/venv_0910/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.3.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=5105
+Debug: Overriding config value backend_port with env var BACKEND_PORT=5105
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.032 seconds
+Debug: Latest version of reflex: 0.9.10.post2
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+[<AddressFamily.AF_INET: 2>].
+Debug: Fullstack port: 5105 is not in use.
+DeprecationWarning: `@rx.memo` on `row_counter` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`rowid`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (ag_grid/formatters.py:219)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_aggrid/venv_0910/lib/python3.11/site-packages/reflex_enterprise/app.py
+:154)
+Info: Single port proxy mode enabled
+Debug: Registered lifespan task: proxy_middleware
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_aggrid/venv_0910/lib/python3.11/site-packages/reflex_enterprise/compon
+ents/ag_grid/aggrid.py:1736)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_aggrid/venv_0910/lib/python3.11/site-packages/reflex_components_radix/
+plugin.py:72)
+Debug: [timing] Compile pages: 1.27s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 44/43 0:00:01
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 479 installs across 322 packages (no changes) [22.00ms]
+'--legacy-peer-deps', '-d', '@react-router/fs-routes@8.3.0', 'vite@8.2.0', 
+'@emotion/react@11.14.0', '@react-router/dev@8.3.0', 'postcss@8.5.23', 
+'autoprefixer@10.5.4', 'postcss-import@16.1.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug:  - vite
+Debug:  - react-router
+Debug:  - autoprefixer
+Debug: 
+Debug: [16.00ms] done
+'--legacy-peer-deps', 'ag-charts-enterprise@11.2.4', 'sonner@2.0.7', 
+'@mantine/core@8.3.9', '@react-router/node@8.3.0', 'lucide-react@1.26.0', 
+'react-dom@19.2.8', 'react@19.2.8', 'ag-grid-enterprise@34.3.1', 
+'socket.io-client@4.8.3', 'react-router@8.3.0', 'universal-cookie@8.1.2', 
+'@radix-ui/themes@3.3.0', 'react-syntax-highlighter@16.1.1', 'moment@2.30.1', 
+'ag-grid-community@34.3.1', 'react-moment@1.2.2', '@radix-ui/react-form@0.1.14',
+'react-helmet@6.1.0', 'react-error-boundary@6.1.2', 'ag-grid-react@34.3.1', 
+'isbot@5.2.1']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: 
+Debug: [15.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/ent_aggrid/demo_0910/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/ent_aggrid/demo_0910/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.08s
+Debug: [timing] Write to Disk: 0.00s
+'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.0 building client environment for production...
+Debug: transforming...
+Debug: ✓ 1920 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                                    94.36
+kB │ gzip:  10.88 kB
+Debug: build/client/assets/_selected-items_-CHxOyYuQ.css                  196.83
+kB │ gzip:  28.92 kB
+Debug: build/client/assets/ag-theme-quartz-DIBqjlv2.css                   351.64
+kB │ gzip:  68.44 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css            698.26
+kB │ gzip:  84.10 kB
+Debug: build/client/assets/csv-DeoZPBvg.js                                  0.14
+kB │ gzip:   0.14 kB
+Debug: build/client/assets/hsts-ex6XpwRW.js                                 0.20
+kB │ gzip:   0.18 kB
+Debug: build/client/assets/t4-vb-DX4Q326x.js                                0.24
+kB │ gzip:   0.19 kB
+Debug: build/client/assets/hpkp-CZL65u9s.js                                 0.24
+kB │ gzip:   0.21 kB
+Debug: build/client/assets/arff-DrptKHcu.js                                 0.25
+kB │ gzip:   0.22 kB
+Debug: build/client/assets/t4-cs-D9qMupz_.js                                0.26
+kB │ gzip:   0.20 kB
+Debug: build/client/assets/gcode-BXEcl5qa.js                                0.28
+kB │ gzip:   0.24 kB
+Debug: build/client/assets/brainfuck-CIuPsdNI.js                            0.29
+kB │ gzip:   0.20 kB
+Debug: build/client/assets/git-BASw3ufu.js                                  0.29
+kB │ gzip:   0.25 kB
+Debug: build/client/assets/reflex-env-CVzIJ1rP.js                           0.30
+kB │ gzip:   0.20 kB
+Debug: build/client/assets/jsonp-5kZSLV4l.js                                0.31
+kB │ gzip:   0.24 kB
+Debug: build/client/assets/cilkc-BPCsa15g.js                                0.32
+kB │ gzip:   0.23 kB
+Debug: build/client/assets/button-Dyy8htgW.js                               0.32
+kB │ gzip:   0.25 kB
+Debug: build/client/assets/nand2tetris-hdl-gURQffqi.js                      0.33
+kB │ gzip:   0.27 kB
+Debug: build/client/assets/bnf-C0XyL7NM.js                                  0.36
+kB │ gzip:   0.24 kB
+Debug: build/client/assets/yang-0H42dP10.js                                 0.36
+kB │ gzip:   0.27 kB
+Debug: build/client/assets/cilkcpp-C96VUPbO.js                              0.37
+kB │ gzip:   0.25 kB
+Debug: build/client/assets/properties-DKg_-2lZ.js                           0.37
+kB │ gzip:   0.24 kB
+Debug: build/client/assets/racket-DUkyhs4D.js                               0.39
+kB │ gzip:   0.27 kB
+Debug: build/client/assets/prolog-DM-3k7xl.js                               0.41
+kB │ gzip:   0.31 kB
+Debug: build/client/assets/editorconfig-XJ0zNcNf.js                         0.42
+kB │ gzip:   0.27 kB
+Debug: build/client/assets/xml-doc-CKVi4AsR.js                              0.42
+kB │ gzip:   0.27 kB
+Debug: build/client/assets/false-D4D70b-Z.js                                0.43
+kB │ gzip:   0.32 kB
+Debug: build/client/assets/ebnf-L8SoqwZ8.js                                 0.44
+kB │ gzip:   0.31 kB
+Debug: build/client/assets/ignore-C5N49Roq.js                               0.44
+kB │ gzip:   0.27 kB
+Debug: build/client/assets/php-extras-BnFRE0cT.js                           0.44
+kB │ gzip:   0.36 kB
+Debug: build/client/assets/_404_._index-zcWAl9fU.js                         0.46
+kB │ gzip:   0.31 kB
+Debug: build/client/assets/tsx-D8udrHBK.js                                  0.47
+kB │ gzip:   0.31 kB
+Debug: build/client/assets/tap-1l_zd01v.js                                  0.49
+kB │ gzip:   0.36 kB
+Debug: build/client/assets/go-module-BEI50IkE.js                            0.49
+kB │ gzip:   0.31 kB
+Debug: build/client/assets/matlab-BQyvBoSn.js                               0.49
+kB │ gzip:   0.37 kB
+Debug: build/client/assets/json5-BkFQEBcI.js                                0.51
+kB │ gzip:   0.38 kB
+Debug: build/client/assets/json-B02E3pk2.js                                 0.51
+kB │ gzip:   0.31 kB
+Debug: build/client/assets/roboconf-Bn3ncXn_.js                             0.51
+kB │ gzip:   0.32 kB
+Debug: build/client/assets/bbcode-D6OMWDTq.js                               0.52
+kB │ gzip:   0.28 kB
+Debug: build/client/assets/hoon-CUqn1Uky.js                                 0.55
+kB │ gzip:   0.37 kB
+Debug: build/client/assets/etlua-D5bGe04V.js                                0.56
+kB │ gzip:   0.33 kB
+Debug: build/client/assets/linker-script-XTh_UVOA.js                        0.56
+kB │ gzip:   0.38 kB
+Debug: build/client/assets/gedcom-C5YFAf6D.js                               0.58
+kB │ gzip:   0.28 kB
+Debug: build/client/assets/r-CjN4PMnd.js                                    0.58
+kB │ gzip:   0.43 kB
+Debug: build/client/assets/box-BCER_bSQ.js                                  0.59
+kB │ gzip:   0.39 kB
+Debug: build/client/assets/gettext-BaPu7_e8.js                              0.59
+kB │ gzip:   0.31 kB
+Debug: build/client/assets/jexl-DbkIzZKC.js                                 0.60
+kB │ gzip:   0.36 kB
+Debug: build/client/assets/llvm-BML3FRzH.js                                 0.61
+kB │ gzip:   0.42 kB
+Debug: build/client/assets/processing-kyurvxDH.js                           0.61
+kB │ gzip:   0.43 kB
+Debug: build/client/assets/ejs-tRZWNDG5.js                                  0.64
+kB │ gzip:   0.36 kB
+Debug: build/client/assets/rego-DgqoaeAa.js                                 0.64
+kB │ gzip:   0.40 kB
+Debug: build/client/assets/lua-Dl7axvik.js                                  0.66
+kB │ gzip:   0.45 kB
+Debug: build/client/assets/diff-CnVbg4kZ.js                                 0.66
+kB │ gzip:   0.44 kB
+Debug: build/client/assets/erb-o6PO7Bre.js                                  0.66
+kB │ gzip:   0.39 kB
+Debug: build/client/assets/ini-_H0-Wnh8.js                                  0.67
+kB │ gzip:   0.31 kB
+Debug: build/client/assets/bison-DUUwJzRd.js                                0.69
+kB │ gzip:   0.43 kB
+Debug: build/client/assets/warpscript-BcDDSmPD.js                           0.69
+kB │ gzip:   0.51 kB
+Debug: build/client/assets/birb-BTYIz025.js                                 0.69
+kB │ gzip:   0.48 kB
+Debug: build/client/assets/n4js-D4NBhiIr.js                                 0.69
+kB │ gzip:   0.44 kB
+Debug: build/client/assets/t4-templating-xhBpS6bs.js                        0.70
+kB │ gzip:   0.44 kB
+Debug: build/client/assets/smalltalk-lZkBJf_H.js                            0.71
+kB │ gzip:   0.45 kB
+Debug: build/client/assets/awk-q4YWlkWR.js                                  0.76
+kB │ gzip:   0.49 kB
+Debug: build/client/assets/idris-DHAJW6jN.js                                0.76
+kB │ gzip:   0.49 kB
+Debug: build/client/assets/nasm-BYyRWXsA.js                                 0.76
+kB │ gzip:   0.51 kB
+Debug: build/client/assets/solution-file-gE9JyDmu.js                        0.77
+kB │ gzip:   0.43 kB
+Debug: build/client/assets/less-DZtXz-rP.js                                 0.78
+kB │ gzip:   0.44 kB
+Debug: build/client/assets/nginx-B19tPRFV.js                                0.79
+kB │ gzip:   0.43 kB
+Debug: build/client/assets/objectivec-Cv_qlwGW.js                           0.79
+kB │ gzip:   0.52 kB
+Debug: build/client/assets/systemd-D1_5snoB.js                              0.79
+kB │ gzip:   0.45 kB
+Debug: build/client/assets/agda-uS3zBbvL.js                                 0.80
+kB │ gzip:   0.53 kB
+Debug: build/client/assets/phpdoc-CSxNstJJ.js                               0.81
+kB │ gzip:   0.50 kB
+Debug: build/client/assets/ichigojam-Di1Ns6X_.js                            0.82
+kB │ gzip:   0.62 kB
+Debug: build/client/assets/jsstacktrace-DwWA-I7r.js                         0.83
+kB │ gzip:   0.45 kB
+Debug: build/client/assets/erlang-DFlnBev6.js                               0.83
+kB │ gzip:   0.50 kB
+Debug: build/client/assets/rip-B4Ycriad.js                                  0.83
+kB │ gzip:   0.46 kB
+Debug: build/client/assets/apl-D1-3En04.js                                  0.83
+kB │ gzip:   0.59 kB
+Debug: build/client/assets/clike-jjKDqbJf.js                                0.85
+kB │ gzip:   0.55 kB
+Debug: build/client/assets/openqasm-D58R-1tG.js                             0.86
+kB │ gzip:   0.60 kB
+Debug: build/client/assets/pcaxis-1DvWz8SL.js                               0.86
+kB │ gzip:   0.44 kB
+Debug: build/client/assets/j-DQt7bR4l.js                                    0.88
+kB │ gzip:   0.56 kB
+Debug: build/client/assets/oz-C41MtKuJ.js                                   0.88
+kB │ gzip:   0.58 kB
+Debug: build/client/assets/autoit-XLsjApYF.js                               0.89
+kB │ gzip:   0.58 kB
+Debug: build/client/assets/firestore-security-rules-CfJ2maxt.js             0.90
+kB │ gzip:   0.49 kB
+Debug: build/client/assets/dns-zone-file-DIw4tGE3.js                        0.90
+kB │ gzip:   0.55 kB
+Debug: build/client/assets/parigp-DdjG9MK8.js                               0.91
+kB │ gzip:   0.55 kB
+Debug: build/client/assets/javadoclike-BBI20IT2.js                          0.91
+kB │ gzip:   0.53 kB
+Debug: build/client/assets/dataweave-CZbfBwNi.js                            0.92
+kB │ gzip:   0.56 kB
+Debug: build/client/assets/mel-6r1HqpkP.js                                  0.92
+kB │ gzip:   0.54 kB
+Debug: build/client/assets/reason-BS6AzHnn.js                               0.92
+kB │ gzip:   0.60 kB
+Debug: build/client/assets/supercollider-BpgCy7pe.js                        0.92
+kB │ gzip:   0.55 kB
+Debug: build/client/assets/wolfram-D2zPSWp1.js                              0.93
+kB │ gzip:   0.58 kB
+Debug: build/client/assets/asm6502-CRL1W035.js                              0.93
+kB │ gzip:   0.63 kB
+Debug: build/client/assets/bbj-CGdFgIN6.js                                  0.93
+kB │ gzip:   0.61 kB
+Debug: build/client/assets/code-Ml40JOy-.js                                 0.93
+kB │ gzip:   0.45 kB
+Debug: build/client/assets/monkey-es2e915U.js                               0.94
+kB │ gzip:   0.64 kB
+Debug: build/client/assets/actionscript-Ddu_MquT.js                         0.95
+kB │ gzip:   0.58 kB
+Debug: build/client/assets/abnf-40Fo_Vtj.js                                 0.96
+kB │ gzip:   0.53 kB
+Debug: build/client/assets/ada-CulH8oqI.js                                  0.97
+kB │ gzip:   0.61 kB
+Debug: build/client/assets/turtle-BajsPQ9K.js                               0.97
+kB │ gzip:   0.54 kB
+Debug: build/client/assets/gdscript-DQmNHg50.js                             0.98
+kB │ gzip:   0.63 kB
+Debug: build/client/assets/icon-Dzyu6qEV.js                                 0.99
+kB │ gzip:   0.65 kB
+Debug: build/client/assets/twig-BsPlsNZX.js                                 0.99
+kB │ gzip:   0.60 kB
+Debug: build/client/assets/makefile-C7Vj606s.js                             1.00
+kB │ gzip:   0.60 kB
+Debug: build/client/assets/eiffel-C7SR1lph.js                               1.01
+kB │ gzip:   0.64 kB
+Debug: build/client/assets/toml-shH6cMOm.js                                 1.02
+kB │ gzip:   0.54 kB
+Debug: build/client/assets/flow-CHpA_P98.js                                 1.04
+kB │ gzip:   0.56 kB
+Debug: build/client/assets/handlebars-DodvshyA.js                           1.04
+kB │ gzip:   0.57 kB
+Debug: build/client/assets/excel-formula-BXhYwmBR.js                        1.06
+kB │ gzip:   0.56 kB
+Debug: build/client/assets/sparql-B019SYfI.js                               1.06
+kB │ gzip:   0.72 kB
+Debug: build/client/assets/avro-idl-9kRV7bUR.js                             1.06
+kB │ gzip:   0.58 kB
+Debug: build/client/assets/keyman-CJcnrxrj.js                               1.07
+kB │ gzip:   0.61 kB
+Debug: build/client/assets/neon-zwwbwoMR.js                                 1.07
+kB │ gzip:   0.52 kB
+Debug: build/client/assets/go-BTdFQSkQ.js                                   1.07
+kB │ gzip:   0.69 kB
+Debug: build/client/assets/elm-CnpgxzWV.js                                  1.07
+kB │ gzip:   0.65 kB
+Debug: build/client/assets/julia-m-tue8zV.js                                1.07
+kB │ gzip:   0.70 kB
+Debug: build/client/assets/gap-CtLis1Xu.js                                  1.08
+kB │ gzip:   0.60 kB
+Debug: build/client/assets/shell-session-8H-pu4k1.js                        1.08
+kB │ gzip:   0.62 kB
+Debug: build/client/assets/cypher-Bp-c8qFh.js                               1.10
+kB │ gzip:   0.72 kB
+Debug: build/client/assets/latex-euonHM-l.js                                1.10
+kB │ gzip:   0.52 kB
+Debug: build/client/assets/protobuf-fGn9Dsbt.js                             1.10
+kB │ gzip:   0.58 kB
+Debug: build/client/assets/rolldown-runtime-Dd_uD5pT.js                     1.10
+kB │ gzip:   0.62 kB
+Debug: build/client/assets/mizar-B6Z6M1Ed.js                                1.11
+kB │ gzip:   0.67 kB
+Debug: build/client/assets/aql-vMdHpWig.js                                  1.11
+kB │ gzip:   0.70 kB
+Debug: build/client/assets/gn-wwd7v58L.js                                   1.11
+kB │ gzip:   0.59 kB
+Debug: build/client/assets/qore-DmTt42qF.js                                 1.11
+kB │ gzip:   0.69 kB
+Debug: build/client/assets/brightscript-z9kOOoxM.js                         1.14
+kB │ gzip:   0.63 kB
+Debug: build/client/assets/vhdl-CIWn_y0q.js                                 1.14
+kB │ gzip:   0.72 kB
+Debug: build/client/assets/bro-rdG3ka22.js                                  1.17
+kB │ gzip:   0.75 kB
+Debug: build/client/assets/solidity-B5ie-u2b.js                             1.18
+kB │ gzip:   0.73 kB
+Debug: build/client/assets/xojo-ByP3cRow.js                                 1.18
+kB │ gzip:   0.79 kB
+Debug: build/client/assets/magma-9lzosfcB.js                                1.19
+kB │ gzip:   0.68 kB
+Debug: build/client/assets/sass-RhMvkm29.js                                 1.19
+kB │ gzip:   0.53 kB
+Debug: build/client/assets/squirrel-DEAnswq_.js                             1.20
+kB │ gzip:   0.68 kB
+Debug: build/client/assets/nim-CjyG8OP2.js                                  1.20
+kB │ gzip:   0.72 kB
+Debug: build/client/assets/glsl-BltrEk-u.js                                 1.20
+kB │ gzip:   0.63 kB
+Debug: build/client/assets/csp-D_cTitSG.js                                  1.21
+kB │ gzip:   0.64 kB
+Debug: build/client/assets/aspnet-7__XbnVR.js                               1.22
+kB │ gzip:   0.61 kB
+Debug: build/client/assets/mata-Dc5rk9nS.js                                 1.23
+kB │ gzip:   0.72 kB
+Debug: build/client/assets/lolcode-CfMr6tZs.js                              1.23
+kB │ gzip:   0.72 kB
+Debug: build/client/assets/ocaml-CGRmXfd0.js                                1.23
+kB │ gzip:   0.72 kB
+Debug: build/client/assets/jq-BmCy6E6o.js                                   1.23
+kB │ gzip:   0.68 kB
+Debug: build/client/assets/uri-9IuvSt6-.js                                  1.25
+kB │ gzip:   0.57 kB
+Debug: build/client/assets/dot-Cte5oIpV.js                                  1.25
+kB │ gzip:   0.65 kB
+Debug: build/client/assets/markup-templating-sYFejUZF.js                    1.26
+kB │ gzip:   0.67 kB
+Debug: build/client/assets/antlr4-XraleXvN.js                               1.26
+kB │ gzip:   0.67 kB
+Debug: build/client/assets/wasm-CL-PBsLm.js                                 1.27
+kB │ gzip:   0.72 kB
+Debug: build/client/assets/wiki-ol_hRk6W.js                                 1.27
+kB │ gzip:   0.67 kB
+Debug: build/client/assets/django-DOEsIwOr.js                               1.27
+kB │ gzip:   0.66 kB
+Debug: build/client/assets/latte-Bd5BWZzr.js                                1.28
+kB │ gzip:   0.68 kB
+Debug: build/client/assets/promql-Cyu0bSs-.js                               1.29
+kB │ gzip:   0.69 kB
+Debug: build/client/assets/css-BLUnUyF9.js                                  1.30
+kB │ gzip:   0.65 kB
+Debug: build/client/assets/dhall-85OdaVgO.js                                1.30
+kB │ gzip:   0.73 kB
+Debug: build/client/assets/peoplecode-BgBWHHHM.js                           1.31
+kB │ gzip:   0.74 kB
+Debug: build/client/assets/fortran-CRREqS6m.js                              1.33
+kB │ gzip:   0.85 kB
+Debug: build/client/assets/cfscript-CiEe55bD.js                             1.33
+kB │ gzip:   0.77 kB
+Debug: build/client/assets/nix-BkfMGg2d.js                                  1.33
+kB │ gzip:   0.81 kB
+Debug: build/client/assets/chaiscript-DxNEADsS.js                           1.33
+kB │ gzip:   0.67 kB
+Debug: build/client/assets/armasm-BrfBtT9v.js                               1.34
+kB │ gzip:   0.84 kB
+Debug: build/client/assets/bicep-BgiflvoR.js                                1.34
+kB │ gzip:   0.64 kB
+Debug: build/client/assets/lilypond-C-fbis9c.js                             1.34
+kB │ gzip:   0.69 kB
+Debug: build/client/assets/tt2-DbAZDsTE.js                                  1.35
+kB │ gzip:   0.76 kB
+Debug: build/client/assets/velocity-DWfxgmES.js                             1.35
+kB │ gzip:   0.64 kB
+Debug: build/client/assets/regex-Dv2vm_uO.js                                1.36
+kB │ gzip:   0.65 kB
+Debug: build/client/assets/iecst-Dp4yaA1l.js                                1.38
+kB │ gzip:   0.91 kB
+Debug: build/client/assets/pascaligo-DpmXB4fk.js                            1.39
+kB │ gzip:   0.72 kB
+Debug: build/client/assets/bqn-CAmdIE_e.js                                  1.39
+kB │ gzip:   0.77 kB
+Debug: build/client/assets/wren-ZVk8-izA.js                                 1.41
+kB │ gzip:   0.71 kB
+Debug: build/client/assets/scss-BSDGjs1D.js                                 1.42
+kB │ gzip:   0.70 kB
+Debug: build/client/assets/crystal--9cksZYb.js                              1.42
+kB │ gzip:   0.83 kB
+Debug: build/client/assets/smali-DHR2StmD.js                                1.42
+kB │ gzip:   0.67 kB
+Debug: build/client/assets/typescript-B0FStyYo.js                           1.42
+kB │ gzip:   0.66 kB
+Debug: build/client/assets/hcl-BVMyo2BJ.js                                  1.45
+kB │ gzip:   0.64 kB
+Debug: build/client/assets/scala-DImwIwvy.js                                1.45
+kB │ gzip:   0.79 kB
+Debug: build/client/assets/typoscript-L2xWg453.js                           1.46
+kB │ gzip:   0.77 kB
+Debug: build/client/assets/gradle-DhsByOZP.js                               1.49
+kB │ gzip:   0.81 kB
+Debug: build/client/assets/odin-Byl7CSB2.js                                 1.51
+kB │ gzip:   0.83 kB
+Debug: build/client/assets/parser-C1jVaQdY.js                               1.55
+kB │ gzip:   0.75 kB
+Debug: build/client/assets/coffeescript-C578cE9V.js                         1.56
+kB │ gzip:   0.74 kB
+Debug: build/client/assets/qml-Bek9aNzP.js                                  1.56
+kB │ gzip:   0.69 kB
+Debug: build/client/assets/robotframework-BZw9gX0w.js                       1.57
+kB │ gzip:   0.65 kB
+Debug: build/client/assets/tcl-CEa2RNd5.js                                  1.57
+kB │ gzip:   0.89 kB
+Debug: build/client/assets/stan-Byqu5KZz.js                                 1.57
+kB │ gzip:   0.88 kB
+Debug: build/client/assets/jolie-C78-bU34.js                                1.58
+kB │ gzip:   0.88 kB
+Debug: build/client/assets/sml-CGCKZ7_9.js                                  1.59
+kB │ gzip:   0.82 kB
+Debug: build/client/assets/kusto-De8KKPxY.js                                1.60
+kB │ gzip:   0.95 kB
+Debug: build/client/assets/cue-nEhSTQ5F.js                                  1.61
+kB │ gzip:   0.79 kB
+Debug: build/client/assets/javastacktrace-BjbuPutP.js                       1.61
+kB │ gzip:   0.66 kB
+Debug: build/client/assets/javadoc-BA4BRqau.js                              1.62
+kB │ gzip:   0.74 kB
+Debug: build/client/assets/docker-C_eDFnUW.js                               1.62
+kB │ gzip:   0.76 kB
+Debug: build/client/assets/rescript-Cla-WDKB.js                             1.62
+kB │ gzip:   0.85 kB
+Debug: build/client/assets/cooklang-CudJKlCU.js                             1.64
+kB │ gzip:   0.67 kB
+Debug: build/client/assets/jsdoc-xT5OMD3U.js                                1.64
+kB │ gzip:   0.78 kB
+Debug: build/client/assets/maxscript-C-5mgloj.js                            1.65
+kB │ gzip:   0.90 kB
+Debug: build/client/assets/tremor-C12yT62p.js                               1.66
+kB │ gzip:   0.88 kB
+Debug: build/client/assets/haxe-tAz4OhMQ.js                                 1.67
+kB │ gzip:   0.86 kB
+Debug: build/client/assets/kumir-CtNudeVI.js                                1.69
+kB │ gzip:   0.84 kB
+Debug: build/client/assets/dart-DV7F6cKc.js                                 1.70
+kB │ gzip:   0.89 kB
+Debug: build/client/assets/soy-6LHe5wHi.js                                  1.72
+kB │ gzip:   0.89 kB
+Debug: build/client/assets/groovy-THN_Qhuh.js                               1.73
+kB │ gzip:   0.95 kB
+Debug: build/client/assets/batch-ExsvRcTe.js                                1.74
+kB │ gzip:   0.70 kB
+Debug: build/client/assets/bsl-CD2CmxFZ.js                                  1.74
+kB │ gzip:   0.81 kB
+Debug: build/client/assets/hlsl-mN1Ad3hq.js                                 1.76
+kB │ gzip:   0.96 kB
+Debug: build/client/assets/splunk-spl-BkLEGjpI.js                           1.77
+kB │ gzip:   0.95 kB
+Debug: build/client/assets/q-Bk86XahR.js                                    1.77
+kB │ gzip:   1.05 kB
+Debug: build/client/assets/io-6xqbEpcP.js                                   1.77
+kB │ gzip:   1.10 kB
+Debug: build/client/assets/asmatmel-BI-S8lDS.js                             1.80
+kB │ gzip:   1.07 kB
+Debug: build/client/assets/stata-D75x4J7L.js                                1.83
+kB │ gzip:   0.81 kB
+Debug: build/client/assets/vbnet-D23NBH8t.js                                1.84
+kB │ gzip:   1.11 kB
+Debug: build/client/assets/applescript-CMxJz5BX.js                          1.84
+kB │ gzip:   1.01 kB
+Debug: build/client/assets/naniscript-00Efet83.js                           1.85
+kB │ gzip:   0.82 kB
+Debug: build/client/assets/n1ql-D9ZVNH8B.js                                 1.86
+kB │ gzip:   1.15 kB
+Debug: build/client/assets/unrealscript-B-NggFno.js                         1.86
+kB │ gzip:   0.98 kB
+Debug: build/client/assets/elixir-DLp7SwIK.js                               1.90
+kB │ gzip:   0.91 kB
+Debug: build/client/assets/ftl-Ckpp_GUF.js                                  1.94
+kB │ gzip:   0.89 kB
+Debug: build/client/assets/http-D4oga4du.js                                 1.94
+kB │ gzip:   0.91 kB
+Debug: build/client/assets/concurnas-BBlql4Uj.js                            1.95
+kB │ gzip:   0.99 kB
+Debug: build/client/assets/visual-basic-BwH6S-m8.js                         1.96
+kB │ gzip:   1.13 kB
+Debug: build/client/assets/basic-DaH7NNNh.js                                1.97
+kB │ gzip:   1.25 kB
+Debug: build/client/assets/pascal-DzYtueWJ.js                               1.97
+kB │ gzip:   1.03 kB
+Debug: build/client/assets/v-M2oOhfvh.js                                    1.99
+kB │ gzip:   1.07 kB
+Debug: build/client/assets/powerquery-CdxcVCeV.js                           2.02
+kB │ gzip:   1.07 kB
+Debug: build/client/assets/livescript-Bc5OVJRm.js                           2.02
+kB │ gzip:   0.98 kB
+Debug: build/client/assets/xeora-Bnt6HsQk.js                                2.02
+kB │ gzip:   0.66 kB
+Debug: build/client/assets/nevod-CzE30xVf.js                                2.03
+kB │ gzip:   0.79 kB
+Debug: build/client/assets/c-C8PoWFx3.js                                    2.04
+kB │ gzip:   1.08 kB
+Debug: build/client/assets/yaml-n53w1Kfi.js                                 2.04
+kB │ gzip:   0.91 kB
+Debug: build/client/assets/kotlin-lSpEPTBz.js                               2.05
+kB │ gzip:   1.03 kB
+Debug: build/client/assets/vala-38QofgtV.js                                 2.10
+kB │ gzip:   1.07 kB
+Debug: build/client/assets/smarty-CuJXcpQy.js                               2.10
+kB │ gzip:   0.97 kB
+Debug: build/client/assets/moonscript-Diqag_n2.js                           2.11
+kB │ gzip:   1.13 kB
+Debug: build/client/assets/qsharp-BtJB4xjn.js                               2.11
+kB │ gzip:   1.13 kB
+Debug: build/client/assets/icu-message-format-Dx59rolq.js                   2.13
+kB │ gzip:   0.87 kB
+Debug: build/client/assets/mermaid-Cke4m_Cz.js                              2.14
+kB │ gzip:   0.96 kB
+Debug: build/client/assets/verilog-Ccu_Xk-I.js                              2.16
+kB │ gzip:   1.14 kB
+Debug: build/client/assets/python-PcNiIBxw.js                               2.16
+kB │ gzip:   1.14 kB
+Debug: build/client/assets/cil-B8_gfQ5d.js                                  2.17
+kB │ gzip:   1.17 kB
+Debug: build/client/assets/web-idl-L-ew2qx6.js                              2.19
+kB │ gzip:   1.00 kB
+Debug: build/client/assets/liquid-KPxI1yU3.js                               2.21
+kB │ gzip:   1.15 kB
+Debug: build/client/assets/powershell-CO2koXZw.js                           2.21
+kB │ gzip:   1.31 kB
+Debug: build/client/assets/fsharp--kd6WGgJ.js                               2.21
+kB │ gzip:   1.20 kB
+Debug: build/client/assets/apex-CtiN_ZB5.js                                 2.24
+kB │ gzip:   1.23 kB
+Debug: build/client/assets/perl-Ci2iz3Xf.js                                 2.30
+kB │ gzip:   1.06 kB
+Debug: build/client/assets/d-DJrqF1op.js                                    2.34
+kB │ gzip:   1.35 kB
+Debug: build/client/assets/plant-uml-Dr2Y4irI.js                            2.34
+kB │ gzip:   1.20 kB
+Debug: build/client/assets/haml-sxBqA86M.js                                 2.34
+kB │ gzip:   0.90 kB
+Debug: build/client/assets/zig-JX-h6b9i.js                                  2.38
+kB │ gzip:   1.24 kB
+Debug: build/client/assets/purescript-NMXprYIU.js                           2.41
+kB │ gzip:   1.29 kB
+Debug: build/client/assets/uorazor-Cd-VrsLz.js                              2.45
+kB │ gzip:   1.25 kB
+Debug: build/client/assets/scroll-area-D_FrgcQ7.js                          2.47
+kB │ gzip:   0.92 kB
+Debug: build/client/assets/rust-CYWeblTv.js                                 2.54
+kB │ gzip:   1.22 kB
+Debug: build/client/assets/log-CZXGB4zT.js                                  2.56
+kB │ gzip:   1.20 kB
+Debug: build/client/assets/purebasic-B9J4cbNZ.js                            2.57
+kB │ gzip:   1.22 kB
+Debug: build/client/assets/jsx-CfE7C-LF.js                                  2.58
+kB │ gzip:   1.08 kB
+Debug: build/client/assets/graphql-yR0KZn6_.js                              2.59
+kB │ gzip:   1.19 kB
+Debug: build/client/assets/js-extras-Bme4aSYo.js                            2.59
+kB │ gzip:   1.09 kB
+Debug: build/client/assets/puppet-D28JRZD1.js                               2.60
+kB │ gzip:   1.13 kB
+Debug: build/client/assets/lisp-Im1BsEoa.js                                 2.64
+kB │ gzip:   1.07 kB
+Debug: build/client/assets/al-DCOMDDak.js                                   2.68
+kB │ gzip:   1.34 kB
+Debug: build/client/assets/cpp-BNrDeSFM.js                                  2.71
+kB │ gzip:   1.29 kB
+Debug: build/client/assets/js-templates-DuSRMJtN.js                         2.73
+kB │ gzip:   1.27 kB
+Debug: build/client/assets/cshtml-Cj7pf2Tf.js                               2.81
+kB │ gzip:   1.29 kB
+Debug: build/client/assets/plsql-Gdc5k5FM.js                                2.84
+kB │ gzip:   1.59 kB
+Debug: build/client/assets/java-OEPW09uX.js                                 2.88
+kB │ gzip:   1.30 kB
+Debug: build/client/assets/markup-Bfi2BWVm.js                               2.94
+kB │ gzip:   1.19 kB
+Debug: build/client/assets/swift-7bJ1Hzvg.js                                3.00
+kB │ gzip:   1.35 kB
+Debug: build/client/assets/pug-C167AFvI.js                                  3.00
+kB │ gzip:   1.10 kB
+Debug: build/client/assets/haskell-fbSFjs_d.js                              3.03
+kB │ gzip:   1.60 kB
+Debug: build/client/assets/mongodb-Bz7cEDgz.js                              3.08
+kB │ gzip:   1.62 kB
+Debug: build/client/assets/coq-CK0VuwP0.js                                  3.10
+kB │ gzip:   1.68 kB
+Debug: build/client/assets/clojure-Cal39ug-.js                              3.11
+kB │ gzip:   1.55 kB
+Debug: build/client/assets/arturo-CXbgK3GJ.js                               3.20
+kB │ gzip:   1.66 kB
+Debug: build/client/assets/psl-C4ZUpXFx.js                                  3.24
+kB │ gzip:   1.70 kB
+Debug: build/client/assets/sql-DL4klaVE.js                                  3.32
+kB │ gzip:   1.91 kB
+Debug: build/client/assets/css-extras-BUKTif8p.js                           3.37
+kB │ gzip:   1.57 kB
+Debug: build/client/assets/inform7-hBjdaCQN.js                              3.40
+kB │ gzip:   1.54 kB
+Debug: build/client/assets/_formatters_._index-C5JQ54L2.js                  3.40
+kB │ gzip:   1.19 kB
+Debug: build/client/assets/dax-CKB8QRdy.js                                  3.49
+kB │ gzip:   1.70 kB
+Debug: build/client/assets/pure-BJm2LNYT.js                                 3.51
+kB │ gzip:   1.74 kB
+Debug: build/client/assets/wgsl-DESs6Ww8.js                                 3.51
+kB │ gzip:   1.54 kB
+Debug: build/client/assets/textile-DMY31iCE.js                              3.53
+kB │ gzip:   1.24 kB
+Debug: build/client/assets/rest-Jn9jSZ2s.js                                 3.60
+kB │ gzip:   1.12 kB
+Debug: build/client/assets/ruby-DGkU311C.js                                 3.68
+kB │ gzip:   1.57 kB
+Debug: build/client/assets/stylus-ChgJAoS8.js                               3.80
+kB │ gzip:   1.67 kB
+Debug: build/client/assets/nsis-BAiVBhPp.js                                 3.83
+kB │ gzip:   2.12 kB
+Debug: build/client/assets/arduino-CEYAtK6G.js                              4.03
+kB │ gzip:   1.99 kB
+Debug: build/client/assets/scheme-DEQeAjll.js                               4.03
+kB │ gzip:   1.68 kB
+Debug: build/client/assets/xquery-CfgZaxSZ.js                               4.03
+kB │ gzip:   1.75 kB
+Debug: build/client/assets/renpy-DroUj61n.js                                4.35
+kB │ gzip:   2.03 kB
+Debug: build/client/assets/asciidoc-DDXwstOS.js                             4.51
+kB │ gzip:   1.67 kB
+Debug: build/client/assets/metafont-CgGUclsg.js                             4.57
+kB │ gzip:   2.08 kB
+Debug: build/client/assets/javascript-BbCtko1M.js                           4.76
+kB │ gzip:   1.77 kB
+Debug: build/client/assets/markdown-D0Y7CUbI.js                             5.09
+kB │ gzip:   1.96 kB
+Debug: build/client/assets/avisynth-CHXSu3lG.js                             5.15
+kB │ gzip:   2.71 kB
+Debug: build/client/assets/cobol-DOV3u-Ty.js                                5.15
+kB │ gzip:   2.46 kB
+Debug: build/client/assets/keepalived-fDo2-RHG.js                           5.74
+kB │ gzip:   2.27 kB
+Debug: build/client/assets/_index-B5IDpVKb.js                               6.03
+kB │ gzip:   2.21 kB
+Debug: build/client/assets/bash-4sOSYtlG.js                                 6.22
+kB │ gzip:   3.09 kB
+Debug: build/client/assets/php-QcDj4lbS.js                                  6.45
+kB │ gzip:   2.08 kB
+Debug: build/client/assets/csharp-C2EQRp-I.js                               6.49
+kB │ gzip:   2.57 kB
+Debug: build/client/assets/sas-BI7KPfej.js                                  7.54
+kB │ gzip:   3.10 kB
+Debug: build/client/assets/abap-C1aVpbp_.js                                 7.98
+kB │ gzip:   3.61 kB
+Debug: build/client/assets/apacheconf-D72xpb2t.js                           8.25
+kB │ gzip:   3.59 kB
+Debug: build/client/assets/gml-DQFYFqO8.js                                  8.29
+kB │ gzip:   3.82 kB
+Debug: build/client/assets/autohotkey-NKYlqafD.js                           8.82
+kB │ gzip:   4.07 kB
+Debug: build/client/assets/plus-B7V6trhs.js                                 8.82
+kB │ gzip:   3.41 kB
+Debug: build/client/assets/factor-CTBqOjKA.js                               9.03
+kB │ gzip:   3.52 kB
+Debug: build/client/assets/switch-DivFrYJC.js                               9.18
+kB │ gzip:   3.61 kB
+Debug: build/client/assets/gherkin-ClajUNSI.js                              9.89
+kB │ gzip:   5.40 kB
+Debug: build/client/assets/opencl-DCu7_WAW.js                              10.02
+kB │ gzip:   4.29 kB
+Debug: build/client/assets/cmake-CjNjy5sG.js                               10.54
+kB │ gzip:   4.15 kB
+Debug: build/client/assets/_editable_._index-B41vfwAo.js                   11.14
+kB │ gzip:   3.87 kB
+Debug: build/client/assets/_cell-selection_._index-bQn90Eco.js             11.82
+kB │ gzip:   4.04 kB
+Debug: build/client/assets/dialog-1bK0kKsZ.js                              12.08
+kB │ gzip:   4.32 kB
+Debug: build/client/assets/_aligned-grids_._index-Cc8Lh-_o.js              12.32
+kB │ gzip:   3.88 kB
+Debug: build/client/assets/_advanced-serialization_._index-BV8MBKLC.js     13.40
+kB │ gzip:   4.42 kB
+Debug: build/client/assets/text-field-rtVwzSKu.js                          13.41
+kB │ gzip:   4.75 kB
+Debug: build/client/assets/vim-ChHP2Qq7.js                                 14.27
+kB │ gzip:   5.96 kB
+Debug: build/client/assets/data-list-deqGT6iz.js                           14.55
+kB │ gzip:   5.16 kB
+Debug: build/client/assets/_pivot_._index-CmqJum4y.js                      14.90
+kB │ gzip:   4.73 kB
+Debug: build/client/assets/_model_._index-BYgvosZt.js                      15.16
+kB │ gzip:   4.67 kB
+Debug: build/client/assets/_state-grid_._index-CMOm9y4q.js                 15.26
+kB │ gzip:   4.49 kB
+Debug: build/client/assets/_simple-serialization_._index-TsTqoPah.js       16.08
+kB │ gzip:   4.52 kB
+Debug: build/client/assets/_master-detail_._index-SRnP1PtQ.js              16.49
+kB │ gzip:   4.74 kB
+Debug: build/client/assets/_fill-handle_._index-CF5pdNwG.js                18.83
+kB │ gzip:   5.26 kB
+Debug: build/client/assets/_model-auth_._index-yZbpXJPG.js                 20.45
+kB │ gzip:   5.82 kB
+Debug: build/client/assets/emotion-react.browser.esm-CncDzQhA.js           20.76
+kB │ gzip:   8.15 kB
+Debug: build/client/assets/_tree_._index-BDTutDol.js                       22.07
+kB │ gzip:   5.88 kB
+Debug: build/client/assets/_model-ssrm_._index-CLtwJWRs.js                 24.96
+kB │ gzip:   6.68 kB
+Debug: build/client/assets/formatters-DJFm6QeN.js                          29.76
+kB │ gzip:   7.52 kB
+Debug: build/client/assets/core-Bknfrmj-.js                                30.07
+kB │ gzip:  11.19 kB
+Debug: build/client/assets/sqf-C2_NPEas.js                                 33.49
+kB │ gzip:  11.17 kB
+Debug: build/client/assets/errorBoundaries-PfJrW8-4.js                     36.84
+kB │ gzip:  12.78 kB
+Debug: build/client/assets/dist-BKjolxfF.js                                82.62
+kB │ gzip:  27.32 kB
+Debug: build/client/assets/components-DsiIFQTr.js                          82.77
+kB │ gzip:  27.45 kB
+Debug: build/client/assets/_selected-items_._index-79cuGnjg.js            134.16
+kB │ gzip:  34.82 kB
+Debug: build/client/assets/entry.client-BEgY0ygL.js                       182.38
+kB │ gzip:  57.74 kB
+Debug: build/client/assets/root-s7WWLez8.js                               237.97
+kB │ gzip:  53.44 kB
+Debug: build/client/assets/prism-async-light-CulB4AyN.js                  488.28
+kB │ gzip: 116.12 kB
+Debug: build/client/assets/main.esm-BZMKOk4E.js                           983.24
+kB │ gzip: 261.08 kB
+Debug: build/client/assets/ag-theme-quartz-Biq1Op-c.js                  1,058.07
+kB │ gzip: 295.30 kB
+Debug: build/client/assets/_integrated-charts_._index-CfUVaUcN.js       1,882.41
+kB │ gzip: 479.52 kB
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/grid_state_serialization_advanced.jsx:46:25 
+[38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m46 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [plugin builtin:vite-reporter] 
+Debug: (!) Some chunks are larger than 500 kB after minification. Consider:
+Debug: - Using dynamic import() to code-split the application
+Debug: - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+https://rolldown.rs/reference/OutputOptions.codeSplitting
+Debug: - Adjust chunk size limit for this warning via 
+build.chunkSizeWarningLimit.
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/grid_state_serialization_advanced.jsx:53:25 
+[38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m53 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/aligned_grids.jsx:37:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m37 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/aligned_grids.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/grid_state_serialization.jsx:37:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m37 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/grid_state_serialization.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/editable.jsx:37:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m37 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/editable.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/cell_selection.jsx:39:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m39 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/cell_selection.jsx:46:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m46 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/tree.jsx:43:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m43 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/tree.jsx:50:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m50 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/state_grid.jsx:39:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m39 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/state_grid.jsx:46:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m46 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/formatters.jsx:38:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m38 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/formatters.jsx:45:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m45 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_simple.jsx:40:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m40 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_simple.jsx:47:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m47 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/integrated_charts.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/integrated_charts.jsx:51:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m51 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: ✓ built in 6.58s
+Debug: vite v8.2.0 building ssr environment for production...
+Debug: transforming...
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/master_detail.jsx:43:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m43 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/master_detail.jsx:50:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m50 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/fill_handle.jsx:39:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m39 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/fill_handle.jsx:46:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m46 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_ssrm.jsx:48:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m48 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_ssrm.jsx:55:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m55 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/selected_items.jsx:41:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m41 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/selected_items.jsx:48:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m48 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/pivot.jsx:48:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m48 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/pivot.jsx:55:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m55 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_customized.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_customized.jsx:51:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m51 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 63 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 2 assets cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: build/server/assets/server-build-RdyP-uDw.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.83 kB │ 
+gzip:  0.32 kB
+Debug: build/server/assets/server-build-RdyP-uDw.css            548.48 kB │ 
+gzip: 97.55 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-CVzIJ1rP.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                    362.53 kB │ 
+gzip: 53.89 kB
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_simple.jsx:40:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m40 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_simple.jsx:47:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m47 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/integrated_charts.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/integrated_charts.jsx:51:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m51 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_customized.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_customized.jsx:51:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m51 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/formatters.jsx:38:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m38 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/formatters.jsx:45:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m45 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_ssrm.jsx:48:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m48 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/model_wrapper_ssrm.jsx:55:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m55 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/aligned_grids.jsx:37:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m37 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/aligned_grids.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/fill_handle.jsx:39:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m39 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/fill_handle.jsx:46:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m46 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/editable.jsx:37:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m37 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/editable.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/grid_state_serialization_advanced.jsx:46:25 
+[38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m46 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/grid_state_serialization_advanced.jsx:53:25 
+[38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m53 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/selected_items.jsx:41:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m41 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/selected_items.jsx:48:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m48 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/state_grid.jsx:39:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m39 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/state_grid.jsx:46:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m46 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/grid_state_serialization.jsx:37:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m37 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/grid_state_serialization.jsx:44:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m44 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/cell_selection.jsx:39:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m39 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/cell_selection.jsx:46:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m46 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/master_detail.jsx:43:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m43 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/master_detail.jsx:50:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m50 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/tree.jsx:43:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m43 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/tree.jsx:50:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m50 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/pivot.jsx:48:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m48 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m)[0m[38;5;249m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: [33m[EVAL] [0mUse of direct `eval` function is strongly discouraged as it
+poses security risks and may cause issues with minification.
+Debug:     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m 
+app_components/ag_grid/pivot.jsx:55:25 [38;5;246m][0m
+Debug:     [38;5;246m│[0m
+Debug:  [38;5;246m55 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249m [0m[38;5;249m [0m[38;5;249m 
+[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mt[0m[38;5;249mu[0m[38;5;249mr[0m[38;5;2
+49mn[0m[38;5;249m 
+[0m[38;5;249m[[0m[38;5;249mc[0m[38;5;249ma[0m[38;5;249mm[0m[38;5;249me[0m[38;5;2
+49ml[0m[38;5;249mK[0m[38;5;249me[0m[38;5;249my[0m[38;5;249m,[0m[38;5;249m
+[0meval[38;5;249m([0m[38;5;249mv[0m[38;5;249ma[0m[38;5;249ml[0m[38;5;249mu[0m[38
+;5;249me[0m[38;5;249m.[0m[38;5;249m_[0m[38;5;249mj[0m[38;5;249ms[0m[38;5;249m_[0
+m[38;5;249me[0m[38;5;249mx[0m[38;5;249mp[0m[38;5;249mr[0m[38;5;249m)[0m[38;5;249
+m][0m[38;5;249m;[0m
+Debug:  [38;5;240m   │[0m                                    ──┬─  
+Debug:  [38;5;240m   │[0m                                      ╰─── Use of 
+direct `eval` here.
+Debug:  [38;5;240m   │[0m 
+Debug:  [38;5;240m   │[0m [38;5;115mHelp[0m: Consider using indirect eval. For
+more information, check the documentation: 
+https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+Debug: [38;5;246m────╯[0m
+Debug: 
+Debug: ✓ built in 1.04s
+Debug: AG Grid: AG Grid version 34.3.1 and AG Charts version 11.2.4 is not 
+supported. AG Grid version 34.3.x should be used with AG Chart 12.3.x. Please 
+see https://www.ag-grid.com/javascript-data-grid/modules/ for more information.
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /advanced-serialization -> 
+build/client/advanced-serialization/index.html
+Debug: Prerender (html): /simple-serialization -> 
+build/client/simple-serialization/index.html
+Debug: Prerender (html): /integrated-charts -> 
+build/client/integrated-charts/index.html
+Debug: Prerender (html): /cell-selection -> 
+build/client/cell-selection/index.html
+Debug: Prerender (html): /selected-items -> 
+build/client/selected-items/index.html
+Debug: Prerender (html): /aligned-grids -> build/client/aligned-grids/index.html
+Debug: Prerender (html): /master-detail -> build/client/master-detail/index.html
+Debug: Prerender (html): /fill-handle -> build/client/fill-handle/index.html
+Debug: Prerender (html): /formatters -> build/client/formatters/index.html
+Debug: Prerender (html): /model-auth -> build/client/model-auth/index.html
+Debug: Prerender (html): /model-ssrm -> build/client/model-ssrm/index.html
+Debug: Prerender (html): /state-grid -> build/client/state-grid/index.html
+Debug: Prerender (html): /editable -> build/client/editable/index.html
+Debug: Prerender (html): /model -> build/client/model/index.html
+Debug: Prerender (html): /pivot -> build/client/pivot/index.html
+Debug: Prerender (html): /tree -> build/client/tree/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:09
+Debug: Copying .web/build/client/model/index.html to 
+.web/build/client/model.html
+Debug: Copying .web/build/client/integrated-charts/index.html to 
+.web/build/client/integrated-charts.html
+Debug: Copying .web/build/client/state-grid/index.html to 
+.web/build/client/state-grid.html
+Debug: Copying .web/build/client/tree/index.html to .web/build/client/tree.html
+Debug: Copying .web/build/client/simple-serialization/index.html to 
+.web/build/client/simple-serialization.html
+Debug: Copying .web/build/client/editable/index.html to 
+.web/build/client/editable.html
+Debug: Copying .web/build/client/pivot/index.html to 
+.web/build/client/pivot.html
+Debug: Copying .web/build/client/fill-handle/index.html to 
+.web/build/client/fill-handle.html
+Debug: Copying .web/build/client/selected-items/index.html to 
+.web/build/client/selected-items.html
+Debug: Copying .web/build/client/cell-selection/index.html to 
+.web/build/client/cell-selection.html
+Debug: Copying .web/build/client/formatters/index.html to 
+.web/build/client/formatters.html
+Debug: Copying .web/build/client/model-ssrm/index.html to 
+.web/build/client/model-ssrm.html
+Debug: Copying .web/build/client/aligned-grids/index.html to 
+.web/build/client/aligned-grids.html
+Debug: Copying .web/build/client/model-auth/index.html to 
+.web/build/client/model-auth.html
+Debug: Copying .web/build/client/master-detail/index.html to 
+.web/build/client/master-detail.html
+Debug: Copying .web/build/client/advanced-serialization/index.html to 
+.web/build/client/advanced-serialization.html
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/ent_aggrid/demo_0910/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/ent_aggrid/demo_0910/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:5105/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 4834)
+[INFO] Listening at: http://0.0.0.0:5105
+[INFO] Spawning worker-1 with PID: 4894
+Warning: Page aligned-grids is being redefined with the same component.
+Warning: Page cell-selection is being redefined with the same component.
+Warning: Page editable is being redefined with the same component.
+Warning: Page fill-handle is being redefined with the same component.
+Warning: Page formatters is being redefined with the same component.
+Warning: Page simple-serialization is being redefined with the same component.
+Warning: Page advanced-serialization is being redefined with the same component.
+Warning: Page integrated-charts is being redefined with the same component.
+Warning: Page master-detail is being redefined with the same component.
+Warning: Page model is being redefined with the same component.
+Warning: Page model-auth is being redefined with the same component.
+Warning: Page model-ssrm is being redefined with the same component.
+Warning: Page pivot is being redefined with the same component.
+Warning: Page selected-items is being redefined with the same component.
+Warning: Page state-grid is being redefined with the same component.
+Warning: Page tree is being redefined with the same component.
+Warning: Page index is being redefined with the same component.
+Debug: BE Evaluating stateful page: model
+Debug: BE Evaluating stateful page: model-auth
+Debug: BE Evaluating stateful page: model-ssrm
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_aggrid/venv_0910/lib/python3.11/site-packages/reflex_enterprise/proxy.
+py:135)
+Unable to find the base Starlette app. Proxying will not be enabled.
+Debug: Started lifespan task: proxy_middleware as asynccontextmanager
+[INFO] Started worker-1
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_aggrid/venv_0910/lib/python3.11/site-packages/reflex_enterprise/compon
+ents/ag_grid/datasource.py:182)
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.
+
+[trimmed: 37 noisy lines removed by scripts/trim note in NOTES.md]

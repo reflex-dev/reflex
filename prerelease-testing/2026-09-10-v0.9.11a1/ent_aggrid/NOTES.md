@@ -1,0 +1,438 @@
+# ent_aggrid — reflex-enterprise 0.9.5 ag_grid demos vs reflex 0.9.11a1
+
+Cluster: `ent_aggrid`. Tested 2026-09-10/11.
+All packages from PyPI in isolated uv venvs (never from a checkout).
+
+| stack | reflex | reflex-base | reflex-enterprise | radix | moment | code | core |
+|---|---|---|---|---|---|---|---|
+| **under test** | 0.9.11a1 | 0.9.11a1 | 0.9.5 | 0.9.9a1 | 0.9.4a1 | 0.9.5a1 | 0.9.9 |
+| **baseline**   | 0.9.10.post2 | 0.9.10.post2 | 0.9.5 | 0.9.8 | 0.9.3 | 0.9.4 | 0.9.9 |
+
+Apps under test:
+
+- `demo_a1/` — copy of `/home/user/reflex-enterprise/demos/ag_grid` (repo HEAD 2026-09-03),
+  17 routes, run against reflex 0.9.11a1. One patch applied, see "Demo patch" below.
+- `demo_0910/` — byte-identical copy run against reflex 0.9.10.post2 (baseline).
+- `finance_a1/` — copy of `/home/user/reflex-dev/reflex-examples/ag_grid_finance`,
+  run against reflex 0.9.11a1. yfinance is blocked by the egress proxy here, so the copy
+  substitutes a deterministic offline data generator (see "Finance patch").
+- `finance_0910/` — same copy, reflex 0.9.10.post2 baseline.
+
+## Headline result
+
+**No regression.** Every one of the 17 ag_grid demo routes behaves *identically* on
+reflex 0.9.11a1 and reflex 0.9.10.post2, in dev **and** in prod (`shots/*/report.json`
+action lists diff to zero on both pairs). The `ag_grid_finance` example likewise behaves
+identically on both.
+
+**The 0.9.9a1 enterprise breakage is fixed.** The LambdaVar / python-callable
+renderer+formatter path that was dead in 0.9.9a1 (2026-08-27 FINDING-001/021/022) now
+works end-to-end: `/formatters` renders flag/currency/percent formatters, the purple
+monospace `rx.text` cell renderer, the tooltip renderer, the `@rx.memo` `row_counter`
+button (clickable, increments, live `rx.moment` duration) and the `@rxe.static`
+"Raw Data" dialog, in all three column-def styles (Inline / State / API tab).
+See `shots/dev_a1/formatters.png`, `formatters_tab_state.png`, `formatters_rawdialog.png`.
+
+It is fixed **twice over**, independently:
+
+- reflex 0.9.11a1 restored `reflex.components.dynamic.bundled_libraries` and
+  `reflex.page.DECORATED_PAGES` as deprecation shims (`console.deprecate`, removal 1.0);
+- reflex-enterprise 0.9.5 (#219) added `reflex_enterprise.vars.get_bundled_libraries()`
+  which reads `RegistrationContext.ensure_context().bundled_libraries` and falls back to
+  the old module attribute.
+
+## Status of every 2026-08-27 enterprise finding
+
+| 0.9.9a1 finding | status on reflex 0.9.11a1 + rxe 0.9.5 | evidence |
+|---|---|---|
+| FINDING-001 `dynamic.bundled_libraries` removed | **FIXED** (deprecation shim in reflex; rxe also fixed independently) | `scripts/probe_legacy_apis.py` |
+| FINDING-021 ag-grid python-callable renderer/formatter crashes compile | **FIXED** — `/formatters` fully working, all 3 tab styles | `shots/dev_a1/formatters*.png` |
+| FINDING-022 non-static LambdaVar prop with imports crashes | **FIXED** — `LiteralLambdaVar.create()` succeeds for component / dict-get / no-import returns | `scripts/probe_legacy_apis.py` |
+| FINDING-023 `reflex.page.DECORATED_PAGES` removed | **FIXED** — shim returns the defaultdict with a deprecation warning | `scripts/probe_legacy_apis.py` |
+| FINDING-024 `CachedVarOperation` masks AttributeError as bogus `VarAttributeError` | **NOT FIXED** — identical on 0.9.11a1 and 0.9.10.post2 | `scripts/probe_masked_attrerror.py` (ISSUE 3) |
+| FINDING-025 shipped rxe ag_grid demo bundles the stale `$/utils/components` | **NOT FIXED** — demo HEAD still crashes at compile on both versions | `logs/run_0910_shipped_unpatched.log`, `artifacts/traceback_shipped_demo_a1_bundle_path.txt` (ISSUE 1) |
+| FINDING-026 `/​_reflex/cookies/sync` 404 (OIDC demo) | not in this cluster (ent_misc) — not retested here | — |
+| FINDING-029 rxe error paths call deprecated `console.*` | **NOT FIXED** — `console.info` (`app.py:154`) fires on every dev/prod start, `console.error` (`utils.py:119` / `app.py:120`) on the login and prod gates | `logs/run_a1_dev.log:75,215` (ISSUE 6) |
+
+## Setup / exact rerun commands
+
+Everything below assumes `SB=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad`
+and `A=$SB/apps/ent_aggrid`, and that **no `uv pip install` is ever run from `/home/user/reflex`**
+(the checkout's `[tool.uv] exclude-newer` silently filters the alphas).
+
+### ag_grid demo (17 routes)
+
+```bash
+mkdir -p $A && cp -r /home/user/reflex-enterprise/demos/ag_grid $A/demo_a1
+cd $A/demo_a1
+grep -v '^reflex' requirements.txt > requirements_norx.txt     # drop the demo's reflex pins
+uv venv $A/venv_a1 --python 3.11
+UV_HTTP_TIMEOUT=180 uv pip install --python $A/venv_a1/bin/python --prerelease=allow \
+    'reflex==0.9.11a1' 'reflex-enterprise==0.9.5' -r requirements_norx.txt
+# (uv times out against files.pythonhosted.org fairly often here; just rerun the install)
+
+# DB: alembic.ini ships a placeholder URL
+sed -i 's|^sqlalchemy.url = driver://user:pass@localhost/dbname|sqlalchemy.url = sqlite:///reflex.db|' alembic.ini
+CI=1 $A/venv_a1/bin/alembic upgrade head
+$A/venv_a1/bin/python $A/scripts/seed_db.py 200      # demo ships an empty DB
+
+# apply the demo patch described below, then:
+CI=1 REFLEX_TELEMETRY_ENABLED=false $A/venv_a1/bin/reflex run --loglevel debug \
+    --frontend-port 5100 --backend-port 9500 > $A/logs/run_a1_dev.log 2>&1 &
+
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $A/scripts/drive_aggrid.py \
+    http://localhost:5100 $A/shots/dev_a1          # 17 routes, screenshots + report.json
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $A/scripts/drive_deep.py \
+    http://localhost:5100 $A/shots/dev_a1          # charts / fill handle / aligned / editable / selection
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $A/scripts/drive_hydrate2.py \
+    http://localhost:5100 $A/shots/dev_a1          # ISSUE 2 repro
+```
+
+Prod (single port for frontend AND backend; `CI=1` does **not** bypass the prod gate,
+`APP_HARNESS_FLAG=1` does — `reflex_enterprise/utils.py::is_in_app_harness()`):
+
+```bash
+CI=1 APP_HARNESS_FLAG=1 REFLEX_TELEMETRY_ENABLED=false $A/venv_a1/bin/reflex run --env prod \
+    --loglevel debug --frontend-port 5101 --backend-port 5101 > $A/logs/run_a1_prod.log 2>&1 &
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $A/scripts/drive_aggrid.py \
+    http://localhost:5101 $A/shots/prod_a1
+```
+
+Baseline: same steps with `uv pip install --python $A/venv_0910/bin/python
+'reflex==0.9.10.post2' 'reflex-enterprise==0.9.5' -r requirements_norx.txt`
+(**no** `--prerelease=allow`, so the stable radix/moment/code sub-packages are used),
+ports 5102/9502 (dev) and 5105/5105 (prod).
+
+### ag_grid_finance (reflex-examples)
+
+```bash
+cp -r /home/user/reflex-dev/reflex-examples/ag_grid_finance $A/finance_a1
+cd $A/finance_a1 && grep -v '^reflex' requirements.txt > requirements_norx.txt
+uv venv $A/venv_fin --python 3.11
+UV_HTTP_TIMEOUT=180 uv pip install --python $A/venv_fin/bin/python --prerelease=allow \
+    'reflex==0.9.11a1' 'reflex-enterprise==0.9.5' -r requirements_norx.txt pandas
+# apply the finance patch (see below), then
+CI=1 REFLEX_TELEMETRY_ENABLED=false $A/venv_fin/bin/reflex run --loglevel debug \
+    --frontend-port 5103 --backend-port 9503 > $A/logs/run_fin_a1_dev.log 2>&1 &
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $A/scripts/drive_finance.py \
+    http://localhost:5103 $A/shots/fin_a1
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $A/scripts/drive_finance_sel.py \
+    http://localhost:5103 $A/shots/fin_a1
+```
+
+Baseline used `venv_0910` (+ `yfinance==0.2.54`) on ports 5104/9504.
+
+### Offline probes (seconds, no server)
+
+```bash
+cd $A     # NEVER /home/user/reflex — it shadows the installed reflex package
+$A/venv_a1/bin/python $A/scripts/probe_legacy_apis.py      # FINDING-001/021/022/023 status
+$A/venv_a1/bin/python $A/scripts/probe_masked_attrerror.py # FINDING-024 status (ISSUE 3)
+$A/venv_0910/bin/python $A/scripts/probe_masked_attrerror.py  # same on the baseline
+```
+
+## Patches applied to the copied apps (and why)
+
+### Demo patch — `demo_a1/ag_grid/formatters.py` and `demo_0910/ag_grid/formatters.py`
+
+The shipped demo does `dynamic.bundle_library("$/utils/components")` at line 16. That path
+has not existed since reflex 0.9.8 (memo components now compile to
+`$/app_components/<module path>`), so the unpatched demo **cannot start on any current
+reflex** — see ISSUE 1. The patch replaces it with a helper that bundles
+`$/app_components/ag_grid/formatters` and is called **both at import time and from
+`formatter_page()`**; the page-eval call is required because `compile_app()` calls
+`reset_bundled_libraries()` *after* importing the app module
+(`reflex/compiler/compiler.py:1212` in 0.9.11a1), which wipes any import-time registration.
+Import-time-only is not enough — verified, it still fails:
+`ValueError: Library $/app_components/ag_grid/formatters is not bundled`.
+The same patch is applied to both copies, so the A/B is byte-identical app code.
+
+### Finance patch — `finance_a1/ag_grid_finance/ag_grid_finance.py` (and the 0910 copy)
+
+The egress proxy returns `403 Forbidden` for `fc.yahoo.com`, so `yf.download()` returns an
+empty DataFrame and the app has nothing to grid. `_offline_download()` produces a
+deterministic DataFrame with exactly the shape yfinance returns (MultiIndex
+`(ticker, field)` columns, `DatetimeIndex` named `Date`). Nothing else is changed; the
+`import yfinance` is kept so the dependency is still exercised. **Every finance result
+below therefore uses synthetic prices**, but the grid/pagination/filter/sort/theme/state
+paths are the real ones.
+
+### Test-harness only
+
+- `CI=1` — bypasses `AppEnterprise._check_login()`, which otherwise `exit()`s.
+- `APP_HARNESS_FLAG=1` — bypasses `reflex_enterprise/utils.py::enforce_tier()` for
+  `reflex run --env prod`, which otherwise exits with
+  "requires a paid Reflex subscription ... You are currently logged out".
+- `scripts/seed_db.py` — inserts N fake `friend` rows; the demo ships an empty DB.
+
+## Results table
+
+R = reflex 0.9.11a1 + rxe 0.9.5; B = reflex 0.9.10.post2 + rxe 0.9.5.
+
+| # | Check | dev R | dev B | prod R | prod B | note |
+|---|---|---|---|---|---|---|
+| 1 | shipped (unpatched) demo compiles | FAIL | FAIL | — | — | ISSUE 1, both versions |
+| 2 | patched demo compiles + serves | PASS | PASS | PASS | PASS | |
+| 3 | `/` index: 17 demo cards + links | PASS | PASS | PASS | PASS | |
+| 4 | `/formatters` python-callable renderers + formatters | PASS | PASS | PASS | PASS | FINDING-021 fixed |
+| 5 | `/formatters` `@rx.memo` row-counter button click → state | PASS | PASS | PASS | PASS | 0 → 1 → 2 |
+| 6 | `/formatters` `@rxe.static` "Raw Data" dialog | PASS | PASS | PASS | PASS | |
+| 7 | `/formatters` Inline / State / API tabs agree | PASS | PASS | PASS | PASS | incl. `api.set_grid_option("column_defs", …)` |
+| 8 | `/editable` cell edit → `on_cell_value_changed` → toast | PASS | PASS | PASS | PASS | dev also raises an error toast, ISSUE 2 |
+| 9 | `/master-detail` expand → detail row | PASS | PASS | PASS | PASS | |
+| 10 | `/tree` group expand (5 → 10 rows) | PASS | PASS | PASS | PASS | |
+| 11 | `/pivot` pivot columns + sidebar tool panel | PASS | PASS | PASS | PASS | |
+| 12 | `/selected-items` checkbox / Select All (0 → 128 → 0) | PASS | PASS | PASS | PASS | |
+| 13 | `/cell-selection` range select echoed to state | PASS | PASS | PASS | PASS | |
+| 14 | `/fill-handle` drag fill (8,6,4,1 → 8,8,8,8) | PASS | PASS | n/t | n/t | |
+| 15 | `/aligned-grids` horizontal scroll sync between grids | PASS | n/t | n/t | n/t | `scripts/probe_aligned.py`: grid0 → 200 moves grid1 → 200 |
+| 16 | `/state-grid` "Load columns"/"Load data" (0 → 26 rows) | PASS | PASS | PASS | PASS | |
+| 17 | `/simple-serialization`, `/advanced-serialization` grid state round-trip | PASS | PASS | PASS | PASS | |
+| 18 | `/integrated-charts` grid + range + context menu | PASS | PASS | PASS | PASS | chart itself does not render, ISSUE 4 |
+| 19 | `/model`, `/model-auth`, `/model-ssrm` datasource load | FAIL | FAIL | FAIL | FAIL | ISSUE 5, both versions |
+| 20 | generic sort / floating filter on every route | PASS | PASS | PASS | PASS | |
+| 21 | hydrate delta reaches the client (session state survives reload) | **FAIL** | **FAIL** | PASS | PASS | ISSUE 2 — dev only, both versions |
+| 22 | hot reload of a demo page source (`header_name` change) | PASS | n/t | — | — | header flips to "HMR Name"; error toast also disappears afterwards |
+| 23 | finance: initial render + "Fetch Latest Data" (645 rows) | PASS | PASS | n/t | n/t | |
+| 24 | finance: pagination (page size 20/50, next page) | PASS | PASS | n/t | n/t | "1 to 20 of 645", "Page 2 of 33" |
+| 25 | finance: column filter (ticker = AAPL) | PASS | PASS | n/t | n/t | |
+| 26 | finance: sort by Close | PASS | PASS | n/t | n/t | |
+| 27 | finance: theme switch quartz/balham/alpine/material | PASS | PASS | n/t | n/t | four visually distinct screenshots |
+| 28 | finance: row selection → `on_selection_changed` → recharts chart | **FAIL** | **FAIL** | n/t | n/t | ISSUE 7, both versions |
+| 29 | `bundled_libraries` / `DECORATED_PAGES` compat shims | PASS | n/a | — | — | new in 0.9.11a1 |
+| 30 | AttributeError inside a cached var computation is diagnosable | **FAIL** | **FAIL** | — | — | ISSUE 3, both versions |
+
+`n/t` = not tested in that configuration.
+
+## Issues
+
+Every issue below was checked against reflex 0.9.10.post2 with the same
+reflex-enterprise 0.9.5 — **none of them is a regression of this release train.**
+
+### ISSUE 1 (MEDIUM, downstream: reflex-enterprise demo, pre-existing) — shipped ag_grid demo cannot start: stale `$/utils/components` bundle path
+
+`demos/ag_grid/ag_grid/formatters.py:16` calls
+`dynamic.bundle_library("$/utils/components")`. Since reflex 0.9.8 an `@rx.memo`
+component compiles to `$/app_components/<module path>`, so `row_counter`'s real library
+(`$/app_components/ag_grid/formatters`) is never bundled and rxe's LambdaVar validation
+aborts the compile.
+
+Repro (fresh clone of the demo, no patch):
+
+```bash
+cp -r /home/user/reflex-enterprise/demos/ag_grid /tmp/x && cd /tmp/x
+uv venv v --python 3.11
+uv pip install --python v/bin/python --prerelease=allow 'reflex==0.9.11a1' \
+    'reflex-enterprise==0.9.5' faker==36.2.2 pandas==2.2.3 aiosqlite greenlet
+sed -i 's|^sqlalchemy.url = .*|sqlalchemy.url = sqlite:///reflex.db|' alembic.ini
+CI=1 v/bin/alembic upgrade head
+CI=1 REFLEX_TELEMETRY_ENABLED=false v/bin/reflex run --frontend-port 5100 --backend-port 9500
+# exit 1: ValueError: Library $/app_components/ag_grid/formatters is not bundled.
+```
+
+Evidence: `artifacts/traceback_shipped_demo_a1_bundle_path.txt` (0.9.11a1),
+`logs/run_0910_shipped_unpatched.log` (identical on 0.9.10.post2).
+Note the shipped remedy in rxe's own error message (import-time `bundle_library`) is
+**not sufficient** — `compile_app()` resets the list after importing the app module
+(`reflex/compiler/compiler.py:1212`), so the call must also run at page-eval time.
+This is 2026-08-27 FINDING-025, still open, and it means nobody can run the flagship
+enterprise ag-grid demo out of the box.
+
+### ISSUE 2 (HIGH, downstream root cause + framework-side contributor, pre-existing) — dev mode: the whole hydrate delta is dropped on every page of an rxe app that stores python callables in a state var, and a raw internal error is shown to the user
+
+In `reflex run` (dev) the granian worker skips `compile_app()` (the `.nocompile` marker),
+so the radix plugin's `bundle_library("@radix-ui/themes")` never executes in that process.
+When the worker then serializes `FormatterState.cols_defs` (a root-level `list[dict]`
+state var holding python lambdas) for the hydrate delta, rxe's
+`LiteralLambdaVar._validate_and_extend_return_expr` (`reflex_enterprise/vars.py:166`)
+raises `ValueError: Library @radix-ui/themes is not bundled` inside
+`emit_delta → _sio_dumps`. Consequences:
+
+1. The delta never reaches the browser — **once per page load, on all 17 routes**
+   (17 `[Reflex Backend Exception]` blocks per full sweep, `logs/run_a1_dev.log`).
+2. Session state silently reverts in the UI. Repro: `scripts/drive_hydrate2.py`
+   — click the `/formatters` row-counter 3 times (UI shows 3), reload → UI shows `0 (∞)`,
+   click once → jumps to **4**, proving the server kept the value and only the delta was lost.
+3. The user is shown the raw internal error. `shots/dev_a1/hmr_before.png` is a plain
+   load of `/editable` with a red panel reading
+   "An error occurred. ValueError: Library @radix-ui/themes is not bundled. Use
+   `from reflex.components.dynamic import bundle_library; bundle_library('@radix-ui/themes')
+   to enable it it." (note also the doubled "it it" typo in rxe's message).
+
+Prod is unaffected (the prod worker compiles, so the list is populated): 0 exceptions,
+and the reload test returns 3. A dev hot reload also cures it for the rest of the session.
+
+Repro from scratch: follow "Setup" for `demo_a1`, then
+`NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $A/scripts/drive_hydrate2.py http://localhost:5100 out`
+and `grep -c 'Reflex Backend Exception' $A/logs/run_a1_dev.log`.
+
+Evidence: `artifacts/backend_exception_hydrate_delta_a1.txt` (full traceback),
+`logs/run_a1_dev.log` (17 blocks) vs `logs/run_0910_dev.log` (17 identical blocks),
+`logs/run_a1_prod.log` / `logs/run_0910_prod.log` (0 blocks),
+`shots/dev_a1/hydrate_report2.json`, `shots/prod_a1/hydrate_report2.json`,
+`shots/dev_a1/hmr_before.png`.
+
+Attribution: the validation and the message belong to reflex-enterprise, and rxe should
+not validate against a list it knows is process-local. But reflex owns the two halves that
+make it fatal: (a) `bundled_libraries` is populated only in processes that run
+`compile_app()`, so the frontend bundle and the serving worker's registry are permanently
+out of sync in dev; (b) a single unserializable var takes down the *entire* delta for the
+session with no client-side recovery. Worth fixing on the reflex side even though it is
+not new.
+
+### ISSUE 3 (MEDIUM, reflex-base, pre-existing) — `AttributeError` raised inside a cached var computation is still reported as a bogus `VarAttributeError`
+
+2026-08-27 FINDING-024 is unchanged in 0.9.11a1. Any `AttributeError` escaping a
+`CachedVarOperation` cached computation is discarded by Python's attribute machinery and
+re-raised by `Var.__getattr__` as
+`VarAttributeError: Attribute _cached_get_all_var_data not found.` with
+`__cause__ is None` — the real error is invisible.
+
+Repro: `cd $A && $A/venv_a1/bin/python $A/scripts/probe_masked_attrerror.py`
+(a `CachedVarOperation` subclass whose `_cached_get_all_var_data` raises
+`AttributeError("REAL ERROR: ...")`). Output on 0.9.11a1 **and** on 0.9.10.post2:
+`reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found.`
+raised at `reflex_base/vars/base.py:1471` via `base.py:2120`, no cause, no mention of the
+real error. This is exactly what made 0.9.9a1's headline enterprise breakage
+undebuggable; the shims fixed that instance, not the masking.
+
+### ISSUE 4 (LOW, downstream: reflex-enterprise pins, pre-existing) — `/integrated-charts` cannot draw a chart: ag-grid 34.3.1 pinned against ag-charts 11.2.4
+
+`.web/package.json` gets `ag-grid-*@34.3.1` with `ag-charts-enterprise@11.2.4`. AG Grid
+itself rejects the pair on every load of `/integrated-charts`:
+
+```
+AG Grid: AG Grid version 34.3.1 and AG Charts version 11.2.4 is not supported.
+AG Grid version 34.3.x should be used with AG Chart 12.3.x.
+```
+
+The grid, the cell range and the "Chart Range" context-menu entry all work, but choosing a
+chart produces the page error `Cannot assign to read only property 'api' of object '#<Object>'`
+and no chart element is created (`chart_wrappers = 0`).
+
+Repro: `scripts/drive_deep.py <base> <shots>` section `integrated_charts`
+(select a cell range, right-click, hover "Chart Range" → "Column" → "Grouped").
+Evidence: `shots/dev_a1/deep_report.json`, `shots/dev_a1/charts_01_contextmenu.png`,
+`charts_03_after_chart.png`. Identical pins and identical failure on 0.9.10.post2
+(`shots/dev_0910/deep_report.json`) and in the 2026-08-27 artifacts
+(`.../2026-08-27-v0.9.9a1/ent_aggrid/artifacts/package_a1.json`), so this predates both
+trains. Fix belongs in reflex-enterprise's `ag_grid` package pins.
+
+### ISSUE 5 (MEDIUM, downstream: reflex-enterprise, pre-existing) — `ModelWrapper` datasource URL percent-encodes `?`, every row fetch 404s
+
+`/model`, `/model-auth` and `/model-ssrm` never load a row. Every datasource request goes to
+
+```
+http://localhost:9500/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%5D&...
+```
+
+(note `%3F`) and returns 404. Root cause is unchanged in rxe 0.9.5:
+`reflex_enterprise/utils.py::get_backend_url()` builds the URL by assigning
+`path + "?" + query` to `URL.pathname`, and the `pathname` setter percent-encodes `?`, so
+the query string becomes part of the path and Starlette's `/abstract-wrapper-data` route
+never matches.
+
+Repro: start `demo_a1` (dev or prod), open `/model`, watch the network panel — or
+`scripts/drive_aggrid.py <base> <shots> model` and read the `failed` array of
+`shots/*/report.json`. The DB is populated (200 `friend` rows via `scripts/seed_db.py`)
+and reachable; the request simply never reaches the route.
+Identical on 0.9.10.post2 (`shots/dev_0910/report.json`) and reported in the previous
+campaign, so pre-existing and version-independent.
+
+### ISSUE 6 (LOW, downstream: reflex-enterprise, pre-existing) — rxe still calls the deprecated `console.*` helpers, so every enterprise app start prints a framework DeprecationWarning
+
+`reflex_enterprise/app.py:154` (`console.info("Single port proxy mode enabled")`) fires on
+every dev and prod start; `reflex_enterprise/utils.py:119` and `app.py:120` fire
+`console.error` on the prod-tier gate and the logged-out gate — so the *error message a
+user most needs to read* is preceded by a five-line DeprecationWarning about reflex
+internals. Evidence: `logs/run_a1_dev.log:75`, `logs/run_a1_prod.log:68,2583`, and the
+logged-out gate output quoted in "Setup". Present identically on 0.9.10.post2
+(`logs/run_0910_dev.log:151,292`). 2026-08-27 FINDING-029, still open.
+
+### ISSUE 7 (MEDIUM, downstream: reflex-enterprise, pre-existing) — `ag_grid.column_def()` silently discards unknown kwargs, which kills row selection in the shipped `ag_grid_finance` example
+
+`ag_grid_finance` declares
+`ag_grid.column_def(field="ticker", header_name="Ticker", filter=..., checkbox_selection=True)`.
+rxe 0.9.5's `column_def(**kwargs)` drops any key its `ColumnDef` model does not know,
+with no warning:
+
+```bash
+cd $A && CI=1 $A/venv_fin/bin/python -c "
+from reflex_enterprise import ag_grid
+print(ag_grid.column_def(field='ticker', header_name='Ticker', checkbox_selection=True).dict())
+print(ag_grid.column_def(field='x', totally_bogus_kwarg=123).dict())"
+# {'headerName': 'Ticker', 'field': 'ticker'}
+# {'field': 'x'}
+```
+
+Result in the browser: no selection checkboxes, no selectable rows
+(`ag-selection-checkbox` count 0, `.ag-row-selected` count 0 after a row click and after
+Space), so `on_selection_changed` never fires and the recharts price chart — the point of
+the example — never appears. No AG Grid warning either, because the prop never reaches
+AG Grid. Repro: `scripts/drive_finance_sel.py http://localhost:5103 out`;
+evidence `shots/fin_a1/finance_selection_report.json`,
+`shots/fin_a1/finsel_01_rowclick.png`. Byte-identical on 0.9.10.post2
+(`shots/fin_0910/finance_selection_report.json`), so not a regression: it is rxe's
+`ColumnDef` model drifting from AG Grid 34 (which replaced `checkboxSelection` with
+`rowSelection: {mode, checkboxes}`) plus a permissive `**kwargs` signature. Two fixes are
+warranted downstream: reject/warn on unknown `column_def` kwargs, and update the example.
+
+## Benign-but-surprising observations (recorded, not filed as issues)
+
+- **AG Grid Enterprise trial banner** is printed as `console.error` (6–36 per enterprise
+  route, counted separately as `console_license_noise` in the reports). Expected without a
+  license key, on both versions.
+- **`Unable to find the base Starlette app. Proxying will not be enabled.`**
+  (`reflex_enterprise/proxy.py:135`) is printed on **every** run of the demo — dev and
+  prod, both reflex versions — directly contradicting the `Single port proxy mode enabled`
+  info line emitted moments earlier. The app works regardless. Downstream, pre-existing.
+- **`Warning: Page <route> is being redefined with the same component.`** ×17 in the
+  granian worker, **prod only**. Present identically on 0.9.10.post2
+  (`logs/run_0910_prod.log`), so pre-existing; it looks like the prod worker re-registers
+  the decorated pages after importing the app module.
+- Deprecation warnings on both versions from the demo itself: `@rx.memo` without
+  annotations (`formatters.py:208`), `rx.Model`, strings in `disable_plugins`
+  (`reflex_enterprise/config.py:22`), implicit Radix Themes, `ArrayVar.foreach`
+  (`reflex_enterprise/components/ag_grid/aggrid.py:1736`).
+- `/editable` shows **2** sonner toasts in dev (the real one plus the ISSUE 2 error) and
+  **1** in prod. The 2026-08-27 notes attributed the dev duplicate to a sonner rendering
+  quirk; it is actually the ISSUE 2 error toast.
+- `/state-grid` and `/model-ssrm` take ~35–39 s to drive, on both versions — that is my
+  driver waiting on empty grids, not a perf cliff.
+- `--prerelease=allow` also pulls **pydantic 2.14.0b2** into the 0.9.11a1 venvs (the
+  stable baseline venv gets 2.13.5). That is uv's global prerelease flag, not a reflex pin.
+- Frontend dependency deltas 0.9.10.post2 → 0.9.11a1 in this app
+  (`artifacts/package_json.diff`): react-router 8.3.0 → 8.3.1, vite 8.2.0 → 8.2.2,
+  sonner 2.0.7 → 2.0.8, `react-moment 1.2.2 → 2.0.2` + new `moment-duration-format 2.2.2`,
+  `@radix-ui/react-form` 0.1.14 → 0.1.16, isbot 5.2.1 → 5.2.2, postcss-import 16 → 17.
+  The react-moment bump is campaign FINDING-002; the demo's `rx.moment` usage
+  (`row_counter`, `duration_from_now`) has no `on_change`, so it is unaffected and renders
+  correctly.
+
+## Layout of this artifact directory
+
+```
+NOTES.md                     this file
+demo_a1/       demo_0910/    ag_grid demo copies (sources only; .web/venv/db excluded)
+finance_a1/    finance_0910/ ag_grid_finance copies (offline-data patch applied)
+scripts/                     drivers and probes (see "Setup" for how each is invoked)
+  drive_aggrid.py            17-route sweep: screenshots, console, failed requests
+  drive_deep.py              charts / fill handle / aligned grids / editable / selection
+  drive_hydrate.py           hydrate-delta loss, first version
+  drive_hydrate2.py          hydrate-delta loss, decisive version (ISSUE 2)
+  drive_toasts.py            per-route sonner-toast census
+  drive_aligned_hmr.py       aligned-grid wheel sync + hot-reload before/after
+  probe_aligned.py           aligned-grid scrollLeft synchronisation probe
+  drive_finance.py           ag_grid_finance sweep (fetch/paging/filter/sort/theme)
+  drive_finance_sel.py       ag_grid_finance row-selection probe (ISSUE 7)
+  probe_legacy_apis.py       FINDING-001/021/022/023 status, offline
+  probe_masked_attrerror.py  FINDING-024 status, offline (ISSUE 3)
+  seed_db.py                 insert N fake `friend` rows into the demo sqlite DB
+logs/                        trimmed server logs (a note at the end of each says how many
+                             noisy vite/bun lines were removed; nothing with an error,
+                             warning or traceback was removed)
+shots/dev_a1  dev_0910  prod_a1  prod_0910  fin_a1  fin_0910
+                             screenshots + report.json / deep_report.json /
+                             hydrate_report2.json / finance_report.json per configuration
+artifacts/                   tracebacks, .web/package.json for both versions and their diff
+```

@@ -1,0 +1,30 @@
+{
+  "/": {
+    "toast_count": 0,
+    "toast_texts": []
+  },
+  "/editable": {
+    "toast_count": 0,
+    "toast_texts": []
+  },
+  "/tree": {
+    "toast_count": 0,
+    "toast_texts": []
+  },
+  "/pivot": {
+    "toast_count": 0,
+    "toast_texts": []
+  },
+  "/model": {
+    "toast_count": 0,
+    "toast_texts": []
+  },
+  "/state-grid": {
+    "toast_count": 0,
+    "toast_texts": []
+  },
+  "/formatters": {
+    "toast_count": 0,
+    "toast_texts": []
+  }
+}

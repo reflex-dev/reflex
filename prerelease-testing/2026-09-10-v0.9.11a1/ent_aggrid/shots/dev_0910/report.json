@@ -1,0 +1,594 @@
+{
+  "/": {
+    "actions": [
+      "index links=17",
+      "card_titles=['AgGrid demo', 'Aligned Grids', 'Cell Selection', 'Editable AG Grid', 'Fill Handle', 'AG Grid Formatters']"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 6.3,
+    "console_license_noise": 0
+  },
+  "/aligned-grids": {
+    "actions": [
+      "initial rows=28",
+      "headers=['Athlete', 'Age', 'Country', 'Year', 'Sport', 'Total', 'Athlete', 'Age', 'Country', 'Year', 'Sport', 'Total']",
+      "grid_roots=2",
+      "h_scroll_offsets=[0, 0]",
+      "sort click: first_cell 'Natalie Coughlin' -> 'Aleksey Nemov'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 5.5,
+    "console_license_noise": 0
+  },
+  "/cell-selection": {
+    "actions": [
+      "initial rows=22",
+      "headers=['Athlete', 'Age', 'Country', 'Year', 'Sport', 'Total']",
+      "range_selected_cells=1",
+      "echo=Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}] | Selected cells: [{'startRow': 0, 'endRow': 0, 'columns': ['athlete']}] | Selected cells: [{'startRow': 0, 'endRow': 0, 'columns",
+      "sort click: first_cell 'Natalie Coughlin' -> 'Natalie Coughlin'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 5.4,
+    "console_license_noise": 12
+  },
+  "/editable": {
+    "actions": [
+      "initial rows=3",
+      "headers=['Name', 'Age', 'Country']",
+      "edit 'John' -> 'EditedByQA' toast_count=2",
+      "toast_text='Cell value changed: name = EditedByQA'",
+      "sort click: first_cell 'EditedByQA' -> 'EditedByQA'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 5.9,
+    "console_license_noise": 0
+  },
+  "/fill-handle": {
+    "actions": [
+      "initial rows=10",
+      "headers=['Athlete', 'Age', 'Country', 'Year', 'Date', 'Sport', 'Gold', 'Silver', 'Bronze', 'Total']",
+      "fill_handle_present=0",
+      "sort click: first_cell 'Michael Phelps' -> 'Michael Phelps'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 5.0,
+    "console_license_noise": 12
+  },
+  "/formatters": {
+    "actions": [
+      "initial rows=5",
+      "headers=['Name', 'Name Reversed', 'Country', 'Percent', 'Flag', 'Number', 'Currency Number', 'Scaled Number', '# Clicks (Last click)', 'Show raw data']",
+      "inline cells={'flag': '\ud83c\uddfa\ud83c\uddf8', 'number': '12345.6789', 'currency number': '$12,345.68', 'scaled number': '6913.5802', 'row counter': '0 (\u221e)'}",
+      "inline memo-renderer buttons=10",
+      "row-counter button '0 (\u221e)' -> '1\\n(00:01)'",
+      "row-counter button 2nd click -> '2\\n(00:01)'",
+      "raw-data dialog open=1 text='Raw Row Data\\n\\nJSON representation of the row data.\\n\\n{\"name\":\"John\",\"percent\":0.56,\"country\":\"USA\",\"number\":12345.6789,\"s'",
+      "tab=State rows=5",
+      "tab:State cells={'flag': '\ud83c\uddfa\ud83c\uddf8', 'number': '12345.6789', 'currency number': '$12,345.68', 'scaled number': '6913.5802', 'row counter': '2\\n(00:04)'}",
+      "clicked 'Set column defs'",
+      "tab=API rows=5",
+      "tab:API cells={'flag': '\ud83c\uddfa\ud83c\uddf8', 'number': '12345.6789', 'currency number': '$12,345.68', 'scaled number': '6913.5802', 'row counter': '2\\n(00:08)'}",
+      "tab=Inline rows=5",
+      "tab:Inline cells={'flag': '\ud83c\uddfa\ud83c\uddf8', 'number': '12345.6789', 'currency number': '$12,345.68', 'scaled number': '6913.5802', 'row counter': '2\\n(00:10)'}",
+      "sort click: first_cell 'John' -> 'John'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 16.8,
+    "console_license_noise": 0
+  },
+  "/simple-serialization": {
+    "actions": [
+      "initial rows=15",
+      "headers=['Athlete', 'Age', 'Country', 'Year']",
+      "clicked 'Save'",
+      "clicked 'Restore'",
+      "clicked 'Save State'",
+      "clicked 'Restore State'",
+      "state_text_len=864",
+      "sort click: first_cell 'Natalie Coughlin' -> 'Aleksey Nemov'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 9.4,
+    "console_license_noise": 0
+  },
+  "/advanced-serialization": {
+    "actions": [
+      "initial rows=22",
+      "headers=['', 'Athlete', 'Age', 'Country', 'Year', 'Date', 'Sport', 'Gold', 'Athlete']",
+      "state_text_len=1853",
+      "header sort skipped: TimeoutError"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 7.4,
+    "console_license_noise": 12
+  },
+  "/integrated-charts": {
+    "actions": [
+      "initial rows=26",
+      "headers=['Direction', 'Strength', 'Frequency']",
+      "chart containers=0",
+      "sort click: first_cell 'N' -> 'N'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "AG Grid: AG Grid version 34.3.1 and AG Charts version 11.2.4 is not supported. AG Grid version 34.3.x should be used with AG Chart 12.3.x. Please see https://www.ag-grid.com/javascript-data-grid/modules/ for more information."
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 4.5,
+    "console_license_noise": 10
+  },
+  "/master-detail": {
+    "actions": [
+      "initial rows=8",
+      "headers=['ID', 'Product Name', 'Category', 'Price', 'ID', 'Product Name', 'Category', 'Price']",
+      "expanded master detail_rows=1",
+      "sort click: first_cell '1' -> '1'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 6.4,
+    "console_license_noise": 36
+  },
+  "/model": {
+    "actions": [
+      "initial rows=1",
+      "headers=['Id', 'Name', 'Age', 'Years_known', 'Owes_me', 'Has_a_dog', 'Spouse_is_annoying', 'Met']",
+      "rows_after_wait=1",
+      "first_cells=['', '', '', '', '', '']",
+      "rows_after_scroll=1 first_cells=['', '', '', '']",
+      "sort click: first_cell '' -> ''"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [
+      {
+        "url": "http://localhost:9502/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1",
+        "status": 404
+      },
+      {
+        "url": "http://localhost:9502/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1",
+        "status": 404
+      },
+      {
+        "url": "http://localhost:9502/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%7B%22sort%22%3A%22asc%22%2C%22colId%22%3A%22id%22%7D%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model",
+        "status": 404
+      }
+    ],
+    "status": "ok",
+    "elapsed_s": 9.9,
+    "console_license_noise": 12
+  },
+  "/model-auth": {
+    "actions": [
+      "initial rows=1",
+      "headers=['', 'Id', 'Name', 'Age', 'Years_known', 'Owes_me', 'Has_a_dog', 'Spouse_is_annoying', 'Met']",
+      "rows_after_wait=1",
+      "first_cells=['', '', '', '', '', '']",
+      "rows_after_scroll=1 first_cells=['', '', '', '']",
+      "sort click: first_cell '' -> ''"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "warning",
+        "text": "AG Grid: warning #129 headerCheckbox is only available if using 'clientSide' or 'serverSide' rowModelType, you are using infinite. \nSee https://www.ag-grid.com/react-data-grid/errors/129?_version_=34.3.1&feature=headerCheckbox&rowModel=infinite"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [
+      {
+        "url": "http://localhost:9502/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2",
+        "status": 404
+      },
+      {
+        "url": "http://localhost:9502/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____friend_model_wrapper_n2",
+        "status": 404
+      }
+    ],
+    "status": "ok",
+    "elapsed_s": 10.1,
+    "console_license_noise": 12
+  },
+  "/model-ssrm": {
+    "actions": [
+      "initial rows=0",
+      "headers=['', 'Id', 'Name', 'Age', 'Years_known', 'Owes_me', 'Has_a_dog', 'Spouse_is_annoying', 'Met']",
+      "rows_after_wait=0",
+      "first_cells=[]",
+      "rows_after_scroll=0 first_cells=[]",
+      "header sort skipped: TimeoutError"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [
+      {
+        "url": "http://localhost:9502/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state.",
+        "status": 404
+      }
+    ],
+    "status": "ok",
+    "elapsed_s": 39.1,
+    "console_license_noise": 12
+  },
+  "/pivot": {
+    "actions": [
+      "initial rows=10",
+      "headers=['Group', 'sum(Gold)', 'sum(Gold)', 'sum(Gold)', 'sum(Gold)', 'sum(Gold)', 'sum(Gold)', 'sum(Gold)']",
+      "pivot panel present=6",
+      "opened sidebar tool panel",
+      "sort click: first_cell 'United States\\n(8)' -> 'United States\\n(8)'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 5.6,
+    "console_license_noise": 12
+  },
+  "/selected-items": {
+    "actions": [
+      "initial rows=26",
+      "headers=['', 'Direction', 'Strength', 'Frequency']",
+      "checkboxes=27",
+      "selection_echo=Selected Items | Handle grid selection events and display selected items in a separate panel. | Select by Direction | Select All | Deselect All | Press SPACE to select this row | Selected Items (127)",
+      "header sort skipped: TimeoutError"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 9.5,
+    "console_license_noise": 12
+  },
+  "/state-grid": {
+    "actions": [
+      "initial rows=0",
+      "headers=[]",
+      "clicked 'Load columns' rows=0",
+      "clicked 'Load data' rows=26",
+      "rows_after_load=26",
+      "header sort skipped: TimeoutError"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 34.8,
+    "console_license_noise": 12
+  },
+  "/tree": {
+    "actions": [
+      "initial rows=5",
+      "headers=['File Explorer', 'Created', 'Modified', 'sum(Size)', 'func(Host)']",
+      "expanded tree rows_now=10",
+      "sort click: first_cell 'Desktop' -> 'Desktop'"
+    ],
+    "console": [
+      {
+        "type": "log",
+        "text": "Disconnect websocket on page navigation"
+      },
+      {
+        "type": "log",
+        "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      },
+      {
+        "type": "error",
+        "text": "* If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *"
+      }
+    ],
+    "pageerrors": [],
+    "failed": [],
+    "status": "ok",
+    "elapsed_s": 5.6,
+    "console_license_noise": 12
+  }
+}
