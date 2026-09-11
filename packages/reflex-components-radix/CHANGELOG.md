@@ -1,3 +1,10 @@
+## v0.9.9a2 (2026-09-11)
+
+### Bug Fixes
+
+- Avoid retaining stale Radix Themes library registrations when recompiling an app that no longer uses Radix components. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+
+
 ## v0.9.9a1 (2026-09-10)
 
 ### Miscellaneous

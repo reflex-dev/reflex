@@ -1,3 +1,16 @@
+## v0.9.11a2 (2026-09-11)
+
+### Breaking Changes
+
+- State deltas may emit state entries and variable keys in a different order. Values are unchanged, but downstream snapshots or tests comparing serialized deltas as text may need updating; compare parsed JSON objects or normalize key order instead. ([#7087](https://github.com/reflex-dev/reflex/issues/7087))
+
+### Bug Fixes
+
+- Fix `rx.AdminDash` pages failing with `NoMatchFound` by preserving named route lookup through the application's context middleware. ([#7107](https://github.com/reflex-dev/reflex/issues/7107))
+- Give forked backend workers distinct socket-owner identities so Redis can deliver backend-initiated state updates to clients connected to another worker. ([#7108](https://github.com/reflex-dev/reflex/issues/7108))
+- Preserve explicit `bundle_library()` registrations through frontend compilation and automatically bundle imports used by initial-state components. Explicitly registered component subpaths can first appear after an event, and initial components such as Lucide icons no longer need a separate registration. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+
+
 ## v0.9.11a1 (2026-09-10)
 
 ### Features

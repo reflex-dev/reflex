@@ -2,6 +2,13 @@
 
 <!-- towncrier release notes start -->
 
+## v0.1.0a2 (2026-09-11)
+
+### Documentation
+
+- Correct the environment-variable setup example to select HTTP/protobuf for the installed OTLP HTTP exporter. ([#7086](https://github.com/reflex-dev/reflex/issues/7086))
+
+
 ## v0.1.0a1 (2026-09-10)
 
 ### Features

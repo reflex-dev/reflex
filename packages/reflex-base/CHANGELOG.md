@@ -1,3 +1,16 @@
+## v0.9.11a2 (2026-09-11)
+
+### Bug Fixes
+
+- Reject `frontend_path` segments with trailing dots or spaces that Windows trims, and empty segments from repeated slashes, before they can produce inconsistent build paths. A single leading or trailing slash remains supported. ([#7105](https://github.com/reflex-dev/reflex/issues/7105))
+- Preserve class-level `hybrid_property` frontend types on Pyright 1.1.412 and later instead of resolving them to `Any`. ([#7106](https://github.com/reflex-dev/reflex/issues/7106))
+- `bundle_library()` bundles subpaths without an unused package root; explicit subpath strings also work without registering the package root. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+- Passing a component to `bundle_library()` prebundles the rendered library imports of its entire tree, including children and component-valued props, before initial rendering. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+- Invalid `bundle_library()` arguments now raise a clear `TypeError` directing callers to pass a library name string or a prototype component instance. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+- Preserve default exports when dynamic components use a bundled package root as well as a subpath. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+- Keep explicit `bundle_library()` registrations across compiler resets and registration-context forks without duplicates. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+
+
 ## v0.9.11a1 (2026-09-10)
 
 ### Breaking Changes
