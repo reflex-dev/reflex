@@ -440,6 +440,12 @@ def test_initialize_with_admin_dashboard(
     assert app.admin_dash.models[0] == test_model
 
 
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
 @pytest.mark.parametrize("with_transformer", [False, True])
 def test_admin_dashboard_routes_remain_reversible(
     test_model: type[Model],
