@@ -2,6 +2,7 @@ import dataclasses
 import importlib.util
 import json
 import os
+import sys
 from pathlib import Path, PureWindowsPath
 
 import pytest
@@ -499,6 +500,77 @@ def test_compile_preserves_app_bundle_registrations(
         assert "d3-format" in context.bundled_libraries
         assert "compile-only-library" not in context.bundled_libraries
         assert "@radix-ui/themes" not in context.bundled_libraries
+
+
+def test_compile_preserves_lazily_imported_bundle_registration(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Retain an app registration first imported while evaluating a page.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the app directory and import path.
+        mocker: Fixture for configuring the application.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module_name = "lazy_bundle_registration_test"
+    (tmp_path / f"{module_name}.py").write_text(
+        "from reflex_base.components.dynamic import bundle_library\n"
+        'bundle_library("d3-format@3.1.0")\n'
+    )
+    with RegistrationContext() as context:
+        config = rx.Config(app_name="lazy_bundle_test", plugins=[])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+
+        def index():
+            """Import the registration module when the page is evaluated.
+
+            Returns:
+                A component without implicit plugin dependencies.
+            """
+            importlib.import_module(module_name)
+            return rx.el.div("hello")
+
+        app.add_page(index)
+        try:
+            for _ in range(2):
+                compiler.compile_app(app, dry_run=True, use_rich=False)
+                assert "d3-format" in context.bundled_libraries
+        finally:
+            sys.modules.pop(module_name, None)
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+def test_compile_app_root_uses_unique_window_library_aliases(
+    lazy: bool, mocker: MockerFixture
+):
+    """Bundle subpaths with valid, distinct aliases in eager and lazy mode.
+
+    Args:
+        lazy: Whether application libraries should be loaded lazily.
+        mocker: Fixture for configuring the bundle loading mode.
+    """
+    with RegistrationContext():
+        mocker.patch(
+            "reflex_base.config._get_config",
+            return_value=rx.Config(
+                app_name="testing", frontend_lazy_bundled_libraries=lazy
+            ),
+        )
+        bundle_library("foo.bar")
+        bundle_library("foo_bar")
+        bundle_library("foo/bar.mjs")
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    if lazy:
+        assert '"foo.bar": () => import("foo.bar")' in code
+        assert '"foo/bar.mjs": () => import("foo/bar.mjs")' in code
+    else:
+        assert 'import * as foo_bar from "foo.bar";' in code
+        assert 'import * as foo_bar_2 from "foo_bar";' in code
+        assert 'import * as foo_bar_mjs from "foo/bar.mjs";' in code
 
 
 def test_compile_app_root_omits_hydrate_fallback_by_default():

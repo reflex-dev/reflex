@@ -79,15 +79,16 @@ def reset_bundled_libraries() -> None:
 def _reset_bundled_libraries_for_compile() -> None:
     """Clear compiler-derived libraries while retaining app registrations."""
     context = RegistrationContext.ensure_context()
-    context.bundled_libraries[:] = _default_bundled_libraries()
-    context.bundled_libraries.extend(context._explicit_bundled_libraries)
+    libraries = dict.fromkeys(_default_bundled_libraries())
+    libraries.update(context._explicit_bundled_libraries)
+    context.bundled_libraries[:] = libraries
 
 
 def bundle_library(component: Union["Component", str]) -> None:
     """Register a library for dynamic components.
 
-    Module-level registrations survive compilation. Registrations made while
-    evaluating pages or visiting components belong to the current compile.
+    Explicit app registrations survive compilation, including registrations in
+    modules first imported while evaluating a page.
 
     Args:
         component: The component to bundle the library with.
@@ -95,10 +96,7 @@ def bundle_library(component: Union["Component", str]) -> None:
     Raises:
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
-    # Compiler contexts import components, which also use this module.
-    from reflex_base.plugins.compiler import CompileContext
-
-    _bundle_library(component, explicit=CompileContext.__context_var__.get() is None)
+    _bundle_library(component, explicit=True)
 
 
 def _bundle_library(
@@ -120,10 +118,9 @@ def _bundle_library(
     library = format_library_name(library)
     context = RegistrationContext.ensure_context()
     if explicit:
-        if library in context._explicit_bundled_libraries:
-            return
         context._explicit_bundled_libraries[library] = None
-    context.bundled_libraries.append(library)
+    if library not in context.bundled_libraries:
+        context.bundled_libraries.append(library)
 
 
 def load_dynamic_serializer():
@@ -170,6 +167,7 @@ def load_dynamic_serializer():
         compiler._apply_common_imports(component_imports)
 
         imports = {}
+        bundled_subpaths: set[str] = set()
         for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
             if (
@@ -180,10 +178,43 @@ def load_dynamic_serializer():
                 imports[get_cdn_url(lib)] = names
             else:
                 imports[lib] = names
+                if formatted_lib_name in libs_in_window:
+                    for name in names:
+                        if name.package_path in ("", "/"):
+                            continue
+                        import_path = formatted_lib_name + name.package_path
+                        _bundle_library(import_path)
+                        bundled_subpaths.add(import_path)
+
+        module_imports = []
+        bundled_declarations = []
+        for module in utils.compile_imports(imports):
+            if module["lib"] not in bundled_subpaths:
+                module_imports.append(module)
+                continue
+
+            window_library = f"window.__reflex['{module['lib']}']"
+            if module["default"]:
+                bundled_declarations.append(
+                    f"const {module['default']} = {window_library}.default"
+                )
+            named_imports = []
+            for name in module["rest"]:
+                if name.startswith("* as "):
+                    bundled_declarations.append(
+                        f"const {name.removeprefix('* as ')} = {window_library}"
+                    )
+                else:
+                    named_imports.append(name.replace(" as ", ": "))
+            if named_imports:
+                bundled_declarations.append(
+                    f"const {{{','.join(named_imports)}}} = {window_library}"
+                )
+        bundled_declarations.extend(rendered_components)
 
         module_code_lines = templates.dynamic_components_module_template(
-            imports=utils.compile_imports(imports),
-            memoized_code="\n".join(rendered_components),
+            imports=module_imports,
+            memoized_code="\n".join(bundled_declarations),
         ).splitlines()
 
         # Rewrite imports from `/` to destructure from window

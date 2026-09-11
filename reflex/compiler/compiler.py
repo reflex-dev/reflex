@@ -130,7 +130,36 @@ def _normalize_library_name(lib: str) -> str:
     """
     if lib == "react":
         return "React"
-    return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
+    return (
+        lib
+        .replace("$/", "")
+        .replace("@", "")
+        .replace("/", "_")
+        .replace("-", "_")
+        .replace(".", "_")
+    )
+
+
+def _get_window_libraries() -> list[tuple[str, str]]:
+    """Build distinct JavaScript aliases for bundled libraries and subpaths.
+
+    Returns:
+        Library aliases paired with their original module paths.
+    """
+    used_aliases: set[str] = set()
+    window_libraries: list[tuple[str, str]] = []
+    for library in dict.fromkeys(
+        RegistrationContext.ensure_context().bundled_libraries
+    ):
+        base_alias = _normalize_library_name(library)
+        alias = base_alias
+        suffix = 2
+        while alias in used_aliases:
+            alias = f"{base_alias}_{suffix}"
+            suffix += 1
+        used_aliases.add(alias)
+        window_libraries.append((alias, library))
+    return window_libraries
 
 
 def _compile_app(
@@ -146,24 +175,15 @@ def _compile_app(
     Returns:
         The compiled app.
     """
-    window_libraries = [
-        (_normalize_library_name(name), name)
-        for name in RegistrationContext.ensure_context().bundled_libraries
-    ]
-
-    window_libraries_deduped = list(dict.fromkeys(window_libraries))
+    window_libraries = _get_window_libraries()
     lazy_window_libraries = []
     if get_config().frontend_lazy_bundled_libraries:
         core_libraries = set(_default_bundled_libraries())
         lazy_window_libraries = [
-            library
-            for library in window_libraries_deduped
-            if library[1] not in core_libraries
+            library for library in window_libraries if library[1] not in core_libraries
         ]
-        window_libraries_deduped = [
-            library
-            for library in window_libraries_deduped
-            if library[1] in core_libraries
+        window_libraries = [
+            library for library in window_libraries if library[1] in core_libraries
         ]
 
     app_root_imports = app_root._get_all_imports()
@@ -173,7 +193,7 @@ def _compile_app(
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries_deduped,
+        window_libraries=window_libraries,
         lazy_window_libraries=lazy_window_libraries,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),

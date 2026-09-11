@@ -56,6 +56,22 @@ def test_repeated_app_bundle_registrations_do_not_accumulate():
             assert context.bundled_libraries.count("app-library") == 1
 
 
+@pytest.mark.parametrize("library", ["app-library", "react"])
+def test_bundle_registrations_are_unique_across_scopes(library: str):
+    """Deduplicate compiler and app registrations, including default libraries.
+
+    Args:
+        library: A default or application-provided library.
+    """
+    with RegistrationContext() as context:
+        dynamic._bundle_library(library)
+        dynamic._bundle_library(f"{library}@1.0.0")
+        dynamic.bundle_library(library)
+        assert context.bundled_libraries.count(library) == 1
+        dynamic._reset_bundled_libraries_for_compile()
+        assert context.bundled_libraries.count(library) == 1
+
+
 def test_bundled_libraries_shim_warns(mocker):
     """Reading a relocated global emits a deprecation warning."""
     deprecate = mocker.patch("reflex_base.utils.console.deprecate")

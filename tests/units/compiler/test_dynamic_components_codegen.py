@@ -1,16 +1,114 @@
 """Code generation tests for dynamic components."""
 
+import dataclasses
 from pathlib import Path
 
+import pytest
+from reflex_base.components.dynamic import bundle_library
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
+from reflex_base.vars.base import Var
 
 import reflex as rx
+from reflex.compiler import compiler
 from reflex.state import State
 
 STATE_JS_TEMPLATE = (
     Path(__file__).parents[3]
     / "packages/reflex-base/src/reflex_base/.templates/web/utils/state.js"
 )
+
+
+def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
+    """Bundled Lucide subpaths resolve through their own window namespaces."""
+    with RegistrationContext():
+        bundle_library("lucide-react")
+        code = serializers.serialize(rx.icon("apple"))
+        dynamic_code = serializers.serialize(rx.icon(Var("icon_name").to(str)))
+        _, app_root_code = compiler.compile_app_root(rx.el.div())
+
+    assert isinstance(code, str)
+    assert 'from "lucide-react/dist/esm/icons/apple.mjs"' not in code
+    assert (
+        "const LucideApple = "
+        "window.__reflex['lucide-react/dist/esm/icons/apple.mjs'].default"
+    ) in code
+    assert isinstance(dynamic_code, str)
+    assert 'from "lucide-react/dynamic.mjs"' not in dynamic_code
+    assert (
+        "const {DynamicIcon} = window.__reflex['lucide-react/dynamic.mjs']"
+    ) in dynamic_code
+    assert (
+        "import * as lucide_react_dist_esm_icons_apple_mjs "
+        'from "lucide-react/dist/esm/icons/apple.mjs";'
+    ) in app_root_code
+
+
+@pytest.mark.parametrize(
+    ("fields", "expected"),
+    [
+        (
+            [ImportVar("Widget", is_default=True, alias="DeepWidget")],
+            ["const DeepWidget = {window}.default"],
+        ),
+        (
+            [ImportVar("Widget", alias="DeepWidget")],
+            ["const {Widget: DeepWidget} = {window}"],
+        ),
+        ([ImportVar("*", alias="DeepNamespace")], ["const DeepNamespace = {window}"]),
+        (
+            [
+                ImportVar("Widget", is_default=True),
+                ImportVar("value", alias="deepValue"),
+            ],
+            ["const Widget = {window}.default", "const {value: deepValue} = {window}"],
+        ),
+    ],
+)
+def test_dynamic_component_bundled_subpath_import_forms(
+    fields: list[ImportVar], expected: list[str]
+):
+    """Preserve default, named, namespace and mixed bindings from exact subpaths.
+
+    Args:
+        fields: Import bindings requested from the subpath.
+        expected: Declarations expected in the dynamic module.
+    """
+    test_library = "test-library@1.0.0"
+
+    class SubpathComponent(rx.Component):
+        """A component with an additional bundled subpath dependency."""
+
+        library = test_library
+        tag = "RootComponent"
+
+        def add_imports(self) -> ParsedImportDict:
+            """Import bindings from a module below the package root.
+
+            Returns:
+                The requested versioned subpath imports.
+            """
+            return {
+                test_library: [
+                    dataclasses.replace(field, package_path="/deep.mjs")
+                    for field in fields
+                ]
+            }
+
+    with RegistrationContext() as context:
+        bundle_library("test-library")
+        code = serializers.serialize(SubpathComponent.create())
+        assert isinstance(code, str)
+        assert 'from "test-library/deep.mjs"' not in code
+        for declaration in expected:
+            assert (
+                declaration.replace(
+                    "{window}", "window.__reflex['test-library/deep.mjs']"
+                )
+                in code
+            )
+        assert context.bundled_libraries.count("test-library/deep.mjs") == 1
 
 
 def test_dynamic_component_codegen_wires_event_handlers() -> None:

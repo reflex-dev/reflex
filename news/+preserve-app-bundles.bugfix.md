@@ -1,1 +1,1 @@
-Preserve module-level `bundle_library()` registrations through frontend compilation so page evaluation and the emitted bundle can use them.
+Preserve explicit `bundle_library()` registrations through frontend compilation and expose bundled subpaths for dynamic components, including static and reactive Lucide icons.

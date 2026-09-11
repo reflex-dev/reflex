@@ -14,10 +14,14 @@ from reflex.testing import AppHarness
 def DynamicComponents():
     """App with var operations."""
     import reflex as rx
+    from reflex.components.dynamic import bundle_library
+
+    bundle_library("lucide-react")
 
     class DynamicComponentsState(rx.State):
         value: int = 10
         count: int = 0
+        icon_name: str = "apple"
 
         button: rx.Component = rx.button(
             "Click me",
@@ -84,6 +88,18 @@ def DynamicComponents():
                 ),
             )
 
+        @rx.var
+        def icon_component(self) -> rx.Component:
+            """Get icons with default and named bundled subpath imports.
+
+            Returns:
+                Static and reactive Lucide icons rendered dynamically.
+            """
+            return rx.hstack(
+                rx.icon("apple", id="dynamic-icon"),
+                rx.icon(DynamicComponentsState.icon_name, id="dynamic-named-icon"),
+            )
+
     app = rx.App()
 
     def factorial(n: int) -> int:
@@ -97,6 +113,7 @@ def DynamicComponents():
             DynamicComponentsState.client_token_component,
             DynamicComponentsState.button,
             DynamicComponentsState.counter_component,
+            DynamicComponentsState.icon_component,
             rx.text(
                 DynamicComponentsState._evaluate(
                     lambda state: factorial(state.value), of_type=int
@@ -175,6 +192,11 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
         lambda: driver.find_element(By.ID, "factorial")
     )
     assert factorial.text == "3628800"
+
+    for icon_id in ("dynamic-icon", "dynamic-named-icon"):
+        AppHarness.poll_for_or_raise_timeout(
+            lambda icon_id=icon_id: driver.find_element(By.ID, icon_id)
+        )
 
     count = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "count")
