@@ -12,7 +12,7 @@ import re
 import sys
 import typing
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from os import getcwd
 from pathlib import Path
 from types import ModuleType
@@ -33,7 +33,9 @@ from reflex.utils.misc import get_module_path
 
 logger = logging.getLogger(__name__)
 
+# Reuse successful checks for 24 hours.
 _LATEST_VERSION_CHECK_INTERVAL = timedelta(days=1)
+# Retry failed checks after one hour.
 _LATEST_VERSION_CHECK_FAILURE_INTERVAL = timedelta(hours=1)
 _LATEST_VERSION_CHECK_DATETIME_KEY = "last_version_check_datetime"
 _LATEST_VERSION_CHECK_ATTEMPT_DATETIME_KEY = "last_version_check_attempt_datetime"
@@ -100,13 +102,18 @@ def check_latest_package_version(package_name: str):
         current_version = importlib.metadata.version(package_name)
         url = f"https://pypi.org/pypi/{package_name}/json"
         response = net.get(url, timeout=2)
+        response.raise_for_status()
         latest_version = response.json()["info"]["version"]
         logger.debug(f"Latest version of {package_name}: {latest_version}")
         current_version_parsed = version.parse(current_version)
         latest_version_parsed = version.parse(latest_version)
         path_ops.update_json_file(
             get_web_dir() / constants.Reflex.JSON,
-            {_version_check_timestamp_key(package_name): str(datetime.now())},
+            {
+                _version_check_timestamp_key(package_name): datetime.now(
+                    timezone.utc
+                ).isoformat()
+            },
         )
         if current_version_parsed < latest_version_parsed:
             # Show a warning when the host version is older than PyPI version
@@ -158,7 +165,7 @@ def get_or_set_last_reflex_version_check_datetime(
         return None
 
     data = json.loads(reflex_json_file.read_text())
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     for key, interval in (
         (
             _version_check_timestamp_key(package_name),
@@ -173,7 +180,8 @@ def get_or_set_last_reflex_version_check_datetime(
         if not isinstance(timestamp, str):
             continue
         try:
-            elapsed = now - datetime.fromisoformat(timestamp)
+            checked_at = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            elapsed = datetime.now(checked_at.tzinfo) - checked_at
         except (TypeError, ValueError):
             continue
         else:

@@ -10,7 +10,14 @@ from pathlib import Path, PurePosixPath
 from reflex_base import constants
 from reflex_base.config import get_config
 
-from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
+from reflex.utils import (
+    build_cache,
+    console,
+    js_runtimes,
+    path_ops,
+    prerequisites,
+    processes,
+)
 from reflex.utils.exec import is_in_app_harness
 
 logger = logging.getLogger(__name__)
@@ -62,6 +69,26 @@ def _zip(
     root_directory = Path(root_directory).resolve()
     directory_names_to_exclude = directory_names_to_exclude or set()
     files_to_exclude = files_to_exclude or set()
+    excluded_file_ids = set()
+    for excluded_file in files_to_exclude:
+        if excluded_file.exists():
+            stat = excluded_file.stat()
+            excluded_file_ids.add((stat.st_dev, stat.st_ino))
+
+    def is_excluded(path: Path) -> bool:
+        """Check file identity without repeatedly statting every excluded path.
+
+        Args:
+            path: The file or directory to check.
+
+        Returns:
+            Whether the path refers to an excluded file or directory.
+        """
+        if not excluded_file_ids:
+            return False
+        stat = path.stat()
+        return (stat.st_dev, stat.st_ino) in excluded_file_ids
+
     files_to_zip: list[Path] = []
     # Traverse the root directory in a top-down manner. In this traversal order,
     # we can modify the dirs list in-place to remove directories we don't want to include.
@@ -74,11 +101,7 @@ def _zip(
             subdirectory_name
             for subdirectory_name in subdirectories_names
             if subdirectory_name not in directory_names_to_exclude
-            and not any(
-                (directory_path / subdirectory_name).samefile(exclude)
-                for exclude in files_to_exclude
-                if exclude.exists()
-            )
+            and not is_excluded(directory_path / subdirectory_name)
             and not subdirectory_name.startswith(".")
             and (
                 not exclude_venv_directories
@@ -95,11 +118,7 @@ def _zip(
         files_to_zip += [
             directory_path / subfile_name
             for subfile_name in subfiles_names
-            if not any(
-                (directory_path / subfile_name).samefile(excluded_file)
-                for excluded_file in files_to_exclude
-                if excluded_file.exists()
-            )
+            if not is_excluded(directory_path / subfile_name)
         ]
     if globs_to_include:
         for glob in globs_to_include:
@@ -118,7 +137,16 @@ def _zip(
         for file in files_to_zip:
             logger.debug(f"{target}: {file}", extra={"progress": progress})
             progress.advance(task)
-            zipf.write(file, Path(file).relative_to(root_directory))
+            # Sidecars are already compressed for serving the frontend.
+            compress_type = (
+                zipfile.ZIP_STORED
+                if component_name == constants.ComponentName.FRONTEND
+                and file.suffix in {".gz", ".br", ".zst"}
+                else zipfile.ZIP_DEFLATED
+            )
+            zipf.write(
+                file, file.relative_to(root_directory), compress_type=compress_type
+            )
 
 
 def zip_app(
@@ -253,7 +281,31 @@ def build():
         SystemExit: If the build process fails.
     """
     wdir = prerequisites.get_web_dir()
+    command = [
+        *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
+        "run",
+        "export",
+    ]
+    with build_cache.frontend_build_cache(wdir, command) as cache:
+        if cache is None or not cache.restore():
+            _build_frontend(wdir, command)
+            if cache is not None:
+                cache.capture()
+        _postprocess_frontend(wdir)
+        if cache is not None:
+            cache.commit()
 
+
+def _build_frontend(wdir: Path, command: list[str]) -> None:
+    """Run a fresh production JavaScript build.
+
+    Args:
+        wdir: Frontend working directory.
+        command: Package manager export command.
+
+    Raises:
+        SystemExit: The frontend build failed.
+    """
     # Clean the static directory if it exists.
     path_ops.rm(str(wdir / constants.Dirs.BUILD_DIR))
 
@@ -266,11 +318,7 @@ def build():
 
     # Start the subprocess with the progress bar.
     process = processes.new_process(
-        [
-            *js_runtimes.get_js_package_executor(raise_on_none=True)[0],
-            "run",
-            "export",
-        ],
+        command,
         cwd=wdir,
         shell=constants.IS_WINDOWS,
         env={
@@ -285,6 +333,14 @@ def build():
             "Failed to build the frontend. Please run with --loglevel debug for more information.",
         )
         raise SystemExit(1)
+
+
+def _postprocess_frontend(wdir: Path) -> None:
+    """Apply build hooks and serving transformations to pristine frontend output.
+
+    Args:
+        wdir: Frontend working directory.
+    """
     config = get_config()
     static_dir = wdir / constants.Dirs.STATIC
 

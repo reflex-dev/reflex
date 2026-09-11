@@ -9,6 +9,8 @@ import sys
 
 import click.testing
 import pytest
+from pytest_mock import MockerFixture
+from reflex_base import constants
 
 from reflex import reflex
 
@@ -384,3 +386,111 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+@pytest.fixture
+def patched_production_startup(mocker: MockerFixture) -> dict:
+    """Patch process startup while retaining the production command sequence.
+
+    Returns:
+        Mocked startup operations and the frontend lock context.
+    """
+    config = mocker.patch("reflex.reflex.get_config", return_value=mocker.Mock())
+    mocker.patch("reflex.reflex._skip_compile")
+    mocker.patch("atexit.register")
+    mocker.patch("reflex.utils.telemetry.send")
+    mocker.patch("reflex.utils.exec.notify_app_running")
+    mocker.patch("reflex.utils.exec.notify_frontend")
+    mount_frontend = mocker.patch(
+        "reflex.reflex.environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP"
+    ).set
+    return {
+        "config": config.return_value,
+        "mount_frontend": mount_frontend,
+        "lock": mocker.patch("reflex.utils.build_cache.frontend_build_lock"),
+        "compile": mocker.patch("reflex.reflex._compile_app"),
+        "setup": mocker.patch("reflex.utils.build.setup_frontend_prod"),
+        "backend_prod": mocker.patch("reflex.utils.exec.run_backend_prod"),
+        "backend_preview": mocker.patch("reflex.utils.exec.run_backend"),
+        "frontend": mocker.patch("reflex.utils.exec.run_frontend_prod"),
+    }
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+@pytest.mark.parametrize(
+    "running_mode",
+    [constants.RunningMode.FULLSTACK, constants.RunningMode.FRONTEND_ONLY],
+)
+def test_production_startup_locks_compile_and_build_before_serving(
+    patched_production_startup, runner_name: str, running_mode: constants.RunningMode
+):
+    """Only compile and build hold the lock; serving starts after release."""
+    context = patched_production_startup["lock"].return_value
+
+    def require_lock(*args, **kwargs):
+        """Compilation and setup share the same unreleased lock."""
+        context.__enter__.assert_called_once()
+        context.__exit__.assert_not_called()
+
+    def require_release(*args, **kwargs):
+        """Serving must not retain the frontend lock for the server lifetime."""
+        context.__exit__.assert_called_once_with(None, None, None)
+
+    patched_production_startup["compile"].side_effect = require_lock
+    patched_production_startup["setup"].side_effect = require_lock
+    patched_production_startup["config"]._set_persistent.side_effect = require_lock
+    patched_production_startup["mount_frontend"].side_effect = require_lock
+    for server in ("backend_prod", "backend_preview", "frontend"):
+        patched_production_startup[server].side_effect = require_release
+
+    getattr(reflex, runner_name)(running_mode, 8000, "127.0.0.1")
+
+    patched_production_startup["lock"].assert_called_once()
+    patched_production_startup["setup"].assert_called_once()
+    patched_production_startup["config"]._set_persistent.assert_called_once_with(
+        frontend_port=8000, backend_port=8000
+    )
+    server = (
+        "frontend"
+        if running_mode == constants.RunningMode.FRONTEND_ONLY
+        else "backend_prod"
+        if runner_name == "_run_prod"
+        else "backend_preview"
+    )
+    patched_production_startup[server].assert_called_once()
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+@pytest.mark.parametrize("failing_target", ["compile", "setup"])
+def test_production_startup_releases_lock_after_failed_build(
+    patched_production_startup, runner_name: str, failing_target: str
+):
+    """A startup failure releases the lock and does not start a server."""
+    error = RuntimeError("build failed")
+    patched_production_startup[failing_target].side_effect = error
+    with pytest.raises(RuntimeError, match="build failed"):
+        getattr(reflex, runner_name)(constants.RunningMode.FULLSTACK, 8000, "127.0.0.1")
+
+    context = patched_production_startup["lock"].return_value
+    context.__enter__.assert_called_once()
+    context.__exit__.assert_called_once()
+    assert context.__exit__.call_args.args[:2] == (RuntimeError, error)
+    for server in ("backend_prod", "backend_preview", "frontend"):
+        patched_production_startup[server].assert_not_called()
+
+
+@pytest.mark.parametrize("runner_name", ["_run_prod", "_run_preview"])
+def test_backend_only_startup_does_not_lock_frontend(
+    patched_production_startup, runner_name: str
+):
+    """Backend-only startup does not access the frontend working directory."""
+    getattr(reflex, runner_name)(constants.RunningMode.BACKEND_ONLY, 8000, "127.0.0.1")
+
+    patched_production_startup["lock"].assert_not_called()
+    patched_production_startup["compile"].assert_not_called()
+    patched_production_startup["setup"].assert_not_called()
+    patched_production_startup["config"]._set_persistent.assert_called_once_with(
+        frontend_port=8000, backend_port=8000
+    )
+    if runner_name == "_run_preview":
+        patched_production_startup["mount_frontend"].assert_called_once_with(False)

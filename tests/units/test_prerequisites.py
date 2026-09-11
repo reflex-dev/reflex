@@ -1,13 +1,18 @@
 import importlib.metadata
 import json
+import logging
+import os
 import shutil
+import subprocess
+import sys
 import tempfile
 import uuid
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Protocol
+from unittest.mock import Mock
 
 import pytest
 from click.testing import CliRunner
@@ -140,7 +145,7 @@ def test_check_latest_package_version_refreshes_expired_check(
         })
     )
     installed_version, request = _mock_pypi_versions(mocker)
-    before_check = datetime.now()
+    before_check = datetime.now(timezone.utc)
 
     with caplog.at_level("WARNING"):
         prerequisites.check_latest_package_version("reflex")
@@ -150,7 +155,7 @@ def test_check_latest_package_version_refreshes_expired_check(
     )
     installed_version.assert_called_once_with("reflex")
     request.assert_called_once_with("https://pypi.org/pypi/reflex/json", timeout=2)
-    assert before_check <= checked_at <= datetime.now()
+    assert before_check <= checked_at <= datetime.now(timezone.utc)
     assert caplog.messages == [
         (
             "Your version (1.0.0) of reflex is out of date. Upgrade to 2.0.0 "
@@ -207,7 +212,7 @@ def test_check_latest_package_version_repairs_invalid_timestamp(
         "last_version_check_datetime"
     ]
     assert refreshed_timestamp != stored_timestamp
-    assert datetime.fromisoformat(refreshed_timestamp) <= datetime.now()
+    assert datetime.fromisoformat(refreshed_timestamp) <= datetime.now(timezone.utc)
 
 
 def test_check_latest_package_version_throttles_failed_request(
@@ -300,6 +305,173 @@ def test_check_latest_package_version_can_be_disabled(
     assert json.loads(version_check_file.read_text()) == {}
 
 
+@pytest.fixture
+def version_check_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Isolate the persisted version check and its PyPI request.
+
+    Args:
+        tmp_path: The temporary directory fixture.
+        monkeypatch: The monkeypatch fixture.
+
+    Returns:
+        The reflex.json path and the mocked PyPI request.
+    """
+    reflex_json = tmp_path / constants.Reflex.JSON
+    reflex_json.write_text(json.dumps({"project_hash": "test-project"}))
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: tmp_path)
+    monkeypatch.setenv(environment.REFLEX_CHECK_LATEST_VERSION.name, "True")
+    monkeypatch.setattr(prerequisites.importlib.metadata, "version", lambda _: "1.0.0")
+
+    class FrozenDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            if tz is None:
+                return cls(2026, 9, 6, 12)
+            return cls(2026, 9, 6, 12, tzinfo=timezone.utc).astimezone(tz)
+
+    monkeypatch.setattr(prerequisites, "datetime", FrozenDatetime)
+    response = Mock()
+    response.json.return_value = {"info": {"version": "2.0.0"}}
+    request = Mock(return_value=response)
+    monkeypatch.setattr(prerequisites.net, "get", request)
+    return reflex_json, request
+
+
+@pytest.mark.parametrize(
+    "timestamp",
+    [
+        "2026-09-06 11:00:00",
+        "2026-09-06T12:00:00+00:00",
+        "2026-09-06T13:00:00+02:00",
+        "2026-09-06T11:00:00Z",
+        "2026-09-05T12:00:01+00:00",
+    ],
+)
+def test_check_latest_package_version_skips_cached_request(
+    version_check_env, timestamp
+):
+    """A check less than one day old avoids another PyPI request."""
+    reflex_json, request = version_check_env
+    contents = json.dumps({"last_version_check_datetime": timestamp})
+    reflex_json.write_text(contents)
+
+    prerequisites.check_latest_package_version("reflex")
+
+    request.assert_not_called()
+    assert reflex_json.read_text() == contents
+
+
+@pytest.mark.parametrize(
+    "timestamp",
+    [
+        "2026-09-01 12:00:00",
+        "2026-09-05T12:00:00+00:00",
+        "2026-09-05T14:00:00+02:00",
+        "2026-09-07 12:00:00",
+        "2026-09-06T12:00:01+00:00",
+        "2026-09-06T13:00:00-02:00",
+        "not-a-date",
+        123,
+        ["2026-09-06 11:00:00"],
+        None,
+    ],
+)
+def test_check_latest_package_version_refreshes_stale_or_invalid_timestamp(
+    version_check_env, timestamp, caplog: pytest.LogCaptureFixture
+):
+    """Expired, invalid, and future records refresh and allow a new upgrade warning."""
+    reflex_json, request = version_check_env
+    reflex_json.write_text(
+        json.dumps({
+            "project_hash": "test-project",
+            "last_version_check_datetime": timestamp,
+        })
+    )
+
+    with caplog.at_level(logging.WARNING, logger=prerequisites.__name__):
+        prerequisites.check_latest_package_version("reflex")
+        prerequisites.check_latest_package_version("reflex")
+
+    request.assert_called_once_with("https://pypi.org/pypi/reflex/json", timeout=2)
+    assert json.loads(reflex_json.read_text()) == {
+        "project_hash": "test-project",
+        "last_version_check_datetime": "2026-09-06T12:00:00+00:00",
+        "last_version_check_attempt_datetime": "2026-09-06 12:00:00+00:00",
+    }
+    assert sum(record.levelno == logging.WARNING for record in caplog.records) == 1
+
+
+@pytest.mark.parametrize("failure", ["network", "http", "json", "version"])
+def test_check_latest_package_version_retries_failed_refresh(
+    version_check_env, failure
+):
+    """Failed refreshes preserve the old record and retry after the failure cooldown."""
+    reflex_json, request = version_check_env
+    contents = json.dumps({"last_version_check_datetime": "2026-09-01 12:00:00"})
+    reflex_json.write_text(contents)
+    failed_response = Mock()
+    failed_response.json.return_value = {
+        "info": {"version": "not-a-version" if failure == "version" else "2.0.0"}
+    }
+    if failure == "http":
+        failed_response.raise_for_status.side_effect = OSError("HTTP failure")
+    elif failure == "json":
+        failed_response.json.side_effect = ValueError("Invalid JSON")
+    request.side_effect = [
+        OSError("network unavailable") if failure == "network" else failed_response,
+        request.return_value,
+    ]
+
+    prerequisites.check_latest_package_version("reflex")
+    data = json.loads(reflex_json.read_text())
+    assert data["last_version_check_datetime"] == "2026-09-01 12:00:00"
+    prerequisites.check_latest_package_version("reflex")
+    assert request.call_count == 1
+    data["last_version_check_attempt_datetime"] = "2026-09-06T11:00:00+00:00"
+    reflex_json.write_text(json.dumps(data))
+    prerequisites.check_latest_package_version("reflex")
+    assert request.call_count == 2
+    assert json.loads(reflex_json.read_text())["last_version_check_datetime"] == (
+        "2026-09-06T12:00:00+00:00"
+    )
+
+
+@pytest.mark.parametrize("latest_version", ["1.0.0", "2.0.0"])
+def test_check_latest_package_version_caches_success(
+    version_check_env, latest_version: str, caplog: pytest.LogCaptureFixture
+):
+    """A successful check is reused for the same package without repeating warnings."""
+    reflex_json, request = version_check_env
+    request.return_value.json.return_value = {"info": {"version": latest_version}}
+
+    with caplog.at_level(logging.WARNING, logger=prerequisites.__name__):
+        prerequisites.check_latest_package_version("reflex")
+        prerequisites.check_latest_package_version("reflex")
+
+    request.assert_called_once_with("https://pypi.org/pypi/reflex/json", timeout=2)
+    data = json.loads(reflex_json.read_text())
+    assert data["last_version_check_datetime"]
+    assert data["project_hash"] == "test-project"
+    warnings = [
+        record for record in caplog.records if record.levelno == logging.WARNING
+    ]
+    assert len(warnings) == (latest_version == "2.0.0")
+
+
+def test_check_latest_package_version_disabled(
+    version_check_env, monkeypatch: pytest.MonkeyPatch
+):
+    """Disabling version checks avoids requests and cache updates."""
+    reflex_json, request = version_check_env
+    monkeypatch.setenv(environment.REFLEX_CHECK_LATEST_VERSION.name, "False")
+    contents = reflex_json.read_text()
+
+    prerequisites.check_latest_package_version("reflex")
+
+    request.assert_not_called()
+    assert reflex_json.read_text() == contents
+
+
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
     monkeypatch.setattr(frontend_skeleton, "get_web_dir", lambda: web_dir)
     monkeypatch.setattr(js_runtimes, "get_web_dir", lambda: web_dir)
@@ -325,6 +497,8 @@ def _patch_frontend_package_manager(
     # inspect the install args without mocking subprocess primitives.
     def _stub_initial_install(primary_pm, env, frozen_lockfile):
         args = [primary_pm, "install", "--legacy-peer-deps"]
+        if not js_runtimes._is_bun_package_manager(primary_pm):
+            args.append("--include=dev")
         if frozen_lockfile and js_runtimes._is_bun_package_manager(primary_pm):
             args.append("--frozen-lockfile")
         run_package_manager(
@@ -359,6 +533,43 @@ def _stub_framework_packages(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {})
     monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {})
     monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {})
+
+
+@pytest.mark.parametrize("config_class", ["Config", "AppConfig"])
+def test_frontend_package_cache_fingerprint_is_stable_across_processes(
+    tmp_path: Path, config_class: str
+):
+    """Python hash randomization must not invalidate unchanged dependency installs."""
+    script = f"""
+import hashlib
+from reflex_base.config import Config
+from reflex.utils.js_runtimes import _frontend_packages_cache_payload
+
+class AppConfig(Config):
+    pass
+
+config = {config_class}(
+    app_name="test_app",
+    api_url="https://api.example.com",
+    deploy_url="https://example.com",
+    frontend_port=3001,
+    frozen_lockfile=True,
+    _skip_plugins_checks=True,
+)
+payload = _frontend_packages_cache_payload({{"some-package@1.0.0"}}, set(), config.frozen_lockfile, ("npm",))
+print(hashlib.sha256(payload.encode()).hexdigest())
+"""
+    fingerprints = {
+        subprocess.check_output(
+            [sys.executable, "-c", script],
+            cwd=tmp_path,
+            env={**os.environ, "PYTHONHASHSEED": seed},
+            text=True,
+        ).strip()
+        for seed in ("1", "2", "3")
+    }
+
+    assert len(fingerprints) == 1
 
 
 @pytest.fixture
@@ -1166,6 +1377,232 @@ def test_install_frontend_packages_pins_framework_dependencies(
     assert "--only-missing" not in pin_dev_deps_call
 
 
+@pytest.mark.parametrize("package_manager", ["bun", "npm"])
+@pytest.mark.parametrize("has_lockfile", [False, True])
+def test_install_frontend_packages_reuses_installed_framework_pins(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+    package_manager: str,
+    has_lockfile: bool,
+):
+    """Matching framework pins need no add only after a successful initial install."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
+    env.root_package_json.write_text(
+        json.dumps({
+            "dependencies": {"react": "19.2.5"},
+            "devDependencies": {"vite": "8.0.9"},
+        })
+    )
+    if has_lockfile:
+        lockfile = (
+            env.root_lock
+            if package_manager == "bun"
+            else env.root_lock.parent / constants.Node.LOCKFILE_PATH
+        )
+        lockfile.write_text("persisted-lock")
+    calls = _record_calls_with_pm(env, package_manager)
+
+    env.install()
+
+    install_calls = [call for call in calls if "install" in call]
+    assert len(install_calls) == int(has_lockfile)
+    if has_lockfile:
+        assert ("--frozen-lockfile" in install_calls[0]) == (package_manager == "bun")
+    add_calls = [call for call in calls if "add" in call]
+    assert len(add_calls) == (0 if has_lockfile else 2)
+    if not has_lockfile:
+        assert "vite@8.0.9" in add_calls[0]
+        assert "react@19.2.5" in add_calls[1]
+
+
+def test_install_frontend_packages_updates_only_changed_framework_pins(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """Changed, absent, or misplaced framework pins still get installed."""
+    env = install_packages_env
+    monkeypatch.setattr(
+        constants.PackageJson,
+        "DEPENDENCIES",
+        {
+            "react": "19.2.5",
+            "react-dom": "19.2.5",
+            "isbot": "5.2.2",
+        },
+    )
+    monkeypatch.setattr(
+        constants.PackageJson,
+        "DEV_DEPENDENCIES",
+        {
+            "vite": "8.0.9",
+            "postcss": "8.5.26",
+        },
+    )
+    env.root_lock.write_text("persisted-lock")
+    env.root_package_json.write_text(
+        json.dumps({
+            "dependencies": {
+                "react": "19.2.5",
+                "react-dom": "18.0.0",
+                "stale": "1.0.0",
+            },
+            "devDependencies": {"isbot": "5.2.2", "vite": "8.0.9"},
+        })
+    )
+    calls = _record_calls(env)
+
+    env.install()
+
+    assert set(calls[0][3:]) == {"stale", "isbot"}
+    add_calls = [call for call in calls if "add" in call]
+    assert len(add_calls) == 2
+    assert "postcss@8.5.26" in add_calls[0]
+    assert {"react-dom@19.2.5", "isbot@5.2.2"}.issubset(add_calls[1])
+    assert all(
+        "react@19.2.5" not in call and "vite@8.0.9" not in call for call in add_calls
+    )
+
+
+def test_install_frontend_packages_keeps_custom_and_plugin_pin_resolution(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """Custom pins still resolve and dev requests cannot override framework deps."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+
+    class FakePlugin:
+        def get_frontend_dependencies(self):
+            return {"plugin-pkg@1.0.0"}
+
+        def get_frontend_development_dependencies(self):
+            return {"plugin-dev@2.0.0", "react@18.0.0"}
+
+    monkeypatch.setattr(env.config, "plugins", [FakePlugin()])
+    env.root_lock.write_text("persisted-lock")
+    env.root_package_json.write_text(
+        json.dumps({
+            "dependencies": {
+                "react": "19.2.5",
+                "plugin-pkg": "1.0.0",
+                "custom": "^3.0.0",
+            },
+            "devDependencies": {"plugin-dev": "2.0.0"},
+        })
+    )
+    calls = _record_calls(env)
+
+    env.install({"custom@^3.0.0"})
+
+    add_calls = [call for call in calls if "add" in call]
+    assert len(add_calls) == 2
+    assert "plugin-dev@2.0.0" in add_calls[0]
+    assert {"plugin-pkg@1.0.0", "custom@^3.0.0"}.issubset(add_calls[1])
+    assert all(not any(arg.startswith("react@") for arg in call) for call in add_calls)
+
+
+def test_install_frontend_packages_reconciles_overrides_with_matching_framework_pins(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """Skipping matched pins must still apply newly merged framework overrides."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.26"})
+    env.root_lock.write_text("persisted-lock")
+    env.root_package_json.write_text(json.dumps({"dependencies": {"react": "19.2.5"}}))
+    calls = _record_calls(env)
+
+    env.install()
+
+    assert len(calls) == 2
+    assert "install" in calls[0]
+    assert "--frozen-lockfile" in calls[0]
+    assert "install" in calls[1]
+    assert "--frozen-lockfile" not in calls[1]
+    assert json.loads(env.root_package_json.read_text())["overrides"] == {
+        "postcss": "8.5.26"
+    }
+
+
+def test_install_frontend_packages_preserves_conflicting_pin_arguments(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """Explicit pins conflicting with framework pins keep the original add arguments."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
+
+    class FakePlugin:
+        def get_frontend_dependencies(self):
+            return set()
+
+        def get_frontend_development_dependencies(self):
+            return {"vite@7.0.0"}
+
+    monkeypatch.setattr(env.config, "plugins", [FakePlugin()])
+    env.root_lock.write_text("persisted-lock")
+    env.root_package_json.write_text(
+        json.dumps({
+            "dependencies": {"react": "19.2.5"},
+            "devDependencies": {"vite": "8.0.9"},
+        })
+    )
+    calls = _record_calls(env)
+
+    env.install({"react@18.0.0"})
+
+    add_calls = [call for call in calls if "add" in call]
+    assert len(add_calls) == 2
+    assert {"vite@7.0.0", "vite@8.0.9"}.issubset(add_calls[0])
+    assert {"react@18.0.0", "react@19.2.5"}.issubset(add_calls[1])
+
+
+def test_install_frontend_packages_matching_pins_do_not_bypass_failed_install(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """A failed frozen install propagates and never marks the dependencies cached."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    env.root_lock.write_text("persisted-lock")
+    env.root_package_json.write_text(json.dumps({"dependencies": {"react": "19.2.5"}}))
+    calls = _record_calls(env)
+    monkeypatch.setattr(
+        js_runtimes, "_run_initial_install", Mock(side_effect=SystemExit(1))
+    )
+
+    with pytest.raises(SystemExit):
+        env.install()
+
+    assert calls == []
+    assert not js_runtimes._frontend_packages_cache_path().exists()
+
+
+@pytest.mark.parametrize(
+    "version_spec",
+    ["^19.2.5", "19.x", "latest", "github:facebook/react", "file:../react"],
+)
+def test_install_frontend_packages_still_resolves_framework_version_overrides(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+    version_spec: str,
+):
+    """Framework version overrides that are not exact pins keep their add behavior."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": version_spec})
+    env.root_lock.write_text("persisted-lock")
+    env.root_package_json.write_text(
+        json.dumps({"dependencies": {"react": version_spec}})
+    )
+    calls = _record_calls(env)
+
+    env.install()
+
+    assert len(calls) == 2
+    assert "install" in calls[0]
+    assert "add" in calls[1]
+    assert f"react@{version_spec}" in calls[1]
+
+
 def _record_calls_with_pm(
     env: InstallPackagesEnv, package_manager: str
 ) -> list[list[str]]:
@@ -1185,6 +1622,231 @@ def _record_calls_with_pm(
 
     env.patch_pm([package_manager], run_package_manager)
     return calls
+
+
+@pytest.mark.parametrize("package_manager", ["bun", "npm"])
+def test_install_frontend_packages_uses_package_manager_dev_flag(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+    package_manager: str,
+):
+    """Npm must save development tools in devDependencies, including in production."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
+    monkeypatch.setenv("NODE_ENV", "production")
+    calls = _record_calls_with_pm(env, package_manager)
+
+    env.install()
+
+    assert len(calls) == 1
+    assert ("--save-dev" in calls[0]) == (package_manager == "npm")
+    assert ("-d" in calls[0]) == (package_manager == "bun")
+    assert ("--include=dev" in calls[0]) == (package_manager == "npm")
+
+
+@pytest.mark.parametrize("lockfile_version", [2, 3])
+def test_install_frontend_packages_reuses_verified_npm_caret_pins(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+    lockfile_version: int,
+):
+    """Npm's saved caret declarations can reuse the exact version just installed."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    monkeypatch.setattr(
+        constants.PackageJson, "DEV_DEPENDENCIES", {"@scope/tool": "2.0.0"}
+    )
+    package_json = {
+        "dependencies": {"react": "^19.2.5"},
+        "devDependencies": {"@scope/tool": "^2.0.0"},
+    }
+    env.root_package_json.write_text(json.dumps(package_json))
+    (env.root_lock.parent / constants.Node.LOCKFILE_PATH).write_text(
+        json.dumps({
+            "lockfileVersion": lockfile_version,
+            "packages": {
+                "": package_json,
+                "node_modules/react": {"version": "19.2.5"},
+                "node_modules/@scope/tool": {"version": "2.0.0", "name": "@scope/tool"},
+            },
+        })
+    )
+    for name, package_version in (("react", "19.2.5"), ("@scope/tool", "2.0.0")):
+        package_dir = env.web_dir / "node_modules" / name
+        package_dir.mkdir(parents=True)
+        (package_dir / "package.json").write_text(
+            json.dumps({"name": name, "version": package_version})
+        )
+    calls = _record_calls_with_pm(env, "npm")
+
+    env.install()
+
+    assert len(calls) == 1
+    assert "install" in calls[0]
+
+    npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    saved_package_json = env.root_package_json.read_bytes()
+    saved_lock = npm_lock.read_bytes()
+    js_runtimes._frontend_packages_cache_path().unlink()
+    calls.clear()
+    env.install()
+
+    assert len(calls) == 1
+    assert "install" in calls[0]
+    assert env.root_package_json.read_bytes() == saved_package_json
+    assert npm_lock.read_bytes() == saved_lock
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "newer_version",
+        "wrong_section",
+        "alias",
+        "link",
+        "local_tarball",
+        "missing_entry",
+        "legacy",
+        "malformed",
+        "malformed_packages",
+        "missing_root",
+        "missing_manifest",
+        "newer_installed_version",
+        "aliased_manifest",
+        "linked_package",
+        "explicit_conflict",
+        "tilde",
+        "overrides_changed",
+    ],
+)
+def test_install_frontend_packages_npm_caret_pin_fallback(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+    case: str,
+):
+    """Unverified npm declarations keep the explicit framework add operation."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    declaration = "~19.2.5" if case == "tilde" else "^19.2.5"
+    package_json = {"dependencies": {"react": declaration}}
+    env.root_package_json.write_text(json.dumps(package_json))
+    locked_react: dict[str, object] = {"version": "19.2.5"}
+    lock = {
+        "lockfileVersion": 3,
+        "packages": {"": package_json, "node_modules/react": locked_react},
+    }
+    if case == "newer_version":
+        locked_react["version"] = "19.3.0"
+    elif case == "wrong_section":
+        lock["packages"][""] = {"devDependencies": {"react": declaration}}
+    elif case == "alias":
+        locked_react["name"] = "different-package"
+    elif case == "link":
+        locked_react["link"] = True
+    elif case == "local_tarball":
+        locked_react["resolved"] = "file:../react.tgz"
+    elif case == "missing_entry":
+        del lock["packages"]["node_modules/react"]
+    elif case == "legacy":
+        lock["lockfileVersion"] = 1
+    elif case == "malformed_packages":
+        lock["packages"] = []
+    elif case == "missing_root":
+        del lock["packages"][""]
+    elif case == "overrides_changed":
+        monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.26"})
+    (env.root_lock.parent / constants.Node.LOCKFILE_PATH).write_text(
+        "invalid" if case == "malformed" else json.dumps(lock)
+    )
+    package_dir = env.web_dir / "node_modules" / "react"
+    package_dir.mkdir(parents=True)
+    if case != "missing_manifest":
+        (package_dir / "package.json").write_text(
+            json.dumps({
+                "name": "different-package" if case == "aliased_manifest" else "react",
+                "version": "19.3.0" if case == "newer_installed_version" else "19.2.5",
+            })
+        )
+    if case == "linked_package":
+        if constants.IS_WINDOWS:
+            pytest.skip("Requires directory symlinks")
+        linked_package = env.tmp_path / "linked-package"
+        package_dir.rename(linked_package)
+        package_dir.symlink_to(linked_package, target_is_directory=True)
+    calls = _record_calls_with_pm(env, "npm")
+
+    env.install({"react@18.0.0"} if case == "explicit_conflict" else None)
+
+    assert len(calls) == 2
+    assert "install" in calls[0]
+    assert "add" in calls[1]
+    assert "react@19.2.5" in calls[1]
+    if case == "explicit_conflict":
+        assert "react@18.0.0" in calls[1]
+
+
+def test_install_frontend_packages_reads_npm_versions_after_install(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """A newer version resolved during initial install must be repinned afterwards."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    package_json = {"dependencies": {"react": "^19.2.5"}}
+    env.root_package_json.write_text(json.dumps(package_json))
+    lock = {
+        "lockfileVersion": 3,
+        "packages": {"": package_json, "node_modules/react": {"version": "19.2.5"}},
+    }
+    (env.root_lock.parent / constants.Node.LOCKFILE_PATH).write_text(json.dumps(lock))
+    package_dir = env.web_dir / "node_modules" / "react"
+    package_dir.mkdir(parents=True)
+    (package_dir / "package.json").write_text(
+        json.dumps({"name": "react", "version": "19.2.5"})
+    )
+    calls: list[list[str]] = []
+
+    def run_package_manager(args, **kwargs):
+        calls.append(list(args))
+        if "install" in args:
+            lock["packages"]["node_modules/react"]["version"] = "19.3.0"
+            (env.web_dir / constants.Node.LOCKFILE_PATH).write_text(json.dumps(lock))
+
+    env.patch_pm(["npm"], run_package_manager)
+    env.install()
+
+    assert len(calls) == 2
+    assert "react@19.2.5" in calls[1]
+
+
+def test_install_frontend_packages_all_npm_operations_include_dev(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """Later npm add/remove operations must not prune development tools in production."""
+    env = install_packages_env
+    monkeypatch.setenv("NODE_ENV", "production")
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"react": "19.2.5"})
+    monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {"vite": "8.0.9"})
+    env.root_package_json.write_text(json.dumps({"dependencies": {"stale": "1.0.0"}}))
+    calls = _record_calls_with_pm(env, "npm")
+
+    env.install()
+
+    assert {call[1] for call in calls} == {"remove", "add"}
+    assert all("--include=dev" in call for call in calls)
+
+
+def test_run_initial_npm_install_includes_dev_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Installing a restored npm lock must include development tools for the build."""
+    monkeypatch.setenv("NODE_ENV", "production")
+    new_process = Mock(return_value=Mock(returncode=0))
+    monkeypatch.setattr(js_runtimes.processes, "new_process", new_process)
+    monkeypatch.setattr(js_runtimes.processes, "show_status", Mock(return_value=[]))
+
+    js_runtimes._run_initial_install("npm", {}, frozen_lockfile=True)
+
+    assert "--include=dev" in new_process.call_args.args[0]
 
 
 def test_install_frontend_packages_npm_skips_frozen_lockfile(

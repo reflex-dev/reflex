@@ -1160,6 +1160,24 @@ def test_deploy_without_instance_bounds_flags_skips_the_call(
     recorder.create_deployment.assert_called_once()
 
 
+def test_deploy_non_interactive_skips_provider_availability_lookup(
+    mocker: MockerFixture,
+    mock_export_fn: MagicMock,
+):
+    """A non-interactive deploy exports and submits without probing unused targets."""
+    recorder = _deploy_call_recorder(mocker)
+    available = mocker.patch(
+        "reflex_cli.utils.hosting.gcp_deploy_available",
+        return_value={"configured": True, "allowed": True},
+    )
+
+    cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=False)
+
+    available.assert_not_called()
+    assert mock_export_fn.call_count == 2
+    recorder.create_deployment.assert_called_once()
+
+
 def test_deploy_failed_export_does_not_apply_instance_bounds(
     mocker: MockerFixture,
     mock_export_import_error_fn: Callable[[str, str, str, bool, bool, bool], None],
@@ -1549,19 +1567,25 @@ def test_resolve_deploy_provider_reflex_cloud_no_switch(mocker: MockFixture):
     mock_set.assert_not_called()
 
 
-def test_resolve_deploy_provider_non_interactive_keeps_current(mocker: MockFixture):
-    """Non-interactive with no --provider keeps the app's provider, no prompt."""
+@pytest.mark.parametrize("provider", [None, "fly", "gcp"])
+def test_resolve_deploy_provider_non_interactive_keeps_current(
+    mocker: MockFixture, provider: str | None
+):
+    """Non-interactive deploys keep their provider without a lookup or prompt."""
     client = hosting.AuthenticatedClient(token="t", validated_data={})
-    mocker.patch(
+    available = mocker.patch(
         "reflex_cli.utils.hosting.gcp_deploy_available",
         return_value={"configured": True, "allowed": True},
     )
+    ask = mocker.patch("reflex_cli.utils.console.ask")
     mock_set = mocker.patch("reflex_cli.utils.hosting.set_app_provider")
-    app = {"id": "app-1", "name": "myapp", "provider": "fly"}
+    app = {"id": "app-1", "name": "myapp", "provider": provider}
     result = cli._resolve_deploy_provider(
         app, None, interactive=False, app_was_created=False, client=client
     )
-    assert result == "fly"
+    assert result == provider
+    available.assert_not_called()
+    ask.assert_not_called()
     mock_set.assert_not_called()
 
 
@@ -1601,7 +1625,7 @@ def test_resolve_deploy_provider_switch_confirm_defaults_to_cancel(
 def test_resolve_deploy_provider_interactive_prompt_selects_gcp(mocker: MockFixture):
     """When GCP is available and the user picks it, the app switches to GCP."""
     client = hosting.AuthenticatedClient(token="t", validated_data={})
-    mocker.patch(
+    available = mocker.patch(
         "reflex_cli.utils.hosting.gcp_deploy_available",
         return_value={"configured": True, "allowed": True, "region": "us-central1"},
     )
@@ -1614,6 +1638,7 @@ def test_resolve_deploy_provider_interactive_prompt_selects_gcp(mocker: MockFixt
         app, None, interactive=True, app_was_created=True, client=client
     )
     assert result == "gcp"
+    available.assert_called_once_with(client)
     mock_set.assert_called_once()
 
 
@@ -1690,8 +1715,9 @@ def test_resolve_deploy_provider_named_connection_is_pinned(mocker: MockFixture)
     )
 
 
+@pytest.mark.parametrize("provider_arg", [None, "gcp"])
 def test_resolve_deploy_provider_repoints_without_a_provider_switch(
-    mocker: MockFixture,
+    mocker: MockFixture, provider_arg: str | None
 ):
     """An app already on GCP is still repointed when a connection is named."""
     client = hosting.AuthenticatedClient(token="t", validated_data={})
@@ -1706,7 +1732,7 @@ def test_resolve_deploy_provider_repoints_without_a_provider_switch(
 
     result = cli._resolve_deploy_provider(
         app,
-        "gcp",
+        provider_arg,
         interactive=False,
         app_was_created=False,
         client=client,

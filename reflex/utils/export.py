@@ -11,7 +11,7 @@ from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils import console
 
-from reflex.utils import build, exec, prerequisites, telemetry
+from reflex.utils import build, build_cache, exec, prerequisites, telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -49,23 +49,6 @@ def export(
     # Set the log level.
     console.set_log_level(loglevel)
 
-    # Set env mode in the environment
-    environment.REFLEX_ENV_MODE.set(env)
-
-    # Override the config url values if provided.
-    if api_url is not None:
-        config._set_persistent(api_url=str(api_url))
-        logger.debug(f"overriding API URL: {config.api_url}")
-    if deploy_url is not None:
-        config._set_persistent(deploy_url=str(deploy_url))
-        logger.debug(f"overriding deploy URL: {config.deploy_url}")
-
-    # Show system info
-    exec.output_system_info()
-
-    # Compile the app in production mode and export it.
-    console.rule("[bold]Compiling production app and preparing for export.")
-
     start = time.monotonic()
     phase_durations: dict[str, float] = {}
     status = "success"
@@ -80,26 +63,41 @@ def export(
             phase_durations[name] = time.monotonic() - t0
 
     try:
-        if frontend:
-            with _time_phase("compile_duration"):
-                # Ensure module can be imported and app.compile() is called.
-                prerequisites.get_compiled_app(
-                    prerender_routes=prerender_routes, trigger="export"
-                )
-            with _time_phase("setup_duration"):
-                # Set up .web directory and install frontend dependencies.
-                build.setup_frontend(Path.cwd())
-            with _time_phase("build_duration"):
-                build.build()
-        if zipping:
-            with _time_phase("zip_duration"):
-                build.zip_app(
-                    frontend=frontend,
-                    backend=backend,
-                    zip_dest_dir=zip_dest_dir,
-                    include_db_file=upload_db_file,
-                    backend_excluded_dirs=backend_excluded_dirs,
-                )
+        with build_cache.frontend_build_lock(prerequisites.get_web_dir()):
+            # Set env mode in the environment.
+            environment.REFLEX_ENV_MODE.set(env)
+
+            # Override the config url values if provided.
+            if api_url is not None:
+                config._set_persistent(api_url=str(api_url))
+                logger.debug(f"overriding API URL: {config.api_url}")
+            if deploy_url is not None:
+                config._set_persistent(deploy_url=str(deploy_url))
+                logger.debug(f"overriding deploy URL: {config.deploy_url}")
+
+            exec.output_system_info()
+            console.rule("[bold]Compiling production app and preparing for export.")
+
+            if frontend:
+                with _time_phase("compile_duration"):
+                    # Ensure module can be imported and app.compile() is called.
+                    prerequisites.get_compiled_app(
+                        prerender_routes=prerender_routes, trigger="export"
+                    )
+                with _time_phase("setup_duration"):
+                    # Set up .web directory and install frontend dependencies.
+                    build.setup_frontend(Path.cwd())
+                with _time_phase("build_duration"):
+                    build.build()
+            if zipping:
+                with _time_phase("zip_duration"):
+                    build.zip_app(
+                        frontend=frontend,
+                        backend=backend,
+                        zip_dest_dir=zip_dest_dir,
+                        include_db_file=upload_db_file,
+                        backend_excluded_dirs=backend_excluded_dirs,
+                    )
     except Exception as exc:
         status = "failure"
         detail = type(exc).__name__

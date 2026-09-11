@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from contextlib import nullcontext
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -437,21 +438,33 @@ def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
     """
     import atexit
 
-    from reflex.utils import build, exec, processes, telemetry
+    from reflex.utils import (
+        build,
+        build_cache,
+        exec,
+        prerequisites,
+        processes,
+        telemetry,
+    )
 
     config = get_config()
 
-    config._set_persistent(frontend_port=port, backend_port=port)
+    with (
+        build_cache.frontend_build_lock(prerequisites.get_web_dir())
+        if running_mode.has_frontend()
+        else nullcontext()
+    ):
+        config._set_persistent(frontend_port=port, backend_port=port)
 
-    # Mount the compiled frontend into the dev backend so no Vite server is needed.
-    environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(
-        running_mode.has_frontend() and running_mode.has_backend()
-    )
+        # Mount the compiled frontend into the dev backend so no Vite server is needed.
+        environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(
+            running_mode.has_frontend() and running_mode.has_backend()
+        )
 
-    if running_mode.has_frontend():
-        # Compile the app and produce the initial frontend build.
-        _compile_app()
-        build.setup_frontend_prod(Path.cwd())
+        if running_mode.has_frontend():
+            # Compile the app and produce the initial frontend build.
+            _compile_app()
+            build.setup_frontend_prod(Path.cwd())
 
     # Post a telemetry event.
     telemetry.send("run-preview")
@@ -476,16 +489,28 @@ def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
 def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
     import atexit
 
-    from reflex.utils import build, exec, processes, telemetry
+    from reflex.utils import (
+        build,
+        build_cache,
+        exec,
+        prerequisites,
+        processes,
+        telemetry,
+    )
 
     config = get_config()
 
-    config._set_persistent(frontend_port=port, backend_port=port)
+    with (
+        build_cache.frontend_build_lock(prerequisites.get_web_dir())
+        if running_mode.has_frontend()
+        else nullcontext()
+    ):
+        config._set_persistent(frontend_port=port, backend_port=port)
 
-    if running_mode.has_frontend():
-        # Get the app module.
-        _compile_app(avoid_dirty_check=False)
-        build.setup_frontend_prod(Path.cwd())
+        if running_mode.has_frontend():
+            # Get the app module.
+            _compile_app(avoid_dirty_check=False)
+            build.setup_frontend_prod(Path.cwd())
 
     _skip_compile()
 

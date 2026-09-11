@@ -16,6 +16,9 @@ def patched_export(mocker: MockerFixture) -> dict:
         Dict of patched mocks keyed by short name.
     """
     return {
+        "frontend_build_lock": mocker.patch(
+            "reflex.utils.build_cache.frontend_build_lock"
+        ),
         "get_compiled_app": mocker.patch(
             "reflex.utils.export.prerequisites.get_compiled_app"
         ),
@@ -27,8 +30,8 @@ def patched_export(mocker: MockerFixture) -> dict:
             "reflex.utils.export.exec.output_system_info"
         ),
         "env_mode_set": mocker.patch(
-            "reflex.utils.export.environment.REFLEX_ENV_MODE.set"
-        ),
+            "reflex.utils.export.environment.REFLEX_ENV_MODE"
+        ).set,
         "get_config": mocker.patch(
             "reflex.utils.export.get_config", return_value=mocker.Mock()
         ),
@@ -126,3 +129,64 @@ def test_export_no_zip_emits_only_compile_and_build_durations(patched_export):
     assert isinstance(kwargs["setup_duration"], float)
     assert isinstance(kwargs["build_duration"], float)
     assert kwargs["zip_duration"] is None
+
+
+@pytest.mark.parametrize(
+    ("frontend", "zipping", "phases"),
+    [
+        (True, True, ["get_compiled_app", "setup_frontend", "build", "zip_app"]),
+        (True, False, ["get_compiled_app", "setup_frontend", "build"]),
+        (False, True, ["zip_app"]),
+    ],
+)
+def test_export_holds_frontend_lock_through_packaging(
+    patched_export, frontend: bool, zipping: bool, phases: list[str]
+):
+    """Generated inputs and both archives belong to one locked export."""
+    lock = patched_export["frontend_build_lock"]
+    context = lock.return_value
+
+    def require_lock(*args, **kwargs):
+        """Require each export phase to run before the lock is released."""
+        context.__enter__.assert_called_once()
+        context.__exit__.assert_not_called()
+
+    for phase in phases:
+        patched_export[phase].side_effect = require_lock
+    patched_export["env_mode_set"].side_effect = require_lock
+    config = patched_export["get_config"].return_value
+    config._set_persistent.side_effect = require_lock
+
+    export.export(
+        frontend=frontend,
+        zipping=zipping,
+        api_url="https://api.example.com",
+        deploy_url="https://app.example.com",
+    )
+
+    lock.assert_called_once_with(export.prerequisites.get_web_dir())
+    context.__exit__.assert_called_once_with(None, None, None)
+    assert config._set_persistent.call_count == 2
+
+
+@pytest.mark.parametrize(
+    "failing_target", ["get_compiled_app", "setup_frontend", "build", "zip_app"]
+)
+def test_export_releases_frontend_lock_before_failure_telemetry(
+    patched_export, failing_target: str
+):
+    """A failed export releases shared files before reporting its failure."""
+    context = patched_export["frontend_build_lock"].return_value
+    error = RuntimeError("export failed")
+    patched_export[failing_target].side_effect = error
+
+    def require_release(*args, **kwargs):
+        """Telemetry runs outside the frontend lock even on failure."""
+        context.__enter__.assert_called_once()
+        context.__exit__.assert_called_once()
+
+    patched_export["send"].side_effect = require_release
+    with pytest.raises(RuntimeError, match="export failed"):
+        export.export()
+
+    assert context.__exit__.call_args.args[:2] == (RuntimeError, error)
