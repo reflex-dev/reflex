@@ -4,8 +4,9 @@ from collections.abc import Generator
 
 import pytest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
 
-from reflex.testing import AppHarness, WebDriver
+from reflex.testing import AppHarness
 
 
 def MomentApp():
@@ -38,7 +39,37 @@ def MomentApp():
                 trim="large",
                 id="moment-duration",
             ),
+            rx.moment(
+                "2024-03-14T15:09:26",
+                format="dddd D MMMM YYYY",
+                id="moment-default-locale",
+            ),
+            rx.moment(
+                "2024-03-14T15:09:26",
+                format="dddd D MMMM YYYY",
+                locale="fr",
+                id="moment-french",
+            ),
+            rx.link("Plain page", href="/plain", id="plain-link"),
         )
+
+    def plain():
+        """Render moments after another route has loaded a foreign locale.
+
+        Returns:
+            The page used to check date and relative-time locale isolation.
+        """
+        return rx.vstack(
+            rx.moment(
+                "2024-03-14T15:09:26",
+                format="dddd D MMMM YYYY",
+                id="plain-date",
+            ),
+            rx.moment("2020-01-01", from_now=True, id="plain-relative"),
+            rx.link("Home", href="/", id="home-link"),
+        )
+
+    app.add_page(plain, route="/plain")
 
 
 @pytest.fixture(scope="module")
@@ -85,3 +116,41 @@ def test_moment_2_props_render(driver: WebDriver) -> None:
         lambda: driver.find_element(By.ID, "moment-duration")
     )
     AppHarness.expect(lambda: moment_duration.text == "30 mins")
+
+
+def test_moment_locales_are_isolated(driver: WebDriver) -> None:
+    """Keep default moments in English across sibling locales, navigation and reload.
+
+    Args:
+        driver: The browser connected to the Moment app.
+    """
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-default-locale").text
+            == "Thursday 14 March 2024"
+        )
+    )
+    assert driver.find_element(By.ID, "moment-french").text == "jeudi 14 mars 2024"
+    driver.find_element(By.ID, "plain-link").click()
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "plain-date").text == "Thursday 14 March 2024"
+        )
+    )
+    AppHarness.expect(
+        lambda: driver.find_element(By.ID, "plain-relative").text.endswith("ago")
+    )
+    driver.find_element(By.ID, "home-link").click()
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-default-locale").text
+            == "Thursday 14 March 2024"
+        )
+    )
+    driver.refresh()
+    AppHarness.expect(
+        lambda: (
+            driver.find_element(By.ID, "moment-default-locale").text
+            == "Thursday 14 March 2024"
+        )
+    )

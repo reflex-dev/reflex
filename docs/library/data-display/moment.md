@@ -173,6 +173,18 @@ rx.vstack(
 )
 ```
 
+### Locales
+
+Each `rx.moment` defaults to English. Set `locale` on a component to render it
+in another language; other components and pages keep their own locale.
+
+```python demo
+rx.vstack(
+    rx.moment(MomentState.date_now, format="dddd D MMMM YYYY"),
+    rx.moment(MomentState.date_now, format="dddd D MMMM YYYY", locale="fr"),
+)
+```
+
 ### Timezones
 
 You can also set dates to display in a specific timezone:
