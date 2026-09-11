@@ -2061,6 +2061,7 @@ class cached_property:  # noqa: N801
 
         Raises:
             TypeError: If the class does not have __set_name__.
+            RuntimeError: If computing the property raises an AttributeError.
         """
         if self._attrname is None:
             msg = "Cannot use cached_property on a class without __set_name__."
@@ -2072,7 +2073,15 @@ class cached_property:  # noqa: N801
             unique_id = uuid.uuid4().int
             object.__setattr__(instance, cached_field_name, unique_id)
         if unique_id not in GLOBAL_CACHE:
-            GLOBAL_CACHE[unique_id] = self._func(instance)
+            try:
+                GLOBAL_CACHE[unique_id] = self._func(instance)
+            except AttributeError as err:
+                # CPython would swallow an AttributeError here and fall back to __getattr__
+                msg = (
+                    f"Computing cached property {type(instance).__name__}."
+                    f"{self._attrname} raised {type(err).__name__}: {err}"
+                )
+                raise RuntimeError(msg) from err
         return GLOBAL_CACHE[unique_id]
 
 

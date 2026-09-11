@@ -1,12 +1,25 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
+import dataclasses
 import threading
+import traceback
 import typing
+from collections.abc import Callable
 from typing import Any, Literal, TypeVar
 
 import pytest
+from reflex_base.utils import serializers
 from reflex_base.utils.types import get_field_type
-from reflex_base.vars.base import EvenMoreBasicBaseState, Var, _linearize_bases, field
+from reflex_base.vars.base import (
+    CachedVarOperation,
+    EvenMoreBasicBaseState,
+    LiteralVar,
+    Var,
+    VarData,
+    _linearize_bases,
+    cached_property_no_lock,
+    field,
+)
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
@@ -246,3 +259,155 @@ def test_linearize_bases_compares_by_identity() -> None:
             _linearize_bases((b, c)), created.__mro__[1:], strict=True
         )
     )
+
+
+_REAL_ERROR = "the real error"
+
+
+@dataclasses.dataclass(eq=False, frozen=True, slots=True)
+class _BrokenVarData(CachedVarOperation, Var):
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        return "broken"
+
+    @cached_property_no_lock
+    def _cached_get_all_var_data(self) -> VarData | None:
+        raise AttributeError(_REAL_ERROR)
+
+
+@dataclasses.dataclass(eq=False, frozen=True, slots=True)
+class _BrokenVarName(CachedVarOperation, Var):
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        raise AttributeError(_REAL_ERROR)
+
+
+@dataclasses.dataclass(eq=False, frozen=True, slots=True)
+class _BrokenObjectVarName(CachedVarOperation, ObjectVar):
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        raise AttributeError(_REAL_ERROR)
+
+
+@dataclasses.dataclass(eq=False, frozen=True, slots=True)
+class _OuterVarName(CachedVarOperation, Var):
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        return str(_BrokenVarName(_js_expr=""))
+
+
+@dataclasses.dataclass(eq=False, frozen=True, slots=True)
+class _ValueErrorVarName(CachedVarOperation, Var):
+    @cached_property_no_lock
+    def _cached_var_name(self) -> str:
+        raise ValueError(_REAL_ERROR)
+
+
+@pytest.mark.parametrize(
+    ("access", "property_name"),
+    [
+        pytest.param(
+            lambda: _BrokenVarData(_js_expr="")._get_all_var_data(),
+            "_BrokenVarData._cached_get_all_var_data",
+            id="get_all_var_data",
+        ),
+        pytest.param(
+            lambda: str(_BrokenVarName(_js_expr="")),
+            "_BrokenVarName._cached_var_name",
+            id="str",
+        ),
+        pytest.param(
+            lambda: _BrokenVarName(_js_expr="")._js_expr,
+            "_BrokenVarName._cached_var_name",
+            id="js_expr",
+        ),
+        pytest.param(
+            lambda: str(_BrokenObjectVarName(_js_expr="", _var_type=dict)),
+            "_BrokenObjectVarName._cached_var_name",
+            id="mapping_object_var",
+        ),
+        # the outer property sees a RuntimeError, so the error is wrapped once
+        pytest.param(
+            lambda: str(_OuterVarName(_js_expr="")),
+            "_BrokenVarName._cached_var_name",
+            id="nested",
+        ),
+    ],
+)
+def test_cached_property_attribute_error_is_chained(
+    access: Callable[[], object], property_name: str
+) -> None:
+    """An AttributeError raised while computing a cached property is not masked.
+
+    CPython would otherwise treat it as a failed lookup and fall back to
+    ``__getattr__``, which reported a bogus missing attribute or, for Mapping
+    vars, fabricated an item access.
+
+    Args:
+        access: Triggers the failing cached property.
+        property_name: The class and attribute name of the failing property.
+    """
+    with pytest.raises(RuntimeError) as exc_info:
+        access()
+    assert str(exc_info.value) == (
+        f"Computing cached property {property_name} raised AttributeError: {_REAL_ERROR}"
+    )
+    cause = exc_info.value.__cause__
+    assert type(cause) is AttributeError
+    assert str(cause) == _REAL_ERROR
+
+
+def test_cached_property_other_errors_propagate_unwrapped() -> None:
+    """Exceptions other than AttributeError keep their type and have no cause."""
+    with pytest.raises(ValueError, match=_REAL_ERROR) as exc_info:
+        str(_ValueErrorVarName(_js_expr=""))
+    assert exc_info.type is ValueError
+    assert exc_info.value.__cause__ is None
+
+
+def test_cached_property_failure_is_not_cached() -> None:
+    """A failed computation runs again on the next access, then caches."""
+    attempts = []
+
+    @dataclasses.dataclass(eq=False, frozen=True, slots=True)
+    class FlakyVar(CachedVarOperation, Var):
+        @cached_property_no_lock
+        def _cached_var_name(self) -> str:
+            attempts.append(None)
+            if len(attempts) == 1:
+                raise AttributeError(_REAL_ERROR)
+            return "recovered"
+
+    var = FlakyVar(_js_expr="")
+    with pytest.raises(RuntimeError):
+        str(var)
+    assert str(var) == "recovered"
+    assert str(var) == "recovered"
+    assert len(attempts) == 2
+
+
+def test_serializer_attribute_error_is_not_masked() -> None:
+    """A typo in a user serializer surfaces with the serializer's own frame."""
+
+    class Point:
+        pass
+
+    def serialize_point(value: Point) -> str:
+        return value.label  # pyright: ignore[reportAttributeAccessIssue]
+
+    serializers.serializer(serialize_point)
+    try:
+        with pytest.raises(
+            RuntimeError, match=r"LiteralArrayVar\._cached_var_name"
+        ) as exc_info:
+            str(LiteralVar.create([Point()]))
+    finally:
+        serializers.SERIALIZERS.pop(Point)
+        serializers.SERIALIZER_TYPES.pop(Point)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+    cause = exc_info.value.__cause__
+    assert isinstance(cause, AttributeError)
+    assert "'label'" in str(cause)
+    frames = traceback.extract_tb(cause.__traceback__)
+    assert frames[-1].name == serialize_point.__name__
