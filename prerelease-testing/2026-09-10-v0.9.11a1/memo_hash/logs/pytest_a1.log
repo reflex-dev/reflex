@@ -1,0 +1,42 @@
+───────────────────────────── Initializing appone ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [14141]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:45915 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:43639/
+
+.───────────────────────────── Initializing apptwo ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [14141]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:38093 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:35337/
+
+..app_one memo names: ['Bare_comp_775db053df72332b30b28ee1c3257a62_aa63a4fa', 'Button_button_cbd972e50e8780c27d10dc8c6567fe28_aa63a4fa', 'Card_aa63a4fa', 'DefaultOverlayComponents_04c36749', 'Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14', 'Foreach_comp_9932fd49c93b7ca9626399d8c7d300b9_aa63a4fa', 'MemoizedToastProvider_18b15038']
+app_two memo names: ['Bare_comp_89d2f0fe0a209040ce6ae636a26ba97b_964d7cb0', 'Button_button_306e95abec156580e5ee834611694911_964d7cb0', 'Card_964d7cb0', 'DefaultOverlayComponents_04c36749', 'Errorboundary_errorboundary_31a7648b7b25a2edcd5686e44d996c14', 'Foreach_comp_c959881e6084504c6e348815fc8c1a3e_964d7cb0', 'MemoizedToastProvider_18b15038']
+..INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14141]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [14141]
+
+5 passed in 8.32s

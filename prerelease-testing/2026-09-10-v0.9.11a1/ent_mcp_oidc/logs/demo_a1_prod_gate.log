@@ -1,0 +1,9 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_enterprise/utils.py:119)
+`reflex run --env prod` requires a paid Reflex subscription (one of pro, team, 
+enterprise). You are currently logged out. Run `reflex login` to authenticate. 
+See https://reflex.dev/pricing/ for more information.

@@ -1,0 +1,52 @@
+{
+ "label": "0910",
+ "steps": [
+  {
+   "step": "anon_token_rate_limit",
+   "codes": [
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    429,
+    429,
+    429,
+    429
+   ],
+   "last_body": "{\"error\":\"rate_limited\",\"error_description\":\"Too many token requests; retry later.\"}",
+   "retry_after": "39"
+  },
+  {
+   "step": "rest_event_path",
+   "authed": false,
+   "status": 404,
+   "body": "Not Found"
+  },
+  {
+   "step": "rest_event_path",
+   "authed": true,
+   "status": 404,
+   "body": "Not Found"
+  },
+  {
+   "step": "garbage_bearer",
+   "status": 401,
+   "body": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}"
+  },
+  {
+   "step": "sse_transport",
+   "ok": false,
+   "error": "TimeoutError: "
+  },
+  {
+   "step": "streamable_control",
+   "ok": true,
+   "server": "authapp MCP"
+  }
+ ]
+}

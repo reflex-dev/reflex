@@ -1,0 +1,388 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='authapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'plugins', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[AuthPlugin(), 
+MCPPlugin(), SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/ent_mcp_a1/bin/python3)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=5262
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9662
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 5262 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 5262 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 5262 is not in use.
+Debug: Checking if Backend port: 9662 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9662 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9662 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_components_radix/plugin.py:
+72)
+Debug: [timing] Compile pages: 0.28s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 32/31 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [11.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'autoprefixer@10.5.4', 
+'postcss@8.5.26', 'vite@8.2.2', 'postcss-import@17.0.0', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss-import@17.0.0
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [11.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'lucide-react@1.26.0', 'sonner@2.0.8', 
+'@react-router/node@8.3.1', 'react-error-boundary@6.1.2', 
+'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 'react@19.2.8', 
+'@radix-ui/themes@3.3.0', 'react-helmet@6.1.0', 'react-router@8.3.1', 
+'react-dom@19.2.8', 'isbot@5.2.2']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.8
+Debug: installed @react-router/node@8.3.1
+Debug: installed react-error-boundary@6.1.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed react@19.2.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-helmet@6.1.0
+Debug: installed react-router@8.3.1
+Debug: installed react-dom@19.2.8
+Debug: installed isbot@5.2.2
+Debug: 
+Debug: [11.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/ent_mcp_oidc/authapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/ent_mcp_oidc/authapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.06s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/apps/ent_mcp_oidc/authapp/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_mcp_oidc/authapp/assets', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_mcp_oidc/authapp/authapp', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_mcp_oidc/authapp/rxconfig.py']
+[INFO] Starting granian (main PID: 9557)
+[INFO] Listening at: http://0.0.0.0:9662
+[INFO] Spawning worker-1 with PID: 9587
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+Debug: BE Evaluating stateful page: index
+Debug:   ➜  Local:   http://localhost:5262/
+App running at: http://localhost:5262/
+Backend running at: http://0.0.0.0:9662
+Debug:   ➜  Network: http://192.0.2.2:5262/  eth0
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_enterprise/plugins/mcp.py:1
+552)
+Debug: MCPPlugin: using the in-memory OAuth store (no Redis configured). Tokens 
+do not survive restarts and are per-process; configure redis_url for 
+multi-worker deployments.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_enterprise/plugins/api_toke
+ns.py:114)
+Debug: Using the in-memory API token store (no Redis configured). Tokens do not 
+survive restarts and are per-process; configure redis_url for multi-worker 
+deployments.
+Debug: Registered lifespan task: _mcp_session_manager_lifespan
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[09/11/26 03:38:17] INFO     StreamableHTTP       streamable_http_manager.py:164
+                             session manager                                    
+                             started                                            
+Debug: Started lifespan task: _mcp_session_manager_lifespan as 
+asynccontextmanager
+[INFO] Started worker-1
+Debug: 3:39:14 AM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[09/11/26 03:43:11] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9670/.well-known/o                
+                             penid-configuration "HTTP/1.1 200                  
+                             OK"                                                
+[09/11/26 03:43:12] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9670/token                        
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9670/jwks                         
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9670/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     1cd28e7c-1ce1-4657-b411-9607dbc5b3ca  state.py:2140
+                             [txid=b67969a09f3844afa3dd009e8ed285a              
+                             3] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[09/11/26 03:43:48] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9670/token                        
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9670/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     73d60fc9-cbbc-41fc-8b7f-603ac46c45a0  state.py:2140
+                             [txid=b69237d6acda4aeb884a90289d1a30f              
+                             8] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+[09/11/26 03:43:58] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9670/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Warning: Attempting to send delta to disconnected client 
+'7f02d6d0-eea7-46c3-994d-aa42c307b574'
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListResourcesRequest                               
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListResourceTemplatesRequest                       
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[09/11/26 03:44:41] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9670/token                        
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9670/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     cb1f8b3c-3cf0-42f5-d663-79b1fcfae64f  state.py:2140
+                             [txid=3e19962297154bfda5e8afdebb114f6              
+                             6] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+[09/11/26 03:44:51] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9670/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Warning: Attempting to send delta to disconnected client 
+'b9b50283-bb7b-4973-ae8c-7f7c3a684e6a'
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListResourcesRequest                               
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListResourceTemplatesRequest                       
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+[09/11/26 03:44:52] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+[09/11/26 03:45:38] INFO     HTTP Request: POST                  _client.py:1740
+                             http://localhost:9670/token                        
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9670/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+                    INFO     d9fd7b4c-bde9-4304-9e35-32784384b7fd  state.py:2140
+                             [txid=167ab5a01a884793a6aeea7e82bb961              
+                             e] ─ Auth callback succeeded; user                 
+                             logged in, redirecting to                          
+                             '/agent-consent?…'.                                
+[09/11/26 03:45:48] INFO     HTTP Request: GET                   _client.py:1740
+                             http://localhost:9670/userinfo                     
+                             "HTTP/1.1 200 OK"                                  
+Warning: Attempting to send delta to disconnected client 
+'2eab6db2-c0b2-45c2-a044-ebd66b1774b8'
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListToolsRequest                                   
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListResourcesRequest                               
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ListResourceTemplatesRequest                       
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             CallToolRequest                                    
+                    INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Processing request of type            server.py:733
+                             ReadResourceRequest                                
+                    INFO     Terminating session: None    streamable_http.py:831
+[09/11/26 03:47:25] INFO     Terminating session: None    streamable_http.py:831
+                    INFO     Terminating session: None    streamable_http.py:831

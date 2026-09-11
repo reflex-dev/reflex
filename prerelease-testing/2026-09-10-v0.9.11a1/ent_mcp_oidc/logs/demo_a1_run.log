@@ -1,0 +1,342 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='oidc', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'app_name', 'telemetry_enabled', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']})], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/ent_mcp_a1/bin/python3)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='oidc', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'app_name', 'telemetry_enabled', 
+'plugins'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']})], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.12.3 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/ent_mcp_a1/bin/python3)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────────────────────── Initializing oidc ───────────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_base/.templates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/ent_mcp_oidc/oidcdemo/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 127657566960735413319504510064743283465.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.036 seconds
+Debug: Latest version of reflex: 0.9.10.post2
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized oidc. Install dependencies from `requirements.txt` with `uv
+pip install -r requirements.txt` (or your preferred installer) before running 
+`uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=5260
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9660
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 5260 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 5260 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 5260 is not in use.
+Debug: Checking if Backend port: 9660 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9660 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9660 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: register_auth_endpoints has been deprecated in version 
+0.9.1. Register rxe.AuthPlugin in rxe.Config(plugins=[...]) instead. It will be 
+completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_enterprise/auth/oidc/state.
+py:2701)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_components_radix/plugin.py:
+72)
+Debug: [timing] Compile pages: 0.33s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 31/30 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'postcss@8.5.26', 'autoprefixer@10.5.4', 
+'vite@8.2.2', 'postcss-import@17.0.0', '@tailwindcss/typography@0.5.20', 
+'@react-router/fs-routes@8.3.1', '@tailwindcss/postcss@4.3.0', 
+'@emotion/react@11.14.0', 'tailwindcss@4.3.0', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [13]
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.26
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss-import@17.0.0
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed tailwindcss@4.3.0
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: 146 packages installed [263.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-dom@19.2.8', 'isbot@5.2.2', 'lucide-react@1.26.0', 
+'sonner@2.0.8', 'socket.io-client@4.8.3', 'react-moment@2.0.2', 
+'@radix-ui/themes@3.3.0', 'react-error-boundary@6.1.2', 
+'universal-cookie@8.1.2', 'moment@2.30.1', 'react@19.2.8', 
+'@react-router/node@8.3.1', 'react-router@8.3.1', 'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-dom@19.2.8
+Debug: installed isbot@5.2.2
+Debug: installed lucide-react@1.26.0
+Debug: installed sonner@2.0.8
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-moment@2.0.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed moment@2.30.1
+Debug: installed react@19.2.8
+Debug: installed @react-router/node@8.3.1
+Debug: installed react-router@8.3.1
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: 100 packages installed [135.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/ent_mcp_oidc/oidcdemo/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/ent_mcp_oidc/oidcdemo/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.42s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/apps/ent_mcp_oidc/oidcdemo/oidc', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_mcp_oidc/oidcdemo/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_mcp_oidc/oidcdemo/assets', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/ent_mcp_oidc/oidcdemo/rxconfig.py']
+[INFO] Starting granian (main PID: 5604)
+[INFO] Listening at: http://0.0.0.0:9660
+[INFO] Spawning worker-1 with PID: 5642
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Fetching token from existing config...
+DeprecationWarning: register_auth_endpoints has been deprecated in version 
+0.9.1. Register rxe.AuthPlugin in rxe.Config(plugins=[...]) instead. It will be 
+completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent_mcp_a1/lib/python3.12/site-packages/reflex_enterprise/auth/oidc/state.
+py:2701)
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:5260/
+App running at: http://localhost:5260/
+Backend running at: http://0.0.0.0:9660
+Debug:   ➜  Network: http://192.0.2.2:5260/  eth0
+Debug: 3:22:28 AM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=8d1d943795114cdf836e25c5ebb7ca36] Processing login flow
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=8d1d943795114cdf836e25c5ebb7ca36] Building authorization request
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=04ccea1f96c043cbb8848df3416729fd] Processing auth callback
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=04ccea1f96c043cbb8848df3416729fd] ─ Building token request payload
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=04ccea1f96c043cbb8848df3416729fd] ─ Exchanging authorization code for tokens
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=04ccea1f96c043cbb8848df3416729fd] ─ Setting authentication tokens
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=04ccea1f96c043cbb8848df3416729fd] ── ID Token verification
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=04ccea1f96c043cbb8848df3416729fd] ── ID Token verification
+INFO    okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=04ccea1f96c043cbb8848df3416729fd] ─ Auth callback succeeded; user logged in, redirecting to 'http://localhost:5260/'.
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=04ccea1f96c043cbb8848df3416729fd] ID Token verification
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=04ccea1f96c043cbb8848df3416729fd] Fetching userinfo
+INFO    okta      : Userinfo: {'sub': 'alice', 'email': 'alice@example.test', 'name': 'User alice', 'preferred_username': 'alice'}, ID Token: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5LTEifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojk2NzAiLCJzdWIiOiJhbGljZSIsImF1ZCI6Im9rdGEtY2xpZW50IiwiaWF0IjoxNzg5MDk2OTU3LCJleHAiOjE3ODkxMDA1NTcsImVtYWlsIjoiYWxpY2VAZXhhbXBsZS50ZXN0IiwibmFtZSI6IlVzZXIgYWxpY2UiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhbGljZSIsImF0X2hhc2giOiJocXlxeUJXRk00c2VjOURzdThpN3JBIn0.EKjflgAUaY1LaKHIatzqjCg0tqtyk4aE7QjsFiPU_OLlMhgywJTrdmZxlc0ktFNf4DikYAc-WOVEYX92wZtZZFfe5RHpYNBHSxVtbXwXgQl4H_ETFy7AzEoEM1yYeUw4LUcVqAofuf4OhkQTynAqteEFDK3Kr7pd30c2Ixk0cSavWDoQ36yq8H0kcM-XxGua-3syWDpnkdz4hs19wvsvdD26ShgMfTYFmYcAJZu4DUoNyYm7fQW32gGZKnNMQfEftkcfaRVWvy293hY11YpHlV2SDrc7qQQkvcxJSfkuS0TK_Kz05VsMDHeF36IgCgNPGYuF1OQToDJ2siF5GiNhmg, Access Token: SRBkAOVb54M5RG79PZzNjGtWbCJxFyzx
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=7510cb280b584e1eb8d078d8f7a7d4a3] Processing login flow
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=7510cb280b584e1eb8d078d8f7a7d4a3] Building authorization request
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] Processing auth callback
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] ─ Building token request payload
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] ─ Exchanging authorization code for tokens
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] ─ Setting authentication tokens
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] ── ID Token verification
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] ── ID Token verification
+INFO    databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] ─ Auth callback succeeded; user logged in, redirecting to 'http://localhost:5260/'.
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] ID Token verification
+DEBUG   databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] Fetching userinfo
+INFO    databricks: 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=27cd2b1d6ed64159acb97fb0a6111831] Access token change callback hit refresh=False
+Debug: 3:22:49 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:22:49 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:22:49 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:22:49 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+DEBUG   okta      : 7cf4e340-3bd2-4c09-810f-111d767d1223 [txid=a88bceb6d98e4fad95f1fd226f6d9c4e] ID Token verification
+DEBUG   okta      : 7cf4e340-3bd2-4c09-810f-111d767d1223 [txid=a88bceb6d98e4fad95f1fd226f6d9c4e] Fetching userinfo
+DEBUG   databricks: 7cf4e340-3bd2-4c09-810f-111d767d1223 [txid=6b1404e4b6a24dce85177ff312c57ee7] ID Token verification
+DEBUG   databricks: 7cf4e340-3bd2-4c09-810f-111d767d1223 [txid=6b1404e4b6a24dce85177ff312c57ee7] Fetching userinfo
+INFO    databricks: 7cf4e340-3bd2-4c09-810f-111d767d1223 [txid=6b1404e4b6a24dce85177ff312c57ee7] Access token change callback hit refresh=False
+Debug: 3:22:56 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:22:56 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:22:56 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:22:56 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=e0ffada0973a44f9909b5732ad51f058] Processing logout flow (from_popup=False)
+INFO    okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=e0ffada0973a44f9909b5732ad51f058] User initiated logout (from_popup=False); clearing session.
+DEBUG   okta      : 0b2aa357-91d6-4e5c-8d0d-edfa0e6c8a10 [txid=e0ffada0973a44f9909b5732ad51f058] Reset auth cookies
+Debug: 3:23:00 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:23:00 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:23:00 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:23:00 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+DEBUG   databricks: 386c05f6-be8c-4e30-adf5-7e8668305d2d [txid=8fdad64c97154a5a8a9aa64567ceb97f] ID Token verification
+DEBUG   databricks: 386c05f6-be8c-4e30-adf5-7e8668305d2d [txid=8fdad64c97154a5a8a9aa64567ceb97f] Fetching userinfo
+INFO    databricks: 386c05f6-be8c-4e30-adf5-7e8668305d2d [txid=8fdad64c97154a5a8a9aa64567ceb97f] Access token change callback hit refresh=False
+Debug: 3:23:05 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:23:05 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:23:05 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: 3:23:05 AM [vite] (client) [console.warn] [react-moment] Invalid date 
+input: undefined Provide a valid date or use the `fallback` prop.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/message_listener/messageListener.j
+s, use 
+/external/reflex_enterprise/components/message_listener/messageListener.js.
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=ef78fc7dbec74188a24476c27248a319] Processing login flow
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=ef78fc7dbec74188a24476c27248a319] Building authorization request
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=b48e8099c6184f2ead205356db522aea] Processing auth callback
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=b48e8099c6184f2ead205356db522aea] ─ Building token request payload
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=b48e8099c6184f2ead205356db522aea] ─ Exchanging authorization code for tokens
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=b48e8099c6184f2ead205356db522aea] ─ Setting authentication tokens
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=b48e8099c6184f2ead205356db522aea] ── ID Token verification
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=b48e8099c6184f2ead205356db522aea] ── ID Token verification
+INFO    okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=b48e8099c6184f2ead205356db522aea] ─ Auth callback succeeded; user logged in, redirecting to 'http://localhost:5260/_reflex_oidc_okta/popup-login'.
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=b48e8099c6184f2ead205356db522aea] ID Token verification
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=b48e8099c6184f2ead205356db522aea] Fetching userinfo
+DEBUG   okta      : d5ed3c66-f6d7-49b2-b1d3-8cfa5921c097 [txid=f67a22361f8840a1a5c8aa0cc65e4c24] ID Token verification
+DEBUG   okta      : d5ed3c66-f6d7-49b2-b1d3-8cfa5921c097 [txid=f67a22361f8840a1a5c8aa0cc65e4c24] Fetching userinfo
+DEBUG   okta      : 0820d4b6-e401-49b5-8713-23f61f096a53 [txid=5bbb389d2828427c98fd3d6fcf09cbf7] ID Token verification
+DEBUG   okta      : 0820d4b6-e401-49b5-8713-23f61f096a53 [txid=5bbb389d2828427c98fd3d6fcf09cbf7] Fetching userinfo
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=64bd06cbdf3c460eac4e198f72d94b28] Processing login flow
+DEBUG   okta      : b8e246c8-05e8-480c-9e19-0fd3d5a45c3d [txid=64bd06cbdf3c460eac4e198f72d94b28] Posting auth message to opener
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!

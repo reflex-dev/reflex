@@ -8,10 +8,9 @@ or trivially small to fix. Everything else is filed and fixed after.
 packaging, hmr_runtime, hybrid_property, bg_rehydrate, event_hotpath, up_counter_todo_clock,
 up_upload_traversal_quiz, up_dataviz_local_lorem, ent_aggrid, ent_map_dnd_flow, ent_mcp_oidc,
 ent_mantine_highcharts_tickets, otel, components_bumps, orch_probes, config_assets_cli,
-frontend_path_ssr, telemetry_ctx — **every reflex-enterprise demo has now been run on both reflex
-versions, and every bug fix in the 0.9.11a1 changelog has been exercised**. The one claim never
-exercised is the #6947 memoization-naming-cache change, which has no user-visible surface; also not
-run, for want of budget: reverify_prev and four further reflex-examples apps.
+frontend_path_ssr, telemetry_ctx, memo_hash — **every reflex-enterprise demo has now been run on
+both reflex versions, and every claim in the 0.9.11a1 changelog has been exercised**. Not run, for
+want of budget: reverify_prev and four further reflex-examples apps.
 
 ## Bottom line so far
 
@@ -175,6 +174,9 @@ Recorded so the next campaign knows what was already exercised and can spend its
   left pointing at the wrong file on 0.9.10.post2. The concurrent-first-create half of the claim
   could not be provoked on this filesystem on either version.
 - **#7050** (CLI startup): ~2.3x faster on every subcommand (0.40 s → 0.17 s for `reflex --help`).
+- **#6947** (memoization naming caches): two `AppHarness` apps compiled in one pytest process, each
+  with a same-named `rx.memo` component and `rx.foreach` auto-memoization, emit distinct names and
+  neither app's output is disturbed by the other's compile.
 - **#6960** (telemetry context): `rxconfig.py` is re-imported on the `reflex-telemetry_0` thread on
   0.9.10.post2 and only ever on the main thread on 0.9.11a1, shown by a config file that logs its
   own importing thread.

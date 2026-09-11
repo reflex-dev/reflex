@@ -1,0 +1,95 @@
+{
+ "label": "a1",
+ "steps": [
+  {
+   "step": "iframe_loaded",
+   "frames": [
+    "http://localhost:5260/iframe",
+    "http://localhost:5260/"
+   ],
+   "inner": 1
+  },
+  {
+   "step": "after_login_click",
+   "popups": [
+    {
+     "urls": [
+      "http://localhost:5260/_reflex_oidc_okta/popup-login",
+      "http://localhost:5260/_reflex_oidc_okta/popup-login",
+      "http://localhost:5260/_reflex_oidc_okta/authorization-code/callback?code=gQ6IvFDOpX47pm9FnHda-g&state=ZHcLFP8X8PqUwQDlpj1HfsZW5iA1DxUXbZO0q2smMMaW5CzRRkjd4EGdA1tW82k50ZRsag2_4H7A90d8hYd12g",
+      "http://localhost:5260/_reflex_oidc_okta/authorization-code/callback?code=gQ6IvFDOpX47pm9FnHda-g&state=ZHcLFP8X8PqUwQDlpj1HfsZW5iA1DxUXbZO0q2smMMaW5CzRRkjd4EGdA1tW82k50ZRsag2_4H7A90d8hYd12g",
+      "http://localhost:5260/_reflex_oidc_okta/popup-login"
+     ],
+     "closed": true,
+     "size": null,
+     "closed_final": true
+    }
+   ]
+  },
+  {
+   "step": "opener_state",
+   "popups": [
+    {
+     "urls": [
+      "http://localhost:5260/_reflex_oidc_okta/popup-login",
+      "http://localhost:5260/_reflex_oidc_okta/popup-login",
+      "http://localhost:5260/_reflex_oidc_okta/authorization-code/callback?code=gQ6IvFDOpX47pm9FnHda-g&state=ZHcLFP8X8PqUwQDlpj1HfsZW5iA1DxUXbZO0q2smMMaW5CzRRkjd4EGdA1tW82k50ZRsag2_4H7A90d8hYd12g",
+      "http://localhost:5260/_reflex_oidc_okta/authorization-code/callback?code=gQ6IvFDOpX47pm9FnHda-g&state=ZHcLFP8X8PqUwQDlpj1HfsZW5iA1DxUXbZO0q2smMMaW5CzRRkjd4EGdA1tW82k50ZRsag2_4H7A90d8hYd12g",
+      "http://localhost:5260/_reflex_oidc_okta/popup-login"
+     ],
+     "closed": true,
+     "size": null,
+     "closed_final": true
+    }
+   ],
+   "inner_logged_in": true,
+   "inner_text": "OIDC Demo\nOkta User Info\n\nsub: alice\n\nemail: alice@example.test\n\nname: User alice\n\npreferred_username: alice\n\nLog AT\nLogout\nLogin with Databricks\nDo Nothing\nCookie Sync",
+   "outer_url": "http://localhost:5260/iframe"
+  }
+ ],
+ "popups": [
+  {
+   "urls": [
+    "http://localhost:5260/_reflex_oidc_okta/popup-login",
+    "http://localhost:5260/_reflex_oidc_okta/popup-login",
+    "http://localhost:5260/_reflex_oidc_okta/authorization-code/callback?code=gQ6IvFDOpX47pm9FnHda-g&state=ZHcLFP8X8PqUwQDlpj1HfsZW5iA1DxUXbZO0q2smMMaW5CzRRkjd4EGdA1tW82k50ZRsag2_4H7A90d8hYd12g",
+    "http://localhost:5260/_reflex_oidc_okta/authorization-code/callback?code=gQ6IvFDOpX47pm9FnHda-g&state=ZHcLFP8X8PqUwQDlpj1HfsZW5iA1DxUXbZO0q2smMMaW5CzRRkjd4EGdA1tW82k50ZRsag2_4H7A90d8hYd12g",
+    "http://localhost:5260/_reflex_oidc_okta/popup-login"
+   ],
+   "closed": true,
+   "size": null,
+   "closed_final": true
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ ],
+ "pageerrors": []
+}

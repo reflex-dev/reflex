@@ -1,0 +1,74 @@
+fake IdP on http://localhost:9670 expires_in=70
+03:27:50 GET /.well-known/openid-configuration
+03:27:50 GET /authorize {"client_id": "databricks-client", "redirect_uri": "http://localhost:5260/_reflex_oidc_databricks/authorization-code/callback", "scope": "all-apis offline_access openid email profile", "state": "eSN_QRS8T0v1lwn9VkXgBg6H55rVBqgahbaAGdfQG_mw-3S5SdHA7HbJG-Ol6M0BhJndOQxpxVY75ZM2f8Vncw", "code_challenge": "ETd8v63GpkK3ZLjfj7xMiO3wSrTFY2-Sg_l1eyKjyq8", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:27:50 POST /token grant=authorization_code client=databricks-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:27:50 PKCE OK (databricks-client)
+03:27:50 GET /jwks
+03:27:50 GET /userinfo valid=True
+03:28:52 POST /token grant=refresh_token client=databricks-client keys=['grant_type', 'refresh_token', 'scope']
+03:28:52 REFRESH OK (databricks-client) scope='all-apis offline_access openid email profile'
+03:28:52 GET /userinfo valid=True
+03:30:16 POST /token grant=refresh_token client=databricks-client keys=['grant_type', 'refresh_token', 'scope']
+03:30:16 REFRESH OK (databricks-client) scope='all-apis offline_access openid email profile'
+03:30:16 GET /userinfo valid=True
+03:31:23 POST /token grant=refresh_token client=databricks-client keys=['grant_type', 'refresh_token', 'scope']
+03:31:23 REFRESH OK (databricks-client) scope='all-apis offline_access openid email profile'
+03:31:23 GET /userinfo valid=True
+03:34:35 GET /.well-known/openid-configuration
+03:34:35 GET /authorize {"client_id": "okta-client", "redirect_uri": "http://localhost:5261/_reflex_oidc_okta/authorization-code/callback", "scope": "openid email profile", "state": "IaIjp-OSfMdIBf5rVdrGRLmwu_1-FpxqoVqxCdF8uMyKpInjXNtE2-qO_Y4JY5vPkZRh4_qHTd-gCeT6X4mxIw", "code_challenge": "z_rQ3Mx6rrIsUQjl6DsznInIB6dWdjsmRIz449NBW1A", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:34:35 POST /token grant=authorization_code client=okta-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:34:35 PKCE OK (okta-client)
+03:34:35 GET /jwks
+03:34:35 GET /userinfo valid=True
+03:34:47 GET /authorize {"client_id": "databricks-client", "redirect_uri": "http://localhost:5261/_reflex_oidc_databricks/authorization-code/callback", "scope": "all-apis offline_access openid email profile", "state": "Cd-Y3hnwg5nv1sv8t5FJHGIHf91Ra92ksRj8UEDvjQw0KWfnaXH1IqDfN63A9gq8KmGnqaBY1_BaybP8XjkkHQ", "code_challenge": "SH3JjMVF6aWf6rnGZvpNt_CWKqI5PPpiwblkbLe1zTM", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:34:47 POST /token grant=authorization_code client=databricks-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:34:47 PKCE OK (databricks-client)
+03:34:47 GET /userinfo valid=True
+03:34:55 GET /userinfo valid=True
+03:34:55 GET /userinfo valid=True
+03:34:58 GET /logout {"state": "omTtjBa6Kl1xXfMLcIdSz3eEBAU_TCqckeTEn9609fSqvuppFf3UVIVIP53YXR5oMrQI1RsOQxIfIJoD-gU4Jw", "id_token_hint": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5LTEifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojk2NzAiLCJzdWIiOiJhbGljZSIsImF1ZCI6Im9rdGEtY2xpZW50IiwiaWF0IjoxNzg5MDk3Njc1LCJleHAiOjE3ODkwOTc5NzUsImVtYWlsIjoiYWxpY2VAZXhhbXBsZS50ZXN0IiwibmFtZSI6IlVzZXIgYWxpY2UiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhbGljZSIsImF0X2hhc2giOiJRMEt0S2g1T0V3ME9RUEhrOTlXZHV3In0.l4ooWvEm1MDu9iX-l_nMXRoj3Krz5QcENcpJ35WFOP8ofo6g6MF0YU4GXIu9c6AgKGQfbiWKC9dQW1KKJI4mgos72oRMBBlFCSK2ObrXIIivLtr-BADRSETp2U8ISoxzPVVY8rgvU8pz8cLmz9zBXfa8fgjy5yG4sguG3RpWLOJk16sPGd4rncRnPwRohAhioL4eqMwfORJr_FXLUCj6cyDvfFWnZAaTqv6rJPhtA1DFQKWAlpcD-ovZor3_57QaaCRM4eqsI0MiBttEf1XrtiNL7bScUw4qMvnO31qyjkxdBCv_WTXoQJRdmCyK6UZ4484FNC7LJu0aCUViTUHSlA", "post_logout_redirect_uri": "http://localhost:5261/"}
+03:35:03 GET /userinfo valid=True
+03:43:11 GET /.well-known/openid-configuration
+03:43:11 GET /authorize {"client_id": "test-client", "redirect_uri": "http://localhost:5262/callback", "scope": "openid email profile", "state": "OHaIAA1vQ_5wGG7B1dFXhLW2H55BHHwvGeXiKLgHYF4Y9_fSpJdSevxME01PEcPPISHoCwBw3AchMIUUXGEdTg", "code_challenge": "be68oMs-vbB0UAHbzdbQMzGstiRv1vviOX6nby8less", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:43:12 POST /token grant=authorization_code client=test-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:43:12 PKCE OK (test-client)
+03:43:12 GET /jwks
+03:43:12 GET /userinfo valid=True
+03:43:47 GET /authorize {"client_id": "test-client", "redirect_uri": "http://localhost:5262/callback", "scope": "openid email profile", "state": "y--Q8SLbgjBCeY7G5Kw_-E1G98siVp7CkJcjnUhEU0jiK4vrA0HttU1ch39wNPUkbd1lrXidY2YDPIBcAf_i8Q", "code_challenge": "jk9sDAARSIRUdjjQ6nURoGUOXj5UsB7jHxH6-14ow6g", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:43:48 POST /token grant=authorization_code client=test-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:43:48 PKCE OK (test-client)
+03:43:48 GET /userinfo valid=True
+03:43:58 GET /userinfo valid=True
+03:44:41 GET /authorize {"client_id": "test-client", "redirect_uri": "http://localhost:5262/callback", "scope": "openid email profile", "state": "SwKdkMHxfcHVtn9rCbbI1GyMumrjmqMi0MtHR443yw8lc6jRU19PWwndP91YsGZEmG_5Mb2-z85xnDdu-7SmsA", "code_challenge": "DJkMHJF8yzW0TXdnmXOf_xLQEJStbNnKd24CegCBryU", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:44:41 POST /token grant=authorization_code client=test-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:44:41 PKCE OK (test-client)
+03:44:41 GET /userinfo valid=True
+03:44:51 GET /userinfo valid=True
+03:45:38 GET /authorize {"client_id": "test-client", "redirect_uri": "http://localhost:5262/callback", "scope": "openid email profile", "state": "sXAsgNMgPk4wCFLuYXeHKdXpwQiZDmPdmwOdxy10h1Kwc-Oc2qeGv1TD4hI08LLwKyWlYPbiZ6KA23i76FmFgg", "code_challenge": "mAygg3WPSVinZJTe6I47b9qkrR5R3WwC3k8yJw3vaJs", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:45:38 POST /token grant=authorization_code client=test-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:45:38 PKCE OK (test-client)
+03:45:38 GET /userinfo valid=True
+03:45:48 GET /userinfo valid=True
+03:49:50 GET /.well-known/openid-configuration
+03:49:50 GET /authorize {"client_id": "test-client", "redirect_uri": "http://localhost:5263/callback", "scope": "openid email profile", "state": "J8B_ykSS7JruyOw1Sf-YJNcXTuD0A0ujypZfg782hfbz-Vfq8TIb6xDSOnUNT7uETBsomdsT62SvQDk8ZDxjuw", "code_challenge": "s7Y70Qlm50jUPk2EeySMie34_2cowpO_U1caTmn-WsU", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:49:50 POST /token grant=authorization_code client=test-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:49:50 PKCE OK (test-client)
+03:49:50 GET /jwks
+03:49:50 GET /userinfo valid=True
+03:50:00 GET /userinfo valid=True
+03:54:29 GET /.well-known/openid-configuration
+03:54:29 GET /authorize {"client_id": "okta-client", "redirect_uri": "http://localhost:5260/_reflex_oidc_okta/authorization-code/callback", "scope": "openid email profile", "state": "e3As6Va__nOq1x5sDiIFkT5VGSH-xE-Qdm3av0R5CCk5HHEuVwmh4kFwiXqLe1ow9s9KUwJAKGf1WvODRGqIFw", "code_challenge": "vC6bNcjjijj-ggYg21AlgiPmtgIZsLv6gZ1-_wTmP0I", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:54:29 POST /token grant=authorization_code client=okta-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:54:29 PKCE OK (okta-client)
+03:54:29 GET /jwks
+03:54:29 GET /userinfo valid=True
+03:54:29 GET /userinfo valid=True
+03:54:29 GET /userinfo valid=True
+03:57:24 GET /.well-known/openid-configuration
+03:57:24 GET /authorize {"client_id": "okta-client", "redirect_uri": "http://localhost:5261/_reflex_oidc_okta/authorization-code/callback", "scope": "openid email profile", "state": "2S85u0z-FZtQp9DHfu-f2okz-PUtFJ5SonjBc1Lf8UU05hizDzY_oVDsZC5KM1sdkj8Q36Vh9yz6fbRFViTxgQ", "code_challenge": "3bSCdyKyp9aRBPLtRxgI2YHJ3iUn6cjqKmZuiPivkhY", "code_challenge_method": "S256", "response_type": "code", "response_mode": "query"}
+03:57:24 POST /token grant=authorization_code client=okta-client keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']
+03:57:24 PKCE OK (okta-client)
+03:57:24 GET /jwks
+03:57:24 GET /userinfo valid=True
+03:57:24 GET /userinfo valid=True
+03:57:24 GET /userinfo valid=True
