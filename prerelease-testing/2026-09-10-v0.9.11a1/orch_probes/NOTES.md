@@ -208,3 +208,28 @@ Consequence for this release: the changelog's AdminDash line is not observable e
 `engine` → `session_provider` change is necessary but not sufficient — `/admin` is 500 either way.
 Logs: `logs/admin_run_new.tail.log` (1.0.1), `admin_run_100.tail.log`, `admin_run_old.tail.log`,
 `admin_run_base.tail.log` (0.9.10.post2).
+
+## `reflex[testing]` + AppHarness end to end (#6974 / #7008) — VERIFIED
+
+```
+uv venv envs/harness --python 3.11
+uv pip install --python envs/harness/bin/python --prerelease=allow 'reflex[testing]==0.9.11a1' pytest
+cd <dir with test_harness.py> && envs/harness/bin/pytest -q test_harness.py
+```
+
+`test_harness.py` (copied here) is written the way a downstream project would: a module-scoped
+`AppHarness.create(root=tmp_path_factory.mktemp(...), app_source=...)` fixture, a real app with a
+state and an event handler, and four checks — the frontend serves 200, the backend and
+`app_instance`/`token_manager` are live, the app's state round-trips through
+`app.state_manager.modify_state(...)`, and the served document is real HTML. **4 passed in 4.5 s.**
+
+Together with the bare-install check above (an `ImportError` naming `pip install 'reflex[testing]'`),
+the changelog claim is fully verified: `reflex.testing` imports without test-only dependencies, the
+extra installs what `AppHarness` needs, and the harness runs an app end to end.
+
+Two API-friction notes found while writing the test (not defects, recorded for docs):
+- `AppHarness` has no `modify_state`; state access goes through `harness.app_instance.state_manager`.
+- `rx.BaseStateToken` is keyword-only (`ident=`, `cls=`); a positional call raises
+  `TypeError: StateToken.__init__() takes 1 positional argument but 3 were given`, which does not
+  name the expected keywords.
+- `StateManager.state` is deprecated with a clear pointer to `reflex.state.State`.

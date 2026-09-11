@@ -24,6 +24,12 @@ Playwright, outbound via an egress proxy, redis-server available.
 
 ## Executive summary (interim)
 
+Verified changelog claims (not findings): `reflex[testing]` + `AppHarness` runs an app end to end
+(4/4 pytest checks) while a bare install raises an `ImportError` naming the extra (#6974/#7008);
+`hybrid_property` class-level typing resolves to the frontend var type on the repo-pinned pyright
+(#6812, see FINDING-005 for the newer-pyright caveat); `reflex_base.otel` imports nothing from
+opentelemetry until the instrumentor is installed (#6227).
+
 What works: every headline changelog item exercised so far behaves as described — the hot-update
 runtime fix (#7071) reproduces exactly the PR's verification table against a failing 0.9.10.post2
 baseline; the Safari cache-bust streaming fix (#7048); the dev-server knobs (#7021); the whole
