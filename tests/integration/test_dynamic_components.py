@@ -16,7 +16,6 @@ def DynamicComponents():
     import reflex as rx
     from reflex.components.dynamic import bundle_library
 
-    bundle_library("lucide-react")
     bundle_library(rx.text())
     bundle_library(rx.icon("banana"))
 
@@ -113,10 +112,10 @@ def DynamicComponents():
             """Render an explicitly bundled icon only after activation.
 
             Returns:
-                A delayed counter with working event handlers, or an empty fragment.
+                A delayed counter with working event handlers, or an initial icon.
             """
             if not self.activated:
-                return rx.fragment()
+                return rx.icon("tag", color="red", id="initial-icon")
             return rx.hstack(
                 rx.icon("banana", color="green", id="delayed-icon"),
                 rx.button(
@@ -254,6 +253,7 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
     )
 
     assert not driver.find_elements(By.ID, "delayed-icon")
+    assert driver.find_element(By.ID, "initial-icon")
     driver.find_element(By.ID, "activate").click()
     AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "delayed-icon")
@@ -264,6 +264,9 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
     AppHarness.expect(lambda: driver.find_element(By.ID, "delayed-count").text == "0")
     driver.find_element(By.ID, "activate").click()
     AppHarness.expect(lambda: not driver.find_elements(By.ID, "delayed-icon"))
+    AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "initial-icon")
+    )
     driver.find_element(By.ID, "activate").click()
     AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "delayed-icon")

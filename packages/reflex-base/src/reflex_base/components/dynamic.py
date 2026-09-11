@@ -7,6 +7,7 @@ from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import console, imports
 from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
 from reflex_base.utils.format import format_library_name
+from reflex_base.utils.imports import ParsedImportDict
 from reflex_base.utils.serializers import serializer
 from reflex_base.vars import Var, get_unique_variable_name
 from reflex_base.vars.base import VarData, transform
@@ -90,7 +91,8 @@ def bundle_library(component: Union["Component", str]) -> None:
     Explicit app registrations survive compilation, including registrations in
     modules first imported while evaluating a page. Passing a component bundles
     its rendered library imports, including subpaths, even when it is absent
-    from the initial state.
+    from the initial state. Components present in the initial state have their
+    imports bundled automatically.
 
     Args:
         component: A library name string or a prototype component instance to bundle.
@@ -115,6 +117,18 @@ def bundle_library(component: Union["Component", str]) -> None:
     if not component_imports:
         msg = "Component must have a library to bundle."
         raise DynamicComponentMissingLibraryError(msg)
+    _bundle_imports(component_imports, explicit=True)
+
+
+def _bundle_imports(
+    component_imports: ParsedImportDict, *, explicit: bool = False
+) -> None:
+    """Register the rendered module paths in an import dictionary.
+
+    Args:
+        component_imports: The component's library imports.
+        explicit: Whether the registrations should survive compiler resets.
+    """
     for library, fields in component_imports.items():
         if not library:
             continue
@@ -122,7 +136,7 @@ def bundle_library(component: Union["Component", str]) -> None:
         for field in fields:
             if field.render:
                 subpath = field.package_path if field.package_path != "/" else ""
-                _bundle_library(library + subpath, explicit=True)
+                _bundle_library(library + subpath, explicit=explicit)
 
 
 def _bundle_library(library: str, *, explicit: bool = False) -> None:
@@ -184,7 +198,6 @@ def load_dynamic_serializer():
         compiler._apply_common_imports(component_imports)
 
         imports = {}
-        bundled_subpaths: set[str] = set()
         for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
             root_is_bundled = formatted_lib_name in libs_in_window
@@ -200,12 +213,14 @@ def load_dynamic_serializer():
                 imports.setdefault(lib if is_bundled else fallback, []).append(name)
                 if subpath and is_bundled:
                     _bundle_library(import_path)
-                    bundled_subpaths.add(import_path)
 
         module_imports = []
         bundled_declarations = []
         for module in utils.compile_imports(imports):
-            if module["lib"] not in bundled_subpaths:
+            if module["lib"] not in libs_in_window and not module["lib"].startswith((
+                "$/",
+                "/",
+            )):
                 module_imports.append(module)
                 continue
 
@@ -233,28 +248,7 @@ def load_dynamic_serializer():
             memoized_code="\n".join(bundled_declarations),
         ).splitlines()
 
-        # Rewrite imports from `/` to destructure from window
         for ix, line in enumerate(module_code_lines[:]):
-            if line.startswith("import "):
-                if 'from "$/' in line or 'from "/' in line:
-                    module_code_lines[ix] = (
-                        line
-                        .replace("import ", "const ", 1)
-                        .replace(" as ", ": ")
-                        .replace(" from ", " = window['__reflex'][", 1)
-                        + "]"
-                    )
-                else:
-                    for lib in libs_in_window:
-                        if f'from "{lib}"' in line:
-                            module_code_lines[ix] = (
-                                line
-                                .replace("import ", "const ", 1)
-                                .replace(
-                                    f' from "{lib}"', f" = window.__reflex['{lib}']", 1
-                                )
-                                .replace(" as ", ": ")
-                            )
             if line.startswith("export function"):
                 module_code_lines[ix] = line.replace(
                     "export function", "export default function", 1

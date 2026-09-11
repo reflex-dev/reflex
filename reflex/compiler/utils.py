@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 
 from reflex_base import constants
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
+from reflex_base.components.dynamic import _bundle_imports
 from reflex_base.components.memo import (
     DEFAULT_MEMO_WRAPPER,
     MemoComponentDefinition,
@@ -27,7 +28,7 @@ from reflex_base.components.memo import (
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import format, imports, memo_paths
+from reflex_base.utils import format, imports, memo_paths, serializers
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -233,6 +234,42 @@ def compile_state(state: type[BaseState]) -> dict:
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
     return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
+
+
+def _compile_initial_state(
+    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
+) -> tuple[dict, str]:
+    """Serialize initial state while discovering its dynamic component imports.
+
+    Args:
+        state: The app state class.
+        component_imports: Optional accumulator for frontend package installation.
+
+    Returns:
+        The initial state dictionary and its serialized JSON.
+    """
+
+    def serialize_initial_value(value: Any) -> Any:
+        """Register a component's imports before serializing its initial value.
+
+        Args:
+            value: An initial state value requiring a custom serializer.
+
+        Returns:
+            The serialized value.
+        """
+        if isinstance(value, Component):
+            value_imports = value._get_all_imports()
+            _bundle_imports(value_imports)
+            if component_imports is not None:
+                for library, fields in value_imports.items():
+                    component_imports.setdefault(library, []).extend(fields)
+        return serializers.serialize(value)
+
+    initial_state = compile_state(state)
+    return initial_state, format.json_dumps(
+        initial_state, default=serialize_initial_value
+    )
 
 
 def _compile_client_storage_field(

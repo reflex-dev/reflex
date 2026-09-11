@@ -101,6 +101,147 @@ def test_explicit_subpath_registration_does_not_require_package_root(reactive: b
     assert "cdn.jsdelivr.net/npm/lucide-react" not in code
 
 
+@pytest.mark.parametrize("lazy", [False, True])
+def test_initial_state_components_bundle_their_imports(lazy: bool, mocker):
+    """Discover initial component imports without registering a package root.
+
+    Args:
+        lazy: Whether optional bundled libraries load lazily.
+        mocker: Fixture for configuring library loading.
+    """
+    with RegistrationContext() as context:
+
+        class InitialOnlyComponent(rx.Component):
+            """A default export from a package used only by initial state."""
+
+            library = "initial-only-library@1.0.0"
+            lib_dependencies = ["initial-only-helper@1.0.0"]
+            tag = "InitialWidget"
+            is_default = True
+
+        class InitialComponentState(rx.State):
+            """Initial dynamic components with imports absent from the page tree."""
+
+            component: rx.Component = rx.icon("lamp")
+            widget: rx.Component = InitialOnlyComponent.create()
+
+            @rx.var
+            def counter_ui(self) -> rx.Component:
+                """Return an icon nested in a dynamic component tree.
+
+                Returns:
+                    The initial counter placeholder.
+                """
+                return rx.hstack(rx.icon("tag", color="red"))
+
+            @rx.var
+            async def nested_components(self) -> list[rx.Component]:
+                """Return a component nested in an asynchronously resolved value.
+
+                Returns:
+                    An initial component list.
+                """
+                return [rx.icon("book")]
+
+        mocker.patch(
+            "reflex_base.config._get_config",
+            return_value=rx.Config(
+                app_name="initial_components", frontend_lazy_bundled_libraries=lazy
+            ),
+        )
+        bundle_library(rx.text())
+        bundle_library(rx.icon("apple"))
+        component_imports: ParsedImportDict = {}
+        _, context_code = compiler.compile_contexts(
+            InitialComponentState, None, component_imports=component_imports
+        )
+        _, root_code = compiler.compile_app_root(rx.el.div())
+        lucide_imports = next(
+            fields
+            for library, fields in component_imports.items()
+            if library.startswith("lucide-react@")
+        )
+        for icon in ("tag", "lamp", "book"):
+            subpath = f"lucide-react/dist/esm/icons/{icon}.mjs"
+            assert subpath in context.bundled_libraries
+            assert f"window.__reflex['{subpath}'].default" in context_code
+            assert (
+                f'() => import("{subpath}")' if lazy else f'from "{subpath}";'
+            ) in root_code
+            assert subpath not in context._explicit_bundled_libraries
+            assert any(
+                field.package_path == f"/dist/esm/icons/{icon}.mjs" and field.install
+                for field in lucide_imports
+            )
+        assert "cdn.jsdelivr.net/npm/lucide-react" not in context_code
+        assert (
+            "const InitialWidget = window.__reflex['initial-only-library'].default"
+            in context_code
+        )
+        assert component_imports["initial-only-library@1.0.0"][0].install
+        assert component_imports["initial-only-helper@1.0.0"][0].install
+        assert "initial-only-helper" not in context.bundled_libraries
+        assert "lucide-react" not in context.bundled_libraries
+        _reset_bundled_libraries_for_compile()
+        assert "lucide-react/dist/esm/icons/apple.mjs" in context.bundled_libraries
+        assert "lucide-react/dist/esm/icons/tag.mjs" not in context.bundled_libraries
+
+
+@pytest.mark.parametrize("with_backend_dir", [False, True])
+def test_backend_startup_discovers_initial_component_imports(
+    with_backend_dir: bool, tmp_path: Path, monkeypatch, mocker
+):
+    """Reconstruct initial component bundles in a fresh backend registration context.
+
+    Args:
+        with_backend_dir: Whether startup uses the saved stateful-page marker.
+        tmp_path: Directory for backend metadata.
+        monkeypatch: Fixture for changing the application directory.
+        mocker: Fixture for selecting backend-only startup.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext() as context:
+
+        class BackendComponentState(rx.State):
+            """A backend initialized without frontend compilation."""
+
+            @rx.var
+            def initial_icon(self) -> rx.Component:
+                """Return the icon that must already be bundled in the frontend.
+
+                Returns:
+                    The initial tag icon.
+                """
+                return rx.icon("tag")
+
+        mocker.patch(
+            "reflex_base.config._get_config",
+            return_value=rx.Config(app_name="backend_components", plugins=[]),
+        )
+        bundle_library(rx.icon("apple"))
+        app = rx.App()
+        app.add_page(
+            lambda: rx.el.div(BackendComponentState.initial_icon), route="index"
+        )
+        mocker.patch.object(app, "_should_compile", return_value=False)
+        backend_dir = tmp_path / "backend"
+        mocker.patch.object(
+            compiler.prerequisites, "get_backend_dir", return_value=backend_dir
+        )
+        if with_backend_dir:
+            backend_dir.mkdir()
+            (backend_dir / rx.constants.Dirs.STATEFUL_PAGES).write_text('["index"]')
+        compile_root = mocker.patch.object(compiler, "compile_app_root")
+        assert "lucide-react/dist/esm/icons/tag.mjs" not in context.bundled_libraries
+        assert compiler.compile_app(app, use_rich=False) is False
+        code = serializers.serialize(rx.icon("tag"))
+        assert isinstance(code, str)
+        assert "window.__reflex['lucide-react/dist/esm/icons/tag.mjs'].default" in code
+        assert "cdn.jsdelivr.net/npm/lucide-react" not in code
+        assert "lucide-react" not in context.bundled_libraries
+        compile_root.assert_not_called()
+
+
 @pytest.mark.parametrize("library", ["test-library@1.0.0", "@test/library@1.0.0"])
 @pytest.mark.parametrize("is_default", [False, True])
 def test_component_registration_uses_import_var_subpath(library: str, is_default: bool):
@@ -239,9 +380,9 @@ def test_dynamic_component_codegen_wires_event_handlers() -> None:
     assert "const {Fragment,useEffect}" in code
     # ``addEvents`` is now a module-level callable in ``$/utils/context``;
     # no more ``useContext(EventLoopContext)`` hoist needed for dispatch.
-    assert "const {addEvents} = window['__reflex'][\"$/utils/context\"]" in code
+    assert "const {addEvents} = window.__reflex['$/utils/context']" in code
     assert (
-        "const {ReflexEvent,applyEventActions,pyOr} = window['__reflex'][\"$/utils/state\"]"
+        "const {ReflexEvent,applyEventActions,pyOr} = window.__reflex['$/utils/state']"
         in code
     )
     assert "useContext(EventLoopContext)" not in code
@@ -305,9 +446,9 @@ def test_dynamic_component_codegen_wires_state_var_counter_events() -> None:
     assert 'justify:"center"' in code
     assert 'gap:"5"' in code
     assert "const {Fragment,useEffect}" in code
-    assert "const {addEvents} = window['__reflex'][\"$/utils/context\"]" in code
+    assert "const {addEvents} = window.__reflex['$/utils/context']" in code
     assert (
-        "const {ReflexEvent,applyEventActions,pyOr} = window['__reflex'][\"$/utils/state\"]"
+        "const {ReflexEvent,applyEventActions,pyOr} = window.__reflex['$/utils/state']"
         in code
     )
     assert "useContext(EventLoopContext)" not in code

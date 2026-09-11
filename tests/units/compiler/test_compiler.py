@@ -860,6 +860,7 @@ def test_register_plugin_routes_runs_once_per_app():
 
 
 @pytest.mark.parametrize("with_stateful_marker", [False, True])
+@pytest.mark.usefixtures("clean_registration_context")
 def test_compile_registers_plugin_routes_on_backend_early_return(
     tmp_path: Path,
     mocker: MockerFixture,

@@ -36,7 +36,11 @@ from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
-from reflex_base.utils.imports import ABSOLUTE_IMPORT_PREFIXES, ImportVar
+from reflex_base.utils.imports import (
+    ABSOLUTE_IMPORT_PREFIXES,
+    ImportVar,
+    ParsedImportDict,
+)
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
@@ -237,12 +241,18 @@ def _resolve_default_color_mode(theme: Component | None) -> str:
     return get_config().default_color_mode
 
 
-def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
+def _compile_contexts(
+    state: type[BaseState] | None,
+    theme: Component | None,
+    *,
+    component_imports: ParsedImportDict | None = None,
+) -> str:
     """Compile the initial state and contexts.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        component_imports: Optional accumulator for initial component dependencies.
 
     Returns:
         The compiled context file.
@@ -251,10 +261,16 @@ def _compile_contexts(state: type[BaseState] | None, theme: Component | None) ->
     disable_react_owner_stacks = (
         not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
     )
+    initial_state, initial_state_json = (
+        utils._compile_initial_state(state, component_imports=component_imports)
+        if state
+        else (None, None)
+    )
 
     return (
         templates.context_template(
-            initial_state=utils.compile_state(state),
+            initial_state=initial_state,
+            initial_state_json=initial_state_json,
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
@@ -747,12 +763,15 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
+    *,
+    component_imports: ParsedImportDict | None = None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        component_imports: Optional accumulator for initial component dependencies.
 
     Returns:
         The path and code of the compiled context.
@@ -760,7 +779,9 @@ def compile_contexts(
     # Get the path for the output file.
     output_path = utils.get_context_path()
 
-    return output_path, _compile_contexts(state, theme)
+    return output_path, _compile_contexts(
+        state, theme, component_imports=component_imports
+    )
 
 
 def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
@@ -1219,6 +1240,8 @@ def compile_app(
             for route in stateful_pages:
                 logger.debug(f"BE Evaluating stateful page: {route}")
                 app._compile_page(route, save_page=False)
+        if app._state is not None:
+            utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
 
@@ -1237,6 +1260,8 @@ def compile_app(
                 app._compile_page(route, save_page=False)
 
         app._write_stateful_pages_marker()
+        if app._state is not None:
+            utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
 
@@ -1439,7 +1464,11 @@ def compile_app(
         progress.advance(task)
 
     compile_results.append(
-        compile_contexts(app._state, radix_themes_plugin.get_theme())
+        compile_contexts(
+            app._state,
+            radix_themes_plugin.get_theme(),
+            component_imports=all_imports,
+        )
     )
     progress.advance(task)
 
