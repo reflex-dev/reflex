@@ -80,6 +80,22 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     assert seen["value"] == "True"
 
 
+def test_frontend_env_defaults_mimalloc_and_no_color():
+    """The toolchain env disables eager arena commit unless the user set it."""
+    env = exec_utils.frontend_env({"PATH": "/bin"})
+    assert env == {
+        "PATH": "/bin",
+        "MIMALLOC_ARENA_EAGER_COMMIT": "0",
+        "NO_COLOR": "1",
+    }
+    assert (
+        exec_utils.frontend_env({"MIMALLOC_ARENA_EAGER_COMMIT": "1"})[
+            "MIMALLOC_ARENA_EAGER_COMMIT"
+        ]
+        == "1"
+    )
+
+
 def test_with_development_condition_sets_node_and_bun_options():
     """Both runtime option vars gain the development condition flag."""
     env = exec_utils._with_development_condition({})
