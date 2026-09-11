@@ -1,3 +1,4 @@
+import importlib.metadata
 import json
 import shutil
 import tempfile
@@ -64,10 +65,12 @@ def _mock_pypi_versions(
     Returns:
         The installed-version and network request mocks.
     """
-    installed_version = mocker.patch.object(
-        prerequisites.importlib.metadata,
-        "version",
-        return_value=current_version,
+    installed_version = mocker.Mock(return_value=current_version)
+    # Keep lazy dependency imports on real metadata, outside this consumer's mock.
+    mocker.patch.object(
+        prerequisites,
+        "importlib",
+        mocker.Mock(metadata=mocker.Mock(version=installed_version)),
     )
     response = mocker.Mock()
     response.json.return_value = {"info": {"version": latest_version}}
@@ -113,6 +116,14 @@ def test_check_latest_package_version_tracks_packages_independently(
     )
     stored = json.loads(version_check_file.read_text())
     assert "last_version_check_datetime_reflex_hosting_cli" in stored
+
+
+def test_version_check_mock_keeps_dependency_metadata_real(mocker):
+    """Lazy dependency imports must not see the version check's fixture value."""
+    original_version = importlib.metadata.version
+    installed_version, _ = _mock_pypi_versions(mocker)
+    assert importlib.metadata.version is original_version
+    assert prerequisites.importlib.metadata.version is installed_version
 
 
 def test_check_latest_package_version_refreshes_expired_check(
