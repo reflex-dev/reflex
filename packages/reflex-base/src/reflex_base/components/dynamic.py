@@ -88,7 +88,8 @@ def bundle_library(component: Union["Component", str]) -> None:
     """Register a library for dynamic components.
 
     Explicit app registrations survive compilation, including registrations in
-    modules first imported while evaluating a page.
+    modules first imported while evaluating a page. Passing a component also
+    registers its library subpaths, even when it is absent from the initial state.
 
     Args:
         component: The component to bundle the library with.
@@ -96,25 +97,29 @@ def bundle_library(component: Union["Component", str]) -> None:
     Raises:
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
-    _bundle_library(component, explicit=True)
+    if isinstance(component, str):
+        _bundle_library(component, explicit=True)
+        return
+    if component.library is None:
+        msg = "Component must have a library to bundle."
+        raise DynamicComponentMissingLibraryError(msg)
+    library = format_library_name(component.library)
+    _bundle_library(library, explicit=True)
+    for imported_library, fields in component._get_imports().items():
+        if format_library_name(imported_library) != library:
+            continue
+        for field in fields:
+            if field.render and field.package_path not in ("", "/"):
+                _bundle_library(library + field.package_path, explicit=True)
 
 
-def _bundle_library(
-    component: Union["Component", str], *, explicit: bool = False
-) -> None:
+def _bundle_library(library: str, *, explicit: bool = False) -> None:
     """Register a library, optionally retaining it across compiler resets.
 
     Args:
-        component: The component or library to bundle.
+        library: The library or subpath to bundle.
         explicit: Whether this registration belongs to the app rather than a compile.
-
-    Raises:
-        DynamicComponentMissingLibraryError: If the component has no library.
     """
-    library = component if isinstance(component, str) else component.library
-    if library is None:
-        msg = "Component must have a library to bundle."
-        raise DynamicComponentMissingLibraryError(msg)
     library = format_library_name(library)
     context = RegistrationContext.ensure_context()
     if explicit:
@@ -170,21 +175,20 @@ def load_dynamic_serializer():
         bundled_subpaths: set[str] = set()
         for lib, names in component_imports.items():
             formatted_lib_name = format_library_name(lib)
-            if (
-                not lib.startswith((".", "/", "$/"))
-                and not lib.startswith("http")
-                and formatted_lib_name not in libs_in_window
-            ):
-                imports[get_cdn_url(lib)] = names
-            else:
-                imports[lib] = names
-                if formatted_lib_name in libs_in_window:
-                    for name in names:
-                        if name.package_path in ("", "/"):
-                            continue
-                        import_path = formatted_lib_name + name.package_path
-                        _bundle_library(import_path)
-                        bundled_subpaths.add(import_path)
+            root_is_bundled = formatted_lib_name in libs_in_window
+            fallback = (
+                lib
+                if root_is_bundled or lib.startswith((".", "/", "$/", "http"))
+                else get_cdn_url(lib)
+            )
+            for name in names:
+                subpath = name.package_path if name.package_path != "/" else ""
+                import_path = formatted_lib_name + subpath
+                is_bundled = root_is_bundled or import_path in libs_in_window
+                imports.setdefault(lib if is_bundled else fallback, []).append(name)
+                if subpath and is_bundled:
+                    _bundle_library(import_path)
+                    bundled_subpaths.add(import_path)
 
         module_imports = []
         bundled_declarations = []

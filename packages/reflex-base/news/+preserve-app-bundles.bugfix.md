@@ -1,1 +1,1 @@
-Keep explicit `bundle_library()` registrations across compiler resets and registration-context forks without duplicate entries; `reset_bundled_libraries()` still clears all registrations. Dynamic components can use bundled library subpaths, including static and reactive Lucide icons.
+Keep explicit `bundle_library()` registrations across compiler resets and registration-context forks without duplicates. Passing a component also bundles its required library subpaths before initial rendering; registering a subpath string works without bundling its package root.

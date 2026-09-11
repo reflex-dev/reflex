@@ -4,7 +4,10 @@ import dataclasses
 from pathlib import Path
 
 import pytest
-from reflex_base.components.dynamic import bundle_library
+from reflex_base.components.dynamic import (
+    _reset_bundled_libraries_for_compile,
+    bundle_library,
+)
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
@@ -45,6 +48,57 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
     ) in app_root_code
 
 
+@pytest.mark.parametrize("reactive", [False, True])
+def test_component_registration_bundles_subpaths_before_serialization(reactive: bool):
+    """Prebundle a component that is absent from the initial state.
+
+    Args:
+        reactive: Whether the component uses a named dynamic-icon import.
+    """
+    icon = rx.icon(Var("icon_name").to(str)) if reactive else rx.icon("apple")
+    subpath = (
+        "lucide-react/dynamic.mjs"
+        if reactive
+        else "lucide-react/dist/esm/icons/apple.mjs"
+    )
+    with RegistrationContext() as context:
+        bundle_library(icon)
+        bundle_library(icon)
+        with context.fork():
+            _reset_bundled_libraries_for_compile()
+            _, app_root_code = compiler.compile_app_root(rx.el.div())
+            assert f'from "{subpath}";' in app_root_code
+            assert RegistrationContext.get().bundled_libraries.count(subpath) == 1
+            code = serializers.serialize(icon)
+        assert isinstance(code, str)
+        assert f"window.__reflex['{subpath}']" in code
+
+
+@pytest.mark.parametrize("reactive", [False, True])
+def test_explicit_subpath_registration_does_not_require_package_root(reactive: bool):
+    """Honor an exact subpath registration without sending it to a CDN.
+
+    Args:
+        reactive: Whether the component uses a named dynamic-icon import.
+    """
+    icon = rx.icon(Var("icon_name").to(str)) if reactive else rx.icon("apple")
+    subpath = (
+        "lucide-react/dynamic.mjs"
+        if reactive
+        else "lucide-react/dist/esm/icons/apple.mjs"
+    )
+    with RegistrationContext() as context:
+        bundle_library(subpath)
+        assert "lucide-react" not in context.bundled_libraries
+        _, app_root_code = compiler.compile_app_root(rx.el.div())
+        code = serializers.serialize(icon)
+        assert "lucide-react" not in context.bundled_libraries
+    assert f'from "{subpath}";' in app_root_code
+    assert isinstance(code, str)
+    assert f"window.__reflex['{subpath}']" in code
+    assert "cdn.jsdelivr.net/npm/lucide-react" not in code
+
+
 @pytest.mark.parametrize(
     ("fields", "expected"),
     [
@@ -66,14 +120,16 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
         ),
     ],
 )
+@pytest.mark.parametrize("bundle_root", [False, True])
 def test_dynamic_component_bundled_subpath_import_forms(
-    fields: list[ImportVar], expected: list[str]
+    fields: list[ImportVar], expected: list[str], bundle_root: bool
 ):
     """Preserve default, named, namespace and mixed bindings from exact subpaths.
 
     Args:
         fields: Import bindings requested from the subpath.
         expected: Declarations expected in the dynamic module.
+        bundle_root: Whether the root package or only the subpath is registered.
     """
     test_library = "test-library@1.0.0"
 
@@ -97,7 +153,7 @@ def test_dynamic_component_bundled_subpath_import_forms(
             }
 
     with RegistrationContext() as context:
-        bundle_library("test-library")
+        bundle_library("test-library" if bundle_root else "test-library/deep.mjs")
         code = serializers.serialize(SubpathComponent.create())
         assert isinstance(code, str)
         assert 'from "test-library/deep.mjs"' not in code
@@ -109,6 +165,8 @@ def test_dynamic_component_bundled_subpath_import_forms(
                 in code
             )
         assert context.bundled_libraries.count("test-library/deep.mjs") == 1
+        if not bundle_root:
+            assert 'from "https://cdn.jsdelivr.net/npm/test-library@1.0.0/+esm"' in code
 
 
 def test_dynamic_component_codegen_wires_event_handlers() -> None:
