@@ -47,10 +47,11 @@ outputs (`.web/`, `node_modules/`, venvs) are excluded.
 | `components_bumps/` | all six bumped component libraries (moment, code, plotly, radix, recharts, sonner) in dev and prod, with the previous stable as baseline |
 | `ent_mantine_highcharts_tickets/` | the remaining enterprise demos, plus the tickets demo's `EventHandlerAPIPlugin` REST/OpenAPI surface |
 | `config_assets_cli/` | #7039 shared-asset linking (concurrent and stale-link) and #7050 CLI startup timings |
+| `telemetry_ctx/` | #6960: an `rxconfig.py` that logs its importing thread, proving the telemetry worker no longer re-imports it off-thread |
 | `frontend_path_ssr/` | #7044 `frontend_path` + `REFLEX_SSR=false` export and prod run, driven in a browser, plus a four-way route-status matrix |
 
-Never run, for want of budget: `memo_hash` (#6947, an internal naming-cache change with no
-user-visible surface), `reverify_prev`, and four further reflex-examples apps.
+Never run: `memo_hash` (#6947, an internal naming-cache change with no user-visible surface),
+`reverify_prev`, and four further reflex-examples apps.
 
 ## Reusing for future pre-releases
 

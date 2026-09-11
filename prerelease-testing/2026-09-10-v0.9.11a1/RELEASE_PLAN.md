@@ -8,10 +8,10 @@ or trivially small to fix. Everything else is filed and fixed after.
 packaging, hmr_runtime, hybrid_property, bg_rehydrate, event_hotpath, up_counter_todo_clock,
 up_upload_traversal_quiz, up_dataviz_local_lorem, ent_aggrid, ent_map_dnd_flow, ent_mcp_oidc,
 ent_mantine_highcharts_tickets, otel, components_bumps, orch_probes, config_assets_cli,
-frontend_path_ssr — **every reflex-enterprise demo has now been run on both reflex versions, and
-every bug fix and performance claim in the 0.9.11a1 changelog has been exercised**. Not run for
-want of budget: memo_hash (#6947, a naming-cache change with no user-visible surface),
-reverify_prev, and four further reflex-examples apps.
+frontend_path_ssr, telemetry_ctx — **every reflex-enterprise demo has now been run on both reflex
+versions, and every bug fix in the 0.9.11a1 changelog has been exercised**. The one claim never
+exercised is the #6947 memoization-naming-cache change, which has no user-visible surface; also not
+run, for want of budget: reverify_prev and four further reflex-examples apps.
 
 ## Bottom line so far
 
@@ -175,6 +175,9 @@ Recorded so the next campaign knows what was already exercised and can spend its
   left pointing at the wrong file on 0.9.10.post2. The concurrent-first-create half of the claim
   could not be provoked on this filesystem on either version.
 - **#7050** (CLI startup): ~2.3x faster on every subcommand (0.40 s → 0.17 s for `reflex --help`).
+- **#6960** (telemetry context): `rxconfig.py` is re-imported on the `reflex-telemetry_0` thread on
+  0.9.10.post2 and only ever on the main thread on 0.9.11a1, shown by a config file that logs its
+  own importing thread.
 - **reflex-release 0.1.1a1** against a real worktree of the release branch: `packages`, `detect`
   (all 17 changelog packages already tagged at the versions under test), `check-dev-pins` (passes on
   the branch, correctly fails on `main`, which is the designed dev-floor mechanism), `check-headings`
