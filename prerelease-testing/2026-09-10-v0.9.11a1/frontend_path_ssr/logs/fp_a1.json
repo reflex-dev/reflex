@@ -1,0 +1,73 @@
+{
+ "steps": [
+  {
+   "step": "load",
+   "url": "http://localhost:5471/myapp/",
+   "count": "0",
+   "doubled": "0",
+   "body": "frontend_path app\n\n0\n\n0\n\nincabout\nBuilt with Reflex"
+  },
+  {
+   "step": "after_two_clicks",
+   "count": "2",
+   "doubled": "4"
+  },
+  {
+   "step": "client_route_to_about",
+   "url": "http://localhost:5471/myapp/about",
+   "heading": "about page"
+  },
+  {
+   "step": "back_home",
+   "url": "http://localhost:5471/myapp/",
+   "count": "2"
+  },
+  {
+   "step": "after_reload",
+   "url": "http://localhost:5471/myapp/",
+   "count": "2"
+  },
+  {
+   "step": "deep_link_about",
+   "url": "http://localhost:5471/myapp/about",
+   "heading": "about page",
+   "body": "about page\nhome\nBuilt with Reflex"
+  }
+ ],
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [
+  {
+   "url": "http://localhost:5471/myapp/about",
+   "status": 404
+  }
+ ],
+ "console_errors": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ]
+}

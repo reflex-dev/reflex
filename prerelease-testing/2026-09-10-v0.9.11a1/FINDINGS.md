@@ -704,3 +704,28 @@ page load, and a real delta addressed to a missing substate would be swallowed t
 
 Repro and evidence: `ent_mantine_highcharts_tickets/out/tickets_a1.json` and
 `out/tickets_base_base.json`, `console_errors` in each. Identical on 0.9.10.post2 — pre-existing.
+
+## FINDING-037: with `REFLEX_SSR=false`, every prod route but `/` is served as HTTP 404 (LOW, pre-existing)
+
+Route prerendering off (`REFLEX_SSR=false`, or `reflex export --no-ssr`) leaves the prod server with
+a single prerendered document, and it answers every other path with **404 plus the SPA HTML**. The
+browser is fine — the client router reads the URL and renders the right page — but the status line
+says the page does not exist, and a real route is indistinguishable from a typo'd one.
+
+Measured on the reflex prod server, four configurations
+(`frontend_path_ssr/logs/route_status_matrix.txt`, reproduce with
+`frontend_path_ssr/probe_routes.sh <port> <prefix>`):
+
+| config | `/` | `/about` (a real page) | `/nosuchroute` |
+| --- | --- | --- | --- |
+| `frontend_path=/myapp`, `REFLEX_SSR=false`, 0.9.11a1 | 200 | **404** | 404 |
+| `frontend_path=/myapp`, SSR on, 0.9.11a1 | 200 | 307 → 200 | 404 |
+| no `frontend_path`, `REFLEX_SSR=false`, 0.9.11a1 | 200 | **404** | 404 |
+| no `frontend_path`, `REFLEX_SSR=false`, 0.9.10.post2 | 200 | **404** | 404 |
+
+`frontend_path` is not the trigger and this is not a regression — the previous stable does the same.
+It matters because `REFLEX_SSR=false` is exactly the configuration #7044 makes usable with
+`frontend_path` in this release, so more people are about to run it: crawlers will drop the routes,
+uptime checks and CDNs will treat live pages as errors, and `curl` gives no way to tell a real route
+from a dead one. Serving the fallback document with 200 for a known route (and keeping 404 for
+genuinely unknown paths) would fix it.

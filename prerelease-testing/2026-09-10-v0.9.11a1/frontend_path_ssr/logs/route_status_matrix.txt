@@ -1,0 +1,21 @@
+# route status by configuration, reflex prod server
+## A frontend_path=/myapp SSR=false (0.9.11a1)
+/myapp/                  200
+/myapp/about             404
+/myapp/nosuchroute       404
+/ping                    200
+## B frontend_path=/myapp SSR=on (0.9.11a1)
+/myapp/                  200
+/myapp/about             307
+/myapp/nosuchroute       404
+/ping                    200
+## C no frontend_path SSR=false (0.9.11a1)
+/                        200
+/about                   404
+/nosuchroute             404
+/ping                    200
+## D no frontend_path SSR=false (0.9.10.post2)
+/                        200
+/about                   404
+/nosuchroute             404
+/ping                    200
