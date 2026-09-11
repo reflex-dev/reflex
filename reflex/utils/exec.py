@@ -515,8 +515,18 @@ def run_backend(
 
     # Run the backend in development mode.
     if should_use_granian():
-        # We import reflex app because this lets granian cache the module
-        import reflex.app  # noqa: F401
+        # Forked workers inherit imported modules from the supervisor. Spawned
+        # and forkserver workers do not, so preloading the app there only keeps
+        # the full framework graph resident in the long-lived supervisor.
+        if not environment.REFLEX_STRICT_HOT_RELOAD.get():
+            import multiprocessing
+
+            if multiprocessing.get_start_method() == "fork":
+                from reflex_base.utils import serializers
+
+                import reflex.app  # noqa: F401
+
+                serializers._prepare_serializers_for_fork()
 
         run_granian_backend(host, port, loglevel)
     else:

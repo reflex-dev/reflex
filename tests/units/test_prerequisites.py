@@ -1,6 +1,8 @@
 import importlib.metadata
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
 import uuid
 from collections.abc import Callable, Generator
@@ -298,6 +300,26 @@ def test_check_latest_package_version_can_be_disabled(
     installed_version.assert_not_called()
     request.assert_not_called()
     assert json.loads(version_check_file.read_text()) == {}
+
+
+def test_prerequisites_does_not_import_database_stack() -> None:
+    """Importing general prerequisites must not load optional database support."""
+    script = """
+import sys
+
+from reflex.utils import prerequisites  # noqa: F401
+
+loaded = [name for name in ("reflex.model", "alembic", "sqlmodel") if name in sys.modules]
+assert not loaded, f"database modules imported eagerly: {loaded}"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
