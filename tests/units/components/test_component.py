@@ -5,6 +5,7 @@ from typing import Any, ClassVar, TypedDict
 
 import pytest
 from reflex_base.components.component import Component, field
+from reflex_base.components.tags import Tag
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -43,6 +44,33 @@ from reflex import (
 )
 from reflex.state import BaseState
 from reflex.utils import imports
+
+
+@pytest.mark.parametrize("name", ["div", "", None])
+def test_plain_tag_render_matches_tag_protocol(name, monkeypatch):
+    """Direct rendering preserves names, props, children, and render caching."""
+    tag = Tag(name=name).add_props(title="hello")
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(component, "_render", lambda: tag)
+    expected = dict(tag.set(children=[child.render() for child in component.children]))
+    assert component.render() == expected
+    assert component.render() is component.render()
+    assert not tag.children
+
+
+def test_custom_tag_render_uses_subclass_protocol(monkeypatch):
+    """Custom tag iteration can depend on its supplied children."""
+
+    class ChildrenTag(Tag):
+        """A tag with custom child-dependent rendering."""
+
+        def __iter__(self):
+            """Yield a value derived from the child list."""
+            yield "child_count", len(self.children)
+
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(component, "_render", lambda: ChildrenTag())
+    assert component.render() == {"child_count": 1}
 
 
 class TestState(BaseState):
@@ -2398,3 +2426,24 @@ def test_get_all_hooks_internal_does_not_mutate_hooks_cache():
     assert dict(parent._get_hooks_internal()) == parent_own_hooks
     # And repeated collection yields the same result.
     assert parent._get_all_hooks_internal() == combined
+
+
+def test_set_props_iteration_skips_unset_props_and_keeps_defaults():
+    """Only set props and class defaults are visited, in declaration order."""
+
+    class DefaultedProps(Component):
+        first: Var[str]
+        second: Var[str] = LiteralVar.create("second-default")
+        third: Var[str]
+
+    component = DefaultedProps._create(children=(), third="set")
+    assert [(prop, str(value)) for prop, value in component._iter_set_props()] == [
+        ("second", '"second-default"'),
+        ("third", '"set"'),
+    ]
+    assert [str(var) for var in component._get_vars()] == ['"second-default"', '"set"']
+    assert {prop: str(value) for prop, value in component._render().props.items()} == {
+        "second": '"second-default"',
+        "third": '"set"',
+    }
+    assert "first" not in vars(component)
