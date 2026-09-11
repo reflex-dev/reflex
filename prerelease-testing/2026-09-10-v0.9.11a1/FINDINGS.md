@@ -62,6 +62,8 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - FINDING-015: `reflex cloud regions/vmtypes --json` exit 0 with `[]` after a 403 (LOW, pre-existing, agent-usability gap)
 - FINDING-016: `reflex run --json` stdout still carries 9 plain-text granian lines, breaking strict JSON-lines parsing (LOW, pre-existing, previous campaign's FINDING-013)
 - FINDING-017: `rx.plotly` still emits `id` rather than `divId`, so the id never reaches the DOM, unchanged by the react-plotly.js 4.1.0 bump (LOW, pre-existing, previous campaign's FINDING-020)
+- FINDING-018: dev mode: one unserializable state var drops the ENTIRE hydrate delta on every page load, silently reverting session state and showing a raw internal ValueError to the user (HIGH, pre-existing, triggered downstream) — claimed
+- FINDING-019: four shipped reflex-enterprise 0.9.5 defects that block its own demos (stale bundle path, ModelWrapper URL encoding, ag-grid/ag-charts version mismatch, `column_def()` dropping unknown kwargs) (MEDIUM, pre-existing, downstream)
 
 ## FINDING-001: reflex-otel 0.1.0a1 not published by the release run (PROCESS, resolved)
 
@@ -241,6 +243,39 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
   The 4.0.0 → 4.1.0 bump in this train does not change the mechanism.
 - Evidence: `orch_probes/NOTES.md`.
 
+## FINDING-018: one unserializable state var drops the whole hydrate delta in dev (HIGH, pre-existing)
+
+- Cluster: `ent_aggrid` | Regression vs 0.9.10.post2: no (identical counts and messages) |
+  Trigger: downstream (reflex-enterprise python-callable column defs) | Mechanism: reflex-side
+- In dev the granian worker never runs `compile_app`, so reflex-enterprise's lambda-serialization
+  validation raises while the hydrate delta is being encoded. The delta is then dropped **entirely**:
+  one bad var takes every other var in the state with it.
+- User-visible proof from the run: click the `/formatters` row counter three times (UI shows 3),
+  reload, the UI shows `0`, click once and it jumps to 4. The server had the value all along; only
+  the delta was lost. Seventeen `[Reflex Backend Exception]` blocks per route sweep, each
+  `ValueError: Library @radix-ui/themes is not bundled` inside
+  `hydrate -> emit_delta -> _sio_dumps -> reflex_enterprise/vars.py serialize_lambda`. Loading
+  `/editable` also renders a red panel quoting that internal error to the user. Prod is clean.
+- Repro and evidence: `ent_aggrid/NOTES.md` ISSUE 2, `artifacts/backend_exception_hydrate_delta_a1.txt`,
+  `logs/run_a1_dev.log` and `logs/run_0910_dev.log` (17 blocks each), `scripts/drive_hydrate2.py`.
+- Worth a maintainer's judgment even though it is not new: the blast radius (whole delta, silent
+  state revert, internal error text shown to end users) is a framework behaviour, not an enterprise one.
+
+## FINDING-019: shipped reflex-enterprise 0.9.5 demo defects (MEDIUM, pre-existing, downstream)
+
+- Cluster: `ent_aggrid` | Regression: no (all identical on 0.9.10.post2) | Downstream: yes — these
+  belong on the reflex-enterprise tracker, not this repo's.
+1. The shipped `ag_grid` demo cannot start unpatched: `formatters.py` bundles the pre-0.9.8 path
+   `$/utils/components`, so compile exits 1 with `ValueError: Library ... is not bundled`. (The error
+   is at least a clean ValueError now, where 0.9.9a1 masked it as a `VarAttributeError`.)
+2. `ModelWrapper`'s datasource URL percent-encodes the `?`, so `/model`, `/model-auth` and
+   `/model-ssrm` fetch `...%3FstartRow=0...` and 404 with an empty grid.
+3. reflex-enterprise pins ag-grid 34.3.1 against ag-charts-enterprise 11.2.4, which AG Grid rejects,
+   so integrated charts cannot be created.
+4. `ag_grid.column_def()` silently drops unknown kwargs, which is why `ag_grid_finance`'s
+   `checkbox_selection=True` yields no selectable rows and its chart never renders.
+- Evidence: `ent_aggrid/NOTES.md` ISSUES 1, 5, 4, 7 with per-route reports under `shots/`.
+
 ## Cluster summaries (interim)
 
 ### `smoke` (orchestrator) — clean
@@ -286,6 +321,15 @@ upload, traversal and quiz upgrade cleanly (baseline, in-place, cold); sonner 2.
 4.4.3 highlighting render identically to their prior versions. Anomalies are app-level or pre-existing,
 including `rx._x.code_block(use_transformers=True)` compiling `transformers:[]` so the shiki
 notation comments are never applied (identical on 0.9.10.post2).
+
+### `ent_aggrid` (pass 28, fail 8, anomaly 4, skipped 1) — NO REGRESSION; the 0.9.9a1 enterprise breakage is fixed
+The 17-route ag_grid demo and the `ag_grid_finance` example behave identically on 0.9.11a1 and
+0.9.10.post2, dev and prod (per-route action lists diff to zero). Last campaign's FINDING-001/021/022/023
+are fixed twice over: reflex restored `dynamic.bundled_libraries` and `page.DECORATED_PAGES` as
+deprecation shims, and reflex-enterprise 0.9.5 reads bundled libraries from the RegistrationContext.
+Python-callable renderers and formatters, `@rx.memo` row counters, `@rxe.static` dialogs, cell editing,
+master-detail, tree data, pivot, selection, fill handle, grid-state round-trip and the finance app's
+fetch/pagination/filter/sort all work. Every failure is pre-existing (FINDING-018, FINDING-019).
 
 ### `orch_probes` (orchestrator) — 2 fixed items confirmed, 4 pre-existing gaps
 AppHarness now names `reflex[testing]` in its error (previous FINDING-016 fixed); `reflex_base.otel`
