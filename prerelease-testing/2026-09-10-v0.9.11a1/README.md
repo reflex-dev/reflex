@@ -39,9 +39,16 @@ outputs (`.web/`, `node_modules/`, venvs) are excluded.
 | `orch_probes/` | orchestrator's own offline probes: AppHarness extra, otel inertness, `_load_config` deprecation, `reserve_stdout`, `frontend_path` validation, full `reflex cloud` CLI sweep |
 | `up_counter_todo_clock/` | upgrade 0.9.10.post2 → 0.9.11a1: counter, todo, clock, linkinbio (+ full-alpha-train path) |
 | `up_upload_traversal_quiz/` | upgrade: upload (sanitizer), traversal (sonner), quiz (shiki, table) |
+| `up_dataviz_local_lorem/` | in-place upgrade (same venv, app dir, `.web/`, sqlite db) of `local-component` (local React component, refs, popover+form), `lorem-stream` (background streaming tasks) and `data_visualisation` (rx.Model + alembic + 36-row table); also the `reflex-release` 0.1.1a1 gates against a worktree of the release branch |
+| `ent_aggrid/` | enterprise ag_grid + ag_grid_finance demos, dev and prod, both reflex versions |
+| `ent_map_dnd_flow/` | enterprise map, dnd and flow demos |
+| `ent_mcp_oidc/` | enterprise MCP plugin and OIDC auth: a purpose-built MCP exercise app, an `AuthPlugin` app and a self-contained OIDC provider (discovery, JWKS, PKCE S256, refresh, userinfo, RP-initiated logout) driven end to end |
+| `otel/` | the new reflex-otel 0.1.0a1: instrumentor, spans and metrics, the documented env-var recipe, browser plugin |
+| `components_bumps/` | all six bumped component libraries (moment, code, plotly, radix, recharts, sonner) in dev and prod, with the previous stable as baseline |
 
-Clusters added as the campaign continues: enterprise demos (`ent_*`), `otel`,
-`components_bumps`, `config_assets_cli`, `memo_hash`, `reverify_prev`, remaining `up_*` apps.
+Never run, for want of budget, and none covering a surface this train changes:
+`ent_mantine_highcharts_tickets`, `config_assets_cli`, `memo_hash`, `reverify_prev` and four
+further reflex-examples apps.
 
 ## Reusing for future pre-releases
 
@@ -57,6 +64,17 @@ packaging-audit scripts.
 
 - Background agents only make progress while the session is awake; schedule check-ins close
   together, or keep foreground work running, or the fan-out stalls between wakes.
+- `uv pip install --prerelease=allow 'reflex==<alpha>'` **without `--upgrade`** leaves the old
+  stable component packages in an existing venv — reflex pins `reflex-base` exactly but the
+  component packages only by floor. You can believe you are testing the train and be testing new
+  core against old components. Use a fresh venv, or pass `--upgrade` and name the component
+  alphas explicitly.
+- `rxe.App()` exits with "reflex-enterprise is free to use but you must be logged in" for an
+  anonymous tier whenever the frontend is served. `CI=true` (or `REFLEX_BACKEND_ONLY`) skips the
+  check; there is no way to exercise enterprise **prod** mode without a licence.
+- Terminating `reflex run` from a script can orphan the vite frontend process, which keeps the
+  port bound and makes the next run fail with `Address already in use`.
+  `up_dataviz_local_lorem/cycle.sh` carries a `/proc/net/tcp` sweep that cleans it up.
 - This campaign was interrupted repeatedly by the organisation's monthly spend limit. Workflows
   were resumed from cache each time (`Workflow({scriptPath, resumeFromRunId})`), and the
   remaining clusters were re-ordered highest-risk-first into one script so that a truncated run

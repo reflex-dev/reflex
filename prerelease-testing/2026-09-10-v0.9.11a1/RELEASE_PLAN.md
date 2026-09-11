@@ -4,24 +4,44 @@ Triage of [FINDINGS.md](./FINDINGS.md) against the campaign rubric: fix before r
 is (a) a confirmed regression against the previous stable, (b) security-relevant, or (c) high impact
 or trivially small to fix. Everything else is filed and fixed after.
 
-**Status: DRAFT — the campaign is still running.** Clusters completed at the time of writing:
-smoke, packaging, hmr_runtime, hybrid_property, bg_rehydrate, event_hotpath, up_counter_todo_clock,
-up_upload_traversal_quiz, ent_aggrid, ent_map_dnd_flow, otel, orch_probes. Still outstanding:
-components_bumps (running), ent_mcp_oidc, config_assets_cli, memo_hash, reverify_prev,
-ent_mantine_highcharts_tickets and four more reflex-examples apps.
+**Status: the campaign has covered every surface this train touches.** Clusters completed: smoke,
+packaging, hmr_runtime, hybrid_property, bg_rehydrate, event_hotpath, up_counter_todo_clock,
+up_upload_traversal_quiz, up_dataviz_local_lorem, ent_aggrid, ent_map_dnd_flow, ent_mcp_oidc, otel,
+components_bumps, orch_probes. Not run for want of budget, and none of them covering a surface this
+train changes: ent_mantine_highcharts_tickets, config_assets_cli, memo_hash, reverify_prev and four
+further reflex-examples apps.
 
 ## Bottom line so far
 
-**Nothing found so far blocks the release.** Across eleven clusters the only confirmed regression is
-one low-severity downstream behaviour change (FINDING-002), and every headline item of this train
-that has been exercised works as its changelog describes, with the previous stable reproducing the
-bug it claims to fix. The enterprise surface — the thing that blocked 0.9.9 — is clean: ag-grid, map,
-dnd and flow all behave identically on 0.9.11a1 and 0.9.10.post2, and all four 0.9.9a1 enterprise
-breakages are fixed.
+**One thing should be fixed before release, and it is not in reflex itself.** Across fifteen
+clusters the framework core is clean: every headline item of this train works as its changelog
+describes, with the previous stable reproducing the bug it claims to fix, and three unmodified
+reflex-examples apps upgrade in place — same venv, same `.web`, same sqlite database — with
+step-for-step identical behaviour.
+
+Both confirmed regressions are in the same place: **`reflex-components-moment` 0.9.4a1**, from the
+react-moment 1.2.2 → 2.0.2 bump. FINDING-033 (a `locale=` on one `rx.moment` silently changes the
+language of every other moment on the page) is the one worth holding for; FINDING-002 (`on_change`
+now fires at mount) is smaller but is the same bump and wants the same decision. If the moment
+package can ship a fix or the bump can be reverted for this train, everything else is releasable.
+
+The enterprise surface — the thing that blocked 0.9.9 — is clean, and now on four fronts rather
+than two: ag-grid, map, dnd and flow behave identically across versions; the MCP plugin and the
+whole OIDC login → guard → logout flow are step-for-step identical against a live OIDC provider;
+and all four 0.9.9a1 enterprise breakages are fixed.
 
 ## Fix before release
 
 ### Confirmed regressions
+- **FINDING-033 — one `rx.moment(locale=...)` changes the language of every other moment on the
+  page** (medium, downstream, reflex-components-moment 0.9.4a1). Bisected to the component bump
+  alone: 0.9.11a1 core with components-moment 0.9.3 does not leak. An app that localises one date
+  and leaves the rest to the default now renders every date, "time ago" string and title attribute
+  in that language, in dev and in prod, with nothing warning. It is order-dependent — a `Var` locale
+  pulls in `moment/min/locales`, which restores `en` — so an app can start leaking by adding an
+  unrelated moment component. The wrapper should stop relying on moment's global default (pass an
+  explicit locale, use react-moment 2.x's `MomentProvider`, or restore the default after importing
+  a locale file).
 - **FINDING-002 — `rx.moment` `on_change` now fires at mount** (low, downstream,
   reflex-components-moment 0.9.4a1). The only confirmed regression in the campaign. The fix is a
   documentation decision rather than code: upstream react-moment lists this as a breaking change,
@@ -65,8 +85,16 @@ breakages are fixed.
 | 028 | Initial `reflex.compile` span tree never exported in dev | low | Lost with the compile worker's `os._exit`; prod and export are fine. |
 | 029 | reflex-otel upgrades reflex-base out from under reflex | low | Depends on reflex-base but not reflex, so it silently breaks reflex's exact pin. |
 | 026 | Custom code touching `window` fails export with an opaque prerender 500 | low | The compiler knows which component emitted the block; a diagnostic is cheap. |
+| 030 | State-delta key ordering changed between 0.9.10.post2 and 0.9.11a1 | low | Same keys and values; only text-comparing snapshot tests downstream would notice. Worth one release-note line. |
+| 034 | Seven pre-existing component-library rough edges | low | Surfaced by the bump sweep, all reproduce on 0.9.10.post2. See `components_bumps/NOTES.md` ISSUE-2…ISSUE-10. |
 
 ### reflex-enterprise (downstream tracker)
+- **FINDING-031 / FINDING-032**: two MCP-resource quirks in reflex-enterprise 0.9.5, both
+  pre-existing. `reflex://state/events/<unknown state>` answers `{"events": []}` where the sibling
+  `state/vars` resource errors helpfully, and the `state` name `search_events` hands the caller is
+  not the name either resource accepts; and a withheld protected *field* is served to an
+  unauthorised MCP caller as its default value with no indication it was withheld, while a
+  protected computed var errors explicitly. Both mislead an agent into acting on a wrong answer.
 - **FINDING-019**: four defects in reflex-enterprise 0.9.5 that break its own demos — the stale
   bundle path that stops the ag_grid demo starting unpatched, the `ModelWrapper` datasource URL that
   percent-encodes its query separator, the ag-grid/ag-charts version mismatch that blocks integrated
@@ -110,4 +138,24 @@ breakages are fixed.
    (silent state loss with a user-visible internal error), FINDING-022 and FINDING-013 (both make
    other failures hard to diagnose), FINDING-025.
 3. Then the rest of the medium list, which is mostly independent and parallelisable.
-4. File FINDING-019 downstream, ideally alongside the reflex-enterprise release that follows.
+4. File FINDING-019 and FINDING-031/032 downstream, ideally alongside the reflex-enterprise
+   release that follows.
+
+## Verified clean (no findings)
+
+Recorded so the next campaign knows what was already exercised and can spend its budget elsewhere.
+
+- **reflex-enterprise MCP plugin** under both reflex versions: anonymous token, unauthenticated and
+  invented-bearer rejection, tools, every `reflex://` resource, plain / arg-taking / background /
+  sibling-substate / nested-substate `queue_event`, and — with `AuthPlugin` — OAuth 2.1 metadata,
+  401 + `WWW-Authenticate`, and an anonymous session correctly scoped to `auth=False` handlers.
+- **reflex-enterprise OIDC** end to end against a local provider: discovery, PKCE S256 (verified by
+  the provider), callback, userinfo, guarded pages and handlers (foreground and background),
+  protected-value withholding, reload and second-tab persistence, and RP-initiated logout.
+  22 recorded browser steps, byte-identical across reflex versions.
+- **In-place upgrade** of three reflex-examples apps (`local-component`, `lorem-stream`,
+  `data_visualisation`) keeping the venv, the app directory, `.web/` and the sqlite database.
+- **reflex-release 0.1.1a1** against a real worktree of the release branch: `packages`, `detect`
+  (all 17 changelog packages already tagged at the versions under test), `check-dev-pins` (passes on
+  the branch, correctly fails on `main`, which is the designed dev-floor mechanism), `check-headings`
+  and `changelog-check`.
