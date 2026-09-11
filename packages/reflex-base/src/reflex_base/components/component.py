@@ -24,6 +24,7 @@ from reflex_base.breakpoints import Breakpoints
 from reflex_base.components.dynamic import load_dynamic_serializer
 from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.components.tags import Tag
+from reflex_base.components.tags.tag import render_prop
 from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
@@ -1161,7 +1162,7 @@ class Component(BaseComponent, ABC):
         if props is None:
             # Add component props to the tag.
             props = {
-                attr.removesuffix("_"): getattr(self, attr) for attr in self.get_props()
+                prop.removesuffix("_"): value for prop, value in self._iter_set_props()
             }
 
             # Add ref to element if `ref` is None and `id` is not None.
@@ -1203,6 +1204,39 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     @functools.cache
+    def _get_defaulted_props(cls) -> frozenset[str]:
+        """Get the props whose field supplies a value when unset.
+
+        Returns:
+            The props with a default other than ``None`` or a default factory.
+        """
+        return frozenset(
+            prop
+            for prop, field_ in cls.get_js_fields().items()
+            if field_.default_factory is not None
+            or (field_.default is not MISSING and field_.default is not None)
+        )
+
+    def _iter_set_props(self) -> Iterator[tuple[str, Any]]:
+        """Walk the props that carry a value, in declaration order.
+
+        An unset prop resolves to ``None`` through its field descriptor and
+        every consumer drops ``None``, so only props present on the instance
+        or backed by a class default are read.
+
+        Yields:
+            Each prop name with its value.
+        """
+        values = self.__dict__
+        defaulted = self._get_defaulted_props()
+        for prop in self.get_props():
+            if prop in values:
+                yield prop, values[prop]
+            elif prop in defaulted:
+                yield prop, getattr(self, prop)
+
+    @classmethod
+    @functools.cache
     def get_initial_props(cls) -> set[str]:
         """Get the initial props to set for the component.
 
@@ -1215,9 +1249,8 @@ class Component(BaseComponent, ABC):
     def _get_component_prop_property(self) -> Sequence[BaseComponent]:
         return [
             component
-            for prop in self.get_props()
-            if (value := getattr(self, prop)) is not None
-            and isinstance(value, (BaseComponent, Var))
+            for _, value in self._iter_set_props()
+            if isinstance(value, (BaseComponent, Var))
             for component in _components_from(value)
         ]
 
@@ -1438,11 +1471,15 @@ class Component(BaseComponent, ABC):
         except AttributeError:
             pass
         tag = self._render()
-        rendered_dict = dict(
-            tag.set(
-                children=[child.render() for child in self.children],
-            )
-        )
+        children = [child.render() for child in self.children]
+        if type(tag) is Tag:
+            rendered_dict = {}
+            if (name := render_prop(tag.name)) is not None:
+                rendered_dict["name"] = name
+            rendered_dict["props"] = tag.format_props()
+            rendered_dict["children"] = children
+        else:
+            rendered_dict = dict(tag.set(children=children))
         self._replace_prop_names(rendered_dict)
         self._cached_render_result = rendered_dict
         return rendered_dict
@@ -1581,8 +1618,7 @@ class Component(BaseComponent, ABC):
             vars.extend(event_vars)
 
         # Get Vars associated with component props.
-        for prop in self.get_props():
-            prop_var = getattr(self, prop)
+        for _, prop_var in self._iter_set_props():
             if isinstance(prop_var, Var):
                 vars.append(prop_var)
 

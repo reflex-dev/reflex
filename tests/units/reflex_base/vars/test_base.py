@@ -1,12 +1,23 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
+import gc
+import pickle
 import threading
 import typing
+import weakref
 from typing import Any, Literal, TypeVar
 
 import pytest
 from reflex_base.utils.types import get_field_type
-from reflex_base.vars.base import EvenMoreBasicBaseState, Var, _linearize_bases, field
+from reflex_base.vars.base import (
+    GLOBAL_CACHE,
+    EvenMoreBasicBaseState,
+    LiteralVar,
+    Var,
+    _linearize_bases,
+    cached_property,
+    field,
+)
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
@@ -246,3 +257,114 @@ def test_linearize_bases_compares_by_identity() -> None:
             _linearize_bases((b, c)), created.__mro__[1:], strict=True
         )
     )
+
+
+class _CachedValue:
+    """A mutable input with an explicitly resettable derived value."""
+
+    _reflex_cache_result: object
+
+    def __init__(self, value: str):
+        """Store the input.
+
+        Args:
+            value: The value to cache.
+        """
+        self.value = value
+
+    @cached_property
+    def result(self) -> list[str]:
+        """Return the derived value.
+
+        Returns:
+            A fresh list containing the input.
+        """
+        return [self.value]
+
+
+def test_cached_property_identity_and_reset():
+    """Local keys isolate instances and survive explicit cache resets."""
+    first = _CachedValue("first")
+    second = _CachedValue("second")
+    result = first.result
+    assert first.result is result
+    assert second.result == ["second"]
+    first.value = "changed"
+    assert first.result is result
+    GLOBAL_CACHE.clear()
+    assert first.result == ["changed"]
+    assert first.result is not result
+
+
+def test_cached_property_pickle_does_not_reuse_another_instances_key():
+    """Deserialized keys must not collide with live cache entries."""
+    original = _CachedValue("original")
+    assert original.result == ["original"]
+    restored = pickle.loads(pickle.dumps(original))
+    restored.value = "restored"
+    assert restored.result == ["restored"]
+    assert original.result == ["original"]
+
+
+def test_cached_property_releases_entry_with_instance():
+    """Destroying an instance removes its cached value."""
+    value = _CachedValue("temporary")
+    assert value.result == ["temporary"]
+    key = value._reflex_cache_result
+    reference = weakref.ref(value)
+    del value
+    gc.collect()
+    assert reference() is None
+    assert key not in GLOBAL_CACHE
+
+
+def test_literal_var_dispatch_follows_later_registrations():
+    """A literal class registered after a lookup wins the next lookup for its type."""
+
+    class Coordinate:
+        """A value no literal Var claims yet."""
+
+        def __init__(self, x: int):
+            """Store the coordinate.
+
+            Args:
+                x: The coordinate value.
+            """
+            self.x = x
+
+    from reflex_base.utils import serializers
+
+    @serializers.serializer
+    def serialize_coordinate(value: Coordinate) -> str:
+        """Serialize a coordinate.
+
+        Args:
+            value: The coordinate.
+
+        Returns:
+            Its string form.
+        """
+        return f"coordinate-{value.x}"
+
+    assert str(LiteralVar.create(Coordinate(1))) == '"coordinate-1"'
+
+    class CoordinateVar(Var[Coordinate], python_types=Coordinate):
+        """A Var holding a coordinate."""
+
+    class LiteralCoordinateVar(LiteralVar, CoordinateVar):
+        """A literal coordinate Var."""
+
+        @classmethod
+        def create(cls, value: Coordinate, _var_data=None):
+            """Create the literal.
+
+            Args:
+                value: The coordinate.
+                _var_data: Unused metadata.
+
+            Returns:
+                A Var with the coordinate's expression.
+            """
+            return Var(_js_expr=f"[{value.x}]", _var_type=Coordinate)
+
+    assert str(LiteralVar.create(Coordinate(2))) == "[2]"

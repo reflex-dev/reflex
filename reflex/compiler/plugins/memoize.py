@@ -35,6 +35,9 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.core.cond import Cond
+from reflex_components_core.core.match import Match
 
 from reflex.compiler.plugins.builtin import (
     collect_var_app_wraps_for_component,
@@ -146,10 +149,6 @@ def _should_memoize(component: Component) -> bool:
     Returns:
         True if the component should be wrapped in a memo definition.
     """
-    from reflex_components_core.base.bare import Bare
-    from reflex_components_core.core.cond import Cond
-    from reflex_components_core.core.match import Match
-
     strategy = get_memoization_strategy(component)
 
     if component._memoization_mode.disposition == MemoizationDisposition.NEVER:

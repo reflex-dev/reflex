@@ -1,5 +1,6 @@
 import pytest
 from reflex_base.components.tags import CondTag, Tag, tagless
+from reflex_base.components.tags.tag import render_prop
 from reflex_base.vars.base import LiteralVar, Var
 
 
@@ -127,3 +128,28 @@ def test_tagless_string_representation():
     tag = tagless.Tagless(contents="Hello world")
     expected_output = "Hello world"
     assert str(tag) == expected_output
+
+
+def test_render_prop_preserves_plain_values_and_subclass_dispatch():
+    """Already-rendered dictionaries pass through; callable subclasses do not."""
+
+    class CallableString(str):
+        """A string whose callability must still be inspected."""
+
+        def __call__(self):
+            """Return a marker value."""
+            return "called"
+
+    class CallableDict(dict):
+        """A mapping whose callability must still be inspected."""
+
+        def __call__(self):
+            """Return a marker value."""
+            return "called"
+
+    rendered = {"name": "div", "children": []}
+    assert render_prop(rendered) is rendered
+    assert render_prop("text") == "text"
+    assert render_prop(CallableString("text")) is None
+    assert render_prop(CallableDict(rendered)) is None
+    assert render_prop(("text", rendered)) == ["text", rendered]

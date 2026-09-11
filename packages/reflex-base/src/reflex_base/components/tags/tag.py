@@ -20,6 +20,9 @@ def render_prop(value: Any) -> Any:
     Returns:
         The rendered value.
     """
+    if type(value) in (str, dict):
+        return value
+
     from reflex_base.components.component import BaseComponent
 
     if isinstance(value, BaseComponent):
