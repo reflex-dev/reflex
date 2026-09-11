@@ -8,6 +8,7 @@ from typing import Any, Literal, TypeVar
 
 import pytest
 from reflex_base.utils import serializers
+from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.utils.types import get_field_type
 from reflex_base.vars.base import (
     CachedVarOperation,
@@ -270,7 +271,7 @@ def test_serializer_attribute_error_is_not_masked() -> None:
 
     serializers.serializer(serialize_point)
     try:
-        with pytest.raises(RuntimeError, match=r"_cached_var_name") as exc_info:
+        with pytest.raises(ReflexRuntimeError, match=r"_cached_var_name") as exc_info:
             str(LiteralVar.create([Point()]))
     finally:
         serializers.SERIALIZERS.pop(Point)
@@ -297,7 +298,7 @@ def test_cached_var_attribute_error_is_chained() -> None:
             msg = "the real error message"
             raise AttributeError(msg)
 
-    with pytest.raises(RuntimeError, match="the real error message") as exc_info:
+    with pytest.raises(ReflexRuntimeError, match="the real error message") as exc_info:
         BrokenVar(_js_expr="")._get_all_var_data()
     assert isinstance(exc_info.value.__cause__, AttributeError)
     assert str(exc_info.value.__cause__) == "the real error message"

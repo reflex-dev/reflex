@@ -48,6 +48,7 @@ from reflex_base.utils.compat import annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
+    ReflexRuntimeError,
     UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
@@ -2061,7 +2062,7 @@ class cached_property:  # noqa: N801
 
         Raises:
             TypeError: If the class does not have __set_name__.
-            RuntimeError: If computing the property raises an AttributeError.
+            ReflexRuntimeError: If computing the property raises an AttributeError.
         """
         if self._attrname is None:
             msg = "Cannot use cached_property on a class without __set_name__."
@@ -2081,7 +2082,7 @@ class cached_property:  # noqa: N801
                     f"Computing cached property {type(instance).__name__}."
                     f"{self._attrname} raised {type(err).__name__}: {err}"
                 )
-                raise RuntimeError(msg) from err
+                raise ReflexRuntimeError(msg) from err
         return GLOBAL_CACHE[unique_id]
 
 
