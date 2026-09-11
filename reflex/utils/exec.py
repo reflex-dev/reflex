@@ -10,6 +10,7 @@ import logging
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
@@ -669,13 +670,31 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
+    from granian.net import SocketSpec  # pyright: ignore[reportPrivateImportUsage]
     from granian.server import Server as Granian
     from reflex_base.environment import _load_dotenv_from_env
+
+    class ParentBoundGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
+        """Granian server that binds the listen socket in the supervisor.
+
+        On Linux each worker otherwise binds only after loading the app, so
+        requests during a reload are refused. With the supervisor holding the
+        socket they wait in the accept backlog for the new worker.
+        """
+
+        def _init_shared_socket(self):
+            self._ssp = SocketSpec(self.bind_addr, self.bind_port, self.backlog)
+            self._shd = self._ssp.build()
+            self._sfd = self._shd.get_fd()
+            self._ssp = None
+            sock = socket.socket(fileno=self._sfd)
+            sock.set_inheritable(True)
+            self._sso = sock
 
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
-    granian_app = Granian(
+    granian_app = ParentBoundGranian(
         target=get_app_instance_from_file(),
         factory=True,
         address=host,

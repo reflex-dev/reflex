@@ -1,6 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
 import os
+import socket
 from pathlib import Path
 
 import pytest
@@ -78,6 +79,55 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     )
 
     assert seen["value"] == "True"
+
+
+def test_run_granian_backend_binds_listen_socket_in_supervisor(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """The dev server holds the listen socket so requests queue across worker restarts."""
+    mocker.patch.object(
+        exec_utils,
+        "get_dev_backend_reload_marker",
+        return_value=tmp_path / exec_utils.DEV_BACKEND_RELOAD_MARKER,
+    )
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    granian_server = pytest.importorskip("granian.server")
+    servers: list[object] = []
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            self.bind_addr = "127.0.0.1"
+            self.bind_port = 0
+            self.backlog = 16
+            servers.append(self)
+
+        def on_reload(self, _callback):
+            pass
+
+        def serve(self):
+            pass
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+
+    exec_utils.run_granian_backend(
+        host="127.0.0.1", port=0, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    (server,) = servers
+    server._init_shared_socket()  # pyright: ignore[reportAttributeAccessIssue]
+    listener: socket.socket = server._sso  # pyright: ignore[reportAttributeAccessIssue]
+    try:
+        assert listener.get_inheritable()
+        # Once a worker calls listen the supervisor's descriptor keeps the
+        # socket listening, so connections queue while no worker accepts.
+        listener.listen()
+        with socket.create_connection(listener.getsockname(), timeout=1):
+            pass
+    finally:
+        listener.close()
 
 
 def test_with_development_condition_sets_node_and_bun_options():
