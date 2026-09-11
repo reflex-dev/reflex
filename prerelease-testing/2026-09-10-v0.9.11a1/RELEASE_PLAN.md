@@ -6,10 +6,11 @@ or trivially small to fix. Everything else is filed and fixed after.
 
 **Status: the campaign has covered every surface this train touches.** Clusters completed: smoke,
 packaging, hmr_runtime, hybrid_property, bg_rehydrate, event_hotpath, up_counter_todo_clock,
-up_upload_traversal_quiz, up_dataviz_local_lorem, ent_aggrid, ent_map_dnd_flow, ent_mcp_oidc, otel,
-components_bumps, orch_probes. Not run for want of budget, and none of them covering a surface this
-train changes: ent_mantine_highcharts_tickets, config_assets_cli, memo_hash, reverify_prev and four
-further reflex-examples apps.
+up_upload_traversal_quiz, up_dataviz_local_lorem, ent_aggrid, ent_map_dnd_flow, ent_mcp_oidc,
+ent_mantine_highcharts_tickets, otel, components_bumps, orch_probes — **every reflex-enterprise
+demo has now been run on both reflex versions**. Not run for want of budget, and none of them
+covering a surface this train changes: config_assets_cli, memo_hash, reverify_prev and four further
+reflex-examples apps.
 
 ## Bottom line so far
 
@@ -25,10 +26,10 @@ language of every other moment on the page) is the one worth holding for; FINDIN
 now fires at mount) is smaller but is the same bump and wants the same decision. If the moment
 package can ship a fix or the bump can be reverted for this train, everything else is releasable.
 
-The enterprise surface — the thing that blocked 0.9.9 — is clean, and now on four fronts rather
-than two: ag-grid, map, dnd and flow behave identically across versions; the MCP plugin and the
-whole OIDC login → guard → logout flow are step-for-step identical against a live OIDC provider;
-and all four 0.9.9a1 enterprise breakages are fixed.
+The enterprise surface — the thing that blocked 0.9.9 — is clean, and now across every demo the
+project ships: ag-grid, map, dnd, flow, mantine, highcharts and tickets all behave identically
+across versions; the MCP plugin and the whole OIDC login → guard → logout flow are step-for-step
+identical against a live OIDC provider; and all four 0.9.9a1 enterprise breakages are fixed.
 
 ## Fix before release
 
@@ -41,7 +42,8 @@ and all four 0.9.9a1 enterprise breakages are fixed.
   pulls in `moment/min/locales`, which restores `en` — so an app can start leaking by adding an
   unrelated moment component. The wrapper should stop relying on moment's global default (pass an
   explicit locale, use react-moment 2.x's `MomentProvider`, or restore the default after importing
-  a locale file).
+  a locale file). Independently re-reproduced by an adversarial verifier from the written repro
+  alone (confirmed, medium).
 - **FINDING-002 — `rx.moment` `on_change` now fires at mount** (low, downstream,
   reflex-components-moment 0.9.4a1). The only confirmed regression in the campaign. The fix is a
   documentation decision rather than code: upstream react-moment lists this as a breaking change,
@@ -89,6 +91,12 @@ and all four 0.9.9a1 enterprise breakages are fixed.
 | 034 | Seven pre-existing component-library rough edges | low | Surfaced by the bump sweep, all reproduce on 0.9.10.post2. See `components_bumps/NOTES.md` ISSUE-2…ISSUE-10. |
 
 ### reflex-enterprise (downstream tracker)
+- **FINDING-035**: `rxe.EventHandlerAPIPlugin` serves a 500 for its own OpenAPI document because
+  `pyyaml` is not declared anywhere in the dependency chain, while `/.well-known/api-catalog`
+  advertises the broken URL. Pre-existing on both reflex versions; installing `pyyaml` fixes it, so
+  the fix is one dependency line.
+- **FINDING-036**: every page of an enterprise app logs two `no dispatch function for substate(s)`
+  console errors for the OIDC states that merely importing `reflex_enterprise` defines. Pre-existing.
 - **FINDING-031 / FINDING-032**: two MCP-resource quirks in reflex-enterprise 0.9.5, both
   pre-existing. `reflex://state/events/<unknown state>` answers `{"events": []}` where the sibling
   `state/vars` resource errors helpfully, and the `state` name `search_events` hands the caller is
@@ -153,6 +161,9 @@ Recorded so the next campaign knows what was already exercised and can spend its
   the provider), callback, userinfo, guarded pages and handlers (foreground and background),
   protected-value withholding, reload and second-tab persistence, and RP-initiated logout.
   22 recorded browser steps, byte-identical across reflex versions.
+- **Every remaining enterprise demo** (`mantine`, `highcharts`, `tickets`) on both reflex versions,
+  including the tickets demo's REST event API: an app-issued bearer, `POST /_reflex/event/...`
+  returning the delta, and the row persisted to sqlite.
 - **In-place upgrade** of three reflex-examples apps (`local-component`, `lorem-stream`,
   `data_visualisation`) keeping the venv, the app directory, `.web/` and the sqlite database.
 - **reflex-release 0.1.1a1** against a real worktree of the release branch: `packages`, `detect`
