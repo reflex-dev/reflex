@@ -909,6 +909,23 @@ def dynamic_components_module_template(
 _MEMO_WRAPPER_CALLEE_RE = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 
 
+def _apply_memo_wrapper(expression: str, wrapper: str | None) -> str:
+    """Apply an optional memo wrapper to a JavaScript function expression.
+
+    Args:
+        expression: The function expression to wrap.
+        wrapper: The wrapper expression, or ``None`` for a bare function.
+
+    Returns:
+        The wrapped JavaScript expression.
+    """
+    if not wrapper:
+        return expression
+    if not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
+        wrapper = f"({wrapper})"
+    return f"{wrapper}{expression}"
+
+
 def _render_memo_component(component: dict[str, Any]) -> str:
     """Render the ``export const`` statement for one memoized component.
 
@@ -932,10 +949,7 @@ def _render_memo_component(component: dict[str, Any]) -> str:
         {_RenderUtils.render(component["render"])}
     )
 }})"""
-    wrapper = component.get("wrapper")
-    if wrapper and not _MEMO_WRAPPER_CALLEE_RE.fullmatch(wrapper):
-        wrapper = f"({wrapper})"
-    export_expr = f"{wrapper}{function_expr}" if wrapper else function_expr
+    export_expr = _apply_memo_wrapper(function_expr, component.get("wrapper"))
     name = component["name"]
     # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),
     # which is the layer that knows the memo's clean export name — the JS symbol
@@ -974,9 +988,10 @@ def memo_components_template(
 
     functions_code = ""
     for function in functions:
-        functions_code += (
-            f"\nexport const {function['name']} = {function['function']};\n"
+        function_expr = _apply_memo_wrapper(
+            function["function"], function.get("wrapper")
         )
+        functions_code += f"\nexport const {function['name']} = {function_expr};\n"
 
     return f"""
 {imports_str}
@@ -1037,10 +1052,11 @@ def memo_single_function_template(
         The rendered standalone function memo module code.
     """
     imports_str = "\n".join([_RenderUtils.get_import(imp) for imp in imports])
+    function_expr = _apply_memo_wrapper(function["function"], function.get("wrapper"))
     return f"""
 {imports_str}
 
-export const {function["name"]} = {function["function"]};
+export const {function["name"]} = {function_expr};
 """
 
 

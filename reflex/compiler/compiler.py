@@ -465,13 +465,77 @@ class _MemoGroup:
 
 
 # Imports every memo module needs regardless of its body: ``isTrue`` for prop
-# coercion. The component wrapper import (``memo`` from React by default)
-# rides on each definition's ``wrapper`` var data instead, so a module whose
-# memos swap or drop the default wrapper doesn't import it. Shared by the
-# grouped and un-mirrored compile paths so they can't drift apart.
+# coercion. Component and function wrapper imports ride on each definition's
+# ``wrapper`` var data instead, so a module whose memos swap or drop their
+# wrappers doesn't import them. Shared by the grouped and un-mirrored compile
+# paths so they can't drift apart.
 _MEMO_BASE_IMPORTS: dict[str, list[ImportVar]] = {
     f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
 }
+
+
+def _prepare_recursive_memos(
+    memos: Iterable[MemoDefinition],
+) -> list[tuple[MemoDefinition, Component | None]]:
+    """Auto-memoize hook-bearing descendants inside recursive memo bodies.
+
+    Args:
+        memos: The memo definitions requested for compilation.
+
+    Returns:
+        Definitions paired with an optional compiler-transformed component
+        body, including any nested auto-memo definitions discovered while
+        walking recursive bodies.
+    """
+    hooks = CompilerHooks(plugins=(MemoizeStatefulPlugin(),))
+    compile_context = CompileContext(pages=(), hooks=hooks)
+    pending = collections.deque(memos)
+    queued = {
+        (type(memo), memo.export_name, memo.source_module)
+        for memo in pending
+        if isinstance(memo, (MemoComponentDefinition, MemoFunctionDefinition))
+    }
+    prepared: list[tuple[MemoDefinition, Component | None]] = []
+
+    with compile_context:
+        while pending:
+            memo = pending.popleft()
+            compiled_body: Component | None = None
+            if (
+                isinstance(memo, MemoComponentDefinition)
+                and memo.recursive
+                and not memo.auto_memo_wrapper
+            ):
+                page_context = PageContext(
+                    name=memo.python_name,
+                    route=memo.export_name,
+                    root_component=memo.component,
+                    source_module=memo.source_module,
+                )
+                with page_context:
+                    transformed = hooks.compile_component(
+                        memo.component,
+                        page_context=page_context,
+                        compile_context=compile_context,
+                    )
+                if not isinstance(transformed, Component):
+                    msg = "A recursive memo body must compile to a Component."
+                    raise TypeError(msg)
+                compiled_body = transformed
+
+                for generated in compile_context.auto_memo_components.values():
+                    key = (
+                        type(generated),
+                        generated.export_name,
+                        generated.source_module,
+                    )
+                    if key not in queued:
+                        queued.add(key)
+                        pending.append(generated)
+
+            prepared.append((memo, compiled_body))
+
+    return prepared
 
 
 def _compile_memo_components(
@@ -512,9 +576,13 @@ def _compile_memo_components(
         ))
         _extend_imports_in_place(aggregate_imports, file_imports)
 
-    for memo in memos:
+    for memo, compiled_body in _prepare_recursive_memos(memos):
         if isinstance(memo, MemoComponentDefinition):
-            memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
+            memo_render, memo_imports = (
+                utils.compile_experimental_component_memo(memo)
+                if compiled_body is None
+                else utils.compile_experimental_component_memo(memo, compiled_body)
+            )
             segments = memo_paths.module_to_mirrored_segments(memo.source_module)
             if segments is None:
                 _emit_unmirrored(

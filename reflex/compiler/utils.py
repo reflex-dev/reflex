@@ -376,15 +376,18 @@ def _app_style() -> ComponentStyle | Style:
 
 def compile_experimental_component_memo(
     definition: MemoComponentDefinition,
+    component: Component | None = None,
 ) -> tuple[dict, ParsedImportDict]:
     """Compile a memo component.
 
     Args:
         definition: The component memo definition.
+        component: An optional compiler-transformed memo body.
 
     Returns:
         A tuple of the compiled component definition and its imports.
     """
+    memo_body = definition.component if component is None else component
     hole_child = definition.passthrough_hole_child
     if hole_child is not None:
         # Passthrough memo: shallow-copy the root only — ``render.children``
@@ -393,7 +396,7 @@ def compile_experimental_component_memo(
         # we skip the O(n) deepcopy + recursive style pass. Descendants are
         # rendered AND styled in the page scope, not here, so only the root
         # needs app-level style merged.
-        render = copy.copy(definition.component)
+        render = copy.copy(memo_body)
         _apply_root_style(render)
 
         hooks = _root_only_hooks(render)
@@ -413,7 +416,7 @@ def compile_experimental_component_memo(
         render.children = [hole_child]
         rendered = render.render()
     else:
-        render = _apply_component_style_for_compile(copy.deepcopy(definition.component))
+        render = _apply_component_style_for_compile(copy.deepcopy(memo_body))
         hooks = render._get_all_hooks()
         rendered = render.render()
         custom_code = render._get_all_custom_code()
@@ -543,20 +546,26 @@ def compile_experimental_function_memo(
     if var_data := function._get_all_var_data():
         # Un-mirrored per-file memo modules live at ``$/utils/components/<name>``;
         # strip only a self-import to this function memo's own module.
-        self_module = memo_paths.unmirrored_library_specifier(definition.python_name)
+        self_module = memo_paths.unmirrored_library_specifier(definition.export_name)
         imports = {
             lib: list(fields)
             for lib, fields in dict(var_data.imports).items()
             if lib != self_module
         }
 
+    wrapper = definition.wrapper
+    if wrapper is not None and (wrapper_var_data := wrapper._get_all_var_data()):
+        for lib, fields in wrapper_var_data.imports:
+            imports.setdefault(lib, []).extend(fields)
+
     return (
         {
             "kind": "function",
             "name": memo_paths.library_and_symbol(
-                definition.source_module, definition.python_name
+                definition.source_module, definition.export_name
             )[1],
             "function": str(function),
+            "wrapper": str(wrapper) if wrapper is not None else None,
         },
         imports,
     )
