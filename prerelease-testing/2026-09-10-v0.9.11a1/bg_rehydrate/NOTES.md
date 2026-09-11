@@ -305,3 +305,32 @@ Everything else was regenerated in the 18:06-18:30 session.
 All servers were started through `scripts/serve.sh` (pid files in `logs/*.pid`) and stopped with `scripts/stop.sh`;
 redis ran on port 8235 (`logs/redis_8235.log`) and was shut down at the end.
 `ps aux | grep -E 'reflex|granian|vite|bun|chrom|redis'` was empty of this cluster's processes before finishing.
+
+## VERIFICATION: cross-worker deltas silently dropped in prod with redis and the default worker count
+
+Verified by the orchestrator (the verifier agent for this issue was killed by the org spend limit).
+Reproduced from this NOTES.md alone in a fresh directory
+(`$SB/apps/orch_verify_crossworker/`, copies of `rehydrate_app` and `scripts/`), own redis on port
+8057, ports 3057-3059, shared venvs `$SB/envs/smoke` (0.9.11a1) and `$SB/envs/base0910`.
+
+**CONFIRMED, and the multi-worker configuration is the cause.** Three runs of the same driver
+(`scripts/pw_prod_crossworker.py --n 6`, six backend-enqueued `ping` events into a live browser page):
+
+| version | granian workers | distinct token-manager instance ids | deltas delivered | final UI |
+|---|---|---|---|---|
+| 0.9.11a1 | 9 (default, 2·CPU+1) | **1** | **4 / 6** | `pings=6` only after the last delta |
+| 0.9.11a1 | 1 (`GRANIAN_WORKERS=1`) | 1 | **6 / 6** | correct throughout |
+| 0.9.10.post2 | 8 (default) | **1** | **0 / 6** | `pings=0`; the UI never moved |
+
+So: with more than one worker every worker reports the same `RedisTokenManager.instance_id`
+(9 distinct pids, 1 id), a backend-initiated delta processed by a non-owner worker is dropped, and
+the browser only catches up on a later delivered delta or the user's next click. With a single
+worker delivery is perfect. The 0.9.10.post2 baseline is if anything worse (0/6), so this is
+**pre-existing and not a regression of this train** — but it does swallow the routeless hydrate that
+#7073 adds, which is why it matters for this release.
+
+Evidence: `verification/crossworker_9w/`, `verification/crossworker_1w/`,
+`verification/crossworker_base9w/` (each with `results.json` and websocket frame dumps).
+Rerun: start redis, `GRANIAN_WORKERS=<n> REFLEX_REDIS_URL=redis://localhost:<port>
+reflex run --env prod --frontend-port <P> --backend-port <P>`, then
+`whoami_probe.py http://localhost:<P> 20` and `pw_prod_crossworker.py --url http://localhost:<P> --n 6`.

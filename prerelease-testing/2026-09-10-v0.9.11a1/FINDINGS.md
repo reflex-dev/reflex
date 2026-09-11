@@ -39,15 +39,17 @@ What needs a decision or a fix before final:
   trusted publisher not configured for the new project); published manually 17 min later.
 - FINDING-002 (regression, downstream, low): `rx.moment` `on_change` fires at mount under
   react-moment 2.0.2 — documented upstream as breaking, filed in our changelog as a bug fix.
-- FINDING-003 (pre-existing, high): prod multi-worker + redis drops every cross-worker delta
-  (all granian workers share one `RedisTokenManager.instance_id`). Not new, but the #7073
-  hydrate delta is one of the things it swallows.
+- FINDING-003 (pre-existing, high, CONFIRMED): prod with redis and the default worker count drops
+  backend-initiated deltas, because every forked granian worker shares one
+  `RedisTokenManager.instance_id`. Measured: 4/6 delivered on 0.9.11a1 with 9 workers, 6/6 with one
+  worker, 0/6 on 0.9.10.post2 with 8 workers. Not new, but it swallows the #7073 hydrate this train
+  adds.
 - Several verifier verdicts still pending (hybrid_property typing claim; bg_rehydrate items).
 
 Index (confirmed = independently re-reproduced by a verifier; claimed = verification pending):
 - FINDING-001: reflex-otel 0.1.0a1 not published by the release run (PROCESS, resolved)
 - FINDING-002: rx.moment on_change fires at mount with react-moment 2.0.2 (LOW, regression, downstream) — CONFIRMED
-- FINDING-003: prod multi-worker + redis: cross-worker deltas silently dropped, swallowing the new #7073 hydrate (HIGH, pre-existing) — claimed
+- FINDING-003: prod multi-worker + redis: cross-worker deltas silently dropped, swallowing the new #7073 hydrate (HIGH, pre-existing) — CONFIRMED (orchestrator; single-worker control delivers 6/6)
 - FINDING-004: client-storage vars show defaults after a backend rehydrate until a full reload (MEDIUM, pre-existing) — claimed
 - FINDING-005: hybrid_property class-level typing works on the repo-pinned pyright 1.1.411 but degrades to `Any` from pyright 1.1.412 onward (MEDIUM, forward-compat) — CONFIRMED by version bracketing
 - FINDING-006: uv cannot build the `reflex` sdist (workspace sources in pyproject) (LOW, pre-existing)
@@ -96,6 +98,30 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
   still describes 1.2.2 semantics ("Fires when the date changes").
 - Decision for maintainers: document it (changelog "Breaking"/behaviour note + docs) or restore
   the old semantics with a guard in the wrapper.
+
+## FINDING-003: prod multi-worker with redis drops backend-initiated deltas (HIGH, pre-existing, CONFIRMED)
+
+- Cluster: `bg_rehydrate` | Regression vs 0.9.10.post2: no (the baseline is worse) | Verifier:
+  orchestrator, from the written repro in a fresh directory
+- Every forked granian worker reports the same `RedisTokenManager.instance_id` (9 distinct pids,
+  1 id), because `_run_prod` imports and compiles the app — constructing the token manager — before
+  granian forks. `RedisTokenManager._fetch_socket_record` on a non-owner worker sees
+  `record.instance_id == self.instance_id` with an unknown sid, treats it as its own stale socket,
+  and returns None, so `emit_update` drops the delta instead of publishing it to the owner.
+- Measured with one driver over six backend-enqueued events into a live page:
+
+| version | workers | deltas delivered |
+|---|---|---|
+| 0.9.11a1 | 9 (default) | 4 / 6 |
+| 0.9.11a1 | 1 | 6 / 6 |
+| 0.9.10.post2 | 8 (default) | 0 / 6 |
+
+- The state itself is always correct in redis; the browser catches up only on a later delivered
+  delta or the user's next click, so the loss is silent.
+- Why it matters for this train: the routeless hydrate #7073 adds is exactly a backend-initiated
+  delta, so in the default prod deployment the new fix is invisible to the client.
+- Repro, evidence and rerun commands: `bg_rehydrate/NOTES.md` (VERIFICATION section) and
+  `bg_rehydrate/verification/`.
 
 ## FINDING-006: uv cannot build the `reflex` sdist (LOW, pre-existing)
 
