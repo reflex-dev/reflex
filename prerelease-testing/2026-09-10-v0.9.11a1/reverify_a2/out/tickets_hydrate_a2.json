@@ -1,0 +1,40 @@
+{
+ "sent": [
+  "40/_event,",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"Cannot process state update: no dispatch function for substate(s) \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\\\", \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\\\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.\"}}}",
+  "42/_event,[\"client_error\",{\"message\":\"Cannot process state update: no dispatch function for substate(s) \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\\\", \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\\\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.\",\"substate\":\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state, reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\",\"error_type\":\"dispatch_function_missing\"}]"
+ ],
+ "recv": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"BAA7yx_o7POcqSakAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"erouqj2Pjv_WEBv4AAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"a66e5c7f-a7e9-45c9-de83-80e7997421c6\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"erouqj2Pjv_WEBv4AAAB\"},\"headers\":{\"host\":\"localhost:9886\",\"origin\":\"http://localhost:5484\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"CUV2otuzbIyy0JmyONdVsA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:9886\",\"origin\":\"http://localhost:5484\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"CUV2otuzbIyy0JmyONdVsA==\",\"sec-websocket-protocol\":\"0.9.11a2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"page\":{\"host\":\"http://localhost:5484\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:5484/index\",\"full_raw_path\":\"http://localhost:5484/\",\"para",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"q_rx_state_\":\"\",\"page_count_rx_state_\":1,\"tickets_rx_state_\":[],\"priority_filter_rx_state_\":\"all\",\"has_next_page_rx_state_\":false,\"page_rx_state_\":1,\"has_active_filters_rx_state_\":false,\"page_size_rx_state_\":20,\"sort_dir_rx_state_\":\"desc\",\"open_count_rx_state_\":0,\"status_filter_rx_state_\":\"all\",\"sort_by_rx_state_\":\"created_at\",\"total_count_rx_state_\":0,\"has_prev_page_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console": [
+  [
+   "log",
+   "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  [
+   "error",
+   "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\", \"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\". Try refreshing the page or clearing your browser cach"
+  ]
+ ]
+}

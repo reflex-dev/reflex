@@ -1,0 +1,40 @@
+Debug: Copying .web/build/client/page-b/index.html to 
+.web/build/client/page-b.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/reverify_a2/rehydrate_app_a1/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/reverify_a2/rehydrate_app_a1/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3226/
+Debug: Using Granian for backend
+[WARNING] Configured number of workers appears to be higher than the amount of CPU cores available. Mind that such value might actually decrease the overall throughput of the server. Consider using 4 workers and tune threads configuration instead
+[INFO] Starting granian (main PID: 2094)
+[INFO] Listening at: http://0.0.0.0:3226
+[INFO] Spawning worker-1 with PID: 2155
+[INFO] Spawning worker-2 with PID: 2157
+[INFO] Spawning worker-3 with PID: 2159
+[INFO] Spawning worker-4 with PID: 2161
+[INFO] Spawning worker-5 with PID: 2163
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-2
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-3
+[INFO] Spawning worker-6 with PID: 2174
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-5
+[INFO] Started worker-6
+[INFO] Spawning worker-7 with PID: 2182
+[INFO] Spawning worker-8 with PID: 2184
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-4
+[INFO] Spawning worker-9 with PID: 2189
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-7
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-8
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-9

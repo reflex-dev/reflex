@@ -1,0 +1,104 @@
+{
+    "version": "1.1.414",
+    "time": "1789147345611",
+    "generalDiagnostics": [
+        {
+            "file": "/home/user/reflex/prerelease-testing/2026-09-10-v0.9.11a1/orch_probes/hp_types.py",
+            "severity": "information",
+            "message": "Type of \"State.full\" is \"StringVar[str]\"",
+            "range": {
+                "start": {
+                    "line": 31,
+                    "character": 12
+                },
+                "end": {
+                    "line": 31,
+                    "character": 22
+                }
+            }
+        },
+        {
+            "file": "/home/user/reflex/prerelease-testing/2026-09-10-v0.9.11a1/orch_probes/hp_types.py",
+            "severity": "information",
+            "message": "Type of \"State.doubled\" is \"NumberVar[int]\"",
+            "range": {
+                "start": {
+                    "line": 32,
+                    "character": 12
+                },
+                "end": {
+                    "line": 32,
+                    "character": 25
+                }
+            }
+        },
+        {
+            "file": "/home/user/reflex/prerelease-testing/2026-09-10-v0.9.11a1/orch_probes/hp_types.py",
+            "severity": "information",
+            "message": "Type of \"State.positive\" is \"BooleanVar\"",
+            "range": {
+                "start": {
+                    "line": 33,
+                    "character": 12
+                },
+                "end": {
+                    "line": 33,
+                    "character": 26
+                }
+            }
+        },
+        {
+            "file": "/home/user/reflex/prerelease-testing/2026-09-10-v0.9.11a1/orch_probes/hp_types.py",
+            "severity": "information",
+            "message": "Type of \"State.greeting\" is \"StringVar[str]\"",
+            "range": {
+                "start": {
+                    "line": 34,
+                    "character": 12
+                },
+                "end": {
+                    "line": 34,
+                    "character": 26
+                }
+            }
+        },
+        {
+            "file": "/home/user/reflex/prerelease-testing/2026-09-10-v0.9.11a1/orch_probes/hp_types.py",
+            "severity": "information",
+            "message": "Type of \"State().full\" is \"str\"",
+            "range": {
+                "start": {
+                    "line": 35,
+                    "character": 12
+                },
+                "end": {
+                    "line": 35,
+                    "character": 24
+                }
+            }
+        },
+        {
+            "file": "/home/user/reflex/prerelease-testing/2026-09-10-v0.9.11a1/orch_probes/hp_types.py",
+            "severity": "information",
+            "message": "Type of \"State().doubled\" is \"int\"",
+            "range": {
+                "start": {
+                    "line": 36,
+                    "character": 12
+                },
+                "end": {
+                    "line": 36,
+                    "character": 27
+                }
+            }
+        }
+    ],
+    "summary": {
+        "filesAnalyzed": 1,
+        "errorCount": 0,
+        "warningCount": 0,
+        "informationCount": 6,
+        "timeInSec": 1.051
+    }
+}
+

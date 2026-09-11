@@ -1,0 +1,60 @@
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+────────────── Compiling production app and preparing for export. ──────────────
+PROBE import      ctx= 0x7f454c5cb640 bundled= ['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+PROBE after_app   ctx= 0x7f454c5cb640 bundled= ['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+PROBE page_eval   ctx= 0x7f454c5cb640 bundled= ['$/utils/context', '$/utils/state', '@emotion/react', 'd3-format', 'react']
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/bin/reflex", line 10, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/reflex.py", line 858, in export
+    export_utils.export(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/utils/export.py", line 86, in export
+    prerequisites.get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 339, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/app.py", line 1693, in _compile
+    did_real_compile = compiler.compile_app(
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1288, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 809, in compile
+    page_ctx = self.hooks.eval_page(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 271, in eval_page
+    result = hook_impl(page_fn, page=page, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/compiler/plugins/builtin.py", line 182, in eval_page
+    component = compiler.into_component(page_fn)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/a2/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 958, in into_component
+    component_called = component()
+                       ^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/reverify_a2/bundlectx/bundlectx/bundlectx.py", line 60, in index
+    return rx.vstack(rx.text("hi", id="hi"), Formatted.create())
+                                             ^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/reverify_a2/bundlectx/bundlectx/bundlectx.py", line 46, in create
+    _var_data=rx.vars.VarData(imports={"d3-format": [rx.utils.imports.ImportVar(tag="format")]}),
+                                                     ^^^^^^^^^^^^^^^^
+AttributeError: module 'reflex.utils' has no attribute 'imports'
+Happened while evaluating page 'index'

@@ -953,3 +953,26 @@ Detail and repros in `ent_mantine_highcharts_tickets/NOTES.md` ISSUE-3, ISSUE-6 
   at all; the second click works, and so does the first if a hover reaches the point first.
 * An unknown route renders reflex's `404: Page not found` page with HTTP **200** in dev and **404** in
   prod, so a dev-mode smoke test that asserts on status codes silently passes.
+
+## Phase 7 — re-verification against the published 0.9.11a2 batch (2026-09-11)
+
+Full detail, evidence and controls in [PUBLISHED_VALIDATION.md](./PUBLISHED_VALIDATION.md). Every
+row is the **original failing repro** re-run against the published a2 packages, with the a1 build
+kept running beside it as a same-machine control wherever the outcome is a comparison.
+
+| # | finding | a2 change | verdict |
+| --- | --- | --- | --- |
+| 033 | `rx.moment(locale=…)` changes every other moment's language | moment #7110 | **FIXED** |
+| 003 | prod multi-worker + redis drops backend-initiated deltas | reflex #7108 | **FIXED** |
+| 025 | `rx.AdminDash` 500 on every `/admin` route | reflex #7107 | **FIXED** |
+| 022 | module-scope `bundle_library()` discarded before page eval | reflex/base #7109 | **FIXED** |
+| 005 | `hybrid_property` typing degrades to `Any` on pyright ≥1.1.412 | base #7106 | **FIXED** |
+| 014 | `frontend_path` accepts Win32-trimmed and empty segments | base #7105 | **FIXED** |
+| 027 | reflex-otel's documented env-var setup exports nothing | otel #7086 | **DOC FIXED**; the swallowed misconfiguration is unchanged |
+| 002 | `rx.moment` `on_change` fires at mount | moment #7085 | **RESOLVED** — documented breaking change, behaviour matches the text |
+| 030 | state-delta key ordering changed | reflex #7087 | **RESOLVED** — documented breaking change |
+| 036 | a delta for a substate with no dispatcher latches the frontend dead | — | **STILL OPEN**, re-reproduced; `state.js` byte-identical to a1 |
+
+All five a2 packages are published with wheel and sdist (no repeat of FINDING-001), the `.pyi`
+packaging audit passes (69 stubs, both formats, no foreign stubs), and a blank-app smoke on a2 is
+clean in the browser.

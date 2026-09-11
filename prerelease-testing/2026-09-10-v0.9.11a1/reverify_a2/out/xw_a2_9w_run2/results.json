@@ -1,0 +1,12 @@
+[
+ {
+  "name": "XW.backend_event_delta_delivery",
+  "status": "fail",
+  "details": "7/8 backend-initiated pings produced a delta in the browser; final UI pings=8; per call: [{'i': 0, 'api': ['done'], 'worker_runs_ping': 2, 'deltas_received': 1, 'ui': 'pings=1'}, {'i': 1, 'api': ['done'], 'worker_runs_ping': 1, 'deltas_received': 1, 'ui': 'pings=2'}, {'i': 2, 'api': ['done'], 'worker_runs_ping': 2, 'deltas_received': 1, 'ui': 'pings=3'}, {'i': 3, 'api': ['done'], 'worker_runs_ping': 2, 'deltas_received': 1, 'ui': 'pings=4'}, {'i': 4, 'api': ['done'], 'worker_runs_ping': 2, 'deltas_received': 0, 'ui': 'pings=4'}, {'i': 5, 'api': ['done'], 'worker_runs_ping': 3, 'deltas_received': 3, 'ui': 'pings=6'}, {'i': 6, 'api': ['done'], 'worker_runs_ping': 3, 'deltas_received': 1, 'ui': 'pings=7'}, {'i': 7, 'api': ['done'], 'worker_runs_ping': 3, 'deltas_received': 1, 'ui': 'pings=8'}]"
+ },
+ {
+  "name": "XW.ui_after_click",
+  "status": "pass",
+  "details": "snapshot={'pings': 'pings=8', 'clicks': 'clicks=1', 'loaded_page': 'loaded_page=index', 'load_seq': 'load_seq=2'}"
+ }
+]

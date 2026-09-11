@@ -1,0 +1,60 @@
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+──────────────────────────── Initializing momentapp ────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized momentapp. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/a2/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 16/15 0:00:00
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+App running at: http://localhost:5482/
+Backend running at: http://0.0.0.0:9884
+EVT seq=1 kind=interval payload='17:30:15' server_time=17:30:15.526
+EVT seq=2 kind=static payload='2020-01-02 03:04' server_time=17:30:15.528
+EVT seq=3 kind=interval0 payload='17:30:15' server_time=17:30:15.529
+EVT seq=4 kind=interval payload='17:30:15' server_time=17:30:15.530
+EVT seq=5 kind=static payload='2020-01-02 03:04' server_time=17:30:15.532
+EVT seq=6 kind=interval0 payload='17:30:15' server_time=17:30:15.533
+EVT seq=7 kind=interval payload='17:30:18' server_time=17:30:18.527
+EVT seq=8 kind=interval payload='17:30:21' server_time=17:30:21.528
+EVT seq=9 kind=interval payload='17:30:24' server_time=17:30:24.339
+EVT seq=10 kind=static payload='2020-01-02 03:04' server_time=17:30:24.340
+EVT seq=11 kind=interval0 payload='17:30:24' server_time=17:30:24.341
+EVT seq=12 kind=interval payload='17:30:24' server_time=17:30:24.341
+EVT seq=13 kind=static payload='2020-01-02 03:04' server_time=17:30:24.342
+EVT seq=14 kind=interval0 payload='17:30:24' server_time=17:30:24.343
+EVT seq=15 kind=interval payload='17:30:27' server_time=17:30:27.341
+EVT seq=16 kind=interval payload='17:30:30' server_time=17:30:30.340
+EVT seq=17 kind=interval payload='17:30:35' server_time=17:30:35.578
+EVT seq=18 kind=static payload='2020-01-02 03:04' server_time=17:30:35.579
+EVT seq=19 kind=interval0 payload='17:30:35' server_time=17:30:35.580
+EVT seq=20 kind=interval payload='17:30:35' server_time=17:30:35.580
+EVT seq=21 kind=static payload='2020-01-02 03:04' server_time=17:30:35.582
+EVT seq=22 kind=interval0 payload='17:30:35' server_time=17:30:35.583
+EVT seq=23 kind=interval payload='17:30:38' server_time=17:30:38.580
+EVT seq=24 kind=interval payload='17:30:41' server_time=17:30:41.580
