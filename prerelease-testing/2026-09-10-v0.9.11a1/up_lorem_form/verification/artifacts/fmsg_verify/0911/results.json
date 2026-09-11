@@ -1,0 +1,77 @@
+[
+  {
+    "name": "unnamed_renders",
+    "status": "fail",
+    "details": "error_boundary=True heading=False input=False body0='An error occurred while rendering this page.\\n\\nThis is an error with the application itself'"
+  },
+  {
+    "name": "unnamed_submit",
+    "status": "skipped",
+    "details": "page did not render"
+  },
+  {
+    "name": "named_renders",
+    "status": "pass",
+    "details": "error_boundary=False heading=True input=True body0='named\\n\\nWho are you?\\n\\nSubmit'"
+  },
+  {
+    "name": "named_submit",
+    "status": "pass",
+    "details": "state_out=\"{'who': 'alice', 'inp': 'alice', 'sub': None}\" empty_submit_msg_shown=True"
+  },
+  {
+    "name": "msgname_renders",
+    "status": "pass",
+    "details": "error_boundary=False heading=True input=True body0=\"msgname\\n\\nWho are you?\\n\\nSubmit\\n\\n{'who': 'alice', 'inp': 'alice', 'sub': None}\""
+  },
+  {
+    "name": "msgname_submit",
+    "status": "pass",
+    "details": "state_out=\"{'who': 'alice', 'inp': 'alice', 'sub': None}\" empty_submit_msg_shown=True"
+  },
+  {
+    "name": "nomsg_renders",
+    "status": "pass",
+    "details": "error_boundary=False heading=True input=True body0=\"nomsg\\n\\nWho are you?\\n\\nSubmit\\n\\n{'who': 'alice', 'inp': 'alice', 'sub': None}\""
+  },
+  {
+    "name": "nomsg_submit",
+    "status": "pass",
+    "details": "state_out=\"{'who': 'alice', 'inp': 'alice', 'sub': None}\" empty_submit_msg_shown=False"
+  },
+  {
+    "name": "msgtop_renders",
+    "status": "fail",
+    "details": "error_boundary=True heading=False input=False body0='An error occurred while rendering this page.\\n\\nThis is an error with the application itself'"
+  },
+  {
+    "name": "msgtop_submit",
+    "status": "skipped",
+    "details": "page did not render"
+  },
+  {
+    "name": "labelonly_renders",
+    "status": "fail",
+    "details": "error_boundary=True heading=False input=False body0='An error occurred while rendering this page.\\n\\nThis is an error with the application itself'"
+  },
+  {
+    "name": "labelonly_submit",
+    "status": "skipped",
+    "details": "page did not render"
+  },
+  {
+    "name": "controlonly_renders",
+    "status": "fail",
+    "details": "error_boundary=True heading=False input=False body0='An error occurred while rendering this page.\\n\\nThis is an error with the application itself'"
+  },
+  {
+    "name": "controlonly_submit",
+    "status": "skipped",
+    "details": "page did not render"
+  },
+  {
+    "name": "console_errors",
+    "status": "anomaly",
+    "details": "16 error(s)"
+  }
+]

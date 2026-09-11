@@ -1,0 +1,25 @@
+───────────────────────── Initializing trailingcomment ─────────────────────────
+───────────────────── Initializing stringreturnannotation ──────────────────────
+{
+  "reflex": "0.9.11a1",
+  "trailing_comment": "IndentationError: unexpected indent (trailingcomment.py, line 3)",
+  "trailing_comment_tb": "\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_h311/lib/python3.11/site-packages/reflex/testing.py\", line 317, in _initialize_app\n    reflex.utils.prerequisites.get_and_validate_app(\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_h311/lib/python3.11/site-packages/reflex/utils/prerequisites.py\", line 303, in get_and_validate_app\n    app_module = get_app(reload=reload)\n                 ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_h311/lib/python3.11/site-packages/reflex/utils/prerequisites.py\", line 263, in get_app\n    __import__(module, fromlist=(constants.CompileVars.APP,))\n  File \"/tmp/ah_trailing_comment_h_o8blk7/trailingcomment/trailingcomment.py\", line 3\n    import reflex as rx\nIndentationError: unexpected indent\n",
+  "trailing_comment_generated_head": [
+    "",
+    "# noqa: N802",
+    "  import reflex as rx",
+    "",
+    "  def index():",
+    "      return rx.text(\"hi\")"
+  ],
+  "string_return_annotation": "IndentationError: unexpected indent (stringreturnannotation.py, line 3)",
+  "string_return_annotation_tb": "-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_h311/lib/python3.11/site-packages/reflex/testing.py\", line 317, in _initialize_app\n    reflex.utils.prerequisites.get_and_validate_app(\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_h311/lib/python3.11/site-packages/reflex/utils/prerequisites.py\", line 303, in get_and_validate_app\n    app_module = get_app(reload=reload)\n                 ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_h311/lib/python3.11/site-packages/reflex/utils/prerequisites.py\", line 263, in get_app\n    __import__(module, fromlist=(constants.CompileVars.APP,))\n  File \"/tmp/ah_string_return_annotation_2y98bv3y/stringreturnannotation/stringreturnannotation.py\", line 3\n    return rx.text(\"hi\")\nIndentationError: unexpected indent\n",
+  "string_return_annotation_generated_head": [
+    "",
+    "",
+    "    return rx.text(\"hi\")",
+    "",
+    "app = rx.App()",
+    "app.add_page(index, route=\"/\")"
+  ]
+}

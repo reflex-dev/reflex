@@ -1,0 +1,18 @@
+{
+  "static appearance='dark'": {
+    "appearance_in_render": false,
+    "render_head": "{'name': 'RadixThemesTheme', 'props': [\"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\"], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+  },
+  "static color_mode='dark'": {
+    "appearance_in_render": false,
+    "render_head": "{'name': 'RadixThemesTheme', 'props': [\"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\"], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+  },
+  "Var appearance=S.appearance": {
+    "appearance_in_render": false,
+    "render_head": "{'name': 'RadixThemesTheme', 'props': [\"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\"], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+  },
+  "static accent_color='red' (control)": {
+    "appearance_in_render": false,
+    "render_head": "{'name': 'RadixThemesTheme', 'props': ['accentColor:\"red\"', \"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\"], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+  }
+}

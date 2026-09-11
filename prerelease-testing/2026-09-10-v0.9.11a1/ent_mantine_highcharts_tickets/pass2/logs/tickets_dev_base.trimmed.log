@@ -1,0 +1,109 @@
+### first 60 lines of tickets_dev_base.log
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/mht_base/lib/python3.11/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='tickets', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///tickets.db', async_db_url='sqlite+aiosqlite:///tickets.db', 
+redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'db_url', 'loglevel', 'plugins', 'app_name', 
+'async_db_url', 'disable_plugins', 'telemetry_enabled'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[EventHandlerAPIPlugin()], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.10.post2 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/mht_base/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.3.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=5423
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9823
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.032 seconds
+Debug: Latest version of reflex: 0.9.10.post2
+Debug: Checking if Frontend port: 5423 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 5423 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 5423 is not in use.
+Debug: Checking if Backend port: 9823 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9823 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+
+### lines matching error|warn|deprecat|redefined|Exception|Traceback|paid|console
+19:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+62:DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+65:DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+68:Warning: Database is not initialized, run reflex db init first.
+71:DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+107:'--legacy-peer-deps', 'react-error-boundary@6.1.2', '@radix-ui/themes@3.3.0', 
+118:Debug: installed react-error-boundary@6.1.2
+159:DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+162:DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+165:Warning: Database is not initialized, run reflex db init first.
+168:DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+186:Debug: 6:52:28 AM [vite] (client) [console.error] Cannot process state update: 
+191:_auth_state". Try refreshing the page or clearing your browser cache. This error
+195:[Reflex Frontend Exception]
+207:[ERROR] Unexpected exit from worker-1
+211:Debug: error: script "dev" was terminated by signal SIGKILL (Forced quit)
+219:6:52:28 AM [vite] (client) [console.error] Cannot process state update: no 
+224:_auth_state". Try refreshing the page or clearing your browser cache. This error
+228:error: script "dev" was terminated by signal SIGKILL (Forced quit)
+
+### last 25 lines
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" was terminated by signal SIGKILL (Forced quit)
+Starting frontend failed with exit code -9
+$ react-router dev --host
+6:51:25 AM [vite] (client) Re-optimizing dependencies because lockfile has 
+changed
+  ➜  Local:   http://localhost:5423/
+  ➜  Network: http://192.0.2.2:5423/  eth0
+6:51:27 AM [vite] (ssr) connected.
+6:52:28 AM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_s
+tate", 
+"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc
+_auth_state". Try refreshing the page or clearing your browser cache. This error
+usually indicates a mismatch between frontend and backend state definitions. If 
+you are the developer of this app, rebuild the frontend and check that api_url 
+is correct.
+error: script "dev" was terminated by signal SIGKILL (Forced quit)
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

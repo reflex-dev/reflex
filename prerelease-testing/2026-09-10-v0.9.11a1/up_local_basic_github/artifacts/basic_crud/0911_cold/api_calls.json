@@ -1,0 +1,34 @@
+{
+  "GET /products (initial)": [
+    200,
+    "[{\"created\":\"2026-09-11T08:18:23.796981\",\"id\":1,\"seller\":\"acme\",\"code\":\"API-1\",\"updated\":\"2026-09-11T08:18:23.808978\",\"label\":\"Api Widget v2\",\"image\":\"/favicon.ico\",\"quantity\":99,\"category\":\"tools\",\"s"
+  ],
+  "POST /products": [
+    200,
+    "\"OK\""
+  ],
+  "GET /products/1": [
+    200,
+    "{\"created\":\"2026-09-11T08:19:52.723110\",\"id\":1,\"seller\":\"acme\",\"code\":\"API-1\",\"updated\":\"2026-09-11T08:19:52.723110\",\"label\":\"Api Widget\",\"image\":\"/favicon.ico\",\"quantity\":7,\"category\":\"tools\",\"sender\":\"depot\"}"
+  ],
+  "PUT /products/1": [
+    200,
+    "null"
+  ],
+  "GET /products/999999": [
+    200,
+    "{\"status_code\":404,\"detail\":\"Not Found\",\"headers\":null}"
+  ],
+  "POST /products (empty code)": [
+    200,
+    "{\"status_code\":402,\"detail\":\"Invalid `code`\",\"headers\":null}"
+  ],
+  "POST /products (duplicate code)": [
+    500,
+    "Internal Server Error"
+  ],
+  "GET /openapi.json": [
+    200,
+    "['/products', '/products/{spec_id}']"
+  ]
+}

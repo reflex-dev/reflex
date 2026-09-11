@@ -1,0 +1,82 @@
+[
+  {
+    "name": "index_loads",
+    "status": "pass",
+    "details": "new_task_button_visible=True cards=0"
+  },
+  {
+    "name": "new_task_streams",
+    "status": "pass",
+    "details": "card_appeared=True grew=True max_in_ITERATIONS_RANGE=True toggle_btn=⏯️"
+  },
+  {
+    "name": "three_concurrent_tasks",
+    "status": "pass",
+    "details": "cards=3 advanced_or_complete=3 ids=['0', '1', '2']"
+  },
+  {
+    "name": "pause_freezes_stream",
+    "status": "pass",
+    "details": "task=2 frozen=True progress_at_pause_equals_after=True"
+  },
+  {
+    "name": "pause_leaves_others_running",
+    "status": "pass",
+    "details": "others=2 still_advancing_or_complete=2"
+  },
+  {
+    "name": "resume_continues_from_progress",
+    "status": "pass",
+    "details": "task=2 progress_increased=True text_kept=True"
+  },
+  {
+    "name": "task_completes_and_shows_restart",
+    "status": "pass",
+    "details": "completed_cards=2 restart_button=🔄 value_eq_max=True"
+  },
+  {
+    "name": "restart_completed_task",
+    "status": "pass",
+    "details": "task=1 progress_reset=True streams_again=True new_max_in_range=True"
+  },
+  {
+    "name": "kill_removes_card",
+    "status": "pass",
+    "details": "killed=0 card_removed=True cards_before=3 cards_after=2"
+  },
+  {
+    "name": "state_survives_reload",
+    "status": "pass",
+    "details": "same_task_ids=True text_preserved=True cards=3"
+  },
+  {
+    "name": "background_task_streams_into_reloaded_page",
+    "status": "pass",
+    "details": "task=3 received_delta_after_reload=True"
+  },
+  {
+    "name": "burst_six_tasks_all_stream",
+    "status": "pass",
+    "details": "new_cards=6 streaming=6"
+  },
+  {
+    "name": "kill_all_burst_tasks",
+    "status": "pass",
+    "details": "all_burst_cards_removed=True remaining_cards=3"
+  },
+  {
+    "name": "no_unexpected_console",
+    "status": "pass",
+    "details": "[]"
+  },
+  {
+    "name": "no_failed_or_4xx_requests",
+    "status": "pass",
+    "details": "[]"
+  },
+  {
+    "name": "no_page_errors",
+    "status": "pass",
+    "details": "[]"
+  }
+]

@@ -1,0 +1,286 @@
+{
+ "reflex_cli_file": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/__init__.py",
+ "deploy_predicate_source": [
+  "if rx_version.release < breaking_release"
+ ],
+ "deploy_arity": [
+  {
+   "version": "0.6.5",
+   "release_tuple": [
+    0,
+    6,
+    5
+   ],
+   "post_6963_uses_6arg_export": true,
+   "pre_6963_uses_6arg_export": true,
+   "changed": false
+  },
+  {
+   "version": "0.6.6",
+   "release_tuple": [
+    0,
+    6,
+    6
+   ],
+   "post_6963_uses_6arg_export": true,
+   "pre_6963_uses_6arg_export": true,
+   "changed": false
+  },
+  {
+   "version": "0.6.6.post1",
+   "release_tuple": [
+    0,
+    6,
+    6
+   ],
+   "post_6963_uses_6arg_export": true,
+   "pre_6963_uses_6arg_export": true,
+   "changed": false
+  },
+  {
+   "version": "0.7.5",
+   "release_tuple": [
+    0,
+    7,
+    5
+   ],
+   "post_6963_uses_6arg_export": true,
+   "pre_6963_uses_6arg_export": true,
+   "changed": false
+  },
+  {
+   "version": "0.7.6",
+   "release_tuple": [
+    0,
+    7,
+    6
+   ],
+   "post_6963_uses_6arg_export": true,
+   "pre_6963_uses_6arg_export": true,
+   "changed": false
+  },
+  {
+   "version": "0.7.6.post1",
+   "release_tuple": [
+    0,
+    7,
+    6
+   ],
+   "post_6963_uses_6arg_export": true,
+   "pre_6963_uses_6arg_export": false,
+   "changed": true
+  },
+  {
+   "version": "0.7.6.post2",
+   "release_tuple": [
+    0,
+    7,
+    6
+   ],
+   "post_6963_uses_6arg_export": true,
+   "pre_6963_uses_6arg_export": false,
+   "changed": true
+  },
+  {
+   "version": "0.7.7",
+   "release_tuple": [
+    0,
+    7,
+    7
+   ],
+   "post_6963_uses_6arg_export": false,
+   "pre_6963_uses_6arg_export": false,
+   "changed": false
+  },
+  {
+   "version": "0.7.7rc1",
+   "release_tuple": [
+    0,
+    7,
+    7
+   ],
+   "post_6963_uses_6arg_export": false,
+   "pre_6963_uses_6arg_export": false,
+   "changed": false
+  },
+  {
+   "version": "0.9.10.post2",
+   "release_tuple": [
+    0,
+    9,
+    10
+   ],
+   "post_6963_uses_6arg_export": false,
+   "pre_6963_uses_6arg_export": false,
+   "changed": false
+  },
+  {
+   "version": "0.9.11a1",
+   "release_tuple": [
+    0,
+    9,
+    11
+   ],
+   "post_6963_uses_6arg_export": false,
+   "pre_6963_uses_6arg_export": false,
+   "changed": false
+  },
+  {
+   "version": "1.0.0rc1",
+   "release_tuple": [
+    1,
+    0,
+    0
+   ],
+   "post_6963_uses_6arg_export": false,
+   "pre_6963_uses_6arg_export": false,
+   "changed": false
+  },
+  {
+   "version": "1.0.0",
+   "release_tuple": [
+    1,
+    0,
+    0
+   ],
+   "post_6963_uses_6arg_export": false,
+   "pre_6963_uses_6arg_export": false,
+   "changed": false
+  }
+ ],
+ "MINIMUM_REFLEX_VERSION": "0.6.6.post1",
+ "RECOMMENDED_REFLEX_VERSION": "0.7.6",
+ "group_gate": [
+  {
+   "version": "0.6.5",
+   "exit_code": 2,
+   "hard_fail": true,
+   "deprecation_warning": true,
+   "output_head": [
+    "Usage: g [OPTIONS] COMMAND [ARGS]...",
+    "Try 'g --help' for help."
+   ]
+  },
+  {
+   "version": "0.6.6",
+   "exit_code": 2,
+   "hard_fail": true,
+   "deprecation_warning": true,
+   "output_head": [
+    "Usage: g [OPTIONS] COMMAND [ARGS]...",
+    "Try 'g --help' for help."
+   ]
+  },
+  {
+   "version": "0.6.6.post1",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": true,
+   "output_head": [
+    "Support for Reflex version 0.6.6.post1 in reflex-hosting-cli is deprecated. Please upgrade Reflex to at least version 0.7.6.",
+    "OK"
+   ]
+  },
+  {
+   "version": "0.7.5",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": true,
+   "output_head": [
+    "Support for Reflex version 0.7.5 in reflex-hosting-cli is deprecated. Please upgrade Reflex to at least version 0.7.6.",
+    "OK"
+   ]
+  },
+  {
+   "version": "0.7.6",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": false,
+   "output_head": [
+    "OK"
+   ]
+  },
+  {
+   "version": "0.7.6.post1",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": false,
+   "output_head": [
+    "OK"
+   ]
+  },
+  {
+   "version": "0.7.6.post2",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": false,
+   "output_head": [
+    "OK"
+   ]
+  },
+  {
+   "version": "0.7.7",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": false,
+   "output_head": [
+    "OK"
+   ]
+  },
+  {
+   "version": "0.7.7rc1",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": false,
+   "output_head": [
+    "OK"
+   ]
+  },
+  {
+   "version": "0.9.10.post2",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": false,
+   "output_head": [
+    "OK"
+   ]
+  },
+  {
+   "version": "0.9.11a1",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": false,
+   "output_head": [
+    "OK"
+   ]
+  },
+  {
+   "version": "1.0.0rc1",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": false,
+   "output_head": [
+    "OK"
+   ]
+  },
+  {
+   "version": "1.0.0",
+   "exit_code": 0,
+   "hard_fail": false,
+   "deprecation_warning": false,
+   "output_head": [
+    "OK"
+   ]
+  },
+  {
+   "version": null,
+   "exit_code": 2,
+   "hard_fail": true,
+   "deprecation_warning": false,
+   "output_head": [
+    "Usage: g [OPTIONS] COMMAND [ARGS]...",
+    "Try 'g --help' for help."
+   ]
+  }
+ ]
+}

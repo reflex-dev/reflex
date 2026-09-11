@@ -442,3 +442,238 @@ logs/                                 server logs, IdP request log, probe output
 All servers (5260–5264, 9660–9663), the fake IdP (9670), the OAuth callback receivers
 (9671/9672) and every Chromium were stopped; `ps` shows no reflex/granian/vite/bun/chromium
 process from this session.
+
+---
+
+## VERIFICATION: reflex-enterprise 0.9.5: HTTPCookie.sync() endpoint /_reflex/cookies/sync still 404s in the OIDC demo (2026-08-27 FINDING-026 unfixed)
+
+Independent adversarial verification, 2026-09-11. Own venvs, own app copies, own
+fake-IdP instance, own ports (frontend 5960-5963, backend 10360-10363); none of the
+claimant's processes or artifacts were reused except `idp/fake_idp2.py` (copied) and
+the unmodified `demos/oidc` source.
+
+**VERDICT: CONFIRMED as a genuine, pre-existing defect — but the claim is
+mis-scoped in three ways, and LOW rather than medium.**
+
+| Claim | Verdict |
+| --- | --- |
+| `/_reflex/cookies/sync` answers 404 in the shipped demo on reflex 0.9.11a1 | **TRUE**, reproduced |
+| Not a regression (same on 0.9.10.post2) | **TRUE**, reproduced against my own 0.9.10.post2 baseline |
+| Downstream = reflex-enterprise | **TRUE** (unfixed at rxe HEAD too), with a reflex-side contributing factor |
+| "the AuthPlugin shape does NOT have the bug … answers 400 from startup" | **FALSE** — an `rxe.AuthPlugin()` app 404s identically on a cold dev worker |
+| Hot reload is *the* mechanism / fix trigger | **INCOMPLETE** — any server-side `HTTPCookie.sync()` also registers the route, which is why the real OIDC login/logout flows are unaffected |
+| Severity medium | **Downgrade to LOW** — dev-mode only; prod workers compile and do serve the route |
+
+### Environment (all from PyPI, nothing from a checkout)
+
+```
+SB=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+W=$SB/apps/verify2_ent_mcp_oidc_0
+uv venv $SB/envs/verify2_ent_mcp_oidc_0       --python 3.12   # reflex 0.9.11a1
+uv venv $SB/envs/verify2_ent_mcp_oidc_0_b0910 --python 3.12   # reflex 0.9.10.post2
+# installs run with cwd=$W, never /home/user/reflex:
+uv pip install --python $SB/envs/verify2_ent_mcp_oidc_0/bin/python --prerelease=allow \
+    'reflex==0.9.11a1' 'reflex-enterprise[mcp]==0.9.5' aiohttp joserfc uvicorn
+uv pip install --python $SB/envs/verify2_ent_mcp_oidc_0_b0910/bin/python --prerelease=allow \
+    'reflex==0.9.10.post2' 'reflex-enterprise[mcp]==0.9.5' aiohttp joserfc uvicorn
+cp -r /home/user/reflex-enterprise/demos/oidc $W/oidcdemo         # reflex pin emptied
+cp -r /home/user/reflex-enterprise/demos/oidc $W/oidcdemo_0910    # ditto
+$SB/envs/verify2_ent_mcp_oidc_0/bin/python $W/scripts/fake_idp2.py 10363 &   # IdP
+```
+
+### 1. The 404 reproduces (0.9.11a1, shipped demo) — not a proxy/port/cwd artifact
+
+```bash
+cd $W/oidcdemo && CI=true REFLEX_TELEMETRY_ENABLED=false \
+  OKTA_ISSUER_URI=http://localhost:10363 OKTA_CLIENT_ID=okta-client OKTA_CLIENT_SECRET=okta-secret \
+  DATABRICKS_ISSUER_URI=http://localhost:10363 DATABRICKS_CLIENT_ID=databricks-client \
+  DATABRICKS_CLIENT_SECRET=databricks-secret \
+  $SB/envs/verify2_ent_mcp_oidc_0/bin/reflex run --frontend-port 5960 --backend-port 10360 --loglevel debug &
+
+curl -s --noproxy '*' -w ' [%{http_code}]\n' http://localhost:10360/ping
+#   "pong" [200]                     <- same host/port/proxy settings
+curl -s --noproxy '*' -w ' [%{http_code}]\n' -X POST http://localhost:10360/_reflex/cookies/sync
+#   Not Found [404]
+```
+
+The 404 is served by the app's own Starlette router (`/ping` on the same backend is
+200), so it is not the agent proxy, not `NO_PROXY`, not a port mix-up and not cwd
+shadowing (`reflex.__file__` asserted to live under the venv in every script).
+
+### 2. It self-heals on the first *server-side* sync, not only on hot reload
+
+`scripts/drive_cookiesync.py 5960 10360 a1 $W/shots/a1` (Chromium, real clicks) —
+`verification/cookiesync_404/shots/a1/a1_cookiesync.json`:
+
+```
+sync_before_login  -> POST /_reflex/cookies/sync 404      (+ browser console error)
+login (Okta)       -> POST /_reflex/cookies/sync 200      (issued by the auth callback)
+sync_after_login   -> POST /_reflex/cookies/sync 200
+```
+
+and afterwards, in the same never-reloaded worker:
+
+```bash
+curl -s --noproxy '*' -w ' [%{http_code}]\n' -X POST http://localhost:10360/_reflex/cookies/sync
+#   No client token in request [400]
+```
+
+So the claimant's "touch the module, wait for the reload" is only one of two ways the
+route appears. This matters for severity: `HTTPCookie.set()` → `notify_sync()` calls
+`self.sync()` (which registers the route) **before** emitting the fetch event to the
+browser, so every server-initiated cookie push — the whole OIDC token path — registers
+the route on its way out and is never affected. Only an event spec that was built at
+*compile time* (the demo's `on_click=HTTPCookie.sync()`) can fire against a route that
+does not exist yet.
+
+### 3. Minimal repro: 22 lines, no OIDC, no AuthPlugin
+
+`verification/cookiesync_404/apps/cookiemin/` — an `rxe.App` with one `HTTPCookie`,
+a `Cookie Sync` button built at compile time, and a handler that sets the cookie
+server-side.
+
+```bash
+cd $W/cookiemin && CI=true REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/verify2_ent_mcp_oidc_0/bin/reflex run --frontend-port 5962 --backend-port 10362 &
+curl -s --noproxy '*' -w ' [%{http_code}]\n' -X POST http://localhost:10362/_reflex/cookies/sync   # 404
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python scripts/drive_cookiemin.py 5962 10362 $W/shots/min
+```
+
+`verification/cookiesync_404/shots/min/cookiemin.json`:
+
+```
+sync_click_cold        -> 404   + console "Failed to load resource: … 404 (Not Found)"
+set_cookie_serverside  -> 200   (cookie `minpref` really lands in the browser)
+sync_click_warm        -> 200
+```
+
+⇒ the defect is `HTTPCookie` + dev mode, not the OIDC demo and not the deprecated
+`register_auth_endpoints()` shape.
+
+### 4. REFUTED: the `rxe.AuthPlugin` shape has exactly the same bug
+
+`verification/cookiesync_404/apps/authmin/` — `rxe.Config(plugins=[rxe.AuthPlugin()])`,
+one public page carrying `on_click=HTTPCookie.sync()`.
+
+```bash
+cd $W/authmin && CI=true REFLEX_TELEMETRY_ENABLED=false OIDC_ISSUER_URI=http://localhost:10363 \
+  OIDC_CLIENT_ID=okta-client OIDC_CLIENT_SECRET=okta-secret \
+  $SB/envs/verify2_ent_mcp_oidc_0/bin/reflex run --frontend-port 5963 --backend-port 10361 &
+curl -s --noproxy '*' -X POST http://localhost:10361/_reflex/cookies/sync   # Not Found  (404)
+curl -s --noproxy '*'         http://localhost:10361/ping                   # "pong"     (200)
+$SB/envs/driver/bin/python scripts/drive_authmin.py 5963 $W/shots/authmin
+#   after_load: []   after_sync_click: 404   after_bump: []   after_sync_click2: 404
+touch $W/authmin/authmin/authmin.py && sleep 30
+curl -s --noproxy '*' -X POST http://localhost:10361/_reflex/cookies/sync   # No client token in request (400)
+```
+
+(`verification/cookiesync_404/logs/authmin_cold_curl.txt`,
+`shots/authmin/authmin.json`.) Nothing in `reflex_enterprise` ever calls
+`HTTPCookie.ensure_handlers_registered()` except `HTTPCookie.sync()` itself
+(`grep -rn ensure_handlers_registered` over the 0.9.5 wheel and over
+`/home/user/reflex-enterprise` HEAD: `auth/cookie.py:333` def, `auth/cookie.py:399`
+the only call site) — `AuthPlugin` does not register it either. The claimant's
+AuthPlugin observation was made on a worker that had already run a login, i.e. after a
+server-side sync had registered the route.
+
+### 5. Mechanism, deterministically, with no server at all
+
+`verification/cookiesync_404/scripts/factory_probe.py` reproduces what granian's dev
+worker does — call the `App` factory (`App.__call__`) with and without the
+`.web/nocompile` marker:
+
+```bash
+cd $W/oidcdemo && CI=true … $SB/envs/verify2_ent_mcp_oidc_0/bin/python ../scripts/factory_probe.py
+1. after import only          : []
+2. factory call w/ nocompile  : []                          <- what the dev worker's first spawn sees
+3. factory call w/o nocompile : ['/_reflex/cookies/sync']   <- reload worker, and prod
+```
+
+Chain, all in the published wheels:
+
+* `reflex/utils/exec.py:490-494` — `run_backend()` (dev) touches `.web/nocompile`
+  before spawning granian. `run_backend_prod()` (`reflex/utils/exec.py:698-717`)
+  does **not**; `NOCOMPILE_FILE` is written nowhere else in the tree.
+* `reflex/app.py:1578-1596` — `App._should_compile()` sees the marker, deletes it and
+  returns `False` **once**; every later call in that process returns `True`.
+* `reflex/compiler/compiler.py:1175-1187` — with `should_compile == False` and
+  `.web/backend/` present, only the routes listed in `.web/backend/stateful_pages.json`
+  are evaluated. In both the demo and the minimal apps that file is `[]`, so the dev
+  backend worker evaluates **no page components at all** on its first spawn.
+* `reflex_enterprise/auth/cookie.py:333-343` — `HTTPCookie.ensure_handlers_registered()`
+  is what does `app._api.routes.insert(0, Route("/_reflex/cookies/sync", …))`, and its
+  only caller is `HTTPCookie.sync()` at `reflex_enterprise/auth/cookie.py:399`.
+
+So `on_click=HTTPCookie.sync()` runs `ensure_handlers_registered()` in the **CLI**
+process that compiles the frontend, never in the granian worker that serves the
+request — until that worker compiles for itself (any hot reload, or prod) or runs a
+server-side `HTTPCookie.sync()`.
+
+Scope that follows from the chain and from probe line 3: **dev mode only.**
+`reflex run --env prod` never writes the marker, so each prod worker compiles the pages
+itself and the route is present from startup. (Enterprise `--env prod` is gated behind
+a paid subscription in this container, so this half is established from the wheel
+source plus the factory probe rather than from a running prod server.)
+
+### 6. Baseline: 0.9.10.post2 behaves identically — NOT a regression
+
+```bash
+cd $W/oidcdemo_0910 && CI=true … $SB/envs/verify2_ent_mcp_oidc_0_b0910/bin/reflex run \
+    --frontend-port 5961 --backend-port 10361 --loglevel debug &
+curl -s --noproxy '*' -w ' [%{http_code}]\n' -X POST http://localhost:10361/_reflex/cookies/sync
+#   Not Found [404]
+cd $W/oidcdemo_0910 && … $SB/envs/verify2_ent_mcp_oidc_0_b0910/bin/python ../scripts/factory_probe_0910.py
+1. after import only          : []
+2. factory call w/ nocompile  : []
+3. factory call w/o nocompile : ['/_reflex/cookies/sync']
+```
+
+`reflex/app.py:_should_compile`, `reflex/compiler/compiler.py:compile_app` and
+`reflex/utils/exec.py:run_backend` are byte-identical in the relevant regions between
+0.9.10.post2 and 0.9.11a1 (`diff` of the `_compile` bodies shows only the new
+`otel.compile_span` / `clear_hash_caches` wrapper).
+
+*Trap worth recording for whoever re-runs this:* run the factory probe on a `.web` that
+has never served (straight after `reflex init`, so `.web/backend/` does not exist) and
+step 2 prints the route, because `compile_app` then falls through to the
+"evaluate ALL pages (backend)" branch instead of the stateful-pages branch. My first
+0.9.10.post2 probe hit exactly that and looked like a version difference; it is not.
+Compare only app dirs that have both been served at least once.
+
+### 7. Impact and suggested fix
+
+Real but narrow: a `HTTPCookie.sync()` event spec bound to a component prop
+(`on_click`, `on_mount`, `on_load`) is dead in `reflex run` dev until the first hot
+reload or the first server-side cookie push. The server logs nothing at all — the
+handler's own `logger.warning("Cookie sync rejected (400) …")`
+(`reflex_enterprise/auth/cookie.py:448-451`) cannot fire because the route is not
+mounted — so the only signal is a 404 in the browser console. Auth token delivery is
+*not* affected (see §2). Not fixed at reflex-enterprise HEAD.
+
+Fix belongs in reflex-enterprise: call `HTTPCookie.ensure_handlers_registered()` from
+app/plugin setup (e.g. `AuthPlugin`, or `AppEnterprise` construction) instead of only
+as a side effect of building the event spec, so the route exists in every process that
+imports the app module. A reflex-side hardening option is to make the dev backend
+worker evaluate pages the way a reload worker does, rather than trusting an empty
+`stateful_pages.json`.
+
+### Artifacts
+
+```
+verification/cookiesync_404/apps/cookiemin/   minimal repro app (no OIDC, no AuthPlugin)
+verification/cookiesync_404/apps/authmin/     rxe.AuthPlugin control app (refutes "AuthPlugin is immune")
+verification/cookiesync_404/scripts/factory_probe.py        server-free mechanism probe (0.9.11a1)
+verification/cookiesync_404/scripts/factory_probe_0910.py   same, 0.9.10.post2
+verification/cookiesync_404/scripts/drive_cookiesync.py     shipped demo: sync / login / sync
+verification/cookiesync_404/scripts/drive_cookiemin.py      minimal repro driver
+verification/cookiesync_404/scripts/drive_authmin.py        AuthPlugin control driver
+verification/cookiesync_404/shots/a1/a1_cookiesync.json     404 -> 200 -> 200 on the shipped demo
+verification/cookiesync_404/shots/min/cookiemin.json        404 -> 200 -> 200 minimal
+verification/cookiesync_404/shots/authmin/authmin.json      404 -> 404 on AuthPlugin, anonymous
+verification/cookiesync_404/logs/authmin_cold_curl.txt      404 cold, 400 after hot reload
+verification/cookiesync_404/logs/*_run.tail.log             server logs (tails)
+```
+
+All servers (5960-5963, 10360-10362), the fake IdP (10363) and every Chromium started
+for this verification were killed; `ps` shows no reflex/granian/vite/bun/react-router/
+chromium process from this session, and all eight ports answer nothing.

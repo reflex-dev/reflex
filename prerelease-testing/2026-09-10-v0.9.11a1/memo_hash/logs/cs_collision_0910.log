@@ -1,0 +1,4 @@
+reflex 0.9.10.post2 /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py
+class ids: 68354064 71335680
+first  ok -> reflex___state____state.reflex___istate___dynamic____counter_n1
+second ERR StateValueError The substate class 'reflex___istate___dynamic____counter_n1' has been defined multiple times. Shadowing substate classes is not allowed.

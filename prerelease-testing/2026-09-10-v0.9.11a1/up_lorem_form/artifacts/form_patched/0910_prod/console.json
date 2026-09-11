@@ -1,0 +1,78 @@
+[
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+  }
+]

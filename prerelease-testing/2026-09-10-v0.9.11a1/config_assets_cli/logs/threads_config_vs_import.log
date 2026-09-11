@@ -1,0 +1,4 @@
+##### base0910
+RESULT loaders=8 importers=8 rounds=40 ok_load=320 ok_import=320 errors=0
+##### smoke
+RESULT loaders=8 importers=8 rounds=40 ok_load=320 ok_import=320 errors=0

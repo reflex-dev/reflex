@@ -1,0 +1,12 @@
+STDOUT-IS-TTY False
+META unreserved progress.disable=False
+[?25l⠋ MARK reserved spinner[2K⠙ MARK reserved spinner[2K⠹ MARK reserved spinner[2K⠸ MARK reserved spinner[2K⠼ MARK reserved spinner[2K⠴ MARK reserved spinner[2K⠦ MARK reserved spinner[2K⠦ MARK reserved spinner
+[?25h[1A[2KMETA reserved progress.disable=True
+MARK reserved print
+┏━━━━━━━━━━━━━━━━━━━━┳━━━┓
+┃[1m [0m[1mh                 [0m[1m [0m┃[1m [0m[1mi[0m[1m [0m┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━┩
+│ MARK reserved cell │ y │
+└────────────────────┴───┘
+META released progress.disable=False
+META done

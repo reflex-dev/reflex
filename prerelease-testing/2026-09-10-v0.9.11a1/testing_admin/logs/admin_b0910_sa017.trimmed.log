@@ -1,0 +1,206 @@
+### head (first 60 lines)
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/admin_base/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='admindash', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///reflex.db', async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'loglevel', 'db_url'},
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.10.post2 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/admin_base/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.3.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9980
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.045 seconds
+Debug: Latest version of reflex: 0.9.10.post2
+Debug: Checking if Backend port: 9980 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9980 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9980 is not in use.
+
+### first traceback (orig lines 87-203)
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/granian/_futures.py", line 15, in future_watcher
+    await inner(watcher.scope, watcher.proto)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 455, in handle
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/reflex/app.py", line 711, in context_middleware
+    await app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 455, in handle
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette_admin/contrib/sqla/middleware.py", line 28, in dispatch
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 65, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 62, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette_admin/base.py", line 300, in wrapper
+    return await custom_view.render(request, self.templates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette_admin/views.py", line 169, in render
+    return templates.TemplateResponse(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/templating.py", line 149, in TemplateResponse
+    return _TemplateResponse(
+           ^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/templating.py", line 43, in __init__
+    content = template.render(context)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette_admin/templates/index.html", line 1, in top-level template code
+    {% extends "layout.html" %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette_admin/templates/layout.html", line 7, in top-level template code
+    {% set app_title = config.app_title if config and config.app_title else app_title %}
+^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette_admin/templates/base.html", line 12, in top-level template code
+    <link rel="stylesheet" href="{{ url_for(__name__ ~ ':statics', path='css/tabler.min-1.1.0.css') }}">
+^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/templating.py", line 110, in url_for
+    return request.url_for(name, **path_params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/requests.py", line 202, in url_for
+    url_path = url_path_provider.url_path_for(name, **path_params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 637, in url_path_for
+    raise NoMatchFound(name, path_params)
+NoMatchFound: No route exists for name "admin:statics" and params "path".
+[ERROR] Application callable raised an exception
+
+### tail (last 25 lines)
+    raise rewrite_traceback_stack(source=source)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette_admin/templates/index.html", line 1, in top-level template code
+    {% extends "layout.html" %}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette_admin/templates/layout.html", line 7, in top-level template code
+    {% set app_title = config.app_title if config and config.app_title else app_title %}
+^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette_admin/templates/base.html", line 12, in top-level template code
+    <link rel="stylesheet" href="{{ url_for(__name__ ~ ':statics', path='css/tabler.min-1.1.0.css') }}">
+^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/templating.py", line 110, in url_for
+    return request.url_for(name, **path_params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/requests.py", line 202, in url_for
+    url_path = url_path_provider.url_path_for(name, **path_params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_base/lib/python3.11/site-packages/starlette/routing.py", line 637, in url_path_for
+    raise NoMatchFound(name, path_params)
+NoMatchFound: No route exists for name "admin:statics" and params "path".
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

@@ -1,0 +1,27 @@
+[
+  {
+    "name": "unnamed_page_renders",
+    "status": "fail",
+    "details": "error_boundary=True heading_present=False input_present=False"
+  },
+  {
+    "name": "unnamed_submit_works",
+    "status": "skipped",
+    "details": "page did not render"
+  },
+  {
+    "name": "named_page_renders",
+    "status": "pass",
+    "details": "error_boundary=False heading_present=True input_present=True"
+  },
+  {
+    "name": "named_submit_works",
+    "status": "pass",
+    "details": "submitted without error"
+  },
+  {
+    "name": "formmsg_console_error_present",
+    "status": "anomaly",
+    "details": "[\"[unnamed] %o\\n\\n%s\\n\\n%s\\n Error: `FormMessage` must be used within `FormField` or specify the `name` prop\\n    at FormMessage (http://localhost:5462/node_modules/.vite/deps/dist-Ch4b-o_w.js?v=27a6e9f3:652:19)\\n    at Object.react_stack_bottom_frame (http://localhost:5462/node_modules/.vite/deps/react-dom_\"]"
+  }
+]

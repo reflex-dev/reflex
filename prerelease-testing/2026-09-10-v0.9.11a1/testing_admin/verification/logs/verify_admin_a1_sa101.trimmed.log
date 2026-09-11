@@ -1,0 +1,56 @@
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_testing_admin_0/logs/a1_sa101.log: NoMatchFound: No route exists for name "admin:list" and params "key".
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_testing_admin_0/logs/a1_sa101.log: NoMatchFound: No route exists for name "admin:static" and params "path".
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_testing_admin_0/logs/a1_sa101.log: NoMatchFound: No route exists for name "admin:static" and params "path".
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_testing_admin_0/logs/a1_sa101.log: NoMatchFound: No route exists for name "admin:static" and params "path".
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_testing_admin_0/logs/a1_sa101.log: NoMatchFound: No route exists for name "admin:static" and params "path".
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/routing.py", line 65, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/routing.py", line 62, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette_admin/base.py", line 874, in wrapper
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette_admin/views.py", line 453, in index
+    widget = await self._resolve_widget(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette_admin/views.py", line 442, in _resolve_widget
+    return await result
+           ^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette_admin/views.py", line 3172, in _build_widget
+    panels: list[BaseWidget] = [
+                               ^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette_admin/views.py", line 3173, in <listcomp>
+    await self._build_view_panel(request, view) for view in accessible
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette_admin/views.py", line 3181, in _build_view_panel
+    list_href = _view_list_url(request, cast(str, view.key))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette_admin/helpers.py", line 243, in view_list_url
+    return str(request.url_for(route_name + ":list", key=key))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/requests.py", line 202, in url_for
+    url_path = url_path_provider.url_path_for(name, **path_params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/routing.py", line 637, in url_path_for
+    raise NoMatchFound(name, path_params)
+NoMatchFound: No route exists for name "admin:list" and params "key".
+[ERROR] Application callable raised an exception
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/granian/_futures.py", line 15, in future_watcher
+    await inner(watcher.scope, watcher.proto)

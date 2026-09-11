@@ -1,0 +1,248 @@
+{
+ "rc": 0,
+ "meta": [
+  "META is_stdout_reserved_initial=False",
+  "META before progress.disable=False",
+  "META is_stdout_reserved_after_set=True",
+  "META reserved progress.disable=True",
+  "META nested_state_after_2set_1unset=False",
+  "META thread_ran=True",
+  "META is_stdout_reserved_after_release=False",
+  "META after progress.disable=False",
+  "META reserved_after_exception=True",
+  "META context_manager=TypeError: 'NoneType' object does not support the context manager protocol",
+  "META done"
+ ],
+ "marks": [
+  {
+   "mark": "MARK after console.debug",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after console.error",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK after console.info",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after console.print",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after console.success",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after console.warn",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after logger.debug",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after logger.error",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK after logger.info",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after logger.warning",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after progress \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501                      50% 1/2 0:00:00",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after rule \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK after tablecell \u2502 x  \u2502",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK afterexc console.print",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK before console.debug",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before console.error",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK before console.info",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before console.print",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before console.success",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before console.warn",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before logger.debug",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before logger.error",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK before logger.info",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before logger.warning",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before progress \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501                      50% 1/2 0:00:00",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before rule \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK before tablecell \u2502 x  \u2502",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK nested console.print",
+   "stdout": true,
+   "stderr": false
+  },
+  {
+   "mark": "MARK reserved console.debug",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved console.error",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved console.info",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved console.print",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved console.success",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved console.warn",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved logger.debug",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved logger.error",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved logger.info",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved logger.warning",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved rule \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK reserved tablecell \u2502 x  \u2502",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK thread console.print",
+   "stdout": false,
+   "stderr": true
+  },
+  {
+   "mark": "MARK thread logger.info",
+   "stdout": false,
+   "stderr": true
+  }
+ ],
+ "stdout_nonmark_lines": [
+  "DeprecationWarning: console.info has been deprecated in version 0.9.9. use logger.info(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. ",
+  "(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:38)",
+  "DeprecationWarning: console.success has been deprecated in version 0.9.9. use logger.log(log.SUCCESS, msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. ",
+  "(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:39)",
+  "DeprecationWarning: console.warn has been deprecated in version 0.9.9. use logger.warning(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. ",
+  "(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:40)",
+  "DeprecationWarning: console.error has been deprecated in version 0.9.9. use logger.error(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. ",
+  "(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:41)",
+  "DeprecationWarning: console.debug has been deprecated in version 0.9.9. use logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. ",
+  "(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:42)",
+  "\u250f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2513",
+  "\u2503 h1                    \u2503 h2 \u2503",
+  "\u2521\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2529",
+  "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2518",
+  "\u250f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2513",
+  "\u2503 h1                   \u2503 h2 \u2503",
+  "\u2521\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2529",
+  "\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2518"
+ ]
+}

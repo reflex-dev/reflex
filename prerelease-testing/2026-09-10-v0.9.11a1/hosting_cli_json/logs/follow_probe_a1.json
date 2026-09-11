@@ -1,0 +1,84 @@
+[
+ {
+  "case": "default",
+  "args": [
+   "app1"
+  ],
+  "exit_code": 0,
+  "pages_fetched": 1,
+  "output": "",
+  "exception": null,
+  "mentions_follow": false
+ },
+ {
+  "case": "follow_true_interactive",
+  "args": [
+   "app1",
+   "--follow",
+   "true",
+   "--interactive"
+  ],
+  "exit_code": 0,
+  "pages_fetched": 1,
+  "output": "Press Enter to fetch next 100 logs or type 'exit' to quit: ",
+  "exception": null,
+  "mentions_follow": false
+ },
+ {
+  "case": "follow_true_json",
+  "args": [
+   "app1",
+   "--follow",
+   "true",
+   "--json"
+  ],
+  "exit_code": 0,
+  "pages_fetched": 1,
+  "output": "{\"app_id\": \"app1\", \"entries\": [\"line-A2\", \"line-A1\"], \"cursor\": \"cursor-2\", \"error\": null}\n",
+  "exception": null,
+  "mentions_follow": false
+ },
+ {
+  "case": "follow_true_nointeractive",
+  "args": [
+   "app1",
+   "--follow",
+   "true",
+   "--no-interactive"
+  ],
+  "exit_code": 0,
+  "pages_fetched": 1,
+  "output": "",
+  "exception": null,
+  "mentions_follow": false
+ },
+ {
+  "case": "follow_true_json_interactive",
+  "args": [
+   "app1",
+   "--follow",
+   "true",
+   "--json",
+   "--interactive"
+  ],
+  "exit_code": 0,
+  "pages_fetched": 1,
+  "output": "{\"app_id\": \"app1\", \"entries\": [\"line-A2\", \"line-A1\"], \"cursor\": \"cursor-2\", \"error\": null}\n",
+  "exception": null,
+  "mentions_follow": false
+ },
+ {
+  "case": "follow_false_interactive",
+  "args": [
+   "app1",
+   "--follow",
+   "false",
+   "--interactive"
+  ],
+  "exit_code": 0,
+  "pages_fetched": 1,
+  "output": "",
+  "exception": null,
+  "mentions_follow": false
+ }
+]

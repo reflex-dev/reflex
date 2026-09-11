@@ -1,0 +1,172 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Creating Production Build failed with exit code 1
+$ react-router build
+Using Vite Environment API
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 428 modules transformed.
+rendering chunks...
+computing gzip size...
+build/client/.vite/manifest.json                             5.37 kB │ gzip:  
+0.80 kB
+build/client/assets/memoapp-BVNQmq6b.css                     0.05 kB │ gzip:  
+0.07 kB
+build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ gzip: 
+84.10 kB
+build/client/assets/reflex-env-D8B7NrrQ.js                   0.30 kB │ gzip:  
+0.20 kB
+build/client/assets/_404_._index-BS4Ybev6.js                 0.41 kB │ gzip:  
+0.29 kB
+build/client/assets/_index-DWSisrTE.js                       1.76 kB │ gzip:  
+0.64 kB
+build/client/assets/_custom_._index-0-8ld1j1.js              1.95 kB │ gzip:  
+0.69 kB
+build/client/assets/_foreach_._index-DhzgIIgf.js             2.14 kB │ gzip:  
+0.75 kB
+build/client/assets/_samename_._index-Da15rr7z.js            2.41 kB │ gzip:  
+0.80 kB
+build/client/assets/_props_._index-CYeGAgfe.js               2.58 kB │ gzip:  
+0.92 kB
+build/client/assets/_page2_._index-YF8ij2Lk.js               2.83 kB │ gzip:  
+0.93 kB
+build/client/assets/react-dom-l_aGu8H_.js                    3.54 kB │ gzip:  
+1.34 kB
+build/client/assets/memoapp-Cd9iUDA4.js                      7.96 kB │ gzip:  
+1.55 kB
+build/client/assets/emotion-react.browser.esm-Do-RBW0K.js   20.71 kB │ gzip:  
+8.12 kB
+build/client/assets/errorBoundaries-Cdg4mEfL.js             33.31 kB │ gzip: 
+11.64 kB
+build/client/assets/components-Blt2PyNA.js                  84.87 kB │ gzip: 
+28.19 kB
+build/client/assets/link-WQGamR4B.js                       138.65 kB │ gzip: 
+41.67 kB
+build/client/assets/entry.client-DjnItXbE.js               182.36 kB │ gzip: 
+57.72 kB
+build/client/assets/root-DtSOnpwf.js                       313.03 kB │ gzip: 
+87.41 kB
+
+✓ built in 2.10s
+vite v8.2.2 building ssr environment for production...
+transforming...
+⚠️ Paths with dynamic/splat params cannot be prerendered when using `prerender: 
+true`. You may want to use the `prerender()` API to prerender the following 
+paths:
+  - *
+✓ 35 modules transformed.
+rendering chunks...
+
+✓ 2 assets cleaned from React Router server build.
+build/client/assets/__reflex_global_styles-NccINl-w.css
+build/server/assets/server-build-BVNQmq6b.css
+
+computing gzip size...
+build/server/.vite/manifest.json                           0.83 kB │ gzip:  0.32
+kB
+build/server/assets/server-build-BVNQmq6b.css              0.05 kB │ gzip:  0.07
+kB
+build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ gzip: 84.10
+kB
+build/server/assets/reflex-env-D8B7NrrQ.js                 0.30 kB │ gzip:  0.20
+kB
+build/server/index.js                                     76.65 kB │ gzip: 17.20
+kB
+
+✓ built in 594ms
+Error: Prerender: Request failed for /: Prerender (html): Received a 500 status 
+code from `entry.server.tsx` while prerendering the `/` path.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Internal Server Error</pre>
+</body>
+</html>
+
+    at defaultHandleError 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/memo_hash/memoapp/.web/node_modules/@react-router/dev/dist/vite.js:
+887:8)
+    at attempt 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/memo_hash/memoapp/.web/node_modules/@react-router/dev/dist/vite.js:
+835:11)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:103:5)
+    at async prerender 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/memo_hash/memoapp/.web/node_modules/@react-router/dev/dist/vite.js:
+842:64)
+    at async default.concurrency.concurrency 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/memo_hash/memoapp/.web/node_modules/@react-router/dev/dist/vite.js:
+859:9)
+    at async 
+file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scra
+tchpad/apps/memo_hash/memoapp/.web/node_modules/p-map/index.js:122:20
+error: script "export" exited with code 1
+
+
+
+Run with --loglevel debug  for the full log.
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03

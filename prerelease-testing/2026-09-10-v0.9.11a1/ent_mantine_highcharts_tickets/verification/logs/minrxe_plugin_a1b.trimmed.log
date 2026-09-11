@@ -1,0 +1,56 @@
+### head
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+
+### errors/warnings
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+[Reflex Frontend Exception]
+ [SID: t8IrP3xGGOJ9cAVtAAAB] State update failed: no dispatch function for 
+[ERROR] Unexpected exit from worker-1
+7:35:29 AM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+tate". Try refreshing the page or clearing your browser cache. This error 
+error: script "dev" exited with code 143
+
+### tail
+_auth_state", 
+"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_s
+tate". Try refreshing the page or clearing your browser cache. This error 
+usually indicates a mismatch between frontend and backend state definitions. If 
+you are the developer of this app, rebuild the frontend and check that api_url 
+is correct.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

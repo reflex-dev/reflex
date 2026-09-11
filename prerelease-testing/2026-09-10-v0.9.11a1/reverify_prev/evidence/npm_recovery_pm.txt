@@ -1,0 +1,4 @@
+plain 'reflex run' after ONE failed REFLEX_USE_NPM=1 run:
+  reflex 0.9.11a1  (apps/npmapp):  'npm run dev'   (ps during logs/npm_recovery_a1.log run)
+  reflex 0.9.10.post2 (apps/npmapp4): 'npm run dev'   (ps during logs/npm4_run2_plain.log run)
+Neither log mentions npm/bun selection: grep -ci npm on both plain-run logs = 0.

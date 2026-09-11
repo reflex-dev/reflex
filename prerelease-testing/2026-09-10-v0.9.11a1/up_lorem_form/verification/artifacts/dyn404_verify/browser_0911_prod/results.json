@@ -1,0 +1,23 @@
+[
+  {
+    "route": "/",
+    "document_status": 200,
+    "marker": "home",
+    "rendered_ok": true,
+    "state_path_var": null
+  },
+  {
+    "route": "/static-page/",
+    "document_status": 200,
+    "marker": "staticpage",
+    "rendered_ok": true,
+    "state_path_var": null
+  },
+  {
+    "route": "/item/42",
+    "document_status": 404,
+    "marker": "item-page",
+    "rendered_ok": true,
+    "state_path_var": "/item/42"
+  }
+]

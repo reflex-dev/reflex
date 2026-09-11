@@ -1,0 +1,117 @@
+[
+  {
+    "name": "reflexle_page_loads",
+    "status": "pass",
+    "details": "title='Reflexle' grid_rows=6 cols=5 keyboard_buttons=28 (28 expected: 26 letters + backspace + enter)"
+  },
+  {
+    "name": "global_hotkey_letters",
+    "status": "pass",
+    "details": "typed 'homes' with real key presses -> row0='HOMES'"
+  },
+  {
+    "name": "global_hotkey_backspace",
+    "status": "pass",
+    "details": "row0='HOME' (expect HOME)"
+  },
+  {
+    "name": "ctrl_backspace_deletes_one_letter",
+    "status": "anomaly",
+    "details": "row0='HOM'; app expects a 'Ctrl+Backspace' key string (clear row) but reflex key_event forwards only event.key, so Ctrl+Backspace == Backspace (app-level dead branch)"
+  },
+  {
+    "name": "toast_word_too_short",
+    "status": "pass",
+    "details": "toasts=['Word must be 5 characters long.'] (expect 'Word must be 5 characters long.')"
+  },
+  {
+    "name": "invalid_word_shake_and_background_clear",
+    "status": "pass",
+    "details": "row cleared 0.3 s later by the background set_is_wrong_guess_false event=True row0=''"
+  },
+  {
+    "name": "invalid_word_toast_dropped_by_app",
+    "status": "pass",
+    "details": "no toast for an invalid word: ReflexleGame.guess() builds rx.toast('Invalid word.') but Reflexle.received_letter discards its return value and returns set_is_wrong_guess_false instead (upstream example bug, both reflex versions). toasts=[]"
+  },
+  {
+    "name": "valid_guess_colours_row_and_keyboard",
+    "status": "pass",
+    "details": "row0=[('H', 'rgba(170, 170, 170, 0.25)'), ('O', 'rgba(170, 170, 170, 0.25)'), ('M', 'rgba(170, 170, 170, 0.25)'), ('E', 'rgb(83, 141, 78)'), ('S', 'rgba(170, 170, 170, 0.043)')]; keyboard keys whose colour changed=['E', 'O', 'S', 'H', 'M']"
+  },
+  {
+    "name": "duplicate_guess_rejected",
+    "status": "pass",
+    "details": "row1 cleared=True; toast shown=False (same discarded-EventSpec app bug as the invalid-word path). toasts=[]"
+  },
+  {
+    "name": "onscreen_keyboard_clicks",
+    "status": "pass",
+    "details": "clicked G,A,W -> row1='GAW'"
+  },
+  {
+    "name": "onscreen_backspace_and_enter_buttons",
+    "status": "pass",
+    "details": "after ⌫ row1='GA'; after typing WKS + ↵ row1='GAWKS'"
+  },
+  {
+    "name": "high_contrast_toggle",
+    "status": "pass",
+    "details": "cell backgrounds changed: ['rgb(83, 141, 78)', 'rgba(0, 0, 0, 0)', 'rgba(170, 170, 170, 0.043)', 'rgba(170, 170, 170, 0.25)'] -> ['rgb(245, 121, 58)', 'rgba(170, 170, 170, 0.25)']"
+  },
+  {
+    "name": "color_mode_toggle",
+    "status": "pass",
+    "details": "documentElement.class 'light' -> 'dark'"
+  },
+  {
+    "name": "state_survives_reload",
+    "status": "pass",
+    "details": "after reload row0='HOMES' row1='GAWKS' (on_load must not reset a game in progress)"
+  },
+  {
+    "name": "lost_game_reveals_word",
+    "status": "pass",
+    "details": "after 6 non-solution guesses: banner='WORD IS FEVER'; rows=['HOMES', 'GAWKS', 'BUMPH', 'VEXED', 'QUIPS', 'MYLAR']"
+  },
+  {
+    "name": "keys_ignored_after_game_over",
+    "status": "pass",
+    "details": "rows=['HOMES', 'GAWKS', 'BUMPH', 'VEXED', 'QUIPS', 'MYLAR']"
+  },
+  {
+    "name": "play_again_resets_and_sets_focus",
+    "status": "pass",
+    "details": "grid cleared=True; document.activeElement.id='guesses' (rx.set_focus('guesses'))"
+  },
+  {
+    "name": "hotkeys_work_after_reset",
+    "status": "pass",
+    "details": "row0='VEX' after reset + 3 key presses"
+  },
+  {
+    "name": "second_tab_independent_game",
+    "status": "pass",
+    "details": "new context row0 before='' after typing 'quip'='QUIP'; first tab row0 still 'VEX'"
+  },
+  {
+    "name": "npm_versions_recorded",
+    "status": "pass",
+    "details": "{\"@emotion/react\": \"11.14.0\", \"@radix-ui/themes\": \"3.3.0\", \"@react-router/dev\": \"8.3.0\", \"@react-router/fs-routes\": \"8.3.0\", \"@react-router/node\": \"8.3.0\", \"autoprefixer\": \"10.5.4\", \"isbot\": \"5.2.1\", \"lucide-react\": \"1.26.0\", \"postcss\": \"8.5.23\", \"postcss-import\": \"16.1.1\", \"react\": \"19.2.8\", \"react-dom\": \"19.2.8\", \"react-error-boundary\": \"6.1.2\", \"react-helmet\": \"6.1.0\", \"react-router\": \"8.3.0\", \"socket.io-client\": \"4.8.3\", \"sonner\": \"2.0.7\", \"universal-cookie\": \"8.1.2\", \"vite\": \"8.2.0\"}"
+  },
+  {
+    "name": "browser_console_clean",
+    "status": "anomaly",
+    "details": "4 unexpected: [{\"type\": \"error\", \"text\": \"[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET\"}, {\"type\": \"error\", \"text\": \"[reflexle] Failed to load resource: the server responded with a status of 404 (Not Found)\"}, {\"type\": \"error\", \"text\": \"[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET\"}, {\"type\": \"error\", \"text\": \"[tab2] Failed to load resource: net::ERR_CONNECTION_RESET\"}]"
+  },
+  {
+    "name": "no_bad_http_responses",
+    "status": "pass",
+    "details": "0 non-environmental failures: []; 3 blocked Google-Fonts requests (environmental)"
+  },
+  {
+    "name": "no_page_errors",
+    "status": "pass",
+    "details": "0: []"
+  }
+]

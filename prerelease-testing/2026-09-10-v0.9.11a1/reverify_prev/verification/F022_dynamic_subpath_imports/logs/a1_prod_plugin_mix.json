@@ -1,0 +1,28 @@
+{
+  "url": "http://localhost:6087/mix",
+  "title": "mix",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 3000",
+    "eval -> ['react', '@emotion/react', '$/utils/context', '$/utils/state', 'lucide-react', '@radix-ui/themes']",
+    "eval -> [False, False, None, 'bundle_library called: False']",
+    "click: '#btn-relabel'",
+    "wait: 2500",
+    "eval -> [False, False, None]",
+    "screenshot: 'shots/a1_prod_plugin_mix.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "dyn\nctl\nmix\n\nbundle_library called: False\n\nMIX\nrelabel\nBuilt with Reflex"
+}

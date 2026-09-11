@@ -1,0 +1,16 @@
+[?25l⠋ MARK unreserved spinner[2K⠙ MARK unreserved spinner[2K⠹ MARK unreserved spinner[2K⠸ MARK unreserved spinner[2K⠼ MARK unreserved spinner[2K⠴ MARK unreserved spinner[2K⠦ MARK unreserved spinner[2K⠦ MARK unreserved spinner
+[?25h[1A[2K[?25l[2KMARK unreserved progressbar                                            0% 0/2 0:00:00[2KMARK unreserved progressbar ━━━━━━━━━━━━━━━━━━━━                      50% 1/2 0:00:00[2KMARK unreserved progressbar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 2/2 0:00:00[2KMARK unreserved progressbar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 2/2 0:00:00[2KMARK unreserved progressbar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 2/2 0:00:00
+[?25hMARK unreserved print
+┏━━━━━━━━━━━━━━━━━━━━━━┳━━━┓
+┃[1m [0m[1mh                   [0m[1m [0m┃[1m [0m[1mi[0m[1m [0m┃
+┡━━━━━━━━━━━━━━━━━━━━━━╇━━━┩
+│ MARK unreserved cell │ y │
+└──────────────────────┴───┘
+[?25l⠋ MARK released spinner[2K⠙ MARK released spinner[2K⠹ MARK released spinner[2K⠸ MARK released spinner[2K⠼ MARK released spinner[2K⠴ MARK released spinner[2K⠦ MARK released spinner[2K⠦ MARK released spinner
+[?25h[1A[2K[?25l[2KMARK released progressbar                                            0% 0/2 0:00:00[2KMARK released progressbar ━━━━━━━━━━━━━━━━━━━━                      50% 1/2 0:00:00[2KMARK released progressbar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 2/2 0:00:00[2KMARK released progressbar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 2/2 0:00:00[2KMARK released progressbar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 2/2 0:00:00
+[?25hMARK released print
+┏━━━━━━━━━━━━━━━━━━━━┳━━━┓
+┃[1m [0m[1mh                 [0m[1m [0m┃[1m [0m[1mi[0m[1m [0m┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━┩
+│ MARK released cell │ y │
+└────────────────────┴───┘

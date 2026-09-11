@@ -1,0 +1,46 @@
+reflex: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py 0.9.10.post2
+
+----- A no bundle_library / rx.icon -----
+bundled_libraries: ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+    import {Flex as RadixThemesFlex,Text as RadixThemesText} from "https://cdn.jsdelivr.net/npm/@radix-ui/themes@3.3.0/+esm"
+    import LucideApple from "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/apple.mjs"
+    const React = window.__reflex.react;
+    const {jsx} = window.__reflex['@emotion/react']
+    const {Fragment,useEffect} = window.__reflex['react']
+    const {pyOr} = window['__reflex']["$/utils/state"]
+
+----- B after bundle_library('lucide-react') -----
+bundled_libraries: ['react', '@emotion/react', '$/utils/context', '$/utils/state', 'lucide-react']
+    import {Flex as RadixThemesFlex,Text as RadixThemesText} from "https://cdn.jsdelivr.net/npm/@radix-ui/themes@3.3.0/+esm"
+    import LucideApple from "lucide-react/dist/esm/icons/apple.mjs"
+    const React = window.__reflex.react;
+    const {jsx} = window.__reflex['@emotion/react']
+    const {Fragment,useEffect} = window.__reflex['react']
+    const {pyOr} = window['__reflex']["$/utils/state"]
+
+----- C after reset_bundled_libraries() -----
+bundled_libraries: ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+    import {Flex as RadixThemesFlex,Text as RadixThemesText} from "https://cdn.jsdelivr.net/npm/@radix-ui/themes@3.3.0/+esm"
+    import LucideApple from "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/apple.mjs"
+    const React = window.__reflex.react;
+    const {jsx} = window.__reflex['@emotion/react']
+    const {Fragment,useEffect} = window.__reflex['react']
+    const {pyOr} = window['__reflex']["$/utils/state"]
+
+----- D bundled lib, no subpath (control) -----
+bundled_libraries: ['react', '@emotion/react', '$/utils/context', '$/utils/state', 'some-lib']
+    import {Flex as RadixThemesFlex,Text as RadixThemesText} from "https://cdn.jsdelivr.net/npm/@radix-ui/themes@3.3.0/+esm"
+    const React = window.__reflex.react;
+    const {jsx} = window.__reflex['@emotion/react']
+    const {Fragment,useEffect} = window.__reflex['react']
+    const {Plain} = window.__reflex['some-lib']
+    const {pyOr} = window['__reflex']["$/utils/state"]
+
+----- E unbundled lib, no subpath (control, CDN) -----
+bundled_libraries: ['react', '@emotion/react', '$/utils/context', '$/utils/state']
+    import {Flex as RadixThemesFlex,Text as RadixThemesText} from "https://cdn.jsdelivr.net/npm/@radix-ui/themes@3.3.0/+esm"
+    import {Plain} from "https://cdn.jsdelivr.net/npm/some-lib@1.2.3/+esm"
+    const React = window.__reflex.react;
+    const {jsx} = window.__reflex['@emotion/react']
+    const {Fragment,useEffect} = window.__reflex['react']
+    const {pyOr} = window['__reflex']["$/utils/state"]

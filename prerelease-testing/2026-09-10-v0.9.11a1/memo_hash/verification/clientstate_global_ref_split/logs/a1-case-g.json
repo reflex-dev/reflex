@@ -1,0 +1,22 @@
+{
+  "url": "http://localhost:6048/g",
+  "title": "Minrepro | G",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "fill: ['#g-in', 'typed-g']",
+    "wait: 700",
+    "screenshot: 'shots/g-after.png'",
+    "eval -> ''"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [
+    "setCs_g is not defined"
+  ],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "G"
+}

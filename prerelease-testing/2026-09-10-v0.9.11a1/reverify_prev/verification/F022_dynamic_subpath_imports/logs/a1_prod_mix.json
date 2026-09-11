@@ -1,0 +1,45 @@
+{
+  "url": "http://localhost:6087/mix",
+  "title": "ctl",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 3000",
+    "eval -> ['react', '@emotion/react', '$/utils/context', '$/utils/state', '@radix-ui/themes']",
+    "eval -> [False, False, None, 'bundle_library called: True']",
+    "click: '#btn-relabel'",
+    "wait: 2500",
+    "eval -> [False, False, None]",
+    "screenshot: 'shots/a1_prod_bundle_mix.png'",
+    "goto: 'http://localhost:6087/ctl'",
+    "wait: 2500",
+    "eval -> [True, 'ctl-label: clicked']",
+    "screenshot: 'shots/a1_prod_ctl.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [
+    {
+      "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/apple.mjs",
+      "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+    }
+  ],
+  "http_4xx_5xx": [],
+  "body_text": "dyn\nctl\nmix\n\nbundle_library called: True\n\nCTL\n\nplain-box\n\nctl-label: clicked\n\nrelabel\nBuilt with Reflex"
+}

@@ -1,0 +1,7 @@
+command                  0.9.10.post2+db   0.9.11a1+db
+--version                         0.891s        0.170s
+--help                            0.890s        0.165s
+run --help                        0.892s        0.170s
+component --help                  0.897s        0.179s
+cloud --help                      0.925s        0.193s
+deploy --help                     0.941s        0.183s

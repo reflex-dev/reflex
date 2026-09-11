@@ -1,0 +1,310 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Initializing dynmin ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized dynmin. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+App running at: http://localhost:6084/
+Backend running at: http://0.0.0.0:10484
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BFlex%20
+as%20RadixThemesFlex%2CText%20as%20RadixThemesText%7D%20from%20%22https%3A%2F%2F
+cdn.jsdelivr.net%2Fnpm%2F%40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aimport%20Luc
+ideApple%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.
+0%2F%2Besm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__
+reflex.react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freac
+t'%5D%0Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'r
+eact'%5D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Fu
+tils%2Fstate%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%
+0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_icon%22
+%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_label%20%3D%20useRef(null)%3B%20re
+fs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label%3B%0A%0A%0A%0A%20%20return%20(
+%0A%20%20%20%20(jsx(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%
+22rx-Stack%22%2Cdirection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApp
+le%2C%20(%7Bid%3A%22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemes
+Text%2C%20(%7Bas%3A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%2
+0%22icon-label%3A%20start%22))))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BFlex%20
+as%20RadixThemesFlex%2CText%20as%20RadixThemesText%7D%20from%20%22https%3A%2F%2F
+cdn.jsdelivr.net%2Fnpm%2F%40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aimport%20Luc
+ideApple%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.
+0%2F%2Besm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__
+reflex.react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freac
+t'%5D%0Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'r
+eact'%5D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Fu
+tils%2Fstate%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%
+0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_icon%22
+%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_label%20%3D%20useRef(null)%3B%20re
+fs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label%3B%0A%0A%0A%0A%20%20return%20(
+%0A%20%20%20%20(jsx(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%
+22rx-Stack%22%2Cdirection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApp
+le%2C%20(%7Bid%3A%22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemes
+Text%2C%20(%7Bas%3A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%2
+0%22icon-label%3A%20start%22))))%0A%20%20)%0A%7D
+
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BFlex%3A%20RadixThemesFlex%2CText%3A%20RadixThemesText%7D%20%3D%20
+window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20
+window%5B'__reflex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0A%0Aexport%20default%20fu
+nction%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn
+_label%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_l
+abel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixThemesFlex%2C%20(%7B
+align%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdirection%3A%22column%22%2Cga
+p%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%22dyn-icon%22%2Cref%3Aref_d
+yn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3A%22p%22%2Cid%3A%22dyn-labe
+l%22%2Cref%3Aref_dyn_label%7D)%2C%20%22icon-label%3A%20start%22))))%0A%20%20)%0A
+%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BFlex%3A%20RadixThemesFlex%2CText%3A%20RadixThemesText%7D%20%3D%20
+window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20
+window%5B'__reflex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0A%0Aexport%20default%20fu
+nction%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn
+_label%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_l
+abel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixThemesFlex%2C%20(%7B
+align%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdirection%3A%22column%22%2Cga
+p%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%22dyn-icon%22%2Cref%3Aref_d
+yn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3A%22p%22%2Cid%3A%22dyn-labe
+l%22%2Cref%3Aref_dyn_label%7D)%2C%20%22icon-label%3A%20start%22))))%0A%20%20)%0A
+%7D
+
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BFlex%3A%20RadixThemesFlex%2CText%3A%20RadixThemesText%7D%20%3D%20
+window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20
+window%5B'__reflex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0A%0Aexport%20default%20fu
+nction%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn
+_label%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_l
+abel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixThemesFlex%2C%20(%7B
+align%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdirection%3A%22column%22%2Cga
+p%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%22dyn-icon%22%2Cref%3Aref_d
+yn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3A%22p%22%2Cid%3A%22dyn-labe
+l%22%2Cref%3Aref_dyn_label%7D)%2C%20%22icon-label%3A%20start%22))))%0A%20%20)%0A
+%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BFlex%3A%20RadixThemesFlex%2CText%3A%20RadixThemesText%7D%20%3D%20
+window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20
+window%5B'__reflex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0A%0Aexport%20default%20fu
+nction%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dyn_icon%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_dyn_icon%22%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn
+_label%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_l
+abel%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixThemesFlex%2C%20(%7B
+align%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdirection%3A%22column%22%2Cga
+p%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bid%3A%22dyn-icon%22%2Cref%3Aref_d
+yn_icon%7D)))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3A%22p%22%2Cid%3A%22dyn-labe
+l%22%2Cref%3Aref_dyn_label%7D)%2C%20%22icon-label%3A%20start%22))))%0A%20%20)%0A
+%7D
+
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BFlex%20
+as%20RadixThemesFlex%2CText%20as%20RadixThemesText%7D%20from%20%22https%3A%2F%2F
+cdn.jsdelivr.net%2Fnpm%2F%40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aimport%20Luc
+ideApple%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.
+0%2F%2Besm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__
+reflex.react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freac
+t'%5D%0Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'r
+eact'%5D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Fu
+tils%2Fstate%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%
+0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_icon%22
+%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_label%20%3D%20useRef(null)%3B%20re
+fs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label%3B%0A%0A%0A%0A%20%20return%20(
+%0A%20%20%20%20(jsx(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%
+22rx-Stack%22%2Cdirection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApp
+le%2C%20(%7Bid%3A%22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemes
+Text%2C%20(%7Bas%3A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%2
+0%22icon-label%3A%20clicked%22))))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20%7BFlex%20
+as%20RadixThemesFlex%2CText%20as%20RadixThemesText%7D%20from%20%22https%3A%2F%2F
+cdn.jsdelivr.net%2Fnpm%2F%40radix-ui%2Fthemes%403.3.0%2F%2Besm%22%0Aimport%20Luc
+ideApple%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.
+0%2F%2Besm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__
+reflex.react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freac
+t'%5D%0Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'r
+eact'%5D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Fu
+tils%2Fstate%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%
+0A%20%20const%20ref_dyn_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_dyn_icon%22
+%5D%20%3D%20ref_dyn_icon%3B%0Aconst%20ref_dyn_label%20%3D%20useRef(null)%3B%20re
+fs%5B%22ref_dyn_label%22%5D%20%3D%20ref_dyn_label%3B%0A%0A%0A%0A%20%20return%20(
+%0A%20%20%20%20(jsx(RadixThemesFlex%2C%20(%7Balign%3A%22start%22%2CclassName%3A%
+22rx-Stack%22%2Cdirection%3A%22column%22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApp
+le%2C%20(%7Bid%3A%22dyn-icon%22%2Cref%3Aref_dyn_icon%7D)))%2C%20(jsx(RadixThemes
+Text%2C%20(%7Bas%3A%22p%22%2Cid%3A%22dyn-label%22%2Cref%3Aref_dyn_label%7D)%2C%2
+0%22icon-label%3A%20clicked%22))))%0A%20%20)%0A%7D
+
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_mix_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_mix_icon%22%5D%20%
+3D%20ref_mix_icon%3B%0Aconst%20ref_mix_box%20%3D%20useRef(null)%3B%20refs%5B%22r
+ef_mix_box%22%5D%20%3D%20ref_mix_box%3B%0Aconst%20ref_mix_label%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_mix_label%22%5D%20%3D%20ref_mix_label%3B%0A%0A%0A%0A%20%
+20return%20(%0A%20%20%20%20(jsx(%22div%22%2C%20(%7B%7D)%2C%20(jsx(LucideApple%2C
+%20(%7Bid%3A%22mix-icon%22%2Cref%3Aref_mix_icon%7D)))%2C%20(jsx(%22p%22%2C%20(%7
+Bid%3A%22mix-box%22%2Cref%3Aref_mix_box%7D)%2C%20%22mix-box%22))%2C%20(jsx(%22p%
+22%2C%20(%7Bid%3A%22mix-label%22%2Cref%3Aref_mix_label%7D)%2C%20%22mix-label%3A%
+20start%22))))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_mix_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_mix_icon%22%5D%20%
+3D%20ref_mix_icon%3B%0Aconst%20ref_mix_box%20%3D%20useRef(null)%3B%20refs%5B%22r
+ef_mix_box%22%5D%20%3D%20ref_mix_box%3B%0Aconst%20ref_mix_label%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_mix_label%22%5D%20%3D%20ref_mix_label%3B%0A%0A%0A%0A%20%
+20return%20(%0A%20%20%20%20(jsx(%22div%22%2C%20(%7B%7D)%2C%20(jsx(LucideApple%2C
+%20(%7Bid%3A%22mix-icon%22%2Cref%3Aref_mix_icon%7D)))%2C%20(jsx(%22p%22%2C%20(%7
+Bid%3A%22mix-box%22%2Cref%3Aref_mix_box%7D)%2C%20%22mix-box%22))%2C%20(jsx(%22p%
+22%2C%20(%7Bid%3A%22mix-label%22%2Cref%3Aref_mix_label%7D)%2C%20%22mix-label%3A%
+20start%22))))%0A%20%20)%0A%7D
+
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_mix_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_mix_icon%22%5D%20%
+3D%20ref_mix_icon%3B%0Aconst%20ref_mix_box%20%3D%20useRef(null)%3B%20refs%5B%22r
+ef_mix_box%22%5D%20%3D%20ref_mix_box%3B%0Aconst%20ref_mix_label%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_mix_label%22%5D%20%3D%20ref_mix_label%3B%0A%0A%0A%0A%20%
+20return%20(%0A%20%20%20%20(jsx(%22div%22%2C%20(%7B%7D)%2C%20(jsx(LucideApple%2C
+%20(%7Bid%3A%22mix-icon%22%2Cref%3Aref_mix_icon%7D)))%2C%20(jsx(%22p%22%2C%20(%7
+Bid%3A%22mix-box%22%2Cref%3Aref_mix_box%7D)%2C%20%22mix-box%22))%2C%20(jsx(%22p%
+22%2C%20(%7Bid%3A%22mix-label%22%2Cref%3Aref_mix_label%7D)%2C%20%22mix-label%3A%
+20start%22))))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_mix_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_mix_icon%22%5D%20%
+3D%20ref_mix_icon%3B%0Aconst%20ref_mix_box%20%3D%20useRef(null)%3B%20refs%5B%22r
+ef_mix_box%22%5D%20%3D%20ref_mix_box%3B%0Aconst%20ref_mix_label%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_mix_label%22%5D%20%3D%20ref_mix_label%3B%0A%0A%0A%0A%20%
+20return%20(%0A%20%20%20%20(jsx(%22div%22%2C%20(%7B%7D)%2C%20(jsx(LucideApple%2C
+%20(%7Bid%3A%22mix-icon%22%2Cref%3Aref_mix_icon%7D)))%2C%20(jsx(%22p%22%2C%20(%7
+Bid%3A%22mix-box%22%2Cref%3Aref_mix_box%7D)%2C%20%22mix-box%22))%2C%20(jsx(%22p%
+22%2C%20(%7Bid%3A%22mix-label%22%2Cref%3Aref_mix_label%7D)%2C%20%22mix-label%3A%
+20start%22))))%0A%20%20)%0A%7D
+
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_mix_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_mix_icon%22%5D%20%
+3D%20ref_mix_icon%3B%0Aconst%20ref_mix_box%20%3D%20useRef(null)%3B%20refs%5B%22r
+ef_mix_box%22%5D%20%3D%20ref_mix_box%3B%0Aconst%20ref_mix_label%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_mix_label%22%5D%20%3D%20ref_mix_label%3B%0A%0A%0A%0A%20%
+20return%20(%0A%20%20%20%20(jsx(%22div%22%2C%20(%7B%7D)%2C%20(jsx(LucideApple%2C
+%20(%7Bid%3A%22mix-icon%22%2Cref%3Aref_mix_icon%7D)))%2C%20(jsx(%22p%22%2C%20(%7
+Bid%3A%22mix-box%22%2Cref%3Aref_mix_box%7D)%2C%20%22mix-box%22))%2C%20(jsx(%22p%
+22%2C%20(%7Bid%3A%22mix-label%22%2Cref%3Aref_mix_label%7D)%2C%20%22mix-label%3A%
+20clicked%22))))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2F
+state%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%2
+0const%20ref_mix_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_mix_icon%22%5D%20%
+3D%20ref_mix_icon%3B%0Aconst%20ref_mix_box%20%3D%20useRef(null)%3B%20refs%5B%22r
+ef_mix_box%22%5D%20%3D%20ref_mix_box%3B%0Aconst%20ref_mix_label%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_mix_label%22%5D%20%3D%20ref_mix_label%3B%0A%0A%0A%0A%20%
+20return%20(%0A%20%20%20%20(jsx(%22div%22%2C%20(%7B%7D)%2C%20(jsx(LucideApple%2C
+%20(%7Bid%3A%22mix-icon%22%2Cref%3Aref_mix_icon%7D)))%2C%20(jsx(%22p%22%2C%20(%7
+Bid%3A%22mix-box%22%2Cref%3Aref_mix_box%7D)%2C%20%22mix-box%22))%2C%20(jsx(%22p%
+22%2C%20(%7Bid%3A%22mix-label%22%2Cref%3Aref_mix_label%7D)%2C%20%22mix-label%3A%
+20clicked%22))))%0A%20%20)%0A%7D
+
+[ERROR] Unexpected exit from worker-1

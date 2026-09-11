@@ -1,0 +1,1101 @@
+{
+ "base": "http://localhost:5421",
+ "steps": [
+  {
+   "i": 0,
+   "verb": "goto",
+   "val": "/",
+   "note": null,
+   "ok": true,
+   "ms": 2022,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 326,
+    "head": "Mantine demo |  | A collection of examples using Mantine in Reflex. |  | Example |  | Source |  | Dates |  | A collection of examples using Mantine Dates components in Reflex. |  | Pill |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Tags Input |  | A simple Tags In"
+   },
+   "url": "http://localhost:5421/"
+  },
+  {
+   "i": 1,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3001,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 326,
+    "head": "Mantine demo |  | A collection of examples using Mantine in Reflex. |  | Example |  | Source |  | Dates |  | A collection of examples using Mantine Dates components in Reflex. |  | Pill |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Tags Input |  | A simple Tags In"
+   },
+   "url": "http://localhost:5421/"
+  },
+  {
+   "i": 2,
+   "verb": "shot",
+   "val": "index",
+   "note": null,
+   "ok": true,
+   "ms": 126,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 326,
+    "head": "Mantine demo |  | A collection of examples using Mantine in Reflex. |  | Example |  | Source |  | Dates |  | A collection of examples using Mantine Dates components in Reflex. |  | Pill |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Tags Input |  | A simple Tags In"
+   },
+   "url": "http://localhost:5421/"
+  },
+  {
+   "i": 3,
+   "verb": "eval",
+   "val": "() => ({cards: Array.from(document.querySelectorAll('.rt-Card')).map(c=>c.innerText.replace(/\\n/g,' / ')), links: Array.from(document.querySelectorAll('a')).map(a=>[a.innerText, a.getAttribute('href')])})",
+   "note": "index lists the registered demos",
+   "ok": true,
+   "result": {
+    "cards": [
+     "Dates /  / A collection of examples using Mantine Dates components in Reflex.",
+     "Pill /  / A pill is a small, rounded component that can be used to represent a single value or a small set of values.",
+     "Tags Input /  / A simple Tags Input example using Mantine."
+    ],
+    "links": [
+     [
+      "Mantine demo",
+      "/"
+     ],
+     [
+      "Dates",
+      "/dates"
+     ],
+     [
+      "Pill",
+      "/pill"
+     ],
+     [
+      "Tags Input",
+      "/tags-input"
+     ]
+    ]
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 326,
+    "head": "Mantine demo |  | A collection of examples using Mantine in Reflex. |  | Example |  | Source |  | Dates |  | A collection of examples using Mantine Dates components in Reflex. |  | Pill |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Tags Input |  | A simple Tags In"
+   },
+   "url": "http://localhost:5421/"
+  },
+  {
+   "i": 4,
+   "verb": "click",
+   "val": "button[role=combobox], .rt-SelectTrigger",
+   "note": "radix select dropdown in the demo header",
+   "ok": true,
+   "ms": 98,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 349,
+    "head": "Mantine demo |  | A collection of examples using Mantine in Reflex. |  | Example |  | Source |  | Dates |  | A collection of examples using Mantine Dates components in Reflex. |  | Pill |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Tags Input |  | A simple Tags In"
+   },
+   "url": "http://localhost:5421/"
+  },
+  {
+   "i": 5,
+   "verb": "wait",
+   "val": 1000,
+   "note": null,
+   "ok": true,
+   "ms": 1001,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 349,
+    "head": "Mantine demo |  | A collection of examples using Mantine in Reflex. |  | Example |  | Source |  | Dates |  | A collection of examples using Mantine Dates components in Reflex. |  | Pill |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Tags Input |  | A simple Tags In"
+   },
+   "url": "http://localhost:5421/"
+  },
+  {
+   "i": 6,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('[role=option]')).map(e=>[e.innerText, e.getAttribute('data-value')])",
+   "note": null,
+   "ok": true,
+   "result": [
+    [
+     "Dates",
+     null
+    ],
+    [
+     "Pill",
+     null
+    ],
+    [
+     "Tags Input",
+     null
+    ]
+   ],
+   "ms": 2,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 349,
+    "head": "Mantine demo |  | A collection of examples using Mantine in Reflex. |  | Example |  | Source |  | Dates |  | A collection of examples using Mantine Dates components in Reflex. |  | Pill |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Tags Input |  | A simple Tags In"
+   },
+   "url": "http://localhost:5421/"
+  },
+  {
+   "i": 7,
+   "verb": "shot",
+   "val": "index_select_open",
+   "note": null,
+   "ok": true,
+   "ms": 79,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 349,
+    "head": "Mantine demo |  | A collection of examples using Mantine in Reflex. |  | Example |  | Source |  | Dates |  | A collection of examples using Mantine Dates components in Reflex. |  | Pill |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Tags Input |  | A simple Tags In"
+   },
+   "url": "http://localhost:5421/"
+  },
+  {
+   "i": 8,
+   "verb": "click",
+   "val": "[role=option]:has-text('Pill')",
+   "note": "select -> on_change=rx.redirect",
+   "ok": true,
+   "ms": 102,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 326,
+    "head": "Mantine demo |  | A collection of examples using Mantine in Reflex. |  | Example |  | Source |  | Dates |  | A collection of examples using Mantine Dates components in Reflex. |  | Pill |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Tags Input |  | A simple Tags In"
+   },
+   "url": "http://localhost:5421/"
+  },
+  {
+   "i": 9,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3002,
+   "probe": {
+    "svg": 7,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 16,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 200,
+    "head": "Pill | Mantine demo |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Example |  | Source |  | Default | Default | Default | Default | Default | Default | Default"
+   },
+   "url": "http://localhost:5421/pill"
+  },
+  {
+   "i": 10,
+   "verb": "eval",
+   "val": "() => ({url: location.pathname, pills: document.querySelectorAll('[class*=mantine-Pill-root]').length, body: document.body.innerText.replace(/\\n/g,' | ').slice(0,160)})",
+   "note": "redirected to /pill",
+   "ok": true,
+   "result": {
+    "url": "/pill",
+    "pills": 7,
+    "body": "Pill | Mantine demo |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Example |  | Source | "
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 7,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 16,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 200,
+    "head": "Pill | Mantine demo |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Example |  | Source |  | Default | Default | Default | Default | Default | Default | Default"
+   },
+   "url": "http://localhost:5421/pill"
+  },
+  {
+   "i": 11,
+   "verb": "shot",
+   "val": "pill_page",
+   "note": null,
+   "ok": true,
+   "ms": 65,
+   "probe": {
+    "svg": 7,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 16,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 200,
+    "head": "Pill | Mantine demo |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Example |  | Source |  | Default | Default | Default | Default | Default | Default | Default"
+   },
+   "url": "http://localhost:5421/pill"
+  },
+  {
+   "i": 12,
+   "verb": "click",
+   "val": "[class*=Pill-remove]",
+   "note": "pill remove button -> rx.toast('Removed')",
+   "ok": true,
+   "ms": 22,
+   "probe": {
+    "svg": 7,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 16,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 200,
+    "head": "Pill | Mantine demo |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Example |  | Source |  | Default | Default | Default | Default | Default | Default | Default"
+   },
+   "url": "http://localhost:5421/pill"
+  },
+  {
+   "i": 13,
+   "verb": "wait",
+   "val": 1500,
+   "note": null,
+   "ok": true,
+   "ms": 1502,
+   "probe": {
+    "svg": 7,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 16,
+    "toasts": 1,
+    "toast_text": "Removed",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 208,
+    "head": "Removed | Pill | Mantine demo |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Example |  | Source |  | Default | Default | Default | Default | Default | Default | Default"
+   },
+   "url": "http://localhost:5421/pill"
+  },
+  {
+   "i": 14,
+   "verb": "eval",
+   "val": "() => ({toasts: Array.from(document.querySelectorAll('[data-sonner-toast]')).map(e=>e.innerText.replace(/\\n/g,' ')), pills: document.querySelectorAll('[class*=mantine-Pill-root]').length})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "toasts": [
+     "Removed"
+    ],
+    "pills": 7
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 7,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 16,
+    "toasts": 1,
+    "toast_text": "Removed",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 208,
+    "head": "Removed | Pill | Mantine demo |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Example |  | Source |  | Default | Default | Default | Default | Default | Default | Default"
+   },
+   "url": "http://localhost:5421/pill"
+  },
+  {
+   "i": 15,
+   "verb": "shot",
+   "val": "pill_removed",
+   "note": null,
+   "ok": true,
+   "ms": 68,
+   "probe": {
+    "svg": 7,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 16,
+    "toasts": 1,
+    "toast_text": "Removed",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 208,
+    "head": "Removed | Pill | Mantine demo |  | A pill is a small, rounded component that can be used to represent a single value or a small set of values. |  | Example |  | Source |  | Default | Default | Default | Default | Default | Default | Default"
+   },
+   "url": "http://localhost:5421/pill"
+  },
+  {
+   "i": 16,
+   "verb": "goto",
+   "val": "/tags-input",
+   "note": null,
+   "ok": true,
+   "ms": 1092,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 137,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 17,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3004,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 137,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 18,
+   "verb": "eval",
+   "val": "() => ({tags: Array.from(document.querySelectorAll('[class*=Pill-root]')).map(e=>e.innerText), input: document.querySelectorAll('[class*=TagsInput-input] input, .mantine-TagsInput-inputField').length, body: document.body.innerText.replace(/\\n/g,' | ').slice(0,160)})",
+   "note": "initial state tags Tag1/Tag2",
+   "ok": true,
+   "result": {
+    "tags": [
+     "Tag1",
+     "Tag2"
+    ],
+    "input": 1,
+    "body": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 |"
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 137,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 19,
+   "verb": "shot",
+   "val": "tagsinput_load",
+   "note": null,
+   "ok": true,
+   "ms": 100,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 137,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 20,
+   "verb": "click",
+   "val": ".mantine-TagsInput-inputField",
+   "note": null,
+   "ok": true,
+   "ms": 64,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 137,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 21,
+   "verb": "keyboard",
+   "val": "Q",
+   "note": null,
+   "ok": true,
+   "ms": 14,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 137,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 22,
+   "verb": "keyboard",
+   "val": "A",
+   "note": null,
+   "ok": true,
+   "ms": 12,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 137,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 23,
+   "verb": "keyboard",
+   "val": "Enter",
+   "note": null,
+   "ok": true,
+   "ms": 12,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 137,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 24,
+   "verb": "wait",
+   "val": 1500,
+   "note": null,
+   "ok": true,
+   "ms": 1501,
+   "probe": {
+    "svg": 9,
+    "buttons": 7,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 23,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 140,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 25,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('[class*=Pill-root]')).map(e=>e.innerText)",
+   "note": "state round trip: QA added",
+   "ok": true,
+   "result": [
+    "Tag1",
+    "Tag2",
+    "QA"
+   ],
+   "ms": 1,
+   "probe": {
+    "svg": 9,
+    "buttons": 7,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 23,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 140,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 26,
+   "verb": "shot",
+   "val": "tagsinput_added",
+   "note": null,
+   "ok": true,
+   "ms": 72,
+   "probe": {
+    "svg": 9,
+    "buttons": 7,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 23,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 140,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 27,
+   "verb": "click_nth",
+   "val": [
+    "[class*=Pill-remove]",
+    0
+   ],
+   "note": "remove Tag1 -> on_change -> state list",
+   "ok": true,
+   "ms": 36,
+   "probe": {
+    "svg": 9,
+    "buttons": 7,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 23,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 140,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag1 | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 28,
+   "verb": "wait",
+   "val": 1500,
+   "note": null,
+   "ok": true,
+   "ms": 1501,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 135,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 29,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('[class*=Pill-root]')).map(e=>e.innerText)",
+   "note": null,
+   "ok": true,
+   "result": [
+    "Tag2",
+    "QA"
+   ],
+   "ms": 1,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 135,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 30,
+   "verb": "reload",
+   "val": null,
+   "note": null,
+   "ok": true,
+   "ms": 979,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 135,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 31,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3002,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 135,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 32,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('[class*=Pill-root]')).map(e=>e.innerText)",
+   "note": "after reload the disk-state manager restores the edited tag list",
+   "ok": true,
+   "result": [
+    "Tag2",
+    "QA"
+   ],
+   "ms": 4,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 135,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 33,
+   "verb": "shot",
+   "val": "tagsinput_reload",
+   "note": null,
+   "ok": true,
+   "ms": 96,
+   "probe": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 20,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 135,
+    "head": "Tags Input | Mantine demo |  | A simple Tags Input example using Mantine. |  | Example |  | Source |  | TagsInput |  | This is a TagsInput component |  | Tag2 | QA"
+   },
+   "url": "http://localhost:5421/tags-input"
+  },
+  {
+   "i": 34,
+   "verb": "goto",
+   "val": "/accordion",
+   "note": null,
+   "ok": true,
+   "ms": 894,
+   "probe": {
+    "svg": 0,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 19,
+    "head": "404: Page not found"
+   },
+   "url": "http://localhost:5421/accordion"
+  },
+  {
+   "i": 35,
+   "verb": "wait",
+   "val": 2000,
+   "note": null,
+   "ok": true,
+   "ms": 2004,
+   "probe": {
+    "svg": 0,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 19,
+    "head": "404: Page not found"
+   },
+   "url": "http://localhost:5421/accordion"
+  },
+  {
+   "i": 36,
+   "verb": "eval",
+   "val": "() => document.body.innerText.slice(0,80)",
+   "note": "route of a commented-out demo module",
+   "ok": true,
+   "result": "404: Page not found",
+   "ms": 3,
+   "probe": {
+    "svg": 0,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 19,
+    "head": "404: Page not found"
+   },
+   "url": "http://localhost:5421/accordion"
+  },
+  {
+   "i": 37,
+   "verb": "shot",
+   "val": "unregistered_route",
+   "note": null,
+   "ok": true,
+   "ms": 84,
+   "probe": {
+    "svg": 0,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 19,
+    "head": "404: Page not found"
+   },
+   "url": "http://localhost:5421/accordion"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "ws": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"XHswvIyZA-Z33TLVAAAG\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"mmaVSKC4Dx7xhExqAAAH\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"e063da06-eb8c-4ebd-d93e-e98e8724a216\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true,\"router_rx_state_\":{\"session\":{\"client_token\":\"e063da06-eb8c-4ebd-d93e-e98e8724a216\",\"client_ip\":\"127.0.0.1\",\"sessi",
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"j-7Lewp_nUdq_Y5lAAAI\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"FthaGls5rEw8FtowAAAJ\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"e063da06-eb8c-4ebd-d93e-e98e8724a216\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___tags_input____tags_input_state\":{\"tags_rx_state_\":[\"Tag1\",\"Tag2\",\"QA\"]}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.mantine___tags_input____tags_input_state\":{\"tags_rx_state_\":[\"Tag2\",\"QA\"]}}}]",
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"YrBrOGEMho-3OMbQAAAK\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"o-Egqy3551agTjIbAAAL\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"e063da06-eb8c-4ebd-d93e-e98e8724a216\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"IquwNmGX9GV8y-PuAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"0RlA7SPeQeMguA9KAAAN\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"e063da06-eb8c-4ebd-d93e-e98e8724a216\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console_errors": [],
+ "console_warnings": [],
+ "failed_steps": []
+}

@@ -1,0 +1,11 @@
+STDOUT-IS-TTY True
+META unreserved progress.disable=False
+META reserved progress.disable=True
+MARK reserved print
+┏━━━━━━━━━━━━━━━━━━━━┳━━━┓
+┃ h                  ┃ i ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━┩
+│ MARK reserved cell │ y │
+└────────────────────┴───┘
+META released progress.disable=False
+META done

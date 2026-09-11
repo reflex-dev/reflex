@@ -1,0 +1,5 @@
+### authmin (rxe.AuthPlugin) cold dev worker, after a full browser session:
+Not Found [404]
+### control: /ping on the same backend
+"pong" [200]
+No client token in request [400]

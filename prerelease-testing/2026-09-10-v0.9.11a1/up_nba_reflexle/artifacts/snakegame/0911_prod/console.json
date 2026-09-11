@@ -1,0 +1,14 @@
+[
+  {
+    "type": "log",
+    "text": "[snake] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[tab2] Disconnect websocket on pagehide"
+  },
+  {
+    "type": "log",
+    "text": "[snake] Disconnect websocket on pagehide"
+  }
+]

@@ -1,0 +1,45 @@
+{
+ "count_before": "0",
+ "count_after": "3",
+ "new_sent": [
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.minrxe___minrxe____counter_state.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.minrxe___minrxe____counter_state.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.minrxe___minrxe____counter_state.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ "console": [
+  [
+   "log",
+   "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+ ],
+ "sent": [
+  "40/_event,",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.minrxe___minrxe____counter_state.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.minrxe___minrxe____counter_state.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.minrxe___minrxe____counter_state.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ "recv": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"eCGjvfnKpVnsNaygAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"ZrGQi2GFH__ji4CYAAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"d5a4f661-7924-4fa7-e98f-35937d4f1cf5\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"ZrGQi2GFH__ji4CYAAAB\"},\"headers\":{\"host\":\"localhost:10523\",\"origin\":\"http://localhost:6123\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"4CF2/i1e7YEBF5sU249gyw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:10523\",\"origin\":\"http://localhost:6123\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"4CF2/i1e7YEBF5sU249gyw==\",\"sec-websocket-protocol\":\"0.9.11a1\",\"sec-websocket-version\":\"13\",\"upgr",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.minrxe___minrxe____counter_state\":{\"count_rx_state_\":1}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.minrxe___minrxe____counter_state\":{\"count_rx_state_\":2}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.minrxe___minrxe____counter_state\":{\"count_rx_state_\":3}}}]"
+ ]
+}

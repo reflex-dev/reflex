@@ -1,0 +1,52 @@
+### head
+───────────────────────────── Initializing tickets ─────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized tickets. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (tickets/tickets.py:54)
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/verify2_ent_mantine_highcharts_tickets_0/lib/python3.11/site-packages/refl
+ex_components_radix/plugin.py:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+
+### errors/warnings
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+[Reflex Frontend Exception]
+ [SID: cYDiodudpMQ-NfWOAAAB] State update failed: no dispatch function for 
+
+### tail
+ex_enterprise/plugins/api_tokens.py:114)
+App running at: http://localhost:6122/
+Backend running at: http://0.0.0.0:10522
+[Reflex Frontend Exception]
+ [SID: cYDiodudpMQ-NfWOAAAB] State update failed: no dispatch function for 
+substate(s) 
+'reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc
+_auth_state, 
+reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_st
+ate'. This indicates a frontend/backend state mismatch. Rebuild the frontend or 
+check that api_url points to the matching backend.
+

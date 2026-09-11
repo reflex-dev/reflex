@@ -1,0 +1,4 @@
+[{"fill": ["#g-in", "typed-g"]},
+ {"wait": 700},
+ {"screenshot": "shots/g-after.png"},
+ {"eval": "document.querySelector('#g-out').textContent"}]

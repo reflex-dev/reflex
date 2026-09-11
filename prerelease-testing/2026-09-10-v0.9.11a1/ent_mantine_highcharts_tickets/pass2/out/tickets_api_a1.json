@@ -1,0 +1,79 @@
+{
+ "auth_token": {
+  "status": 200,
+  "body": "{\"access_token\": \"hqxVK9Qz1I4MyRVtkd8oghXQOtvUxViZpzEYGrzICRU\", \"token_type\": \"Bearer\", \"expires_in\": 3600, \"session\": \"anonymous\"}"
+ },
+ "create_no_auth": {
+  "status": 401,
+  "body": "{\"error\": \"Unauthorized: Provide an app-issued token as `Authorization: Bearer <token>`. Obtain an anonymous session token from `POST /_reflex/auth/token`, or an authenticated one through the app's OAuth flow (when available).\"}"
+ },
+ "create_bad_auth": {
+  "status": 401,
+  "body": "{\"error\": \"Unauthorized: Provide an app-issued token as `Authorization: Bearer <token>`. Obtain an anonymous session token from `POST /_reflex/auth/token`, or an authenticated one through the app's OAuth flow (when available).\"}"
+ },
+ "api_catalog": {
+  "status": 200,
+  "body": "{\"linkset\": [{\"anchor\": \"http://localhost:9822/\", \"service-desc\": [{\"href\": \"http://localhost:9822/_reflex/events/openapi.yaml\", \"type\": \"application/vnd.oai.openapi\"}]}]}"
+ },
+ "openapi_yaml": {
+  "status": 500,
+  "body": "Internal Server Error"
+ },
+ "retrieve_state": {
+  "status": 200,
+  "body": "{\"reflex___state____state\": {\"is_hydrated\": false, \"router\": {\"session\": {\"client_token\": \"\", \"client_ip\": \"0.0.0.0\", \"session_id\": \"\"}, \"headers\": {\"host\": \"\", \"origin\": \"\", \"upgrade\": \"\", \"connection\": \"\", \"cookie\": \"\", \"pragma\": \"\", \"cache_control\": \"\", \"user_agent\": \"\", \"sec_websocket_version\": \"\", \"sec_websocket_key\": \"\", \"sec_websocket_extensions\": \"\", \"accept_encoding\": \"\", \"accept_language"
+ },
+ "create_ticket": {
+  "status": 200,
+  "body": "{\"reflex___state____state\": {\"router\": {\"session\": {\"client_token\": \"\", \"client_ip\": \"127.0.0.1\", \"session_id\": \"\"}, \"headers\": {\"host\": \"localhost:9822\", \"origin\": \"\", \"upgrade\": \"\", \"connection\": \"keep-alive\", \"cookie\": \"\", \"pragma\": \"\", \"cache_control\": \"\", \"user_agent\": \"python-httpx/0.28.1\", \"sec_websocket_version\": \"\", \"sec_websocket_key\": \"\", \"sec_websocket_extensions\": \"\", \"accept_encoding"
+ },
+ "created_title": "api ticket ce30dad7",
+ "create_wrong_state": {
+  "status": 404,
+  "body": "Not Found"
+ },
+ "nonexistent_handler": {
+  "status": 404,
+  "body": "Not Found"
+ },
+ "create_missing_title": {
+  "status": 200,
+  "body": "{\"error\": \"Error processing event: TicketState.create_ticket() missing 1 required positional argument: 'title'. Check server logs for more details.\"}"
+ },
+ "create_wrong_type": {
+  "status": 200,
+  "body": "{\"error\": \"Error processing event: 'int' object has no attribute 'strip'. Check server logs for more details.\"}"
+ },
+ "set_status_bad_id": {
+  "status": 200,
+  "body": "{\"reflex___state____state\": {\"router\": {\"session\": {\"client_token\": \"\", \"client_ip\": \"127.0.0.1\", \"session_id\": \"\"}, \"headers\": {\"host\": \"localhost:9822\", \"origin\": \"\", \"upgrade\": \"\", \"connection\": \"keep-alive\", \"cookie\": \"\", \"pragma\": \"\", \"cache_control\": \"\", \"user_agent\": \"python-httpx/0.28.1\", \"sec_websocket_version\": \"\", \"sec_websocket_key\": \"\", \"sec_websocket_extensions\": \"\", \"accept_encoding"
+ },
+ "set_status_bad_status": {
+  "status": 200,
+  "body": "{\"reflex___state____state\": {\"router\": {\"session\": {\"client_token\": \"\", \"client_ip\": \"127.0.0.1\", \"session_id\": \"\"}, \"headers\": {\"host\": \"localhost:9822\", \"origin\": \"\", \"upgrade\": \"\", \"connection\": \"keep-alive\", \"cookie\": \"\", \"pragma\": \"\", \"cache_control\": \"\", \"user_agent\": \"python-httpx/0.28.1\", \"sec_websocket_version\": \"\", \"sec_websocket_key\": \"\", \"sec_websocket_extensions\": \"\", \"accept_encoding"
+ },
+ "apply_query": {
+  "status": 200,
+  "body": "{\"reflex___state____state\": {\"router\": {\"session\": {\"client_token\": \"\", \"client_ip\": \"127.0.0.1\", \"session_id\": \"\"}, \"headers\": {\"host\": \"localhost:9822\", \"origin\": \"\", \"upgrade\": \"\", \"connection\": \"keep-alive\", \"cookie\": \"\", \"pragma\": \"\", \"cache_control\": \"\", \"user_agent\": \"python-httpx/0.28.1\", \"sec_websocket_version\": \"\", \"sec_websocket_key\": \"\", \"sec_websocket_extensions\": \"\", \"accept_encoding"
+ },
+ "seed": {
+  "status": 200,
+  "body": "{\"reflex___state____state\": {\"router\": {\"session\": {\"client_token\": \"\", \"client_ip\": \"127.0.0.1\", \"session_id\": \"\"}, \"headers\": {\"host\": \"localhost:9822\", \"origin\": \"\", \"upgrade\": \"\", \"connection\": \"keep-alive\", \"cookie\": \"\", \"pragma\": \"\", \"cache_control\": \"\", \"user_agent\": \"python-httpx/0.28.1\", \"sec_websocket_version\": \"\", \"sec_websocket_key\": \"\", \"sec_websocket_extensions\": \"\", \"accept_encoding"
+ },
+ "load_tickets": {
+  "status": 200,
+  "body": "{\"reflex___state____state\": {\"router\": {\"session\": {\"client_token\": \"\", \"client_ip\": \"127.0.0.1\", \"session_id\": \"\"}, \"headers\": {\"host\": \"localhost:9822\", \"origin\": \"\", \"upgrade\": \"\", \"connection\": \"keep-alive\", \"cookie\": \"\", \"pragma\": \"\", \"cache_control\": \"\", \"user_agent\": \"python-httpx/0.28.1\", \"sec_websocket_version\": \"\", \"sec_websocket_key\": \"\", \"sec_websocket_extensions\": \"\", \"accept_encoding"
+ },
+ "private_helper": {
+  "status": 404,
+  "body": "Not Found"
+ },
+ "openapi_json": {
+  "status": 404,
+  "body": "Not Found"
+ },
+ "docs": {
+  "status": 404,
+  "body": "Not Found"
+ }
+}

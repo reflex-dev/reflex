@@ -1,0 +1,28 @@
+[PASS] snakegame_page_loads: title='snake game' grid_cells=361 (19x19=361) stats={'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False} switch=unchecked
+[PASS] initial_board_all_empty: cell colours at first paint: {'rgb(224, 225, 230)': 361} — the app only paints snake/food on the first loop tick, so an un-started board is uniformly empty (app design)
+[PASS] run_starts_background_loop: cell colours after RUN: {'rgb(224, 225, 230)': 359, 'rgb(0, 144, 255)': 1, 'rgb(70, 167, 88)': 1}; switch=checked (rx.switch(checked=State.running) must follow the backend)
+[PASS] background_loop_pushes_deltas: non-empty cell layout changed over 2.5 s: True
+[PASS] pause_stops_loop: board identical over 2 s after PAUSE: True; switch=unchecked
+[PASS] escape_key_toggles_run: Escape -> running=True, Escape -> paused=True
+[PASS] switch_controls_loop: switch -> checked=True; board advanced=True
+[PASS] arrow_keys_navigate_and_eat_food: queued 10x ArrowUp + 5x ArrowLeft from the start position (10,15) -> food at (5,5); stats {'RATE': '12', 'SCORE': '1', 'MAGIC': '2', 'gameover': False} (SCORE 0->1, MAGIC 1->2, RATE 10->12 expected: the handler does magic += 1 before rate = 10 + magic)
+[PASS] score_magic_rate_update_together: stats after eating: {'RATE': '12', 'SCORE': '1', 'MAGIC': '2', 'gameover': False}
+[PASS] vim_keys_steer_snake: h/j/k/l key_map entries accepted; board changed=True
+[PASS] control_buttons_clickable: clicked one of the four arrow icon_buttons; no error raised, board still live
+[PASS] deterministic_game_over: three ',' (arrow_rel_left) presses -> Game Over heading=True; stats={'RATE': '12', 'SCORE': '1', 'MAGIC': '2', 'gameover': True}; switch=unchecked; distinct cell colours=['rgb(224, 225, 230)', 'rgb(70, 167, 88)', 'rgb(229, 72, 77)', 'rgb(0, 144, 255)']
+[PASS] dead_cell_is_recoloured: cell colours on death (empty + snake + food + dead red expected): {'rgb(224, 225, 230)': 353, 'rgb(70, 167, 88)': 6, 'rgb(229, 72, 77)': 1, 'rgb(0, 144, 255)': 1}
+[PASS] loop_stops_after_death: board frozen after Game Over=True; switch=unchecked
+[PASS] run_after_death_resets: stats after replay: {'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False} (SCORE 0, MAGIC 1, RATE 10, no Game Over heading)
+[PASS] state_survives_reload: stats {'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False} -> {'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False}; board identical=True
+[PASS] keys_work_after_reload: ArrowLeft after a reload still reaches the backend
+[PASS] second_tab_independent_game: second context fresh stats={'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False}; its own loop running=checked; first tab switch=unchecked
+[PASS] npm_versions_recorded: {"@emotion/react": "11.14.0", "@radix-ui/themes": "3.3.0", "@react-router/dev": "8.3.1", "@react-router/fs-routes": "8.3.1", "@react-router/node": "8.3.1", "autoprefixer": "10.5.4", "isbot": "5.2.2", "lucide-react": "1.26.0", "postcss": "8.5.26", "postcss-import": "17.0.0", "react": "19.2.8", "react-dom": "19.2.8", "react-error-boundary": "6.1.2", "react-helmet": "6.1.0", "react-router": "8.3.1", "socket.io-client": "4.8.3", "sonner": "2.0.8", "universal-cookie": "8.1.2", "vite": "8.2.2"}
+[PASS] browser_console_clean: 0 unexpected: []
+[PASS] no_bad_http_responses: 0: []
+[PASS] no_page_errors: 0: []
+
+UNEXPECTED CONSOLE: []
+ALL CONSOLE TYPES: ["log"]
+BAD RESPONSES: []
+PAGE ERRORS: []
+SUMMARY: {"snakegame_page_loads": "pass", "initial_board_all_empty": "pass", "run_starts_background_loop": "pass", "background_loop_pushes_deltas": "pass", "pause_stops_loop": "pass", "escape_key_toggles_run": "pass", "switch_controls_loop": "pass", "arrow_keys_navigate_and_eat_food": "pass", "score_magic_rate_update_together": "pass", "vim_keys_steer_snake": "pass", "control_buttons_clickable": "pass", "deterministic_game_over": "pass", "dead_cell_is_recoloured": "pass", "loop_stops_after_death": "pass", "run_after_death_resets": "pass", "state_survives_reload": "pass", "keys_work_after_reload": "pass", "second_tab_independent_game": "pass", "npm_versions_recorded": "pass", "browser_console_clean": "pass", "no_bad_http_responses": "pass", "no_page_errors": "pass"}

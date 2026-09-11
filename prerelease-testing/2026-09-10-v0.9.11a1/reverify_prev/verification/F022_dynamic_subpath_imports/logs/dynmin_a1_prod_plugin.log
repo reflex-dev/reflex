@@ -1,0 +1,108 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 21/20 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:06
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:6087/
+Warning: Page index is being redefined with the same component.
+Warning: Page dyn is being redefined with the same component.
+Warning: Page ctl is being redefined with the same component.
+Warning: Page mix is being redefined with the same component.
+[Reflex Frontend Exception]
+ TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+    at eval (eval at evalReactComponent 
+(http://localhost:6087/assets/link-iYUb51Rh.js:15:4112), <anonymous>:1:8)
+    at evalReactComponent 
+(http://localhost:6087/assets/link-iYUb51Rh.js:15:4112)
+    at http://localhost:6087/assets/dynmin-CS0mr0Li.js:1:1294
+    at Gc (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:91651)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106750)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:107513)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106730)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+
+[Reflex Frontend Exception]
+ TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+    at eval (eval at evalReactComponent 
+(http://localhost:6087/assets/link-iYUb51Rh.js:15:4112), <anonymous>:1:8)
+    at evalReactComponent 
+(http://localhost:6087/assets/link-iYUb51Rh.js:15:4112)
+    at http://localhost:6087/assets/dynmin-CS0mr0Li.js:1:1294
+    at Gc (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:91651)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106750)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:107513)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106730)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+
+[Reflex Frontend Exception]
+ TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+    at eval (eval at evalReactComponent 
+(http://localhost:6087/assets/link-iYUb51Rh.js:15:4112), <anonymous>:1:8)
+    at evalReactComponent 
+(http://localhost:6087/assets/link-iYUb51Rh.js:15:4112)
+    at http://localhost:6087/assets/dynmin-CS0mr0Li.js:1:658
+    at Gc (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:91651)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106750)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:107513)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106730)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+
+[Reflex Frontend Exception]
+ TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+TypeError: Failed to resolve module specifier 
+"lucide-react/dist/esm/icons/apple.mjs". Relative references must start with 
+either "/", "./", or "../".
+    at eval (eval at evalReactComponent 
+(http://localhost:6087/assets/link-iYUb51Rh.js:15:4112), <anonymous>:1:8)
+    at evalReactComponent 
+(http://localhost:6087/assets/link-iYUb51Rh.js:15:4112)
+    at http://localhost:6087/assets/dynmin-CS0mr0Li.js:1:658
+    at Gc (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:91651)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106750)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:107513)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+    at Ol (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106730)
+    at Dl (http://localhost:6087/assets/entry.client-5UErbQKK.js:8:106634)
+

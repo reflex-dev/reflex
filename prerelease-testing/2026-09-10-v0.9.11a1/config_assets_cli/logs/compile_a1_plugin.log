@@ -1,0 +1,80 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/cac_plotly/lib/python3.11/site-packages/reflex_components_radix/plugin.py:
+72)
+Debug: [timing] Compile pages: 0.17s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 19/18 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 480 installs across 498 packages (no changes) [17.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'autoprefixer@10.5.4', 'vite@8.2.2', 
+'@react-router/dev@8.3.1', 'postcss@8.5.26', '@react-router/fs-routes@8.3.1', 
+'tailwindcss@4.3.0', 'postcss-import@17.0.0', '@emotion/react@11.14.0', 
+'@tailwindcss/typography@0.5.20', '@tailwindcss/postcss@4.3.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [11]
+Debug: Saved lockfile
+Debug: 
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed tailwindcss@4.3.0
+Debug: installed postcss-import@17.0.0
+Debug: installed @emotion/react@11.14.0
+Debug: installed @tailwindcss/typography@0.5.20
+Debug: installed @tailwindcss/postcss@4.3.0
+Debug: 
+Debug: 17 packages installed [149.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-dom@19.2.8', 'universal-cookie@8.1.2', 
+'react-router@8.3.1', 'react-helmet@6.1.0', 'react-plotly.js@4.1.0', 
+'react@19.2.8', 'react-error-boundary@6.1.2', 'lucide-react@1.26.0', 
+'socket.io-client@4.8.3', 'mergician@v2.0.2', '@react-router/node@8.3.1', 
+'sonner@2.0.8', '@radix-ui/themes@3.3.0', 'isbot@5.2.2', 'plotly.js@3.7.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed react-dom@19.2.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-router@8.3.1
+Debug: installed react-helmet@6.1.0
+Debug: installed react-plotly.js@4.1.0
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed mergician@2.0.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed sonner@2.0.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed isbot@5.2.2
+Debug: installed plotly.js@3.7.0
+Debug: 
+Debug: [20.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/config_assets_cli/cliapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/config_assets_cli/cliapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.21s
+Debug: [timing] Write to Disk: 0.00s
+Success: App compiled successfully in 0.644 seconds.

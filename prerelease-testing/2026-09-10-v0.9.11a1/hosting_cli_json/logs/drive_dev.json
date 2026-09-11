@@ -1,0 +1,22 @@
+{
+  "url": "http://localhost:5620/",
+  "title": "Deployapp | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "expect_text: 'hosting_cli_json deploy probe'",
+    "click: '#inc'",
+    "expect_text: '1'",
+    "click: '#inc'",
+    "expect_text: '2'",
+    "screenshot: '/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/shots/deployapp_dev.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "hosting_cli_json deploy probe\n\n2\n\ninc"
+}

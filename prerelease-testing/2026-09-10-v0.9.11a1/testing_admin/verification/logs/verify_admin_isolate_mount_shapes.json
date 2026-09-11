@@ -1,0 +1,27 @@
+{
+  "python": "3.11.15",
+  "starlette": "1.6.0",
+  "starlette_admin": "1.0.1",
+  "results": [
+    {
+      "shape": "A direct mount_to(served app)",
+      "/admin/": 200,
+      "/admin/widget/list": 200
+    },
+    {
+      "shape": "B outer Mount('', app=<Starlette object>)",
+      "/admin/": 200,
+      "/admin/widget/list": 200
+    },
+    {
+      "shape": "C outer Mount('', app=<plain function>)  [reflex shape]",
+      "/admin/": 500,
+      "/admin/widget/list": 500
+    },
+    {
+      "shape": "D outer Mount('', app=<callable exposing .routes>)  [candidate fix]",
+      "/admin/": 200,
+      "/admin/widget/list": 200
+    }
+  ]
+}

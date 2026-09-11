@@ -1,0 +1,3 @@
+[{"wait": 3000},
+ {"eval": "[!!document.getElementById('static-icon'), !!document.getElementById('dyn-icon'), !!document.getElementById('dyn-label'), typeof window.__reflex['lucide-react']]"},
+ {"screenshot": "shots/a1_prod_plugin_dyn.png"}]

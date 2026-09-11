@@ -1,0 +1,150 @@
+{
+ "base": "http://localhost:5420",
+ "steps": [
+  {
+   "i": 0,
+   "verb": "goto",
+   "val": "/state-foreach",
+   "note": null,
+   "ok": true,
+   "ms": 2285,
+   "probe": {
+    "svg": 1,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 1,
+    "hc_points": 4,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 92,
+    "head": "foreach series | Values | foreach | a | b | 0 | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2 | 0 | 1 | 2 | 3 | 4 | Highcharts.com"
+   },
+   "url": "http://localhost:5420/state-foreach"
+  },
+  {
+   "i": 1,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3001,
+   "probe": {
+    "svg": 1,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 1,
+    "hc_points": 4,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 92,
+    "head": "foreach series | Values | foreach | a | b | 0 | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2 | 0 | 1 | 2 | 3 | 4 | Highcharts.com"
+   },
+   "url": "http://localhost:5420/state-foreach"
+  },
+  {
+   "i": 2,
+   "verb": "shot",
+   "val": "hcforeach",
+   "note": null,
+   "ok": true,
+   "ms": 125,
+   "probe": {
+    "svg": 1,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 1,
+    "hc_points": 4,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 92,
+    "head": "foreach series | Values | foreach | a | b | 0 | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2 | 0 | 1 | 2 | 3 | 4 | Highcharts.com"
+   },
+   "url": "http://localhost:5420/state-foreach"
+  },
+  {
+   "i": 3,
+   "verb": "eval",
+   "val": "() => ({charts: document.querySelectorAll('.highcharts-container').length, series: document.querySelectorAll('.highcharts-series').length, legend: Array.from(document.querySelectorAll('.highcharts-legend-item text')).map(e=>e.textContent), body: document.body.innerText.replace(/\\n/g,' | ').slice(0,200)})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "charts": 1,
+    "series": 2,
+    "legend": [
+     "a",
+     "b"
+    ],
+    "body": "foreach series | Values | foreach | a | b | 0 | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2 | 0 | 1 | 2 | 3 | 4 | Highcharts.com"
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 1,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 1,
+    "hc_points": 4,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 92,
+    "head": "foreach series | Values | foreach | a | b | 0 | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2 | 0 | 1 | 2 | 3 | 4 | Highcharts.com"
+   },
+   "url": "http://localhost:5420/state-foreach"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "ws": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"EcHXXd8MrLEt7f1cAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"u2rFnD2RKa0tyNv3AAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"eb041961-9f93-47f4-dbd2-ee28881d78d5\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console_errors": [],
+ "console_warnings": [
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  }
+ ],
+ "failed_steps": []
+}

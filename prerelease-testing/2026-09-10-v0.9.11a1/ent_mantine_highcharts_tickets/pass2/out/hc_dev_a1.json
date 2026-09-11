@@ -1,0 +1,1099 @@
+{
+ "base": "http://localhost:5420",
+ "steps": [
+  {
+   "i": 0,
+   "verb": "goto",
+   "val": "/",
+   "note": "highcharts index",
+   "ok": true,
+   "ms": 2489,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 1,
+   "verb": "wait",
+   "val": 2500,
+   "note": null,
+   "ok": true,
+   "ms": 2501,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 2,
+   "verb": "shot",
+   "val": "hc_index",
+   "note": null,
+   "ok": true,
+   "ms": 163,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 3,
+   "verb": "eval",
+   "val": "() => ({series: document.querySelectorAll('.highcharts-series').length, pts1: document.querySelectorAll('.highcharts-series-1 .highcharts-point').length, pie: document.querySelectorAll('.highcharts-pie-series .highcharts-point').length, titles: Array.from(document.querySelectorAll('.highcharts-title')).map(e=>e.textContent), legend: Array.from(document.querySelectorAll('.highcharts-legend-item text')).map(e=>e.textContent)})",
+   "note": "chart structure",
+   "ok": true,
+   "result": {
+    "series": 3,
+    "pts1": 7,
+    "pie": 3,
+    "titles": [
+     "Monthly sales",
+     "Traffic sources"
+    ],
+    "legend": [
+     "2025",
+     "2026"
+    ]
+   },
+   "ms": 3,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 4,
+   "verb": "click_nth",
+   "val": [
+    ".highcharts-series-1 .highcharts-point",
+    2
+   ],
+   "note": "click Mar on the 2026 line -> backend event",
+   "ok": true,
+   "ms": 43,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 5,
+   "verb": "wait",
+   "val": 1200,
+   "note": null,
+   "ok": true,
+   "ms": 1200,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 6,
+   "verb": "expect_text",
+   "val": "Clicked Mar: 3 units",
+   "note": "state var updated from point-click event",
+   "ok": false,
+   "err": "TimeoutError: Page.wait_for_selector: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator(\"text=Clicked Mar: 3 units\") to be visible\n",
+   "ms": 12004,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 7,
+   "verb": "shot",
+   "val": "hc_after_point_click",
+   "note": null,
+   "ok": true,
+   "ms": 148,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 270,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Mar | \u25cf 2025: 1 | \u25cf 2026: 3 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 8,
+   "verb": "click_nth",
+   "val": [
+    ".highcharts-series-1 .highcharts-point",
+    5
+   ],
+   "note": "click Jun -> 8 units",
+   "ok": true,
+   "ms": 42,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 270,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jun | \u25cf 2025: 7 | \u25cf 2026: 8 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 9,
+   "verb": "wait",
+   "val": 1200,
+   "note": null,
+   "ok": true,
+   "ms": 1201,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 244,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jun | \u25cf 2025: 7 | \u25cf 2026: 8 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 10,
+   "verb": "expect_text",
+   "val": "Clicked Jun: 8 units",
+   "note": null,
+   "ok": true,
+   "ms": 11,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 244,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jun | \u25cf 2025: 7 | \u25cf 2026: 8 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 11,
+   "verb": "click_nth",
+   "val": [
+    ".highcharts-series-0 .highcharts-point",
+    0
+   ],
+   "note": "column series has no handler; text must stay",
+   "ok": true,
+   "ms": 36,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 244,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 12,
+   "verb": "wait",
+   "val": 800,
+   "note": null,
+   "ok": true,
+   "ms": 802,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 244,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 13,
+   "verb": "expect_text",
+   "val": "Clicked Jun: 8 units",
+   "note": "unchanged after clicking the handler-less series",
+   "ok": true,
+   "ms": 8,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 244,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 14,
+   "verb": "click_nth",
+   "val": [
+    ".highcharts-pie-series .highcharts-point",
+    1
+   ],
+   "note": "pie slice click (options-dict chart, no handler)",
+   "ok": true,
+   "ms": 29,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 264,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | Traffic sources | Search | Direct | Social | Highcharts.com | Direct\u200b\u25cf Share: 25\u200b"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 15,
+   "verb": "wait",
+   "val": 600,
+   "note": null,
+   "ok": true,
+   "ms": 600,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 264,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | Traffic sources | Search | Direct | Social | Highcharts.com | Direct\u200b\u25cf Share: 25\u200b"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 16,
+   "verb": "hover",
+   "val": ".highcharts-series-1 .highcharts-point",
+   "note": "shared tooltip",
+   "ok": true,
+   "ms": 64,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 264,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | Traffic sources | Search | Direct | Social | Highcharts.com | Direct\u200b\u25cf Share: 25\u200b"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 17,
+   "verb": "wait",
+   "val": 900,
+   "note": null,
+   "ok": true,
+   "ms": 901,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 244,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 18,
+   "verb": "eval",
+   "val": "() => ({tooltip: (document.querySelector('.highcharts-tooltip')||{}).textContent, tooltip_vis: !!document.querySelector('.highcharts-tooltip')})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "tooltip": "",
+    "tooltip_vis": true
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 244,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 19,
+   "verb": "shot",
+   "val": "hc_tooltip",
+   "note": null,
+   "ok": true,
+   "ms": 145,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 244,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 20,
+   "verb": "click",
+   "val": ".highcharts-contextbutton",
+   "note": "exporting menu",
+   "ok": true,
+   "ms": 45,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 405,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Jan | \u25cf 2025: 3 | \u25cf 2026: 2 |  | View in full screen | Print chart | Download PNG image | Download JPEG image | Download SVG vector image | Download P"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 21,
+   "verb": "wait",
+   "val": 900,
+   "note": null,
+   "ok": true,
+   "ms": 902,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 380,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | View in full screen | Print chart | Download PNG image | Download JPEG image | Download SVG vector image | Download PDF document | Download CSV | "
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 22,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('.highcharts-menu-item')).map(e=>e.textContent)",
+   "note": null,
+   "ok": true,
+   "result": [
+    "View in full screen",
+    "Print chart",
+    "Download PNG image",
+    "Download JPEG image",
+    "Download SVG vector image",
+    "Download PDF document",
+    "Download CSV",
+    "Download XLS",
+    "View data table"
+   ],
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 380,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | View in full screen | Print chart | Download PNG image | Download JPEG image | Download SVG vector image | Download PDF document | Download CSV | "
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 23,
+   "verb": "shot",
+   "val": "hc_export_menu",
+   "note": null,
+   "ok": true,
+   "ms": 122,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 380,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | View in full screen | Print chart | Download PNG image | Download JPEG image | Download SVG vector image | Download PDF document | Download CSV | "
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 24,
+   "verb": "keyboard",
+   "val": "Escape",
+   "note": null,
+   "ok": true,
+   "ms": 4,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 380,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | View in full screen | Print chart | Download PNG image | Download JPEG image | Download SVG vector image | Download PDF document | Download CSV | "
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 25,
+   "verb": "wait",
+   "val": 400,
+   "note": null,
+   "ok": true,
+   "ms": 401,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 12,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 380,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | View in full screen | Print chart | Download PNG image | Download JPEG image | Download SVG vector image | Download PDF document | Download CSV | "
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 26,
+   "verb": "click_nth",
+   "val": [
+    "button.rt-IconButton, button:has(svg)",
+    0
+   ],
+   "note": "color mode toggle -> styled-mode charts follow",
+   "ok": true,
+   "ms": 94,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 27,
+   "verb": "wait",
+   "val": 1500,
+   "note": null,
+   "ok": true,
+   "ms": 1502,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 28,
+   "verb": "eval",
+   "val": "() => ({theme: document.documentElement.className, appearance: document.documentElement.dataset.theme || getComputedStyle(document.body).backgroundColor, hc: document.querySelectorAll('.highcharts-container').length})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "theme": "dark",
+    "appearance": "rgba(0, 0, 0, 0)",
+    "hc": 2
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 29,
+   "verb": "shot",
+   "val": "hc_dark",
+   "note": null,
+   "ok": true,
+   "ms": 110,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 30,
+   "verb": "click_nth",
+   "val": [
+    ".highcharts-legend-item",
+    1
+   ],
+   "note": "legend toggle hides the 2026 series",
+   "ok": true,
+   "ms": 51,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 31,
+   "verb": "wait",
+   "val": 1000,
+   "note": null,
+   "ok": true,
+   "ms": 1001,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 32,
+   "verb": "eval",
+   "val": "() => ({visible_pts: document.querySelectorAll('.highcharts-series-1 .highcharts-point').length})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "visible_pts": 7
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 33,
+   "verb": "shot",
+   "val": "hc_legend_toggled",
+   "note": null,
+   "ok": true,
+   "ms": 132,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 34,
+   "verb": "reload",
+   "val": null,
+   "note": null,
+   "ok": true,
+   "ms": 741,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 35,
+   "verb": "wait",
+   "val": 2500,
+   "note": null,
+   "ok": true,
+   "ms": 2504,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 36,
+   "verb": "expect_text",
+   "val": "Click a point on the 2026 line",
+   "note": "state resets on reload",
+   "ok": false,
+   "err": "TimeoutError: Page.wait_for_selector: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator(\"text=Click a point on the 2026 line\") to be visible\n",
+   "ms": 12001,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 37,
+   "verb": "shot",
+   "val": "hc_reloaded",
+   "note": null,
+   "ok": true,
+   "ms": 122,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "ws": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"8c5XDnFxBVAHRk6uAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"Z0CAaw9Bw0eZUDcXAAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"230d0a68-5eb8-4a67-ac0e-86aeb0749872\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___highcharts____highcharts_state\":{\"last_point_rx_state_\":\"Clicked Jun: 8 units\"}}}]",
+  "2",
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"-dQ3dtI9_xqZQfDAAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"prhea46i2V-K_F58AAAD\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"230d0a68-5eb8-4a67-ac0e-86aeb0749872\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console_errors": [],
+ "console_warnings": [
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  }
+ ],
+ "failed_steps": [
+  {
+   "i": 6,
+   "verb": "expect_text",
+   "val": "Clicked Mar: 3 units",
+   "note": "state var updated from point-click event",
+   "ok": false,
+   "err": "TimeoutError: Page.wait_for_selector: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator(\"text=Clicked Mar: 3 units\") to be visible\n",
+   "ms": 12004,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 36,
+   "verb": "expect_text",
+   "val": "Click a point on the 2026 line",
+   "note": "state resets on reload",
+   "ok": false,
+   "err": "TimeoutError: Page.wait_for_selector: Timeout 12000ms exceeded.\nCall log:\n  - waiting for locator(\"text=Click a point on the 2026 line\") to be visible\n",
+   "ms": 12001,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 219,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Jun: 8 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  }
+ ]
+}

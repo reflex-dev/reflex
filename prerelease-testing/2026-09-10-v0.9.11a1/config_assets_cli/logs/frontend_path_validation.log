@@ -1,0 +1,46 @@
+########## base0910
+=== expected-invalid ===
+ACCEPTED '../x' -> '/../x'  <-- not rejected
+ACCEPTED 'a\\b' -> '/a\\b'  <-- not rejected
+ACCEPTED 'C:foo' -> '/C:foo'  <-- not rejected
+ACCEPTED '..' -> '/..'  <-- not rejected
+ACCEPTED '/..' -> '/..'  <-- not rejected
+ACCEPTED '/a/../b' -> '/a/../b'  <-- not rejected
+ACCEPTED '/a\\b' -> '/a\\b'  <-- not rejected
+ACCEPTED '/C:/x' -> '/C:/x'  <-- not rejected
+ACCEPTED '/.' -> '/.'  <-- not rejected
+ACCEPTED '//x' -> '//x'  <-- not rejected
+ACCEPTED '/\\\\server\\share' -> '/\\\\server\\share'  <-- not rejected
+ACCEPTED '/a/./b' -> '/a/./b'  <-- not rejected
+=== expected-valid ===
+ACCEPTED '/myapp' -> '/myapp'
+ACCEPTED '/a/b' -> '/a/b'
+ACCEPTED '/' -> '/'
+ACCEPTED '' -> ''
+ACCEPTED '/my-app' -> '/my-app'
+ACCEPTED '/my.app' -> '/my.app'
+ACCEPTED '/v1.2' -> '/v1.2'
+ACCEPTED '/a b' -> '/a b'
+########## smoke
+=== expected-invalid ===
+REJECTED '../x': ConfigError: frontend_path '/../x' contains '..', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+REJECTED 'a\\b': ConfigError: frontend_path '/a\\b' contains 'a\\b', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+REJECTED 'C:foo': ConfigError: frontend_path '/C:foo' contains 'C:foo', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+REJECTED '..': ConfigError: frontend_path '/..' contains '..', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+REJECTED '/..': ConfigError: frontend_path '/..' contains '..', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+REJECTED '/a/../b': ConfigError: frontend_path '/a/../b' contains '..', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+REJECTED '/a\\b': ConfigError: frontend_path '/a\\b' contains 'a\\b', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+REJECTED '/C:/x': ConfigError: frontend_path '/C:/x' contains 'C:', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+REJECTED '/.': ConfigError: frontend_path '/.' contains '.', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+ACCEPTED '//x' -> '//x'  <-- not rejected
+REJECTED '/\\\\server\\share': ConfigError: frontend_path '/\\\\server\\share' contains '\\\\server\\share', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+REJECTED '/a/./b': ConfigError: frontend_path '/a/./b' contains '.', which is not a plain directory name (no '.', '..', backslashes, or drive letters).
+=== expected-valid ===
+ACCEPTED '/myapp' -> '/myapp'
+ACCEPTED '/a/b' -> '/a/b'
+ACCEPTED '/' -> '/'
+ACCEPTED '' -> ''
+ACCEPTED '/my-app' -> '/my-app'
+ACCEPTED '/my.app' -> '/my.app'
+ACCEPTED '/v1.2' -> '/v1.2'
+ACCEPTED '/a b' -> '/a b'

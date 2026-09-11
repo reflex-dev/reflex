@@ -1,0 +1,8 @@
+[{"wait": 2500},
+ {"eval": "Object.keys(window.__reflex||{})"},
+ {"eval": "[!!document.getElementById('static-icon'), !!document.getElementById('dyn-icon'), !!document.getElementById('dyn-label'), document.getElementById('mode')?.textContent]"},
+ {"screenshot": "shots/a1_nobundle_dyn_initial.png"},
+ {"click": "#btn-relabel"},
+ {"wait": 2500},
+ {"eval": "[!!document.getElementById('dyn-icon'), document.getElementById('dyn-label')?.textContent]"},
+ {"screenshot": "shots/a1_nobundle_dyn_after_click.png"}]

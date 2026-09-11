@@ -1,0 +1,93 @@
+reflex: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py
+cwd: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_config_assets_cli_1/sharedapp_base web dir: .web
+worker 1 FAILED:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/shutil.py", line 761, in rmtree
+    os.rmdir(path, dir_fd=dir_fd)
+OSError: [Errno 39] Directory not empty: '.web/app/routes'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_config_assets_cli_1/purge_race.py", line 36, in worker
+    purge_web_pages_dir()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 801, in purge_web_pages_dir
+    utils.empty_dir(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/compiler/utils.py", line 993, in empty_dir
+    path_ops.rm(element)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/utils/path_ops.py", line 41, in rm
+    shutil.rmtree(path, onerror=lambda _func, _path, _info: chmod_rm(path))
+  File "/usr/lib/python3.11/shutil.py", line 763, in rmtree
+    onerror(os.rmdir, path, sys.exc_info())
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/utils/path_ops.py", line 41, in <lambda>
+    shutil.rmtree(path, onerror=lambda _func, _path, _info: chmod_rm(path))
+                                                            ^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/utils/path_ops.py", line 27, in chmod_rm
+    shutil.rmtree(path)
+  File "/usr/lib/python3.11/shutil.py", line 763, in rmtree
+    onerror(os.rmdir, path, sys.exc_info())
+  File "/usr/lib/python3.11/shutil.py", line 761, in rmtree
+    os.rmdir(path, dir_fd=dir_fd)
+OSError: [Errno 39] Directory not empty: '.web/app/routes'
+
+worker 2 FAILED:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/shutil.py", line 658, in _rmtree_safe_fd
+    orig_st = entry.stat(follow_symlinks=False)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'race4'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_config_assets_cli_1/purge_race.py", line 36, in worker
+    purge_web_pages_dir()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 801, in purge_web_pages_dir
+    utils.empty_dir(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/compiler/utils.py", line 993, in empty_dir
+    path_ops.rm(element)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/utils/path_ops.py", line 41, in rm
+    shutil.rmtree(path, onerror=lambda _func, _path, _info: chmod_rm(path))
+  File "/usr/lib/python3.11/shutil.py", line 752, in rmtree
+    _rmtree_safe_fd(fd, path, onerror)
+  File "/usr/lib/python3.11/shutil.py", line 661, in _rmtree_safe_fd
+    onerror(os.lstat, fullname, sys.exc_info())
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/utils/path_ops.py", line 41, in <lambda>
+    shutil.rmtree(path, onerror=lambda _func, _path, _info: chmod_rm(path))
+                                                            ^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/utils/path_ops.py", line 25, in chmod_rm
+    path.chmod(stat.S_IWRITE)
+  File "/usr/lib/python3.11/pathlib.py", line 1132, in chmod
+    os.chmod(self, mode, follow_symlinks=follow_symlinks)
+FileNotFoundError: [Errno 2] No such file or directory: '.web/app/routes'
+
+worker 3 FAILED:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/shutil.py", line 740, in rmtree
+    orig_st = os.lstat(path, dir_fd=dir_fd)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '.web/app/routes'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_config_assets_cli_1/purge_race.py", line 36, in worker
+    purge_web_pages_dir()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 801, in purge_web_pages_dir
+    utils.empty_dir(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/compiler/utils.py", line 993, in empty_dir
+    path_ops.rm(element)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/utils/path_ops.py", line 41, in rm
+    shutil.rmtree(path, onerror=lambda _func, _path, _info: chmod_rm(path))
+  File "/usr/lib/python3.11/shutil.py", line 742, in rmtree
+    onerror(os.lstat, path, sys.exc_info())
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/utils/path_ops.py", line 41, in <lambda>
+    shutil.rmtree(path, onerror=lambda _func, _path, _info: chmod_rm(path))
+                                                            ^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/utils/path_ops.py", line 25, in chmod_rm
+    path.chmod(stat.S_IWRITE)
+  File "/usr/lib/python3.11/pathlib.py", line 1132, in chmod
+    os.chmod(self, mode, follow_symlinks=follow_symlinks)
+FileNotFoundError: [Errno 2] No such file or directory: '.web/app/routes'
+
+3/4 workers raised

@@ -1,0 +1,9 @@
+--- 0910 reflex deploy -> exit=1
+`reflex deploy` requires the reflex-hosting-cli package, which is not installed.
+Install it with: pip install reflex-hosting-cli
+--- 0910 reflex cloud apps list -> exit=1
+`reflex cloud` requires the reflex-hosting-cli package, which is not installed.
+Install it with: pip install reflex-hosting-cli
+--- 0910 reflex login -> exit=1
+`reflex login` requires the reflex-hosting-cli package, which is not installed.
+Install it with: pip install reflex-hosting-cli

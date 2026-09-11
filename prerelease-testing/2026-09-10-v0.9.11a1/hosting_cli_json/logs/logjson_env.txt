@@ -1,0 +1,24 @@
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud project selected --json --loglevel debug
+rc=0
+--stdout (50)--
+{"project_id": null, "name": null, "error": null}
+
+--stderr (470)--
+{"timestamp": "2026-09-11T11:13:38.368522+00:00", "level": "debug", "logger": "reflex_cli.utils.hosting", "message": "Unable to read selected project from /root/.local/share/reflex/hosting_v1.json due to: [Errno 2] No such file or directory: '/root/.local/share/reflex/hosting_v1.json'", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/utils/hosting.py:1750", "pid": 20837}
+
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud project selected --loglevel debug
+rc=0
+--stdout (834)--
+{"timestamp": "2026-09-11T11:13:38.787045+00:00", "level": "debug", "logger": "reflex_cli.utils.hosting", "message": "Unable to read selected project from /root/.local/share/reflex/hosting_v1.json due to: [Errno 2] No such file or directory: '/root/.local/share/reflex/hosting_v1.json'", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/utils/hosting.py:1750", "pid": 20845}
+{"timestamp": "2026-09-11T11:13:38.787228+00:00", "level": "warning", "logger": "reflex_cli.v2.project", "message": "no selected project. run `reflex cloud project select` to set one.", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/v2/project.py:233", "pid": 20845}
+
+--stderr (0)--
+
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud apps list --json --loglevel debug
+rc=1
+--stdout (0)--
+
+--stderr (1001)--
+{"timestamp": "2026-09-11T11:13:39.215811+00:00", "level": "debug", "logger": "reflex_cli.utils.hosting", "message": "Fetching token from existing config...", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/utils/hosting.py:402", "pid": 20853}
+{"timestamp": "2026-09-11T11:13:39.216094+00:00", "level": "error", "logger": "reflex_cli.utils.hosting", "message": "Token is required for non-interactive mode.", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/utils/hosting.py:329", "pid": 20853}
+{"timestamp": "2026-09-11T11:13:39.216176+00:00", "level": "error", "logger": "reflex_cli.v2.apps", "message": "Unable to list deployments", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4d

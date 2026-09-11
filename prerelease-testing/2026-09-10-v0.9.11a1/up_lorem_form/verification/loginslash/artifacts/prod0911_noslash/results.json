@@ -1,0 +1,49 @@
+{
+  "label": "prod0911_noslash",
+  "variant": "noslash",
+  "base": "http://localhost:6164",
+  "http": {
+    "/": [
+      200,
+      null
+    ],
+    "/login": [
+      307,
+      "http://localhost:6164/login/"
+    ],
+    "/login/": [
+      200,
+      null
+    ],
+    "/protected": [
+      307,
+      "http://localhost:6164/protected/"
+    ],
+    "/register": [
+      307,
+      "http://localhost:6164/register/"
+    ]
+  },
+  "user": "u1789116327",
+  "after_register_href": "http://localhost:6164/login",
+  "login_page_href": "http://localhost:6164/login/",
+  "login_page_router_path": "/login/",
+  "login_page_matches_LOGIN_ROUTE": "MISMATCH",
+  "left_login_page": false,
+  "seconds_waited": 20.2,
+  "after_login_href": "http://localhost:6164/login/",
+  "login_error_visible": false,
+  "login_error_text": "",
+  "index_authstatus": "AUTHED",
+  "index_router_path": "/",
+  "protected_href": "http://localhost:6164/protected/",
+  "protected_heading": "protected",
+  "protected_router_path": "/protected/",
+  "console_errors": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "bad_responses": []
+}

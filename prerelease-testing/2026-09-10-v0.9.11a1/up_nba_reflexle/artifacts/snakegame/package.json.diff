@@ -1,0 +1,39 @@
+--- /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/up_nba_reflexle/artifacts/snakegame/pre_upgrade_state/package.json	2026-09-11 09:33:48.769892426 +0000
++++ /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/up_nba_reflexle/artifacts/snakegame/post_inplace_state/package.json	2026-09-11 09:35:16.964021059 +0000
+@@ -7,26 +7,26 @@
+   },
+   "dependencies": {
+     "@radix-ui/themes": "3.3.0",
+-    "@react-router/node": "8.3.0",
+-    "isbot": "5.2.1",
++    "@react-router/node": "8.3.1",
++    "isbot": "5.2.2",
+     "lucide-react": "1.26.0",
+     "react": "19.2.8",
+     "react-dom": "19.2.8",
+     "react-error-boundary": "6.1.2",
+     "react-helmet": "6.1.0",
+-    "react-router": "8.3.0",
++    "react-router": "8.3.1",
+     "socket.io-client": "4.8.3",
+-    "sonner": "2.0.7",
++    "sonner": "2.0.8",
+     "universal-cookie": "8.1.2"
+   },
+   "devDependencies": {
+     "@emotion/react": "11.14.0",
+-    "@react-router/dev": "8.3.0",
+-    "@react-router/fs-routes": "8.3.0",
++    "@react-router/dev": "8.3.1",
++    "@react-router/fs-routes": "8.3.1",
+     "autoprefixer": "10.5.4",
+-    "postcss": "8.5.23",
+-    "postcss-import": "16.1.1",
+-    "vite": "8.2.0"
++    "postcss": "8.5.26",
++    "postcss-import": "17.0.0",
++    "vite": "8.2.2"
+   },
+   "overrides": {}
+ }
+\ No newline at end of file

@@ -1,0 +1,55 @@
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex", line 10, in <module>
+    sys.exit(cli())
+             ^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/click/core.py", line 2032, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/reflex.py", line 768, in compile
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 339, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/app.py", line 1675, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1236, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 809, in compile
+    page_ctx = self.hooks.eval_page(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 271, in eval_page
+    result = hook_impl(page_fn, page=page, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/compiler/plugins/builtin.py", line 182, in eval_page
+    component = compiler.into_component(page_fn)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 913, in into_component
+    component_called = component()
+                       ^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_memo_hash_1/csapp/csapp/csapp.py", line 15, in index
+    return rx.el.div(CounterA.create(), CounterB.create())
+                                        ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 2735, in create
+    component_state = type(
+                      ^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 3929, in __new__
+    return super().__new__(cls, name, bases, namespace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen abc>", line 106, in __new__
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 2704, in __init_subclass__
+    super().__init_subclass__(mixin=mixin, **kwargs)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 642, in __init_subclass__
+    raise StateValueError(msg)
+reflex_base.utils.exceptions.StateValueError: The substate class 'reflex.istate.dynamic.CounterN1' Has Been Defined Multiple Times. Shadowing substate classes is not allowed.
+Happened while evaluating page 'samename'

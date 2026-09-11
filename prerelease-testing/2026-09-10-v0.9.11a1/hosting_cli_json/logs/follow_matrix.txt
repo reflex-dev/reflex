@@ -1,0 +1,51 @@
+### follow default (json) :: reflex cloud apps logs someapp --json
+rc=1
+--stdout--
+--stderr--
+Token is required for non-interactive mode.
+
+### follow true (json) :: reflex cloud apps logs someapp --json --follow true
+rc=1
+--stdout--
+--stderr--
+Token is required for non-interactive mode.
+
+### follow false (json) :: reflex cloud apps logs someapp --json --follow false
+rc=1
+--stdout--
+--stderr--
+Token is required for non-interactive mode.
+
+### follow true (plain) :: reflex cloud apps logs someapp --follow true
+rc=1
+--stdout--
+--stderr--
+Token is required for non-interactive mode.
+
+### follow no value :: reflex cloud apps logs someapp --follow
+rc=2
+--stdout--
+--stderr--
+Error: Option '--follow' requires an argument.
+
+### follow garbage :: reflex cloud apps logs someapp --follow maybe
+rc=2
+--stdout--
+--stderr--
+Usage: reflex cloud apps logs [OPTIONS] [APP_ID]
+Try 'reflex cloud apps logs --help' for help.
+
+Error: Invalid value for '--follow': 'maybe' is not a valid boolean. Recognized values: , 0, 1, f, false, n, no, off, on, t, true, y, yes
+
+### follow yes :: reflex cloud apps logs someapp --follow yes
+rc=1
+--stdout--
+--stderr--
+Token is required for non-interactive mode.
+
+### follow 1 json :: reflex cloud apps logs --follow 1 --json
+rc=1
+--stdout--
+--stderr--
+Token is required for non-interactive mode.
+

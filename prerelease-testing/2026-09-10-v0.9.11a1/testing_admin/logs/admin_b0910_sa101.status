@@ -1,0 +1,8 @@
+backend_up_code=000
+/ping -> 000
+/admin -> 000
+/admin/ -> 000
+/admin/widget/list -> 000
+/admin/login -> 000
+/admin/statics/css/tabler.min.css -> 000
+/admin/api/widget -> 000

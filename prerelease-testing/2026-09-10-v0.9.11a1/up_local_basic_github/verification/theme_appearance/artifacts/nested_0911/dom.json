@@ -1,0 +1,76 @@
+{
+  "themes": [
+    {
+      "className": "radix-themes css-0 light",
+      "isRoot": "true",
+      "hasBackground": "true",
+      "accentColor": "indigo",
+      "firstHeading": null
+    },
+    {
+      "className": "radix-themes css-0",
+      "isRoot": "false",
+      "hasBackground": "false",
+      "accentColor": "indigo",
+      "firstHeading": null
+    },
+    {
+      "className": "radix-themes css-0",
+      "isRoot": "false",
+      "hasBackground": "false",
+      "accentColor": "indigo",
+      "firstHeading": null
+    },
+    {
+      "className": "radix-themes dark css-0",
+      "isRoot": "false",
+      "hasBackground": "true",
+      "accentColor": "indigo",
+      "firstHeading": null
+    },
+    {
+      "className": "radix-themes css-0",
+      "isRoot": "false",
+      "hasBackground": "false",
+      "accentColor": "red",
+      "firstHeading": null
+    },
+    {
+      "className": "radix-themes css-0",
+      "isRoot": "false",
+      "hasBackground": "false",
+      "accentColor": "indigo",
+      "firstHeading": null
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-A-stock-appearance",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(28, 32, 36)"
+    },
+    {
+      "id": "card-B-stock-color_mode",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(28, 32, 36)"
+    },
+    {
+      "id": "card-C-patched-appearance",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(237, 238, 240)"
+    },
+    {
+      "id": "card-D-accent-control",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(28, 32, 36)"
+    },
+    {
+      "id": "card-E-state-var",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "rgb(28, 32, 36)"
+    }
+  ],
+  "localStorageTheme": "light",
+  "htmlClass": "light",
+  "htmlStyle": "color-scheme: light;"
+}

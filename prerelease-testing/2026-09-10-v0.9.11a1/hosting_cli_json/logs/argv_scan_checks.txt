@@ -1,0 +1,42 @@
+### selected plain :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud project selected
+rc=0
+--stdout (76)--
+Warning: no selected project. run `reflex cloud project select` to set one.
+
+--stderr (0)--
+
+### selected --json :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud project selected --json
+rc=0
+--stdout (50)--
+{"project_id": null, "name": null, "error": null}
+
+--stderr (0)--
+
+### selected --json --no-json :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud project selected --json --no-json
+rc=0
+--stdout (76)--
+Warning: no selected project. run `reflex cloud project select` to set one.
+
+--stderr (0)--
+
+### selected --no-json --json :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud project selected --no-json --json
+rc=0
+--stdout (50)--
+{"project_id": null, "name": null, "error": null}
+
+--stderr (0)--
+
+### selected --token --json (json as a VALUE) :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud project selected --token --json
+rc=0
+--stdout (0)--
+
+--stderr (76)--
+Warning: no selected project. run `reflex cloud project select` to set one.
+
+### selected -j :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud project selected -j
+rc=0
+--stdout (50)--
+{"project_id": null, "name": null, "error": null}
+
+--stderr (0)--
+

@@ -1,0 +1,352 @@
+{
+ "cloud apps build-logs": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": false,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID\n\n  Retrieve the build logs for a specific deployment.\n\nOptions:\n  --token TEXT                    The authentication token.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps delete": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps delete [OPTIONS] [APP_ID]\n\n  Delete an application.\n\nOptions:\n  --app-name TEXT                 The name of the application.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps describe": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID\n\n  Set or clear the changelog note on a past deployment.\n\n  The note is shown in `reflex cloud apps history`. Identify the app with\n  --app-id/--app-name or a cloud.yml/pyproject.toml appid.\n\nOptions:\n  --description TEXT              The changelog note to set. Pass\n                                  --description \"\" to clear it.  [required]\n  --app-id TEXT                   The ID of the application.\n  --app-name TEXT                 The name of the application.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps history": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps history [OPTIONS] [APP_ID]\n\n  Retrieve the deployment history for a given application.\n\nOptions:\n  --app-name TEXT                 The name of the application.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps inspect": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps inspect [OPTIONS] [APP_ID]\n\n  Retrieve detailed information about a specific application.\n\nOptions:\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in JSON format.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps list": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps list [OPTIONS]\n\n  List all the hosted deployments of the authenticated user. Will exit if\n  unable to list deployments.\n\nOptions:\n  --project TEXT                  The project ID to filter deployments.\n  --project-name TEXT             The name of the project.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in JSON format.\n  --interactive / --no-interactive\n                                  Whether to list configuration options and\n                                  ask for confirmation.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps logs": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": true,
+  "help_text": "Usage: reflex cloud apps logs [OPTIONS] [APP_ID]\n\n  Retrieve logs for a given application.\n\nOptions:\n  --app-name TEXT                 The name of the application.\n  --token TEXT                    The authentication token.\n  --offset INTEGER                The offset in seconds from the current time.\n  --start INTEGER                 The start time in Unix epoch format.\n  --end INTEGER                   The end time in Unix epoch format.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --cursor TEXT                   The cursor for pagination.\n  --pretty BOOLEAN                Use pretty printing for logs.\n  --follow BOOLEAN                Asks to continue to query logs.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps rollback": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID\n\n  Roll an app back to a previous deployment.\n\n  Redeploys the target deployment's already-built image and makes it current\n  again, without rebuilding from source. DEPLOYMENT_ID is a past deployment\n  from `reflex cloud apps history` whose \"can rollback\" is True. Identify the\n  app with --app-id/--app-name or a cloud.yml/pyproject.toml appid.\n\nOptions:\n  --app-id TEXT                   The ID of the application.\n  --app-name TEXT                 The name of the application.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps scale": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps scale [OPTIONS] [APP_ID]\n\n  Scale an application by changing the VM type or adding/removing regions.\n\nOptions:\n  --app-name TEXT                 The name of the app.\n  --vmtype TEXT                   The virtual machine type to scale to.\n  -r, --regions TEXT              Region to scale the app to.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  --scale-type TEXT               The type of scaling.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps start": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps start [OPTIONS] [APP_ID]\n\n  Start a stopped application.\n\nOptions:\n  --app-name TEXT                 The name of the application.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps status": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID\n\n  Retrieve the status of a specific deployment.\n\nOptions:\n  --watch / --no-watch            Whether to continuously watch the status.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud apps stop": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud apps stop [OPTIONS] [APP_ID]\n\n  Stop a running application.\n\nOptions:\n  --app-name TEXT                 The name of the application.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud config": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": false,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud config [OPTIONS]\n\n  Generate a configuration file for the cloud deployment.\n\nOptions:\n  --token TEXT                    An existing authentication token.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud create-token": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud create-token [OPTIONS] NAME\n\n  Create a new authentication token for the hosting service.\n\nOptions:\n  --duration INTEGER RANGE        Duration in days for the token to be valid.\n                                  Default is 90 days.  [1<=x<=90]\n  --token TEXT                    An existing authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud gcp-standalone": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud gcp-standalone [OPTIONS]\n\n  Deploy a Reflex app to GCP Cloud Run yourself, outside Reflex Cloud.\n\n  The command fetches a Dockerfile and bash deploy script from Reflex, embeds\n  the Dockerfile inside a generated ``cloudbuild.yaml`` (written to a\n  tempfile), rewrites the script's ``gcloud builds submit`` invocation to\n  reference that config, then runs the script with cwd= your source dir. Your\n  project tree is never modified.\n\n  Everything runs under your own gcloud credentials and the resulting service\n  is yours alone: Reflex Cloud records no app for it, so it has no dashboard,\n  logs, rollback or teardown. For a GCP deploy the platform manages, through a\n  GCP account connected to your organization, use `reflex deploy --provider\n  gcp`.\n\nOptions:\n  --gcp                           Deploy to GCP Cloud Run. Required (the only\n                                  supported target today).\n  --gcp-project TEXT              The GCP project ID to deploy into (sets\n                                  GCP_PROJECT). Required with --gcp.\n  --region TEXT                   The GCP region for Cloud Run (sets\n                                  GCP_REGION).  [default: us-central1]\n  --service-name TEXT             The Cloud Run service name (sets\n                                  SERVICE_NAME).  [default: reflex-app]\n  --ar-repo TEXT                  The Artifact Registry repository name (sets\n                                  AR_REPO).  [default: reflex]\n  --version TEXT                  The image version tag (sets VERSION).\n                                  Defaults to a UTC timestamp.\n  --cpu TEXT                      Cloud Run CPU allocation, e.g. '1', '2', '4'\n                                  (sets CLOUD_RUN_CPU).  [default: 1]\n  --memory TEXT                   Cloud Run memory allocation, e.g. '512Mi',\n                                  '1Gi', '2Gi' (sets CLOUD_RUN_MEMORY).\n                                  [default: 1Gi]\n  --min-instances INTEGER RANGE   Minimum number of Cloud Run instances to\n                                  keep warm (sets CLOUD_RUN_MIN_INSTANCES).\n                                  Set to 0 to scale to zero.  [default: 1;\n                                  x>=0]\n  --max-instances INTEGER RANGE   Maximum number of Cloud Run instances during\n                                  autoscaling (sets CLOUD_RUN_MAX_INSTANCES).\n                                  Caps cost under traffic spikes.  [default:\n                                  100; x>=1]\n  --allow-unauthenticated / --no-allow-unauthenticated\n                                  Whether to make the Cloud Run service\n                                  publicly reachable (sets\n                                  CLOUD_RUN_ALLOW_UNAUTHENTICATED). Use --no-\n                                  allow-unauthenticated for internal / IAP-\n                                  fronted services; callers will then need a\n                                  roles/run.invoker IAM binding.  [default:\n                                  allow-unauthenticated]\n  --service-account TEXT          IAM service account email the Cloud Run\n                                  service this command creates runs as (sets\n                                  CLOUD_RUN_SERVICE_ACCOUNT). If omitted,\n                                  Cloud Run uses the project's default compute\n                                  SA. The deploying principal needs\n                                  roles/iam.serviceAccountUser on the target\n                                  SA. Unrelated to the credentials this\n                                  command deploys with, and unrelated to\n                                  managed GCP deploys, where the runtime\n                                  identity belongs to the organization's\n                                  connection: see `reflex cloud providers\n                                  connections`.\n  --envfile TEXT                  Path to a .env file. Loaded into the Cloud\n                                  Run service as env vars. Takes precedence\n                                  over --env.\n  --env TEXT                      Environment variable to set on the Cloud Run\n                                  service: <key>=<value>. Repeat for multiple,\n                                  e.g. --env K1=V1 --env K2=V2. Plain Cloud\n                                  Run env vars \u2014 visible to anyone with\n                                  roles/run.viewer; for sensitive values use\n                                  Secret Manager separately.\n  --source DIRECTORY              The directory containing the Reflex app.\n                                  Uploaded to Cloud Build as the build\n                                  context; the source tree itself is not\n                                  modified.  [default: .]\n  --token TEXT                    The Reflex authentication token.\n  --interactive / --no-interactive\n                                  Whether to prompt before running the deploy\n                                  script.\n  --dry-run                       Print the manifest and generated\n                                  cloudbuild.yaml without writing the tempfile\n                                  or running the script.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud project create": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud project create [OPTIONS] NAME\n\n  Create a new project.\n\nOptions:\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud project invite": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud project invite [OPTIONS] ROLE USER\n\n  Invite a user to a project.\n\nOptions:\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud project list": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud project list [OPTIONS]\n\n  Retrieve a list of projects.\n\nOptions:\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud project role-permissions": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID\n\n  Retrieve the permissions for a specific role in a project.\n\nOptions:\n  --project-id TEXT               The ID of the project. If not provided, the\n                                  selected project will be used. If no project\n                                  is selected, it throws an error.\n  --project-name TEXT             The name of the project.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  --interactive / --no-interactive\n                                  Whether to list configuration options and\n                                  ask for confirmation.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud project roles": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud project roles [OPTIONS]\n\n  Retrieve the roles for a project.\n\nOptions:\n  --project-id TEXT               The ID of the project. If not provided, the\n                                  selected project will be used. If no\n                                  project_id is provided or selected throws an\n                                  error.\n  --project-name TEXT             The name of the project.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  --interactive / --no-interactive\n                                  Whether to list configuration options and\n                                  ask for confirmation.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud project select": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud project select [OPTIONS] [PROJECT_ID]\n\n  Select a project.\n\nOptions:\n  --project-name TEXT             The name of the project.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  --interactive / --no-interactive\n                                  Whether to list configuration options and\n                                  ask for confirmation.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud project selected": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud project selected [OPTIONS]\n\n  Get the currently selected project.\n\nOptions:\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  --token TEXT                    The authentication token.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud project users": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud project users [OPTIONS]\n\n  Retrieve the users for a project.\n\nOptions:\n  --project-id TEXT               The ID of the project. If not provided, the\n                                  selected project will be used. If no project\n                                  is selected, it throws an error.\n  --project-name TEXT             The name of the project.\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  --interactive / --no-interactive\n                                  Whether to list configuration options and\n                                  ask for confirmation.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud providers connections": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud providers connections [OPTIONS]\n\n  List your organization's cloud provider connections.\n\n  Each row is one connection: a customer cloud account apps can be deployed\n  into. Pass a connection's name to `reflex deploy --gcp-connection` to deploy\n  an app through it instead of the default one.\n\nOptions:\n  --org-id TEXT                   The organization ID (defaults to your\n                                  token's org).\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud providers list": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud providers list [OPTIONS]\n\n  List your organization's cloud provider connections.\n\n  Each row is one connection: a customer cloud account apps can be deployed\n  into. Pass a connection's name to `reflex deploy --gcp-connection` to deploy\n  an app through it instead of the default one.\n\nOptions:\n  --org-id TEXT                   The organization ID (defaults to your\n                                  token's org).\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud providers status": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud providers status [OPTIONS]\n\n  Show whether your organization can deploy to Google Cloud (GCP).\n\nOptions:\n  --org-id TEXT                   The organization ID (defaults to your\n                                  token's org).\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud regions": {
+  "json": true,
+  "no_json": true,
+  "interactive": false,
+  "no_interactive": false,
+  "loglevel": true,
+  "token": false,
+  "follow": false,
+  "help_text": "Usage: reflex cloud regions [OPTIONS]\n\n  List all the regions of the hosting service. Areas available for deployment\n  are: ams Amsterdam, Netherlands arn Stockholm, Sweden atl Atlanta, Georgia\n  (US) bog Bogot\u00e1, Colombia bom Mumbai, India bos Boston, Massachusetts (US)\n  cdg Paris, France den Denver, Colorado (US) dfw Dallas, Texas (US) ewr\n  Secaucus, NJ (US) eze Ezeiza, Argentina fra Frankfurt, Germany gdl\n  Guadalajara, Mexico gig Rio de Janeiro, Brazil gru Sao Paulo, Brazil hkg\n  Hong Kong, Hong Kong iad Ashburn, Virginia (US) jnb Johannesburg, South\n  Africa lax Los Angeles, California (US) lhr London, United Kingdom mad\n  Madrid, Spain mia Miami, Florida (US) nrt Tokyo, Japan ord Chicago, Illinois\n  (US) otp Bucharest, Romania phx Phoenix, Arizona (US) qro Quer\u00e9taro, Mexico\n  scl Santiago, Chile sea Seattle, Washington (US) sin Singapore, Singapore\n  sjc San Jose, California (US) syd Sydney, Australia waw Warsaw, Poland yul\n  Montreal, Canada yyz Toronto, Canada.\n\nOptions:\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud scan": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud scan [OPTIONS] [DIRECTORY]\n\n  Run a Reflex-aware security review over your app source.\n\n  Uploads the app source under DIRECTORY (the current directory by default)\n  and reports security and logic flaws specific to Reflex apps.\n\nOptions:\n  --token TEXT                    The authentication token.\n  --fail-on [critical|high|medium|low|none]\n                                  Exit non-zero if a violation at or above\n                                  this severity is found. Use 'none' to always\n                                  exit 0.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in JSON format.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud secrets delete": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY\n\n  Delete a secret for a given application.\n\nOptions:\n  --token TEXT                    The authentication token.\n  --reboot / --no-reboot          Automatically reboot your site with the new\n                                  secrets\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud secrets list": {
+  "json": true,
+  "no_json": true,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud secrets list [OPTIONS] [APP_ID]\n\n  Retrieve secrets for a given application.\n\nOptions:\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in JSON format.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud secrets update": {
+  "json": false,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud secrets update [OPTIONS] [APP_ID]\n\n  Update secrets for a given application.\n\nOptions:\n  --envfile TEXT                  The path to an env file to use. Will\n                                  override any envs set manually.\n  --env TEXT                      The environment variables to set:\n                                  <key>=<value>. Required if envfile is not\n                                  specified. For multiple envs, repeat this\n                                  option, e.g. --env k1=v2 --env k2=v2.\n  --reboot / --no-reboot          Automatically reboot your site with the new\n                                  secrets\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -i, --interactive / --no-interactive\n                                  Whether to use interactive mode.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud token": {
+  "json": false,
+  "no_json": false,
+  "interactive": false,
+  "no_interactive": false,
+  "loglevel": true,
+  "token": false,
+  "follow": false,
+  "help_text": "Usage: reflex cloud token [OPTIONS]\n\n  Inspect or replace the stored Reflex Cloud access token.\n\n  Exactly one of --print, --set or --clear must be given. --print writes the\n  raw token to stdout so it can be captured, e.g. `export\n  REFLEX_ACCESS_TOKEN=$(reflex cloud token --print)`; stdout carries the token\n  or nothing at all, so use `reflex cloud whoami` to inspect where the token\n  came from.\n\nOptions:\n  --print                         Print the active access token to stdout.\n  --set TOKEN                     Validate TOKEN and store it as the access\n                                  token. Pass `-`, or omit the value, to read\n                                  the token from stdin instead of the command\n                                  line.\n  --clear                         Remove the stored access token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud vmtypes": {
+  "json": true,
+  "no_json": true,
+  "interactive": false,
+  "no_interactive": false,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud vmtypes [OPTIONS]\n\n  Retrieve the available VM types.\n\nOptions:\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  --help                          Show this message and exit.\n"
+ },
+ "cloud whoami": {
+  "json": true,
+  "no_json": true,
+  "interactive": false,
+  "no_interactive": false,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex cloud whoami [OPTIONS]\n\n  Show which account the Reflex Cloud CLI is authenticating as.\n\n  Reports the identity the control plane resolves the access token to, along\n  with where that token was loaded from. Never starts a browser login and\n  never prints the token itself.\n\nOptions:\n  --token TEXT                    The authentication token.\n  --loglevel [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  -j, --json / --no-json          Whether to output the result in json format.\n  --help                          Show this message and exit.\n"
+ },
+ "deploy": {
+  "json": true,
+  "no_json": false,
+  "interactive": true,
+  "no_interactive": true,
+  "loglevel": true,
+  "token": true,
+  "follow": false,
+  "help_text": "Usage: reflex deploy [OPTIONS]\n\n  Deploy the app to the Reflex hosting service.\n\nOptions:\n  --loglevel, --log-level [debug|default|info|warning|error|critical]\n                                  The log level to use.\n  --json                          Output logs as machine-readable JSON\n                                  records.\n  --app-name TEXT                 The name of the app to deploy.\n  --app-id TEXT                   The ID of the app to deploy.\n  -r, --region TEXT               The regions to deploy to. `reflex cloud\n                                  regions` For multiple envs, repeat this\n                                  option, e.g. --region sjc --region iad\n  --env TEXT                      The environment variables to set:\n                                  <key>=<value>. For multiple envs, repeat\n                                  this option, e.g. --env k1=v2 --env k2=v2.\n  --vmtype TEXT                   Vm type id. Run `reflex cloud vmtypes` to\n                                  get options.\n  --min-instances INTEGER         The minimum number of instances to keep\n                                  running. Left unchanged when omitted. Only\n                                  supported on apps deployed to Google Cloud.\n  --max-instances INTEGER         The maximum number of instances to scale out\n                                  to. Left unchanged when omitted. Only\n                                  supported on apps deployed to Google Cloud.\n  --hostname TEXT                 The hostname of the frontend. On the deploy\n                                  that first lands the app on GCP, it also\n                                  names the app's Cloud Run service.\n  --provider TEXT                 The hosting provider to deploy to: 'reflex-\n                                  cloud' (default) or 'gcp' (a GCP account\n                                  connected to your org, Enterprise tier).\n                                  When omitted and GCP is connected, you'll be\n                                  prompted in interactive mode. Deploys\n                                  through Reflex Cloud either way; for an\n                                  unmanaged deploy run under your own gcloud\n                                  credentials, see `reflex cloud gcp-\n                                  standalone`.\n  --gcp-connection TEXT           Which of your organization's GCP connections\n                                  to deploy through, by name. Run `reflex\n                                  cloud providers connections` to list them.\n                                  Only valid with --provider gcp; omitted\n                                  keeps the app on the connection it already\n                                  has, or your organization's default the\n                                  first time it deploys to GCP.\n  --full-deploy / --no-full-deploy\n                                  Serve the frontend from the provider's own\n                                  container, on the same origin as the\n                                  backend, instead of Reflex's CDN. GCP only,\n                                  Enterprise tier. Omitted leaves the app's\n                                  hosting mode unchanged; changing it stops a\n                                  running app so this deploy brings it back up\n                                  in the new mode.\n  --strategy [immediate|rolling|bluegreen|canary]\n                                  How the new version rolls out. Defaults to\n                                  the app's last strategy, or 'immediate'.\n  --description TEXT              An optional note recorded on this deployment\n                                  and shown in `reflex cloud apps history`.\n  --interactive / --no-interactive\n                                  Whether to list configuration options and\n                                  ask for confirmation.\n  --envfile TEXT                  The path to an env file to use. Will\n                                  override any envs set manually.\n  --project TEXT                  project id to deploy to\n  --project-name TEXT             The name of the project to deploy to.\n  --token TEXT                    token to use for auth\n  --config-path, --config TEXT    path to the config file\n  --exclude-from-backend PATH     Files or directories to exclude from the\n                                  backend zip. Can be used multiple times.\n  --server-side-rendering, --ssr / --no-server-side-rendering, --no-ssr\n                                  Whether to enable server side rendering for\n                                  the frontend.\n  --help                          Show this message and exit.\n"
+ }
+}

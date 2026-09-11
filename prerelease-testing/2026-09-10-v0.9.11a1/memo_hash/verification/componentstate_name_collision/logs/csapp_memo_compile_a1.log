@@ -1,0 +1,17 @@
+────────────────────────────── Initializing csapp ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized csapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (csapp/widget_a.py:33)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (csapp/widget_b.py:33)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Success: App compiled successfully in 0.516 seconds.

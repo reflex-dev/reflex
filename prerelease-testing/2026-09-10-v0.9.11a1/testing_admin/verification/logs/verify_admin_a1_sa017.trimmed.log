@@ -1,0 +1,2 @@
+NoMatchFound: No route exists for name "admin:statics" and params "path".
+NoMatchFound: No route exists for name "admin:api" and params "identity".

@@ -1,0 +1,77 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.06s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [10.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', '@react-router/dev@8.3.1',
+'@react-router/fs-routes@8.3.1', 'vite@8.2.2', 'postcss@8.5.26', 
+'postcss-import@17.0.0', 'autoprefixer@10.5.4']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Saved lockfile
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss@8.5.26
+Debug: installed postcss-import@17.0.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: [11.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-error-boundary@6.1.2', 'socket.io-client@4.8.3', 
+'react-router@8.3.1', 'react-helmet@6.1.0', '@react-router/node@8.3.1', 
+'react@19.2.8', 'react-dom@19.2.8', 'isbot@5.2.2', 'universal-cookie@8.1.2', 
+'@radix-ui/themes@3.3.0', 'sonner@2.0.8', 'lucide-react@1.26.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed react-error-boundary@6.1.2
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-router@8.3.1
+Debug: installed react-helmet@6.1.0
+Debug: installed @react-router/node@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-dom@19.2.8
+Debug: installed isbot@5.2.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed sonner@2.0.8
+Debug: installed lucide-react@1.26.0
+Debug: 
+Debug: [11.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/verify2_config_assets_cli_0/vapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/verify2_config_assets_cli_0/vapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Success: App compiled successfully in 0.445 seconds.

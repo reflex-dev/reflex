@@ -1,0 +1,238 @@
+[
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+  },
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"new-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "verbose",
+    "text": "[DOM] Input elements should have autocomplete attributes (suggested: \"current-password\"): (More info: https://goo.gl/9p2vKq) %o"
+  },
+  {
+    "type": "error",
+    "text": "Received `%s` for a non-boolean attribute `%s`.\n\nIf you want to write it to the DOM, pass a string instead: %s=\"%s\" or %s={value.toString()}. true collapsible collapsible true collapsible"
+  },
+  {
+    "type": "error",
+    "text": "In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s <button> button \n\n  ...\n    <Collapsible data-orientation=\"vertical\" data-state=\"closed\" __scopeCollapsible={{...}} className=\"AccordionI...\" ...>\n      <CollapsibleProvider scope={{...}} disabled={undefined} contentId=\"radix-_r_3_\" open={false} ...>\n        <Primitive.div data-state=\"closed\" data-disabled={undefined} data-orientation=\"vertical\" ...>\n          <div data-state=\"closed\" data-disabled={undefined} data-orientation=\"vertical\" className=\"AccordionI...\" ...>\n            <EmotionCssPropInternal className=\"AccordionH...\" css={{display:\"flex\", ...}} ...>\n              <Insertion>\n              <AccordionHeader className=\"AccordionH...\">\n                <Primitive.h3 data-orientation=\"vertical\" data-state=\"closed\" data-disabled={undefined} ...>\n                  <h3 data-orientation=\"vertical\" data-state=\"closed\" data-disabled={undefined} className=\"AccordionH...\" ...>\n                    <EmotionCssPropInternal className=\"AccordionT...\" css={{color:\"var...\", ...}} ...>\n                      <Insertion>\n                      <AccordionTrigger className=\"AccordionT...\">\n                        <AccordionCollectionItemSlot scope={undefined}>\n                          <AccordionCollectionItemSlot.Slot data-radix-collection-item=\"\" ref={function}>\n                            <CollapsibleTrigger aria-disabled={undefined} data-orientation=\"vertical\" id=\"radix-_r_2_\" ...>\n                              <Primitive.button type=\"button\" aria-controls={undefined} aria-expanded={false} ...>\n>                               <button\n>                                 type=\"button\"\n>                                 aria-controls={undefined}\n>                                 aria-expanded={false}\n>                                 data-state=\"closed\"\n>                                 data-disabled={undefined}\n>                                 disabled={undefined}\n>                                 aria-disabled={undefined}\n>                                 data-orientation=\"vertical\"\n>                                 id=\"radix-_r_2_\"\n>                                 className=\"AccordionTrigger css-1tld8rm\"\n>                                 data-radix-collection-item=\"\"\n>                                 onClick={function handleEvent}\n>                                 ref={function}\n>                               >\n                                  ...\n                                    <EmotionCssPropInternal color=\"tomato\" css={{...}} onClick={function} ...>\n                                      <Insertion>\n                                      <Button color=\"tomato\" onClick={function} aria-describedby={undefined} ...>\n                                        <BaseButton color=\"tomato\" onClick={function} aria-describedby={undefined} ...>\n>                                         <button\n>                                           data-disabled={undefined}\n>                                           data-accent-color=\"tomato\"\n>                                           data-radius={undefined}\n>                                           onClick={function}\n>                                           aria-describedby={undefined}\n>                                           data-state=\"closed\"\n>                                           onPointerMove={function handleEvent}\n>                                           onPointerLeave={function handleEvent}\n>                                           onPointerDown={function handleEvent}\n>                                           onFocus={function handleEvent}\n>                                           onBlur={function handleEvent}\n>                                           data-radix-popper-side={undefined}\n>                                           data-radix-popper-align={undefined}\n>                                           style={undefined}\n>                                           ref={function}\n>                                           className=\"rt-reset rt-BaseButton rt-r-size-2 rt-variant-solid rt-Button c...\"\n>                                           disabled={undefined}\n>                                         >\n                                  ...\n            ...\n"
+  },
+  {
+    "type": "error",
+    "text": "<%s> cannot contain a nested %s.\nSee this log for the ancestor stack trace. button <button>"
+  },
+  {
+    "type": "error",
+    "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+  },
+  {
+    "type": "error",
+    "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+  },
+  {
+    "type": "error",
+    "text": "The pseudo class \":first-child\" is potentially unsafe when doing server-side rendering. Try changing it to \":first-of-type\"."
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on pagehide"
+  }
+]

@@ -1,0 +1,2151 @@
+{
+ "label": "a1",
+ "reflex": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex",
+ "leaf_count": 34,
+ "leaves": [
+  "cloud apps build-logs",
+  "cloud apps delete",
+  "cloud apps describe",
+  "cloud apps history",
+  "cloud apps inspect",
+  "cloud apps list",
+  "cloud apps logs",
+  "cloud apps rollback",
+  "cloud apps scale",
+  "cloud apps start",
+  "cloud apps status",
+  "cloud apps stop",
+  "cloud config",
+  "cloud create-token",
+  "cloud gcp-standalone",
+  "cloud project create",
+  "cloud project invite",
+  "cloud project list",
+  "cloud project role-permissions",
+  "cloud project roles",
+  "cloud project select",
+  "cloud project selected",
+  "cloud project users",
+  "cloud providers connections",
+  "cloud providers list",
+  "cloud providers status",
+  "cloud regions",
+  "cloud scan",
+  "cloud secrets delete",
+  "cloud secrets list",
+  "cloud secrets update",
+  "cloud token",
+  "cloud vmtypes",
+  "cloud whoami"
+ ],
+ "checks": {
+  "cloud apps build-logs": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: No such option '--loglevel'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: No such option '--loglevel'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   }
+  },
+  "cloud apps delete": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=302c90300cbd46539c994dca39503975 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud apps describe": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   }
+  },
+  "cloud apps history": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=c9fcd9249fc040a19fc719b0f67da928 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud apps inspect": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=3d0ff87cadba43deab52ab40d0fd2a59 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud apps list": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Unable to list deployments"
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Unable to list deployments"
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 2,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Unable to list deployments"
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Unable to list deployments"
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Unable to list deployments"
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=a2ae4c755c9842abafed9df07b6d2003 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "please hit 'Enter' or 'Return' after login on website complete: Unable to list deployments"
+   }
+  },
+  "cloud apps logs": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=b1f5ac92445d47cfa35ec772726df2f7 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud apps rollback": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   }
+  },
+  "cloud apps scale": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=ed9a99577a094900b4c934b718dd6a94 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud apps start": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=87b6f80d572f416ea048ea253e5c3a4d ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud apps status": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_tail": "Error: Missing argument 'DEPLOYMENT_ID'."
+   }
+  },
+  "cloud apps stop": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=796dfdd779d74093b13dfaac9f373df4 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud config": {
+   "plain": {
+    "rc": 0,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Please install PyYAML to use this command: pip install pyyaml",
+    "stderr_tail": "Please install PyYAML to use this command: pip install pyyaml"
+   },
+   "json": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "{\"generated\": false, \"path\": null}",
+    "stdout_bytes": 35,
+    "stderr_lines": 1,
+    "stderr_head": "Please install PyYAML to use this command: pip install pyyaml",
+    "stderr_tail": "Please install PyYAML to use this command: pip install pyyaml"
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud config [OPTIONS]",
+    "stderr_tail": "Error: No such option '--loglevel'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud config [OPTIONS]",
+    "stderr_tail": "Error: No such option '--loglevel'."
+   },
+   "json_nointeractive": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "{\"generated\": false, \"path\": null}",
+    "stdout_bytes": 35,
+    "stderr_lines": 1,
+    "stderr_head": "Please install PyYAML to use this command: pip install pyyaml",
+    "stderr_tail": "Please install PyYAML to use this command: pip install pyyaml"
+   },
+   "json_interactive": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "{\"generated\": false, \"path\": null}",
+    "stdout_bytes": 35,
+    "stderr_lines": 1,
+    "stderr_head": "Please install PyYAML to use this command: pip install pyyaml",
+    "stderr_tail": "Please install PyYAML to use this command: pip install pyyaml"
+   }
+  },
+  "cloud create-token": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   }
+  },
+  "cloud gcp-standalone": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_tail": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run)."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_tail": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run)."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_tail": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run)."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_tail": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run)."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_tail": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run)."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_tail": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run)."
+   }
+  },
+  "cloud project create": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_tail": "Error: Missing argument 'NAME'."
+   }
+  },
+  "cloud project invite": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_tail": "Error: Missing argument 'ROLE'."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_tail": "Error: Missing argument 'ROLE'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_tail": "Error: Missing argument 'ROLE'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_tail": "Error: Missing argument 'ROLE'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_tail": "Error: Missing argument 'ROLE'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_tail": "Error: Missing argument 'ROLE'."
+   }
+  },
+  "cloud project list": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Unable to get projects: 1"
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Unable to get projects: 1"
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 2,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Unable to get projects: 1"
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Unable to get projects: 1"
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Unable to get projects: 1"
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=17d9d9c4df0745df919b6cf9b4389fbf ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "please hit 'Enter' or 'Return' after login on website complete: Unable to get projects: EOF when reading a line"
+   }
+  },
+  "cloud project role-permissions": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_tail": "Error: Missing argument 'ROLE_ID'."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_tail": "Error: Missing argument 'ROLE_ID'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_tail": "Error: Missing argument 'ROLE_ID'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_tail": "Error: Missing argument 'ROLE_ID'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_tail": "Error: Missing argument 'ROLE_ID'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_tail": "Error: Missing argument 'ROLE_ID'."
+   }
+  },
+  "cloud project roles": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=cc34ca27aaa64b75a8eeabf81be54223 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud project select": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=21f674adc6774297b7bd0a3b6ce919c6 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud project selected": {
+   "plain": {
+    "rc": 0,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Warning: no selected project. run `reflex cloud project select` to set one.'",
+    "stdout_head": "Warning: no selected project. run `reflex cloud project select` to set one.",
+    "stdout_bytes": 76,
+    "stderr_lines": 0,
+    "stderr_head": "",
+    "stderr_tail": ""
+   },
+   "json": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "{\"project_id\": null, \"name\": null, \"error\": null}",
+    "stdout_bytes": 50,
+    "stderr_lines": 0,
+    "stderr_head": "",
+    "stderr_tail": ""
+   },
+   "debug": {
+    "rc": 0,
+    "stdout_kind": "polluted",
+    "stdout_detail": "2/2 non-JSON lines; first=\"Debug: Unable to read selected project from /root/.local/share/reflex/hosting_v1.json due to: [Errno 2] No such file or directory: '/root/.local/share/reflex/ho\"",
+    "stdout_head": "Debug: Unable to read selected project from /root/.local/share/reflex/hosting_v1.json due to: [Errno 2] No such file or directory: '/root/.local/share/reflex/hosting_v1.json'",
+    "stdout_bytes": 251,
+    "stderr_lines": 0,
+    "stderr_head": "",
+    "stderr_tail": ""
+   },
+   "json_debug": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "{\"project_id\": null, \"name\": null, \"error\": null}",
+    "stdout_bytes": 50,
+    "stderr_lines": 1,
+    "stderr_head": "Debug: Unable to read selected project from /root/.local/share/reflex/hosting_v1.json due to: [Errno 2] No such file or directory: '/root/.local/share/reflex/hosting_v1.json'",
+    "stderr_tail": "Debug: Unable to read selected project from /root/.local/share/reflex/hosting_v1.json due to: [Errno 2] No such file or directory: '/root/.local/share/reflex/hosting_v1.json'"
+   },
+   "json_nointeractive": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "{\"project_id\": null, \"name\": null, \"error\": null}",
+    "stdout_bytes": 50,
+    "stderr_lines": 0,
+    "stderr_head": "",
+    "stderr_tail": ""
+   },
+   "json_interactive": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "{\"project_id\": null, \"name\": null, \"error\": null}",
+    "stdout_bytes": 50,
+    "stderr_lines": 0,
+    "stderr_head": "",
+    "stderr_tail": ""
+   }
+  },
+  "cloud project users": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=fd3bcd6a8a2345659802475060b883e9 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud providers connections": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=0fc23e98b56642cdbf902869c8944687 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud providers list": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=567bcbbf9fa144be8d82af0ff2a8b118 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud providers status": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=d615deb27f4a477fa9c8ff5eab90a2b1 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud regions": {
+   "plain": {
+    "rc": 0,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Unable to get regions due to 403 Forbidden.",
+    "stderr_tail": "Unable to get regions due to 403 Forbidden."
+   },
+   "json": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "[]",
+    "stdout_bytes": 3,
+    "stderr_lines": 1,
+    "stderr_head": "Unable to get regions due to 403 Forbidden.",
+    "stderr_tail": "Unable to get regions due to 403 Forbidden."
+   },
+   "debug": {
+    "rc": 0,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Unable to get regions due to 403 Forbidden.",
+    "stderr_tail": "Unable to get regions due to 403 Forbidden."
+   },
+   "json_debug": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "[]",
+    "stdout_bytes": 3,
+    "stderr_lines": 1,
+    "stderr_head": "Unable to get regions due to 403 Forbidden.",
+    "stderr_tail": "Unable to get regions due to 403 Forbidden."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud regions [OPTIONS]",
+    "stderr_tail": "Error: No such option '--no-interactive'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud regions [OPTIONS]",
+    "stderr_tail": "Error: No such option '--interactive'."
+   }
+  },
+  "cloud scan": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=e7c5da3fb15f4e9dba68a4a89f565339 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud secrets delete": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_tail": "Error: Missing argument 'KEY'."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_tail": "Error: Missing argument 'KEY'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_tail": "Error: Missing argument 'KEY'."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_tail": "Error: Missing argument 'KEY'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_tail": "Error: Missing argument 'KEY'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_tail": "Error: Missing argument 'KEY'."
+   }
+  },
+  "cloud secrets list": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=39eb157ef68b48d9bebe7d8504e0cef9 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud secrets update": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_nointeractive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_tail": "Token is required for non-interactive mode."
+   },
+   "json_interactive": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 4,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=af8aa446deab4511a9d61ae88daebd65 ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].",
+    "stderr_tail": "Aborted!"
+   }
+  },
+  "cloud token": {
+   "plain": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_tail": "Error: Specify exactly one of --print, --set or --clear (got none)."
+   },
+   "json": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_tail": "Error: No such option '--json'."
+   },
+   "debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_tail": "Error: Specify exactly one of --print, --set or --clear (got none)."
+   },
+   "json_debug": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_tail": "Error: No such option '--json'."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_tail": "Error: No such option '--json'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_tail": "Error: No such option '--json'."
+   }
+  },
+  "cloud vmtypes": {
+   "plain": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "[]",
+    "stdout_bytes": 3,
+    "stderr_lines": 1,
+    "stderr_head": "Unable to get vmtypes due to 403 Forbidden.",
+    "stderr_tail": "Unable to get vmtypes due to 403 Forbidden."
+   },
+   "json": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "[]",
+    "stdout_bytes": 3,
+    "stderr_lines": 1,
+    "stderr_head": "Unable to get vmtypes due to 403 Forbidden.",
+    "stderr_tail": "Unable to get vmtypes due to 403 Forbidden."
+   },
+   "debug": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "[]",
+    "stdout_bytes": 3,
+    "stderr_lines": 1,
+    "stderr_head": "Unable to get vmtypes due to 403 Forbidden.",
+    "stderr_tail": "Unable to get vmtypes due to 403 Forbidden."
+   },
+   "json_debug": {
+    "rc": 0,
+    "stdout_kind": "one_json",
+    "stdout_detail": "",
+    "stdout_head": "[]",
+    "stdout_bytes": 3,
+    "stderr_lines": 1,
+    "stderr_head": "Unable to get vmtypes due to 403 Forbidden.",
+    "stderr_tail": "Unable to get vmtypes due to 403 Forbidden."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud vmtypes [OPTIONS]",
+    "stderr_tail": "Error: No such option '--no-interactive'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud vmtypes [OPTIONS]",
+    "stderr_tail": "Error: No such option '--interactive'."
+   }
+  },
+  "cloud whoami": {
+   "plain": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Not logged in. Run `reflex login` to authenticate.",
+    "stderr_tail": "Not logged in. Run `reflex login` to authenticate."
+   },
+   "json": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 1,
+    "stderr_head": "Not logged in. Run `reflex login` to authenticate.",
+    "stderr_tail": "Not logged in. Run `reflex login` to authenticate."
+   },
+   "debug": {
+    "rc": 1,
+    "stdout_kind": "polluted",
+    "stdout_detail": "1/1 non-JSON lines; first='Debug: Fetching token from existing config...'",
+    "stdout_head": "Debug: Fetching token from existing config...",
+    "stdout_bytes": 46,
+    "stderr_lines": 1,
+    "stderr_head": "Not logged in. Run `reflex login` to authenticate.",
+    "stderr_tail": "Not logged in. Run `reflex login` to authenticate."
+   },
+   "json_debug": {
+    "rc": 1,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 2,
+    "stderr_head": "Debug: Fetching token from existing config...",
+    "stderr_tail": "Not logged in. Run `reflex login` to authenticate."
+   },
+   "json_nointeractive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud whoami [OPTIONS]",
+    "stderr_tail": "Error: No such option '--no-interactive'."
+   },
+   "json_interactive": {
+    "rc": 2,
+    "stdout_kind": "empty",
+    "stdout_detail": "",
+    "stdout_head": "",
+    "stdout_bytes": 0,
+    "stderr_lines": 3,
+    "stderr_head": "Usage: reflex cloud whoami [OPTIONS]",
+    "stderr_tail": "Error: No such option '--interactive'."
+   }
+  }
+ }
+}

@@ -1,0 +1,41 @@
+MARK before console.print
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use logger.info(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. 
+(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:38)
+Info: MARK before console.info
+DeprecationWarning: console.success has been deprecated in version 0.9.9. use logger.log(log.SUCCESS, msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. 
+(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:39)
+Success: MARK before console.success
+DeprecationWarning: console.warn has been deprecated in version 0.9.9. use logger.warning(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. 
+(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:40)
+Warning: MARK before console.warn
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use logger.error(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. 
+(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:41)
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use logger.debug(msg) on logging.getLogger(__name__) instead. It will be completely removed in 1.0. 
+(claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/hosting_cli_json/scripts/reserve_probe.py:42)
+Debug: MARK before console.debug
+─────────────────────────────────────────────────────────────────────────────────────────── MARK before rule ───────────────────────────────────────────────────────────────────────────────────────────
+┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━┓
+┃ h1                    ┃ h2 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━┩
+│ MARK before tablecell │ x  │
+└───────────────────────┴────┘
+MARK before progress ━━━━━━━━━━━━━━━━━━━━                      50% 1/2 0:00:00
+Info: MARK before logger.info
+Warning: MARK before logger.warning
+Debug: MARK before logger.debug
+MARK nested console.print
+MARK after console.print
+Info: MARK after console.info
+Success: MARK after console.success
+Warning: MARK after console.warn
+Debug: MARK after console.debug
+─────────────────────────────────────────────────────────────────────────────────────────── MARK after rule ────────────────────────────────────────────────────────────────────────────────────────────
+┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━┓
+┃ h1                   ┃ h2 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━╇━━━━┩
+│ MARK after tablecell │ x  │
+└──────────────────────┴────┘
+MARK after progress ━━━━━━━━━━━━━━━━━━━━                      50% 1/2 0:00:00
+Info: MARK after logger.info
+Warning: MARK after logger.warning
+Debug: MARK after logger.debug

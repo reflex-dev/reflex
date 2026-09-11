@@ -1,0 +1,4 @@
+Usage: reflex cloud whoami [OPTIONS]
+Try 'reflex cloud whoami --help' for help.
+
+Error: No such option '--no-interactive'.

@@ -1,0 +1,25 @@
+{
+  "url": "http://localhost:5300/",
+  "title": "Cliapp | About",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "click: '#inc'",
+    "click: '#inc'",
+    "expect_text: 'count=2'",
+    "expect_text: 'doubled=4'",
+    "screenshot: 'shots/cliapp_dev.png'",
+    "click: '#about-link'",
+    "wait: 600",
+    "expect_text: 'about'",
+    "screenshot: 'shots/cliapp_about.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "about"
+}

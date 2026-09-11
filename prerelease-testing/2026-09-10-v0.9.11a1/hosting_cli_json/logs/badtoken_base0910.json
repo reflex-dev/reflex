@@ -1,0 +1,128 @@
+[
+ {
+  "case": "no_token_nointeractive",
+  "args": [
+   "cloud",
+   "apps",
+   "list",
+   "--json",
+   "--no-interactive"
+  ],
+  "env": [],
+  "rc": 1,
+  "hung": false,
+  "secs": 0.6,
+  "stdout_bytes": 0,
+  "prompted": false,
+  "stderr_head": "Token is required for non-interactive mode."
+ },
+ {
+  "case": "bad_token_opt_json",
+  "args": [
+   "cloud",
+   "apps",
+   "list",
+   "--json",
+   "--token",
+   "bogus-token-123"
+  ],
+  "env": [],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.1,
+  "stdout_bytes": 518,
+  "prompted": true,
+  "stderr_head": ""
+ },
+ {
+  "case": "bad_token_opt_nointeractive",
+  "args": [
+   "cloud",
+   "apps",
+   "list",
+   "--json",
+   "--no-interactive",
+   "--token",
+   "bogus-token-123"
+  ],
+  "env": [],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.1,
+  "stdout_bytes": 518,
+  "prompted": true,
+  "stderr_head": ""
+ },
+ {
+  "case": "bad_token_env_nointeractive",
+  "args": [
+   "cloud",
+   "apps",
+   "list",
+   "--json",
+   "--no-interactive"
+  ],
+  "env": [
+   "REFLEX_ACCESS_TOKEN"
+  ],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.1,
+  "stdout_bytes": 518,
+  "prompted": true,
+  "stderr_head": ""
+ },
+ {
+  "case": "bad_token_env_plain",
+  "args": [
+   "cloud",
+   "apps",
+   "list"
+  ],
+  "env": [
+   "REFLEX_ACCESS_TOKEN"
+  ],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.1,
+  "stdout_bytes": 518,
+  "prompted": true,
+  "stderr_head": ""
+ },
+ {
+  "case": "bad_token_env_whoami_json",
+  "args": [
+   "cloud",
+   "whoami",
+   "--json"
+  ],
+  "env": [
+   "REFLEX_ACCESS_TOKEN"
+  ],
+  "rc": 1,
+  "hung": false,
+  "secs": 0.9,
+  "stdout_bytes": 0,
+  "prompted": false,
+  "stderr_head": "The access token from the REFLEX_ACCESS_TOKEN environment variable was rejected: 403 Forbidden (auth request id: ee7b759efa834dab851ec51da2e8ac47)"
+ },
+ {
+  "case": "bad_token_env_project_list",
+  "args": [
+   "cloud",
+   "project",
+   "list",
+   "--json",
+   "--no-interactive"
+  ],
+  "env": [
+   "REFLEX_ACCESS_TOKEN"
+  ],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.1,
+  "stdout_bytes": 518,
+  "prompted": true,
+  "stderr_head": ""
+ }
+]

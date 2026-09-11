@@ -1,0 +1,8 @@
+59:REFLEX_UNDER_TEST: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py 0.9.10.post2
+188:Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+189:`prerender: true`. You may want to use the `prerender()` API to prerender the 
+210:Debug: Prerender (html): / -> build/client/index.html
+211:Debug: Prerender (html): /static-page -> build/client/static-page/index.html
+212:Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+214:Debug: Copying .web/build/client/static-page/index.html to 
+223:App running at: http://0.0.0.0:6169/

@@ -1,0 +1,257 @@
+[
+  {
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "url": "http://localhost:6160/unnamed"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "url": "http://localhost:6160/unnamed"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "url": "http://localhost:6160/unnamed"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "url": "http://localhost:6160/unnamed"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap",
+    "url": "http://localhost:6160/unnamed"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin",
+    "url": "http://localhost:6160/unnamed"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth",
+    "url": "http://localhost:6160/unnamed"
+  },
+  {
+    "type": "error",
+    "text": "%o\n\n%s\n\n%s\n Error: `FormMessage` must be used within `FormField` or specify the `name` prop\n    at FormMessage (http://localhost:6160/node_modules/.vite/deps/dist-Ch4b-o_w.js?v=013108d5:652:19)\n    at Object.react_stack_bottom_frame (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:12866:12)\n    at renderWithHooks (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:4213:19)\n    at updateForwardRef (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:5396:16)\n    at beginWork (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:6204:21)\n    at runWithFiberInDEV (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:851:66)\n    at performUnitOfWork (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8429:92)\n    at workLoopSync (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8325:37)\n    at renderRootSync (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8309:6)\n    at performWorkOnRoot (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:7994:27) The ",
+    "url": "http://localhost:6160/unnamed"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation",
+    "url": "http://localhost:6160/unnamed"
+  },
+  {
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "url": "http://localhost:6160/named"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "url": "http://localhost:6160/named"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "url": "http://localhost:6160/named"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "url": "http://localhost:6160/named"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation",
+    "url": "http://localhost:6160/named"
+  },
+  {
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "url": "http://localhost:6160/msgname"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "url": "http://localhost:6160/msgname"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "url": "http://localhost:6160/msgname"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "url": "http://localhost:6160/msgname"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation",
+    "url": "http://localhost:6160/msgname"
+  },
+  {
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "url": "http://localhost:6160/nomsg"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "url": "http://localhost:6160/nomsg"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "url": "http://localhost:6160/nomsg"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "url": "http://localhost:6160/nomsg"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation",
+    "url": "http://localhost:6160/nomsg"
+  },
+  {
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "url": "http://localhost:6160/msgtop"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "url": "http://localhost:6160/msgtop"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "url": "http://localhost:6160/msgtop"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "url": "http://localhost:6160/msgtop"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap",
+    "url": "http://localhost:6160/msgtop"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin",
+    "url": "http://localhost:6160/msgtop"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth",
+    "url": "http://localhost:6160/msgtop"
+  },
+  {
+    "type": "error",
+    "text": "%o\n\n%s\n\n%s\n Error: `FormMessage` must be used within `FormField` or specify the `name` prop\n    at FormMessage (http://localhost:6160/node_modules/.vite/deps/dist-Ch4b-o_w.js?v=013108d5:652:19)\n    at Object.react_stack_bottom_frame (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:12866:12)\n    at renderWithHooks (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:4213:19)\n    at updateForwardRef (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:5396:16)\n    at beginWork (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:6204:21)\n    at runWithFiberInDEV (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:851:66)\n    at performUnitOfWork (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8429:92)\n    at workLoopSync (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8325:37)\n    at renderRootSync (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8309:6)\n    at performWorkOnRoot (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:7994:27) The ",
+    "url": "http://localhost:6160/msgtop"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation",
+    "url": "http://localhost:6160/msgtop"
+  },
+  {
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "url": "http://localhost:6160/labelonly"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "url": "http://localhost:6160/labelonly"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "url": "http://localhost:6160/labelonly"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "url": "http://localhost:6160/labelonly"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap",
+    "url": "http://localhost:6160/labelonly"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin",
+    "url": "http://localhost:6160/labelonly"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth",
+    "url": "http://localhost:6160/labelonly"
+  },
+  {
+    "type": "error",
+    "text": "%o\n\n%s\n\n%s\n Error: `FormLabel` must be used within `FormField` or specify the `name` prop\n    at FormLabel (http://localhost:6160/node_modules/.vite/deps/dist-Ch4b-o_w.js?v=013108d5:517:19)\n    at Object.react_stack_bottom_frame (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:12866:12)\n    at renderWithHooks (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:4213:19)\n    at updateForwardRef (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:5396:16)\n    at beginWork (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:6204:21)\n    at runWithFiberInDEV (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:851:66)\n    at performUnitOfWork (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8429:92)\n    at workLoopSync (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8325:37)\n    at renderRootSync (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8309:6)\n    at performWorkOnRoot (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:7994:27) The abov",
+    "url": "http://localhost:6160/labelonly"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on page navigation",
+    "url": "http://localhost:6160/labelonly"
+  },
+  {
+    "type": "log",
+    "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "url": "http://localhost:6160/controlonly"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connecting...",
+    "url": "http://localhost:6160/controlonly"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected.",
+    "url": "http://localhost:6160/controlonly"
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "url": "http://localhost:6160/controlonly"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap",
+    "url": "http://localhost:6160/controlonly"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin",
+    "url": "http://localhost:6160/controlonly"
+  },
+  {
+    "type": "error",
+    "text": "Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth",
+    "url": "http://localhost:6160/controlonly"
+  },
+  {
+    "type": "error",
+    "text": "%o\n\n%s\n\n%s\n Error: `FormControl` must be used within `FormField` or specify the `name` prop\n    at FormControl (http://localhost:6160/node_modules/.vite/deps/dist-Ch4b-o_w.js?v=013108d5:539:19)\n    at Object.react_stack_bottom_frame (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:12866:12)\n    at renderWithHooks (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:4213:19)\n    at updateForwardRef (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:5396:16)\n    at beginWork (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:6204:21)\n    at runWithFiberInDEV (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:851:66)\n    at performUnitOfWork (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8429:92)\n    at workLoopSync (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8325:37)\n    at renderRootSync (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:8309:6)\n    at performWorkOnRoot (http://localhost:6160/node_modules/.vite/deps/react-dom_client.js?v=59e75b52:7994:27) The ",
+    "url": "http://localhost:6160/controlonly"
+  },
+  {
+    "type": "log",
+    "text": "Disconnect websocket on pagehide",
+    "url": "http://localhost:6160/controlonly"
+  }
+]

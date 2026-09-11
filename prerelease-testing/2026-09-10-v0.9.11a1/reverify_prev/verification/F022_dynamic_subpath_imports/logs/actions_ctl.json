@@ -1,0 +1,6 @@
+[{"wait": 2500},
+ {"eval": "[!!document.getElementById('ctl-box'), document.getElementById('ctl-label')?.textContent]"},
+ {"click": "#btn-relabel"},
+ {"wait": 2000},
+ {"eval": "[!!document.getElementById('ctl-box'), document.getElementById('ctl-label')?.textContent]"},
+ {"screenshot": "shots/a1_nobundle_ctl.png"}]

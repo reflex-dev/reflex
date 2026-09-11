@@ -1,0 +1,6 @@
+[{"wait": 2500},
+ {"eval": "[!!document.getElementById('mix-icon'), !!document.getElementById('mix-box'), document.getElementById('mix-label')?.textContent]"},
+ {"click": "#btn-relabel"},
+ {"wait": 2000},
+ {"eval": "[!!document.getElementById('mix-icon'), !!document.getElementById('mix-box'), document.getElementById('mix-label')?.textContent]"},
+ {"screenshot": "shots/a1_nobundle_mix.png"}]

@@ -1,0 +1,2 @@
+Debug: Unable to read selected project from /root/.local/share/reflex/hosting_v1.json due to: [Errno 2] No such file or directory: '/root/.local/share/reflex/hosting_v1.json'
+{"project_id": null, "name": null, "error": null}

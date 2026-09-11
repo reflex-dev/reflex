@@ -1,0 +1,107 @@
+{
+ "after_load": {
+  "sent": 5,
+  "recv": 7
+ },
+ "body_head": "IT Ticketing\n\nManual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog.\n\nOpen: 0\n\nTotal: 0\n\nSeed\n\u22ef\nNew Ticket\nall\nall\nopen\nin_progress\nclosed\nall\nall\nlow\nmedium\nhigh\nApply\n\nSort\n\ncreated_at\ncreated_at\nupdated_at\ntitle\npriority\nstatus\nassignee\ndesc\nasc\ndesc\n\nPage size\n\n20\n10\n20\n50\n100\nPrev\n\nPage 1 / 1\n\nN",
+ "rows_before": 0,
+ "badges_before": [
+  "Open: 0",
+  "Total: 0"
+ ],
+ "dispatch_keys": [],
+ "02_click_seed": {
+  "error": null,
+  "new_sent": [],
+  "new_recv_count": 0,
+  "rows": 0,
+  "badges": [
+   "Open: 0",
+   "Total: 0"
+  ],
+  "dialog_open": 0
+ },
+ "03_click_new_ticket": {
+  "error": null,
+  "new_sent": [],
+  "new_recv_count": 0,
+  "rows": 0,
+  "badges": [
+   "Open: 0",
+   "Total: 0"
+  ],
+  "dialog_open": 0
+ },
+ "04_type_search": {
+  "error": null,
+  "new_sent": [],
+  "new_recv_count": 0,
+  "rows": 0,
+  "badges": [
+   "Open: 0",
+   "Total: 0"
+  ],
+  "dialog_open": 0
+ },
+ "console": [
+  [
+   "log",
+   "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  [
+   "error",
+   "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\", \"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you ar"
+  ]
+ ],
+ "pageerrors": [],
+ "recv_delta_substates": [
+  [
+   "reflex___state____state",
+   "generic_oidc_auth_state",
+   "is_iframed_state",
+   "ticket_state",
+   "on_load_internal_state",
+   "update_vars_internal_state",
+   "frontend_event_exception_state",
+   "shared_state_base_internal"
+  ],
+  [
+   "reflex___state____state"
+  ],
+  [
+   "reflex___state____state",
+   "ticket_state"
+  ],
+  [
+   "reflex___state____state"
+  ]
+ ],
+ "sent_all": [
+  "40/_event,",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "{\"type\":\"custom\",\"event\":\"vite:forward-console\",\"data\":{\"type\":\"log\",\"data\":{\"level\":\"error\",\"message\":\"Cannot process state update: no dispatch function for substate(s) \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\\\", \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\\\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.\"}}}",
+  "42/_event,[\"client_error\",{\"message\":\"Cannot process state update: no dispatch function for substate(s) \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\\\", \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\\\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.\",\"substate\":\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state, reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\",\"error_type\":\"dispatch_function_missing\"}]"
+ ],
+ "recv_all": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"Fp3FGGpxKwC3oyuWAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"FIt1RdRbsqQYae_7AAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"62f768ad-f852-426a-d5bd-3c9d43891671\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"FIt1RdRbsqQYae_7AAAB\"},\"headers\":{\"host\":\"localhost:10520\",\"origin\":\"http://localhost:6120\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"1SzwWeYcExc4FgAmghzRBA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:10520\",\"origin\":\"http://localhost:6120\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"1SzwWeYcExc4FgAmghzRBA==\",\"sec-websocket-protocol\":\"0.9.11a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"page\":{\"host\":\"http://localhost:6120\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:6120/index\",\"full_raw_path\":\"http://localhost:6120/\",\"params\":{}},\"url\":{\"scheme\":\"http\",\"netloc\":\"localhost:6120\",\"origin\":\"http://localhost:6120\",\"path\":\"/\",\"query\":\"\",\"query_parameters\":{},\"fragment\":\"\",\"href\":\"http://localhost:6120/\"},\"route_id\":\"/index\"}},\"reflex___state____state.reflex___state____on_load_internal_state\":{},\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\":{\"checked_this_session_rx_state_\":false,\"is_iframed_rx_state_\":false},\"reflex___state____state.reflex___state____update_vars_internal_state\":{},\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\":{\"app_state_rx_state_\":\"\",\"code_verifier_rx_state_\":\"\",\"from_popup_rx_state_\":false,\"granted_scopes_rx_state_\":\"\",\"has_any_token_rx_state_\":false,\"has_error_rx_state_\":false,\"last_error_txid_rx_state_\":\"\",\"latest_access_token_hash_ls_rx_state_\":\"\",\"origin_rx_state_\":\"http://localhost:6120\",\"redirect_to_url_rx_state_\":\"\",\"rejected_state_digest_rx_state_\":\"\",\"user_error_message_rx_state_\":\"\",\"userinfo_rx_state_\":null},\"reflex___state____state.reflex___istate___shared____shared_state_base_internal\":{},\"reflex___state____state.reflex___state____frontend_event_exception_state\":{},\"reflex___state____state.tickets___tickets____ticket_state\":{\"current_ticket_id_rx_state_\":\"\",\"detail_error_rx_state_\":\"\",\"detail_loading_rx_state_\":false,\"draft_assignee_rx_state_\":\"\",\"draft_description_rx_state_\":\"\",\"draft_priority_rx_state_\":\"medium\",\"draft_title_rx_state_\":\"\",\"edit_assignee_rx_state_\":\"\",\"edit_description_rx_state_\":\"\",\"edit_priority_rx_state_\":\"medium\",\"edit_status_rx_state_\":\"open\",\"edit_title_rx_state_\":\"\",\"has_active_filters_rx_state_\":false,\"has_next_page_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"open_count_rx_state_\":0,\"page_rx_state_\":1,\"page_count_rx_state_\":1,\"page_size_rx_state_\":20,\"priority_filter_rx_state_\":\"all\",\"q_rx_state_\":\"\",\"show_new_ticket_form_rx_state_\":false,\"sort_by_rx_state_\":\"created_at\",\"sort_dir_rx_state_\":\"desc\",\"status_filter_rx_state_\":\"all\",\"tickets_rx_state_\":[],\"total_count_rx_state_\":0}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"tickets_rx_state_\":[],\"has_active_filters_rx_state_\":false,\"q_rx_state_\":\"\",\"page_size_rx_state_\":20,\"total_count_rx_state_\":0,\"status_filter_rx_state_\":\"all\",\"sort_dir_rx_state_\":\"desc\",\"page_rx_state_\":1,\"page_count_rx_state_\":1,\"priority_filter_rx_state_\":\"all\",\"open_count_rx_state_\":0,\"has_next_page_rx_state_\":false,\"sort_by_rx_state_\":\"created_at\",\"has_prev_page_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ]
+}

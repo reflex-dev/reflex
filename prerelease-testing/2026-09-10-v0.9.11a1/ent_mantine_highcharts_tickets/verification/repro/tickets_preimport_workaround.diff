@@ -1,0 +1,10 @@
+--- /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_ent_mantine_highcharts_tickets_0/tickets_a1/tickets/tickets.py.orig	2026-09-11 07:24:33.386796058 +0000
++++ /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_ent_mantine_highcharts_tickets_0/tickets_a1/tickets/tickets.py	2026-09-11 07:28:25.407316914 +0000
+@@ -30,6 +30,7 @@
+ from sqlmodel import Field, func, or_, select
+ 
+ import reflex_enterprise as rxe
++import reflex_enterprise.auth.oidc.state  # noqa: F401  QA: force the OIDC auth states into the compile-time state tree
+ 
+ STATUSES = ("open", "in_progress", "closed")
+ PRIORITIES = ("low", "medium", "high")

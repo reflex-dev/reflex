@@ -1,0 +1,27 @@
+leaf breadth, 0.9.11a1, stdout+stdin = pty, 9 s timeout, '--json' only:
+  leaf_apps_history  stdout=0B stderr=414B
+  leaf_apps_list  stdout=0B stderr=414B
+  leaf_apps_scale  stdout=0B stderr=414B
+  leaf_apps_start  stdout=0B stderr=414B
+  leaf_config  stdout=36B stderr=62B
+  leaf_project_list  stdout=0B stderr=414B
+  leaf_project_selected  stdout=51B stderr=0B
+  leaf_providers_list  stdout=0B stderr=414B
+  leaf_regions  stdout=4B stderr=44B
+  leaf_scan  stdout=0B stderr=414B
+  leaf_secrets_list  stdout=0B stderr=138B
+  leaf_whoami  stdout=0B stderr=51B
+
+rc/elapsed per leaf (from the run transcript in NOTES.md):
+  cloud apps list --json                     TIMEOUT 9.0s   stdout 0B
+  cloud apps history --app-name x --json     TIMEOUT 9.0s   stdout 0B
+  cloud apps scale --app-name x --vmtype ... TIMEOUT 9.0s   stdout 0B
+  cloud apps start --app-name x --json       TIMEOUT 9.0s   stdout 0B
+  cloud project list --json                  TIMEOUT 9.0s   stdout 0B
+  cloud providers list --json                TIMEOUT 9.0s   stdout 0B
+  cloud scan --json                          TIMEOUT 9.0s   stdout 0B
+  cloud project selected --json              rc=0  0.39s    stdout 51B  (no auth needed)
+  cloud whoami --json                        rc=1  0.39s    stdout 0B   (never logs in)
+  cloud regions --json                       rc=0  0.73s    stdout 4B
+  cloud config --json                        rc=0  0.38s    stdout 36B
+  cloud secrets list --app-name x --json     rc=2  0.38s    (my invocation missing a required opt)

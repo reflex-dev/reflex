@@ -1,0 +1,48 @@
+### plain :: reflex deploy
+rc=1
+--stdout (1074 bytes)--
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config 
+inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+──────────────────────────────────────────────────────────────────────────────────────── Initializing deployapp ────────────────────────────────────────────────────────────────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized deployapp. Install dependencies from `requirements.txt` with `uv pip install -r requirements.txt` (or your preferred installer) before running `uv run reflex run`.
+--stderr (44 bytes)--
+Token is required for non-interactive mode.
+
+### json :: reflex deploy --json
+rc=1
+--stdout (579 bytes)--
+{"timestamp": "2026-09-11T10:43:33.673254+00:00", "level": "warning", "logger": "reflex_base.config", "message": "`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py:630", "pid": 19353}
+--stderr (345 bytes)--
+{"timestamp": "2026-09-11T10:43:33.679249+00:00", "level": "error", "logger": "reflex_cli.utils.hosting", "message": "Token is required for non-interactive mode.", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/utils/hosting.py:329", "pid": 19353}
+
+### json-debug :: reflex deploy --json --loglevel debug
+rc=1
+--stdout (1637 bytes)--
+{"timestamp": "2026-09-11T10:43:34.368118+00:00", "level": "debug", "logger": "reflex_base.config", "message": "Overriding config value loglevel with env var LOGLEVEL=debug", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py:776", "pid": 19369}
+{"timestamp": "2026-09-11T10:43:34.368364+00:00", "level": "debug", "logger": "reflex_base.config", "message": "Overriding config value telemetry_enabled with env var TELEMETRY_ENABLED=false", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py:776", "pid": 19369}
+{"timestamp": "2026-09-11T10:43:34.368524+00:00", "level": "warning", "logger": "reflex_base.config", "message": "`reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py:630", "pid": 19369}
+{"timestamp": "2026-09-11T10:43:34.374440+00:00", "level": "debug", "logger": "reflex_cli.utils.hosting", "message": "Fetching token from existing config...", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/utils/hosting.py:402", "pid": 19369}
+--stderr (345 bytes)--
+{"timestamp": "2026-09-11T10:43:34.374605+00:00", "level": "error", "logger": "reflex_cli.utils.hosting", "message": "Token is required for non-interactive mode.", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/utils/hosting.py:329", "pid": 19369}
+
+### nointeractive :: reflex deploy --no-interactive
+rc=1
+--stdout (298 bytes)--
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config 
+inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+--stderr (44 bytes)--
+Token is required for non-interactive mode.
+
+### interactive-offtty :: reflex deploy --interactive
+rc=1
+--stdout (845 bytes)--
+Warning: Unable to detect installed packages in your environment using pip freeze. Please make sure your requirements.txt is up to date.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by default, but not explicitly added to the config. If you want to use it, please add it to the `plugins` list in your config 
+inside of `rxconfig.py`. To disable this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Opening https://build.reflex.dev/cli/login?request_id=b199384567ed4ece9af4315abbfebdbb ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].
+Warning: Unable to automatically open the browser. Please go to https://build.reflex.dev/cli/login?request_id=b199384567ed4ece9af4315abbfebdbb to authenticate.
+please hit 'Enter' or 'Return' after login on website complete: --stderr (10 bytes)--
+
+Aborted!
+

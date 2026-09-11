@@ -1,0 +1,62 @@
+[
+  {
+    "type": "log",
+    "text": "[snake] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[snake] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[snake] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[snake] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[snake] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[snake] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[snake] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[snake] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[snake] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[tab2] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[tab2] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[tab2] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[tab2] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[tab2] Disconnect websocket on pagehide"
+  },
+  {
+    "type": "log",
+    "text": "[snake] Disconnect websocket on pagehide"
+  }
+]

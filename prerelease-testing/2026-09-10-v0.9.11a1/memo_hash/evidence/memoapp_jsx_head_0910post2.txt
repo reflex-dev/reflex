@@ -1,0 +1,20 @@
+
+import {ReflexEvent,applyEventActions,isTrue,refs} from "$/utils/state"
+import {jsx} from "@emotion/react"
+import {Fragment,memo,useCallback,useContext,useEffect,useId,useRef,useState} from "react"
+import {StateContexts,addEvents} from "$/utils/context"
+import {} from "$/public/memo_a.css"
+import {} from "$/public/memo_b.css"
+import {Card_6a3335c9} from "$/app_components/memoapp/mod_a"
+import {Card_d38f1d91} from "$/app_components/memoapp/mod_b"
+
+const MEMO_DYN_B = (globalThis.MEMO_DYN_B = 'dyn-B');
+
+globalThis.MEMO_CODE_B = 'code-B';
+
+
+
+
+export const CsCard_21819d56 = memo(({value:valueRxMemo, tid:tidRxMemo}) => {
+    
+

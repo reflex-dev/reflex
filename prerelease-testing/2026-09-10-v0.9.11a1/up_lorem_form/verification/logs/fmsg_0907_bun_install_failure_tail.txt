@@ -1,0 +1,64 @@
+
+
+error: ConnectionClosed downloading package manifest detect-libc
+
+error: ConnectionClosed downloading package manifest hoist-non-react-statics
+
+error: ConnectionClosed downloading tarball @emnapi/wasi-threads@1.2.1
+
+error: ConnectionClosed downloading tarball rolldown@1.0.3
+
+error: ConnectionClosed downloading package manifest @babel/helpers
+
+error: ConnectionClosed downloading tarball @emnapi/core@1.10.0
+
+error: ConnectionClosed downloading package manifest browserslist
+
+error: ConnectionClosed downloading package manifest 
+@babel/helper-module-transforms
+
+error: ConnectionClosed downloading package manifest arg
+
+error: ConnectionClosed downloading package manifest vite-node
+
+error: ConnectionClosed downloading package manifest path-parse
+
+error: ConnectionClosed downloading package manifest gensync
+
+error: ConnectionClosed downloading package manifest caniuse-lite
+
+error: ConnectionClosed downloading package manifest is-core-module
+
+error: ConnectionClosed downloading package manifest @emotion/babel-plugin
+
+error: ConnectionClosed downloading package manifest readdirp
+
+error: ConnectionClosed downloading package manifest @jridgewell/gen-mapping
+
+error: ConnectionClosed downloading package manifest json5
+
+error: ConnectionClosed downloading tarball @react-router/dev@7.15.0
+
+error: ConnectionClosed downloading package manifest tslib
+
+error: ConnectionClosed downloading package manifest fraction.js
+
+error: ConnectionClosed downloading package manifest debug
+
+error: ConnectionClosed downloading package manifest 
+@emotion/use-insertion-effect-with-fallbacks
+
+error: ConnectionClosed downloading package manifest @jridgewell/trace-mapping
+
+error: ConnectionClosed downloading package manifest 
+@babel/helper-validator-identifier
+
+error: ConnectionClosed downloading package manifest @babel/code-frame
+
+error: ConnectionClosed downloading package manifest react-router
+
+error: ConnectionClosed downloading package manifest react
+
+
+
+Run with --loglevel debug  for the full log.

@@ -1,0 +1,665 @@
+{
+ "base": "http://localhost:5421",
+ "steps": [
+  {
+   "i": 0,
+   "verb": "goto",
+   "val": "/dates",
+   "note": null,
+   "ok": true,
+   "ms": 1907,
+   "probe": {
+    "svg": 0,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 0,
+    "head": ""
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 1,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3001,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 2,
+   "verb": "eval",
+   "val": "() => ({mantine: document.querySelectorAll('[class*=mantine-]').length, tabs: Array.from(document.querySelectorAll('[role=tab]')).map(e=>[e.innerText, e.getAttribute('data-state')])})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "mantine": 387,
+    "tabs": [
+     [
+      "Example",
+      "active"
+     ],
+     [
+      "Source",
+      "inactive"
+     ]
+    ]
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 3,
+   "verb": "click_nth",
+   "val": [
+    "[role=tab]",
+    1
+   ],
+   "note": "Source tab by role",
+   "ok": true,
+   "ms": 509,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 4945,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | ent_mantine_highcharts_tickets/mantine/mantine/dates.py | 1\"\"\"Mantine Dates Demo\"\"\" | 2 | 3import reflex as rx | 4 | 5import reflex_enterprise as rxe | 6 | 7from .common import demo | 8 | 9 | 10class DateState(rx.St"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 4,
+   "verb": "wait",
+   "val": 2500,
+   "note": null,
+   "ok": true,
+   "ms": 2501,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 4945,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | ent_mantine_highcharts_tickets/mantine/mantine/dates.py | 1\"\"\"Mantine Dates Demo\"\"\" | 2 | 3import reflex as rx | 4 | 5import reflex_enterprise as rxe | 6 | 7from .common import demo | 8 | 9 | 10class DateState(rx.St"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 5,
+   "verb": "eval",
+   "val": "() => ({mantine: document.querySelectorAll('[class*=mantine-]').length, pre: document.querySelectorAll('pre').length, tabs: Array.from(document.querySelectorAll('[role=tab]')).map(e=>[e.innerText, e.getAttribute('data-state')])})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "mantine": 0,
+    "pre": 1,
+    "tabs": [
+     [
+      "Example",
+      "inactive"
+     ],
+     [
+      "Source",
+      "active"
+     ]
+    ]
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 4945,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | ent_mantine_highcharts_tickets/mantine/mantine/dates.py | 1\"\"\"Mantine Dates Demo\"\"\" | 2 | 3import reflex as rx | 4 | 5import reflex_enterprise as rxe | 6 | 7from .common import demo | 8 | 9 | 10class DateState(rx.St"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 6,
+   "verb": "click_nth",
+   "val": [
+    "[role=tab]",
+    0
+   ],
+   "note": "back to Example tab by role",
+   "ok": true,
+   "ms": 141,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 7,
+   "verb": "wait",
+   "val": 2500,
+   "note": null,
+   "ok": true,
+   "ms": 2502,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 8,
+   "verb": "eval",
+   "val": "() => ({mantine: document.querySelectorAll('[class*=mantine-]').length, pre: document.querySelectorAll('pre').length, cards: document.querySelectorAll('.rt-Card').length, tabs: Array.from(document.querySelectorAll('[role=tab]')).map(e=>[e.innerText, e.getAttribute('data-state')])})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "mantine": 387,
+    "pre": 0,
+    "cards": 12,
+    "tabs": [
+     [
+      "Example",
+      "active"
+     ],
+     [
+      "Source",
+      "inactive"
+     ]
+    ]
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 9,
+   "verb": "shot",
+   "val": "tabs_back_example",
+   "note": null,
+   "ok": true,
+   "ms": 407,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 10,
+   "verb": "click_nth",
+   "val": [
+    ".mantine-DatePicker-day:not([data-outside])",
+    5
+   ],
+   "note": "pickers still live after tab round trip",
+   "ok": true,
+   "ms": 118,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 11,
+   "verb": "wait",
+   "val": 1500,
+   "note": null,
+   "ok": true,
+   "ms": 1501,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 12,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('[data-sonner-toast]')).map(e=>e.innerText.replace(/\\n/g,' '))",
+   "note": null,
+   "ok": true,
+   "result": [
+    "Date selected: 2026-09-06"
+   ],
+   "ms": 1,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 13,
+   "verb": "fill",
+   "val": [
+    ".mantine-TimePicker-input",
+    ""
+   ],
+   "note": "TimePicker: type a full time",
+   "ok": false,
+   "err": "Error: Page.fill: Error: Element is not an <input>, <textarea>, <select> or [contenteditable] and does not have a role allowing [aria-readonly]\nCall log:\n  - waiting for locator(\".mantine-TimePicker-input\")\n    - locator resolved to <div aria-invalid=\"false\" data-variant=\"default\" id=\"mantine-pgs0vf6h8\" cl",
+   "ms": 9,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 14,
+   "verb": "click_nth",
+   "val": [
+    ".mantine-TimePicker-field",
+    0
+   ],
+   "note": null,
+   "ok": true,
+   "ms": 35,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 15,
+   "verb": "keyboard",
+   "val": "1",
+   "note": null,
+   "ok": true,
+   "ms": 9,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 16,
+   "verb": "keyboard",
+   "val": "1",
+   "note": null,
+   "ok": true,
+   "ms": 6,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 17,
+   "verb": "keyboard",
+   "val": "2",
+   "note": null,
+   "ok": true,
+   "ms": 6,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 18,
+   "verb": "keyboard",
+   "val": "2",
+   "note": null,
+   "ok": true,
+   "ms": 5,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 19,
+   "verb": "wait",
+   "val": 2000,
+   "note": null,
+   "ok": true,
+   "ms": 2001,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 3,
+    "toast_text": "Time selected: 11:22 ;; Time selected: 11:02 ;; Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 1003,
+    "head": "Time selected: 11:22 | Time selected: 11:02 | Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 20,
+   "verb": "eval",
+   "val": "() => ({toasts: Array.from(document.querySelectorAll('[data-sonner-toast]')).map(e=>e.innerText.replace(/\\n/g,' ')), fields: Array.from(document.querySelectorAll('.mantine-TimePicker-field')).map(e=>e.value)})",
+   "note": "TimePicker on_change",
+   "ok": true,
+   "result": {
+    "toasts": [
+     "Time selected: 11:22",
+     "Time selected: 11:02",
+     "Date selected: 2026-09-06"
+    ],
+    "fields": [
+     "11",
+     "22"
+    ]
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 3,
+    "toast_text": "Time selected: 11:22 ;; Time selected: 11:02 ;; Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 1003,
+    "head": "Time selected: 11:22 | Time selected: 11:02 | Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 21,
+   "verb": "shot",
+   "val": "tabs_timepicker",
+   "note": null,
+   "ok": true,
+   "ms": 414,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 3,
+    "toast_text": "Time selected: 11:22 ;; Time selected: 11:02 ;; Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 1003,
+    "head": "Time selected: 11:22 | Time selected: 11:02 | Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t"
+   },
+   "url": "http://localhost:5421/dates"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "ws": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"dFb5laKZX8dQ5kU4AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"XUeZpmq3TNr8zW8GAAAF\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"bcd7e17a-e5f4-4638-86f0-860fd1807dd2\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console_errors": [],
+ "console_warnings": [],
+ "failed_steps": [
+  {
+   "i": 13,
+   "verb": "fill",
+   "val": [
+    ".mantine-TimePicker-input",
+    ""
+   ],
+   "note": "TimePicker: type a full time",
+   "ok": false,
+   "err": "Error: Page.fill: Error: Element is not an <input>, <textarea>, <select> or [contenteditable] and does not have a role allowing [aria-readonly]\nCall log:\n  - waiting for locator(\".mantine-TimePicker-input\")\n    - locator resolved to <div aria-invalid=\"false\" data-variant=\"default\" id=\"mantine-pgs0vf6h8\" cl",
+   "ms": 9,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 1,
+    "toast_text": "Date selected: 2026-09-06",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 961,
+    "head": "Date selected: 2026-09-06 | Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pi"
+   },
+   "url": "http://localhost:5421/dates"
+  }
+ ]
+}

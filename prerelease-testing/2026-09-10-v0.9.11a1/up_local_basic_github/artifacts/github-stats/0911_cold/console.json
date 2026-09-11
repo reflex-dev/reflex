@@ -1,0 +1,90 @@
+[
+  {
+    "type": "log",
+    "text": "[gh_0911_cold] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0911_cold] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0911_cold] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[gh_0911_cold] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "error",
+    "text": "[gh_0911_cold] You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`."
+  },
+  {
+    "type": "log",
+    "text": "[gh_0911_cold] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[gh_0911_cold] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0911_cold] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0911_cold] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[gh_0911_cold] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "error",
+    "text": "[gh_0911_cold] You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`."
+  },
+  {
+    "type": "log",
+    "text": "[gh_0911_cold] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[gh_0911_cold] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0911_cold] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0911_cold] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[gh_0911_cold] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[gh_0911_cold] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[gh_0911_cold] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0911_cold] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0911_cold] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[gh_0911_cold] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[gh_0911_cold] Disconnect websocket on pagehide"
+  }
+]

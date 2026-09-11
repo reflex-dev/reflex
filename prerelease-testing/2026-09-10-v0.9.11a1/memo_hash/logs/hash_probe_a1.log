@@ -1,0 +1,75 @@
+reflex: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py 0.9.11a1
+[PASS] dataclass_identity: Alpha=09fbbaf81e1c Beta=ef5d3f006294
+[PASS] intenum_vs_int: Level.ONE=9797fbbc8852 1=c82561ec215a
+[PASS] intenum_cross_enum: Level.ONE=9797fbbc8852 OtherLevel.ONE=d0f08e8d1644
+[PASS] strvalue_enum_vs_str: Color.RED=b3bfdd87b8ab 'red'=a835428b8e73
+[PASS] infunction_dataclass_release: alive before clear=50, after clear=0
+[PASS] infunction_dataclass_distinct: two function-local dataclasses of identical shape
+[PASS] same_qualname_diff_module: Widget_div_0bf6f0bddb7a10da8fffb0c7d6e7ca12 vs Widget_div_26be05b0dc97ed7559831c3b23366dba
+[PASS] add_custom_code_hashed: Codewidget_div_6854df26b26448e8b4d021bfc81dcce2 vs Codewidget_div_73aefd253c8440b248c710ebe15b6dcb
+[PASS] add_custom_code_only_difference: identical module+qualname, only add_custom_code differs
+[PASS] dynamic_imports_hashed: identical module+qualname, only _get_dynamic_imports differs
+[PASS] tagless_importvar_hashed: identical module+qualname, only a tagless ImportVar differs
+[PASS] appwrap_markdowncomponentmap_hashed: app-wrap rx.text('a') vs rx.text('bbbbb')
+[PASS] rx_text_direct_hash: deterministic_hash(rx.text('a')) vs rx.text('bbbbb')
+[PASS] tag_stable_across_cache_clear: Widget_div_0bf6f0bddb7a10da8fffb0c7d6e7ca12
+
+{
+  "dataclass_identity": {
+    "ok": true,
+    "detail": "Alpha=09fbbaf81e1c Beta=ef5d3f006294"
+  },
+  "intenum_vs_int": {
+    "ok": true,
+    "detail": "Level.ONE=9797fbbc8852 1=c82561ec215a"
+  },
+  "intenum_cross_enum": {
+    "ok": true,
+    "detail": "Level.ONE=9797fbbc8852 OtherLevel.ONE=d0f08e8d1644"
+  },
+  "strvalue_enum_vs_str": {
+    "ok": true,
+    "detail": "Color.RED=b3bfdd87b8ab 'red'=a835428b8e73"
+  },
+  "infunction_dataclass_release": {
+    "ok": true,
+    "detail": "alive before clear=50, after clear=0"
+  },
+  "infunction_dataclass_distinct": {
+    "ok": true,
+    "detail": "two function-local dataclasses of identical shape"
+  },
+  "same_qualname_diff_module": {
+    "ok": true,
+    "detail": "Widget_div_0bf6f0bddb7a10da8fffb0c7d6e7ca12 vs Widget_div_26be05b0dc97ed7559831c3b23366dba"
+  },
+  "add_custom_code_hashed": {
+    "ok": true,
+    "detail": "Codewidget_div_6854df26b26448e8b4d021bfc81dcce2 vs Codewidget_div_73aefd253c8440b248c710ebe15b6dcb"
+  },
+  "add_custom_code_only_difference": {
+    "ok": true,
+    "detail": "identical module+qualname, only add_custom_code differs"
+  },
+  "dynamic_imports_hashed": {
+    "ok": true,
+    "detail": "identical module+qualname, only _get_dynamic_imports differs"
+  },
+  "tagless_importvar_hashed": {
+    "ok": true,
+    "detail": "identical module+qualname, only a tagless ImportVar differs"
+  },
+  "appwrap_markdowncomponentmap_hashed": {
+    "ok": true,
+    "detail": "app-wrap rx.text('a') vs rx.text('bbbbb')"
+  },
+  "rx_text_direct_hash": {
+    "ok": true,
+    "detail": "deterministic_hash(rx.text('a')) vs rx.text('bbbbb')"
+  },
+  "tag_stable_across_cache_clear": {
+    "ok": true,
+    "detail": "Widget_div_0bf6f0bddb7a10da8fffb0c7d6e7ca12"
+  }
+}
+FAILED: none

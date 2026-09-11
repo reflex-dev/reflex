@@ -1,0 +1,378 @@
+[
+ [
+  "recv",
+  "{\"type\":\"connected\"}"
+ ],
+ [
+  "recv",
+  "0{\"sid\":\"QJCo4kS8tr1P2DreAAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+ ],
+ [
+  "sent",
+  "40/_event,"
+ ],
+ [
+  "recv",
+  "40/_event,{\"sid\":\"MMQ-vqHX4Lr7SzF7AAAR\"}"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"391f4174-724b-4557-81dd-21f165ebace4\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"MMQ-vqHX4Lr7SzF7AAAR\"},\"headers\":{\"host\":\"localhost:9941\",\"origin\":\"http://localhost:5541\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"rSp6qQm3Fpi2X2XsUd1uFQ==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:9941\",\"origin\":\"http://localhost:5541\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"rSp6qQm3Fpi2X2XsUd1uFQ==\",\"sec-websocket-protocol\":\"0.9.10.post2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"page\":{\"host\":\"http://localhost:5541\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:5541/index\",\"full_raw_path\":\"http://localhost:5541/\",\""
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"current_guess_rx_state_\":\"\",\"correct_word_rx_state_\":null,\"game_status_rx_state_\":0,\"guesses_rx_state_\":[[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"is_wrong_guess_rx_state_\":false,\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",0],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",0],[\"p\",0]],[[\"a\",0],[\"s\",0],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",0],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",0],[\"Enter\",0]]],\"guesses_count_rx_state_\":0}}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"h\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",0],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",0],[\"p\",0]],[[\"a\",0],[\"s\",0],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",0],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",0],[\"Enter\",0]]],\"current_guess_rx_state_\":\"h\",\"guesses_count_rx_state_\":1}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"o\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",0],[\"o\",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",0],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",0],[\"p\",0]],[[\"a\",0],[\"s\",0],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",0],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",0],[\"Enter\",0]]],\"current_guess_rx_state_\":\"ho\",\"guesses_count_rx_state_\":1}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"m\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",0],[\"o\",0],[\"m\",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",0],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",0],[\"p\",0]],[[\"a\",0],[\"s\",0],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",0],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",0],[\"Enter\",0]]],\"current_guess_rx_state_\":\"hom\",\"guesses_count_rx_state_\":1}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"e\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",0],[\"o\",0],[\"m\",0],[\"e\",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",0],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",0],[\"p\",0]],[[\"a\",0],[\"s\",0],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",0],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",0],[\"Enter\",0]]],\"current_guess_rx_state_\":\"home\",\"guesses_count_rx_state_\":1}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"s\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",0],[\"o\",0],[\"m\",0],[\"e\",0],[\"s\",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",0],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",0],[\"p\",0]],[[\"a\",0],[\"s\",0],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",0],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",0],[\"Enter\",0]]],\"current_guess_rx_state_\":\"homes\",\"guesses_count_rx_state_\":1}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"Enter\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"current_guess_rx_state_\":\"\",\"correct_word_rx_state_\":null,\"game_status_rx_state_\":0,\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",0],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",2],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"guesses_count_rx_state_\":1}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"g\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",0],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",2],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"g\",\"guesses_count_rx_state_\":2}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"a\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",0],[\"a\",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",0],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",2],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"ga\",\"guesses_count_rx_state_\":2}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"w\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",0],[\"a\",0],[\"w\",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",0],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",2],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"gaw\",\"guesses_count_rx_state_\":2}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"k\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",0],[\"a\",0],[\"w\",0],[\"k\",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",0],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",2],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"gawk\",\"guesses_count_rx_state_\":2}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"s\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",0],[\"a\",0],[\"w\",0],[\"k\",0],[\"s\",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",0],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",0],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",0],[\"h\",2],[\"j\",0],[\"k\",0],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"gawks\",\"guesses_count_rx_state_\":2}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"Enter\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"current_guess_rx_state_\":\"\",\"correct_word_rx_state_\":null,\"game_status_rx_state_\":0,\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",2],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"guesses_count_rx_state_\":2}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"b\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",2],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"b\",\"guesses_count_rx_state_\":3}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"u\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",0],[\"u\",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",2],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"bu\",\"guesses_count_rx_state_\":3}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"m\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",0],[\"u\",0],[\"m\",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",2],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"bum\",\"guesses_count_rx_state_\":3}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"p\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",0],[\"u\",0],[\"m\",0],[\"p\",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",2],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"bump\",\"guesses_count_rx_state_\":3}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"h\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",0],[\"u\",0],[\"m\",0],[\"p\",0],[\"h\",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",0],[\"i\",0],[\"o\",1],[\"p\",0]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",2],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",0],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"bumph\",\"guesses_count_rx_state_\":3}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"Enter\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"current_guess_rx_state_\":\"\",\"correct_word_rx_state_\":null,\"game_status_rx_state_\":0,\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"guesses_count_rx_state_\":3}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"v\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"v\",\"guesses_count_rx_state_\":4}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"e\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",0],[\"e\",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"ve\",\"guesses_count_rx_state_\":4}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"x\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",0],[\"e\",0],[\"x\",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"vex\",\"guesses_count_rx_state_\":4}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"e\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",0],[\"e\",0],[\"x\",0],[\"e\",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"vexe\",\"guesses_count_rx_state_\":4}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"d\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",0],[\"e\",0],[\"x\",0],[\"e\",0],[\"d\",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",0],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",0],[\"c\",0],[\"v\",0],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"vexed\",\"guesses_count_rx_state_\":4}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"Enter\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"current_guess_rx_state_\":\"\",\"correct_word_rx_state_\":null,\"game_status_rx_state_\":0,\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"guesses_count_rx_state_\":4}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"q\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"q\",\"guesses_count_rx_state_\":5}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"u\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",0],[\"u\",0],[\" \",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"qu\",\"guesses_count_rx_state_\":5}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"i\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",0],[\"u\",0],[\"i\",0],[\" \",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"qui\",\"guesses_count_rx_state_\":5}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"p\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",0],[\"u\",0],[\"i\",0],[\"p\",0],[\" \",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"quip\",\"guesses_count_rx_state_\":5}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"s\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",0],[\"u\",0],[\"i\",0],[\"p\",0],[\"s\",0]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",0],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",0],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"quips\",\"guesses_count_rx_state_\":5}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"Enter\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"current_guess_rx_state_\":\"\",\"correct_word_rx_state_\":null,\"game_status_rx_state_\":0,\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",1],[\"u\",1],[\"i\",1],[\"p\",1],[\"s\",2]],[[\" \",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",1],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",1],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"guesses_count_rx_state_\":5}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"m\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",1],[\"u\",1],[\"i\",1],[\"p\",1],[\"s\",2]],[[\"m\",0],[\" \",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",1],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",1],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"m\",\"guesses_count_rx_state_\":6}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"y\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",1],[\"u\",1],[\"i\",1],[\"p\",1],[\"s\",2]],[[\"m\",0],[\"y\",0],[\" \",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",1],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",1],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"my\",\"guesses_count_rx_state_\":6}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"l\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",1],[\"u\",1],[\"i\",1],[\"p\",1],[\"s\",2]],[[\"m\",0],[\"y\",0],[\"l\",0],[\" \",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",1],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",1],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"myl\",\"guesses_count_rx_state_\":6}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"a\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",1],[\"u\",1],[\"i\",1],[\"p\",1],[\"s\",2]],[[\"m\",0],[\"y\",0],[\"l\",0],[\"a\",0],[\" \",0]]],\"letters_rx_state_\":[[[\"q\",1],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",1],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"myla\",\"guesses_count_rx_state_\":6}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"r\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",1],[\"u\",1],[\"i\",1],[\"p\",1],[\"s\",2]],[[\"m\",0],[\"y\",0],[\"l\",0],[\"a\",0],[\"r\",0]]],\"letters_rx_state_\":[[[\"q\",1],[\"w\",1],[\"e\",1],[\"r\",0],[\"t\",0],[\"y\",0],[\"u\",1],[\"i\",1],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",0],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",2],[\"Enter\",0]]],\"current_guess_rx_state_\":\"mylar\",\"guesses_count_rx_state_\":6}}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflexle___reflexle____reflexle.received_letter\",\"payload\":{\"letter\":\"Enter\"},\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflexle___reflexle____reflexle\":{\"current_guess_rx_state_\":\"\",\"correct_word_rx_state_\":\"marsh\",\"game_status_rx_state_\":2,\"guesses_rx_state_\":[[[\"h\",2],[\"o\",1],[\"m\",2],[\"e\",1],[\"s\",2]],[[\"g\",1],[\"a\",3],[\"w\",1],[\"k\",1],[\"s\",2]],[[\"b\",1],[\"u\",1],[\"m\",2],[\"p\",1],[\"h\",3]],[[\"v\",1],[\"e\",1],[\"x\",1],[\"e\",1],[\"d\",1]],[[\"q\",1],[\"u\",1],[\"i\",1],[\"p\",1],[\"s\",2]],[[\"m\",3],[\"y\",1],[\"l\",1],[\"a\",2],[\"r\",2]]],\"letters_rx_state_\":[[[\"q\",1],[\"w\",1],[\"e\",1],[\"r\",2],[\"t\",0],[\"y\",1],[\"u\",1],[\"i\",1],[\"o\",1],[\"p\",1]],[[\"a\",3],[\"s\",2],[\"d\",1],[\"f\",0],[\"g\",1],[\"h\",3],[\"j\",0],[\"k\",1],[\"l\",1],[\"Backspace\",0]],[[\"z\",0],[\"x\",1],[\"c\",0],[\"v\",1],[\"b\",1],[\"n\",0],[\"m\",3],[\"Enter\",0]]],\"guesses_count_rx_state_\":6}}}]"
+ ],
+ [
+  "recv",
+  "2"
+ ],
+ [
+  "sent",
+  "3"
+ ],
+ [
+  "sent",
+  "41/_event,"
+ ],
+ [
+  "recv",
+  "{\"type\":\"connected\"}"
+ ],
+ [
+  "recv",
+  "0{\"sid\":\"apbsG4n0J_aAjn4zAAAS\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}"
+ ],
+ [
+  "sent",
+  "40/_event,"
+ ],
+ [
+  "recv",
+  "40/_event,{\"sid\":\"lU670MO10IVhB156AAAT\"}"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "sent",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"391f4174-724b-4557-81dd-21f165ebace4\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"lU670MO10IVhB156AAAT\"},\"headers\":{\"host\":\"localhost:9941\",\"origin\":\"http://localhost:5541\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"3CzyVkZZzI3+Znt4ayR9vg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:9941\",\"origin\":\"http://localhost:5541\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"3CzyVkZZzI3+Znt4ayR9vg==\",\"sec-websocket-protocol\":\"0.9.10.post2\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"page\":{\"host\":\"http://localhost:5541\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:5541/index\",\"full_raw_path\":\"http://localhost:5541/\",\""
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]"
+ ],
+ [
+  "recv",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ]
+]

@@ -1,0 +1,26 @@
+{
+ "sent": [
+  "40/_event,",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"}}]",
+  "42/_event,[\"client_error\",{\"message\":\"Cannot process state update: no dispatch function for substate(s) \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\\\", \\\"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\\\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.\",\"substate\":\"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state, reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\",\"error_type\":\"dispatch_function_missing\"}]"
+ ],
+ "recv": [
+  "0{\"sid\":\"r0hEEybfRj94qpoqAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"SZLUBTlDXKBPxxEgAAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"bab97787-7fab-47f6-8578-055bc7d3a0e8\",\"client_ip\":\"127.0.0.1\",\"session_id\":\"SZLUBTlDXKBPxxEgAAAB\"},\"headers\":{\"host\":\"localhost:5434\",\"origin\":\"http://localhost:5434\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"55mYIbNc1A6W6y5glUeHUA==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflate, br, zstd\",\"accept_language\":\"en-US,en;q=0.9\",\"raw_headers\":{\"accept-encoding\":\"gzip, deflate, br, zstd\",\"accept-language\":\"en-US,en;q=0.9\",\"asgi-scope-client\":\"127.0.0.1\",\"cache-control\":\"no-cache\",\"connection\":\"Upgrade\",\"host\":\"localhost:5434\",\"origin\":\"http://localhost:5434\",\"pragma\":\"no-cache\",\"sec-websocket-extensions\":\"permessage-deflate; client_max_window_bits\",\"sec-websocket-key\":\"55mYIbNc1A6W6y5glUeHUA==\",\"sec-websocket-protocol\":\"0.9.11a1\",\"sec-websocket-version\":\"13\",\"upgrade\":\"websocket\",\"user-agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\"}},\"page\":{\"host\":\"http://localhost:5434\",\"path\":\"/index\",\"raw_path\":\"/\",\"full_path\":\"http://localhost:5434/index\",\"full_raw_path\":\"http://localhost:5434/\",\"para",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"has_next_page_rx_state_\":false,\"sort_by_rx_state_\":\"created_at\",\"page_rx_state_\":1,\"has_active_filters_rx_state_\":false,\"has_prev_page_rx_state_\":false,\"page_count_rx_state_\":1,\"status_filter_rx_state_\":\"all\",\"total_count_rx_state_\":5,\"q_rx_state_\":\"\",\"priority_filter_rx_state_\":\"all\",\"page_size_rx_state_\":20,\"tickets_rx_state_\":[{\"ticket_id\":\"854aef63-bbc7-4efa-b81b-f88c87f9476b\",\"title\":\"prod ticket\",\"id\":12,\"status\":\"in_progress\",\"priority\":\"medium\",\"assignee\":\"\",\"created_at\":\"2026-09-11T07:02:44.363866+00:00\",\"description\":\"\",\"updated_at\":\"2026-09-11T07:02:47.500296+00:00\"},{\"ticket_id\":\"529dfa33-7a30-421f-8685-222feb596e69\",\"title\":\"Printer offline\",\"id\":11,\"status\":\"open\",\"priority\":\"medium\",\"assignee\":\"carol\",\"created_at\":\"2026-09-11T07:02:34.342526+00:00\",\"description\":\"Cannot reach printer on 3rd floor.\",\"updated_at\":\"2026-09-11T07:02:34.342526+00:00\"},{\"ticket_id\":\"80d5585a-8ca5-439d-ada5-f56e1d7999d1\",\"title\":\"Email signature broken\",\"id\":10,\"status\":\"open\",\"priority\":\"low\",\"assignee\":\"\",\"created_at\":\"2026-09-11T07:02:34.342440+00:00\",\"description\":\"Corporate logo image is missing.\",\"updated_at\":\"2026-09-11T07:02:34.342440+00:00\"},{\"ticket_id\":\"ba622660-b7e6-4845-bf29-4937c4be0867\",\"title\":\"VPN slow from home\",\"id\":9,\"status\":\"open\",\"priority\":\"medium\",\"assignee\":\"bob\",\"created_at\":\"2026-09-11T07:02:34.342305+00:00\",\"description\":\"RTT > 500ms over the corporate tunnel.\",\"upda",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console": [
+  [
+   "error",
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  [
+   "error",
+   "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\", \"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\". Try refreshing the page or clearing your browser cach"
+  ]
+ ]
+}

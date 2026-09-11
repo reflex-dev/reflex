@@ -1,0 +1,49 @@
+{
+  "dev1_env_mode": "Env.DEV",
+  "dev1_frontend_url": "http://localhost:34011/",
+  "dev1_status": 200,
+  "dev1_vite_client_status": 200,
+  "dev1_token": "b6eabed6-5359-4b76-e7e5-fc5e8f459910",
+  "dev1_ui_count": "3",
+  "dev1_ui_summary": "3/3/4",
+  "dev1_ui_nitems": "3",
+  "dev1_items_rendered": 3,
+  "dev1_state_count": 3,
+  "dev1_state_items": "['i1', 'i2', 'i3']",
+  "dev1_state_meta": "{'k1': 1, 'k2': 2, 'k3': 3}",
+  "dev1_state_row_qty": 4,
+  "dev1_chain_count": "11",
+  "dev1_bg_ticks": "3",
+  "dev1_second_count": "11",
+  "dev1_state_after_chain": {
+    "count": 11,
+    "bg_ticks": 3
+  },
+  "dev1_console_errors": [],
+  "dev1_console_warnings": [],
+  "dev1_failed_requests": [],
+  "dev1_selenium_frontend": "NoSuchDriverException: Message: Unable to obtain driver for chrome; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors/driver_location\n",
+  "prod_frontend_url": "http://127.0.0.1:34299/",
+  "prod_status": 200,
+  "prod_vite_client_status": 404,
+  "prod_token": "dac2123b-f1f4-4201-8410-b1c79bb438db",
+  "prod_ui_count": "2",
+  "prod_ui_summary": "2/2/3",
+  "prod_state": {
+    "count": 2,
+    "items": "['i1', 'i2']",
+    "bg_ticks": 3
+  },
+  "prod_console_errors": [],
+  "prod_console_warnings": [],
+  "prod_failed_requests": [],
+  "dev2_env_mode": "Env.DEV",
+  "dev2_status": 200,
+  "dev2_vite_client_status": 200,
+  "dev2_state": {
+    "count": 1,
+    "items": "['i1']"
+  },
+  "dev2_console_errors": [],
+  "dev2_failed_requests": []
+}

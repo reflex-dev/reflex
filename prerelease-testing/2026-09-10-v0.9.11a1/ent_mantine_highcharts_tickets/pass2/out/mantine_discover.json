@@ -1,0 +1,318 @@
+{
+ "base": "http://localhost:5421",
+ "steps": [
+  {
+   "i": 0,
+   "verb": "goto",
+   "val": "/dates",
+   "note": null,
+   "ok": true,
+   "ms": 3562,
+   "probe": {
+    "svg": 0,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 0,
+    "head": ""
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 1,
+   "verb": "wait",
+   "val": 4000,
+   "note": null,
+   "ok": true,
+   "ms": 4001,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 2,
+   "verb": "shot",
+   "val": "discover_dates",
+   "note": null,
+   "ok": true,
+   "ms": 391,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 3,
+   "verb": "eval",
+   "val": "() => {const s=new Set(); document.querySelectorAll('[class*=mantine-]').forEach(e=>e.classList.forEach(c=>{if(c.startsWith('mantine-')) s.add(c);})); return Array.from(s).sort();}",
+   "note": null,
+   "ok": true,
+   "result": [
+    "mantine-Calendar-calendarHeader",
+    "mantine-Calendar-calendarHeaderControl",
+    "mantine-Calendar-calendarHeaderControlIcon",
+    "mantine-Calendar-calendarHeaderLevel",
+    "mantine-Calendar-day",
+    "mantine-Calendar-levelsGroup",
+    "mantine-Calendar-month",
+    "mantine-Calendar-monthCell",
+    "mantine-Calendar-monthRow",
+    "mantine-Calendar-monthTbody",
+    "mantine-Calendar-monthThead",
+    "mantine-Calendar-weekday",
+    "mantine-Calendar-weekdaysRow",
+    "mantine-DateInput-input",
+    "mantine-DateInput-root",
+    "mantine-DateInput-wrapper",
+    "mantine-DatePicker-calendarHeader",
+    "mantine-DatePicker-calendarHeaderControl",
+    "mantine-DatePicker-calendarHeaderControlIcon",
+    "mantine-DatePicker-calendarHeaderLevel",
+    "mantine-DatePicker-datePickerRoot",
+    "mantine-DatePicker-day",
+    "mantine-DatePicker-levelsGroup",
+    "mantine-DatePicker-month",
+    "mantine-DatePicker-monthCell",
+    "mantine-DatePicker-monthRow",
+    "mantine-DatePicker-monthTbody",
+    "mantine-DatePicker-monthThead",
+    "mantine-DatePicker-presetButton",
+    "mantine-DatePicker-presetsList",
+    "mantine-DatePicker-weekday",
+    "mantine-DatePicker-weekdaysRow",
+    "mantine-DatePickerInput-input",
+    "mantine-DatePickerInput-label",
+    "mantine-DatePickerInput-placeholder",
+    "mantine-DatePickerInput-root",
+    "mantine-DatePickerInput-wrapper",
+    "mantine-DateTimePicker-input",
+    "mantine-DateTimePicker-label",
+    "mantine-DateTimePicker-placeholder",
+    "mantine-DateTimePicker-root",
+    "mantine-DateTimePicker-wrapper",
+    "mantine-Input-input",
+    "mantine-Input-wrapper",
+    "mantine-InputPlaceholder-placeholder",
+    "mantine-InputWrapper-label",
+    "mantine-InputWrapper-root",
+    "mantine-MonthPicker-calendarHeader",
+    "mantine-MonthPicker-calendarHeaderControl",
+    "mantine-MonthPicker-calendarHeaderControlIcon",
+    "mantine-MonthPicker-calendarHeaderLevel",
+    "mantine-MonthPicker-levelsGroup",
+    "mantine-MonthPicker-monthsList",
+    "mantine-MonthPicker-monthsListCell",
+    "mantine-MonthPicker-monthsListControl",
+    "mantine-MonthPicker-monthsListRow",
+    "mantine-MonthPicker-pickerControl",
+    "mantine-MonthPickerInput-input",
+    "mantine-MonthPickerInput-placeholder",
+    "mantine-MonthPickerInput-root",
+    "mantine-MonthPickerInput-wrapper",
+    "mantine-PickerControl-pickerControl",
+    "mantine-TimeInput-input",
+    "mantine-TimeInput-root",
+    "mantine-TimeInput-wrapper",
+    "mantine-TimePicker-field",
+    "mantine-TimePicker-fieldsGroup",
+    "mantine-TimePicker-fieldsRoot",
+    "mantine-TimePicker-input",
+    "mantine-TimePicker-root",
+    "mantine-TimePicker-wrapper",
+    "mantine-UnstyledButton-root",
+    "mantine-YearPicker-calendarHeader",
+    "mantine-YearPicker-calendarHeaderControl",
+    "mantine-YearPicker-calendarHeaderControlIcon",
+    "mantine-YearPicker-calendarHeaderLevel",
+    "mantine-YearPicker-levelsGroup",
+    "mantine-YearPicker-yearsList",
+    "mantine-YearPicker-yearsListCell",
+    "mantine-YearPicker-yearsListControl",
+    "mantine-YearPicker-yearsListRow",
+    "mantine-YearPickerInput-input",
+    "mantine-YearPickerInput-placeholder",
+    "mantine-YearPickerInput-root",
+    "mantine-YearPickerInput-wrapper",
+    "mantine-focus-auto"
+   ],
+   "ms": 3,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  },
+  {
+   "i": 4,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('.rt-Card')).map(c=>({label: c.innerText.split('\\n')[0], inputs: c.querySelectorAll('input').length, buttons: c.querySelectorAll('button').length, first_btn_class: (c.querySelector('button')||{}).className}))",
+   "note": null,
+   "ok": true,
+   "result": [
+    {
+     "label": "Calendar",
+     "inputs": 0,
+     "buttons": 38,
+     "first_btn_class": "mantine-focus-auto m_2351eeb0 mantine-Calendar-calendarHeaderControl m_87cf2631 mantine-UnstyledButton-root"
+    },
+    {
+     "label": "DateTimePicker",
+     "inputs": 1,
+     "buttons": 1,
+     "first_btn_class": "m_6fa5e2aa m_8fb7ebe7 mantine-Input-input mantine-DateTimePicker-input"
+    },
+    {
+     "label": "DatePicker",
+     "inputs": 0,
+     "buttons": 38,
+     "first_btn_class": "mantine-focus-auto m_2351eeb0 mantine-DatePicker-calendarHeaderControl m_87cf2631 mantine-UnstyledButton-root"
+    },
+    {
+     "label": "DatePickerInput",
+     "inputs": 1,
+     "buttons": 1,
+     "first_btn_class": "m_6fa5e2aa m_8fb7ebe7 mantine-Input-input mantine-DatePickerInput-input"
+    },
+    {
+     "label": "DateInput",
+     "inputs": 2,
+     "buttons": 0,
+     "first_btn_class": null
+    },
+    {
+     "label": "MonthPicker",
+     "inputs": 0,
+     "buttons": 15,
+     "first_btn_class": "mantine-focus-auto m_2351eeb0 mantine-MonthPicker-calendarHeaderControl m_87cf2631 mantine-UnstyledButton-root"
+    },
+    {
+     "label": "MonthPickerInput",
+     "inputs": 1,
+     "buttons": 1,
+     "first_btn_class": "m_6fa5e2aa m_8fb7ebe7 mantine-Input-input mantine-MonthPickerInput-input"
+    },
+    {
+     "label": "YearPicker",
+     "inputs": 0,
+     "buttons": 12,
+     "first_btn_class": "mantine-focus-auto m_2351eeb0 mantine-YearPicker-calendarHeaderControl m_87cf2631 mantine-UnstyledButton-root"
+    },
+    {
+     "label": "YearPickerInput",
+     "inputs": 1,
+     "buttons": 1,
+     "first_btn_class": "m_6fa5e2aa m_8fb7ebe7 mantine-Input-input mantine-YearPickerInput-input"
+    },
+    {
+     "label": "TimeInput",
+     "inputs": 1,
+     "buttons": 0,
+     "first_btn_class": null
+    },
+    {
+     "label": "TimePicker",
+     "inputs": 3,
+     "buttons": 0,
+     "first_btn_class": null
+    },
+    {
+     "label": "DatePicker w/ presets",
+     "inputs": 0,
+     "buttons": 45,
+     "first_btn_class": "mantine-focus-auto m_acd30b22 mantine-DatePicker-presetButton m_87cf2631 mantine-UnstyledButton-root"
+    }
+   ],
+   "ms": 2,
+   "probe": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 387,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 127,
+    "text_len": 935,
+    "head": "Dates | Mantine demo |  | A collection of examples using Mantine Dates components in Reflex. |  | Example |  | Source |  | Calendar |  | September 2026 | Mo\tTu\tWe\tTh\tFr\tSa\tSu | 31\t1\t2\t3\t4\t5\t6 | 7\t8\t9\t10\t11\t12\t13 | 14\t15\t16\t17\t18\t19\t20 | 21\t22\t23\t24\t25\t26\t27 | 28\t29\t30\t1\t2\t3\t4 |  | DateTimePicker |  | Pick a Date | Pick date |  | DatePicker |  | Septe"
+   },
+   "url": "http://localhost:5421/dates"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "ws": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"3Q62QaCwl81waOjDAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"F2uOn_lcOYpr0BnSAAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"f97c1fd0-a9f7-4c69-d128-685f4e676252\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console_errors": [],
+ "console_warnings": [],
+ "failed_steps": []
+}

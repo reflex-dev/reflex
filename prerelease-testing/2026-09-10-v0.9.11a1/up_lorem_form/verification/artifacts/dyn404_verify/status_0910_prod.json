@@ -1,0 +1,9 @@
+[
+  {"route": "/", "status": "200", "location": "", "bytes": 7114, "title": "<title>Dyn404 | Index</title>"},
+  {"route": "/static-page", "status": "307", "location": "http://localhost:6169/static-page/", "bytes": 0, "title": ""},
+  {"route": "/static-page/", "status": "200", "location": "", "bytes": 7169, "title": "<title>Dyn404 | Static-Page</title>"},
+  {"route": "/item/1", "status": "404", "location": "", "bytes": 5167, "title": ""},
+  {"route": "/item/1/", "status": "404", "location": "", "bytes": 5167, "title": ""},
+  {"route": "/item/abc", "status": "404", "location": "", "bytes": 5167, "title": ""},
+  {"route": "/nonexistent-route", "status": "404", "location": "", "bytes": 5167, "title": ""}
+]

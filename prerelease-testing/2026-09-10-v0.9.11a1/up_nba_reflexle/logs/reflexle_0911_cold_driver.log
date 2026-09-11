@@ -1,0 +1,55 @@
+[PASS] reflexle_page_loads: title='Reflexle' grid_rows=6 cols=5 keyboard_buttons=28 (28 expected: 26 letters + backspace + enter)
+[PASS] global_hotkey_letters: typed 'homes' with real key presses -> row0='HOMES'
+[PASS] global_hotkey_backspace: row0='HOME' (expect HOME)
+[ANOMALY] ctrl_backspace_deletes_one_letter: row0='HOM'; app expects a 'Ctrl+Backspace' key string (clear row) but reflex key_event forwards only event.key, so Ctrl+Backspace == Backspace (app-level dead branch)
+[PASS] toast_word_too_short: toasts=['Word must be 5 characters long.'] (expect 'Word must be 5 characters long.')
+[PASS] invalid_word_shake_and_background_clear: row cleared 0.3 s later by the background set_is_wrong_guess_false event=True row0=''
+[PASS] invalid_word_toast_dropped_by_app: no toast for an invalid word: ReflexleGame.guess() builds rx.toast('Invalid word.') but Reflexle.received_letter discards its return value and returns set_is_wrong_guess_false instead (upstream example bug, both reflex versions). toasts=[]
+[PASS] valid_guess_colours_row_and_keyboard: row0=[('H', 'rgba(170, 170, 170, 0.25)'), ('O', 'rgba(170, 170, 170, 0.25)'), ('M', 'rgba(170, 170, 170, 0.25)'), ('E', 'rgb(83, 141, 78)'), ('S', 'rgba(181, 159, 59, 0.165)')]; keyboard keys whose colour changed=['E', 'O', 'S', 'H', 'M']
+[PASS] duplicate_guess_rejected: row1 cleared=True; toast shown=False (same discarded-EventSpec app bug as the invalid-word path). toasts=[]
+[PASS] onscreen_keyboard_clicks: clicked G,A,W -> row1='GAW'
+[PASS] onscreen_backspace_and_enter_buttons: after ⌫ row1='GA'; after typing WKS + ↵ row1='GAWKS'
+[PASS] high_contrast_toggle: cell backgrounds changed: ['rgb(181, 159, 59)', 'rgb(83, 141, 78)', 'rgba(0, 0, 0, 0)', 'rgba(170, 170, 170, 0.055)', 'rgba(170, 170, 170, 0.25)'] -> ['rgb(133, 192, 249)', 'rgb(138, 188, 228)', 'rgb(245, 121, 58)', 'rgba(133, 192, 249, 0.89)', 'rgba(170, 170, 170, 0.25)']
+[PASS] color_mode_toggle: documentElement.class 'light' -> 'dark'
+[PASS] state_survives_reload: after reload row0='HOMES' row1='GAWKS' (on_load must not reset a game in progress)
+[PASS] lost_game_reveals_word: after 6 non-solution guesses: banner='WORD IS SLEEK'; rows=['HOMES', 'GAWKS', 'BUMPH', 'VEXED', 'QUIPS', 'MYLAR']
+[PASS] keys_ignored_after_game_over: rows=['HOMES', 'GAWKS', 'BUMPH', 'VEXED', 'QUIPS', 'MYLAR']
+[PASS] play_again_resets_and_sets_focus: grid cleared=True; document.activeElement.id='guesses' (rx.set_focus('guesses'))
+[PASS] hotkeys_work_after_reset: row0='VEX' after reset + 3 key presses
+[PASS] second_tab_independent_game: new context row0 before='' after typing 'quip'='QUIP'; first tab row0 still 'VEX'
+[PASS] npm_versions_recorded: {"@emotion/react": "11.14.0", "@radix-ui/themes": "3.3.0", "@react-router/dev": "8.3.1", "@react-router/fs-routes": "8.3.1", "@react-router/node": "8.3.1", "autoprefixer": "10.5.4", "isbot": "5.2.2", "lucide-react": "1.26.0", "postcss": "8.5.26", "postcss-import": "17.0.0", "react": "19.2.8", "react-dom": "19.2.8", "react-error-boundary": "6.1.2", "react-helmet": "6.1.0", "react-router": "8.3.1", "socket.io-client": "4.8.3", "sonner": "2.0.8", "universal-cookie": "8.1.2", "vite": "8.2.2"}
+[ANOMALY] browser_console_clean: 3 unexpected: [{"type": "error", "text": "[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET"}, {"type": "error", "text": "[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET"}, {"type": "error", "text": "[tab2] Failed to load resource: net::ERR_CONNECTION_RESET"}]
+[PASS] no_bad_http_responses: 0 non-environmental failures: []; 3 blocked Google-Fonts requests (environmental)
+[PASS] no_page_errors: 0: []
+
+UNEXPECTED CONSOLE: [
+  {
+    "type": "error",
+    "text": "[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+    "type": "error",
+    "text": "[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+    "type": "error",
+    "text": "[tab2] Failed to load resource: net::ERR_CONNECTION_RESET"
+  }
+]
+ALL CONSOLE TYPES: ["debug", "error", "info", "log"]
+BAD RESPONSES: [
+  {
+    "url": "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap",
+    "status": "FAILED:net::ERR_CONNECTION_RESET"
+  },
+  {
+    "url": "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap",
+    "status": "FAILED:net::ERR_CONNECTION_RESET"
+  },
+  {
+    "url": "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap",
+    "status": "FAILED:net::ERR_CONNECTION_RESET"
+  }
+]
+PAGE ERRORS: []
+SUMMARY: {"reflexle_page_loads": "pass", "global_hotkey_letters": "pass", "global_hotkey_backspace": "pass", "ctrl_backspace_deletes_one_letter": "anomaly", "toast_word_too_short": "pass", "invalid_word_shake_and_background_clear": "pass", "invalid_word_toast_dropped_by_app": "pass", "valid_guess_colours_row_and_keyboard": "pass", "duplicate_guess_rejected": "pass", "onscreen_keyboard_clicks": "pass", "onscreen_backspace_and_enter_buttons": "pass", "high_contrast_toggle": "pass", "color_mode_toggle": "pass", "state_survives_reload": "pass", "lost_game_reveals_word": "pass", "keys_ignored_after_game_over": "pass", "play_again_resets_and_sets_focus": "pass", "hotkeys_work_after_reset": "pass", "second_tab_independent_game": "pass", "npm_versions_recorded": "pass", "browser_console_clean": "anomaly", "no_bad_http_responses": "pass", "no_page_errors": "pass"}

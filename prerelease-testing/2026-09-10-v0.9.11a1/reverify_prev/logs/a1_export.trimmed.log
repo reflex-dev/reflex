@@ -1,0 +1,27 @@
+### vite/warning grep of reflex export --loglevel debug (a1)
+4:Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+22:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+44:Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+49:DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+123:Debug: vite v8.2.2 building client environment for production...
+126:Debug: rendering chunks...
+166:Debug: (!) Some chunks are larger than 500 kB after minification. Consider:
+168:Debug: - Use build.rolldownOptions.output.codeSplitting to improve chunking: 
+170:Debug: - Adjust chunk size limit for this warning via 
+171:build.chunkSizeWarningLimit.
+183:Debug: vite v8.2.2 building ssr environment for production...
+190:Debug: rendering chunks...
+
+### tail
+apps/reverify_prev/apps/rvapp/rvapp/__init__.py
+Debug: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/reverify_prev/apps/rvapp/backend.zip: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/reverify_prev/apps/rvapp/rvapp/rvapp.py
+Debug: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/reverify_prev/apps/rvapp/backend.zip: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/reverify_prev/apps/rvapp/.web/backend/stateful_pages.json
+Zipping Backend: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 7/7 0:00:00

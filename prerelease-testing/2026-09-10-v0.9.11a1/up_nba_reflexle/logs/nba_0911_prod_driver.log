@@ -1,0 +1,27 @@
+[PASS] nba_page_loads: title='NBA Data App' navbar_found=True
+[PASS] data_table_renders: visible_rows=10 first='Avery Bradley Boston Celtics 0 PG 25 6-2 180 Texas 7730337' avery_bradley=True
+[PASS] data_table_search: rows_after_search=2 rows=['Stephen Curry Golden State Warriors 30 PG 28 6-3 190 Davidson 11370786', 'Seth Curry Sacramento Kings 30 SG 25 6-2 185 Duke 947276']
+[PASS] data_table_sort: before=['Avery Bradley Boston Celtics 0 PG 25 6-2 180 Texas 7730337'] after=['Aaron Brooks Chicago Bulls 0 PG 31 6-0 161 Oregon 2250000']
+[PASS] data_table_pagination: page1=['Aaron Brooks Chicago Bulls 0 PG 31 6-0 161 Oregon 2250000'] page2=['Alex Len Phoenix Suns 21 C 22 7-1 260 Maryland 3807120']
+[PASS] plotly_two_figures_render: plot_count=2 fingerprints=[{"traces": 6, "points": 445, "titles": ["NBA Age/Salary plot"], "legend": ["PG", "SF", "SG", "PF", "C", "Overall Trendline"], "xticks": "20,25,30,35,40", "yticks": "0,5M,10M,15M,20M", "width": 638, "svglen": 106417}, {"traces": 1, "points": 22, "titles": ["Age/Salary Distribution"], "legend": [], "xticks": "20,25,30,35,40", "yticks": "0,50M,100M,150M,200M,250M", "width": 638, "svglen": 12863}]
+[PASS] plotly_titles: titles=['NBA Age/Salary plot', 'Age/Salary Distribution']
+[PASS] plotly_scatter_trendline_traces: scatter traces=6 legend=['PG', 'SF', 'SG', 'PF', 'C', 'Overall Trendline'] (5 position symbols + overall lowess trendline expected)
+[PASS] select_position_filters_plots: traces 6->2 legend=['PG', 'Overall Trendline'] fp 13420583d218->b31dfc19861b
+[PASS] select_college_filters_plots: traces=2 points=4 fp=62e0281c877c
+[PASS] slider_age_commit: thumbs_on_page=4 badges ['Min Age: 18Max Age: 50', 'Min Age: 18Max Age: 50'] -> ['Min Age: 23Max Age: 50', 'Min Age: 23Max Age: 50']
+[PASS] slider_salary_commit: badges ['Min Sal: 0MMax Sal: 25M', 'Min Sal: 0MMax Sal: 25M'] -> ['Min Sal: 9MMax Sal: 25M', 'Min Sal: 9MMax Sal: 25M']; aria-valuenow=['23', '50', '9999996', '25000000']; plot traces=6
+[PASS] empty_dataframe_bare_figure: fingerprints=[{"traces": 0, "points": 0, "titles": [], "legend": [], "xticks": "0,2,4,6", "yticks": "\u22121,0,1,2,3,4", "width": 638, "svglen": 8601}, {"traces": 0, "points": 0, "titles": [], "legend": [], "xticks": "0,2,4,6", "yticks": "\u22121,0,1,2,3,4", "width": 638, "svglen": 8601}] (expect traces=0 on both, no crash)
+[PASS] recover_from_empty_dataframe: traces after restore=6
+[PASS] color_mode_toggle: documentElement.class 'light' -> 'dark'; plot .bg style='stroke: rgb(68, 68, 68); stroke-opacity: 1; fill: rgb(17, 17, 17); fill-opacity: 1; stroke-width: 0px;' (plotly figures are built with the default template, so they stay light - app behaviour)
+[PASS] plotly_use_resize_handler: plot widths [638, 638] -> [704, 704] after viewport 1500->800
+[PASS] reload_rehydrates: traces=6 rows=10
+[PASS] npm_versions_recorded: {"@emotion/react": "11.14.0", "@radix-ui/themes": "3.3.0", "@react-router/dev": "8.3.1", "@react-router/fs-routes": "8.3.1", "@react-router/node": "8.3.1", "gridjs": "6.2.0", "gridjs-react": "6.1.1", "lucide-react": "1.26.0", "plotly.js": "3.7.0", "react": "19.2.8", "react-dom": "19.2.8", "react-error-boundary": "6.1.2", "react-helmet": "6.1.0", "react-plotly.js": "4.1.0", "react-router": "8.3.1", "sonner": "2.0.8", "vite": "8.2.2"}
+[PASS] browser_console_clean: 0 unexpected console error/warning(s): []
+[PASS] no_bad_http_responses: 0 failed/4xx-5xx: []
+[PASS] no_page_errors: 0: []
+
+UNEXPECTED CONSOLE: []
+ALL CONSOLE TYPES: ["log"]
+BAD RESPONSES: []
+PAGE ERRORS: []
+SUMMARY: {"nba_page_loads": "pass", "data_table_renders": "pass", "data_table_search": "pass", "data_table_sort": "pass", "data_table_pagination": "pass", "plotly_two_figures_render": "pass", "plotly_titles": "pass", "plotly_scatter_trendline_traces": "pass", "select_position_filters_plots": "pass", "select_college_filters_plots": "pass", "slider_age_commit": "pass", "slider_salary_commit": "pass", "empty_dataframe_bare_figure": "pass", "recover_from_empty_dataframe": "pass", "color_mode_toggle": "pass", "plotly_use_resize_handler": "pass", "reload_rehydrates": "pass", "npm_versions_recorded": "pass", "browser_console_clean": "pass", "no_bad_http_responses": "pass", "no_page_errors": "pass"}

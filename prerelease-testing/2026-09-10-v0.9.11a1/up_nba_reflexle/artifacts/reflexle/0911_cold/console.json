@@ -1,0 +1,74 @@
+[
+  {
+    "type": "error",
+    "text": "[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+    "type": "log",
+    "text": "[reflexle] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[reflexle] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[reflexle] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[reflexle] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[reflexle] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "error",
+    "text": "[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+    "type": "log",
+    "text": "[reflexle] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[reflexle] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[reflexle] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[reflexle] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "error",
+    "text": "[tab2] Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+    "type": "log",
+    "text": "[tab2] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[tab2] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[tab2] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[tab2] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[tab2] Disconnect websocket on pagehide"
+  },
+  {
+    "type": "log",
+    "text": "[reflexle] Disconnect websocket on pagehide"
+  }
+]

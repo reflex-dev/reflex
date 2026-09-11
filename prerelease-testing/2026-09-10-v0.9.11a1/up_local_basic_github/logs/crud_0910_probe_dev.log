@@ -1,0 +1,475 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ulbg_crud_b0910/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='basic_crud', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///reflex.db', async_db_url=None, redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4
+dc3b5b67/scratchpad/reflex_dirs/basic_crud-b0910/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'db_url', 'plugins', 
+'loglevel'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.10.post2 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/ulbg_crud_b0910/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=5504
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9904
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.037 seconds
+Debug: Latest version of reflex: 0.9.10.post2
+Debug: Checking if Frontend port: 5504 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 5504 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 5504 is not in use.
+Debug: Checking if Backend port: 9904 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9904 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9904 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.10s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss-import@16.1.1', 'autoprefixer@10.5.4', 'postcss@8.5.23', 
+'@emotion/react@11.14.0', 'vite@8.2.0', '@react-router/dev@8.3.0', 
+'@react-router/fs-routes@8.3.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react-router@8.3.1"
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss-import@16.1.1
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.23
+Debug: installed @emotion/react@11.14.0
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: 
+Debug: 140 packages installed [98.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'react-dom@19.2.8', 'lucide-react@1.26.0', '@react-router/node@8.3.0', 
+'rehype-katex@7.0.1', 'react-markdown@10.1.0', 'rehype-raw@7.0.0', 
+'universal-cookie@8.1.2', 'remark-math@6.0.0', 'sonner@2.0.7', 
+'react-router@8.3.0', 'react-syntax-highlighter@16.1.1', 
+'react-error-boundary@6.1.2', 'isbot@5.2.1', 'react-helmet@6.1.0', 
+'react-debounce-input@3.3.0', 'rehype-unwrap-images@1.0.0', 
+'socket.io-client@4.8.3', 'react@19.2.8', 'remark-gfm@4.0.1', 
+'@radix-ui/themes@3.3.0']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [125]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: 
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-dom@19.2.8
+Debug: installed lucide-react@1.26.0
+Debug: installed @react-router/node@8.3.0
+Debug: installed rehype-katex@7.0.1
+Debug: installed react-markdown@10.1.0
+Debug: installed rehype-raw@7.0.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed remark-math@6.0.0
+Debug: installed sonner@2.0.7
+Debug: installed react-router@8.3.0
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: installed react-error-boundary@6.1.2
+Debug: installed isbot@5.2.1
+Debug: installed react-helmet@6.1.0
+Debug: installed react-debounce-input@3.3.0
+Debug: installed rehype-unwrap-images@1.0.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed react@19.2.8
+Debug: installed remark-gfm@4.0.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: 
+Debug: 239 packages installed [2.50s]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_local_basic_github/basic_crud-b0910/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_local_basic_github/basic_crud-b0910/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 2.62s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/apps/up_local_basic_github/basic_crud-b0910/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_local_basic_github/basic_crud-b0910/alembic.ini', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_local_basic_github/basic_crud-b0910/assets', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_local_basic_github/basic_crud-b0910/README.md', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_local_basic_github/basic_crud-b0910/basic_crud', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_local_basic_github/basic_crud-b0910/logs', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_local_basic_github/basic_crud-b0910/reflex.db', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_local_basic_github/basic_crud-b0910/alembic', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_local_basic_github/basic_crud-b0910/rxconfig.py']
+[INFO] Starting granian (main PID: 31231)
+[INFO] Listening at: http://0.0.0.0:9904
+[INFO] Spawning worker-1 with PID: 31280
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:5504/
+App running at: http://localhost:5504/
+Backend running at: http://0.0.0.0:9904
+Debug:   ➜  Network: http://192.0.2.2:5504/  eth0
+Debug: 8:32:46 AM [vite] (ssr) connected.
+[ERROR] Application callable raised an exception
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/granian/_futures.py", line 15, in future_watcher
+    await inner(watcher.scope, watcher.proto)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/routing.py", line 455, in handle
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/reflex/app.py", line 711, in context_middleware
+    await app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/up_local_basic_github/basic_crud-b0910/basic_crud/api.py", line 49, in add_product
+    session.commit()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2035, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1316, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1290, in _prepare_impl
+    self.session.flush()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4353, in flush
+    self._flush(objects)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4488, in _flush
+    with util.safe_reraise():
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 122, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4449, in _flush
+    flush_context.execute()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 465, in execute
+    rec.execute(self)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 641, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 94, in save_obj
+    _emit_insert_statements(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 1234, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: product.code
+[SQL: INSERT INTO product (code, created, updated, label, image, quantity, category, seller, sender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('API-1', '2026-09-11 08:32:56.588003', '2026-09-11 08:32:56.588003', 'Duplicate', '/favicon.ico', 7, 'tools', 'acme', 'depot')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+Debug: Cancelling the previous unfinished 
+reflex___state____state.reflex___state____on_load_internal_state.on_load_interna
+l chain for token e2083604-441c-420b-90fe-907843ed8322, superseded by a newer 
+invocation.
+[ERROR] Application callable raised an exception
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/granian/_futures.py", line 15, in future_watcher
+    await inner(watcher.scope, watcher.proto)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/routing.py", line 690, in app
+    await route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/routing.py", line 455, in handle
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/reflex/app.py", line 711, in context_middleware
+    await app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 1780, in handle
+    await self.original_router.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 2789, in handle
+    await included_router._handle_selected(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 1800, in _handle_selected
+    await original_route.handle(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 1279, in handle
+    await app(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/fastapi/routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/up_local_basic_github/basic_crud-b0910/basic_crud/api.py", line 49, in add_product
+    session.commit()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2035, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1316, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1290, in _prepare_impl
+    self.session.flush()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4353, in flush
+    self._flush(objects)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4488, in _flush
+    with util.safe_reraise():
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 122, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4449, in _flush
+    flush_context.execute()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 465, in execute
+    rec.execute(self)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 641, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 94, in save_obj
+    _emit_insert_statements(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 1234, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ulbg_crud_b0910/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: product.code
+[SQL: INSERT INTO product (code, created, updated, label, image, quantity, category, seller, sender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('API-1', '2026-09-11 08:33:19.385028', '2026-09-11 08:33:19.385028', 'Duplicate', '/favicon.ico', 7, 'tools', 'acme', 'depot')]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+Warning: Attempting to send delta to disconnected client 
+'3ab6f18e-b438-496d-9b2e-f55aa066a2b1'
+Debug: Cancelling the previous unfinished 
+reflex___state____state.reflex___state____on_load_internal_state.on_load_interna
+l chain for token 3ab6f18e-b438-496d-9b2e-f55aa066a2b1, superseded by a newer 
+invocation.
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:5504/
+  ➜  Network: http://192.0.2.2:5504/  eth0
+8:32:46 AM [vite] (ssr) connected.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

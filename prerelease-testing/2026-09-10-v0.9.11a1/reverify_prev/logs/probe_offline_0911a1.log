@@ -1,0 +1,71 @@
+### reflex.__file__ = /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py
+### reflex version = 0.9.11a1
+
+===== F014 rx.Model(table=True) without sqlmodel =====
+F014 RESULT: TypeError: Item.__init_subclass__() takes no keyword arguments
+F014 helpful_db_hint=False
+
+===== F024 CachedVarOperation masks AttributeError in cached computation =====
+F024 RESULT: VarAttributeError: Attribute _cached_get_all_var_data not found.
+F024 masked=True chained_cause=None
+F024 real_error_visible=False
+
+===== F020 rx.plotly id prop -> divId =====
+F020 PROBE ERROR:
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/reverify_prev/repros/probe_offline.py", line 112, in <module>
+    import plotly.graph_objects as go
+ModuleNotFoundError: No module named 'plotly'
+
+===== F017 bundle_library + subpath rewrite =====
+F017 default bundled=['react', '@emotion/react', '$/utils/context', '$/utils/state']
+F017 after bundle_library: lucide-react present=True
+F017b bare subpath import line: ['import LucideApple from "lucide-react/dist/esm/icons/apple.mjs"']
+F017b subpath_not_rewritten=True
+F017a user registration wiped by reset_bundled_libraries=True
+
+===== SWEEP S002/S006 PEP695 alias (typing_extensions backport on 3.11) =====
+S002 RESULT: alias setattr OK
+S006 RESULT: uncalled alias-annotated handler OK
+
+===== SWEEP S007 upload filename sanitizer =====
+S007 '..' -> 'upload'
+S007 './../.' -> 'upload'
+S007 '..\\' -> 'upload'
+S007 '/..' -> 'upload'
+S007 '...' -> 'upload'
+S007 '../x.txt' -> 'x.txt'
+S007 'a/../b' -> 'a/b'
+
+===== SWEEP S027 console warning bracket escaping =====
+Event handler on_submit expects (dict[str, typing.Any]) -> () but got (Pair2[str, str]) -> () as annotated in FormState.submit_alias instead. This may lead to unexpected behavior but is intentionally ignored for on_submit.
+S027 captured warning chars: has_backslash_bracket=False
+
+===== SWEEP S010 library='react-router-dom' custom component =====
+S010 react-router-dom: ValueError: The component `BadDomLink` references `react-router-dom`, but React Router 8 removed the `react-router-dom` package and Reflex no longer installs it. Use `library = "react-router"` instead, or `"react
+S010 react-router: BUILT (no error)
+
+===== SWEEP S008/S009 deprecation shims =====
+DeprecationWarning: reflex_base.components.dynamic.bundled_libraries has been 
+deprecated in version 0.9.9. The bundled library list now lives on the active 
+RegistrationContext. Use RegistrationContext.ensure_context().bundled_libraries 
+to read it, or bundle_library()/reset_bundled_libraries() to modify it. It will 
+be completely removed in 1.0. (repros/probe_offline.py:304)
+SHIM dynamic.bundled_libraries: OK list warnings=0 []
+DeprecationWarning: reflex_base.components.dynamic.DEFAULT_BUNDLED_LIBRARIES has
+been deprecated in version 0.9.9. Every RegistrationContext starts with these 
+libraries bundled; call reset_bundled_libraries() to restore them on the active 
+context. It will be completely removed in 1.0. (repros/probe_offline.py:308)
+SHIM dynamic.DEFAULT_BUNDLED_LIBRARIES: OK list warnings=0 []
+DeprecationWarning: reflex.page.DECORATED_PAGES has been deprecated in version 
+0.9.9. Decorated pages now live on the active RegistrationContext. Use 
+RegistrationContext.ensure_context().decorated_pages to read the list of 
+(render_fn, kwargs) entries. It will be completely removed in 1.0. 
+(repros/probe_offline.py:316)
+SHIM reflex.page.DECORATED_PAGES: OK defaultdict warnings=0 []
+DeprecationWarning: get_config(reload=True) has been deprecated in version 
+0.9.9. Use reload_config() to force a fresh load of the config. It will be 
+completely removed in 1.0. (repros/probe_offline.py:322)
+SHIM get_config(reload=True): OK Config warnings=0 []
+
+### probe_offline done

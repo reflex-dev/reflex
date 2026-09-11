@@ -1,0 +1,107 @@
+[
+  {
+    "name": "nba_page_loads",
+    "status": "pass",
+    "details": "title='NBA Data App' navbar_found=True"
+  },
+  {
+    "name": "data_table_renders",
+    "status": "pass",
+    "details": "visible_rows=10 first='Avery Bradley Boston Celtics 0 PG 25 6-2 180 Texas 7730337' avery_bradley=True"
+  },
+  {
+    "name": "data_table_search",
+    "status": "pass",
+    "details": "rows_after_search=2 rows=['Stephen Curry Golden State Warriors 30 PG 28 6-3 190 Davidson 11370786', 'Seth Curry Sacramento Kings 30 SG 25 6-2 185 Duke 947276']"
+  },
+  {
+    "name": "data_table_sort",
+    "status": "pass",
+    "details": "before=['Avery Bradley Boston Celtics 0 PG 25 6-2 180 Texas 7730337'] after=['Aaron Brooks Chicago Bulls 0 PG 31 6-0 161 Oregon 2250000']"
+  },
+  {
+    "name": "data_table_pagination",
+    "status": "pass",
+    "details": "page1=['Aaron Brooks Chicago Bulls 0 PG 31 6-0 161 Oregon 2250000'] page2=['Alex Len Phoenix Suns 21 C 22 7-1 260 Maryland 3807120']"
+  },
+  {
+    "name": "plotly_two_figures_render",
+    "status": "pass",
+    "details": "plot_count=2 fingerprints=[{\"traces\": 6, \"points\": 445, \"titles\": [\"NBA Age/Salary plot\"], \"legend\": [\"PG\", \"SF\", \"SG\", \"PF\", \"C\", \"Overall Trendline\"], \"xticks\": \"20,25,30,35,40\", \"yticks\": \"0,5M,10M,15M,20M\", \"width\": 638, \"svglen\": 106417}, {\"traces\": 1, \"points\": 22, \"titles\": [\"Age/Salary Distribution\"], \"legend\": [], \"xticks\": \"20,25,30,35,40\", \"yticks\": \"0,50M,100M,150M,200M,250M\", \"width\": 638, \"svglen\": 12863}]"
+  },
+  {
+    "name": "plotly_titles",
+    "status": "pass",
+    "details": "titles=['NBA Age/Salary plot', 'Age/Salary Distribution']"
+  },
+  {
+    "name": "plotly_scatter_trendline_traces",
+    "status": "pass",
+    "details": "scatter traces=6 legend=['PG', 'SF', 'SG', 'PF', 'C', 'Overall Trendline'] (5 position symbols + overall lowess trendline expected)"
+  },
+  {
+    "name": "select_position_filters_plots",
+    "status": "pass",
+    "details": "traces 6->2 legend=['PG', 'Overall Trendline'] fp 13420583d218->b31dfc19861b"
+  },
+  {
+    "name": "select_college_filters_plots",
+    "status": "pass",
+    "details": "traces=2 points=4 fp=62e0281c877c"
+  },
+  {
+    "name": "slider_age_commit",
+    "status": "pass",
+    "details": "thumbs_on_page=4 badges ['Min Age: 18Max Age: 50', 'Min Age: 18Max Age: 50'] -> ['Min Age: 23Max Age: 50', 'Min Age: 23Max Age: 50']"
+  },
+  {
+    "name": "slider_salary_commit",
+    "status": "pass",
+    "details": "badges ['Min Sal: 0MMax Sal: 25M', 'Min Sal: 0MMax Sal: 25M'] -> ['Min Sal: 9MMax Sal: 25M', 'Min Sal: 9MMax Sal: 25M']; aria-valuenow=['23', '50', '9999996', '25000000']; plot traces=6"
+  },
+  {
+    "name": "empty_dataframe_bare_figure",
+    "status": "pass",
+    "details": "fingerprints=[{\"traces\": 0, \"points\": 0, \"titles\": [], \"legend\": [], \"xticks\": \"0,2,4,6\", \"yticks\": \"\\u22121,0,1,2,3,4\", \"width\": 638, \"svglen\": 8601}, {\"traces\": 0, \"points\": 0, \"titles\": [], \"legend\": [], \"xticks\": \"0,2,4,6\", \"yticks\": \"\\u22121,0,1,2,3,4\", \"width\": 638, \"svglen\": 8601}] (expect traces=0 on both, no crash)"
+  },
+  {
+    "name": "recover_from_empty_dataframe",
+    "status": "pass",
+    "details": "traces after restore=6"
+  },
+  {
+    "name": "color_mode_toggle",
+    "status": "pass",
+    "details": "documentElement.class 'light' -> 'dark'; plot .bg style='stroke: rgb(68, 68, 68); stroke-opacity: 1; fill: rgb(17, 17, 17); fill-opacity: 1; stroke-width: 0px;' (plotly figures are built with the default template, so they stay light - app behaviour)"
+  },
+  {
+    "name": "plotly_use_resize_handler",
+    "status": "pass",
+    "details": "plot widths [638, 638] -> [704, 704] after viewport 1500->800"
+  },
+  {
+    "name": "reload_rehydrates",
+    "status": "pass",
+    "details": "traces=6 rows=10"
+  },
+  {
+    "name": "npm_versions_recorded",
+    "status": "pass",
+    "details": "{\"@emotion/react\": \"11.14.0\", \"@radix-ui/themes\": \"3.3.0\", \"@react-router/dev\": \"8.3.0\", \"@react-router/fs-routes\": \"8.3.0\", \"@react-router/node\": \"8.3.0\", \"gridjs\": \"6.2.0\", \"gridjs-react\": \"6.1.1\", \"lucide-react\": \"1.26.0\", \"plotly.js\": \"3.7.0\", \"react\": \"19.2.8\", \"react-dom\": \"19.2.8\", \"react-error-boundary\": \"6.1.2\", \"react-helmet\": \"6.1.0\", \"react-plotly.js\": \"4.0.0\", \"react-router\": \"8.3.0\", \"sonner\": \"2.0.7\", \"vite\": \"8.2.0\"}"
+  },
+  {
+    "name": "browser_console_clean",
+    "status": "pass",
+    "details": "0 unexpected console error/warning(s): []"
+  },
+  {
+    "name": "no_bad_http_responses",
+    "status": "pass",
+    "details": "0 failed/4xx-5xx: []"
+  },
+  {
+    "name": "no_page_errors",
+    "status": "pass",
+    "details": "0: []"
+  }
+]

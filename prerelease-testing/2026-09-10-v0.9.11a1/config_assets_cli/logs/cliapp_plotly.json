@@ -1,0 +1,23 @@
+{
+  "url": "http://localhost:5300/",
+  "title": "Cliapp | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 2500",
+    "click: '#inc'",
+    "expect_text: 'count=1'",
+    "click: '#inc'",
+    "expect_text: 'doubled=4'",
+    "wait: 1200",
+    "screenshot: 'shots/cliapp_plotly.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "cliapp\n\ncount=2\n\ndoubled=4\n\ninc\nabout\n0.5\n1\n1.5\n2\n2.5\n3\n3.5\n0\n0.5\n1\n1.5\n2\n2.5\n3"
+}

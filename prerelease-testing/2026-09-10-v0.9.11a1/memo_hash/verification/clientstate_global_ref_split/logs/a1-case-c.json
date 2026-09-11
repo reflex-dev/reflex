@@ -1,0 +1,22 @@
+{
+  "url": "http://localhost:6048/c",
+  "title": "Minrepro | C",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "expect_text: 'c0'",
+    "click: '#c-btn'",
+    "wait: 700",
+    "screenshot: 'shots/c-after.png'"
+  ],
+  "action_error": "TimeoutError: Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"text=c-clicked\") to be visible\n",
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [
+    "setCs_c is not defined"
+  ],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "C\nc0set-c"
+}

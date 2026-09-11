@@ -1,0 +1,7 @@
+{
+  "react": "19.2.8",
+  "react-dom": "19.2.8",
+  "react-router": "8.3.0",
+  "recharts": "3.8.1",
+  "vite": "8.2.0"
+}

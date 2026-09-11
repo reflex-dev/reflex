@@ -1,0 +1,5 @@
+[{"expect_text": "e0"},
+ {"click": "#e-btn"},
+ {"wait": 700},
+ {"screenshot": "shots/e-after.png"},
+ {"expect_text": "e-clicked"}]

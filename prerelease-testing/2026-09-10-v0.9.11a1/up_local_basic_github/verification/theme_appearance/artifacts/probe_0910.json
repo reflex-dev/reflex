@@ -1,0 +1,60 @@
+{
+  "info": {
+    "reflex": "0.9.10.post2",
+    "reflex_file": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py",
+    "radix": "0.9.8"
+  },
+  "cases": {
+    "appearance='dark'": {
+      "component_appearance_attr": "\"dark\"",
+      "rendered_props": [
+        "css:{...theme.styles.global[':root'], ...theme.styles.global.body}"
+      ],
+      "appearance_in_props": false,
+      "full_render_str": "{'name': 'RadixThemesTheme', 'props': [\"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\"], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+    },
+    "color_mode='dark'": {
+      "component_appearance_attr": "\"dark\"",
+      "rendered_props": [
+        "css:{...theme.styles.global[':root'], ...theme.styles.global.body}"
+      ],
+      "appearance_in_props": false,
+      "full_render_str": "{'name': 'RadixThemesTheme', 'props': [\"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\"], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+    },
+    "appearance=State.var": {
+      "component_appearance_attr": "reflex___state____state____main______probe_state.ap_rx_state_",
+      "rendered_props": [
+        "css:{...theme.styles.global[':root'], ...theme.styles.global.body}"
+      ],
+      "appearance_in_props": false,
+      "full_render_str": "{'name': 'RadixThemesTheme', 'props': [\"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\"], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+    },
+    "accent_color='red' CONTROL": {
+      "component_appearance_attr": "None",
+      "rendered_props": [
+        "accentColor:\"red\"",
+        "css:{...theme.styles.global[':root'], ...theme.styles.global.body}"
+      ],
+      "appearance_in_props": false,
+      "full_render_str": "{'name': 'RadixThemesTheme', 'props': ['accentColor:\"red\"', \"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\"], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+    },
+    "has_background=False CONTROL": {
+      "component_appearance_attr": "None",
+      "rendered_props": [
+        "css:{...theme.styles.global[':root'], ...theme.styles.global.body}",
+        "hasBackground:false"
+      ],
+      "appearance_in_props": false,
+      "full_render_str": "{'name': 'RadixThemesTheme', 'props': [\"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\", 'hasBackground:false'], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+    },
+    "appearance='dark'+accent": {
+      "component_appearance_attr": "\"dark\"",
+      "rendered_props": [
+        "accentColor:\"red\"",
+        "css:{...theme.styles.global[':root'], ...theme.styles.global.body}"
+      ],
+      "appearance_in_props": false,
+      "full_render_str": "{'name': 'RadixThemesTheme', 'props': ['accentColor:\"red\"', \"css:{...theme.styles.global[':root'], ...theme.styles.global.body}\"], 'children': [{'name': 'RadixThemesText', 'props': ['as:\"p\"'], 'children': [{'contents': '\"hi\"'}]}]}"
+    }
+  }
+}

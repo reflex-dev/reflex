@@ -1,0 +1,82 @@
+[
+  {
+    "name": "load_index",
+    "status": "pass",
+    "details": "#greeting visible=True"
+  },
+  {
+    "name": "heading",
+    "status": "pass",
+    "details": "heading text present"
+  },
+  {
+    "name": "hello_initial",
+    "status": "pass",
+    "details": "h1='Hello world!'"
+  },
+  {
+    "name": "forwardref_props",
+    "status": "pass",
+    "details": "{'tag': 'DIV', 'title': 'Click to change name. Right-click to toggle caps.', 'bg': 'rgb(255, 239, 213)', 'children': 1, 'firstChild': 'H1'}"
+  },
+  {
+    "name": "color_mode_cond_light",
+    "status": "pass",
+    "details": "bg=rgb(255, 239, 213) expect rgb(255, 239, 213)"
+  },
+  {
+    "name": "rightclick_caps_on",
+    "status": "pass",
+    "details": "h1='HELLO WORLD!'"
+  },
+  {
+    "name": "event_passthrough_console_log",
+    "status": "pass",
+    "details": "1 console.log from on_context_menu"
+  },
+  {
+    "name": "rightclick_caps_off",
+    "status": "pass",
+    "details": "h1='Hello world!'"
+  },
+  {
+    "name": "popover_opens",
+    "status": "pass",
+    "details": "input visible=True"
+  },
+  {
+    "name": "live_state_var",
+    "status": "pass",
+    "details": "h1='Hello reflex!'"
+  },
+  {
+    "name": "popover_escape_reverts",
+    "status": "pass",
+    "details": "closed=True h1='Hello world!'"
+  },
+  {
+    "name": "form_submit_persists",
+    "status": "pass",
+    "details": "h1='Hello alpha!' popover_open=False"
+  },
+  {
+    "name": "color_mode_cond_dark",
+    "status": "pass",
+    "details": "bg=rgb(102, 51, 153) expect rgb(102, 51, 153)"
+  },
+  {
+    "name": "scroll_to_greeting",
+    "status": "pass",
+    "details": "scrollY 1092 -> 352, greeting_in_view=True"
+  },
+  {
+    "name": "reload_renders",
+    "status": "pass",
+    "details": "h1='Hello alpha!' (value not asserted)"
+  },
+  {
+    "name": "asset_served_note",
+    "status": "pass",
+    "details": "GET /public/hello.jsx -> 200 (dev server does not have to serve the raw path)"
+  }
+]

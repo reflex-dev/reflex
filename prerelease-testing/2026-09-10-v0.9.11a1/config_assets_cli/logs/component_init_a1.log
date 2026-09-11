@@ -1,0 +1,15 @@
+─────────────────── Initializing reflex-test-widget project ────────────────────
+Info: Populating pyproject.toml with package name: reflex-test-widget
+Info: Initializing the component directory: custom_components/reflex_test_widget
+Info: Creating app for testing: test_widget_demo
+──────────────────────── Initializing test_widget_demo ─────────────────────────
+Info: Initializing the web directory.
+Info: Initializing the app directory.
+Success: Initialized test_widget_demo using the blank template. Install 
+dependencies from `requirements.txt` with `uv pip install -r requirements.txt` 
+(or your preferred installer) before running `uv run reflex run`.
+─────────────── Installing reflex-test-widget in editable mode. ────────────────
+
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/smoke/bin/python: No module named pip
+

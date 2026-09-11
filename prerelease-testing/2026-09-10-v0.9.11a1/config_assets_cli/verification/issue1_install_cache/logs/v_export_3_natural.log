@@ -1,0 +1,179 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='vapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=10400, backend_path='', api_url='http://localhost:10400', 
+deploy_url='http://localhost:3000', backend_host='127.0.0.1', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=['http://localhost:6001', 'http://localhost:10400'], 
+vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'cors_allowed_origins', 'telemetry_enabled', 
+'loglevel', 'app_name', 'backend_port', 'backend_host'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/smoke/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+────────────── Compiling production app and preparing for export. ──────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.05s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'postcss@8.5.26', 'postcss-import@17.0.0', 
+'autoprefixer@10.5.4', '@react-router/fs-routes@8.3.1', 
+'@emotion/react@11.14.0', '@react-router/dev@8.3.1', 'vite@8.2.2']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed postcss@8.5.26
+Debug: installed postcss-import@17.0.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-helmet@6.1.0', 'universal-cookie@8.1.2', 
+'react-dom@19.2.8', 'lucide-react@1.26.0', 'socket.io-client@4.8.3', 
+'isbot@5.2.2', '@radix-ui/themes@3.3.0', 'react-error-boundary@6.1.2', 
+'@react-router/node@8.3.1', 'react@19.2.8', 'sonner@2.0.8', 
+'react-router@8.3.1']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed react-helmet@6.1.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-dom@19.2.8
+Debug: installed lucide-react@1.26.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed isbot@5.2.2
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed react@19.2.8
+Debug: installed sonner@2.0.8
+Debug: installed react-router@8.3.1
+Debug: 
+Debug: [10.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/verify2_config_assets_cli_0/vapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/verify2_config_assets_cli_0/vapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 
+'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 413 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                             2.69 kB │ 
+gzip:  0.58 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-CAAQa7UI.js                   0.31 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_404_._index-BS4Ybev6.js                 0.41 kB │ 
+gzip:  0.29 kB
+Debug: build/client/assets/_index-CBdI045f.js                       0.82 kB │ 
+gzip:  0.49 kB
+Debug: build/client/assets/emotion-react.browser.esm-Do-RBW0K.js   20.71 kB │ 
+gzip:  8.12 kB
+Debug: build/client/assets/errorBoundaries-DIYo_grw.js             36.81 kB │ 
+gzip: 12.78 kB
+Debug: build/client/assets/components-Blt2PyNA.js                  84.87 kB │ 
+gzip: 28.19 kB
+Debug: build/client/assets/button-CAk3vP97.js                     143.66 kB │ 
+gzip: 43.51 kB
+Debug: build/client/assets/entry.client-5UErbQKK.js               182.33 kB │ 
+gzip: 57.70 kB
+Debug: build/client/assets/root-CyYWu25E.js                       304.98 kB │ 
+gzip: 85.88 kB
+Debug: 
+Debug: ✓ built in 1.83s
+Debug: vite v8.2.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - *
+Debug: ✓ 25 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.80 kB │ 
+gzip:  0.31 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-CAAQa7UI.js                 0.31 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     42.60 kB │ 
+gzip: 13.22 kB
+Debug: 
+Debug: ✓ built in 551ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/verify2_config_assets_cli_0/vapp/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/apps/verify2_config_assets_cli_0/vapp/.web/build/client'), 'gzip']

@@ -1,0 +1,2266 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='memoapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'telemetry_enabled', 'loglevel'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/smoke/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=5340
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9740
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 5340 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 5340 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 5340 is not in use.
+Debug: Checking if Backend port: 9740 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9740 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9740 is not in use.
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:12)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:26)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.14s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [15.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [14.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [11.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.07s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/apps/memo_hash/memoapp/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/memo_hash/memoapp/assets', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/memo_hash/memoapp/memoapp', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/memo_hash/memoapp/rxconfig.py']
+[INFO] Starting granian (main PID: 24452)
+[INFO] Listening at: http://0.0.0.0:9740
+[INFO] Spawning worker-1 with PID: 24482
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:12)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:26)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: BE Evaluating stateful page: samename
+Debug: BE Evaluating stateful page: foreach
+Debug: BE Evaluating stateful page: page2
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:5340/
+App running at: http://localhost:5340/
+Backend running at: http://0.0.0.0:9740
+Debug:   ➜  Network: http://192.0.2.2:5340/  eth0
+Debug: 5:04:30 AM [vite] (ssr) connected.
+Debug: 5:04:33 AM [vite] (client) [console.error] In HTML, <p> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >         <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug: 
+Debug: 5:04:33 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<p>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:33 AM [vite] (client) [console.error] In HTML, <section> cannot be a
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   <ErrorBoundary>
+Debug:                     <m fallbackRender={function fallbackRender} 
+onError={function}>
+Debug:                       <RadixThemesColorModeProvider>
+Debug:                         <MemoizedToastProvider>
+Debug:                           <Toaster closeButton={false} expand={true} 
+position="bottom-right" richColors={true} ...>
+Debug: >                           <section
+Debug: >                             ref={null}
+Debug: >                             aria-label="Notifications alt+T"
+Debug: >                             tabIndex={-1}
+Debug: >                             aria-live="polite"
+Debug: >                             aria-relevant="additions text"
+Debug: >                             aria-atomic="false"
+Debug: >                             suppressHydrationWarning={true}
+Debug: >                             data-react-aria-top-layer={true}
+Debug: >                           >
+Debug:                         ...
+Debug: 
+Debug: 5:04:33 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<section>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:33 AM [vite] (client) [console.error] In HTML, <div> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   ...
+Debug:                     <ThemeRoot accentColor="blue" className="css-0" 
+ref={null}>
+Debug:                       <ThemeImpl className="css-0" ref={null} 
+isRoot={true} hasBackground={true} appearance="inherit" ...>
+Debug:                         <div data-is-root-theme="true" 
+data-accent-color="blue" data-gray-color="slate" ...>
+Debug:                           <DefaultOverlayComponents>
+Debug:                             <EmotionCssPropInternal css={{position:"...",
+...}} title={"Connecti..."} ...>
+Debug:                               <Insertion>
+Debug: >                             <div title={"Connection Error: "} 
+className="css-17rg0dp">
+Debug:                             ...
+Debug:                           ...
+Debug: 
+Debug: 5:04:33 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<div>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:33 AM [vite] (client) [Unhandled error] Error: Hydration failed 
+because the server rendered HTML didn't match the client. As a result this tree 
+will be regenerated on the client. This can happen if a SSR-ed Client Component 
+used:
+Debug: 
+Debug: - A server/client branch `if (typeof window !== 'undefined')`.
+Debug: - Variable input such as `Date.now()` or `Math.random()` which changes 
+each time it's called.
+Debug: - Date formatting in a user's locale which doesn't match the server.
+Debug: - External changing data without sending a snapshot of it along with the 
+HTML.
+Debug: - Invalid HTML tag nesting.
+Debug: 
+Debug: It can also happen if the client has a browser extension installed which 
+messes with the HTML before React loaded.
+Debug: 
+Debug: https://react.dev/link/hydration-mismatch
+Debug:  > throwOnHydrationMismatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:5238:10
+Debug:  > beginWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:12027:16
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > performUnitOfWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+Debug:  > workLoopConcurrentByScheduler 
+node_modules/react-dom/cjs/react-dom-client.development.js:17635:8
+Debug:  > renderRootConcurrent 
+node_modules/react-dom/cjs/react-dom-client.development.js:17617:14
+Debug:  > performWorkOnRoot 
+node_modules/react-dom/cjs/react-dom-client.development.js:16503:10
+Debug:  > performWorkOnRootViaSchedulerTask 
+node_modules/react-dom/cjs/react-dom-client.development.js:18957:6
+Debug:  > MessagePort.performWorkUntilDeadline 
+node_modules/scheduler/cjs/scheduler.development.js:45:47
+Debug: 
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of /public/memo_a.css, use /memo_a.css.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of /public/memo_b.css, use /memo_b.css.
+Debug: 5:04:36 AM [vite] (client) [console.error] In HTML, <p> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >         <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug: 
+Debug: 5:04:36 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<p>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:36 AM [vite] (client) [console.error] In HTML, <section> cannot be a
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   <ErrorBoundary>
+Debug:                     <m fallbackRender={function fallbackRender} 
+onError={function}>
+Debug:                       <RadixThemesColorModeProvider>
+Debug:                         <MemoizedToastProvider>
+Debug:                           <Toaster closeButton={false} expand={true} 
+position="bottom-right" richColors={true} ...>
+Debug: >                           <section
+Debug: >                             ref={null}
+Debug: >                             aria-label="Notifications alt+T"
+Debug: >                             tabIndex={-1}
+Debug: >                             aria-live="polite"
+Debug: >                             aria-relevant="additions text"
+Debug: >                             aria-atomic="false"
+Debug: >                             suppressHydrationWarning={true}
+Debug: >                             data-react-aria-top-layer={true}
+Debug: >                           >
+Debug:                         ...
+Debug: 
+Debug: 5:04:36 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<section>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:36 AM [vite] (client) [console.error] In HTML, <div> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   ...
+Debug:                     <ThemeRoot accentColor="blue" className="css-0" 
+ref={null}>
+Debug:                       <ThemeImpl className="css-0" ref={null} 
+isRoot={true} hasBackground={true} appearance="inherit" ...>
+Debug:                         <div data-is-root-theme="true" 
+data-accent-color="blue" data-gray-color="slate" ...>
+Debug:                           <DefaultOverlayComponents>
+Debug:                             <EmotionCssPropInternal css={{position:"...",
+...}} title={"Connecti..."} ...>
+Debug:                               <Insertion>
+Debug: >                             <div title={"Connection Error: "} 
+className="css-17rg0dp">
+Debug:                             ...
+Debug:                           ...
+Debug: 
+Debug: 5:04:36 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<div>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:37 AM [vite] (client) [Unhandled error] Error: Hydration failed 
+because the server rendered HTML didn't match the client. As a result this tree 
+will be regenerated on the client. This can happen if a SSR-ed Client Component 
+used:
+Debug: 
+Debug: - A server/client branch `if (typeof window !== 'undefined')`.
+Debug: - Variable input such as `Date.now()` or `Math.random()` which changes 
+each time it's called.
+Debug: - Date formatting in a user's locale which doesn't match the server.
+Debug: - External changing data without sending a snapshot of it along with the 
+HTML.
+Debug: - Invalid HTML tag nesting.
+Debug: 
+Debug: It can also happen if the client has a browser extension installed which 
+messes with the HTML before React loaded.
+Debug: 
+Debug: https://react.dev/link/hydration-mismatch
+Debug:  > throwOnHydrationMismatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:5238:10
+Debug:  > beginWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:12027:16
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > performUnitOfWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+Debug:  > workLoopConcurrentByScheduler 
+node_modules/react-dom/cjs/react-dom-client.development.js:17635:8
+Debug:  > renderRootConcurrent 
+node_modules/react-dom/cjs/react-dom-client.development.js:17617:14
+Debug:  > performWorkOnRoot 
+node_modules/react-dom/cjs/react-dom-client.development.js:16503:10
+Debug:  > performWorkOnRootViaSchedulerTask 
+node_modules/react-dom/cjs/react-dom-client.development.js:18957:6
+Debug:  > MessagePort.performWorkUntilDeadline 
+node_modules/scheduler/cjs/scheduler.development.js:45:47
+Debug: 
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of /public/memo_a.css, use /memo_a.css.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of /public/memo_b.css, use /memo_b.css.
+Debug: 5:04:43 AM [vite] (client) [console.error] In HTML, <p> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >         <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug: 
+Debug: 5:04:43 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<p>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:43 AM [vite] (client) [console.error] In HTML, <section> cannot be a
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   <ErrorBoundary>
+Debug:                     <m fallbackRender={function fallbackRender} 
+onError={function}>
+Debug:                       <RadixThemesColorModeProvider>
+Debug:                         <MemoizedToastProvider>
+Debug:                           <Toaster closeButton={false} expand={true} 
+position="bottom-right" richColors={true} ...>
+Debug: >                           <section
+Debug: >                             ref={null}
+Debug: >                             aria-label="Notifications alt+T"
+Debug: >                             tabIndex={-1}
+Debug: >                             aria-live="polite"
+Debug: >                             aria-relevant="additions text"
+Debug: >                             aria-atomic="false"
+Debug: >                             suppressHydrationWarning={true}
+Debug: >                             data-react-aria-top-layer={true}
+Debug: >                           >
+Debug:                         ...
+Debug: 
+Debug: 5:04:43 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<section>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:43 AM [vite] (client) [console.error] In HTML, <div> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   ...
+Debug:                     <ThemeRoot accentColor="blue" className="css-0" 
+ref={null}>
+Debug:                       <ThemeImpl className="css-0" ref={null} 
+isRoot={true} hasBackground={true} appearance="inherit" ...>
+Debug:                         <div data-is-root-theme="true" 
+data-accent-color="blue" data-gray-color="slate" ...>
+Debug:                           <DefaultOverlayComponents>
+Debug:                             <EmotionCssPropInternal css={{position:"...",
+...}} title={"Connecti..."} ...>
+Debug:                               <Insertion>
+Debug: >                             <div title={"Connection Error: "} 
+className="css-17rg0dp">
+Debug:                             ...
+Debug:                           ...
+Debug: 
+Debug: 5:04:43 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<div>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:43 AM [vite] (client) [Unhandled error] Error: Hydration failed 
+because the server rendered HTML didn't match the client. As a result this tree 
+will be regenerated on the client. This can happen if a SSR-ed Client Component 
+used:
+Debug: 
+Debug: - A server/client branch `if (typeof window !== 'undefined')`.
+Debug: - Variable input such as `Date.now()` or `Math.random()` which changes 
+each time it's called.
+Debug: - Date formatting in a user's locale which doesn't match the server.
+Debug: - External changing data without sending a snapshot of it along with the 
+HTML.
+Debug: - Invalid HTML tag nesting.
+Debug: 
+Debug: It can also happen if the client has a browser extension installed which 
+messes with the HTML before React loaded.
+Debug: 
+Debug: https://react.dev/link/hydration-mismatch
+Debug:  > throwOnHydrationMismatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:5238:10
+Debug:  > beginWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:12027:16
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > performUnitOfWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+Debug:  > workLoopConcurrentByScheduler 
+node_modules/react-dom/cjs/react-dom-client.development.js:17635:8
+Debug:  > renderRootConcurrent 
+node_modules/react-dom/cjs/react-dom-client.development.js:17617:14
+Debug:  > performWorkOnRoot 
+node_modules/react-dom/cjs/react-dom-client.development.js:16503:10
+Debug:  > performWorkOnRootViaSchedulerTask 
+node_modules/react-dom/cjs/react-dom-client.development.js:18957:6
+Debug:  > MessagePort.performWorkUntilDeadline 
+node_modules/scheduler/cjs/scheduler.development.js:45:47
+Debug: 
+Debug: 5:04:45 AM [vite] (client) [console.error] In HTML, <p> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >         <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug: 
+Debug: 5:04:45 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<p>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:45 AM [vite] (client) [console.error] In HTML, <section> cannot be a
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   <ErrorBoundary>
+Debug:                     <m fallbackRender={function fallbackRender} 
+onError={function}>
+Debug:                       <RadixThemesColorModeProvider>
+Debug:                         <MemoizedToastProvider>
+Debug:                           <Toaster closeButton={false} expand={true} 
+position="bottom-right" richColors={true} ...>
+Debug: >                           <section
+Debug: >                             ref={null}
+Debug: >                             aria-label="Notifications alt+T"
+Debug: >                             tabIndex={-1}
+Debug: >                             aria-live="polite"
+Debug: >                             aria-relevant="additions text"
+Debug: >                             aria-atomic="false"
+Debug: >                             suppressHydrationWarning={true}
+Debug: >                             data-react-aria-top-layer={true}
+Debug: >                           >
+Debug:                         ...
+Debug: 
+Debug: 5:04:45 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<section>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:45 AM [vite] (client) [console.error] In HTML, <div> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   ...
+Debug:                     <ThemeRoot accentColor="blue" className="css-0" 
+ref={null}>
+Debug:                       <ThemeImpl className="css-0" ref={null} 
+isRoot={true} hasBackground={true} appearance="inherit" ...>
+Debug:                         <div data-is-root-theme="true" 
+data-accent-color="blue" data-gray-color="slate" ...>
+Debug:                           <DefaultOverlayComponents>
+Debug:                             <EmotionCssPropInternal css={{position:"...",
+...}} title={"Connecti..."} ...>
+Debug:                               <Insertion>
+Debug: >                             <div title={"Connection Error: "} 
+className="css-17rg0dp">
+Debug:                             ...
+Debug:                           ...
+Debug: 
+Debug: 5:04:45 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<div>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:04:45 AM [vite] (client) [Unhandled error] Error: Hydration failed 
+because the server rendered HTML didn't match the client. As a result this tree 
+will be regenerated on the client. This can happen if a SSR-ed Client Component 
+used:
+Debug: 
+Debug: - A server/client branch `if (typeof window !== 'undefined')`.
+Debug: - Variable input such as `Date.now()` or `Math.random()` which changes 
+each time it's called.
+Debug: - Date formatting in a user's locale which doesn't match the server.
+Debug: - External changing data without sending a snapshot of it along with the 
+HTML.
+Debug: - Invalid HTML tag nesting.
+Debug: 
+Debug: It can also happen if the client has a browser extension installed which 
+messes with the HTML before React loaded.
+Debug: 
+Debug: https://react.dev/link/hydration-mismatch
+Debug:  > throwOnHydrationMismatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:5238:10
+Debug:  > beginWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:12027:16
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > performUnitOfWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+Debug:  > workLoopConcurrentByScheduler 
+node_modules/react-dom/cjs/react-dom-client.development.js:17635:8
+Debug:  > renderRootConcurrent 
+node_modules/react-dom/cjs/react-dom-client.development.js:17617:14
+Debug:  > performWorkOnRoot 
+node_modules/react-dom/cjs/react-dom-client.development.js:16503:10
+Debug:  > performWorkOnRootViaSchedulerTask 
+node_modules/react-dom/cjs/react-dom-client.development.js:18957:6
+Debug:  > MessagePort.performWorkUntilDeadline 
+node_modules/scheduler/cjs/scheduler.development.js:45:47
+Debug: 
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of /public/memo_a.css, use /memo_a.css.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of /public/memo_b.css, use /memo_b.css.
+[Reflex Frontend Exception]
+ ReferenceError: setMemo_cs is not defined
+ReferenceError: setMemo_cs is not defined
+    at http://localhost:5340/app_components/memoapp/memoapp.jsx:300:92
+    at http://localhost:5340/app_components/memoapp/memoapp.jsx:300:117
+    at http://localhost:5340/app_components/memoapp/memoapp.jsx:309:15
+    at executeDispatch 
+(http://localhost:5340/node_modules/.vite/deps/react-dom_client.js?v=d33e6f3f:91
+41:5)
+    at runWithFiberInDEV 
+(http://localhost:5340/node_modules/.vite/deps/react-dom_client.js?v=d33e6f3f:85
+1:66)
+    at processDispatchQueue 
+(http://localhost:5340/node_modules/.vite/deps/react-dom_client.js?v=d33e6f3f:91
+67:27)
+    at 
+http://localhost:5340/node_modules/.vite/deps/react-dom_client.js?v=d33e6f3f:945
+4:5
+    at batchedUpdates$1 
+(http://localhost:5340/node_modules/.vite/deps/react-dom_client.js?v=d33e6f3f:20
+44:12)
+    at dispatchEventForPluginEventSystem 
+(http://localhost:5340/node_modules/.vite/deps/react-dom_client.js?v=d33e6f3f:92
+40:4)
+    at dispatchEvent 
+(http://localhost:5340/node_modules/.vite/deps/react-dom_client.js?v=d33e6f3f:11
+319:29)
+
+Debug: 5:04:51 AM [vite] (client) [Unhandled error] ReferenceError: setMemo_cs 
+is not defined
+Debug:  > setMemo_cs app_components/memoapp/memoapp.jsx:252:95
+Debug:     250 |  export const 
+Button_button_882b8147af971b77f84b205e0baae455_21819d56 = memo(({children}) => {
+Debug:     251 |      const ref_cs_btn = useRef(null); refs["ref_cs_btn"] = 
+ref_cs_btn;
+Debug:     252 |  ...f082b17b2f1f = useCallback(((_e) => (((...args) => ((() => 
+(setMemo_cs("cs-clicked")))(({ ["button"] : _e?.["butto...
+Debug:         |                                                                
+^
+Debug:     253 |  
+Debug:     254 |  
+Debug:  > app_components/memoapp/memoapp.jsx:252:123
+Debug:  > _e app_components/memoapp/memoapp.jsx:252:391
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+Debug:  > dispatchEventForPluginEventSystem 
+node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+Debug:  > dispatchEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+Debug: 
+Debug: 5:04:52 AM [vite] (client) [console.error] In HTML, <h2> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   ...
+Debug:                     <Outlet>
+Debug:                       <RenderedRoute match={{params:{}, ...}} 
+routeContext={{outlet:null, ...}}>
+Debug:                         <WithComponentProps>
+Debug:                           <Component(page2) params={{}} loaderData={null}
+actionData={undefined} matches={[...]}>
+Debug:                             <div id="page2-page" ref={{current:null}}>
+Debug:                               <div>
+Debug: >                             <h2 id="page2-title" ref={{current:null}}>
+Debug:                               ...
+Debug:                             ...
+Debug: 
+Debug: 5:04:52 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<h2>.
+Debug: See this log for the ancestor stack trace.
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/memoapp.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 25096
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.16s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [10.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [12.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.06s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:05:43 AM [vite] (client) hmr update /app_components/memoapp/memoapp.jsx
+Debug: 5:05:43 AM [vite] (client) hmr update /app_components/memoapp/memoapp.jsx
+Debug: 5:05:44 AM [vite] (client) hmr update /app/routes/[foreach]._index.jsx
+Debug: 5:05:44 AM [vite] (client) hmr update /app/routes/[foreach]._index.jsx
+Debug: 5:06:20 AM [vite] (client) [console.error] In HTML, <p> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >         <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug: 
+Debug: 5:06:20 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<p>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:06:20 AM [vite] (client) [console.error] In HTML, <section> cannot be a
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   <ErrorBoundary>
+Debug:                     <m fallbackRender={function fallbackRender} 
+onError={function}>
+Debug:                       <RadixThemesColorModeProvider>
+Debug:                         <MemoizedToastProvider>
+Debug:                           <Toaster closeButton={false} expand={true} 
+position="bottom-right" richColors={true} ...>
+Debug: >                           <section
+Debug: >                             ref={null}
+Debug: >                             aria-label="Notifications alt+T"
+Debug: >                             tabIndex={-1}
+Debug: >                             aria-live="polite"
+Debug: >                             aria-relevant="additions text"
+Debug: >                             aria-atomic="false"
+Debug: >                             suppressHydrationWarning={true}
+Debug: >                             data-react-aria-top-layer={true}
+Debug: >                           >
+Debug:                         ...
+Debug: 
+Debug: 5:06:20 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<section>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:06:20 AM [vite] (client) [console.error] In HTML, <div> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   ...
+Debug:                     <ThemeRoot accentColor="blue" className="css-0" 
+ref={null}>
+Debug:                       <ThemeImpl className="css-0" ref={null} 
+isRoot={true} hasBackground={true} appearance="inherit" ...>
+Debug:                         <div data-is-root-theme="true" 
+data-accent-color="blue" data-gray-color="slate" ...>
+Debug:                           <DefaultOverlayComponents>
+Debug:                             <EmotionCssPropInternal css={{position:"...",
+...}} title={"Connecti..."} ...>
+Debug:                               <Insertion>
+Debug: >                             <div title={"Connection Error: "} 
+className="css-17rg0dp">
+Debug:                             ...
+Debug:                           ...
+Debug: 
+Debug: 5:06:20 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<div>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:06:20 AM [vite] (client) [Unhandled error] Error: Hydration failed 
+because the server rendered HTML didn't match the client. As a result this tree 
+will be regenerated on the client. This can happen if a SSR-ed Client Component 
+used:
+Debug: 
+Debug: - A server/client branch `if (typeof window !== 'undefined')`.
+Debug: - Variable input such as `Date.now()` or `Math.random()` which changes 
+each time it's called.
+Debug: - Date formatting in a user's locale which doesn't match the server.
+Debug: - External changing data without sending a snapshot of it along with the 
+HTML.
+Debug: - Invalid HTML tag nesting.
+Debug: 
+Debug: It can also happen if the client has a browser extension installed which 
+messes with the HTML before React loaded.
+Debug: 
+Debug: https://react.dev/link/hydration-mismatch
+Debug:  > throwOnHydrationMismatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:5238:10
+Debug:  > beginWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:12027:16
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > performUnitOfWork 
+node_modules/react-dom/cjs/react-dom-client.development.js:17641:21
+Debug:  > workLoopConcurrentByScheduler 
+node_modules/react-dom/cjs/react-dom-client.development.js:17635:8
+Debug:  > renderRootConcurrent 
+node_modules/react-dom/cjs/react-dom-client.development.js:17617:14
+Debug:  > performWorkOnRoot 
+node_modules/react-dom/cjs/react-dom-client.development.js:16503:10
+Debug:  > performWorkOnRootViaSchedulerTask 
+node_modules/react-dom/cjs/react-dom-client.development.js:18957:6
+Debug:  > MessagePort.performWorkUntilDeadline 
+node_modules/scheduler/cjs/scheduler.development.js:45:47
+Debug: 
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of /public/memo_a.css, use /memo_a.css.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of /public/memo_b.css, use /memo_b.css.
+Debug: 5:06:24 AM [vite] (client) [console.error] In HTML, <p> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >         <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug: 
+Debug: 5:06:24 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<p>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:06:24 AM [vite] (client) [console.error] In HTML, <section> cannot be a
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   <ErrorBoundary>
+Debug:                     <m fallbackRender={function fallbackRender} 
+onError={function}>
+Debug:                       <RadixThemesColorModeProvider>
+Debug:                         <MemoizedToastProvider>
+Debug:                           <Toaster closeButton={false} expand={true} 
+position="bottom-right" richColors={true} ...>
+Debug: >                           <section
+Debug: >                             ref={null}
+Debug: >                             aria-label="Notifications alt+T"
+Debug: >                             tabIndex={-1}
+Debug: >                             aria-live="polite"
+Debug: >                             aria-relevant="additions text"
+Debug: >                             aria-atomic="false"
+Debug: >                             suppressHydrationWarning={true}
+Debug: >                             data-react-aria-top-layer={true}
+Debug: >                           >
+Debug:                         ...
+Debug: 
+Debug: 5:06:24 AM [vite] (client) [console.error] <p> cannot contain a nested 
+<section>.
+Debug: See this log for the ancestor stack trace.
+Debug: 5:06:24 AM [vite] (client) [console.error] In HTML, <div> cannot be a 
+descendant of <p>.
+Debug: This will cause a hydration error.
+Debug: 
+Debug:   ...
+Debug:     <EventLoopProvider>
+Debug:       <Text as="p">
+Debug:         <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug:           <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:             <Text as="p">
+Debug:               <Slot.Slot data-accent-color={undefined} style={undefined} 
+ref={null} className="rt-Text">
+Debug: >               <p data-accent-color={undefined} style={undefined} 
+className="rt-Text" ref={null}>
+Debug:                   ...
+Debug:                     <ThemeRoot accentColor="blue" className="css-0" 
+ref={null}>
+Debug:                       <ThemeImpl className="css-0" ref={null} 
+isRoot={true} hasBackground={true} appearance="inherit" ...>
+Debug:                         <div data-is-root-theme="true" 
+data-accent-color="blue" data-gray-color="slate" ...>
+Debug:                           <DefaultOverlayComponents>
+Debug:                             <EmotionCssPropInternal 
+... [TRIMMED 254831 bytes total] ...
+
+...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.15s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [11.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [15.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [11.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.06s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:09:27 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:27 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:27 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:27 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:09:27 AM [vite] (ssr) program reload
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/common.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 27959
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.15s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [11.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [11.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.06s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:09:33 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:33 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:33 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:33 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:09:33 AM [vite] (ssr) program reload
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/common.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 27989
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.16s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [10.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:09:39 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:39 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:39 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:39 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:09:39 AM [vite] (ssr) program reload
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/common.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 28013
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.15s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [10.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [10.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:09:45 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:45 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:45 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:45 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:09:45 AM [vite] (ssr) program reload
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/common.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 28037
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.14s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [11.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:09:51 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:51 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:51 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:51 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:09:51 AM [vite] (ssr) program reload
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/common.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 28061
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.14s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [11.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [10.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.06s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:09:57 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:57 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:57 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:09:57 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:09:57 AM [vite] (ssr) program reload
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/common.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 28085
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.16s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [9.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:10:03 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:10:03 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:10:03 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:10:03 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:10:03 AM [vite] (ssr) program reload
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/common.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 28109
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.14s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [8.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [11.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [9.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:10:09 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:10:09 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:10:09 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:10:09 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:10:09 AM [vite] (ssr) program reload
+[INFO] Changes detected, reloading workers..
+[INFO] Deleted: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/common.py.orig
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/memo_hash/memoapp/memoapp/common.py
+[INFO] Stopping worker-1
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 28139
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Debug: [timing] Compile pages: 0.14s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 225 installs across 248 packages (no changes) [9.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@emotion/react@11.14.0', 'postcss-import@17.0.0', 
+'vite@8.2.2', 'autoprefixer@10.5.4', 'postcss@8.5.26', 
+'@react-router/fs-routes@8.3.1', '@react-router/dev@8.3.1']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed @emotion/react@11.14.0
+Debug: installed postcss-import@17.0.0
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: 
+Debug: [10.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'socket.io-client@4.8.3', 'universal-cookie@8.1.2', 
+'lucide-react@1.26.0', 'react-router@8.3.1', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'sonner@2.0.8', 'isbot@5.2.2', 
+'@react-router/node@8.3.1', '@radix-ui/themes@3.3.0', 'react-dom@19.2.8', 
+'react-helmet@6.1.0']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed socket.io-client@4.8.3
+Debug: installed universal-cookie@8.1.2
+Debug: installed lucide-react@1.26.0
+Debug: installed react-router@8.3.1
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed react-dom@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: 
+Debug: [9.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/memo_hash/memoapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.05s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 5:10:15 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:10:15 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:10:15 AM [vite] (client) hmr update /utils/context.jsx
+Debug: 5:10:15 AM [vite] (ssr) page reload utils/context.jsx
+Debug: 5:10:15 AM [vite] (ssr) program reload
+[INFO] Stopping worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!

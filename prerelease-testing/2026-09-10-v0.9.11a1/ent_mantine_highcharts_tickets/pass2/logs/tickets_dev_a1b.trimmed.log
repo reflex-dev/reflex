@@ -1,0 +1,89 @@
+### first 40 lines
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/mht_a1/lib/python3.11/site-packages/reflex_enterprise/config.py'
+Debug: Config: ConfigEnterprise(app_name='tickets', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', 
+db_url='sqlite:///tickets.db', async_db_url='sqlite+aiosqlite:///tickets.db', 
+redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'disable_plugins', 'plugins', 'db_url', 'async_db_url',
+'loglevel', 'telemetry_enabled', 'app_name'}, env_file=None, 
+state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[EventHandlerAPIPlugin()], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=None)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/mht_a1/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+
+### grep
+19:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+58:DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+61:DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+66:DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+103:'react-error-boundary@6.1.2', 'socket.io-client@4.8.3', 'lucide-react@1.26.0', 
+114:Debug: installed react-error-boundary@6.1.2
+154:DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+157:DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+162:DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+178:[ERROR] Application callable raised an exception
+184:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+186:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+190:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+191:    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+192:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+194:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+206:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+208:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+212:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+213:    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+214:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+216:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+225:    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+226:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+228:  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+254:AssertionError: `pyyaml` must be installed to use parse_docstring.
+256:[ERROR] Unexpected exit from worker-1
+260:Debug: error: script "dev" was terminated by signal SIGKILL (Forced quit)
+266:error: script "dev" was terminated by signal SIGKILL (Forced quit)
+
+### tail
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" was terminated by signal SIGKILL (Forced quit)
+Starting frontend failed with exit code -9
+$ react-router dev --host
+  ➜  Local:   http://localhost:5422/
+  ➜  Network: http://192.0.2.2:5422/  eth0
+7:06:42 AM [vite] (ssr) connected.
+error: script "dev" was terminated by signal SIGKILL (Forced quit)
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

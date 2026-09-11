@@ -1,0 +1,7 @@
+────────────────────────────── Initializing csapp ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized csapp. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Success: App compiled successfully in 4.044 seconds.

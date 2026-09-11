@@ -1,0 +1,136 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/base0910/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72
+)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 24/23 0:00:00
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_a.py:22)
+DeprecationWarning: `@rx.memo` on `card` without explicit annotations has been 
+deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (memoapp/mod_b.py:22)
+DeprecationWarning: `@rx.memo` on `show_obj` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`obj`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:42)
+DeprecationWarning: `@rx.memo` on `show_level` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`level`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:56)
+DeprecationWarning: `@rx.memo` on `show_hue` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`hue`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/props_mod.py:70)
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `cs_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`value`, `tid`. Until removal, a missing return defaults to `rx.Component` and 
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:13)
+DeprecationWarning: `@rx.memo` on `counter_holder` without explicit annotations 
+has been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on 
+parameter(s) `tid`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (memoapp/memoapp.py:27)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+App running at: http://localhost:5341/
+Backend running at: http://0.0.0.0:9741
+[Reflex Frontend Exception]
+ ReferenceError: setMemo_cs is not defined
+ReferenceError: setMemo_cs is not defined
+    at http://localhost:5341/app_components/memoapp/memoapp.jsx:276:92
+    at http://localhost:5341/app_components/memoapp/memoapp.jsx:276:117
+    at http://localhost:5341/app_components/memoapp/memoapp.jsx:285:15
+    at executeDispatch 
+(http://localhost:5341/node_modules/.vite/deps/react-dom_client.js?v=08b708ca:91
+41:5)
+    at runWithFiberInDEV 
+(http://localhost:5341/node_modules/.vite/deps/react-dom_client.js?v=08b708ca:85
+1:66)
+    at processDispatchQueue 
+(http://localhost:5341/node_modules/.vite/deps/react-dom_client.js?v=08b708ca:91
+67:27)
+    at 
+http://localhost:5341/node_modules/.vite/deps/react-dom_client.js?v=08b708ca:945
+4:5
+    at batchedUpdates$1 
+(http://localhost:5341/node_modules/.vite/deps/react-dom_client.js?v=08b708ca:20
+44:12)
+    at dispatchEventForPluginEventSystem 
+(http://localhost:5341/node_modules/.vite/deps/react-dom_client.js?v=08b708ca:92
+40:4)
+    at dispatchEvent 
+(http://localhost:5341/node_modules/.vite/deps/react-dom_client.js?v=08b708ca:11
+319:29)
+
+[ERROR] Unexpected exit from worker-1

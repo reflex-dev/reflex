@@ -1,0 +1,127 @@
+[
+  {
+    "name": "load_index",
+    "status": "pass",
+    "details": "heading present=True"
+  },
+  {
+    "name": "empty_chart_renders",
+    "status": "pass",
+    "details": "recharts wrappers=1, bars=0"
+  },
+  {
+    "name": "add_user_one",
+    "status": "pass",
+    "details": "bars=4 (expect 4 series x 1 category), saw 'Fetching Data...'=False"
+  },
+  {
+    "name": "background_event_spinner",
+    "status": "anomaly",
+    "details": "the @rx.event(background=True) fetch window was visible in the DOM"
+  },
+  {
+    "name": "x_axis_tick",
+    "status": "pass",
+    "details": "ticks=['masenf']"
+  },
+  {
+    "name": "index_bars_drawn",
+    "status": "pass",
+    "details": "4/4 bar paths have a non-zero bbox; sizes=[{'w': 239, 'h': 194}, {'w': 239, 'h': 20}, {'w': 239, 'h': 37}, {'w': 239, 'h': 72}] (index chart is rx.box(width='100%', height='15em'))"
+  },
+  {
+    "name": "cached_var_textarea",
+    "status": "pass",
+    "details": "data_pretty len=462 has_login=True"
+  },
+  {
+    "name": "chip_rendered",
+    "status": "pass",
+    "details": "rx.foreach chip for masenf"
+  },
+  {
+    "name": "tooltip_on_hover",
+    "status": "pass",
+    "details": "wrappers=1 text='masenf\\n\\nclosedIssues : 136\\nmergedPullRequests : 38\\nopenIssues : 70\\nrepositoriesC'"
+  },
+  {
+    "name": "tooltip_cursor_false",
+    "status": "pass",
+    "details": "tooltip-cursor elements=0"
+  },
+  {
+    "name": "add_user_two",
+    "status": "pass",
+    "details": "bars=8 ticks=['masenf', 'picklelo']"
+  },
+  {
+    "name": "unknown_user_no_crash",
+    "status": "pass",
+    "details": "bars=8 spinner_gone=True new_page_errors=0"
+  },
+  {
+    "name": "remove_buttons",
+    "status": "pass",
+    "details": "X buttons=3"
+  },
+  {
+    "name": "remove_user",
+    "status": "pass",
+    "details": "bars=4 ticks=['masenf']"
+  },
+  {
+    "name": "localstorage_keys",
+    "status": "pass",
+    "details": "keys=['last_compiled_theme', 'reflex___state____state.github_stats___github_stats____state.selected_users_json_rx_state_', 'reflex___state____state.github_stats___github_stats____state.user_stats_json_rx_state_', 'theme']"
+  },
+  {
+    "name": "localstorage_restores_after_reload",
+    "status": "pass",
+    "details": "bars=4 ticks=['masenf']"
+  },
+  {
+    "name": "color_mode_toggle",
+    "status": "pass",
+    "details": "class='radix-themes css-0 dark'"
+  },
+  {
+    "name": "widget_dynamic_route",
+    "status": "pass",
+    "details": "heading_ok=True bars=4 ticks=['masenf']"
+  },
+  {
+    "name": "widget_bars_drawn",
+    "status": "pass",
+    "details": "4/4 bar paths drawn; sizes=[{'w': 239, 'h': 167}, {'w': 239, 'h': 17}, {'w': 239, 'h': 32}, {'w': 239, 'h': 62}] (widget chart is 100vw x 85vh)"
+  },
+  {
+    "name": "widget_legend",
+    "status": "pass",
+    "details": "legend items=4"
+  },
+  {
+    "name": "widget_appearance_param",
+    "status": "anomaly",
+    "details": "radix-themes classes='radix-themes css-0 light|radix-themes css-0' -- rx.theme(appearance=...) is stripped by Theme._render().remove_props('appearance'), so ?appearance=dark has no effect (see probes/theme_appearance_probe.py; identical on 0.9.10.post2)"
+  },
+  {
+    "name": "console_recharts_chart_size_warning",
+    "status": "pass",
+    "details": "0 recharts 'width(-1) and height(-1)' warnings"
+  },
+  {
+    "name": "console_readonly_textarea_error",
+    "status": "anomaly",
+    "details": "2 React read-only-field errors (app passes rx.text_area(value=...) with no on_change)"
+  },
+  {
+    "name": "console_other",
+    "status": "pass",
+    "details": "0 other console errors/warnings: []"
+  },
+  {
+    "name": "recharts_version",
+    "status": "pass",
+    "details": "{\"recharts\": \"3.10.1\", \"react\": \"19.2.8\", \"react-dom\": \"19.2.8\", \"react-router\": \"8.3.1\", \"vite\": \"8.2.2\"}"
+  }
+]

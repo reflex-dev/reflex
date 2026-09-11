@@ -1,0 +1,58 @@
+[
+  {
+    "type": "log",
+    "text": "[unnamed] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[unnamed] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[unnamed] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[unnamed] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "error",
+    "text": "[unnamed] Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap"
+  },
+  {
+    "type": "error",
+    "text": "[unnamed] Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin"
+  },
+  {
+    "type": "error",
+    "text": "[unnamed] Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth"
+  },
+  {
+    "type": "error",
+    "text": "[unnamed] %o\n\n%s\n\n%s\n Error: `FormMessage` must be used within `FormField` or specify the `name` prop\n    at FormMessage (http://localhost:5462/node_modules/.vite/deps/dist-Ch4b-o_w.js?v=27a6e9f3:652:19)\n    at Object.react_stack_bottom_frame (http://localhost:5462/node_modules/.vite/deps/react-dom_client.js?v=df7015c5:12866:12)\n    at renderWithHooks (http://localhost:5462/node_modules/.vite/deps/react-dom_client.js?v=df7015c5:4213:19)\n    at updateForwardRef (http://localhost:5462/node_modules/.vite/deps/react-dom_client.js?v=df7015c5:5396:16)\n    at beginWork (http://localhost:5462/node_modules/.vite/deps/react-dom_client.js?v=df7015c5:6204:21)\n    at runWithFiberInDEV (http://localhost:5462/node_modules/.vite/deps/react-dom_client.js?v=df7015c5:851:66)\n    at performUnitOfWork (http://localhost:5462/node_modules/.vite/deps/react-dom_client.js?v=df7015c5:8429:92)\n    at workLoopSync (http://localhost:5462/node_modules/.vite/deps/react-dom_client.js?v=df7015c5:8325:37)\n    at renderRootSync (http://localhost:5462/node_modules/.vite/deps/react-dom_client.js?v=df7015c5:8309:6)\n    at performWorkOnRoot (http://localhost:5462/node_modules/.vite/deps/react-dom_client.js?v=df7015c5:7994:27) The above error occurred in the <ForwardRef(FormMessage)> component. React will try to recreate this component tree from scratch using the error boundary you provided, m."
+  },
+  {
+    "type": "log",
+    "text": "[unnamed] Disconnect websocket on pagehide"
+  },
+  {
+    "type": "log",
+    "text": "[named] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[named] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[named] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[named] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[named] Disconnect websocket on pagehide"
+  }
+]

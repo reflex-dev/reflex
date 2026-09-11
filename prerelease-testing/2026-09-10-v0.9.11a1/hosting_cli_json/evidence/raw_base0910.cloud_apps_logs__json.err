@@ -1,0 +1,4 @@
+Usage: reflex cloud apps logs [OPTIONS] [APP_ID]
+Try 'reflex cloud apps logs --help' for help.
+
+Error: No such option '--json'. Did you mean '--token'?

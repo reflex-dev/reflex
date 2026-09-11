@@ -1,0 +1,9 @@
+trial 1 rcs: 0 0 0 0
+shared.css shared.js 
+trial 2 rcs: 0 0 0 0
+shared.css shared.js 
+trial 3 rcs: 1 0 1 0
+shared.css shared.js 
+trial 4 rcs: 1 0 0 1
+shared.css shared.js 
+FAILED 4 / 16

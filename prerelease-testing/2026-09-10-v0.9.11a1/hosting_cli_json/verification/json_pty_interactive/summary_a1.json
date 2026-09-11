@@ -1,0 +1,106 @@
+{
+  "exe": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex",
+  "timeout": 12.0,
+  "results": [
+    {
+      "label": "ptyout_json",
+      "args": [
+        "--json"
+      ],
+      "stdout": "pty",
+      "stdin": "pty",
+      "rc": "TIMEOUT",
+      "elapsed": 12.01,
+      "stdout_bytes": 0,
+      "stderr_bytes": 414,
+      "hung": true
+    },
+    {
+      "label": "ptyout_nointeractive",
+      "args": [
+        "--no-interactive"
+      ],
+      "stdout": "pty",
+      "stdin": "pty",
+      "rc": 1,
+      "elapsed": 0.41,
+      "stdout_bytes": 0,
+      "stderr_bytes": 71,
+      "hung": false
+    },
+    {
+      "label": "ptyout_plain",
+      "args": [],
+      "stdout": "pty",
+      "stdin": "pty",
+      "rc": "TIMEOUT",
+      "elapsed": 12.0,
+      "stdout_bytes": 448,
+      "stderr_bytes": 0,
+      "hung": true
+    },
+    {
+      "label": "pipeout_json",
+      "args": [
+        "--json"
+      ],
+      "stdout": "pipe",
+      "stdin": "pty",
+      "rc": 1,
+      "elapsed": 0.39,
+      "stdout_bytes": 0,
+      "stderr_bytes": 71,
+      "hung": false
+    },
+    {
+      "label": "pipeout_nointeractive",
+      "args": [
+        "--no-interactive"
+      ],
+      "stdout": "pipe",
+      "stdin": "pty",
+      "rc": 1,
+      "elapsed": 0.45,
+      "stdout_bytes": 0,
+      "stderr_bytes": 71,
+      "hung": false
+    },
+    {
+      "label": "pipeout_plain",
+      "args": [],
+      "stdout": "pipe",
+      "stdin": "pty",
+      "rc": 1,
+      "elapsed": 0.44,
+      "stdout_bytes": 0,
+      "stderr_bytes": 71,
+      "hung": false
+    },
+    {
+      "label": "ptyout_json_stdin_pipe_open",
+      "args": [
+        "--json"
+      ],
+      "stdout": "pty",
+      "stdin": "pipe_open",
+      "rc": "TIMEOUT",
+      "elapsed": 12.0,
+      "stdout_bytes": 0,
+      "stderr_bytes": 414,
+      "hung": true
+    },
+    {
+      "label": "ptyout_json_stdin_devnull",
+      "args": [
+        "--json"
+      ],
+      "stdout": "pty",
+      "stdin": "devnull",
+      "rc": 1,
+      "elapsed": 0.4,
+      "stdout_bytes": 0,
+      "stderr_bytes": 441,
+      "hung": false
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+backend_up_code=200
+/ping -> 200
+/admin -> 404
+/admin/ -> 404
+/admin/widget/list -> 404
+/admin/login -> 404
+/admin/statics/css/tabler.min.css -> 404
+/admin/api/widget -> 404

@@ -1,0 +1,48 @@
+{
+  "reflex": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/reflex/__init__.py",
+  "python": "3.11.15",
+  "asgi_tree": [
+    {
+      "at": "asgi",
+      "type": "Starlette",
+      "n_routes": 1
+    },
+    {
+      "at": "asgi.routes[0]",
+      "type": "Mount",
+      "name": null,
+      "path": "",
+      "app_type": "builtins.function",
+      "n_child_routes": 0
+    }
+  ],
+  "app._api mounts": [
+    {
+      "path": "/_event",
+      "name": null,
+      "n_child_routes": 0
+    },
+    {
+      "path": "/admin",
+      "name": "admin",
+      "n_child_routes": 13
+    }
+  ],
+  "statuses": {
+    "/ping": 200,
+    "/admin/": 500,
+    "/admin/widget/list": 500,
+    "/admin/api/widget": 500
+  },
+  "errors": {
+    "/admin/": "NoMatchFound: No route exists for name \"admin:list\" and params \"key\".",
+    "frame": [
+      "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/requests.py\", line 202, in url_for",
+      "    url_path = url_path_provider.url_path_for(name, **path_params)",
+      "               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_0/lib/python3.11/site-packages/starlette/routing.py\", line 637, in url_path_for",
+      "    raise NoMatchFound(name, path_params)",
+      "starlette.routing.NoMatchFound: No route exists for name \"admin:list\" and params \"key\"."
+    ]
+  }
+}

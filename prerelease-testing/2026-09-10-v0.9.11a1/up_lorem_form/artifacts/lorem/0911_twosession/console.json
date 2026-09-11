@@ -1,0 +1,42 @@
+[
+  {
+    "type": "log",
+    "text": "[A] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[A] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[A] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[A] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[B] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[B] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[B] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[B] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "text": "[A] Disconnect websocket on pagehide"
+  },
+  {
+    "type": "log",
+    "text": "[B] Disconnect websocket on pagehide"
+  }
+]

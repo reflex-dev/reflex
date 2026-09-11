@@ -1,0 +1,20 @@
+##### base0910 get_config rc=0
+mode=get_config threads=16 pid=16393
+reflex: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py
+ok_results: 80 distinct: ['cfgapp']
+syspath len range: 5 5 final: 5
+   rxconfig imports: 16  sibling imports: 16
+##### base0910 reload_config rc=0
+   rxconfig imports: 80  sibling imports: 80
+##### base0910 mixed rc=0
+   rxconfig imports: 48  sibling imports: 48
+##### smoke get_config rc=0
+mode=get_config threads=16 pid=16468
+reflex: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py
+ok_results: 80 distinct: ['cfgapp']
+syspath len range: 5 5 final: 5
+   rxconfig imports: 16  sibling imports: 16
+##### smoke reload_config rc=0
+   rxconfig imports: 80  sibling imports: 80
+##### smoke mixed rc=0
+   rxconfig imports: 48  sibling imports: 48

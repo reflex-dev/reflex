@@ -1,0 +1,1 @@
+{"timestamp": "2026-09-11T10:43:33.679249+00:00", "level": "error", "logger": "reflex_cli.utils.hosting", "message": "Token is required for non-interactive mode.", "location": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_cli/utils/hosting.py:329", "pid": 19353}

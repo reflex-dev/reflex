@@ -1,0 +1,132 @@
+[
+  {
+    "name": "home_page_renders",
+    "status": "pass",
+    "details": "readme_markdown_rendered=True edit_link=True version_badge=v0.9.10.post2"
+  },
+  {
+    "name": "editor_redirects_to_login",
+    "status": "pass",
+    "details": "url=http://localhost:5465/login"
+  },
+  {
+    "name": "register_password_mismatch_error",
+    "status": "pass",
+    "details": "error_shown=True"
+  },
+  {
+    "name": "register_new_user",
+    "status": "pass",
+    "details": "redirected_to_login=True"
+  },
+  {
+    "name": "duplicate_username_rejected",
+    "status": "pass",
+    "details": "error_shown=True"
+  },
+  {
+    "name": "login_wrong_password_error",
+    "status": "pass",
+    "details": "error_shown=True"
+  },
+  {
+    "name": "login_success",
+    "status": "pass",
+    "details": "left_login_page=True landed_on=/edit/form/ seconds=0.4"
+  },
+  {
+    "name": "menu_shows_username",
+    "status": "pass",
+    "details": "username_visible=True"
+  },
+  {
+    "name": "create_form",
+    "status": "pass",
+    "details": "redirected_to_form_route=True has_numeric_id=True"
+  },
+  {
+    "name": "add_text_field",
+    "status": "pass",
+    "details": "modal_route=True returned_to_form=True field_listed=True"
+  },
+  {
+    "name": "edit_field_rename_and_require",
+    "status": "pass",
+    "details": "renamed=True shows_required=True"
+  },
+  {
+    "name": "add_select_field_with_option",
+    "status": "pass",
+    "details": "type_select_applied=True option_row_added=True field_listed=True"
+  },
+  {
+    "name": "preview_renders_fields",
+    "status": "pass",
+    "details": "url_is_form_route=True text_input_and_select_visible=True error_boundary_rendered=False"
+  },
+  {
+    "name": "required_field_validation_toast",
+    "status": "pass",
+    "details": "toast_shown=True stayed_on_form=True"
+  },
+  {
+    "name": "submit_response_logged_in",
+    "status": "pass",
+    "details": "url=http://localhost:5465/form/success"
+  },
+  {
+    "name": "logout",
+    "status": "pass",
+    "details": "redirected_home=True username_gone=True"
+  },
+  {
+    "name": "submit_response_anonymous",
+    "status": "pass",
+    "details": "form_public=True saved=True"
+  },
+  {
+    "name": "responses_requires_login",
+    "status": "pass",
+    "details": "url=http://localhost:5465/login"
+  },
+  {
+    "name": "responses_page_lists_both",
+    "status": "pass",
+    "details": "redirected_back_to_responses=True accordion_items=2"
+  },
+  {
+    "name": "response_values_visible",
+    "status": "pass",
+    "details": "text_value_and_select_value_rendered=True"
+  },
+  {
+    "name": "delete_response",
+    "status": "pass",
+    "details": "items_before=2 items_after=1"
+  },
+  {
+    "name": "delete_field",
+    "status": "pass",
+    "details": "select_field_removed=True cards_before=2"
+  },
+  {
+    "name": "delete_form",
+    "status": "pass",
+    "details": "redirected_to_new_form=True absent_from_dropdown=True"
+  },
+  {
+    "name": "no_unexpected_console",
+    "status": "anomaly",
+    "details": "[{\"type\": \"error\", \"text\": \"Received `%s` for a non-boolean attribute `%s`.\\n\\nIf you want to write it to the DOM, pass a string instead: %s=\\\"%s\\\" or %s={value.toString()}. true collapsible collapsible true collapsible\"}, {\"type\": \"error\", \"text\": \"In HTML, %s cannot be a descendant of <%s>.\\nThis will cause a hydration error.%s <button> button \\n\\n  ...\\n    <Collapsible data-orientation=\\\"vertical\\\" data-state=\\\"closed\\\" __scopeCollapsible={{...}} className=\\\"AccordionI...\\\" ...>\\n      <CollapsibleProvider scope={{...}} disabled={undefined} contentId=\\\"radix-_r_3_\\\" open={false} ...>\\n        <Primitive.div data-state=\\\"closed\\\" data-disabled={undefined} data-orientation=\\\"vertical\\\" ...>\\n          <div data-state=\\\"closed\\\" data-disabled={undefined} data-orientation=\\\"vertical\\\" className=\\\"AccordionI...\\\" ...>\\n            <EmotionCssPropInternal className=\\\"AccordionH...\\\" css={{"
+  },
+  {
+    "name": "no_failed_or_4xx_requests",
+    "status": "pass",
+    "details": "[]"
+  },
+  {
+    "name": "no_page_errors",
+    "status": "pass",
+    "details": "[]"
+  }
+]

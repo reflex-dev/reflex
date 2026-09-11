@@ -1,0 +1,22 @@
+{
+  "url": "http://localhost:6048/a",
+  "title": "Minrepro | A",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "expect_text: 'a0'",
+    "click: '#a-btn'",
+    "wait: 700",
+    "screenshot: 'shots/a-after.png'"
+  ],
+  "action_error": "TimeoutError: Page.wait_for_selector: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"text=a-clicked\") to be visible\n",
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [
+    "setCs_a is not defined"
+  ],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "A\na0set-a"
+}

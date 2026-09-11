@@ -1,0 +1,21 @@
+{
+  "url": "http://localhost:6049/e",
+  "title": "Minrepro | E",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "expect_text: 'e0'",
+    "click: '#e-btn'",
+    "wait: 700",
+    "screenshot: 'shots/e-after.png'",
+    "expect_text: 'e-clicked'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "E\ne-clickedset-e"
+}

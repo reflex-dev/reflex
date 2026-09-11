@@ -1,0 +1,60 @@
+reflex: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py 0.9.10.post2
+[FAIL] dataclass_identity: Alpha=98096fb6744c Beta=98096fb6744c
+[FAIL] intenum_vs_int: Level.ONE=c82561ec215a 1=c82561ec215a
+[PASS] strvalue_enum_vs_str: Color.RED=1d02955a6abb 'red'=a835428b8e73
+[PASS] infunction_dataclass_release: alive after gc.collect()=0/50
+[FAIL] infunction_dataclass_distinct: two function-local dataclasses of identical shape
+[FAIL] same_qualname_diff_module: Widget_div_b56e2348b74bf701791f15a942fa8493 vs Widget_div_b56e2348b74bf701791f15a942fa8493
+[FAIL] add_custom_code_only_difference: Ccbase_div_b56e2348b74bf701791f15a942fa8493 vs Ccbase_div_b56e2348b74bf701791f15a942fa8493
+[FAIL] dynamic_imports_hashed: Dyna_div_4f6fbd920bff0c99b9cabfb7e1fba255 vs Dyna_div_4f6fbd920bff0c99b9cabfb7e1fba255
+[PASS] tagless_importvar_hashed: Cssa_div_0db892d801302967d5411504cfe04b2b vs Cssa_div_a1b26853f5b714b454f95a14e088ab8d
+[FAIL] appwrap_markdowncomponentmap_hashed: Wrapa_div_2547e45f978d4374f2cb6ad84d6590ab vs Wrapa_div_2547e45f978d4374f2cb6ad84d6590ab
+[FAIL] rx_text_direct_hash: ad58a98ec5a9 vs ad58a98ec5a9
+
+{
+  "dataclass_identity": {
+    "ok": false,
+    "detail": "Alpha=98096fb6744c Beta=98096fb6744c"
+  },
+  "intenum_vs_int": {
+    "ok": false,
+    "detail": "Level.ONE=c82561ec215a 1=c82561ec215a"
+  },
+  "strvalue_enum_vs_str": {
+    "ok": true,
+    "detail": "Color.RED=1d02955a6abb 'red'=a835428b8e73"
+  },
+  "infunction_dataclass_release": {
+    "ok": true,
+    "detail": "alive after gc.collect()=0/50"
+  },
+  "infunction_dataclass_distinct": {
+    "ok": false,
+    "detail": "two function-local dataclasses of identical shape"
+  },
+  "same_qualname_diff_module": {
+    "ok": false,
+    "detail": "Widget_div_b56e2348b74bf701791f15a942fa8493 vs Widget_div_b56e2348b74bf701791f15a942fa8493"
+  },
+  "add_custom_code_only_difference": {
+    "ok": false,
+    "detail": "Ccbase_div_b56e2348b74bf701791f15a942fa8493 vs Ccbase_div_b56e2348b74bf701791f15a942fa8493"
+  },
+  "dynamic_imports_hashed": {
+    "ok": false,
+    "detail": "Dyna_div_4f6fbd920bff0c99b9cabfb7e1fba255 vs Dyna_div_4f6fbd920bff0c99b9cabfb7e1fba255"
+  },
+  "tagless_importvar_hashed": {
+    "ok": true,
+    "detail": "Cssa_div_0db892d801302967d5411504cfe04b2b vs Cssa_div_a1b26853f5b714b454f95a14e088ab8d"
+  },
+  "appwrap_markdowncomponentmap_hashed": {
+    "ok": false,
+    "detail": "Wrapa_div_2547e45f978d4374f2cb6ad84d6590ab vs Wrapa_div_2547e45f978d4374f2cb6ad84d6590ab"
+  },
+  "rx_text_direct_hash": {
+    "ok": false,
+    "detail": "ad58a98ec5a9 vs ad58a98ec5a9"
+  }
+}
+FAILED: ['dataclass_identity', 'intenum_vs_int', 'infunction_dataclass_distinct', 'same_qualname_diff_module', 'add_custom_code_only_difference', 'dynamic_imports_hashed', 'appwrap_markdowncomponentmap_hashed', 'rx_text_direct_hash']

@@ -1,0 +1,650 @@
+{
+ "base": "http://localhost:5430",
+ "steps": [
+  {
+   "i": 0,
+   "verb": "goto",
+   "val": "/",
+   "note": null,
+   "ok": true,
+   "ms": 624,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 263,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 1,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3004,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 263,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 2,
+   "verb": "shot",
+   "val": "prod_hc_index",
+   "note": null,
+   "ok": true,
+   "ms": 179,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 263,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 3,
+   "verb": "eval",
+   "val": "() => ({charts: document.querySelectorAll('.highcharts-container').length, titles: Array.from(document.querySelectorAll('.highcharts-title')).map(e=>e.textContent), body: document.body.innerText.replace(/\\n/g,' | ').slice(0,160)})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "charts": 2,
+    "titles": [
+     "Monthly sales",
+     "Traffic sources"
+    ],
+    "body": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | "
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 263,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 4,
+   "verb": "hover",
+   "val": ".highcharts-series-1 .highcharts-point",
+   "note": null,
+   "ok": true,
+   "ms": 70,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 263,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 5,
+   "verb": "wait",
+   "val": 400,
+   "note": null,
+   "ok": true,
+   "ms": 401,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 263,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 6,
+   "verb": "click_nth",
+   "val": [
+    ".highcharts-series-1 .highcharts-point",
+    3
+   ],
+   "note": "Apr -> 5 units, prod event round trip",
+   "ok": true,
+   "ms": 64,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 262,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Apr: 5 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Apr | \u25cf 2025: 6 | \u25cf 2026: 5 |  | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 7,
+   "verb": "wait",
+   "val": 1500,
+   "note": null,
+   "ok": true,
+   "ms": 1501,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 262,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Apr: 5 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Apr | \u25cf 2025: 6 | \u25cf 2026: 5 |  | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 8,
+   "verb": "expect_text",
+   "val": "Clicked Apr: 5 units",
+   "note": null,
+   "ok": true,
+   "ms": 15,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 262,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Apr: 5 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Apr | \u25cf 2025: 6 | \u25cf 2026: 5 |  | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 9,
+   "verb": "shot",
+   "val": "prod_hc_click",
+   "note": null,
+   "ok": true,
+   "ms": 153,
+   "probe": {
+    "svg": 4,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 262,
+    "head": "Highcharts in Reflex Enterprise |  | Clicked Apr: 5 units |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Apr | \u25cf 2025: 6 | \u25cf 2026: 5 |  | Traffic sources | Search | Direct | Social | Highcharts.com | Built with Reflex"
+   },
+   "url": "http://localhost:5430/"
+  },
+  {
+   "i": 10,
+   "verb": "goto",
+   "val": "/state",
+   "note": null,
+   "ok": true,
+   "ms": 554,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 339,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts"
+   },
+   "url": "http://localhost:5430/state/"
+  },
+  {
+   "i": 11,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3002,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 319,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5430/state/"
+  },
+  {
+   "i": 12,
+   "verb": "eval",
+   "val": "() => ({body: document.body.innerText.replace(/\\n/g,' | ').slice(0,200), charts: document.querySelectorAll('.highcharts-container').length})",
+   "note": null,
+   "ok": true,
+   "result": {
+    "body": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | li",
+    "charts": 2
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 319,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5430/state/"
+  },
+  {
+   "i": 13,
+   "verb": "click_text",
+   "val": "Add point",
+   "note": null,
+   "ok": true,
+   "ms": 51,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 319,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5430/state/"
+  },
+  {
+   "i": 14,
+   "verb": "wait",
+   "val": 1200,
+   "note": null,
+   "ok": true,
+   "ms": 1203,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 6,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 309,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 4 |  | total: 12 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (4 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | Highcharts.com | total above 9 | Built wi"
+   },
+   "url": "http://localhost:5430/state/"
+  },
+  {
+   "i": 15,
+   "verb": "click_text",
+   "val": "Stream (background)",
+   "note": null,
+   "ok": true,
+   "ms": 22,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 6,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 309,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 4 |  | total: 12 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (4 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | Highcharts.com | total above 9 | Built wi"
+   },
+   "url": "http://localhost:5430/state/"
+  },
+  {
+   "i": 16,
+   "verb": "wait",
+   "val": 3500,
+   "note": null,
+   "ok": true,
+   "ms": 3501,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 9,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 326,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 7 |  | total: 31 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (7 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | Highcharts.com | total"
+   },
+   "url": "http://localhost:5430/state/"
+  },
+  {
+   "i": 17,
+   "verb": "eval",
+   "val": "() => document.body.innerText.replace(/\\n/g,' | ').slice(0,220)",
+   "note": "prod: state chart + background task",
+   "ok": true,
+   "result": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 7 |  | total: 31 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 ",
+   "ms": 2,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 9,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 326,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 7 |  | total: 31 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (7 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | Highcharts.com | total"
+   },
+   "url": "http://localhost:5430/state/"
+  },
+  {
+   "i": 18,
+   "verb": "shot",
+   "val": "prod_hc_state",
+   "note": null,
+   "ok": true,
+   "ms": 133,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 9,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 326,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 7 |  | total: 31 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (7 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | Highcharts.com | total"
+   },
+   "url": "http://localhost:5430/state/"
+  },
+  {
+   "i": 19,
+   "verb": "goto",
+   "val": "/nonexistent-route",
+   "note": null,
+   "ok": true,
+   "ms": 583,
+   "probe": {
+    "svg": 1,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 37,
+    "head": "404: Page not found | Built with Reflex"
+   },
+   "url": "http://localhost:5430/nonexistent-route"
+  },
+  {
+   "i": 20,
+   "verb": "wait",
+   "val": 1500,
+   "note": null,
+   "ok": true,
+   "ms": 1501,
+   "probe": {
+    "svg": 1,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 37,
+    "head": "404: Page not found | Built with Reflex"
+   },
+   "url": "http://localhost:5430/nonexistent-route"
+  },
+  {
+   "i": 21,
+   "verb": "eval",
+   "val": "() => document.body.innerText.slice(0,120)",
+   "note": "prod 404 page",
+   "ok": true,
+   "result": "404: Page not found\nBuilt with Reflex",
+   "ms": 2,
+   "probe": {
+    "svg": 1,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 37,
+    "head": "404: Page not found | Built with Reflex"
+   },
+   "url": "http://localhost:5430/nonexistent-route"
+  },
+  {
+   "i": 22,
+   "verb": "shot",
+   "val": "prod_hc_404",
+   "note": null,
+   "ok": true,
+   "ms": 97,
+   "probe": {
+    "svg": 1,
+    "buttons": 0,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 37,
+    "head": "404: Page not found | Built with Reflex"
+   },
+   "url": "http://localhost:5430/nonexistent-route"
+  }
+ ],
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [
+  {
+   "url": "http://localhost:5430/nonexistent-route",
+   "status": 404
+  }
+ ],
+ "ws": [
+  "0{\"sid\":\"5edl19ru5EKSsXOXAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"h-XeBx46eBfNb7WBAAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"f744c9af-49c4-4bb0-cb6e-18e867c288e9\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___highcharts____highcharts_state\":{\"last_point_rx_state_\":\"Clicked Apr: 5 units\"}}}]",
+  "0{\"sid\":\"Ap4ujvlJUrmG9bW_AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"AH2c-dI_jt_9d8LxAAAD\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"f744c9af-49c4-4bb0-cb6e-18e867c288e9\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"total_rx_state_\":12,\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"options from state (4 ",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"streaming_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"total_rx_state_\":20,\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"options from state (5 ",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"total_rx_state_\":26,\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"options from state (6 ",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"total_rx_state_\":31,\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"options from state (7 ",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"streaming_rx_state_\":false}}}]",
+  "0{\"sid\":\"QTPyzyDIOY-7KDz4AAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"DVP445C84JfCxaY-AAAF\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"f744c9af-49c4-4bb0-cb6e-18e867c288e9\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console_errors": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  }
+ ],
+ "console_warnings": [
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  }
+ ],
+ "failed_steps": []
+}

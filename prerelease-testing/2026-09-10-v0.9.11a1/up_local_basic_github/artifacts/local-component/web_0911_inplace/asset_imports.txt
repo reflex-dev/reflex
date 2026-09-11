@@ -1,0 +1,1 @@
+app_components/local_component/local_component.jsx: $/public//external/local_component/hello/hello.jsx?v=0ebba69a

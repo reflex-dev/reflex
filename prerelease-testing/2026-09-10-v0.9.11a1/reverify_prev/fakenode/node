@@ -1,0 +1,3 @@
+#!/bin/sh
+if [ "$1" = "--version" ]; then echo "v22.12.0"; exit 0; fi
+exec /opt/node22/bin/node "$@"

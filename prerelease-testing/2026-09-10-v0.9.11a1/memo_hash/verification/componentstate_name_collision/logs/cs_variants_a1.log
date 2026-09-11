@@ -1,0 +1,16 @@
+reflex 0.9.11a1
+A) same class created twice (expected fine, n1/n2):
+  Widget#1                           ok  -> reflex___istate___dynamic____widget_n1
+  Widget#2                           ok  -> reflex___istate___dynamic____widget_n2
+B) same name, different __module__:
+  mod_a.Gauge                        ok  -> reflex___istate___dynamic____gauge_n1
+  mod_b.Gauge                        ERR StateValueError: The substate class 'reflex___istate___dynamic____gauge_n1' has been defined multiple times
+C) different names, different modules (control):
+  mod_a.DialA                        ok  -> reflex___istate___dynamic____dial_a_n1
+  mod_b.DialB                        ok  -> reflex___istate___dynamic____dial_b_n1
+D) same name, SAME module (two local classes):
+  mod_c.Knob (first defn)            ok  -> reflex___istate___dynamic____knob_n1
+  mod_c.Knob (second defn)           ERR StateValueError: The substate class 'reflex___istate___dynamic____knob_n1' has been defined multiple times.
+E) after the failure, is the first class still usable?
+  mod_a.Gauge again (n2)             ok  -> reflex___istate___dynamic____gauge_n2
+  mod_b.Gauge retry                  ERR StateValueError: The substate class 'reflex___istate___dynamic____gauge_n2' has been defined multiple times

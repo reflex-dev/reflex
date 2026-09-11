@@ -1,0 +1,30 @@
+[
+  {
+    "type": "error",
+    "text": "[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+    "type": "error",
+    "text": "[reflexle] Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+    "type": "log",
+    "text": "[reflexle] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "error",
+    "text": "[reflexle] Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+    "type": "error",
+    "text": "[tab2] Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+    "type": "log",
+    "text": "[tab2] Disconnect websocket on pagehide"
+  },
+  {
+    "type": "log",
+    "text": "[reflexle] Disconnect websocket on pagehide"
+  }
+]

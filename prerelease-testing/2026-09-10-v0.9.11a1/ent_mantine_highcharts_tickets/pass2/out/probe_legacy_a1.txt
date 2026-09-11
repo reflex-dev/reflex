@@ -1,0 +1,46 @@
+reflex 0.9.11a1 | rxe 0.9.5
+module: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/mht_a1/lib/python3.11/site-packages/reflex/__init__.py
+
+== FINDING-001: reflex.components.dynamic.bundled_libraries
+DeprecationWarning: reflex_base.components.dynamic.bundled_libraries has been 
+deprecated in version 0.9.9. The bundled library list now lives on the active 
+RegistrationContext. Use RegistrationContext.ensure_context().bundled_libraries 
+to read it, or bundle_library()/reset_bundled_libraries() to modify it. It will 
+be completely removed in 1.0. (probe_legacy.py:28)
+   OK -> list ['$/utils/context', '$/utils/state', '@emotion/react', 'react']
+   warnings: []
+== FINDING-023: reflex.page.DECORATED_PAGES
+DeprecationWarning: reflex.page.DECORATED_PAGES has been deprecated in version 
+0.9.9. Decorated pages now live on the active RegistrationContext. Use 
+RegistrationContext.ensure_context().decorated_pages to read the list of 
+(render_fn, kwargs) entries. It will be completely removed in 1.0. 
+(probe_legacy.py:36)
+   OK -> defaultdict 1
+== rxe compat helper (rxe #219)
+   get_bundled_libraries() -> ['$/utils/context', '$/utils/state', '@emotion/react', 'react']
+== FINDING-024: AttributeError inside a cached var computation
+   raised: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found.
+   real message present in traceback: False
+== FINDING-029 path: does rxe still call console.error / console.info?
+   proxy.py:135: console.error(
+   app.py:120: console.error(msg)
+   app.py:154: console.info("Single port proxy mode enabled")
+   utils.py:119: console.error(
+   plugins/mcp.py:1037: console.error(rich.markup.escape(_MISSING_MCP_DEPS_MESSAGE))
+== is console.error/console.info deprecated in this reflex-base?
+   console.error: present
+   console.info: present
+   console.warn: present
+   console.deprecate: present
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. (probe_legacy.py:91)
+probe: console.error call
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. (probe_legacy.py:92)
+Info: probe: console.info call
+   python warnings raised: []
+== FINDING-026 path: which rxe module registers /_reflex/cookies/sync?
+   auth/cookie.py:341: Route("/_reflex/cookies/sync", sync_cookies, methods=["POST"]),
+   auth/cookie.py:364: get_backend_url("/_reflex/cookies/sync"),

@@ -1,0 +1,122 @@
+[
+  {
+    "type": "log",
+    "text": "[gh_0910] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0910] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0910] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[gh_0910] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "warning",
+    "text": "[gh_0910] The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(10) or minHeight(10) or use aspect(undefined) to control the\n       height and width."
+  },
+  {
+    "type": "warning",
+    "text": "[gh_0910] The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(10) or minHeight(10) or use aspect(undefined) to control the\n       height and width."
+  },
+  {
+    "type": "error",
+    "text": "[gh_0910] You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`."
+  },
+  {
+    "type": "log",
+    "text": "[gh_0910] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[gh_0910] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0910] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0910] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[gh_0910] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "warning",
+    "text": "[gh_0910] The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(10) or minHeight(10) or use aspect(undefined) to control the\n       height and width."
+  },
+  {
+    "type": "warning",
+    "text": "[gh_0910] The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(10) or minHeight(10) or use aspect(undefined) to control the\n       height and width."
+  },
+  {
+    "type": "error",
+    "text": "[gh_0910] You provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`."
+  },
+  {
+    "type": "log",
+    "text": "[gh_0910] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[gh_0910] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0910] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0910] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[gh_0910] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "warning",
+    "text": "[gh_0910] The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(10) or minHeight(10) or use aspect(undefined) to control the\n       height and width."
+  },
+  {
+    "type": "warning",
+    "text": "[gh_0910] The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(10) or minHeight(10) or use aspect(undefined) to control the\n       height and width."
+  },
+  {
+    "type": "log",
+    "text": "[gh_0910] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[gh_0910] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0910] [vite] connecting..."
+  },
+  {
+    "type": "debug",
+    "text": "[gh_0910] [vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[gh_0910] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "warning",
+    "text": "[gh_0910] The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(10) or minHeight(10) or use aspect(undefined) to control the\n       height and width."
+  },
+  {
+    "type": "warning",
+    "text": "[gh_0910] The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(10) or minHeight(10) or use aspect(undefined) to control the\n       height and width."
+  },
+  {
+    "type": "log",
+    "text": "[gh_0910] Disconnect websocket on pagehide"
+  }
+]

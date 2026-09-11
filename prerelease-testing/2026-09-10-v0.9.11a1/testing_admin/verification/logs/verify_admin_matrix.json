@@ -1,0 +1,21 @@
+{
+  "note": "Independent re-run (verify2_testing_admin_0). backend-only servers, curl --noproxy '*'.",
+  "app": "verification/verify_admindash (rx.Model Widget + rx.App(admin_dash=rx.AdminDash(models=[Widget])))",
+  "matrix": [
+    {"reflex": "0.9.11a1", "starlette": "1.6.0", "starlette_admin": "1.0.1", "port": 10680,
+     "boots": true, "/ping": 200, "/admin": 307, "/admin/": 500, "/admin/login": 500,
+     "/admin/widget/list": 500, "/admin/api/widget": 500, "/admin/statics/css/main.css": 500,
+     "error": "NoMatchFound: No route exists for name \"admin:list\" and params \"key\"."},
+    {"reflex": "0.9.11a1", "starlette": "1.6.0", "starlette_admin": "0.17.1", "port": 10683,
+     "boots": true, "/ping": 200, "/admin/": 500, "/admin/widget/list": 500, "/admin/api/widget": 200,
+     "error": "NoMatchFound: ... \"admin:statics\" / \"admin:api\""},
+    {"reflex": "0.9.10.post2", "starlette": "1.6.0", "starlette_admin": "1.0.1", "port": 10682,
+     "boots": false, "error": "TypeError: Admin.__init__() got an unexpected keyword argument 'engine'"},
+    {"reflex": "0.9.10.post2", "starlette": "1.6.0", "starlette_admin": "0.17.1", "port": 10681,
+     "boots": true, "/ping": 200, "/admin/": 500, "/admin/widget/list": 500, "/admin/api/widget": 200,
+     "error": "NoMatchFound: ... \"admin:statics\" / \"admin:api\""}
+  ],
+  "browser": {"/admin/": {"status": 500, "body_text": "Internal Server Error"},
+              "/admin/widget/list": {"status": 500, "body_text": "Internal Server Error"}},
+  "api_transformer_escape_hatch": "no help - rx.App(..., api_transformer=Starlette()) still yields /admin/ 500"
+}

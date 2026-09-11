@@ -1,0 +1,102 @@
+### first 60 lines of hc_dev_foreach.log
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:3)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/mht_a1/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='highcharts', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'disable_plugins', 'telemetry_enabled', 'loglevel', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/mht_a1/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=5420
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9820
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 5420 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 5420 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 5420 is not in use.
+Debug: Checking if Backend port: 9820 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9820 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9820 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+
+### lines matching error|warn|deprecat|redefined|Exception|Traceback|paid|console
+4:DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+22:redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+62:DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+99:'react-error-boundary@6.1.2', 'highcharts@12.6.0', 'react-router@8.3.1', 
+110:Debug: installed react-error-boundary@6.1.2
+153:Debug: 6:30:21 AM [vite] (client) [console.warn] Highcharts warning: Consider 
+156:remove this warning. See 
+161:[ERROR] Unexpected exit from worker-1
+162:Debug: error: script "dev" exited with code 143
+168:6:30:21 AM [vite] (client) [console.warn] Highcharts warning: Consider including
+171:warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.
+172:error: script "dev" exited with code 143
+
+### last 25 lines
+remove this warning. See 
+https://www.highcharts.com/docs/accessibility/accessibility-module.
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:5420/
+  ➜  Network: http://192.0.2.2:5420/  eth0
+6:30:10 AM [vite] (ssr) connected.
+6:30:21 AM [vite] (client) [console.warn] Highcharts warning: Consider including
+the "accessibility.js" module to make your chart more usable for people with 
+disabilities. Set the "accessibility.enabled" option to false to remove this 
+warning. See https://www.highcharts.com/docs/accessibility/accessibility-module.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

@@ -1,0 +1,83 @@
+### npmapp2 (reflex 0.9.11a1): bun run -> failed REFLEX_USE_NPM run -> plain run
+--- reflex.lock/ after the failed npm run AND after the successful bun recovery run:
+-rw-r--r-- 1 root root  95233 Sep 11 05:55 bun.lock
+-rw-r--r-- 1 root root 104427 Sep 11 05:55 package-lock.json
+-rw-r--r-- 1 root root    724 Sep 11 05:55 package.json
+--- .web/ lockfiles:
+-rw-r--r-- 1 root root  95233 Sep 11 05:54 /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/reverify_prev/apps/npmapp2/.web/bun.lock
+-rw-r--r-- 1 root root 104427 Sep 11 05:55 /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/reverify_prev/apps/npmapp2/.web/package-lock.json
+
+--- .web/package.json dependency pins: after bun run (exact) vs after npm run (caret):
+9,20c9,20
+<         "@radix-ui/themes": "3.3.0",
+<         "@react-router/node": "8.3.1",
+<         "isbot": "5.2.2",
+<         "lucide-react": "1.26.0",
+<         "react": "19.2.8",
+<         "react-dom": "19.2.8",
+<         "react-error-boundary": "6.1.2",
+<         "react-helmet": "6.1.0",
+<         "react-router": "8.3.1",
+<         "socket.io-client": "4.8.3",
+<         "sonner": "2.0.8",
+<         "universal-cookie": "8.1.2"
+---
+>         "@radix-ui/themes": "^3.3.0",
+>         "@react-router/node": "^8.3.1",
+>         "isbot": "^5.2.2",
+>         "lucide-react": "^1.26.0",
+>         "react": "^19.2.8",
+>         "react-dom": "^19.2.8",
+>         "react-error-boundary": "^6.1.2",
+>         "react-helmet": "^6.1.0",
+>         "react-router": "^8.3.1",
+>         "socket.io-client": "^4.8.3",
+>         "sonner": "^2.0.8",
+>         "universal-cookie": "^8.1.2"
+23,32c23,32
+<         "@emotion/react": "11.14.0",
+<         "@react-router/dev": "8.3.1",
+<         "@react-router/fs-routes": "8.3.1",
+<         "@tailwindcss/postcss": "4.3.0",
+<         "@tailwindcss/typography": "0.5.20",
+<         "autoprefixer": "10.5.4",
+<         "postcss": "8.5.26",
+<         "postcss-import": "17.0.0",
+<         "tailwindcss": "4.3.0",
+<         "vite": "8.2.2"
+---
+>         "@emotion/react": "^11.14.0",
+>         "@react-router/dev": "^8.3.1",
+>         "@react-router/fs-routes": "^8.3.1",
+>         "@tailwindcss/postcss": "^4.3.0",
+>         "@tailwindcss/typography": "^0.5.20",
+>         "autoprefixer": "^10.5.4",
+>         "postcss": "^8.5.26",
+>         "postcss-import": "^17.0.0",
+>         "tailwindcss": "^4.3.0",
+>         "vite": "^8.2.2"
+
+### npmapp3 (reflex 0.9.10.post2) same sequence:
+-rw-r--r-- 1 root root 100034 Sep 11 05:59 bun.lock
+-rw-r--r-- 1 root root 109721 Sep 11 05:59 package-lock.json
+-rw-r--r-- 1 root root    724 Sep 11 05:59 package.json
+
+### npmapp (reflex 0.9.11a1): npm-first app is silently npm forever
+reflex.lock/:
+-rw-r--r-- 1 root root 171992 Sep 11 05:52 package-lock.json
+-rw-r--r-- 1 root root    704 Sep 11 05:52 package.json
+(a later plain 'reflex run' with no REFLEX_USE_NPM used 'npm run dev' - see logs/npm_recovery_pm.txt)
+### npmapp reflex.lock/
+-rw-r--r-- 1 root root 171992 Sep 11 05:52 package-lock.json
+-rw-r--r-- 1 root root    704 Sep 11 05:52 package.json
+### npmapp2 reflex.lock/
+-rw-r--r-- 1 root root  95233 Sep 11 05:55 bun.lock
+-rw-r--r-- 1 root root 104427 Sep 11 05:55 package-lock.json
+-rw-r--r-- 1 root root    724 Sep 11 05:55 package.json
+### npmapp3 reflex.lock/
+-rw-r--r-- 1 root root 100034 Sep 11 05:59 bun.lock
+-rw-r--r-- 1 root root 109721 Sep 11 05:59 package-lock.json
+-rw-r--r-- 1 root root    724 Sep 11 05:59 package.json
+### npmapp4 reflex.lock/
+-rw-r--r-- 1 root root 180127 Sep 11 06:11 package-lock.json
+-rw-r--r-- 1 root root    704 Sep 11 06:11 package.json

@@ -1,0 +1,19 @@
+
+==================================== ERRORS ====================================
+_______________________ ERROR collecting test_harness.py _______________________
+ImportError while importing test module '/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/reverify_prev/harness/test_harness.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.11/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test_harness.py:15: in <module>
+    from reflex.testing import AppHarness, AppHarnessProd
+../../../envs/rvp_test0910/lib/python3.11/site-packages/reflex/testing.py:28: in <module>
+    import uvicorn
+E   ModuleNotFoundError: No module named 'uvicorn'
+=========================== short test summary info ============================
+ERROR test_harness.py
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.37s

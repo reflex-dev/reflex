@@ -1,0 +1,17 @@
+[
+  {
+    "name": "sessions_see_only_own_tasks",
+    "status": "pass",
+    "details": "session_A_cards=2 session_B_cards=1 A_ids=['1', '0'] B_ids=['0']"
+  },
+  {
+    "name": "both_sessions_stream_concurrently",
+    "status": "pass",
+    "details": "A_advanced=2/2 B_advanced=1/1"
+  },
+  {
+    "name": "no_unexpected_console",
+    "status": "pass",
+    "details": "[]"
+  }
+]

@@ -1,0 +1,19 @@
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/testing_admin/admin_isolate_nesting.py:19: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/admin_new/lib/python3.11/site-packages/starlette_admin/base.py:260: UserWarning: No secret_key provided: a random one was generated. CSRF tokens and flash messages will NOT survive server restarts. Set secret_key= on Admin in production.
+  self._ensure_secret_key()
+{
+  "flat_ping": 200,
+  "flat_admin_index": 200,
+  "flat_admin_list": 200,
+  "nested_ping": 200,
+  "nested_admin_index": 200,
+  "nested_admin_list": 200,
+  "outerroute_admin_index": 200,
+  "outerroute_admin_list": 200,
+  "wrapped_ping": 200,
+  "wrapped_admin_index": 500,
+  "wrapped_admin_list": 500,
+  "starlette": "1.6.0",
+  "starlette_admin": "1.0.1"
+}

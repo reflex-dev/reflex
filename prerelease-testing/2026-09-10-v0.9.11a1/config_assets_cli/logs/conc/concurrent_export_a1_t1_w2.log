@@ -1,0 +1,122 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+────────────── Compiling production app and preparing for export. ──────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Creating Production Build failed with exit code 1
+$ react-router build
+Using Vite Environment API
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 413 modules transformed.
+rendering chunks...
+computing gzip size...
+build/client/.vite/manifest.json                             2.68 kB │ gzip:  
+0.58 kB
+build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ gzip: 
+84.10 kB
+build/client/assets/reflex-env-BVGF6eGS.js                   0.30 kB │ gzip:  
+0.20 kB
+build/client/assets/_404_._index-BS4Ybev6.js                 0.41 kB │ gzip:  
+0.29 kB
+build/client/assets/_index-DugZ2z3c.js                       1.57 kB │ gzip:  
+0.73 kB
+build/client/assets/emotion-react.browser.esm-Do-RBW0K.js   20.71 kB │ gzip:  
+8.12 kB
+build/client/assets/errorBoundaries-DIYo_grw.js             36.81 kB │ gzip: 
+12.78 kB
+build/client/assets/components-Blt2PyNA.js                  84.87 kB │ gzip: 
+28.19 kB
+build/client/assets/button-TDxxLlse.js                     144.29 kB │ gzip: 
+43.58 kB
+build/client/assets/entry.client-5UErbQKK.js               182.33 kB │ gzip: 
+57.70 kB
+build/client/assets/root-jDSkDhWr.js                       304.50 kB │ gzip: 
+85.72 kB
+
+✓ built in 2.37s
+vite v8.2.2 building ssr environment for production...
+transforming...
+⚠️ Paths with dynamic/splat params cannot be prerendered when using `prerender: 
+true`. You may want to use the `prerender()` API to prerender the following 
+paths:
+  - *
+✓ 25 modules transformed.
+rendering chunks...
+
+✓ 1 asset cleaned from React Router server build.
+build/client/assets/__reflex_global_styles-NccINl-w.css
+
+computing gzip size...
+build/server/.vite/manifest.json                           0.79 kB │ gzip:  0.31
+kB
+build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ gzip: 84.10
+kB
+build/server/assets/reflex-env-BVGF6eGS.js                 0.30 kB │ gzip:  0.20
+kB
+build/server/index.js                                     43.41 kB │ gzip: 13.44
+kB
+
+✓ built in 612ms
+Error: ENOENT: no such file or directory, scandir 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/config_assets_cli/sharedapp/.web/build/server/.vite'
+    at async readdirRecursive (node:internal/fs/promises:875:7)
+    at async 
+file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scra
+tchpad/apps/config_assets_cli/sharedapp/.web/node_modules/@react-router/dev/dist
+/vite.js:2516:8
+    at async Promise.all (index 1)
+    at async cleanViteManifests 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/config_assets_cli/sharedapp/.web/node_modules/@react-router/dev/dis
+t/vite.js:2509:2)
+    at async buildApp 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/config_assets_cli/sharedapp/.web/node_modules/@react-router/dev/dis
+t/vite.js:1540:8)
+    at async buildApp 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/config_assets_cli/sharedapp/.web/node_modules/@react-router/dev/dis
+t/vite.js:794:6)
+    at async Object.buildApp 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/config_assets_cli/sharedapp/.web/node_modules/@react-router/dev/dis
+t/vite.js:2202:8)
+    at async Object.buildApp 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/config_assets_cli/sharedapp/.web/node_modules/vite/dist/node/chunks
+/node.js:34238:38)
+    at async build 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/config_assets_cli/sharedapp/.web/node_modules/@react-router/dev/dis
+t/build-Ou3B3epu.js:16:2)
+    at async build 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/apps/config_assets_cli/sharedapp/.web/node_modules/@react-router/dev/dis
+t/cli/index.js:164:3) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'scandir',
+  path: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/config_assets_cli/sharedapp/.web/build/server/.vite'
+}
+error: script "export" exited with code 1
+
+
+
+Run with --loglevel debug  for the full log.
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:04

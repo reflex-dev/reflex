@@ -65,6 +65,17 @@ identical against a live OIDC provider; and all four 0.9.9a1 enterprise breakage
 | # | Finding | Severity | Note |
 |---|---|---|---|
 | 003 | Prod multi-worker + redis drops backend-initiated deltas | high | Pre-existing; verified 4/6 delivered with 9 workers, 6/6 with one, 0/6 on 0.9.10.post2. Swallows this train's #7073 hydrate, so it devalues a shipped fix. Best candidate for the next release. |
+| 036 | A delta for a substate the page has no dispatcher for latches the frontend dead | high | Pre-existing, but it makes any enterprise app using `EventHandlerAPIPlugin` (or anything importing the auth enforcement module) unusable in a browser unless it happens to render an auth var. Two independent fixes: don't treat such a delta as fatal, and don't register auth states in apps with no auth provider. |
+| 040 | Generated memo module names are not reproducible across identical compiles | medium | Every export/deploy churns the compiled output. |
+| 041 | Two same-named `ComponentState` subclasses in different modules crash the compile | medium | The module-disambiguation #6947 added for memo names is still missing here. |
+| 042 | `client_state(global_ref=False)` throws `ReferenceError` when memoization splits reader from writer | medium | Silent no-op plus a hard console error. |
+| 043 | Frontend packages reinstalled on every run | medium | #7050's second claim is not observable. |
+| 044 | Multi-process compile still aborts past the fixed asset link | medium | #7039's user-facing scenario is not yet met; worth a changelog qualification. |
+| 045 | `reflex component init` fails with "No module named pip" in a uv venv | low | The documented custom-component flow is broken for uv users. |
+| 046 | `reflex component build` prints five tracebacks then reports success | low | |
+| 047 | reflex-base's changelog re-lists #6933 under three versions | low | Readers will think it shipped in this train. |
+| 048 | Enterprise event-handler REST API answers 200 for failed calls | low | Downstream. |
+| 049 | Three more small pre-existing rough edges from the second enterprise pass | low | Prod "page is being redefined" spam; first Highcharts point click swallowed; dev 404 page served with HTTP 200. |
 | 018 | One unserializable state var drops the whole hydrate delta in dev | high | Pre-existing; reproduced in a 40-line app with no enterprise components. Blast radius is the issue: whole delta lost, state silently reverts, internal error text shown to end users. |
 | 025 | `rx.AdminDash` serves 500 on every `/admin` route | medium-high | Pre-existing on both versions and every starlette-admin generation; isolated to reflex's mount, not starlette or starlette-admin. See "Decisions needed". |
 | 022 | Module-scope `bundle_library()` discarded before page evaluation | medium | Three clusters found it independently. The error message tells the user to do what they already did. |
@@ -96,8 +107,9 @@ identical against a live OIDC provider; and all four 0.9.9a1 enterprise breakage
   `pyyaml` is not declared anywhere in the dependency chain, while `/.well-known/api-catalog`
   advertises the broken URL. Pre-existing on both reflex versions; installing `pyyaml` fixes it, so
   the fix is one dependency line.
-- **FINDING-036**: every page of an enterprise app logs two `no dispatch function for substate(s)`
-  console errors for the OIDC states that merely importing `reflex_enterprise` defines. Pre-existing.
+- **FINDING-036 has been re-rated HIGH and moved to the reflex table below** — the two console
+  errors latch `backend_state_mismatch`, which discards every user event, so the enterprise
+  `tickets` demo's UI is completely inert in dev and prod on both reflex versions.
 - **FINDING-038 / FINDING-039**: MCP `search_events` advertises a `rest_path` that 404s unless the
   REST plugin is also enabled, and logout from an iframed app never reaches the IdP's
   `end_session_endpoint`, so single sign-out silently does not happen. Both pre-existing in 0.9.5.
@@ -147,7 +159,9 @@ identical against a live OIDC provider; and all four 0.9.9a1 enterprise breakage
 
 1. Before release: fix FINDING-027 (a docs line, plus making the failed configuration fatal) and
    decide (1)-(4) below; the only code change any of the decisions might need is small.
-2. First post-release batch, in this order: FINDING-003 (devalues a shipped fix), FINDING-018
+2. First post-release batch, in this order: FINDING-036 (an entire class of enterprise app is
+   unusable in a browser, and the framework half is a small change), FINDING-003 (devalues a shipped
+   fix), FINDING-018
    (silent state loss with a user-visible internal error), FINDING-022 and FINDING-013 (both make
    other failures hard to diagnose), FINDING-025.
 3. Then the rest of the medium list, which is mostly independent and parallelisable.
@@ -177,10 +191,13 @@ Recorded so the next campaign knows what was already exercised and can spend its
 - **#7044** (`frontend_path` + `REFLEX_SSR=false`): both `reflex export` and `reflex run --env prod`
   fail on 0.9.10.post2 with exactly the documented `FileNotFoundError` and succeed on 0.9.11a1, and
   the resulting prod deployment works end to end in a browser under the sub-path.
-- **#7039** (shared assets): a stale `assets/external` symlink is repointed on 0.9.11a1 and silently
-  left pointing at the wrong file on 0.9.10.post2. The concurrent-first-create half of the claim
-  could not be provoked on this filesystem on either version.
-- **#7050** (CLI startup): ~2.3x faster on every subcommand (0.40 s → 0.17 s for `reflex --help`).
+- **#7039** (shared assets), **partly**: a stale `assets/external` symlink is repointed on 0.9.11a1
+  and silently left pointing at the wrong file on 0.9.10.post2. The concurrent-first-create half
+  could not be provoked on this filesystem, and a second pass found the multi-process scenario still
+  aborts one step past the fixed asset link — FINDING-044.
+- **#7050** (CLI startup), **partly**: ~2.3x faster on every subcommand (0.40 s → 0.17 s for
+  `reflex --help`). Its other half — "avoid frontend package reinstalls after backend-only config
+  changes" — is not observable: `bun add` re-runs on every run. FINDING-043.
 - **#6947** (memoization naming caches): two `AppHarness` apps compiled in one pytest process, each
   with a same-named `rx.memo` component and `rx.foreach` auto-memoization, emit distinct names and
   neither app's output is disturbed by the other's compile.

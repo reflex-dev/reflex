@@ -1,0 +1,20 @@
+─────────────────── Initializing reflex-lazy-widget project ────────────────────
+Info: Populating pyproject.toml with package name: reflex-lazy-widget
+Info: Initializing the component directory: custom_components/reflex_lazy_widget
+Info: Creating app for testing: lazy_widget_demo
+──────────────────────── Initializing lazy_widget_demo ─────────────────────────
+Info: Initializing the web directory.
+Info: Initializing the app directory.
+Success: Initialized lazy_widget_demo using the blank template. Install 
+dependencies from `requirements.txt` with `uv pip install -r requirements.txt` 
+(or your preferred installer) before running `uv run reflex run`.
+─────────────── Installing reflex-lazy-widget in editable mode. ────────────────
+Info: Package reflex-lazy-widget installed!
+Custom component initialized successfully!
+─────────────────────────────── Project Summary ────────────────────────────────
+[ README.md ]: Package description. Please add usage examples.
+[ pyproject.toml ]: Project configuration file. Please fill in details such as 
+your name, email, homepage URL.
+[ custom_components/ ]: Custom component code template. Start by editing it with
+your component implementation.
+[ lazy_widget_demo/ ]: Demo App. Add more code to this app and test.

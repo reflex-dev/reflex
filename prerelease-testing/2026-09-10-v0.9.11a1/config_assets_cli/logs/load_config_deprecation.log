@@ -1,0 +1,16 @@
+##### base0910
+DeprecationWarning: _load_config() has been deprecated in version 0.9.9.post1. 
+Use _get_config() to load a config from disk, or get_config() to read the config
+cached on the current RegistrationContext. It will be completely removed in 1.0.
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/config_assets_cli/scripts/load_config_deprecation.py:11)
+app_name: cfgapp
+warnings captured: 0
+##### smoke
+DeprecationWarning: _load_config() has been deprecated in version 0.9.9.post1. 
+Use _get_config() to load a config from disk, or get_config() to read the config
+cached on the current RegistrationContext. It will be completely removed in 1.0.
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/config_assets_cli/scripts/load_config_deprecation.py:11)
+app_name: cfgapp
+warnings captured: 0

@@ -1,0 +1,14 @@
+[
+  {
+    "label": "Api Widget v2",
+    "code": "API-1",
+    "updated": "2026-09-11T08:18:23.808978",
+    "image": "/favicon.ico",
+    "quantity": 99,
+    "category": "tools",
+    "sender": "depot",
+    "id": 1,
+    "created": "2026-09-11T08:18:23.796981",
+    "seller": "acme"
+  }
+]

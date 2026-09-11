@@ -1,0 +1,9 @@
+[
+  {"route": "/", "status": "200", "location": "", "bytes": 3593, "title": ""},
+  {"route": "/static-page", "status": "200", "location": "", "bytes": 3615, "title": ""},
+  {"route": "/static-page/", "status": "200", "location": "", "bytes": 3617, "title": ""},
+  {"route": "/item/1", "status": "200", "location": "", "bytes": 3605, "title": ""},
+  {"route": "/item/1/", "status": "200", "location": "", "bytes": 3607, "title": ""},
+  {"route": "/item/abc", "status": "200", "location": "", "bytes": 3609, "title": ""},
+  {"route": "/nonexistent-route", "status": "200", "location": "", "bytes": 3627, "title": ""}
+]

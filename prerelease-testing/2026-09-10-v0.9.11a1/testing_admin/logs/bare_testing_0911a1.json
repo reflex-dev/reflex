@@ -1,0 +1,16 @@
+──────────────────────────── Initializing tiny_app ─────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+{
+  "reflex_file": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py",
+  "reflex_version": "0.9.11a1",
+  "import_reflex_testing": "OK",
+  "has_psutil": false,
+  "has_selenium": false,
+  "has_uvicorn": false,
+  "has_pydantic": false,
+  "has_sqlmodel": false,
+  "has_alembic": false,
+  "appharness_enter_type": "ImportError",
+  "appharness_enter_msg": "AppHarness backend support requires `uvicorn`. Install it with `pip install 'reflex[testing]'`.",
+  "appharness_enter_tb_tail": "t recent call last):\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/testing.py\", line 81, in _get_uvicorn\n    import uvicorn\nModuleNotFoundError: No module named 'uvicorn'\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/testing_admin/probe_bare_testing.py\", line 78, in <module>\n    h.__enter__()\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/testing.py\", line 491, in __enter__\n    return self.start()\n           ^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/testing.py\", line 463, in start\n    self._start_backend()\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/testing.py\", line 365, in _start_backend\n    uvicorn = _get_uvicorn()\n              ^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/testing.py\", line 87, in _get_uvicorn\n    raise ImportError(msg) from exc\nImportError: AppHarness backend support requires `uvicorn`. Install it with `pip install 'reflex[testing]'`.\n"
+}

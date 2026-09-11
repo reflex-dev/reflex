@@ -1,0 +1,31 @@
+### 0.9.11a1 — module-level markers emitted into .web/app_components/memoapp/memoapp.jsx
+6:import {} from "$/public/memo_a.css"
+7:import {} from "$/public/memo_b.css"
+11:const MEMO_DYN_A = (globalThis.MEMO_DYN_A = 'dyn-A');
+12:const MEMO_DYN_B = (globalThis.MEMO_DYN_B = 'dyn-B');
+14:globalThis.MEMO_CODE_A = 'code-A';
+15:globalThis.MEMO_CODE_B = 'code-B';
+
+### 0.9.10.post2 — same file, same source (module A's two markers are MISSING)
+6:import {} from "$/public/memo_a.css"
+7:import {} from "$/public/memo_b.css"
+11:const MEMO_DYN_B = (globalThis.MEMO_DYN_B = 'dyn-B');
+13:globalThis.MEMO_CODE_B = 'code-B';
+
+### 0.9.11a1 — widget memo export names (four distinct pairs)
+export const Codewidget_div_17ad8794ba15a41e82763bca2dfd80b5_21819d56
+export const Codewidget_div_ae4e383aba3b077a2a0ec8961bad82e9_21819d56
+export const Csswidget_div_c9264a9dd784e3e4c1aa29c116a1d5d2_21819d56
+export const Csswidget_div_e3636b4a6723be965f4a2358915e58eb_21819d56
+export const Dynwidget_div_1e682796188bdd33f4d4eca70d94a670_21819d56
+export const Dynwidget_div_21c62824109474758469d99e005f5886_21819d56
+export const Wrapwidget_div_58f541141e2e22f94ce20a35c9c0a60a_21819d56
+export const Wrapwidget_div_695250d872492ef3421c1f9c953e2454_21819d56
+
+### 0.9.10.post2 — Codewidget and Dynwidget collapse to ONE name each, and share one hash
+export const Codewidget_div_72e19cb8ef3fd91caa56c0e2ed95e1d0_21819d56
+export const Csswidget_div_28d12f98b323c82e0f339894ce259411_21819d56
+export const Csswidget_div_979ae813faed4475eb4804dd908fd6b8_21819d56
+export const Dynwidget_div_72e19cb8ef3fd91caa56c0e2ed95e1d0_21819d56
+export const Wrapwidget_div_0afb82450a21d06d8cf23bd94c2e60b7_21819d56
+export const Wrapwidget_div_f840eb174f7cb3a8e2b461cda45cf150_21819d56

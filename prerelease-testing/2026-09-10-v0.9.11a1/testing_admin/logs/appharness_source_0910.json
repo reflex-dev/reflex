@@ -1,0 +1,61 @@
+{
+  "reflex": "0.9.10.post2",
+  "results": {
+    "plain": {
+      "status": "compiles",
+      "first_two_lines": [
+        "",
+        "import reflex as rx",
+        ""
+      ]
+    },
+    "noqa_comment": {
+      "status": "IndentationError: unexpected indent (line 2)",
+      "first_two_lines": [
+        "# noqa: N802",
+        "  import reflex as rx",
+        ""
+      ]
+    },
+    "annotated": {
+      "status": "compiles",
+      "first_two_lines": [
+        "",
+        "import reflex as rx",
+        ""
+      ]
+    },
+    "annotated_comment": {
+      "status": "IndentationError: unexpected indent (line 2)",
+      "first_two_lines": [
+        "# a comment",
+        "  import reflex as rx",
+        ""
+      ]
+    },
+    "annotated_str": {
+      "status": "compiles",
+      "first_two_lines": [
+        "def annotated_str() -> \"None\":",
+        "    import reflex as rx",
+        ""
+      ]
+    },
+    "multiline_sig": {
+      "status": "compiles",
+      "first_two_lines": [
+        "",
+        "import reflex as rx",
+        ""
+      ]
+    },
+    "with_docstring": {
+      "status": "compiles",
+      "first_two_lines": [
+        "",
+        "\"\"\"Doc.\"\"\"",
+        "import reflex as rx"
+      ]
+    }
+  }
+}

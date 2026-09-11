@@ -1,0 +1,146 @@
+### reflex.__file__ = /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py
+### reflex version = 0.9.11a1
+
+### cached_property_no_lock = <class 'reflex_base.vars.base.cached_property'>
+
+===== A_cached_get_all_var_data =====
+A_cached_get_all_var_data: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found.
+A_cached_get_all_var_data: __cause__=None __context__=None
+A_cached_get_all_var_data: real_error_visible_in_traceback=False
+A_cached_get_all_var_data: ---- full traceback (real cause absent) ----
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 38, in report
+    out = fn()
+          ^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 113, in <lambda>
+    lambda: BoomVarData(_var_value="hi", _var_type=str, _js_expr="")._get_all_var_data(),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2128, in _get_all_var_data
+    return self._cached_get_all_var_data
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2120, in __getattr__
+    return next_class.__getattr__(self, name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1471, in __getattr__
+    raise VarAttributeError(msg)
+reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found.
+
+===== B_cached_var_name =====
+B_cached_var_name: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+B_cached_var_name: __cause__=None __context__=None
+B_cached_var_name: real_error_visible_in_traceback=False
+B_cached_var_name: ---- full traceback (real cause absent) ----
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 38, in report
+    out = fn()
+          ^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 117, in <lambda>
+    lambda: str(BoomVarName(_var_value="hi", _var_type=str, _js_expr="")),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 614, in __str__
+    return self._js_expr
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2114, in __getattr__
+    return self._cached_var_name
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2120, in __getattr__
+    return next_class.__getattr__(self, name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1471, in __getattr__
+    raise VarAttributeError(msg)
+reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+
+===== F_control_ValueError =====
+F_control_ValueError: builtins.ValueError: module 'some.module' has no attribute 'the_real_problem'
+F_control_ValueError: __cause__=None __context__=None
+F_control_ValueError: real_error_visible_in_traceback=True
+
+===== C_userspace_serializer_in_array_literal =====
+C_userspace_serializer_in_array_literal: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+C_userspace_serializer_in_array_literal: __cause__=None __context__=None
+C_userspace_serializer_in_array_literal: real_error_visible_in_traceback=False
+C_userspace_serializer_in_array_literal: ---- full traceback (real cause absent) ----
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 38, in report
+    out = fn()
+          ^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 142, in <lambda>
+    report("C_userspace_serializer_in_array_literal", lambda: str(rx.Var.create([Thing(1)])))
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 614, in __str__
+    return self._js_expr
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2114, in __getattr__
+    return self._cached_var_name
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2120, in __getattr__
+    return next_class.__getattr__(self, name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1471, in __getattr__
+    raise VarAttributeError(msg)
+reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+
+===== C2_userspace_serializer_component_render =====
+C2_userspace_serializer_component_render: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+C2_userspace_serializer_component_render: __cause__=None __context__=None
+C2_userspace_serializer_component_render: real_error_visible_in_traceback=False
+C2_userspace_serializer_component_render: ---- full traceback (real cause absent) ----
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 38, in report
+    out = fn()
+          ^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 146, in <lambda>
+    lambda: rx.text("x", custom_attrs={"data-x": rx.Var.create([Thing(1)])}).render(),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/components/component.py", line 1441, in render
+    rendered_dict = dict(
+                    ^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/components/tags/tag.py", line 77, in __iter__
+    yield "props", self.format_props()
+                   ^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/components/tags/tag.py", line 56, in format_props
+    return format.format_props(*self.special_props, **self.props)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/utils/format.py", line 438, in format_props
+    return [
+           ^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/utils/format.py", line 441, in <listcomp>
+    + str(format_prop(prop if isinstance(prop, Var) else LiteralVar.create(prop)))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/utils/format.py", line 393, in format_prop
+    return str(prop)
+           ^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 614, in __str__
+    return self._js_expr
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2114, in __getattr__
+    return self._cached_var_name
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2120, in __getattr__
+    return next_class.__getattr__(self, name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1471, in __getattr__
+    raise VarAttributeError(msg)
+reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found.
+
+===== D_control_eager_serializer =====
+D_control_eager_serializer: builtins.AttributeError: type object 'Reflex' has no attribute 'the_real_problem'
+D_control_eager_serializer: __cause__=None __context__=None
+D_control_eager_serializer: real_error_visible_in_traceback=True
+
+===== E_control_computed_var =====
+E_control_computed_var: reflex_base.utils.exceptions.ReflexRuntimeError: State classes should not be instantiated directly in a Reflex app. See https://reflex.dev/docs/state/ for further information.
+E_control_computed_var: __cause__=None __context__=None
+E_control_computed_var: real_error_visible_in_traceback=False
+E_control_computed_var: ---- full traceback (real cause absent) ----
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 38, in report
+    out = fn()
+          ^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_reverify_prev_0/verify_cachedvar_mask.py", line 163, in <lambda>
+    report("E_control_computed_var", lambda: SomeState().bad)
+                                             ^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/state.py", line 533, in __init__
+    raise ReflexRuntimeError(msg)
+reflex_base.utils.exceptions.ReflexRuntimeError: State classes should not be instantiated directly in a Reflex app. See https://reflex.dev/docs/state/ for further information.
+

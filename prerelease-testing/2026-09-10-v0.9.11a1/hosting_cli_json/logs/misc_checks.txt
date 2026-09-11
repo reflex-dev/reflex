@@ -1,0 +1,107 @@
+### token --print no token :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud token --print
+rc=1
+--stdout (0)--
+
+--stderr (60)--
+No access token stored. Run `reflex login` to authenticate.
+
+### token no flags :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud token
+rc=2
+--stdout (0)--
+
+--stderr (147)--
+Usage: reflex cloud token [OPTIONS]
+Try 'reflex cloud token --help' for help.
+
+Error: Specify exactly one of --print, --set or --clear (got none).
+
+### token --clear :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud token --clear
+rc=0
+--stdout (42)--
+Success: Cleared the stored access token.
+
+--stderr (0)--
+
+### whoami --interactive (unsupported) :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud whoami --interactive
+rc=2
+--stdout (0)--
+
+--stderr (120)--
+Usage: reflex cloud whoami [OPTIONS]
+Try 'reflex cloud whoami --help' for help.
+
+Error: No such option '--interactive'.
+
+### whoami -i (unsupported) :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud whoami -i
+rc=2
+--stdout (0)--
+
+--stderr (109)--
+Usage: reflex cloud whoami [OPTIONS]
+Try 'reflex cloud whoami --help' for help.
+
+Error: No such option '-i'.
+
+### regions -i (unsupported) :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud regions -i
+rc=2
+--stdout (0)--
+
+--stderr (111)--
+Usage: reflex cloud regions [OPTIONS]
+Try 'reflex cloud regions --help' for help.
+
+Error: No such option '-i'.
+
+### apps list -j short flag :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud apps list -j
+rc=1
+--stdout (0)--
+
+--stderr (71)--
+Token is required for non-interactive mode.
+Unable to list deployments
+
+### apps list -ij combined :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud apps list -ij
+rc=1
+--stdout (0)--
+
+--stderr (437)--
+Opening https://build.reflex.dev/cli/login?request_id=c5a02fcd21c24de4a6560d2f767997fb ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].
+Warning: Unable to automatically open the browser. Please go to https://build.reflex.dev/cli/login?request_id=c5a02fcd21c24de4a6560d2f767997fb to authenticate.
+please hit 'Enter' or 'Return' after login on website complete: Unable to list deployments
+
+### apps list --no-json --json (last wins) :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud apps list --no-json --json
+rc=1
+--stdout (0)--
+
+--stderr (71)--
+Token is required for non-interactive mode.
+Unable to list deployments
+
+### apps list --json --no-json (last wins) :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud apps list --json --no-json
+rc=1
+--stdout (0)--
+
+--stderr (71)--
+Token is required for non-interactive mode.
+Unable to list deployments
+
+### cloud --json (group level) :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud --json
+rc=2
+--stdout (0)--
+
+--stderr (117)--
+Usage: reflex cloud [OPTIONS] COMMAND [ARGS]...
+Try 'reflex cloud --help' for help.
+
+Error: No such option '--json'.
+
+### config --loglevel debug (unsupported) :: /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud config --loglevel debug
+rc=2
+--stdout (0)--
+
+--stderr (117)--
+Usage: reflex cloud config [OPTIONS]
+Try 'reflex cloud config --help' for help.
+
+Error: No such option '--loglevel'.
+

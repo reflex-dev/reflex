@@ -1,0 +1,20 @@
+{
+  "url": "http://localhost:6048/f",
+  "title": "Minrepro | F",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "fill: ['#f-in', 'typed-f']",
+    "wait: 700",
+    "screenshot: 'shots/f-after.png'",
+    "eval -> 'typed-f'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "F"
+}

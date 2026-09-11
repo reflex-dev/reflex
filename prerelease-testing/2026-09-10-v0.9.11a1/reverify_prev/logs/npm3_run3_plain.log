@@ -1,0 +1,14 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:5383/
+Backend running at: http://0.0.0.0:9783
+Starting frontend failed with exit code -9
+$ react-router dev --host
+  ➜  Local:   http://localhost:5383/
+  ➜  Network: http://192.0.2.2:5383/  eth0
+6:00:08 AM [vite] (ssr) connected.
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

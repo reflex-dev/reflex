@@ -1,0 +1,21 @@
+{
+  "url": "http://localhost:6048/d",
+  "title": "Minrepro | D",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "expect_text: 'd0'",
+    "click: '#d-btn'",
+    "wait: 700",
+    "screenshot: 'shots/d-after.png'",
+    "expect_text: 'd-clicked'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "D\nd-clickedset-d"
+}

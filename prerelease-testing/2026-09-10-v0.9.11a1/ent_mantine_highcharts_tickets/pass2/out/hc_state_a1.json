@@ -1,0 +1,996 @@
+{
+ "base": "http://localhost:5420",
+ "steps": [
+  {
+   "i": 0,
+   "verb": "goto",
+   "val": "/state",
+   "note": null,
+   "ok": true,
+   "ms": 1464,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 321,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 1,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3005,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 301,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 2,
+   "verb": "shot",
+   "val": "hcstate_load",
+   "note": null,
+   "ok": true,
+   "ms": 169,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 301,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 3,
+   "verb": "eval",
+   "val": "() => ({texts: Array.from(document.querySelectorAll('p, span')).map(e=>e.innerText).filter(t=>/points|total|clicked|streaming/.test(t)), s0: document.querySelectorAll('.highcharts-series-0 .highcharts-point').length, titles: Array.from(document.querySelectorAll('.highcharts-title')).map(e=>e.textContent), charts: document.querySelectorAll('.highcharts-container').length, badge: (document.querySelector('#badge')||{}).innerText})",
+   "note": "initial: 3 points, total 9, badge red",
+   "ok": true,
+   "result": {
+    "texts": [
+     "points: 3",
+     "total: 9",
+     "clicked: none",
+     "streaming: false",
+     "total 9 or below"
+    ],
+    "s0": 8,
+    "titles": [
+     "series data from state",
+     "options from state (3 points)"
+    ],
+    "charts": 2,
+    "badge": "total 9 or below"
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 301,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 4,
+   "verb": "click_text",
+   "val": "Add point",
+   "note": null,
+   "ok": true,
+   "ms": 46,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 299,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 4 |  | total: 12 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total above 9"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 5,
+   "verb": "wait",
+   "val": 1200,
+   "note": null,
+   "ok": true,
+   "ms": 1201,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 6,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 291,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 4 |  | total: 12 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (4 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | Highcharts.com | total above 9"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 6,
+   "verb": "eval",
+   "val": "() => ({body: document.body.innerText.replace(/\\n/g,' | ').slice(0,220), s0: document.querySelectorAll('.highcharts-series-0 .highcharts-point').length, titles: Array.from(document.querySelectorAll('.highcharts-title')).map(e=>e.textContent), badge: (document.querySelector('#badge')||{}).innerText})",
+   "note": "after add: 4 points in both charts",
+   "ok": true,
+   "result": {
+    "body": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 4 |  | total: 12 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 ",
+    "s0": 10,
+    "titles": [
+     "series data from state",
+     "options from state (4 points)"
+    ],
+    "badge": "total above 9"
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 6,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 291,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 4 |  | total: 12 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (4 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | Highcharts.com | total above 9"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 7,
+   "verb": "shot",
+   "val": "hcstate_add",
+   "note": null,
+   "ok": true,
+   "ms": 113,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 6,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 291,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 4 |  | total: 12 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (4 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | Highcharts.com | total above 9"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 8,
+   "verb": "click_text",
+   "val": "Rename + add (chain)",
+   "note": null,
+   "ok": true,
+   "ms": 43,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 6,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 291,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 4 |  | total: 12 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 3 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (4 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | Highcharts.com | total above 9"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 9,
+   "verb": "wait",
+   "val": 1500,
+   "note": null,
+   "ok": true,
+   "ms": 1501,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 7,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 299,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 5 |  | total: 15 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (5 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | 4 | Highcharts.com | total above 9"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 10,
+   "verb": "eval",
+   "val": "() => ({body: document.body.innerText.replace(/\\n/g,' | ').slice(0,220), s0: document.querySelectorAll('.highcharts-series-0 .highcharts-point').length, legend: Array.from(document.querySelectorAll('.highcharts-legend-item text')).map(e=>e.textContent), titles: Array.from(document.querySelectorAll('.highcharts-title')).map(e=>e.textContent)})",
+   "note": "event chain: label renamed AND a point added",
+   "ok": true,
+   "result": {
+    "body": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 5 |  | total: 15 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | ",
+    "s0": 12,
+    "legend": [
+     "live-4",
+     "live-4"
+    ],
+    "titles": [
+     "series data from state",
+     "options from state (5 points)"
+    ]
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 7,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 299,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 5 |  | total: 15 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (5 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | 4 | Highcharts.com | total above 9"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 11,
+   "verb": "shot",
+   "val": "hcstate_chain",
+   "note": null,
+   "ok": true,
+   "ms": 106,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 7,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 299,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 5 |  | total: 15 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (5 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | 4 | Highcharts.com | total above 9"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 12,
+   "verb": "click_text",
+   "val": "Stream (background)",
+   "note": null,
+   "ok": true,
+   "ms": 29,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 7,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 299,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 5 |  | total: 15 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (5 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 2 | 4 | Highcharts.com | total above 9"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 13,
+   "verb": "wait",
+   "val": 900,
+   "note": null,
+   "ok": true,
+   "ms": 901,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 8,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 317,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 6 |  | total: 23 |  | clicked: none |  | streaming: true |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 1 | 2 | 3 | 4 | 5 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (6 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 2 | 4 | Highcharts."
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 14,
+   "verb": "eval",
+   "val": "() => document.body.innerText.replace(/\\n/g,' | ').slice(0,200)",
+   "note": "streaming true mid-task",
+   "ok": true,
+   "result": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 6 |  | total: 23 |  | clicked: none |  | streaming: true |  | Values | series data from state | li",
+   "ms": 4,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 8,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 317,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 6 |  | total: 23 |  | clicked: none |  | streaming: true |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 1 | 2 | 3 | 4 | 5 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (6 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 2 | 4 | Highcharts."
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 15,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3002,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 314,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | Highcharts.com"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 16,
+   "verb": "eval",
+   "val": "() => ({body: document.body.innerText.replace(/\\n/g,' | ').slice(0,220), s0: document.querySelectorAll('.highcharts-series-0 .highcharts-point').length, titles: Array.from(document.querySelectorAll('.highcharts-title')).map(e=>e.textContent)})",
+   "note": "background task appended 3 points, streaming false",
+   "ok": true,
+   "result": {
+    "body": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | ",
+    "s0": 18,
+    "titles": [
+     "series data from state",
+     "options from state (8 points)"
+    ]
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 314,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | Highcharts.com"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 17,
+   "verb": "shot",
+   "val": "hcstate_stream",
+   "note": null,
+   "ok": true,
+   "ms": 128,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 314,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | Highcharts.com"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 18,
+   "verb": "hover",
+   "val": ".highcharts-series-0 .highcharts-point",
+   "note": null,
+   "ok": true,
+   "ms": 55,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 314,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | Highcharts.com"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 19,
+   "verb": "wait",
+   "val": 400,
+   "note": null,
+   "ok": true,
+   "ms": 401,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 314,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: none |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | Highcharts.com"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 20,
+   "verb": "click_nth",
+   "val": [
+    ".highcharts-series-0 .highcharts-point",
+    0
+   ],
+   "note": "reflex-style on_click trigger",
+   "ok": true,
+   "ms": 57,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 328,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: 0=2 |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | 0\u200b\u25cf live-4: 2\u200b | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | "
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 21,
+   "verb": "wait",
+   "val": 1500,
+   "note": null,
+   "ok": true,
+   "ms": 1502,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 328,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: 0=2 |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | 0\u200b\u25cf live-4: 2\u200b | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | "
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 22,
+   "verb": "eval",
+   "val": "() => document.body.innerText.replace(/\\n/g,' | ').slice(0,220)",
+   "note": "clicked=0=2 expected",
+   "ok": true,
+   "result": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: 0=2 |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3",
+   "ms": 3,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 328,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: 0=2 |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | 0\u200b\u25cf live-4: 2\u200b | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | "
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 23,
+   "verb": "shot",
+   "val": "hcstate_click",
+   "note": null,
+   "ok": true,
+   "ms": 200,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 328,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: 0=2 |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | 0\u200b\u25cf live-4: 2\u200b | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | "
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 24,
+   "verb": "click_text",
+   "val": "Reset",
+   "note": null,
+   "ok": true,
+   "ms": 46,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 10,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 328,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 8 |  | total: 34 |  | clicked: 0=2 |  | streaming: false |  | Values | series data from state | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 2 | 4 | 0 | 6 | 8 | 10 | Highcharts.com | 0\u200b\u25cf live-4: 2\u200b | Values | options from state (8 points) | live-4 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 5 | "
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 25,
+   "verb": "wait",
+   "val": 1200,
+   "note": null,
+   "ok": true,
+   "ms": 1202,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 301,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 0.5 | 1.5 | 2 | 4 | 1 | 3 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 26,
+   "verb": "eval",
+   "val": "() => ({body: document.body.innerText.replace(/\\n/g,' | ').slice(0,220), s0: document.querySelectorAll('.highcharts-series-0 .highcharts-point').length, badge: (document.querySelector('#badge')||{}).innerText})",
+   "note": "back to 3 points / total 9 / red badge",
+   "ok": true,
+   "result": {
+    "body": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 0.5",
+    "s0": 8,
+    "badge": "total 9 or below"
+   },
+   "ms": 1,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 301,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 0.5 | 1.5 | 2 | 4 | 1 | 3 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 27,
+   "verb": "shot",
+   "val": "hcstate_reset",
+   "note": null,
+   "ok": true,
+   "ms": 120,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 301,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 1 | 2 | 0.5 | 1.5 | 2 | 4 | 1 | 3 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 28,
+   "verb": "goto",
+   "val": "/",
+   "note": null,
+   "ok": true,
+   "ms": 766,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 29,
+   "verb": "wait",
+   "val": 2000,
+   "note": null,
+   "ok": true,
+   "ms": 2002,
+   "probe": {
+    "svg": 3,
+    "buttons": 1,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 11,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 245,
+    "head": "Highcharts in Reflex Enterprise |  | Click a point on the 2026 line to see it here. |  | Units | Monthly sales | Composed from child components | 2025 | 2026 | Jan | Feb | Mar | Apr | May | Jun | 0 | 2 | 4 | 6 | 8 | 10 | Highcharts.com | Traffic sources | Search | Direct | Social | Highcharts.com"
+   },
+   "url": "http://localhost:5420/"
+  },
+  {
+   "i": 30,
+   "verb": "goto",
+   "val": "/state",
+   "note": null,
+   "ok": true,
+   "ms": 653,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 321,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 31,
+   "verb": "wait",
+   "val": 2500,
+   "note": null,
+   "ok": true,
+   "ms": 2501,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 301,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 32,
+   "verb": "eval",
+   "val": "() => ({body: document.body.innerText.replace(/\\n/g,' | ').slice(0,200), s0: document.querySelectorAll('.highcharts-series-0 .highcharts-point').length})",
+   "note": "state survives client-side navigation",
+   "ok": true,
+   "result": {
+    "body": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | li",
+    "s0": 8
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 301,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5420/state"
+  },
+  {
+   "i": 33,
+   "verb": "shot",
+   "val": "hcstate_renav",
+   "note": null,
+   "ok": true,
+   "ms": 211,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 2,
+    "hc_points": 5,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 301,
+    "head": "State-driven Highcharts | Add point | Rename + add (chain) | Stream (background) | Reset |  | points: 3 |  | total: 9 |  | clicked: none |  | streaming: false |  | Values | series data from state | live | 0 | 0.5 | 1 | 1.5 | 2 | 1 | 2 | 3 | 4 | 5 | Highcharts.com | Values | options from state (3 points) | live | 0 | 1 | 2 | 3 | 4 | 5 | 0 | 1 | 2 | Highcharts.com | total 9 or belo"
+   },
+   "url": "http://localhost:5420/state"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "ws": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"rqxFlrX-U58JVZqiAAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"2WXFlHin-2kxuueGAAAB\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"47e0e3ae-5730-4e9e-866b-a283c0fdf329\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"values_rx_state_\":[2,4,3,3],\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"options from s",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"label_rx_state_\":\"live-4\",\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"options from sta",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"values_rx_state_\":[2,4,3,3,3],\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"options from",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"streaming_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"values_rx_state_\":[2,4,3,3,3,8],\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"options fr",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"values_rx_state_\":[2,4,3,3,3,8,6],\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"options ",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"values_rx_state_\":[2,4,3,3,3,8,6,5],\"options_rx_state_\":{\"chart\":{\"type\":\"bar\"},\"title\":{\"text\":\"option",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"streaming_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"clicked_rx_state_\":\"0=2\"}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.highcharts___state_demo____series_state\":{\"label_rx_state_\":\"live\",\"values_rx_state_\":[2,4,3],\"clicked_rx_state_\":\"none\",\"options_rx_state_\":{\"cha",
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"w16cbpYQCK3iwL0NAAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"699LtB4hpXHJsxJnAAAD\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"47e0e3ae-5730-4e9e-866b-a283c0fdf329\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"CN4H-oqtNCGdCv5rAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"gf4mJl2IGPytqBO1AAAF\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"47e0e3ae-5730-4e9e-866b-a283c0fdf329\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console_errors": [],
+ "console_warnings": [
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  },
+  {
+   "type": "warning",
+   "text": "Highcharts warning: Consider including the \"accessibility.js\" module to make your chart more usable for people with disabilities. Set the \"accessibility.enabled\" option to false to remove this warning. See https://www.highcharts.com/docs/accessibility/accessibility-module."
+  }
+ ],
+ "failed_steps": []
+}

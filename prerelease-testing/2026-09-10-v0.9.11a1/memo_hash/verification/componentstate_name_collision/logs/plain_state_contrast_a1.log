@@ -1,0 +1,5 @@
+reflex 0.9.11a1
+plain rx.State, same class name, two modules:
+   reflex___state____state.st_one___s____foo
+   reflex___state____state.st_two___s____foo
+   coexist: True

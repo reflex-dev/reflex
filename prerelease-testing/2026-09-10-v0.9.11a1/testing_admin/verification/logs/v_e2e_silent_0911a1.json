@@ -1,0 +1,8 @@
+─────────────────────────── Initializing cleansilent ───────────────────────────
+{
+  "reflex": "0.9.11a1",
+  "python": "3.11.15",
+  "cleansilent": "AttributeError: module 'cleansilent.cleansilent' has no attribute 'app'",
+  "cleansilent_tb_tail": "turn self.start()\n           ^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_1/lib/python3.11/site-packages/reflex/testing.py\", line 462, in start\n    self._initialize_app()\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_1/lib/python3.11/site-packages/reflex/testing.py\", line 317, in _initialize_app\n    reflex.utils.prerequisites.get_and_validate_app(\n  File \"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/verify2_testing_admin_1/lib/python3.11/site-packages/reflex/utils/prerequisites.py\", line 304, in get_and_validate_app\n    app = getattr(app_module, constants.CompileVars.APP)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'cleansilent.cleansilent' has no attribute 'app'\n",
+  "cleansilent_generated": "\ndef CleanSilentApp() -> \"None\":  # noqa: N802\n    import reflex as rx\n\n    app = rx.App()\n    app.add_page(rx.text(\"hi\"), route=\"/\")\n"
+}

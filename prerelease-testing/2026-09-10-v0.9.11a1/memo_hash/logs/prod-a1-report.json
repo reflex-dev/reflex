@@ -1,0 +1,190 @@
+{
+  "base": "http://localhost:5342",
+  "checks": [
+    {
+      "name": "custom.add_custom_code.A",
+      "ok": true,
+      "detail": "{'code_a': 'code-A', 'code_b': 'code-B', 'dyn_a': 'dyn-A', 'dyn_b': 'dyn-B'}"
+    },
+    {
+      "name": "custom.add_custom_code.B",
+      "ok": true,
+      "detail": "{'code_a': 'code-A', 'code_b': 'code-B', 'dyn_a': 'dyn-A', 'dyn_b': 'dyn-B'}"
+    },
+    {
+      "name": "custom.dynamic_import.A",
+      "ok": true,
+      "detail": "{'code_a': 'code-A', 'code_b': 'code-B', 'dyn_a': 'dyn-A', 'dyn_b': 'dyn-B'}"
+    },
+    {
+      "name": "custom.dynamic_import.B",
+      "ok": true,
+      "detail": "{'code_a': 'code-A', 'code_b': 'code-B', 'dyn_a': 'dyn-A', 'dyn_b': 'dyn-B'}"
+    },
+    {
+      "name": "custom.tagless_importvar.A_css",
+      "ok": true,
+      "detail": "computed={'color': 'rgb(1, 2, 3)', 'background': 'rgb(4, 5, 6)'}"
+    },
+    {
+      "name": "custom.tagless_importvar.B_css",
+      "ok": true,
+      "detail": "computed={'color': 'rgb(1, 2, 3)', 'background': 'rgb(4, 5, 6)'}"
+    },
+    {
+      "name": "custom.appwrap.text_a",
+      "ok": true,
+      "detail": "'bbbbb\\n\\na\\nindexsamenamecustompropsforeachpage2\\ncode:\\ndyn:\\ncss'"
+    },
+    {
+      "name": "custom.appwrap.text_bbbbb",
+      "ok": true,
+      "detail": "'bbbbb\\n\\na\\nindexsamenamecustompropsforeachpage2\\ncode:\\ndyn:\\ncss'"
+    },
+    {
+      "name": "custom.four_widgets_each",
+      "ok": true,
+      "detail": "{'a': 4, 'b': 4}"
+    },
+    {
+      "name": "custom.state_bound_prop_initial",
+      "ok": true,
+      "detail": "['shared', 'shared', 'shared', 'shared', 'shared', 'shared', 'shared', 'shared']"
+    },
+    {
+      "name": "custom.state_bound_prop_after_event",
+      "ok": true,
+      "detail": "['relabelled', 'relabelled', 'relabelled', 'relabelled', 'relabelled', 'relabelled', 'relabelled', 'relabelled']"
+    },
+    {
+      "name": "samename.two_cards",
+      "ok": true,
+      "detail": "['card-A', 'card-B']"
+    },
+    {
+      "name": "samename.card_A_bumps_only_A",
+      "ok": true,
+      "detail": "A=1 B=0"
+    },
+    {
+      "name": "samename.card_B_bumps_only_B",
+      "ok": true,
+      "detail": "A=1 B=10"
+    },
+    {
+      "name": "samename.componentstate_independent",
+      "ok": true,
+      "detail": "A=1 B=10"
+    },
+    {
+      "name": "props.dataclass_alpha_beta",
+      "ok": true,
+      "detail": "{'obj-alpha': 'x', 'obj-beta': 'x', 'obj-local-one': 'x', 'obj-local-two': 'x', 'level-enum': '1', 'level-int': '1', 'level-enum-two': '2', 'hue-red': 'matched-red|cond-red|relabelled', 'hue-blue': 'matched-blue|cond-not-red|relabelled'}"
+    },
+    {
+      "name": "props.local_dataclasses",
+      "ok": true,
+      "detail": "{'obj-alpha': 'x', 'obj-beta': 'x', 'obj-local-one': 'x', 'obj-local-two': 'x', 'level-enum': '1', 'level-int': '1', 'level-enum-two': '2', 'hue-red': 'matched-red|cond-red|relabelled', 'hue-blue': 'matched-blue|cond-not-red|relabelled'}"
+    },
+    {
+      "name": "props.intenum_vs_int",
+      "ok": true,
+      "detail": "{'obj-alpha': 'x', 'obj-beta': 'x', 'obj-local-one': 'x', 'obj-local-two': 'x', 'level-enum': '1', 'level-int': '1', 'level-enum-two': '2', 'hue-red': 'matched-red|cond-red|relabelled', 'hue-blue': 'matched-blue|cond-not-red|relabelled'}"
+    },
+    {
+      "name": "props.enum_match_cond",
+      "ok": true,
+      "detail": "{'obj-alpha': 'x', 'obj-beta': 'x', 'obj-local-one': 'x', 'obj-local-two': 'x', 'level-enum': '1', 'level-int': '1', 'level-enum-two': '2', 'hue-red': 'matched-red|cond-red|relabelled', 'hue-blue': 'matched-blue|cond-not-red|relabelled'}"
+    },
+    {
+      "name": "foreach.rows",
+      "ok": true,
+      "detail": "3"
+    },
+    {
+      "name": "foreach.state_bound_memo_props",
+      "ok": true,
+      "detail": "['i0', 'i0', 'i1', 'i1', 'i2', 'i2']"
+    },
+    {
+      "name": "foreach.memo_handlers_routed",
+      "ok": true,
+      "detail": "dA=1 dB=10 (abs A=2 B=20)"
+    },
+    {
+      "name": "foreach.componentstate_inside_memo",
+      "ok": true,
+      "detail": "A=1 B=10"
+    },
+    {
+      "name": "foreach.client_state_local_memo_prop",
+      "ok": false,
+      "detail": "global_ref=False: before='cs0' after='cs0'"
+    },
+    {
+      "name": "foreach.client_state_global_memo_prop",
+      "ok": true,
+      "detail": "global_ref=True: before='csg0' after='csg-clicked'"
+    },
+    {
+      "name": "nav.page2_loaded",
+      "ok": true,
+      "detail": "http://localhost:5342/page2"
+    },
+    {
+      "name": "nav.page2_custom_markers",
+      "ok": true,
+      "detail": "{'code_a': 'code-A', 'code_b': 'code-B', 'dyn_a': 'dyn-A', 'dyn_b': 'dyn-B'}"
+    },
+    {
+      "name": "nav.page2_memo_handlers",
+      "ok": true,
+      "detail": "dA=1 dB=10 (abs A=3 B=30)"
+    },
+    {
+      "name": "nav.back_to_samename",
+      "ok": true,
+      "detail": "http://localhost:5342/samename a-clicks=3 expected=3"
+    }
+  ],
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://localhost:5342/custom/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:5342/custom/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:5342/samename/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:5342/props/"
+    }
+  ],
+  "network": [],
+  "pageerrors": [
+    "Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+    "setMemo_cs is not defined"
+  ],
+  "summary": {
+    "checks": 29,
+    "failed": [
+      "foreach.client_state_local_memo_prop"
+    ],
+    "console_errors": 1,
+    "console_warnings": 0,
+    "pageerrors": 5,
+    "http_errors": 0
+  }
+}

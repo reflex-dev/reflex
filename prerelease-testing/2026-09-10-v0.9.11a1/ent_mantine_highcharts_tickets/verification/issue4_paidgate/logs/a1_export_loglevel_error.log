@@ -1,0 +1,5 @@
+────────────── Compiling production app and preparing for export. ──────────────
+`reflex export` requires a paid Reflex subscription (one of pro, team, 
+enterprise). You are currently logged out. Run `reflex login` to authenticate. 
+See https://reflex.dev/pricing/ for more information.
+EXIT=0

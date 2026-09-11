@@ -1,0 +1,22 @@
+{
+  "url": "http://localhost:6084/ctl",
+  "title": "ctl",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 2500",
+    "eval -> [True, 'ctl-label: start']",
+    "click: '#btn-relabel'",
+    "wait: 2000",
+    "eval -> [True, 'ctl-label: clicked']",
+    "screenshot: 'shots/a1_nobundle_ctl.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "dyn\nctl\nmix\n\nbundle_library called: False\n\nCTL\n\nplain-box\n\nctl-label: clicked\n\nrelabel"
+}

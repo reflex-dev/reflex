@@ -1,0 +1,15 @@
+───────────────────────────── Starting Reflex App ──────────────────────────────
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:5382/
+Backend running at: http://0.0.0.0:9782
+Starting frontend failed with exit code -9
+$ react-router dev --host
+  ➜  Local:   http://localhost:5382/
+  ➜  Network: http://192.0.2.2:5382/  eth0
+5:56:55 AM [vite] (ssr) connected.
+error: script "dev" was terminated by signal SIGKILL (Forced quit)
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

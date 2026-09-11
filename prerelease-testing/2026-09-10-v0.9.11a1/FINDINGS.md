@@ -67,8 +67,9 @@ Findings 030-037 were found in the foreground clusters that closed the campaign:
 FINDING-030 delta key ordering changed (LOW, new); FINDING-031 and FINDING-032 enterprise MCP
 resource quirks (LOW, pre-existing); **FINDING-033 the `rx.moment` locale leak (MEDIUM, regression)
 — CONFIRMED**; FINDING-034 seven component-library rough edges (LOW, pre-existing); FINDING-035 the
-enterprise OpenAPI document 500s without `pyyaml` (LOW, pre-existing); FINDING-036 a delta sent for
-substates the page has no dispatcher for (LOW, pre-existing); FINDING-037 `REFLEX_SSR=false` serves
+enterprise OpenAPI document 500s without `pyyaml` (LOW, pre-existing); **FINDING-036 a delta sent for a
+substate the page has no dispatcher for latches the whole frontend dead (HIGH, pre-existing —
+re-rated from LOW after a second pass)**; FINDING-037 `REFLEX_SSR=false` serves
 every prod route but `/` as 404 (LOW, pre-existing).
 - FINDING-001: reflex-otel 0.1.0a1 not published by the release run (PROCESS, resolved)
 - FINDING-002: rx.moment on_change fires at mount with react-moment 2.0.2 (LOW, regression, downstream) — CONFIRMED
@@ -583,7 +584,8 @@ real worktree of the release branch.
 `mantine`, `highcharts` and `tickets` identical across versions on every structural count and
 route. The tickets demo's `EventHandlerAPIPlugin` works over REST (bearer, delta, persisted row)
 but 500s on its own OpenAPI document (FINDING-035), and every page logs a delta addressed to
-substates it has no dispatcher for (FINDING-036).
+substates it has no dispatcher for, which a second pass showed latches the demo's entire UI dead
+(FINDING-036, re-rated HIGH).
 
 ### `config_assets_cli` (solo) — both claims hold, no findings
 #7039's stale-link half is a clean pass/fail and 0.9.11a1 fixes it (0.9.10.post2 keeps serving the
@@ -751,23 +753,47 @@ document (`ent_mantine_highcharts_tickets/out/tickets_openapi_with_pyyaml.yaml`)
 unaffected — `POST /_reflex/event/<state>/<handler>` with an app-issued bearer returns 200, the
 delta, and a persisted row.
 
-## FINDING-036: a delta is sent for substates the page has no dispatcher for (LOW, pre-existing)
+## FINDING-036: a delta for a substate the page has no dispatcher for latches the frontend dead (HIGH, pre-existing)
 
-Every page of the enterprise `tickets` demo logs, twice, on both reflex versions:
+**Re-rated from LOW after a second pass.** The first pass saw two console errors and recorded
+"nothing visibly breaks". The consequence is much larger: the enterprise `tickets` demo's UI never
+dispatches a single event, in dev and in prod, on both reflex versions. Seed, New Ticket, Apply,
+Reset, sort, Start/Close, Delete, Clear all — every control is inert, while the REST API of the very
+same app works, so the backend is healthy and nothing ever leaves the browser.
 
-```
-Cannot process state update: no dispatch function for substate(s)
-"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state",
-"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state". Try ...
-```
+Mechanism, end to end:
 
-The app configures no auth plugin; importing `reflex_enterprise` is enough to define those states,
-and the backend then includes them in the delta while the compiled page carries no dispatcher for
-them. Nothing visibly breaks, but every user of an enterprise app sees two console errors on every
-page load, and a real delta addressed to a missing substate would be swallowed the same way.
+1. `rxe.EventHandlerAPIPlugin` imports `reflex_enterprise.auth.enforcement`, which imports
+   `reflex_enterprise/auth/oidc/state.py`, which *defines* `GenericOIDCAuthState` and
+   `IsIframedState` as `rx.State` subclasses. They join the backend state tree even though the app
+   configures no auth plugin and renders no auth component.
+2. The hydrate delta therefore carries eight substates, two of which the page never renders
+   (`ent_mantine_highcharts_tickets/out/tickets_delta_keys_prod.json`).
+3. `.web/utils/state.js` takes its fatal-mismatch branch: it logs `Cannot process state update: no
+   dispatch function for substate(s) ...`, emits a `client_error`, and sets
+   `backend_state_mismatch = true`.
+4. That flag is a one-way latch — `processEvent()` begins with
+   `if (backend_state_mismatch) { event_queue.length = 0; return; }` — so from the first hydrate
+   onwards **every** user event is discarded client-side. Verified with socket capture: clicking
+   Seed produces **zero** sent frames, and the row count in `tickets.db` never changes.
+5. The error text tells the user to refresh or rebuild the frontend. Neither helps; the condition is
+   deterministic on every load.
 
-Repro and evidence: `ent_mantine_highcharts_tickets/out/tickets_a1.json` and
-`out/tickets_base_base.json`, `console_errors` in each. Identical on 0.9.10.post2 — pre-existing.
+Repro: `ent_mantine_highcharts_tickets/scripts/probe_tickets_hydrate.py <frontend_url>` against the
+shipped `reflex-enterprise/demos/tickets`; evidence `out/tickets_hydrate_a1.json` and
+`out/tickets_hydrate_base.json` — byte-for-byte the same on 0.9.10.post2, and the latch code is
+identical in both `.web/utils/state.js`, so **pre-existing, not a regression of this train**.
+
+Confirmed workaround and confirmation of the mechanism: rendering one var from every substate the
+backend knows about (a `/ref` page that reads `IsIframedState.is_iframed` and
+`GenericOIDCAuthState.user_error_message`) makes the same `index()` UI hydrate cleanly and Seed
+insert four rows (`out/tickets_hydrate_qaref.json`). In prod the dispatch map is per-bundle, so the
+presence of such a page anywhere in the app revives the others — the prod check had to be repeated
+with it removed before concluding (`out/tickets_hydrate_prod_noref.json`: dead again).
+
+Two independent fixes are plausible: reflex should not treat a delta for a substate the page does
+not use as fatal (or should not send it), and reflex-enterprise should not register auth states in
+apps that configure no auth provider.
 
 ## FINDING-037: with `REFLEX_SSR=false`, every prod route but `/` is served as HTTP 404 (LOW, pre-existing)
 
@@ -828,3 +854,102 @@ Repro: run the shipped `reflex-enterprise/demos/oidc` against `ent_mcp_oidc/idp/
 `GET /authorize` of the login but **no `GET /logout`**, while the non-iframed logout in
 `scripts/drive_oidc_demo.py` does produce `GET /logout` with `id_token_hint` and
 `post_logout_redirect_uri`. Reproduced identically on reflex 0.9.10.post2 — pre-existing.
+
+
+## FINDING-040: generated memo module names are not reproducible across identical compiles (MEDIUM, pre-existing)
+
+Compiling unchanged source twice produces a different memo export name **and a different memo body**,
+so every `reflex export` or deploy churns the compiled output even when nothing changed — which
+defeats content-addressed caching downstream and makes build diffs unreadable.
+
+Repro and evidence: `memo_hash/NOTES.md` ISSUE-1 (copy the app, delete `.web`, compile twice, diff
+the generated `app_components/` names). Pre-existing on 0.9.10.post2.
+
+## FINDING-041: two same-named `rx.ComponentState` subclasses in different modules crash the compile (MEDIUM, pre-existing)
+
+Exactly the gap #6947 closed for memo names — "the defining module, so same-named components from
+different modules stay apart" — is still open for `ComponentState`: the dynamic substate name is
+derived from `cls.__name__` alone (`reflex/state.py:2733-2734`), so two same-named
+`rx.ComponentState` subclasses in different modules collide and the compile fails.
+
+Repro: `memo_hash/verification/componentstate_name_collision/`. Pre-existing.
+
+## FINDING-042: `rx._x.client_state(..., global_ref=False)` throws `ReferenceError` once memoization splits reader from writer (MEDIUM, pre-existing)
+
+A non-global `ClientStateVar` read in one component and written from another lands in two different
+memo bodies. The `useState` hook is emitted only in the reader's body, so the writer's `useCallback`
+closes over an undefined symbol: the click silently does nothing and the console shows a hard
+`ReferenceError`. The `global_ref=True` control right beside it works.
+
+Repro: `/foreach` in `memo_hash/verification/minapp`, button `#cs-btn`;
+`memo_hash/verification/clientstate_global_ref_split/`. Pre-existing.
+
+## FINDING-043: frontend packages are reinstalled on every run, so #7050's "avoid reinstalls" is not observable (MEDIUM, pre-existing)
+
+#7050's changelog line promises to "avoid frontend package reinstalls after backend-only config
+changes". As a user would test it, `bun add` re-runs on every `reflex run` / `compile` / `export`:
+the install cache is invalidated each time, so run 2 logs `Installing frontend packages` exactly like
+run 1. The CLI-startup half of #7050 does hold (see the verified list in RELEASE_PLAN.md); this half
+does not.
+
+Repro and logs: `config_assets_cli/NOTES.md` ISSUE-1. Pre-existing on 0.9.10.post2, so the claim is
+about a code path whose user-visible effect is masked, not a regression.
+
+## FINDING-044: multi-process compile still aborts, one step past the fixed asset link (MEDIUM, pre-existing)
+
+#7039 says compiling one app directory from several processes "no longer aborts with
+`FileNotFoundError` or `FileExistsError`". The `rx.asset(shared=True)` link step really is fixed
+(see `config_assets_cli` and FINDING-030's cluster), but the overall scenario still aborts one step
+later, so the user-facing promise — pytest-xdist workers, parallel builds, containers sharing a bind
+mount — is not yet met.
+
+Repro: `config_assets_cli/NOTES.md` ISSUE-2. Pre-existing; worth a changelog qualification.
+
+## FINDING-045: `reflex component init` dies with a bare "No module named pip" in a uv venv (LOW, pre-existing)
+
+`reflex/custom_components/custom_components.py::_pip_install_on_demand` runs
+`sys.executable -m pip install -e .`. uv-created venvs have no `pip` — and uv is what this repo's own
+guidelines tell contributors to use — so the documented custom-component flow ends at exit 1 with
+`No module named pip` and no pointer to the cause.
+
+Repro: `config_assets_cli/NOTES.md` ISSUE-3.
+
+## FINDING-046: `reflex component build` prints five tracebacks and then reports success (LOW, pre-existing)
+
+`reflex component build` exits 0 and produces the wheel and sdist, after printing five
+`Failed to import ...` blocks with full tracebacks. A user cannot tell the build worked.
+
+Repro: `config_assets_cli/NOTES.md` ISSUE-6.
+
+## FINDING-047: reflex-base's changelog re-lists #6933 under three versions (LOW, documentation)
+
+`packages/reflex-base/CHANGELOG.md` on the release branch lists the same two #6933 entries (the
+`_load_config()` deprecation and the multi-threaded `rxconfig.py` fix) under **v0.9.9.post1,
+v0.9.10.post1 and v0.9.11a1**. Readers of the 0.9.11a1 notes will think those shipped in this train.
+
+```
+git show origin/r/pre-2026.09.10-34457666442:packages/reflex-base/CHANGELOG.md | grep -n 6933
+```
+
+## FINDING-048: the enterprise event-handler REST API answers 200 for failed calls (LOW, pre-existing, reflex-enterprise)
+
+`POST /_reflex/event/<state>/<handler>` returns **HTTP 200** with an error body when the call is
+invalid, so a client that checks the status code cannot tell success from failure:
+
+```
+create_ticket {}                     -> 200 {"error": "... missing 1 required positional argument: 'title' ..."}
+create_ticket {"title": 12345, ...}  -> 200 {"error": "... 'int' object has no attribute 'strip' ..."}
+```
+
+Evidence: `ent_mantine_highcharts_tickets/out/tickets_api_a1.json`. Pre-existing.
+
+## FINDING-049: three more small pre-existing rough edges from the second enterprise pass (LOW, all pre-existing)
+
+Detail and repros in `ent_mantine_highcharts_tickets/NOTES.md` ISSUE-3, ISSUE-6 and ISSUE-7.
+
+* `reflex run --env prod` logs `Page <name> is being redefined with the same component` once per
+  `@rx.page`-decorated page, after `App Running`.
+* The first click on a Highcharts `.highcharts-point` after a fresh load produces no websocket frame
+  at all; the second click works, and so does the first if a hover reaches the point first.
+* An unknown route renders reflex's `404: Page not found` page with HTTP **200** in dev and **404** in
+  prod, so a dev-mode smoke test that asserts on status codes silently passes.

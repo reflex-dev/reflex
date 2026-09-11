@@ -1,0 +1,6 @@
+reflex 0.9.11a1 /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py
+modules: pkg_one.widget pkg_two.widget
+qualnames: Counter Counter
+distinct classes: True
+one  ok  -> reflex___state____state.reflex___istate___dynamic____counter_n1
+two  ERR StateValueError: The substate class 'reflex___istate___dynamic____counter_n1' has been defined multiple times. Shadowing substate classes is not allowed.

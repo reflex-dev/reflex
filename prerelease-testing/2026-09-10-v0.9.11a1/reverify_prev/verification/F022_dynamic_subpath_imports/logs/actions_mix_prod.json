@@ -1,0 +1,11 @@
+[{"wait": 3000},
+ {"eval": "Object.keys(window.__reflex||{})"},
+ {"eval": "[!!document.getElementById('mix-icon'), !!document.getElementById('mix-box'), document.getElementById('mix-label')?.textContent, document.getElementById('mode')?.textContent]"},
+ {"click": "#btn-relabel"},
+ {"wait": 2500},
+ {"eval": "[!!document.getElementById('mix-icon'), !!document.getElementById('mix-box'), document.getElementById('mix-label')?.textContent]"},
+ {"screenshot": "shots/a1_prod_bundle_mix.png"},
+ {"goto": "http://localhost:6087/ctl"},
+ {"wait": 2500},
+ {"eval": "[!!document.getElementById('ctl-box'), document.getElementById('ctl-label')?.textContent]"},
+ {"screenshot": "shots/a1_prod_ctl.png"}]

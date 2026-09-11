@@ -1,0 +1,10 @@
+[
+  {
+    "type": "log",
+    "text": "[nba] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[nba] Disconnect websocket on pagehide"
+  }
+]

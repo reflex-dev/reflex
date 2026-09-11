@@ -1,0 +1,132 @@
+[
+  {
+    "name": "home_page_renders",
+    "status": "pass",
+    "details": "readme_markdown_rendered=True edit_link=True version_badge=v0.9.11a1"
+  },
+  {
+    "name": "editor_redirects_to_login",
+    "status": "pass",
+    "details": "url=http://localhost:5461/login"
+  },
+  {
+    "name": "register_password_mismatch_error",
+    "status": "pass",
+    "details": "error_shown=True"
+  },
+  {
+    "name": "register_new_user",
+    "status": "pass",
+    "details": "redirected_to_login=True"
+  },
+  {
+    "name": "duplicate_username_rejected",
+    "status": "pass",
+    "details": "error_shown=True"
+  },
+  {
+    "name": "login_wrong_password_error",
+    "status": "pass",
+    "details": "error_shown=True"
+  },
+  {
+    "name": "login_success",
+    "status": "pass",
+    "details": "left_login_page=True landed_on=/edit/form/ seconds=0.4"
+  },
+  {
+    "name": "menu_shows_username",
+    "status": "pass",
+    "details": "username_visible=True"
+  },
+  {
+    "name": "create_form",
+    "status": "pass",
+    "details": "redirected_to_form_route=True has_numeric_id=True"
+  },
+  {
+    "name": "add_text_field",
+    "status": "pass",
+    "details": "modal_route=True returned_to_form=True field_listed=True"
+  },
+  {
+    "name": "edit_field_rename_and_require",
+    "status": "pass",
+    "details": "renamed=True shows_required=True"
+  },
+  {
+    "name": "add_select_field_with_option",
+    "status": "pass",
+    "details": "type_select_applied=True option_row_added=True field_listed=True"
+  },
+  {
+    "name": "preview_renders_fields",
+    "status": "fail",
+    "details": "url_is_form_route=True text_input_and_select_visible=False error_boundary_rendered=True"
+  },
+  {
+    "name": "required_field_validation_toast",
+    "status": "skipped",
+    "details": "form entry page did not render (see preview_renders_fields)"
+  },
+  {
+    "name": "submit_response_logged_in",
+    "status": "skipped",
+    "details": "form entry page did not render (see preview_renders_fields)"
+  },
+  {
+    "name": "logout",
+    "status": "skipped",
+    "details": "form entry page did not render (see preview_renders_fields)"
+  },
+  {
+    "name": "submit_response_anonymous",
+    "status": "skipped",
+    "details": "form entry page did not render (see preview_renders_fields)"
+  },
+  {
+    "name": "responses_requires_login",
+    "status": "skipped",
+    "details": "form entry page did not render (see preview_renders_fields)"
+  },
+  {
+    "name": "responses_page_lists_both",
+    "status": "skipped",
+    "details": "form entry page did not render (see preview_renders_fields)"
+  },
+  {
+    "name": "response_values_visible",
+    "status": "skipped",
+    "details": "form entry page did not render (see preview_renders_fields)"
+  },
+  {
+    "name": "delete_response",
+    "status": "skipped",
+    "details": "form entry page did not render (see preview_renders_fields)"
+  },
+  {
+    "name": "delete_field",
+    "status": "pass",
+    "details": "select_field_removed=True cards_before=2"
+  },
+  {
+    "name": "delete_form",
+    "status": "pass",
+    "details": "redirected_to_new_form=True absent_from_dropdown=True"
+  },
+  {
+    "name": "no_unexpected_console",
+    "status": "anomaly",
+    "details": "[{\"type\": \"error\", \"text\": \"Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap\"}, {\"type\": \"error\", \"text\": \"Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin\"}, {\"type\": \"error\", \"text\": \"Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth\"}, {\"type\": \"error\", \"text\": \"%o\\n\\n%s\\n\\n%s\\n Error: `FormMessage` must be used within `FormField` or specify the `name` prop\\n    at FormMessage (http://localhost:5461/node_modules/.vite/deps/@radix-ui_react-form.js?v=6b1f8b48:295:19)\\n    at Object.react_stack_bottom_frame (http://localhost:5461/node_modules/.vite/deps/react-dom_client.js?v=5450ceca:12866:12)\\n    at renderWithHooks (http://localhost:5461/node_modules/.vite/deps/react-dom_client.js?v=5450ceca:4213:19)\\n    at updateForwardRef (http://localhost:5461/node_modules/.vite/deps/react-dom_client.js?v=5450ceca:5396:16)\\n"
+  },
+  {
+    "name": "no_failed_or_4xx_requests",
+    "status": "pass",
+    "details": "[]"
+  },
+  {
+    "name": "no_page_errors",
+    "status": "pass",
+    "details": "[]"
+  }
+]

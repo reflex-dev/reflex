@@ -1,0 +1,128 @@
+[
+ {
+  "case": "no_token_nointeractive",
+  "args": [
+   "cloud",
+   "apps",
+   "list",
+   "--json",
+   "--no-interactive"
+  ],
+  "env": [],
+  "rc": 1,
+  "hung": false,
+  "secs": 0.4,
+  "stdout_bytes": 0,
+  "prompted": false,
+  "stderr_head": "Token is required for non-interactive mode."
+ },
+ {
+  "case": "bad_token_opt_json",
+  "args": [
+   "cloud",
+   "apps",
+   "list",
+   "--json",
+   "--token",
+   "bogus-token-123"
+  ],
+  "env": [],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.1,
+  "stdout_bytes": 0,
+  "prompted": true,
+  "stderr_head": "Warning: Unable to validate access token: 403 Forbidden (auth request id: bc1a254a4c4c4719b8399f89667d782c)"
+ },
+ {
+  "case": "bad_token_opt_nointeractive",
+  "args": [
+   "cloud",
+   "apps",
+   "list",
+   "--json",
+   "--no-interactive",
+   "--token",
+   "bogus-token-123"
+  ],
+  "env": [],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.0,
+  "stdout_bytes": 0,
+  "prompted": true,
+  "stderr_head": "Warning: Unable to validate access token: 403 Forbidden (auth request id: 73b0f8e6e1a74f399769384b3b8f7519)"
+ },
+ {
+  "case": "bad_token_env_nointeractive",
+  "args": [
+   "cloud",
+   "apps",
+   "list",
+   "--json",
+   "--no-interactive"
+  ],
+  "env": [
+   "REFLEX_ACCESS_TOKEN"
+  ],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.1,
+  "stdout_bytes": 0,
+  "prompted": true,
+  "stderr_head": "Warning: Unable to validate access token: 403 Forbidden (auth request id: 57127dabe3754fd3a1a8fe2e2b365b92)"
+ },
+ {
+  "case": "bad_token_env_plain",
+  "args": [
+   "cloud",
+   "apps",
+   "list"
+  ],
+  "env": [
+   "REFLEX_ACCESS_TOKEN"
+  ],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.1,
+  "stdout_bytes": 518,
+  "prompted": true,
+  "stderr_head": ""
+ },
+ {
+  "case": "bad_token_env_whoami_json",
+  "args": [
+   "cloud",
+   "whoami",
+   "--json"
+  ],
+  "env": [
+   "REFLEX_ACCESS_TOKEN"
+  ],
+  "rc": 1,
+  "hung": false,
+  "secs": 0.7,
+  "stdout_bytes": 0,
+  "prompted": false,
+  "stderr_head": "The access token from the REFLEX_ACCESS_TOKEN environment variable was rejected: 403 Forbidden (auth request id: 4415a39af667497f806657eeefc349b9)"
+ },
+ {
+  "case": "bad_token_env_project_list",
+  "args": [
+   "cloud",
+   "project",
+   "list",
+   "--json",
+   "--no-interactive"
+  ],
+  "env": [
+   "REFLEX_ACCESS_TOKEN"
+  ],
+  "rc": "TIMEOUT",
+  "hung": true,
+  "secs": 90.1,
+  "stdout_bytes": 0,
+  "prompted": true,
+  "stderr_head": "Warning: Unable to validate access token: 403 Forbidden (auth request id: 1e2aff7ec5684f5baba03233d5be78c2)"
+ }
+]

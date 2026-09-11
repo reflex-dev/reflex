@@ -1,0 +1,8 @@
+82:[INFO] Starting granian (main PID: 20379)
+83:[INFO] Listening at: http://0.0.0.0:10020
+84:[INFO] Spawning worker-1 with PID: 20417
+88:[INFO] Started worker-1
+94:[INFO] Stopping worker-1
+99:[INFO] Shutting down granian
+100:[INFO] Stopped worker-1
+101:[INFO] Granian shutdown completed, see ya!

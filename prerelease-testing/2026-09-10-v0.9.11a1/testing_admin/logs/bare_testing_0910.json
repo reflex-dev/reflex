@@ -1,0 +1,12 @@
+{
+  "reflex_file": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910/lib/python3.11/site-packages/reflex/__init__.py",
+  "reflex_version": "0.9.10.post2",
+  "import_reflex_testing": "ModuleNotFoundError: No module named 'uvicorn'",
+  "has_psutil": false,
+  "has_selenium": false,
+  "has_uvicorn": false,
+  "has_pydantic": false,
+  "has_sqlmodel": false,
+  "has_alembic": false,
+  "appharness_import": "ModuleNotFoundError: No module named 'uvicorn'"
+}

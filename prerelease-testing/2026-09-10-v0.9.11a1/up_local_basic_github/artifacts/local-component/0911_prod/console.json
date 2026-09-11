@@ -1,0 +1,18 @@
+[
+  {
+    "type": "log",
+    "text": "[local_0911_prod] Yes we pass events through"
+  },
+  {
+    "type": "log",
+    "text": "[local_0911_prod] Yes we pass events through"
+  },
+  {
+    "type": "log",
+    "text": "[local_0911_prod] Disconnect websocket on page navigation"
+  },
+  {
+    "type": "log",
+    "text": "[local_0911_prod] Disconnect websocket on pagehide"
+  }
+]

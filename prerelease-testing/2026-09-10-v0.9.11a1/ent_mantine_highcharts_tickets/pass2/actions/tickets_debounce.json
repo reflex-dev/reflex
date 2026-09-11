@@ -1,0 +1,18 @@
+[
+ {"goto": "/ref"},
+ {"wait": 3500},
+ {"eval": "() => ({rows0: document.querySelectorAll('tbody tr').length})", "note": "row count before"},
+ {"click_text": "New Ticket"},
+ {"wait": 900},
+ {"type": ["input[placeholder='Title']", "race-A-no-wait"], "note": "type then click Create with no pause"},
+ {"click_text": "Create"},
+ {"wait": 2500},
+ {"eval": "() => ({rows: document.querySelectorAll('tbody tr').length, titles: Array.from(document.querySelectorAll('tbody tr')).map(r=>r.innerText.split('\\n')[0]), form_open: !!document.querySelector(\"input[placeholder='Title']\"), field: (document.querySelector(\"input[placeholder='Title']\")||{}).value})", "note": "A: was race-A created?"},
+ {"shot": "debounce_A"},
+ {"type": ["input[placeholder='Title']", "-B-with-wait"], "note": "same field, now wait past the 300ms debounce"},
+ {"wait": 800},
+ {"click_text": "Create"},
+ {"wait": 2500},
+ {"eval": "() => ({rows: document.querySelectorAll('tbody tr').length, titles: Array.from(document.querySelectorAll('tbody tr')).map(r=>r.innerText.split('\\n')[0])})", "note": "B: created after waiting"},
+ {"shot": "debounce_B"}
+]

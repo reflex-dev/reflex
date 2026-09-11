@@ -1,0 +1,24 @@
+{
+  "url": "http://localhost:6087/dyn",
+  "title": "dyn",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 3000",
+    "eval -> [True, False, False, 'object']",
+    "screenshot: 'shots/a1_prod_plugin_dyn.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "dyn\nctl\nmix\n\nbundle_library called: False\n\nDYN\nrelabel\nBuilt with Reflex"
+}

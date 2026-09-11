@@ -1,0 +1,65 @@
+.─────────────────────────── Initializing counterapp ────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [2020]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9784 (Press CTRL+C to quit)
+Building frontend...
+Frontend starting...
+$ react-router dev --host
+
+  ➜  Local:   http://localhost:5384/
+
+INFO:     127.0.0.1:60796 - "WebSocket /_event/?token=e30f1dd0-97e2-4e32-aed0-33120216c0a8&EIO=4&transport=websocket" [accepted]
+DEV url: http://localhost:5384/ before: 0 after: 1
+DEV console: ['log:💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.', 'debug:[vite] connecting...', 'debug:[vite] connected.', 'info:%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold']
+.─────────────────────────── Initializing counterapp ────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating backend in a new thread...
+Backend started.
+Polling for servers...
+INFO:     Started server process [2020]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:9785 (Press CTRL+C to quit)
+Building frontend...
+────────────── Compiling production app and preparing for export. ──────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:03
+Frontend starting...
+INFO:     Started server process [2020]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:5385 (Press CTRL+C to quit)
+INFO:     127.0.0.1:36742 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36742 - "GET /assets/manifest-46f6f9aa.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36770 - "GET /assets/components-Blt2PyNA.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36758 - "GET /assets/entry.client-5UErbQKK.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36784 - "GET /assets/errorBoundaries-DIYo_grw.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36798 - "GET /assets/button-BNo45heh.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36790 - "GET /assets/root-BVTQ8NRs.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36742 - "GET /assets/__reflex_global_styles-wJMQpgz8.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36784 - "GET /assets/reflex-env-q7FIPYCV.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36770 - "GET /assets/emotion-react.browser.esm-Do-RBW0K.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36758 - "GET /assets/_index-DtrxSaLS.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36742 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41688 - "WebSocket /_event/?token=4e02a94d-190b-4f90-9a2b-a4d4996c28e4&EIO=4&transport=websocket" [accepted]
+PROD url: http://127.0.0.1:5385/ before: 0 after: 1
+PROD console: []
+.INFO:     Shutting down
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2020]
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2020]
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2020]
+
+3 passed in 18.74s

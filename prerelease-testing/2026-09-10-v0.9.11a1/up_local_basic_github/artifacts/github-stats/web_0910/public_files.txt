@@ -1,0 +1,2 @@
+6dac71803010d95e  public/favicon.ico
+a3562e47925847c1  public/sitemap.xml

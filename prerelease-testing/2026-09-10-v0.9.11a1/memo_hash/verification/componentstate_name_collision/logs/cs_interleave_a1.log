@@ -1,0 +1,7 @@
+reflex 0.9.11a1
+mod_a.Slider once, then mod_b.Slider twice:
+  mod_a.Slider #1                ok  -> reflex___istate___dynamic____slider_n1
+  mod_b.Slider #1                ERR StateValueError: The substate class 'reflex___istate___dynamic____slider_n1' has been defined mul
+  mod_b.Slider #2                ok  -> reflex___istate___dynamic____slider_n2
+=> a same-named twin can silently SUCCEED on a later create,
+   sharing nothing with the first: name depends only on per-class count.

@@ -1,0 +1,9 @@
+id:"wrap-a",ref:ref_wrap_a},jsx(RadixThemesTheme,{css:{...theme.styles.global[':root'], ...theme.styles.global.body}},jsx(RadixThemesCard,{id:"card-A-stock-appearance",ref
+
+id:"wrap-b",ref:ref_wrap_b},jsx(RadixThemesTheme,{css:{...theme.styles.global[':root'], ...theme.styles.global.body}},jsx(RadixThemesCard,{id:"card-B-stock-color_mode",ref
+
+id:"wrap-c",ref:ref_wrap_c},jsx(RadixThemesTheme,{appearance:"dark",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},jsx(RadixThemesCard,{id:"card-C-pat
+
+id:"wrap-d",ref:ref_wrap_d},jsx(RadixThemesTheme,{accentColor:"red",css:{...theme.styles.global[':root'], ...theme.styles.global.body}},jsx(RadixThemesCard,{id:"card-D-acc
+
+id:"wrap-e",ref:ref_wrap_e},jsx(Theme_theme_c8a3b51d26e8d7af641adc03cf6f5e8d_f38dd5eb,{},jsx(RadixThemesCard,{id:"card-E-state-var",ref:ref_card_E_state_var},jsx(RadixThem

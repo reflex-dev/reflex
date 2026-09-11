@@ -1,0 +1,42 @@
+{
+  "url": "http://localhost:6084/dyn",
+  "title": "dyn",
+  "clean": false,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 2500",
+    "eval -> ['react', '@emotion/react', '$/utils/context', '$/utils/state', '@radix-ui/themes']",
+    "eval -> [True, False, False, 'bundle_library called: False']",
+    "screenshot: 'shots/a1_nobundle_dyn_initial.png'",
+    "click: '#btn-relabel'",
+    "wait: 2500",
+    "eval -> [False, None]",
+    "screenshot: 'shots/a1_nobundle_dyn_after_click.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [
+    {
+      "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/apple.mjs",
+      "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@radix-ui/themes@3.3.0/+esm",
+      "failure": "net::ERR_TUNNEL_CONNECTION_FAILED"
+    }
+  ],
+  "http_4xx_5xx": [],
+  "body_text": "dyn\nctl\n\nbundle_library called: False\n\nDYN\nrelabel"
+}

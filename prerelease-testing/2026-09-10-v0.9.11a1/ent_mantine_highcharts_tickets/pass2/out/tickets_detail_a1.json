@@ -1,0 +1,996 @@
+{
+ "base": "http://localhost:5422",
+ "steps": [
+  {
+   "i": 0,
+   "verb": "goto",
+   "val": "/ref",
+   "note": null,
+   "ok": true,
+   "ms": 1082,
+   "probe": {
+    "svg": 6,
+    "buttons": 31,
+    "inputs": 1,
+    "rows": 5,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 19,
+    "text_len": 789,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 5 |  | Total: 5 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | S"
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 1,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3004,
+   "probe": {
+    "svg": 6,
+    "buttons": 31,
+    "inputs": 1,
+    "rows": 5,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 19,
+    "text_len": 789,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 5 |  | Total: 5 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | S"
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 2,
+   "verb": "click_text",
+   "val": "New Ticket",
+   "note": null,
+   "ok": true,
+   "ms": 64,
+   "probe": {
+    "svg": 7,
+    "buttons": 33,
+    "inputs": 3,
+    "rows": 5,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 19,
+    "text_len": 861,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 5 |  | Total: 5 |  | Seed | \u22ef | Hide New Ticket | New ticket |  | Title |  | Description |  | Priority |  | medium |  | Assignee | "
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 3,
+   "verb": "wait",
+   "val": 900,
+   "note": null,
+   "ok": true,
+   "ms": 901,
+   "probe": {
+    "svg": 7,
+    "buttons": 33,
+    "inputs": 3,
+    "rows": 5,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 19,
+    "text_len": 861,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 5 |  | Total: 5 |  | Seed | \u22ef | Hide New Ticket | New ticket |  | Title |  | Description |  | Priority |  | medium |  | Assignee | "
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 4,
+   "verb": "fill",
+   "val": [
+    "input[placeholder='Title']",
+    "fill-race-repro"
+   ],
+   "note": null,
+   "ok": true,
+   "ms": 22,
+   "probe": {
+    "svg": 7,
+    "buttons": 33,
+    "inputs": 3,
+    "rows": 5,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 19,
+    "text_len": 861,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 5 |  | Total: 5 |  | Seed | \u22ef | Hide New Ticket | New ticket |  | Title |  | Description |  | Priority |  | medium |  | Assignee | "
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 5,
+   "verb": "fill",
+   "val": [
+    "textarea[placeholder='Description']",
+    "d"
+   ],
+   "note": null,
+   "ok": true,
+   "ms": 28,
+   "probe": {
+    "svg": 7,
+    "buttons": 33,
+    "inputs": 3,
+    "rows": 5,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 19,
+    "text_len": 861,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 5 |  | Total: 5 |  | Seed | \u22ef | Hide New Ticket | New ticket |  | Title |  | Description |  | Priority |  | medium |  | Assignee | "
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 6,
+   "verb": "fill",
+   "val": [
+    "input[placeholder='Assignee']",
+    "a"
+   ],
+   "note": null,
+   "ok": true,
+   "ms": 30,
+   "probe": {
+    "svg": 7,
+    "buttons": 33,
+    "inputs": 3,
+    "rows": 5,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 19,
+    "text_len": 861,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 5 |  | Total: 5 |  | Seed | \u22ef | Hide New Ticket | New ticket |  | Title |  | Description |  | Priority |  | medium |  | Assignee | "
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 7,
+   "verb": "shot",
+   "val": "fillrace_form",
+   "note": null,
+   "ok": true,
+   "ms": 136,
+   "probe": {
+    "svg": 7,
+    "buttons": 33,
+    "inputs": 3,
+    "rows": 5,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 19,
+    "text_len": 861,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 5 |  | Total: 5 |  | Seed | \u22ef | Hide New Ticket | New ticket |  | Title |  | Description |  | Priority |  | medium |  | Assignee | "
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 8,
+   "verb": "click_text",
+   "val": "Create",
+   "note": null,
+   "ok": true,
+   "ms": 50,
+   "probe": {
+    "svg": 7,
+    "buttons": 33,
+    "inputs": 3,
+    "rows": 5,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 19,
+    "text_len": 861,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 5 |  | Total: 5 |  | Seed | \u22ef | Hide New Ticket | New ticket |  | Title |  | Description |  | Priority |  | medium |  | Assignee | "
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 9,
+   "verb": "wait",
+   "val": 2500,
+   "note": null,
+   "ok": true,
+   "ms": 2516,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 843,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | S"
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 10,
+   "verb": "eval",
+   "val": "() => ({titles: Array.from(document.querySelectorAll('tbody tr')).map(r=>r.innerText.split('\\n')[0]).slice(0,3), form_open: !!document.querySelector(\"input[placeholder='Title']\"), field: (document.querySelector(\"input[placeholder='Title']\")||{}).value})",
+   "note": "fill()+immediate Create: created or silently dropped?",
+   "ok": true,
+   "result": {
+    "titles": [
+     "fill-race-repro",
+     "race-A-no-wait",
+     "FILLED title typed"
+    ],
+    "form_open": false,
+    "field": null
+   },
+   "ms": 3,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 843,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | S"
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 11,
+   "verb": "shot",
+   "val": "fillrace_result",
+   "note": null,
+   "ok": true,
+   "ms": 100,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 843,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | S"
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 12,
+   "verb": "goto",
+   "val": "/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be",
+   "note": null,
+   "ok": true,
+   "ms": 742,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 209,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | open |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 13,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3002,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 209,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | open |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 14,
+   "verb": "eval",
+   "val": "() => ({title: (document.querySelector(\"input[placeholder='Title']\")||{}).value, desc: (document.querySelector('textarea')||{}).value, selects: Array.from(document.querySelectorAll('button[role=combobox]')).map(e=>e.innerText), assignee: (document.querySelectorAll(\"input[placeholder='Assignee']\")[0]||{}).value, body: document.body.innerText.replace(/\\n/g,' | ').slice(0,150)})",
+   "note": "detail form pre-filled from the db",
+   "ok": true,
+   "result": {
+    "title": "Laptop won't boot",
+    "desc": "Blue screen on startup.",
+    "selects": [
+     "open",
+     "high"
+    ],
+    "assignee": "alice",
+    "body": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit t"
+   },
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 209,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | open |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 15,
+   "verb": "shot",
+   "val": "detail_loaded",
+   "note": null,
+   "ok": true,
+   "ms": 162,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 209,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | open |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 16,
+   "verb": "type",
+   "val": [
+    "input[placeholder='Title']",
+    " (edited)"
+   ],
+   "note": null,
+   "ok": true,
+   "ms": 400,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 209,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | open |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 17,
+   "verb": "wait",
+   "val": 800,
+   "note": null,
+   "ok": true,
+   "ms": 801,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 209,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | open |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 18,
+   "verb": "click",
+   "val": "button[role=combobox]",
+   "note": "status select",
+   "ok": true,
+   "ms": 84,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 233,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | open |  | Priority |  | high |  | Assignee |  | Save changes | open | in_progress | closed"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 19,
+   "verb": "wait",
+   "val": 700,
+   "note": null,
+   "ok": true,
+   "ms": 702,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 233,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | open |  | Priority |  | high |  | Assignee |  | Save changes | open | in_progress | closed"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 20,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('[role=option]')).map(e=>e.innerText)",
+   "note": null,
+   "ok": true,
+   "result": [
+    "open",
+    "in_progress",
+    "closed"
+   ],
+   "ms": 2,
+   "probe": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 233,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | open |  | Priority |  | high |  | Assignee |  | Save changes | open | in_progress | closed"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 21,
+   "verb": "click",
+   "val": "[role=option]:has-text('in_progress')",
+   "note": null,
+   "ok": true,
+   "ms": 60,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | in_progress |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 22,
+   "verb": "wait",
+   "val": 1200,
+   "note": null,
+   "ok": true,
+   "ms": 1201,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | in_progress |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 23,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('button[role=combobox]')).map(e=>e.innerText)",
+   "note": "status select now in_progress",
+   "ok": true,
+   "result": [
+    "in_progress",
+    "high"
+   ],
+   "ms": 2,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | in_progress |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 24,
+   "verb": "type",
+   "val": [
+    "input[placeholder='Assignee']",
+    "-qa"
+   ],
+   "note": null,
+   "ok": true,
+   "ms": 132,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | in_progress |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 25,
+   "verb": "wait",
+   "val": 800,
+   "note": null,
+   "ok": true,
+   "ms": 801,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | in_progress |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 26,
+   "verb": "shot",
+   "val": "detail_edited",
+   "note": null,
+   "ok": true,
+   "ms": 158,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | in_progress |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 27,
+   "verb": "click_text",
+   "val": "Save changes",
+   "note": null,
+   "ok": true,
+   "ms": 104,
+   "probe": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 0,
+    "text_len": 216,
+    "head": "iframed: false |  | Ticket detail |  | Review and edit a ticket. |  | Back to tickets |  | Ticket ID: f6f53f2d-5be7-4f73-9cea-869d8a01e6be |  | Edit ticket |  | Title |  | Description |  | Status |  | in_progress |  | Priority |  | high |  | Assignee |  | Save changes"
+   },
+   "url": "http://localhost:5422/ticket-ref?ticket_id=f6f53f2d-5be7-4f73-9cea-869d8a01e6be"
+  },
+  {
+   "i": 28,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3002,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 832,
+    "head": "IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | Sort |  | created_at | created_at | upd"
+   },
+   "url": "http://localhost:5422/?page=1&page_size=20&sort_by=created_at&sort_dir=desc"
+  },
+  {
+   "i": 29,
+   "verb": "eval",
+   "val": "() => ({url: location.href.replace(location.origin,''), body: document.body.innerText.replace(/\\n/g,' | ').slice(0,220)})",
+   "note": "save_ticket_detail redirects to the list",
+   "ok": true,
+   "result": {
+    "url": "/?page=1&page_size=20&sort_by=created_at&sort_dir=desc",
+    "body": "IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New T"
+   },
+   "ms": 1,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 832,
+    "head": "IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | Sort |  | created_at | created_at | upd"
+   },
+   "url": "http://localhost:5422/?page=1&page_size=20&sort_by=created_at&sort_dir=desc"
+  },
+  {
+   "i": 30,
+   "verb": "shot",
+   "val": "detail_saved",
+   "note": null,
+   "ok": true,
+   "ms": 85,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 832,
+    "head": "IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | Sort |  | created_at | created_at | upd"
+   },
+   "url": "http://localhost:5422/?page=1&page_size=20&sort_by=created_at&sort_dir=desc"
+  },
+  {
+   "i": 31,
+   "verb": "goto",
+   "val": "/ref",
+   "note": null,
+   "ok": true,
+   "ms": 634,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 862,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | S"
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 32,
+   "verb": "wait",
+   "val": 3000,
+   "note": null,
+   "ok": true,
+   "ms": 3001,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 862,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | S"
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 33,
+   "verb": "eval",
+   "val": "() => Array.from(document.querySelectorAll('tbody tr')).map(r=>r.innerText.replace(/\\n/g,' | ')).slice(0,3)",
+   "note": "edited row in the list",
+   "ok": true,
+   "result": [
+    "fill-race-repro |  | \tmedium\topen\t |  | a |  | \t | Start | Close | \u22ef",
+    "race-A-no-wait |  | \tmedium\topen\t |  | \u2014 |  | \t | Start | Close | \u22ef",
+    "FILLED title typed |  | \tmedium\topen\t |  | qa-typed |  | \t | Start | Close | \u22ef"
+   ],
+   "ms": 2,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 862,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | S"
+   },
+   "url": "http://localhost:5422/ref"
+  },
+  {
+   "i": 34,
+   "verb": "shot",
+   "val": "detail_list_after",
+   "note": null,
+   "ok": true,
+   "ms": 112,
+   "probe": {
+    "svg": 6,
+    "buttons": 34,
+    "inputs": 1,
+    "rows": 6,
+    "highcharts": 0,
+    "hc_points": 0,
+    "mantine": 0,
+    "toasts": 0,
+    "toast_text": "",
+    "dialogs": 0,
+    "calendar_cells": 22,
+    "text_len": 862,
+    "head": "iframed: false | oidc_error: |  | IT Ticketing |  | Manual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog. |  | Open: 6 |  | Total: 6 |  | Seed | \u22ef | New Ticket | all | all | open | in_progress | closed | all | all | low | medium | high | Apply |  | S"
+   },
+   "url": "http://localhost:5422/ref"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "ws": [
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"w13E3sNJdRxcaZJAAAAM\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"N2Mz5MHEiGlTsYyOAAAN\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"3e7076c5-38a3-41b1-cb77-a936f5a68165\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"has_active_filters_rx_state_\":false,\"status_filter_rx_state_\":\"all\",\"q_rx_state_\":\"\",\"open_count_rx_state_\":5",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"show_new_ticket_form_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"draft_title_rx_state_\":\"fill-race-repro\"}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"draft_description_rx_state_\":\"d\"}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"draft_assignee_rx_state_\":\"a\"}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"draft_title_rx_state_\":\"\",\"draft_assignee_rx_state_\":\"\",\"show_new_ticket_form_rx_state_\":false,\"draft_priorit",
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"Ty6uee6-HzS3gGL6AAAO\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"Mszo2ocYyoi7J07RAAAP\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"3e7076c5-38a3-41b1-cb77-a936f5a68165\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"detail_error_rx_state_\":\"\",\"edit_description_rx_state_\":\"Blue screen on startup.\",\"edit_priority_rx_state_\":\"",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"edit_title_rx_state_\":\"Laptop won't boot (edited)\"}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"edit_status_rx_state_\":\"in_progress\"}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"edit_assignee_rx_state_\":\"alice-qa\"}}}]",
+  "42/_event,[\"event\",{\"events\":[{\"name\":\"_redirect\",\"router_data\":{},\"payload\":{\"path\":\"/?page=1&page_size=20&sort_by=created_at&sort_dir=desc\",\"external\":false,\"popup\":false,\"replace\":true}}]}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"3e7076c5-38a3-41b1-cb77-a936f5a68165\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"has_active_filters_rx_state_\":false,\"status_filter_rx_state_\":\"all\",\"q_rx_state_\":\"\",\"open_count_rx_state_\":6",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+  "{\"type\":\"connected\"}",
+  "0{\"sid\":\"2bJht6KgTrS7P8UvAAAQ\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+  "40/_event,{\"sid\":\"A75F5PzM4KXtOTp3AAAR\"}",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false,\"router_rx_state_\":{\"session\":{\"client_token\":\"3e7076c5-38a3-41b1-cb77-a936f5a68165\",\"client_ip\":\"127.0.0.1\",\"sess",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":false}}}]",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.tickets___tickets____ticket_state\":{\"has_active_filters_rx_state_\":false,\"status_filter_rx_state_\":\"all\",\"q_rx_state_\":\"\",\"open_count_rx_state_\":6",
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]"
+ ],
+ "console_errors": [],
+ "console_warnings": [],
+ "failed_steps": []
+}

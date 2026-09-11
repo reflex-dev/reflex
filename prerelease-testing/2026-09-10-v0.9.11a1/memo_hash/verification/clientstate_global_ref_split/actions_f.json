@@ -1,0 +1,4 @@
+[{"fill": ["#f-in", "typed-f"]},
+ {"wait": 700},
+ {"screenshot": "shots/f-after.png"},
+ {"eval": "document.querySelector('#f-in').value"}]

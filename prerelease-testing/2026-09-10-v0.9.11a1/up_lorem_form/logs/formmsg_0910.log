@@ -1,0 +1,402 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/up_lorem_form_form_b0910/lib/python3.11/site-packages/reflex_base/config.p
+y'
+Debug: Config: Config(app_name='formmsg', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4
+dc3b5b67/scratchpad/reflex_dirs/formmsg_b0910/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'loglevel', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.10.post2 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/up_lorem_form_form_b0910/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/up_lorem_form_form_b0910/lib/python3.11/site-packages/reflex_base/config.p
+y'
+Debug: Config: Config(app_name='formmsg', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4
+dc3b5b67/scratchpad/reflex_dirs/formmsg_b0910/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'app_name', 'plugins', 'loglevel', 
+'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []}), 
+SitemapPlugin(trailing_slash='preserve')], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: [Reflex 0.9.10.post2 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/up_lorem_form_form_b0910/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.3.11 (Minimum: 1.3.0) (PATH: /root/.bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.bun/bin/bun', '/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing formmsg ─────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.031 seconds
+Debug: Latest version of reflex: 0.9.10.post2
+Debug: Creating 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+reflex_dirs/formmsg_b0910
+Debug: Ensuring reflex installation id.
+Debug: Creating 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+reflex_dirs/formmsg_b0910
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.bun/bin/bun'), '--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/up_lorem_form_form_b0910/lib/python3.11/site-packages/reflex_base/.template
+s/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_lorem_form/formmsg_b0910/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Getting best registry...
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.046 seconds
+Debug: Latency of https://registry.npmjs.org: 45894
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.024 seconds
+Debug: Latency of https://registry.npmjs.org: 23994
+Debug: Sending HTTPS request to https://registry.npmjs.org
+Debug: Received response from https://registry.npmjs.org in 0.025 seconds
+Debug: Latency of https://registry.npmjs.org: 24589
+Debug: Average latency of https://registry.npmjs.org: 31492
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Info: Failed to connect to https://registry.npmmirror.com.
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Info: Failed to connect to https://registry.npmmirror.com.
+Debug: Sending HTTPS request to https://registry.npmmirror.com
+Info: Failed to connect to https://registry.npmmirror.com.
+Debug: Average latency of https://registry.npmmirror.com: 10000000
+Debug: Best registry: https://registry.npmjs.org
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 251116551012139666607005991380784123526.
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized formmsg. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=5463
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9863
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.024 seconds
+Debug: Latest version of reflex: 0.9.10.post2
+Debug: Checking if Frontend port: 5463 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 5463 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 5463 is not in use.
+Debug: Checking if Backend port: 9863 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9863 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9863 is not in use.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.16s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 17/16 0:00:00
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'-d', 'postcss@8.5.23', '@emotion/react@11.14.0', '@react-router/dev@8.3.0', 
+'@react-router/fs-routes@8.3.0', 'postcss-import@16.1.1', 'vite@8.2.0', 
+'autoprefixer@10.5.4']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [13]
+Debug: warn: incorrect peer dependency "react-router@8.3.1"
+Debug: Saved lockfile
+Debug: 
+Debug: installed postcss@8.5.23
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/dev@8.3.0 with binaries:
+Debug:  - react-router
+Debug: installed @react-router/fs-routes@8.3.0
+Debug: installed postcss-import@16.1.1
+Debug: installed vite@8.2.0 with binaries:
+Debug:  - vite
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: 140 packages installed [298.00ms]
+Debug: Running command: ['/root/.bun/bin/bun', 'add', '--legacy-peer-deps', 
+'@radix-ui/react-form@0.1.14', 'lucide-react@1.26.0', 'react@19.2.8', 
+'react-error-boundary@6.1.2', 'react-dom@19.2.8', '@radix-ui/themes@3.3.0', 
+'sonner@2.0.7', 'socket.io-client@4.8.3', 'isbot@5.2.1', 'react-router@8.3.0', 
+'react-helmet@6.1.0', '@react-router/node@8.3.0', 'universal-cookie@8.1.2']
+Debug: Installing frontend packages
+Debug: bun add v1.3.11 (af24e281)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [0]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed @radix-ui/react-form@0.1.14
+Debug: installed lucide-react@1.26.0
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: installed react-dom@19.2.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed sonner@2.0.7
+Debug: installed socket.io-client@4.8.3
+Debug: installed isbot@5.2.1
+Debug: installed react-router@8.3.0
+Debug: installed react-helmet@6.1.0
+Debug: installed @react-router/node@8.3.0
+Debug: installed universal-cookie@8.1.2
+Debug: 
+Debug: 109 packages installed [152.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_lorem_form/formmsg_b0910/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+apps/up_lorem_form/formmsg_b0910/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.48s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpa
+d/apps/up_lorem_form/formmsg_b0910/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_lorem_form/formmsg_b0910/logs', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_lorem_form/formmsg_b0910/formmsg', 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/up_lorem_form/formmsg_b0910/rxconfig.py']
+[INFO] Starting granian (main PID: 21584)
+[INFO] Listening at: http://0.0.0.0:9863
+[INFO] Spawning worker-1 with PID: 21624
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:5463/
+App running at: http://localhost:5463/
+Backend running at: http://0.0.0.0:9863
+Debug:   ➜  Network: http://192.0.2.2:5463/  eth0
+Debug: 7:46:56 AM [vite] (ssr) connected.
+Debug: 7:47:05 AM [vite] (client) [console.error] Invalid DOM property 
+`stroke-linecap`. Did you mean `strokeLinecap`?
+Debug: 7:47:05 AM [vite] (client) [console.error] Invalid DOM property 
+`stroke-linejoin`. Did you mean `strokeLinejoin`?
+Debug: 7:47:05 AM [vite] (client) [console.error] Invalid DOM property 
+`stroke-width`. Did you mean `strokeWidth`?
+Debug: 7:47:05 AM [vite] (client) [console.error] Error: `FormMessage` must be 
+used within `FormField` or specify the `name` prop
+Debug:     at FormMessage 
+(http://localhost:5463/node_modules/.vite/deps/@radix-ui_react-form.js?v=dcbf6a4
+a:625:19)
+Debug:     at Object.react_stack_bottom_frame 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:12
+866:12)
+Debug:     at renderWithHooks 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:42
+13:19)
+Debug:     at updateForwardRef 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:53
+96:16)
+Debug:     at beginWork 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:62
+04:21)
+Debug:     at runWithFiberInDEV 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:85
+1:66)
+Debug:     at performUnitOfWork 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:84
+29:92)
+Debug:     at workLoopSync 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:83
+25:37)
+Debug:     at renderRootSync 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:83
+09:6)
+Debug:     at performWorkOnRoot 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:79
+94:27)
+Debug: 
+Debug: The above error occurred in the <ForwardRef(FormMessage)> component.
+Debug: 
+Debug: React will try to recreate this component tree from scratch using the 
+error boundary you provided, m.
+Debug: 
+[Reflex Frontend Exception]
+ Error: `FormMessage` must be used within `FormField` or specify the `name` prop
+Error: `FormMessage` must be used within `FormField` or specify the `name` prop
+    at FormMessage 
+(http://localhost:5463/node_modules/.vite/deps/@radix-ui_react-form.js?v=dcbf6a4
+a:625:19)
+    at Object.react_stack_bottom_frame 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:12
+866:12)
+    at renderWithHooks 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:42
+13:19)
+    at updateForwardRef 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:53
+96:16)
+    at beginWork 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:62
+04:21)
+    at runWithFiberInDEV 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:85
+1:66)
+    at performUnitOfWork 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:84
+29:92)
+    at workLoopSync 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:83
+25:37)
+    at renderRootSync 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:83
+09:6)
+    at performWorkOnRoot 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:79
+94:27)
+
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:5463/
+  ➜  Network: http://192.0.2.2:5463/  eth0
+7:46:56 AM [vite] (ssr) connected.
+7:47:05 AM [vite] (client) [console.error] Invalid DOM property 
+`stroke-linecap`. Did you mean `strokeLinecap`?
+7:47:05 AM [vite] (client) [console.error] Invalid DOM property 
+`stroke-linejoin`. Did you mean `strokeLinejoin`?
+7:47:05 AM [vite] (client) [console.error] Invalid DOM property `stroke-width`. 
+Did you mean `strokeWidth`?
+7:47:05 AM [vite] (client) [console.error] Error: `FormMessage` must be used 
+within `FormField` or specify the `name` prop
+    at FormMessage 
+(http://localhost:5463/node_modules/.vite/deps/@radix-ui_react-form.js?v=dcbf6a4
+a:625:19)
+    at Object.react_stack_bottom_frame 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:12
+866:12)
+    at renderWithHooks 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:42
+13:19)
+    at updateForwardRef 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:53
+96:16)
+    at beginWork 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:62
+04:21)
+    at runWithFiberInDEV 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:85
+1:66)
+    at performUnitOfWork 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:84
+29:92)
+    at workLoopSync 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:83
+25:37)
+    at renderRootSync 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:83
+09:6)
+    at performWorkOnRoot 
+(http://localhost:5463/node_modules/.vite/deps/react-dom_client.js?v=ab917a03:79
+94:27)
+
+The above error occurred in the <ForwardRef(FormMessage)> component.
+
+React will try to recreate this component tree from scratch using the error 
+boundary you provided, m.
+
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

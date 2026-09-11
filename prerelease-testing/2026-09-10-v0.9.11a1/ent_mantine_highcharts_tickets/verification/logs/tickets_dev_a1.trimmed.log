@@ -1,0 +1,62 @@
+### head
+───────────────────────────── Initializing tickets ─────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized tickets. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (tickets/tickets.py:54)
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 15/14 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+
+### errors/warnings
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+Warning: Database is not initialized, run reflex db init first.
+DeprecationWarning: console.debug has been deprecated in version 0.9.9. use 
+[Reflex Frontend Exception]
+ [SID: FIt1RdRbsqQYae_7AAAB] State update failed: no dispatch function for 
+[Reflex Frontend Exception]
+ [SID: AMtq2HUt4RA2KShJAAAD] State update failed: no dispatch function for 
+[ERROR] Unexpected exit from worker-1
+7:21:14 AM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+_auth_state". Try refreshing the page or clearing your browser cache. This error
+7:23:33 AM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+_auth_state". Try refreshing the page or clearing your browser cache. This error
+error: script "dev" exited with code 143
+
+### tail
+tate", 
+"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc
+_auth_state". Try refreshing the page or clearing your browser cache. This error
+usually indicates a mismatch between frontend and backend state definitions. If 
+you are the developer of this app, rebuild the frontend and check that api_url 
+is correct.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

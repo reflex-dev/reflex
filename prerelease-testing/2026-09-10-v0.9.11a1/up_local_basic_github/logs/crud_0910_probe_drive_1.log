@@ -1,0 +1,33 @@
+[PASS] api_list_initial: 200 1 rows
+[PASS] api_cleanup: 0 rows left after DELETE sweep
+[PASS] api_create: 200 "OK"
+[PASS] api_list_after_create: 1 rows, API-1 x1
+[PASS] api_row_shape: keys=['category', 'code', 'created', 'id', 'image', 'label', 'quantity', 'seller', 'sender', 'updated']
+[PASS] api_get_one: 200 {"id":1,"created":"2026-09-11T08:32:56.560113","seller":"acme","label":"Api Widget","updated":"2026-09-11T08:32:56.56011
+[PASS] api_update: PUT 200; now quantity=99 label='Api Widget v2'
+[PASS] api_update_touches_updated: created=2026-09-11T08:32:56.560113 updated=2026-09-11T08:32:56.574966
+[ANOMALY] api_get_missing: 200 body='{"status_code":404,"detail":"Not Found","headers":null}' (app `return HTTPException(404)` instead of raising)
+[ANOMALY] api_create_empty_code: 200 body='{"status_code":402,"detail":"Invalid `code`","headers":null}' (app `return HTTPException(402)`)
+[PASS] api_create_duplicate_code: 500 (unique constraint on code; 500 expected, app does not catch it)
+[PASS] api_openapi: 200 paths=['/products', '/products/{spec_id}']
+[PASS] api_docs: GET /docs -> 200
+[PASS] api_reflex_ping: GET /ping -> 200 '"pong"'
+[PASS] ui_load: 'products found' present=True
+[PASS] ui_on_load_lists_products: heading='1 products found' (expect '1 products found' from the API row)
+[PASS] ui_foreach_row: rx.foreach rendered the API-1 row
+[PASS] ui_post_status: 'Status: 200' resp='"OK"'
+[PASS] ui_background_poller_refreshes: heading='2 products found' (background reload_product should reach 2)
+[PASS] ui_new_row_rendered: UI-1 row present after background refresh
+[PASS] ui_get_list: 'Status: 200' resp_has_UI-1=True resp_has_API-1=True
+[PASS] ui_put: 'Status: 200' quantity now 55
+[PASS] ui_put_reflected_in_list: 'Stock: 55' visible=True
+[PASS] ui_delete: 'Status: 200' heading='1 products found'
+[PASS] ui_clear_resets_form: url='products'
+[PASS] ui_error_response_surfaced: 'Status: 200' resp='{\n  "status_code": 404,\n  "detail": "Not Found",\n  "headers": null\n}'
+[PASS] ui_reload: heading='1 products found'
+
+UNEXPECTED CONSOLE: []
+ALL CONSOLE TYPES: ["debug", "info", "log"]
+BAD RESPONSES: []
+PAGE ERRORS: []
+SUMMARY: {"api_list_initial": "pass", "api_cleanup": "pass", "api_create": "pass", "api_list_after_create": "pass", "api_row_shape": "pass", "api_get_one": "pass", "api_update": "pass", "api_update_touches_updated": "pass", "api_get_missing": "anomaly", "api_create_empty_code": "anomaly", "api_create_duplicate_code": "pass", "api_openapi": "pass", "api_docs": "pass", "api_reflex_ping": "pass", "ui_load": "pass", "ui_on_load_lists_products": "pass", "ui_foreach_row": "pass", "ui_post_status": "pass", "ui_background_poller_refreshes": "pass", "ui_new_row_rendered": "pass", "ui_get_list": "pass", "ui_put": "pass", "ui_put_reflected_in_list": "pass", "ui_delete": "pass", "ui_clear_resets_form": "pass", "ui_error_response_surfaced": "pass", "ui_reload": "pass"}

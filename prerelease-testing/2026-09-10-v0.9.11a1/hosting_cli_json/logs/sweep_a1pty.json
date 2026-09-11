@@ -1,0 +1,993 @@
+{
+ "label": "a1pty",
+ "timeout": 40.0,
+ "leaf_count": 34,
+ "checks": {
+  "cloud apps build-logs": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 154
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 154
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps build-logs [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 154
+   }
+  },
+  "cloud apps delete": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=87951f35250f4a5a86333f43f1ed518d ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud apps describe": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 150
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 150
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps describe [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 150
+   }
+  },
+  "cloud apps history": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=24dfa04b88794552a20be822941e2aa1 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud apps inspect": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.5,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=39a3509ff98046538dea5afa5b22282e ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud apps list": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 71
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=ad0deaae6c4e42bb9d3eabf6c38f4cb8 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud apps logs": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=543e37e11ed8409e9cb42e50e0869c62 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud apps rollback": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 150
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 150
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps rollback [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 150
+   }
+  },
+  "cloud apps scale": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=4a73e37da7bb4c0ca30cf21dddc59fda ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud apps start": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=12546b434c174082a871b6cc4dea980a ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud apps status": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 146
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 146
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud apps status [OPTIONS] DEPLOYMENT_ID",
+    "stderr_bytes": 146
+   }
+  },
+  "cloud apps stop": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=d778253b9c764e5eab13c5e3350d31ef ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud config": {
+   "tty_plain": {
+    "rc": 0,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Please install PyYAML to use this command: pip install pyyaml",
+    "stderr_bytes": 62
+   },
+   "tty_nointeractive": {
+    "rc": 0,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Please install PyYAML to use this command: pip install pyyaml",
+    "stderr_bytes": 62
+   },
+   "tty_json": {
+    "rc": 0,
+    "secs": 0.4,
+    "stdout_head": "{\"generated\": false, \"path\": null}",
+    "stdout_tail": "{\"generated\": false, \"path\": null}",
+    "stdout_bytes": 36,
+    "stderr_head": "Please install PyYAML to use this command: pip install pyyaml",
+    "stderr_bytes": 62
+   }
+  },
+  "cloud create-token": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_bytes": 130
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_bytes": 130
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud create-token [OPTIONS] NAME",
+    "stderr_bytes": 130
+   }
+  },
+  "cloud gcp-standalone": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.5,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_bytes": 69
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_bytes": 69
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run).",
+    "stderr_bytes": 69
+   }
+  },
+  "cloud project create": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_bytes": 134
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_bytes": 134
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud project create [OPTIONS] NAME",
+    "stderr_bytes": 134
+   }
+  },
+  "cloud project invite": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_bytes": 139
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_bytes": 139
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud project invite [OPTIONS] ROLE USER",
+    "stderr_bytes": 139
+   }
+  },
+  "cloud project list": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 70
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=a9b85d1b826d4f109da40a6d64202e6c ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud project role-permissions": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_bytes": 160
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_bytes": 160
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud project role-permissions [OPTIONS] ROLE_ID",
+    "stderr_bytes": 160
+   }
+  },
+  "cloud project roles": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=c6c89584ba8547e3a14607e8386cadd6 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud project select": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=950a5e85449d40e0a884a6b1fdedff0a ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud project selected": {
+   "tty_plain": {
+    "rc": 0,
+    "secs": 0.4,
+    "stdout_head": "Warning: no selected project. run `reflex cloud project select` to set one.",
+    "stdout_tail": "Warning: no selected project. run `reflex cloud project select` to set one.",
+    "stdout_bytes": 77,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 0,
+    "secs": 0.4,
+    "stdout_head": "Warning: no selected project. run `reflex cloud project select` to set one.",
+    "stdout_tail": "Warning: no selected project. run `reflex cloud project select` to set one.",
+    "stdout_bytes": 77,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_json": {
+    "rc": 0,
+    "secs": 0.4,
+    "stdout_head": "{\"project_id\": null, \"name\": null, \"error\": null}",
+    "stdout_tail": "{\"project_id\": null, \"name\": null, \"error\": null}",
+    "stdout_bytes": 51,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   }
+  },
+  "cloud project users": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=e1ca626ac2e34fb8b9460fbb5e3015a6 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud providers connections": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=4a1ff2babc2649faa8ae63cf8cab3719 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud providers list": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=3119f18d12ce4d7cbe56804aadcc1093 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud providers status": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=14fd0c1b035849f8b265e2613da2a50f ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud regions": {
+   "tty_plain": {
+    "rc": 0,
+    "secs": 0.7,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Unable to get regions due to 403 Forbidden.",
+    "stderr_bytes": 44
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud regions [OPTIONS]",
+    "stderr_bytes": 125
+   },
+   "tty_json": {
+    "rc": 0,
+    "secs": 0.7,
+    "stdout_head": "[]",
+    "stdout_tail": "[]",
+    "stdout_bytes": 4,
+    "stderr_head": "Unable to get regions due to 403 Forbidden.",
+    "stderr_bytes": 44
+   }
+  },
+  "cloud scan": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=b86daa43aac244169de3f2025e5e8cf1 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud secrets delete": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_bytes": 141
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_bytes": 141
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud secrets delete [OPTIONS] [APP_ID] KEY",
+    "stderr_bytes": 141
+   }
+  },
+  "cloud secrets list": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=1e5635d3661e4df7a2277dde6b58ee42 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud secrets update": {
+   "tty_plain": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "Opening ",
+    "stdout_tail": "please hit 'Enter' or 'Return' after login on website complete:",
+    "stdout_bytes": 421,
+    "stderr_head": "",
+    "stderr_bytes": 0
+   },
+   "tty_nointeractive": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Token is required for non-interactive mode.",
+    "stderr_bytes": 44
+   },
+   "tty_json": {
+    "rc": "TIMEOUT",
+    "secs": 40.0,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Opening https://build.reflex.dev/cli/login?request_id=632d39d8dcdd4436884f21653bf08459 ... By connecting your account, you agree to Reflex Cloud [Terms of Servi",
+    "stderr_bytes": 410
+   }
+  },
+  "cloud token": {
+   "tty_plain": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_bytes": 147
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_bytes": 121
+   },
+   "tty_json": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud token [OPTIONS]",
+    "stderr_bytes": 111
+   }
+  },
+  "cloud vmtypes": {
+   "tty_plain": {
+    "rc": 0,
+    "secs": 0.8,
+    "stdout_head": "[]",
+    "stdout_tail": "[]",
+    "stdout_bytes": 4,
+    "stderr_head": "Unable to get vmtypes due to 403 Forbidden.",
+    "stderr_bytes": 44
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud vmtypes [OPTIONS]",
+    "stderr_bytes": 125
+   },
+   "tty_json": {
+    "rc": 0,
+    "secs": 0.7,
+    "stdout_head": "[]",
+    "stdout_tail": "[]",
+    "stdout_bytes": 4,
+    "stderr_head": "Unable to get vmtypes due to 403 Forbidden.",
+    "stderr_bytes": 44
+   }
+  },
+  "cloud whoami": {
+   "tty_plain": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Not logged in. Run `reflex login` to authenticate.",
+    "stderr_bytes": 51
+   },
+   "tty_nointeractive": {
+    "rc": 2,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Usage: reflex cloud whoami [OPTIONS]",
+    "stderr_bytes": 123
+   },
+   "tty_json": {
+    "rc": 1,
+    "secs": 0.4,
+    "stdout_head": "",
+    "stdout_tail": "",
+    "stdout_bytes": 0,
+    "stderr_head": "Not logged in. Run `reflex login` to authenticate.",
+    "stderr_bytes": 51
+   }
+  }
+ }
+}

@@ -1,0 +1,20 @@
+{
+  "url": "http://localhost:5302/",
+  "title": "Sharedapp | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 1500",
+    "click: '#bump'",
+    "expect_text: '1'",
+    "screenshot: 'shots/sharedapp.png'"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "sharedapp\nshared widget\n\n/external/sharedapp/widget/shared.css?v=3f824f9b\n\n/external/sharedapp/widget/shared.js?v=f374d304\n\n1\n\nbump"
+}

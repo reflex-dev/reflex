@@ -1,0 +1,56 @@
+{
+  "reflex": "0.9.11a1",
+  "python": "3.11.15",
+  "results": {
+    "f_plain": {
+      "status": "compiles",
+      "body_has_index_def": true,
+      "generated": "\nimport reflex as rx\n\ndef index():\n    return rx.text(\"hi\")\n\napp = rx.App()\napp.add_page(index, route=\"/\")\n"
+    },
+    "f_trailing_comment": {
+      "status": "IndentationError: unexpected indent (line 2)",
+      "body_has_index_def": true,
+      "generated": "# noqa: N802\n  import reflex as rx\n\n  def index():\n      return rx.text(\"hi\")\n\n  app = rx.App()\n  app.add_page(index, route=\"/\")\n"
+    },
+    "f_trailing_comment_plain_words": {
+      "status": "IndentationError: unexpected indent (line 2)",
+      "body_has_index_def": true,
+      "generated": "# a note about the app\n  import reflex as rx\n\n  def index():\n      return rx.text(\"hi\")\n\n  app = rx.App()\n  app.add_page(index, route=\"/\")\n"
+    },
+    "f_annot_none": {
+      "status": "compiles",
+      "body_has_index_def": true,
+      "generated": "\nimport reflex as rx\n\ndef index():\n    return rx.text(\"hi\")\n\napp = rx.App()\napp.add_page(index, route=\"/\")\n"
+    },
+    "f_annot_str": {
+      "status": "IndentationError: unexpected indent (line 2)",
+      "body_has_index_def": false,
+      "generated": "\n    return rx.text(\"hi\")\n\napp = rx.App()\napp.add_page(index, route=\"/\")\n"
+    },
+    "f_annot_subscript": {
+      "status": "IndentationError: unexpected indent (line 2)",
+      "body_has_index_def": false,
+      "generated": "\n    return rx.text(\"hi\")\n\napp = rx.App()\napp.add_page(index, route=\"/\")\n"
+    },
+    "f_annot_none_and_comment": {
+      "status": "IndentationError: unexpected indent (line 2)",
+      "body_has_index_def": true,
+      "generated": "# noqa: N802\n  import reflex as rx\n\n  def index():\n      return rx.text(\"hi\")\n\n  app = rx.App()\n  app.add_page(index, route=\"/\")\n"
+    },
+    "f_multiline_sig": {
+      "status": "compiles",
+      "body_has_index_def": true,
+      "generated": "\nimport reflex as rx\n\ndef index():\n    return rx.text(\"hi\")\n\napp = rx.App()\napp.add_page(index, route=\"/\")\n"
+    },
+    "f_docstring": {
+      "status": "compiles",
+      "body_has_index_def": true,
+      "generated": "\n\"\"\"Doc.\"\"\"\nimport reflex as rx\n\ndef index():\n    return rx.text(\"hi\")\n\napp = rx.App()\napp.add_page(index, route=\"/\")\n"
+    },
+    "f_decorated": {
+      "status": "compiles",
+      "body_has_index_def": true,
+      "generated": "@_decorator\ndef f_decorated():\n    import reflex as rx\n\n    def index():\n        return rx.text(\"hi\")\n\n    app = rx.App()\n    app.add_page(index, route=\"/\")\n"
+    }
+  }
+}

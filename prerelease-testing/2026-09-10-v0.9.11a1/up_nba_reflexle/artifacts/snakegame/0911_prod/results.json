@@ -1,0 +1,112 @@
+[
+  {
+    "name": "snakegame_page_loads",
+    "status": "pass",
+    "details": "title='snake game' grid_cells=361 (19x19=361) stats={'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False} switch=unchecked"
+  },
+  {
+    "name": "initial_board_all_empty",
+    "status": "pass",
+    "details": "cell colours at first paint: {'rgb(224, 225, 230)': 361} — the app only paints snake/food on the first loop tick, so an un-started board is uniformly empty (app design)"
+  },
+  {
+    "name": "run_starts_background_loop",
+    "status": "pass",
+    "details": "cell colours after RUN: {'rgb(224, 225, 230)': 359, 'rgb(0, 144, 255)': 1, 'rgb(70, 167, 88)': 1}; switch=checked (rx.switch(checked=State.running) must follow the backend)"
+  },
+  {
+    "name": "background_loop_pushes_deltas",
+    "status": "pass",
+    "details": "non-empty cell layout changed over 2.5 s: True"
+  },
+  {
+    "name": "pause_stops_loop",
+    "status": "pass",
+    "details": "board identical over 2 s after PAUSE: True; switch=unchecked"
+  },
+  {
+    "name": "escape_key_toggles_run",
+    "status": "pass",
+    "details": "Escape -> running=True, Escape -> paused=True"
+  },
+  {
+    "name": "switch_controls_loop",
+    "status": "pass",
+    "details": "switch -> checked=True; board advanced=True"
+  },
+  {
+    "name": "arrow_keys_navigate_and_eat_food",
+    "status": "pass",
+    "details": "queued 10x ArrowUp + 5x ArrowLeft from the start position (10,15) -> food at (5,5); stats {'RATE': '12', 'SCORE': '1', 'MAGIC': '2', 'gameover': False} (SCORE 0->1, MAGIC 1->2, RATE 10->12 expected: the handler does magic += 1 before rate = 10 + magic)"
+  },
+  {
+    "name": "score_magic_rate_update_together",
+    "status": "pass",
+    "details": "stats after eating: {'RATE': '12', 'SCORE': '1', 'MAGIC': '2', 'gameover': False}"
+  },
+  {
+    "name": "vim_keys_steer_snake",
+    "status": "pass",
+    "details": "h/j/k/l key_map entries accepted; board changed=True"
+  },
+  {
+    "name": "control_buttons_clickable",
+    "status": "pass",
+    "details": "clicked one of the four arrow icon_buttons; no error raised, board still live"
+  },
+  {
+    "name": "deterministic_game_over",
+    "status": "pass",
+    "details": "three ',' (arrow_rel_left) presses -> Game Over heading=True; stats={'RATE': '12', 'SCORE': '1', 'MAGIC': '2', 'gameover': True}; switch=unchecked; distinct cell colours=['rgb(224, 225, 230)', 'rgb(70, 167, 88)', 'rgb(229, 72, 77)', 'rgb(0, 144, 255)']"
+  },
+  {
+    "name": "dead_cell_is_recoloured",
+    "status": "pass",
+    "details": "cell colours on death (empty + snake + food + dead red expected): {'rgb(224, 225, 230)': 353, 'rgb(70, 167, 88)': 6, 'rgb(229, 72, 77)': 1, 'rgb(0, 144, 255)': 1}"
+  },
+  {
+    "name": "loop_stops_after_death",
+    "status": "pass",
+    "details": "board frozen after Game Over=True; switch=unchecked"
+  },
+  {
+    "name": "run_after_death_resets",
+    "status": "pass",
+    "details": "stats after replay: {'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False} (SCORE 0, MAGIC 1, RATE 10, no Game Over heading)"
+  },
+  {
+    "name": "state_survives_reload",
+    "status": "pass",
+    "details": "stats {'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False} -> {'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False}; board identical=True"
+  },
+  {
+    "name": "keys_work_after_reload",
+    "status": "pass",
+    "details": "ArrowLeft after a reload still reaches the backend"
+  },
+  {
+    "name": "second_tab_independent_game",
+    "status": "pass",
+    "details": "second context fresh stats={'RATE': '10', 'SCORE': '0', 'MAGIC': '1', 'gameover': False}; its own loop running=checked; first tab switch=unchecked"
+  },
+  {
+    "name": "npm_versions_recorded",
+    "status": "pass",
+    "details": "{\"@emotion/react\": \"11.14.0\", \"@radix-ui/themes\": \"3.3.0\", \"@react-router/dev\": \"8.3.1\", \"@react-router/fs-routes\": \"8.3.1\", \"@react-router/node\": \"8.3.1\", \"autoprefixer\": \"10.5.4\", \"isbot\": \"5.2.2\", \"lucide-react\": \"1.26.0\", \"postcss\": \"8.5.26\", \"postcss-import\": \"17.0.0\", \"react\": \"19.2.8\", \"react-dom\": \"19.2.8\", \"react-error-boundary\": \"6.1.2\", \"react-helmet\": \"6.1.0\", \"react-router\": \"8.3.1\", \"socket.io-client\": \"4.8.3\", \"sonner\": \"2.0.8\", \"universal-cookie\": \"8.1.2\", \"vite\": \"8.2.2\"}"
+  },
+  {
+    "name": "browser_console_clean",
+    "status": "pass",
+    "details": "0 unexpected: []"
+  },
+  {
+    "name": "no_bad_http_responses",
+    "status": "pass",
+    "details": "0: []"
+  },
+  {
+    "name": "no_page_errors",
+    "status": "pass",
+    "details": "0: []"
+  }
+]

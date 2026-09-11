@@ -45,9 +45,9 @@ outputs (`.web/`, `node_modules/`, venvs) are excluded.
 | `ent_mcp_oidc/` | enterprise MCP plugin and OIDC auth: a purpose-built MCP exercise app, an `AuthPlugin` app and a self-contained OIDC provider (discovery, JWKS, PKCE S256, refresh, userinfo, RP-initiated logout) driven end to end |
 | `otel/` | the new reflex-otel 0.1.0a1: instrumentor, spans and metrics, the documented env-var recipe, browser plugin |
 | `components_bumps/` | all six bumped component libraries (moment, code, plotly, radix, recharts, sonner) in dev and prod, with the previous stable as baseline |
-| `ent_mantine_highcharts_tickets/` | the remaining enterprise demos, plus the tickets demo's `EventHandlerAPIPlugin` REST/OpenAPI surface |
-| `config_assets_cli/` | #7039 shared-asset linking (concurrent and stale-link) and #7050 CLI startup timings |
-| `memo_hash/` | #6947: two AppHarness apps compiled in one process, each with a same-named `rx.memo`, checked for naming-cache leakage |
+| `ent_mantine_highcharts_tickets/` | the remaining enterprise demos in dev **and** prod, driven as a user, plus the tickets demo's `EventHandlerAPIPlugin` REST/OpenAPI surface (first pass preserved as `NOTES_pass1.md`, second pass under `pass2/`) |
+| `config_assets_cli/` | #7039 shared-asset linking, #7050 CLI startup and the frontend-reinstall claim, the version-check cache, rxconfig loading and `reflex component` (first pass preserved as `NOTES.first-pass.md`) |
+| `memo_hash/` | the auto-memoization naming and hashing changes, dev and prod; the first pass's AppHarness cache check is under `memo_hash/prior_appharness_cache_check/` |
 | `telemetry_ctx/` | #6960: an `rxconfig.py` that logs its importing thread, proving the telemetry worker no longer re-imports it off-thread |
 | `frontend_path_ssr/` | #7044 `frontend_path` + `REFLEX_SSR=false` export and prod run, driven in a browser, plus a four-way route-status matrix |
 
@@ -62,6 +62,10 @@ dir on free ports, and run its driver script against the frontend URL. Each NOTE
 exact commands. AGENT_BRIEF.md is a ready-made brief for orchestrating the same fan-out again,
 and `.claude/skills/prerelease-test/` carries the campaign playbook and the discovery /
 packaging-audit scripts.
+
+Several clusters were run twice — a foreground first pass and a deeper agent second pass that
+arrived later. Where that happened the first pass is preserved beside the second (`NOTES.first-pass.md`,
+`NOTES_pass1.md`, `prior_appharness_cache_check/`) because `FINDINGS.md` cites its artifact paths.
 
 ## Campaign notes for the next run
 

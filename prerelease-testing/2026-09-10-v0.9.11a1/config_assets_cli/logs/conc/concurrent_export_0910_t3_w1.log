@@ -1,0 +1,95 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+────────────── Compiling production app and preparing for export. ──────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/base0910/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72
+)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Creating Production Build failed with exit code 1
+$ react-router build
+Using Vite Environment API
+vite v8.2.0 building client environment for production...
+transforming...
+✓ 411 modules transformed.
+rendering chunks...
+computing gzip size...
+build/client/.vite/manifest.json                             2.69 kB │ gzip:  
+0.58 kB
+build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ gzip: 
+84.10 kB
+build/client/assets/reflex-env-BVGF6eGS.js                   0.30 kB │ gzip:  
+0.20 kB
+build/client/assets/_404_._index-BsqhOdrF.js                 0.41 kB │ gzip:  
+0.29 kB
+build/client/assets/_index-DD4yXiEh.js                       1.57 kB │ gzip:  
+0.73 kB
+build/client/assets/emotion-react.browser.esm-BWmUBQ1I.js   20.71 kB │ gzip:  
+8.12 kB
+build/client/assets/errorBoundaries-CurWbIgo.js             36.79 kB │ gzip: 
+12.77 kB
+build/client/assets/components-B6bD0jeK.js                  83.45 kB │ gzip: 
+27.73 kB
+build/client/assets/button-DnOLewe0.js                     143.81 kB │ gzip: 
+43.35 kB
+build/client/assets/entry.client-CGm3t_6B.js               182.33 kB │ gzip: 
+57.70 kB
+build/client/assets/root-5xqcajZn.js                       303.22 kB │ gzip: 
+85.47 kB
+
+✓ built in 3.87s
+vite v8.2.0 building ssr environment for production...
+transforming...
+⚠️ Paths with dynamic/splat params cannot be prerendered when using `prerender: 
+true`. You may want to use the `prerender()` API to prerender the following 
+paths:
+  - *
+✓ 24 modules transformed.
+rendering chunks...
+
+✓ 1 asset cleaned from React Router server build.
+build/client/assets/__reflex_global_styles-NccINl-w.css
+
+computing gzip size...
+build/server/.vite/manifest.json                           0.80 kB │ gzip:  0.31
+kB
+build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ gzip: 84.10
+kB
+build/server/assets/reflex-env-BVGF6eGS.js                 0.30 kB │ gzip:  0.20
+kB
+build/server/index.js                                     42.97 kB │ gzip: 13.21
+kB
+
+✓ built in 1.07s
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+[Error: ENOTEMPTY: directory not empty, rmdir 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/config_assets_cli/sharedapp_base/.web/.react-router/types'] {
+  errno: -39,
+  code: 'ENOTEMPTY',
+  syscall: 'rmdir',
+  path: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/apps/config_assets_cli/sharedapp_base/.web/.react-router/types'
+}
+
+Node.js v22.22.2
+error: script "export" exited with code 1
+
+
+
+Run with --loglevel debug  for the full log.
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:06

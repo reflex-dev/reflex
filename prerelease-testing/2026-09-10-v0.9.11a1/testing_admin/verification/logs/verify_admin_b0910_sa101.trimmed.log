@@ -1,0 +1,28 @@
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Process granian-worker:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_adm_b1/lib/python3.11/site-packages/granian/server/mp.py", line 92, in wrapped
+    callback = callback_loader()
+               ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_adm_b1/lib/python3.11/site-packages/granian/_internal.py", line 65, in load_target
+    module = load_module(path)
+             ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_adm_b1/lib/python3.11/site-packages/granian/_internal.py", line 47, in load_module
+    __import__(module_name)
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/verify2_testing_admin_0/admindash_b0910/admindash/admindash.py", line 44, in <module>
+    app = rx.App(admin_dash=rx.AdminDash(models=[Widget]))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 34, in __init__
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_adm_b1/lib/python3.11/site-packages/reflex/app.py", line 537, in __post_init__
+    self._setup_admin_dash()
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/ta_adm_b1/lib/python3.11/site-packages/reflex/app.py", line 1434, in _setup_admin_dash
+    admin = admin_dash.admin or Admin(
+                                ^^^^^^
+TypeError: Admin.__init__() got an unexpected keyword argument 'engine'
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian

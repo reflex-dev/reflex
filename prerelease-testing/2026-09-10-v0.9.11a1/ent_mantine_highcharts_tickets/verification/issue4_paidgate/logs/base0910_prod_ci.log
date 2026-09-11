@@ -1,0 +1,27 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+─────────────────────────── Initializing minimal_rxe ───────────────────────────
+Info: Initializing the web directory.
+Success: Initialized minimal_rxe. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/entbase/lib/python3.11/site-packages/reflex_enterprise/utils.py:119)
+`reflex run --env prod` requires a paid Reflex subscription (one of pro, team, 
+enterprise). You are currently logged out. Run `reflex login` to authenticate. 
+See https://reflex.dev/pricing/ for more information.
+EXIT=0

@@ -1,0 +1,34 @@
+META is_stdout_reserved_initial=False
+MARK before console.error
+META before progress.disable=False
+MARK before logger.error
+META is_stdout_reserved_after_set=True
+MARK reserved console.print
+Info: MARK reserved console.info
+Success: MARK reserved console.success
+Warning: MARK reserved console.warn
+MARK reserved console.error
+Debug: MARK reserved console.debug
+────────────────────────────────────────────────────────────────────────────────────────── MARK reserved rule ──────────────────────────────────────────────────────────────────────────────────────────
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━┓
+┃ h1                      ┃ h2 ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━┩
+│ MARK reserved tablecell │ x  │
+└─────────────────────────┴────┘
+META reserved progress.disable=True
+Info: MARK reserved logger.info
+Warning: MARK reserved logger.warning
+MARK reserved logger.error
+Debug: MARK reserved logger.debug
+META nested_state_after_2set_1unset=False
+MARK thread console.print
+Info: MARK thread logger.info
+META thread_ran=True
+META is_stdout_reserved_after_release=False
+MARK after console.error
+META after progress.disable=False
+MARK after logger.error
+META reserved_after_exception=True
+MARK afterexc console.print
+META context_manager=TypeError: 'NoneType' object does not support the context manager protocol
+META done

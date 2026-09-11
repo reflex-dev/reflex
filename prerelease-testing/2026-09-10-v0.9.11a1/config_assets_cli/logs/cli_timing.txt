@@ -1,0 +1,9 @@
+command                  0.9.10.post2       0.9.11a1
+--version                       0.383          0.171
+--help                          0.378          0.174
+run --help                      0.361          0.170
+component --help                0.352          0.175
+cloud --help                    0.355          0.197
+deploy --help                   0.366          0.182
+export --help                   0.371          0.177
+db --help                       0.380          0.178

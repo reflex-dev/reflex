@@ -1,0 +1,15 @@
+--- reflex deploy -> exit=1
+`reflex deploy` requires the reflex-hosting-cli package, which is not installed.
+Install it with: pip install reflex-hosting-cli
+--- reflex cloud apps list -> exit=1
+`reflex cloud` requires the reflex-hosting-cli package, which is not installed.
+Install it with: pip install reflex-hosting-cli
+--- reflex cloud -> exit=1
+`reflex cloud` requires the reflex-hosting-cli package, which is not installed.
+Install it with: pip install reflex-hosting-cli
+--- reflex login -> exit=1
+`reflex login` requires the reflex-hosting-cli package, which is not installed.
+Install it with: pip install reflex-hosting-cli
+--- reflex logout -> exit=1
+`reflex logout` requires the reflex-hosting-cli package, which is not installed.
+Install it with: pip install reflex-hosting-cli

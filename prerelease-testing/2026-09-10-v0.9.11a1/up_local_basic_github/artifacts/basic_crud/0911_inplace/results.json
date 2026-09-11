@@ -1,0 +1,137 @@
+[
+  {
+    "name": "api_list_initial",
+    "status": "pass",
+    "details": "200 1 rows"
+  },
+  {
+    "name": "api_cleanup",
+    "status": "pass",
+    "details": "0 rows left after DELETE sweep"
+  },
+  {
+    "name": "api_create",
+    "status": "pass",
+    "details": "200 \"OK\""
+  },
+  {
+    "name": "api_list_after_create",
+    "status": "pass",
+    "details": "1 rows, API-1 x1"
+  },
+  {
+    "name": "api_row_shape",
+    "status": "pass",
+    "details": "keys=['category', 'code', 'created', 'id', 'image', 'label', 'quantity', 'seller', 'sender', 'updated']"
+  },
+  {
+    "name": "api_get_one",
+    "status": "pass",
+    "details": "200 {\"label\":\"Api Widget\",\"code\":\"API-1\",\"updated\":\"2026-09-11T08:18:23.796981\",\"image\":\"/favicon.ico\",\"quantity\":7,\"categor"
+  },
+  {
+    "name": "api_update",
+    "status": "pass",
+    "details": "PUT 200; now quantity=99 label='Api Widget v2'"
+  },
+  {
+    "name": "api_update_touches_updated",
+    "status": "pass",
+    "details": "created=2026-09-11T08:18:23.796981 updated=2026-09-11T08:18:23.808978"
+  },
+  {
+    "name": "api_get_missing",
+    "status": "anomaly",
+    "details": "200 body='{\"status_code\":404,\"detail\":\"Not Found\",\"headers\":null}' (app `return HTTPException(404)` instead of raising)"
+  },
+  {
+    "name": "api_create_empty_code",
+    "status": "anomaly",
+    "details": "200 body='{\"status_code\":402,\"detail\":\"Invalid `code`\",\"headers\":null}' (app `return HTTPException(402)`)"
+  },
+  {
+    "name": "api_create_duplicate_code",
+    "status": "pass",
+    "details": "500 (unique constraint on code; 500 expected, app does not catch it)"
+  },
+  {
+    "name": "api_openapi",
+    "status": "pass",
+    "details": "200 paths=['/products', '/products/{spec_id}']"
+  },
+  {
+    "name": "api_docs",
+    "status": "pass",
+    "details": "GET /docs -> 200"
+  },
+  {
+    "name": "api_reflex_ping",
+    "status": "pass",
+    "details": "GET /ping -> 200 '\"pong\"'"
+  },
+  {
+    "name": "ui_load",
+    "status": "pass",
+    "details": "'products found' present=True"
+  },
+  {
+    "name": "ui_on_load_lists_products",
+    "status": "pass",
+    "details": "heading='1 products found' (expect '1 products found' from the API row)"
+  },
+  {
+    "name": "ui_foreach_row",
+    "status": "pass",
+    "details": "rx.foreach rendered the API-1 row"
+  },
+  {
+    "name": "ui_post_status",
+    "status": "pass",
+    "details": "'Status: 200' resp='\"OK\"'"
+  },
+  {
+    "name": "ui_background_poller_refreshes",
+    "status": "pass",
+    "details": "heading='2 products found' (background reload_product should reach 2)"
+  },
+  {
+    "name": "ui_new_row_rendered",
+    "status": "pass",
+    "details": "UI-1 row present after background refresh"
+  },
+  {
+    "name": "ui_get_list",
+    "status": "pass",
+    "details": "'Status: 200' resp_has_UI-1=True resp_has_API-1=True"
+  },
+  {
+    "name": "ui_put",
+    "status": "pass",
+    "details": "'Status: 200' quantity now 55"
+  },
+  {
+    "name": "ui_put_reflected_in_list",
+    "status": "pass",
+    "details": "'Stock: 55' visible=True"
+  },
+  {
+    "name": "ui_delete",
+    "status": "pass",
+    "details": "'Status: 200' heading='1 products found'"
+  },
+  {
+    "name": "ui_clear_resets_form",
+    "status": "pass",
+    "details": "url='products'"
+  },
+  {
+    "name": "ui_error_response_surfaced",
+    "status": "pass",
+    "details": "'Status: 200' resp='{\\n  \"status_code\": 404,\\n  \"detail\": \"Not Found\",\\n  \"headers\": null\\n}'"
+  },
+  {
+    "name": "ui_reload",
+    "status": "pass",
+    "details": "heading='1 products found'"
+  }
+]

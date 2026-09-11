@@ -1,0 +1,62 @@
+{
+  "label": "wrapt241",
+  "steps": [
+    {
+      "button": "#b_list",
+      "before": "1|1|0|0|1|0",
+      "after": "2|1|0|0|1|0",
+      "items": "[\"X\",\"i1\"]",
+      "counts": "{\"x\":1}",
+      "tags": "[\"a\"]",
+      "rendered_items": 2
+    },
+    {
+      "button": "#b_dict",
+      "before": "2|1|0|0|1|0",
+      "after": "2|3|0|0|1|0",
+      "items": "[\"X\",\"i1\"]",
+      "counts": "{\"x\":2,\"k1\":1}",
+      "tags": "[\"a\"]",
+      "rendered_items": 2
+    },
+    {
+      "button": "#b_nested",
+      "before": "2|3|0|0|1|0",
+      "after": "2|3|1|0|1|0",
+      "items": "[\"X\",\"i1\"]",
+      "counts": "{\"x\":2,\"k1\":1}",
+      "tags": "[\"a\"]",
+      "rendered_items": 2
+    },
+    {
+      "button": "#b_dc",
+      "before": "2|3|1|0|1|0",
+      "after": "2|3|1|1|2|0",
+      "items": "[\"X\",\"i1\"]",
+      "counts": "{\"x\":2,\"k1\":1}",
+      "tags": "[\"a\",\"t1\"]",
+      "rendered_items": 2
+    },
+    {
+      "button": "#b_pop",
+      "before": "2|3|1|1|2|0",
+      "after": "1|1|1|1|2|0",
+      "items": "[\"X\"]",
+      "counts": "{\"k1\":1}",
+      "tags": "[\"a\",\"t1\"]",
+      "rendered_items": 1
+    },
+    {
+      "button": "#b_bg",
+      "before": "1|1|1|1|2|0",
+      "after": "1|1|1|1|5|3",
+      "items": "[\"X\"]",
+      "counts": "{\"k1\":1}",
+      "tags": "[\"a\",\"t1\",\"bg0\",\"bg1\",\"bg2\"]",
+      "rendered_items": 1
+    }
+  ],
+  "initial_digest": "1|1|0|0|1|0",
+  "console_errors": [],
+  "failed_requests": []
+}

@@ -1,0 +1,32 @@
+{
+  "label": "prod0911_paths",
+  "base": "http://localhost:6164",
+  "user": "p1789116390",
+  "cases": {
+    "a_hard_load_login": {
+      "href_on_login_page": "http://localhost:6164/login/",
+      "router_path": "/login/",
+      "matches": "MISMATCH",
+      "left_login_page": false,
+      "seconds": 15.1,
+      "href_after_login": "http://localhost:6164/login/"
+    },
+    "b_require_login_bounce": {
+      "href_on_login_page": "http://localhost:6164/login",
+      "router_path": "/login",
+      "matches": "MATCH",
+      "left_login_page": true,
+      "seconds": 0.6,
+      "href_after_login": "http://localhost:6164/protected/"
+    },
+    "c_link_click": {
+      "href_on_login_page": "http://localhost:6164/login",
+      "router_path": "/login",
+      "matches": "MATCH",
+      "left_login_page": true,
+      "seconds": 0.5,
+      "href_after_login": "http://localhost:6164/"
+    }
+  },
+  "cases_b_bounced_to": "http://localhost:6164/login"
+}

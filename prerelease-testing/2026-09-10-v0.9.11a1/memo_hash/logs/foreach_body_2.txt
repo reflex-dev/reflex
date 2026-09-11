@@ -1,0 +1,11 @@
+export const Foreach_comp_c454dccb09ae54b9b2ffa08f413a219d_21819d56 = memo(({children}) => {
+    const reflex___state____state__memoapp___common____shared = useContext(StateContexts.reflex___state____state__memoapp___common____shared)
+const ref_row_reflex_Var_5949624049744022204_reflex_Var_i_rx_state_ = useRef(null); refs["ref_row_reflex_Var_5949624049744022204_reflex_Var_i_rx_state_"] = ref_row_reflex_Var_5949624049744022204_reflex_Var_i_rx_state_;
+
+
+
+    return(
+        Array.prototype.map.call(reflex___state____state__memoapp___common____shared.items_rx_state_ ?? [],((item_rx_state_,i_rx_state_)=>(jsx("div",{id:("row-"+i_rx_state_),key:i_rx_state_,ref:ref_row_reflex_Var_5949624049744022204_reflex_Var_i_rx_state_},jsx(Card_6a3335c9,{label:item_rx_state_},),jsx(Card_d38f1d91,{label:item_rx_state_},)))))
+    )
+});
+Foreach_comp_c454dccb09ae54b9b2ffa08f413a219d_21819d56.displayName = "Foreach";

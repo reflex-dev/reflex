@@ -1,0 +1,40 @@
+HTTP status matrix for the minimal `slashauth` app (verifier verify2_up_lorem_form_1).
+Command used for every row:
+  curl -s -o /dev/null -w '%{http_code} -> %{redirect_url}\n' --noproxy '*' "http://localhost:<PORT><PATH>"
+
+reflex 0.9.11a1, DEV  (port 6166, `reflex run --frontend-port 6166 --backend-port 10566`)
+  /              200
+  /login         200
+  /login/        200
+  /register      200
+  /protected     200
+  /protected/    200
+
+reflex 0.9.11a1, PROD (port 6164, `reflex run --env prod --frontend-port 6164 --backend-port 6164`)
+  /              200
+  /login         307 -> http://localhost:6164/login/
+  /login/        200
+  /login.html    200            <- the duplicate build.py writes; never used for /login
+  /register      307 -> http://localhost:6164/register/
+  /protected     307 -> http://localhost:6164/protected/
+  /protected/    200
+  /login?next=x  307 -> http://localhost:6164/login/?next=x   (query preserved)
+
+  full headers for GET /login:
+    HTTP/1.1 307 Temporary Redirect
+    content-length: 0
+    location: http://localhost:6164/login/
+    server: granian
+
+reflex 0.9.10.post2, PROD (port 6165) -- IDENTICAL
+  /              200
+  /login         307 -> http://localhost:6165/login/
+  /login/        200
+  /register      307 -> http://localhost:6165/register/
+  /protected     307 -> http://localhost:6165/protected/
+
+reflex 0.9.11a1, PROD with REFLEX_SSR=false (port 6167; no prerendered per-route dirs)
+  /              200
+  /login         404      (no redirect; SPA-fallback body, cf. reflex issue #6983)
+  /login/        404
+  /protected     404

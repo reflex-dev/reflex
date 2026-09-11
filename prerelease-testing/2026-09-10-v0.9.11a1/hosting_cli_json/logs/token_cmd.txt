@@ -1,0 +1,30 @@
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud token --set bogus-token-123 (stdin=/dev/null)
+rc=1
+--stdout (0)--
+
+--stderr--
+Token rejected, nothing was saved: 403 Forbidden (auth request id: 2cb67b3ac44b486b9419e519b10f95d1)
+
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud token --clear (stdin=/dev/null)
+rc=0
+--stdout (42)--
+Success: Cleared the stored access token.
+
+--stderr--
+
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud token --print --set x (stdin=/dev/null)
+rc=2
+--stdout (0)--
+
+--stderr--
+Usage: reflex cloud token [OPTIONS]
+Try 'reflex cloud token --help' for help.
+
+Error: Specify exactly one of --print, --set or --clear (got --print, --set).
+
+### echo token | reflex cloud token --set -
+rc=1
+--stdout--
+--stderr--
+Token rejected, nothing was saved: 403 Forbidden (auth request id: 
+1b47061e5488440dafa52fadac7be16d)

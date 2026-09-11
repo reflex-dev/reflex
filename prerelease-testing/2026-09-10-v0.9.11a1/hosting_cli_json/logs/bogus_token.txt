@@ -1,0 +1,48 @@
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud apps list --token bogus-token-123 --json
+rc=1
+--stdout (0)--
+
+--stderr (545)--
+Warning: Unable to validate access token: 403 Forbidden (auth request id: f97cbf4e764948c28e87af2860576447)
+Opening https://build.reflex.dev/cli/login?request_id=07107b8be3e1475ca08843a7b3df6c3b ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].
+Warning: Unable to automatically open the browser. Please go to https://build.reflex.dev/cli/login?request_id=07107b8be3e1475ca08843a7b3df6c3b to authenticate.
+please hit 'Enter' or 'Return' after login on website complete: Unable to list deployments
+
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud project list --token bogus-token-123 --json
+rc=1
+--stdout (0)--
+
+--stderr (566)--
+Warning: Unable to validate access token: 403 Forbidden (auth request id: 531597bc65694b4cb6e9fdecec221263)
+Opening https://build.reflex.dev/cli/login?request_id=1a82dcc0eaee4ce98293e67947d12d1f ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].
+Warning: Unable to automatically open the browser. Please go to https://build.reflex.dev/cli/login?request_id=1a82dcc0eaee4ce98293e67947d12d1f to authenticate.
+please hit 'Enter' or 'Return' after login on website complete: Unable to get projects: EOF when reading a line
+
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud whoami --token bogus-token-123 --json
+rc=1
+--stdout (0)--
+
+--stderr (121)--
+The access token from the --token option was rejected: 403 Forbidden (auth request id: dd1116edf5664763bfe41802df79c5e9)
+
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud secrets list --token bogus-token-123 --json myapp
+rc=1
+--stdout (0)--
+
+--stderr (528)--
+Warning: Unable to validate access token: 403 Forbidden (auth request id: 7f731305dcd34dcba87e5f50378713c5)
+Opening https://build.reflex.dev/cli/login?request_id=8c89db286a2648d481b0992dbaa4215c ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].
+Warning: Unable to automatically open the browser. Please go to https://build.reflex.dev/cli/login?request_id=8c89db286a2648d481b0992dbaa4215c to authenticate.
+please hit 'Enter' or 'Return' after login on website complete: 
+Aborted!
+
+### /tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/bin/reflex cloud apps list --token bogus-token-123
+rc=1
+--stdout (518)--
+Warning: Unable to validate access token: 403 Forbidden (auth request id: 4285aac57cae4630b6de327b867b141e)
+Opening https://build.reflex.dev/cli/login?request_id=09ff3a78597449c5865d462dd7c1495a ... By connecting your account, you agree to Reflex Cloud [Terms of Service] and [Privacy Policy].
+Warning: Unable to automatically open the browser. Please go to https://build.reflex.dev/cli/login?request_id=09ff3a78597449c5865d462dd7c1495a to authenticate.
+please hit 'Enter' or 'Return' after login on website complete: 
+--stderr (27)--
+Unable to list deployments
+

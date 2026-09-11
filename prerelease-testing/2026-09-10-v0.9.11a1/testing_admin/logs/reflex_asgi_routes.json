@@ -1,0 +1,56 @@
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+{
+  "reflex": "0.9.11a1",
+  "asgi_type": "starlette.applications.Starlette",
+  "api_type": "starlette.applications.Starlette",
+  "api_route_names": [
+    [
+      "Route",
+      "/ping",
+      "ping"
+    ],
+    [
+      "Route",
+      "/_health",
+      "health"
+    ],
+    [
+      "Mount",
+      "/_event",
+      null
+    ],
+    [
+      "Mount",
+      "/admin",
+      "admin"
+    ]
+  ],
+  "tree": [
+    {
+      "path": "asgi",
+      "type": "starlette.applications.Starlette",
+      "name": null,
+      "mount_path": null,
+      "has_routes_attr": true,
+      "n_routes": 1
+    },
+    {
+      "path": "asgi.routes[0]",
+      "type": "starlette.routing.Mount",
+      "name": null,
+      "mount_path": "",
+      "has_routes_attr": true,
+      "n_routes": 0
+    },
+    {
+      "path": "asgi.routes[0].app",
+      "type": "builtins.function",
+      "name": null,
+      "mount_path": null,
+      "has_routes_attr": false,
+      "n_routes": null
+    }
+  ]
+}
