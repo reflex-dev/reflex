@@ -418,11 +418,28 @@ def _stateful_page():
     )
 
 
-@pytest.fixture(params=[_complicated_page, _stateful_page])
+def _repeated_stateful_page() -> Component:
+    """Build repeated memo bodies with distinct call-site children.
+
+    Returns:
+        A page containing 100 repeated stateful rows.
+    """
+    return rx.vstack(
+        *(
+            rx.hstack(
+                rx.text(BenchmarkState.counter),
+                rx.button(f"Increment {index}", on_click=BenchmarkState.increment),
+            )
+            for index in range(100)
+        )
+    )
+
+
+@pytest.fixture(params=[_complicated_page, _stateful_page, _repeated_stateful_page])
 def unevaluated_page(request: pytest.FixtureRequest):
     return request.param
 
 
-@pytest.fixture(params=[_complicated_page, _stateful_page])
+@pytest.fixture(params=[_complicated_page, _stateful_page, _repeated_stateful_page])
 def evaluated_page(request: pytest.FixtureRequest):
     return request.param()

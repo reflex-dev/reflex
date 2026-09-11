@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from reflex.app import App
     from reflex.state import BaseState
+    from reflex_base.components.memo import _MemoBodyAnalysis
     from reflex_base.config import Config
     from reflex_base.event import EventChain, EventHandler
     from reflex_base.utils.types import ArgsSpec
@@ -83,6 +84,9 @@ class RegistrationContext(BaseContext):
         tuple[int, int, str | None],
         tuple[EventHandler, ArgsSpec | Sequence[ArgsSpec], EventChain],
     ] = dataclasses.field(default_factory=dict, repr=False)
+    _memo_body_analyses: dict[str, _MemoBodyAnalysis] = dataclasses.field(
+        default_factory=dict, repr=False
+    )
 
     @property
     def app(self) -> App:
