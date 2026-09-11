@@ -2308,3 +2308,130 @@ def test_computed_var_type_compatibility():
     rx.input(placeholder=ComputedVarTypeState.sync_wrapper)
     rx.input(placeholder=ComputedVarTypeState.async_plain)
     rx.input(placeholder=ComputedVarTypeState.async_wrapper)
+
+
+def test_var_equals_with_var_data_deps():
+    """Var.equals must not bool-ify contained dep Vars.
+
+    VarData.deps holds Vars, and Var.__eq__ builds a BooleanVar instead of
+    returning a bool, so comparing deps element-wise used to raise VarTypeError.
+    """
+    dep_a = Var(_js_expr="dep", _var_type=str)
+    dep_b = Var(_js_expr="dep", _var_type=str)
+    assert dep_a is not dep_b
+
+    var_a = Var(_js_expr="foo", _var_type=str, _var_data=VarData(deps=[dep_a]))
+    var_b = Var(_js_expr="foo", _var_type=str, _var_data=VarData(deps=[dep_b]))
+
+    assert var_a.equals(var_b)
+    assert VarData(deps=[dep_a]) == VarData(deps=[dep_b])
+    assert VarData(deps=[dep_a]) != VarData(deps=[Var(_js_expr="other", _var_type=str)])
+
+
+def test_var_data_merge_dedupes_deps():
+    """Merging VarData collapses deps that refer to the same Var."""
+    dep_a = Var(_js_expr="dep", _var_type=str)
+    dep_b = Var(_js_expr="dep", _var_type=str)
+    other = Var(_js_expr="other", _var_type=str)
+
+    merged = VarData.merge(VarData(deps=[dep_a, other]), VarData(deps=[dep_b]))
+    assert merged is not None
+    assert [str(dep) for dep in merged.deps] == ["dep", "other"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["hi", 5, True, [1, 2], {"a": 1}],
+)
+def test_literal_var_hash_distinguishes_var_data(value):
+    """Literal vars with equal values but different VarData must not share a hash.
+
+    Var.__format__ registers the var in _global_vars under hash(self), so a
+    collision silently drops one var's hooks/imports from the decoded output.
+    """
+    var_a = LiteralVar.create(value)._replace(
+        merge_var_data=VarData(hooks="const A = 1")
+    )
+    var_b = LiteralVar.create(value)._replace(
+        merge_var_data=VarData(hooks="const B = 2")
+    )
+
+    assert not var_a.equals(var_b)
+    assert hash(var_a) != hash(var_b)
+
+    var_data, _ = _decode_var_immutable(f"{var_a}{var_b}")
+    assert var_data is not None
+    assert set(var_data.hooks) == {"const A = 1", "const B = 2"}
+
+
+def test_to_operation_hash_differs_from_original():
+    """A `.to()` view of a var is not equal to it, so it must not collide."""
+    original = Var(_js_expr="x", _var_type=str)
+    converted = original.to(int)
+
+    assert not converted.equals(original)
+    assert hash(converted) != hash(original)
+
+
+@pytest.mark.parametrize(
+    "make_var",
+    [
+        lambda: Var(_js_expr="x", _var_type=str),
+        lambda: LiteralVar.create("hi"),
+        lambda: LiteralVar.create(5),
+        lambda: LiteralVar.create([1, 2]),
+        lambda: LiteralVar.create({"a": 1}),
+        lambda: Var(_js_expr="x", _var_type=str).to(int),
+        lambda: LiteralVar.create("hi").upper(),
+    ],
+    ids=["plain", "string", "number", "array", "object", "to_op", "operation"],
+)
+def test_var_hash_consistent_with_equals(make_var):
+    """Structurally equal vars hash equal, and hashing never bool-ifies a Var."""
+    var_a, var_b = make_var(), make_var()
+    assert var_a is not var_b
+    assert var_a.equals(var_b)
+    assert hash(var_a) == hash(var_b)
+
+
+def test_var_hash_key_contains_no_vars():
+    """The identity key must be Var-free so containers never call Var.__eq__."""
+
+    def walk(value):
+        assert not isinstance(value, Var), f"Var leaked into hash key: {value!r}"
+        if isinstance(value, (tuple, list, frozenset, set)):
+            for item in value:
+                walk(item)
+        elif isinstance(value, VarData):
+            walk(value._identity_key)
+
+    dep = Var(_js_expr="dep", _var_type=str)
+    var = LiteralVar.create("hi")._replace(merge_var_data=VarData(deps=[dep]))
+    walk(var._hash_key())
+
+
+def test_number_and_boolean_vars_are_hashable():
+    """Defining __eq__ must not leave NumberVar/BooleanVar unhashable."""
+    from reflex_base.vars.number import BooleanVar
+
+    assert NumberVar.__hash__ is not None
+    assert BooleanVar.__hash__ is not None
+
+
+@pytest.mark.parametrize("value", [5, 5.5, True])
+def test_numeric_literal_var_hashability_is_load_bearing(value):
+    """Numeric literals must stay hashable so they survive interpolation.
+
+    NumberVar defines __eq__, which drops the inherited __hash__ unless it is
+    restored explicitly. Var.__format__ hashes the var to register it in
+    _global_vars, so an unhashable numeric literal raises TypeError on any
+    f-string interpolation rather than failing anywhere near the cause.
+    """
+    var = LiteralVar.create(value)
+    assert type(var).__hash__ is not None
+
+    var_data, _ = _decode_var_immutable(
+        f"{var._replace(merge_var_data=VarData(hooks='const A = 1'))}"
+    )
+    assert var_data is not None
+    assert var_data.hooks == ("const A = 1",)
