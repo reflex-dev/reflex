@@ -1,4 +1,4 @@
-## v0.9.4a2 (2026-09-11)
+## v0.9.4 (2026-09-11)
 
 ### Breaking Changes
 
@@ -6,14 +6,8 @@
 
 ### Bug Fixes
 
-- Keep `rx.moment` locales independent: components without a `locale` render in English even when another component or route imports a different locale. Explicit `locale="en"` also works without importing a nonexistent locale module. ([#7110](https://github.com/reflex-dev/reflex/issues/7110))
-
-
-## v0.9.4a1 (2026-09-10)
-
-### Bug Fixes
-
 - Migrate `rx.moment` to `react-moment` 2.0.2 and include its duration-format dependency. ([#7003](https://github.com/reflex-dev/reflex/issues/7003))
+- Keep `rx.moment` locales independent: components without a `locale` render in English even when another component or route imports a different locale. Explicit `locale="en"` also works without importing a nonexistent locale module. ([#7110](https://github.com/reflex-dev/reflex/issues/7110))
 
 ### Miscellaneous
 
