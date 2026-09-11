@@ -275,6 +275,7 @@ def context_template(
     is_dev_mode: bool,
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
+    initial_state_json: str | None = None,
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
@@ -283,6 +284,7 @@ def context_template(
 
     Args:
         initial_state: The initial state for the context.
+        initial_state_json: Initial state JSON already serialized by the compiler.
         state_name: The name of the state.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
@@ -295,6 +297,8 @@ def context_template(
         Rendered context file content as string.
     """
     initial_state = initial_state or {}
+    if initial_state_json is None:
+        initial_state_json = json_dumps(initial_state)
     # Context objects come from the static registry so they survive hot
     # updates of this module; only the lookup table is generated here.
     state_contexts_str = "".join([
@@ -398,7 +402,7 @@ import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContex
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
-export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
+export const initialState = {initial_state_json}
 
 export const defaultColorMode = {default_color_mode}
 export const StateContexts = {{{state_contexts_str}}};

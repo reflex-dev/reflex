@@ -1,0 +1,1 @@
+Preserve explicit `bundle_library()` registrations through frontend compilation and automatically bundle imports used by initial-state components. Explicitly registered component subpaths can first appear after an event, and initial components such as Lucide icons no longer need a separate registration.
