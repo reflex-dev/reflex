@@ -113,7 +113,7 @@ class Moment(NoSSRComponent, MemoizationLeaf):
     locale: Var[str] = field(doc="The locale to use when rendering.")
 
     on_change: EventHandler[passthrough_event_spec(str)] = field(
-        doc="Fires when the date changes."
+        doc="Fires when the component mounts and when the date changes, including when interval is 0. React Strict Mode can invoke the mount event twice in development."
     )
 
     def add_imports(self) -> ImportDict:
