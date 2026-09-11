@@ -1,210 +1,148 @@
-# Release plan — what blocks reflex 0.9.11a1 vs what gets filed
+# Triage and implementation outcomes — 0.9.11a1 findings
 
-Triage of [FINDINGS.md](./FINDINGS.md) against the campaign rubric: fix before release if a finding
-is (a) a confirmed regression against the previous stable, (b) security-relevant, or (c) high impact
-or trivially small to fix. Everything else is filed and fixed after.
+Updated 2026-09-11. This replaces the campaign's initial recommendations with the
+maintainer's decisions and the resulting PR/issue disposition. Original observations
+remain in [FINDINGS.md](./FINDINGS.md); the
+[original release plan](https://github.com/reflex-dev/reflex/blob/e7b24ef5b/prerelease-testing/2026-09-10-v0.9.11a1/RELEASE_PLAN.md)
+remains available as historical context.
 
-**Status: the campaign has covered every surface this train touches.** Clusters completed: smoke,
-packaging, hmr_runtime, hybrid_property, bg_rehydrate, event_hotpath, up_counter_todo_clock,
-up_upload_traversal_quiz, up_dataviz_local_lorem, ent_aggrid, ent_map_dnd_flow, ent_mcp_oidc,
-ent_mantine_highcharts_tickets, otel, components_bumps, orch_probes, config_assets_cli,
-frontend_path_ssr, telemetry_ctx, memo_hash — **every reflex-enterprise demo has now been run on
-both reflex versions, and every claim in the 0.9.11a1 changelog has been exercised**. Not run, for
-want of budget: reverify_prev and four further reflex-examples apps.
+**All nine requested PRs are merged, and their release changes are present in the
+published `a2` train. Independent behavioral validation of the installed published
+packages is still pending.** Merged code, development tests, release notes, and PyPI
+availability establish the handoff's inputs, not a successful runtime review.
 
-## Bottom line so far
+Start with [PUBLISHED_VALIDATION.md](./PUBLISHED_VALIDATION.md).
+[REVIEW_STATUS.json](./REVIEW_STATUS.json) records GitHub status observed at
+2026-09-11 16:58 UTC, main/release commit mapping, and PyPI artifact URLs, upload times,
+and hashes. Downloaded wheel hashes were verified, and all 11 changed runtime files
+across the four code-bearing packages match the tagged release source. The OTel change
+is documentation-only. Refresh the snapshot when starting a later review.
 
-**One thing should be fixed before release, and it is not in reflex itself.** Across fifteen
-clusters the framework core is clean: every headline item of this train works as its changelog
-describes, with the previous stable reproducing the bug it claims to fix, and three unmodified
-reflex-examples apps upgrade in place — same venv, same `.web`, same sqlite database — with
-step-for-step identical behaviour.
+## Requested fixes and documentation changes
 
-Both confirmed regressions are in the same place: **`reflex-components-moment` 0.9.4a1**, from the
-react-moment 1.2.2 → 2.0.2 bump. FINDING-033 (a `locale=` on one `rx.moment` silently changes the
-language of every other moment on the page) is the one worth holding for; FINDING-002 (`on_change`
-now fires at mount) is smaller but is the same bump and wants the same decision. If the moment
-package can ship a fix or the bump can be reverted for this train, everything else is releasable.
+Every row is **published; independent verification pending**. Versions identify the
+release containing the claimed change, not a claim that the old reproduction has
+already passed on that wheel.
 
-The enterprise surface — the thing that blocked 0.9.9 — is clean, and now across every demo the
-project ships: ag-grid, map, dnd, flow, mantine, highcharts and tickets all behave identically
-across versions; the MCP plugin and the whole OIDC login → guard → logout flow are step-for-step
-identical against a live OIDC provider; and all four 0.9.9a1 enterprise breakages are fixed.
+| Finding | Maintainer decision and delivered change | PR | Published package containing the change |
+| --- | --- | --- | --- |
+| 002 | Document mount/remount `on_change` callbacks as breaking, including static dates, `interval=0`, and development Strict Mode. Preserve the new behavior. | [#7085](https://github.com/reflex-dev/reflex/pull/7085) | `reflex-components-moment==0.9.4a2`; Moment guide updated in release source |
+| 003 | Verified the forked-worker correctness defect. Give workers distinct socket-owner identities so another worker's backend-initiated delta reaches the connected browser. | [#7108](https://github.com/reflex-dev/reflex/pull/7108) | `reflex==0.9.11a2` |
+| 005 | Preserve class-level `hybrid_property` frontend types on current Pyright and Python types on instance access. | [#7106](https://github.com/reflex-dev/reflex/pull/7106) | `reflex-base==0.9.11a2` |
+| 014 | Complete #7044's validation of Win32-trimmed segments and empty internal segments, retaining valid root/trailing-slash forms. | [#7105](https://github.com/reflex-dev/reflex/pull/7105) | `reflex-base==0.9.11a2` |
+| 022 | Preserve explicit registrations; bundle complete component trees/subpaths; discover initial-state imports in frontend and fresh-backend startup; preserve dynamic import bindings. | [#7109](https://github.com/reflex-dev/reflex/pull/7109) | `reflex==0.9.11a2`, `reflex-base==0.9.11a2`, `reflex-components-radix==0.9.9a2` |
+| 025 | Restore named admin-route lookup through the public ASGI app without losing request context. Small enough to include with the starlette-admin update. | [#7107](https://github.com/reflex-dev/reflex/pull/7107) | `reflex==0.9.11a2` |
+| 027 | Set `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf` in the HTTP-exporter recipe. No SDK failure-handling change was requested or delivered. | [#7086](https://github.com/reflex-dev/reflex/pull/7086) | `reflex-otel==0.1.0a2`; observability guide updated in release source |
+| 030 | Add a potentially breaking note for serialized delta key ordering. Values are unchanged; do not expect the old order to be restored. | [#7087](https://github.com/reflex-dev/reflex/pull/7087) | `reflex==0.9.11a2` |
+| 033 | Isolate default, literal, and reactive Moment locales across siblings/routes. Default and explicit `en` work without importing a nonexistent English locale module. | [#7110](https://github.com/reflex-dev/reflex/pull/7110) | `reflex-components-moment==0.9.4a2` |
 
-## Fix before release
+The fixes were cherry-picked onto the release branch; package tags point to
+`1cd7b6637522f74ade0b2c60d4007ccbdfc502dc`, with different commits from the main PR merges.
+Eight patches match their release cherry-picks by stable patch ID. #7109 was adapted
+because the release branch lacks `main`'s lazy-bundling feature. Its dynamic module and
+shared initial-state/window-library helpers match, but the release compiler integration
+still needs its own installed-package exercise.
 
-### Confirmed regressions
-- **FINDING-033 — one `rx.moment(locale=...)` changes the language of every other moment on the
-  page** (medium, downstream, reflex-components-moment 0.9.4a1). Bisected to the component bump
-  alone: 0.9.11a1 core with components-moment 0.9.3 does not leak. An app that localises one date
-  and leaves the rest to the default now renders every date, "time ago" string and title attribute
-  in that language, in dev and in prod, with nothing warning. It is order-dependent — a `Var` locale
-  pulls in `moment/min/locales`, which restores `en` — so an app can start leaking by adding an
-  unrelated moment component. The wrapper should stop relying on moment's global default (pass an
-  explicit locale, use react-moment 2.x's `MomentProvider`, or restore the default after importing
-  a locale file). Independently re-reproduced by an adversarial verifier from the written repro
-  alone (confirmed, medium).
-- **FINDING-002 — `rx.moment` `on_change` now fires at mount** (low, downstream,
-  reflex-components-moment 0.9.4a1). The only confirmed regression in the campaign. The fix is a
-  documentation decision rather than code: upstream react-moment lists this as a breaking change,
-  while the 0.9.4a1 changelog files the migration under Bug Fixes with no behaviour note, and
-  `docs/library/data-display/moment.md` still describes 1.2.2 semantics. Either add a behaviour note
-  (changelog + docs) or restore the old semantics with a guard in the wrapper. Small either way.
+## Final scope of 022 / #7109
 
-### High impact and/or trivially small
-- **FINDING-027 — reflex-otel's documented env-var setup exports nothing** (medium, new package).
-  The recipe in reflex-otel's README and in `docs/api-reference/observability.md` installs the HTTP
-  exporter and then sets `OTEL_TRACES_EXPORTER=otlp`, which resolves to gRPC; the instrumentor logs a
-  traceback twice, reports otel enabled, and exports nothing. This is the first thing a user of a
-  brand-new package will copy, and the fix is a documentation line plus, ideally, making the
-  configuration failure fatal instead of continuing. Small, and it lands with the package's debut.
+- [#7016](https://github.com/reflex-dev/reflex/pull/7016) was combined into #7109 and closed
+  as superseded; Harsh Thakare's contribution is retained. #7109 closes
+  [#6975](https://github.com/reflex-dev/reflex/issues/6975).
+- Explicit calls survive compilation, including calls in modules first imported during
+  page evaluation. Compiler/plugin-derived entries are cleared on the next compile.
+- Component registrations use `_get_all_imports()`: children, grandchildren,
+  component-valued props, `import_var` overrides, and specialized deep imports contribute.
+  Specific Lucide icons do not require the broad `lucide-react` package root.
+- Initial computed components such as `rx.icon("tag")` register automatically. An icon
+  first introduced after activation can be registered only through a prototype's descendant.
+  Initial component dependencies also contribute to package installation.
+- Default, named, namespace, and mixed bindings use original module paths as
+  `window.__reflex` keys. Compiler aliases are local identifiers, not renamed window keys.
+- Invalid public arguments receive a clear `TypeError`; duplicate registrations stay unique.
+- Fresh backend startup discovers initial components without a second full frontend compile.
+  Machinery for a later full compile inside that same backend-only short circuit was
+  explicitly declined; that hypothetical sequence is outside this fix's contract.
+- [#7111](https://github.com/reflex-dev/reflex/issues/7111) remains an open cleanup to move
+  Lucide deep imports from `_get_imports()` to `import_var`, not a bundling prerequisite.
 
-## File as issues, fix after release
+Development evidence: six new nested-prototype cases failed before the traversal fix;
+the browser also failed on activation with a CDN import for the nested icon. Afterward,
+141 focused tests, 8,517 full unit tests (18 skipped; 76.70% coverage), and the dynamic
+browser test passed on the PR checkout, as did lint/type checks. These counts apply to
+`main`-based development code, not the published release adaptation. The browser check
+used the development harness. The original unchanged app also timed out on its connection
+marker when forced into a production harness, so that test does not establish production
+behavior. The reviewer must run a standalone app against published packages.
 
-### reflex / reflex-base (this repo)
-| # | Finding | Severity | Note |
-|---|---|---|---|
-| 003 | Prod multi-worker + redis drops backend-initiated deltas | high | Pre-existing; verified 4/6 delivered with 9 workers, 6/6 with one, 0/6 on 0.9.10.post2. Swallows this train's #7073 hydrate, so it devalues a shipped fix. Best candidate for the next release. |
-| 036 | A delta for a substate the page has no dispatcher for latches the frontend dead | high | Pre-existing, but it makes any enterprise app using `EventHandlerAPIPlugin` (or anything importing the auth enforcement module) unusable in a browser unless it happens to render an auth var. Two independent fixes: don't treat such a delta as fatal, and don't register auth states in apps with no auth provider. |
-| 040 | Generated memo module names are not reproducible across identical compiles | medium | Every export/deploy churns the compiled output. |
-| 041 | Two same-named `ComponentState` subclasses in different modules crash the compile | medium | The module-disambiguation #6947 added for memo names is still missing here. |
-| 042 | `client_state(global_ref=False)` throws `ReferenceError` when memoization splits reader from writer | medium | Silent no-op plus a hard console error. |
-| 043 | Frontend packages reinstalled on every run | medium | #7050's second claim is not observable. |
-| 044 | Multi-process compile still aborts past the fixed asset link | medium | #7039's user-facing scenario is not yet met; worth a changelog qualification. |
-| 045 | `reflex component init` fails with "No module named pip" in a uv venv | low | The documented custom-component flow is broken for uv users. |
-| 046 | `reflex component build` prints five tracebacks then reports success | low | |
-| 047 | reflex-base's changelog re-lists #6933 under three versions | low | Readers will think it shipped in this train. |
-| 048 | Enterprise event-handler REST API answers 200 for failed calls | low | Downstream. |
-| 049 | Three more small pre-existing rough edges from the second enterprise pass | low | Prod "page is being redefined" spam; first Highcharts point click swallowed; dev 404 page served with HTTP 200. |
-| 018 | One unserializable state var drops the whole hydrate delta in dev | high | Pre-existing; reproduced in a 40-line app with no enterprise components. Blast radius is the issue: whole delta lost, state silently reverts, internal error text shown to end users. |
-| 025 | `rx.AdminDash` serves 500 on every `/admin` route | medium-high | Pre-existing on both versions and every starlette-admin generation; isolated to reflex's mount, not starlette or starlette-admin. See "Decisions needed". |
-| 022 | Module-scope `bundle_library()` discarded before page evaluation | medium | Three clusters found it independently. The error message tells the user to do what they already did. |
-| 023 | Hook-bearing component in `rx.foreach` compiles then blanks the page | medium | Silent compile, `ReferenceError` at runtime. A compile-time diagnostic would be enough. |
-| 008 | `reflex run --backend-only` leaks `.web/nocompile` | medium | Next full run silently serves a stale frontend. |
-| 009 | `frontend_path` mis-routes routes whose name starts with the prefix | medium | `removeprefix` applied twice. |
-| 010 | Backend var named `_get_was_touched` breaks the disk state manager | medium | State silently never persists; the PR's own test uses this name as a supported collision. |
-| 013 | AttributeError in a cached var computation masked as a bogus `VarAttributeError` | medium | This is what made the 0.9.9a1 enterprise breakage undebuggable. |
-| 005 | `hybrid_property` class-level typing degrades to `Any` on pyright 1.1.412+ | medium | Works at the repo-pinned 1.1.411. Forward-compat, see "Decisions needed". |
-| 004 | Client-storage vars show defaults after a backend rehydrate | medium | Until a full reload. |
-| 011 | State attribute names colliding with framework internals are unvalidated | low | Some crash with `'int' object is not callable`. |
-| 012 | `rx.Model(table=True)` without sqlmodel gives a bare TypeError | low | No `reflex[db]` pointer. |
-| 014 | `frontend_path` validation accepts Win32-trimmed segments | low | Gap in the new #7044 guard. |
-| 015 | `reflex cloud regions/vmtypes --json` exit 0 after a 403 | low | Undercuts #6917's agent-usability goal. |
-| 016 | `reflex run --json` stdout is not strict JSON-lines | low | Nine granian lines; `reflex cloud --json` is already clean. |
-| 017 | `rx.plotly` emits `id` rather than `divId` | low | The id never reaches the DOM. |
-| 021 | One `REFLEX_USE_NPM=1` run converts a project to npm permanently | low | Silent and undocumented; deleting the npm lockfile is the remedy. |
-| 024 | Error boundary logs three invalid-DOM-property errors | low | Above the real exception, on every crash page. |
-| 006 | uv cannot build the `reflex` sdist | low | Monorepo `[tool.uv.sources]` ships in the sdist; pip builds it fine. |
-| 028 | Initial `reflex.compile` span tree never exported in dev | low | Lost with the compile worker's `os._exit`; prod and export are fine. |
-| 029 | reflex-otel upgrades reflex-base out from under reflex | low | Depends on reflex-base but not reflex, so it silently breaks reflex's exact pin. |
-| 026 | Custom code touching `window` fails export with an opaque prerender 500 | low | The compiler knows which component emitted the block; a diagnostic is cheap. |
-| 030 | State-delta key ordering changed between 0.9.10.post2 and 0.9.11a1 | low | Same keys and values; only text-comparing snapshot tests downstream would notice. Worth one release-note line. |
-| 034 | Seven pre-existing component-library rough edges | low | Surfaced by the bump sweep, all reproduce on 0.9.10.post2. See `components_bumps/NOTES.md` ISSUE-2…ISSUE-10. |
-| 037 | `REFLEX_SSR=false` serves every prod route but `/` as 404 | low | Pre-existing, but #7044 makes this configuration newly usable with `frontend_path`, so more people are about to hit it. Crawlers and uptime checks see live pages as errors. |
+## Filed or linked in reflex-dev/reflex
 
-### reflex-enterprise (downstream tracker)
-- **FINDING-035**: `rxe.EventHandlerAPIPlugin` serves a 500 for its own OpenAPI document because
-  `pyyaml` is not declared anywhere in the dependency chain, while `/.well-known/api-catalog`
-  advertises the broken URL. Pre-existing on both reflex versions; installing `pyyaml` fixes it, so
-  the fix is one dependency line.
-- **FINDING-036 has been re-rated HIGH and moved to the reflex table below** — the two console
-  errors latch `backend_state_mismatch`, which discards every user event, so the enterprise
-  `tickets` demo's UI is completely inert in dev and prod on both reflex versions.
-- **FINDING-038 / FINDING-039**: MCP `search_events` advertises a `rest_path` that 404s unless the
-  REST plugin is also enabled, and logout from an iframed app never reaches the IdP's
-  `end_session_endpoint`, so single sign-out silently does not happen. Both pre-existing in 0.9.5.
-  The previous campaign's `/_reflex/cookies/sync` 404 (2026-08-27 FINDING-026) is also still open.
-- **FINDING-031 / FINDING-032**: two MCP-resource quirks in reflex-enterprise 0.9.5, both
-  pre-existing. `reflex://state/events/<unknown state>` answers `{"events": []}` where the sibling
-  `state/vars` resource errors helpfully, and the `state` name `search_events` hands the caller is
-  not the name either resource accepts; and a withheld protected *field* is served to an
-  unauthorised MCP caller as its default value with no indication it was withheld, while a
-  protected computed var errors explicitly. Both mislead an agent into acting on a wrong answer.
-- **FINDING-019**: four defects in reflex-enterprise 0.9.5 that break its own demos — the stale
-  bundle path that stops the ag_grid demo starting unpatched, the `ModelWrapper` datasource URL that
-  percent-encodes its query separator, the ag-grid/ag-charts version mismatch that blocks integrated
-  charts, and `column_def()` silently dropping unknown kwargs (which is why `ag_grid_finance` has no
-  selectable rows). Also the still-unfixed use of deprecated `console.*` helpers on both licence
-  gates, so a blocked user's last line is a framework DeprecationWarning.
+All these trackers were **open** at the snapshot. Filing/linking is their disposition;
+none is claimed fixed here. Record any effect of adjacent fixes as a separate observation.
 
-### Release process
-- **FINDING-001**: `reflex-otel 0.1.0a1` failed to publish from the release run (PyPI trusted
-  publisher not configured for a brand-new project) and was published manually 17 minutes later.
-  Add the pending-publisher step to the new-package checklist so the next new package does not
-  repeat it.
+| Finding | Tracker | Disposition / boundary |
+| --- | --- | --- |
+| 006 | [#7088](https://github.com/reflex-dev/reflex/issues/7088) | Filed: `uv` sdist installation references missing workspace members. |
+| 008 | [#7089](https://github.com/reflex-dev/reflex/issues/7089) | Filed: backend-only `.web/nocompile` leaks into the next normal run; separate from registry handling. |
+| 009 | [#7090](https://github.com/reflex-dev/reflex/issues/7090) | Filed: prefix stripped twice; separate from 014 input validation. |
+| 010 | [#7091](https://github.com/reflex-dev/reflex/issues/7091) | Filed separately: `_get_was_touched` collision disables disk persistence. [#7074](https://github.com/reflex-dev/reflex/issues/7074) covers parent/substate shadowing, not this case. |
+| 013 | [#6978](https://github.com/reflex-dev/reflex/issues/6978) | Existing issue reused with new masked-`AttributeError` evidence. |
+| 015 | [#7092](https://github.com/reflex-dev/reflex/issues/7092) | Filed: cloud JSON commands report success/empty results after failures. |
+| 016 | [#6972](https://github.com/reflex-dev/reflex/issues/6972) | Existing issue reused with Granian non-JSON stdout reproduction. |
+| 018 | [#7096](https://github.com/reflex-dev/reflex/issues/7096) | Filed after open/closed duplicate search: missing backend bundle metadata makes a registered serializer abort an entire hydrate packet. Requires a separate check below. |
+| 021 | [#7093](https://github.com/reflex-dev/reflex/issues/7093) | Filed: one environment-selected npm run permanently changes package-manager selection. |
+| 024 | [#7094](https://github.com/reflex-dev/reflex/issues/7094) | Filed: ErrorBoundary SVG uses invalid DOM properties. No fix included. |
+| 028 | [#7095](https://github.com/reflex-dev/reflex/issues/7095) | Filed: initial dev compile spans lost on worker exit; separate from 027's recipe correction. |
+| 037 | [#6983](https://github.com/reflex-dev/reflex/issues/6983) | Existing issue reused with named-route/no-SSR matrix; related [#6996](https://github.com/reflex-dev/reflex/pull/6996) remains open. |
 
-## Decisions needed from a maintainer
+034 was split using the component sweep's original ISSUE numbers:
 
-1. **The AdminDash changelog entry (FINDING-025).** This train says "AdminDash now works with
-   starlette-admin 1.0". The argument rename it describes is handled, but `/admin` returns 500 on
-   every route, on both reflex versions and on starlette-admin 0.17.1, 1.0.0 and 1.0.1, while the
-   same admin mounted on a plain Starlette app works. Either the entry needs qualifying before
-   release or `/admin` needs fixing.
-2. **The `rx.moment` behaviour change (FINDING-002).** Bug fix or breaking change? Upstream calls it
-   breaking; our changelog does not mention the behaviour at all.
-3. **Release notes assembled from PR text (otel).** The descriptions of #6899 and #6901 state
-   behaviour the shipped code does not have: the frontend event span is CONSUMER, not SERVER, and the
-   browser plugin deliberately has no endpoint fallback to `OTEL_EXPORTER_OTLP_*`. README and the docs
-   page are correct; only the PR text is stale. Worth catching before notes are written.
-4. **The `hybrid_property` typing promise (FINDING-005).** The changelog states the class-level type
-   resolves to the frontend var. True on pyright 1.1.411, `Any` from 1.1.412 onward — i.e. for every
-   user who does not pin the repo's checker. Fix the overloads or qualify the claim.
-5. **Enterprise prod coverage.** `reflex run --env prod` and `reflex export` could not be exercised
-   for any enterprise demo: reflex-enterprise gates them behind a paid subscription that `CI=1` does
-   not bypass, and the agents declined to set the app-harness flag purely to get past a licence
-   check. If enterprise prod mode should be covered by this campaign, the team needs to supply a
-   test licence or a sanctioned bypass.
+| Finding / sweep entry | Tracker | Subject |
+| --- | --- | --- |
+| 034 / ISSUE-2 | [#7097](https://github.com/reflex-dev/reflex/issues/7097) | Radix `force_match` without `match`, leaked DOM prop |
+| 034 / ISSUE-3 | [#7098](https://github.com/reflex-dev/reflex/issues/7098) | Emotion `:first-child` SSR warnings |
+| 034 / ISSUE-4 | [#7099](https://github.com/reflex-dev/reflex/issues/7099) | Duplicate Moment `defineLocale` warnings; separate from 033 isolation |
+| 034 / ISSUE-5 | [#7100](https://github.com/reflex-dev/reflex/issues/7100) | Unsupported Moment options silently become CSS |
+| 034 / ISSUE-6 | [#7101](https://github.com/reflex-dev/reflex/issues/7101) | Plotly string title documentation/validation |
+| 034 / ISSUE-7 | [#6575](https://github.com/reflex-dev/reflex/issues/6575) | Existing Recharts formatter issue reused; [#6833](https://github.com/reflex-dev/reflex/pull/6833) remains open |
+| 034 / ISSUE-8 | [#7102](https://github.com/reflex-dev/reflex/issues/7102) | Duplicate toast providers |
+| 034 / ISSUE-9 | [#7103](https://github.com/reflex-dev/reflex/issues/7103) | Unusable documented `ToastAction` import |
+| 034 / ISSUE-10 | [#7104](https://github.com/reflex-dev/reflex/issues/7104) | Null form entries for non-input children with IDs |
 
-## Suggested sequencing
+## Filed in reflex-dev/reflex-enterprise
 
-1. Before release: fix FINDING-027 (a docs line, plus making the failed configuration fatal) and
-   decide (1)-(4) below; the only code change any of the decisions might need is small.
-2. First post-release batch, in this order: FINDING-036 (an entire class of enterprise app is
-   unusable in a browser, and the framework half is a small change), FINDING-003 (devalues a shipped
-   fix), FINDING-018
-   (silent state loss with a user-visible internal error), FINDING-022 and FINDING-013 (both make
-   other failures hard to diagnose), FINDING-025.
-3. Then the rest of the medium list, which is mostly independent and parallelisable.
-4. File FINDING-019 and FINDING-031/032 downstream, ideally alongside the reflex-enterprise
-   release that follows.
+All six trackers were **open** at the snapshot. No enterprise fix or newer enterprise
+release is claimed; 0.9.5 is the original reproduction version.
 
-## Verified clean (no findings)
+| Finding | Tracker | Required follow-up |
+| --- | --- | --- |
+| 019 | [#225](https://github.com/reflex-dev/reflex-enterprise/issues/225) | Repair shipped AG Grid demo bundle paths, datasource URLs, and chart configuration. |
+| 031 | [#226](https://github.com/reflex-dev/reflex-enterprise/issues/226) | Report unknown MCP state names instead of misleading empty event lists. |
+| 035 | [#227](https://github.com/reflex-dev/reflex-enterprise/issues/227) | Check for PyYAML early when `EventHandlerAPIPlugin` is enabled; not an unconditional dependency addition. |
+| 036 | [#228](https://github.com/reflex-dev/reflex-enterprise/issues/228) | Avoid registering unused auth substates on enterprise import; their deltas lack frontend dispatchers. |
+| 038 | [#229](https://github.com/reflex-dev/reflex-enterprise/issues/229) | Include `rest_path` only when `EventHandlerAPIPlugin` is active. |
+| 039 | [#230](https://github.com/reflex-dev/reflex-enterprise/issues/230) | Preserve logout tokens until the popup reaches the IdP end-session endpoint. |
 
-Recorded so the next campaign knows what was already exercised and can spend its budget elsewhere.
+## Accepted exclusions
 
-- **reflex-enterprise MCP plugin** under both reflex versions: anonymous token, unauthenticated and
-  invented-bearer rejection, tools, every `reflex://` resource, plain / arg-taking / background /
-  sibling-substate / nested-substate `queue_event`, and — with `AuthPlugin` — OAuth 2.1 metadata,
-  401 + `WWW-Authenticate`, and an anonymous session correctly scoped to `auth=False` handlers.
-- **The shipped `demos/oidc` app** against a full fake IdP on both reflex versions (12/12 driver
-  steps each), including proactive access-token refresh over `offline_access` with 70-second
-  tokens, and the MCP **OAuth 2.1 + human consent** path driven by the real `mcp` SDK client.
-- **reflex-enterprise OIDC** end to end against a local provider: discovery, PKCE S256 (verified by
-  the provider), callback, userinfo, guarded pages and handlers (foreground and background),
-  protected-value withholding, reload and second-tab persistence, and RP-initiated logout.
-  22 recorded browser steps, byte-identical across reflex versions.
-- **Every remaining enterprise demo** (`mantine`, `highcharts`, `tickets`) on both reflex versions,
-  including the tickets demo's REST event API: an app-issued bearer, `POST /_reflex/event/...`
-  returning the delta, and the row persisted to sqlite.
-- **In-place upgrade** of three reflex-examples apps (`local-component`, `lorem-stream`,
-  `data_visualisation`) keeping the venv, the app directory, `.web/` and the sqlite database.
-- **#7044** (`frontend_path` + `REFLEX_SSR=false`): both `reflex export` and `reflex run --env prod`
-  fail on 0.9.10.post2 with exactly the documented `FileNotFoundError` and succeed on 0.9.11a1, and
-  the resulting prod deployment works end to end in a browser under the sub-path.
-- **#7039** (shared assets), **partly**: a stale `assets/external` symlink is repointed on 0.9.11a1
-  and silently left pointing at the wrong file on 0.9.10.post2. The concurrent-first-create half
-  could not be provoked on this filesystem, and a second pass found the multi-process scenario still
-  aborts one step past the fixed asset link — FINDING-044.
-- **#7050** (CLI startup), **partly**: ~2.3x faster on every subcommand (0.40 s → 0.17 s for
-  `reflex --help`). Its other half — "avoid frontend package reinstalls after backend-only config
-  changes" — is not observable: `bun add` re-runs on every run. FINDING-043.
-- **#6947** (memoization naming caches): two `AppHarness` apps compiled in one pytest process, each
-  with a same-named `rx.memo` component and `rx.foreach` auto-memoization, emit distinct names and
-  neither app's output is disturbed by the other's compile.
-- **#6960** (telemetry context): `rxconfig.py` is re-imported on the `reflex-telemetry_0` thread on
-  0.9.10.post2 and only ever on the main thread on 0.9.11a1, shown by a config file that logs its
-  own importing thread.
-- **reflex-release 0.1.1a1** against a real worktree of the release branch: `packages`, `detect`
-  (all 17 changelog packages already tagged at the versions under test), `check-dev-pins` (passes on
-  the branch, correctly fails on `main`, which is the designed dev-floor mechanism), `check-headings`
-  and `changelog-check`.
+These are maintainer decisions, not newly verified fixes:
+
+| Findings | Disposition |
+| --- | --- |
+| 001, 007, 026 | Ignore in this remediation batch. |
+| 011 | Existing work associated with [#7074](https://github.com/reflex-dev/reflex/issues/7074); no separate change here. |
+| 012 | Existing [#6973](https://github.com/reflex-dev/reflex/issues/6973) already has related PR work; no separate change here. |
+| 017 | Existing work associated with [#6977](https://github.com/reflex-dev/reflex/issues/6977); no separate change here. |
+| 023 | Maintainer says new ClientStateVar work addresses it. Publication/behavior were not independently established here; do not mark `a2` verified on that basis. |
+| 029 | Accepted as not practically fixable in this batch. |
+| 032 | Ignore in this batch. |
+
+004 and later-added 040–049 were not included in the maintainer's enumerated request.
+They remain in campaign artifacts and need separate triage; they are not silently
+classified as fixed, accepted, or release blockers by this update.
+
+## Reviewer return
+
+Use [PUBLISHED_VALIDATION.md](./PUBLISHED_VALIDATION.md). Return exact installed versions,
+artifact provenance, commands, observable results, and evidence paths, with separate
+verdicts for each of the nine claims. Keep open issues/exclusions separate. Report
+regressions or failed claims; do not change framework code during independent review.
