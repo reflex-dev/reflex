@@ -811,10 +811,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
         # Make sure Reflex contexts are attached for each request.
-        top_asgi_app.mount(
-            "",
-            self._context_middleware(asgi_app),
-        )
+        top_asgi_app.add_middleware(self._context_middleware)
+        top_asgi_app.mount("", asgi_app)
         App._add_cors(top_asgi_app)
         if otel.asgi_middleware is not None:
             return otel.asgi_middleware(top_asgi_app)
