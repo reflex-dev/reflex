@@ -541,3 +541,67 @@ clean single-document JSON on stdout. Gaps: FINDING-012 to FINDING-015.
 counter, todo, clock, linkinbio: baseline → in-place → cold identical (md5-identical screenshots),
 Bun 1.3.11→1.4.0 migration clean, lockfile stays v1, `context.js` removed, package.json diff is
 exactly the announced pins.
+
+## FINDING-030: state-delta key ordering changed between 0.9.10.post2 and 0.9.11a1 (LOW, new)
+
+Within a single state's delta object, 0.9.11a1 emits computed vars before base vars where
+0.9.10.post2 emitted them after, and the order of the per-state entries in a multi-state delta
+differs too. Same keys, same values — JSON object order is not semantic — but any downstream
+golden-file or snapshot test that compares a serialised delta as text will break on upgrade.
+
+Repro (`ent_mcp_oidc/`, both venvs, no browser needed):
+
+```
+cd apps/mcpapp && reflex run --backend-only --backend-port 9801     # 0.9.11a1
+python scripts/mcp_drive.py 9801 | diff - <(...same on 0.9.10.post2...)
+```
+
+Evidence `ent_mcp_oidc/logs/a1_drive2.log` vs `logs/0910_drive.log`, `add(5)` delta:
+
+```
+0.9.10.post2: {"count": 6, "uncached_marker": "c=6", "doubled": 12, "history": [1, 6]}
+0.9.11a1:     {"doubled": 12, "uncached_marker": "c=6", "history": [1, 6], "count": 6}
+```
+
+and for a two-state delta the `profile_state` entry moved ahead of the `counter_state` entry.
+The 41 diff lines between the two runs are *entirely* this reordering; `mcp_probe2.py` output is
+byte-identical. Not a regression in behaviour — filed so the release notes can mention it if any
+downstream project snapshots deltas.
+
+## FINDING-031: `reflex://state/events/<unknown state>` returns an empty list instead of an error (LOW, pre-existing, reflex-enterprise)
+
+The two `reflex://state/...` resource families disagree about unknown state names, and neither
+accepts the state name that `search_events` hands the caller.
+
+* `reflex://state/vars/<unknown>` → a helpful `Unknown state '...'. Use a fully-qualified state
+  name from reflex://state (the root is reflex___state____state).`
+* `reflex://state/events/<unknown>` → `{"state": "totally___bogus___state", "events": []}` — a
+  plausible-looking answer that an agent will read as "this state has no handlers".
+
+The trap is that `search_events` and `reflex://event` report `"state":
+"mcpapp___mcpapp____counter_state"`, but the resources require the root-prefixed
+`reflex___state____state.mcpapp___mcpapp____counter_state`. Copying the field straight out of the
+tool result therefore yields an error from one resource and a silent empty list from the other.
+
+Repro: `ent_mcp_oidc/scripts/mcp_drive.py` (steps `read reflex://state/events/...` and `read
+events of BOGUS state`), evidence in `logs/a1_drive2.log`; identical on 0.9.10.post2
+(`logs/0910_drive.log`), so pre-existing in reflex-enterprise 0.9.5, not a 0.9.11a1 regression.
+
+## FINDING-032: a withheld protected field is served to MCP as its default, with no signal (LOW, pre-existing, reflex-enterprise)
+
+With `AuthPlugin` active and an anonymous MCP session, the two kinds of protected member behave
+differently on read:
+
+* protected **computed var** → `'secret_label' on '...' is not accessible for the current session
+  (it is protected and the session is not authorized for it)` — explicit.
+* protected **field** → `{"var": "secret_note", "computed": false, "value": "top-secret"}` — the
+  default value, indistinguishable from the real one.
+
+In the repro the server-side value at that moment is `FIELD-SECRET` (a public handler wrote it),
+so withholding is working; the problem is only that the caller is told nothing. An agent reading
+`secret_note` will act on `top-secret` believing it is live state.
+
+Repro: `ent_mcp_oidc/scripts/mcp_auth_probe.py <backend_port>` against `apps/authapp`; evidence
+`logs/a1_mcp_auth.log` (`queue authapp___authapp____public_state.poison_field` shows the delta
+carrying the filtered `"secret_note": "top-secret"`, then `read secret_note` returns the same).
+Identical on 0.9.10.post2 (`logs/0910_mcp_auth.log`) — pre-existing, enterprise-side.

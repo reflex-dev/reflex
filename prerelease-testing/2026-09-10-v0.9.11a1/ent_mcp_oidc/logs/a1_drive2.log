@@ -1,0 +1,243 @@
+token endpoint: 200 {"access_token": "S45OjpxK4LIS6wpOwNyvgWXm8hOHjJUMVhIwBks1ufM", "token_type": "Bearer", "expires_in": 3600, "session": "anonymous"}
+unauth MCP: 401 Bearer error="invalid_token", error_description="Authentication required", resource_metadata="http://localhost:9801/.well-known/oauth-protected-resource/_reflex/mcp" {"error": "invalid_token", "error_description": "Authentication required"}
+invented-bearer MCP: 401 {"error": "invalid_token", "error_description": "Authentication required"}
+
+--- initialize.instructions ---
+# mcpapp MCP (v1.0.0)
+
+MCP access to the Reflex app **mcpapp** and its 7 event handler(s).
+
+The app is served at http://localhost:9801.
+
+## Authentication
+
+Requests require an app-issued Bearer token. For an anonymous session (no user identity; only public surfaces when the app enforces auth), POST to the app's token endpoint `/_reflex/auth/token` and use the returned `access_token` as your Bearer token. The session is server-generated and bound to the token; reuse the token across calls to address the same session.
+
+## Tools
+
+- `search_events(query)` -- Search the app's event handlers; returns each handler's name (for queue_event) and payload schema.
+- `queue_event(event_name, payload, query)` -- Apply an event to your session: event_name + payload (the handler's parameters) + optional query (a JSON object of query parameters, e.g. the dynamic route variables listed below). Returns the resulting state delta -- or, for a file-upload handler, out-of-band upload directions (files must be POSTed to the MCP upload endpoint separately).
+
+## Resources
+
+Introspect and read the app over `reflex://` resources:
+
+- `reflex://state` -- list the exposed state names.
+- `reflex://event` -- enumer
+
+--- tools ---
+[
+ "search_events",
+ "queue_event"
+]
+
+--- resources ---
+[
+ "reflex://state",
+ "reflex://event"
+]
+
+--- resource_templates ---
+[
+ "reflex://event/{event_name}",
+ "reflex://state/events/{state_name}",
+ "reflex://state/vars/{state_name}",
+ "reflex://state/vars/{state_name}/{var_name}"
+]
+
+--- search_events(increment) ---
+{
+  "query": "increment",
+  "total_available": 7,
+  "total_matched": 2,
+  "returned": 2,
+  "results": [
+    {
+      "name": "mcpapp___mcpapp____counter_state.increment",
+      "state": "mcpapp___mcpapp____counter_state",
+      "handler": "increment",
+      "rest_path": "/_reflex/event/mcpapp___mcpapp____counter_state/increment",
+      "summary": "Bump the count by one.",
+      "description": "Bump the count by one.",
+      "parameters": [],
+      "upload": null
+    },
+    {
+      "name": "reflex___istate___dynamic____memo_counter_n1.tick",
+      "state": "reflex___istate___dynamic____memo_counter_n1",
+      "handler": "tick",
+      "rest_path": "/_reflex/event/reflex___istate___dynamic____memo_counter_n1/tick",
+      "summary": "Increment the per-instance tick counter.",
+      "description": "Increment the per-instance tick counter.",
+      "parameters": [],
+      "upload": null
+    }
+  ]
+}
+
+--- search_events(note) ---
+{
+  "query": "note",
+  "total_available": 7,
+  "total_matched": 1,
+  "returned": 1,
+  "results": [
+    {
+      "name": "mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state.set_note",
+      "state": "mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state",
+      "handler": "set_note",
+      "rest_path": "/_reflex/event/mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state/set_note",
+      "summary": "Set the note.",
+      "description": "Set the note.",
+      "parameters": [
+        {
+          "name": "note",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "upload": null
+    }
+  ]
+}
+
+--- queue_event increment ---
+{
+  "event": "mcpapp___mcpapp____counter_state.increment",
+  "delta": {
+    "reflex___state____state": {
+      "router": {
+        "session": {
+          "client_token": "",
+          "client_ip": "0.0.0.0",
+          "session_id": ""
+        },
+        "headers": {
+          "host": "",
+          "origin": "",
+          "upgrade": "",
+          "connection": "",
+          "cookie": "",
+          "pragma": "",
+          "cache_control": "",
+          "user_agent": "",
+          "sec_websocket_version": "",
+          "sec_websocket_key": "",
+          "sec_websocket_extensions": "",
+          "accept_encoding": "",
+          "accept_language": "",
+          "raw_headers": {}
+        },
+        "page": {
+          "host": "",
+          "path": "/_reflex/mcp",
+          "raw_path": "/_reflex/mcp",
+          "full_path": "/_reflex/mcp",
+          "full_raw_path": "/_reflex/mcp",
+          "params": {}
+        },
+        "url": {
+          "scheme": "",
+          "netloc": "",
+          "origin": "://",
+          "path": "/_reflex/mcp",
+          "query": "",
+          "query_parameters": {},
+          "fragment": "",
+          "href": "/_reflex/mcp"
+        },
+        "route_id": "/_re
+
+--- queue_event add(5) ---
+{
+  "event": "mcpapp___mcpapp____counter_state.add",
+  "delta": {
+    "reflex___state____state.mcpapp___mcpapp____counter_state": {
+      "doubled": 12,
+      "uncached_marker": "c=6",
+      "history": [
+        1,
+        6
+      ],
+      "count": 6
+    }
+  }
+}
+
+--- queue_event slow_bump (background) ---
+{
+  "event": "mcpapp___mcpapp____counter_state.slow_bump",
+  "delta": {
+    "reflex___state____state.mcpapp___mcpapp____counter_state": {
+      "doubled": 212,
+      "uncached_marker": "c=106",
+      "history": [
+        1,
+        6,
+        106
+      ],
+      "count": 106
+    }
+  }
+}
+
+--- queue_event rename(zoe) ---
+{
+  "event": "mcpapp___mcpapp____profile_state.rename",
+  "delta": {
+    "reflex___state____state.mcpapp___mcpapp____profile_state": {
+      "name": "zoe",
+      "greeting": "hello zoe"
+    },
+    "reflex___state____state.mcpapp___mcpapp____counter_state": {
+      "uncached_marker": "c=106"
+    }
+  }
+}
+
+--- queue_event child set_note ---
+{
+  "event": "mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state.set_note",
+  "delta": {
+    "reflex___state____state.mcpapp___mcpapp____counter_state": {
+      "uncached_marker": "c=106"
+    },
+    "reflex___state____state.mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state": {
+      "note": "hi",
+      "note_upper": "HI"
+    }
+  }
+}
+
+--- read reflex://state ---
+{"states": ["reflex___state____state", "reflex___state____state.mcpapp___mcpapp____counter_state", "reflex___state____state.mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state", "reflex___state____state.mcpapp___mcpapp____profile_state", "reflex___state____state.reflex___istate___dynamic____memo_counter_n1"]}
+
+--- read reflex://event ---
+{"events": [{"name": "mcpapp___mcpapp____counter_state.increment", "state": "mcpapp___mcpapp____counter_state", "summary": "Bump the count by one."}, {"name": "mcpapp___mcpapp____counter_state.add", "state": "mcpapp___mcpapp____counter_state", "summary": "Add an arbitrary amount to the count."}, {"name": "mcpapp___mcpapp____counter_state.set_label", "state": "mcpapp___mcpapp____counter_state", "summary": "Set the label."}, {"name": "mcpapp___mcpapp____counter_state.slow_bump", "state": "mcpapp___mcpapp____counter_state", "summary": "Bump the count from a background task."}, {"name": "mcpapp___mcpapp____profile_state.rename", "state": "mcpapp___mcpapp____profile_state", "summary": "Rename the profile."}, {"name": "mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state.set_note", "state": "mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state", "summary": "Set the note."
+
+--- read reflex://state/vars/mcpapp___mcpapp____counter_state FAILED ---
+McpError: Error creating resource from template: Error creating resource from template: Unknown state 'mcpapp___mcpapp____counter_state'. Use a fully-qualified state name from `reflex://state` (the root is `reflex___state____state`).
+
+--- read reflex://state/vars/mcpapp___mcpapp____counter_state/doubled FAILED ---
+McpError: Error creating resource from template: Error creating resource from template: Unknown state 'mcpapp___mcpapp____counter_state'. Use a fully-qualified state name from `reflex://state`.
+
+--- read reflex://state/vars/mcpapp___mcpapp____counter_state/uncached_marker FAILED ---
+McpError: Error creating resource from template: Error creating resource from template: Unknown state 'mcpapp___mcpapp____counter_state'. Use a fully-qualified state name from `reflex://state`.
+
+--- read reflex://state/vars/mcpapp___mcpapp____profile_state/greeting FAILED ---
+McpError: Error creating resource from template: Error creating resource from template: Unknown state 'mcpapp___mcpapp____profile_state'. Use a fully-qualified state name from `reflex://state`.
+
+--- read reflex://state/events/mcpapp___mcpapp____child_state ---
+{"state": "mcpapp___mcpapp____child_state", "events": []}
+
+--- queue_event bogus ---
+Error executing tool queue_event: Unknown event 'does.not.exist'. Use the search_events tool to discover valid event names. Did you mean: mcpapp___mcpapp____counter_state.add, mcpapp___mcpapp____counter_state.increment, mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state.set_note, mcpapp___mcpapp____counter_state.set_label, mcpapp___mcpapp____counter_state.slow_bump?
+
+--- queue_event bad payload ---
+Error executing tool queue_event: unsupported operand type(s) for +=: 'int' and 'str'
+
+--- read events of BOGUS state ---
+{"state": "totally___bogus___state", "events": []}
+
+--- read bogus state raised ---
+McpError: Error creating resource from template: Error creating resource from template: Unknown state 'nope___nope'. Use a fully-qualified state name from `reflex://state` (the root is `reflex___state____state`).

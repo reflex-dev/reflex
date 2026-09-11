@@ -1,0 +1,116 @@
+
+--- search_events(add) schema ---
+{
+  "query": "add",
+  "total_available": 7,
+  "total_matched": 1,
+  "returned": 1,
+  "results": [
+    {
+      "name": "mcpapp___mcpapp____counter_state.add",
+      "state": "mcpapp___mcpapp____counter_state",
+      "handler": "add",
+      "rest_path": "/_reflex/event/mcpapp___mcpapp____counter_state/add",
+      "summary": "Add an arbitrary amount to the count.",
+      "description": "Add an arbitrary amount to the count.",
+      "parameters": [
+        {
+          "name": "amount",
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "upload": null
+    }
+  ]
+}
+
+--- OK reflex://state/vars/reflex___state____state.mcpapp___mcpapp____counter_state ---
+{"reflex___state____state.mcpapp___mcpapp____counter_state": {"count": 0, "doubled": 0, "history": [], "label": "start", "uncached_marker": "c=0"}, "reflex___state____state.mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state": {"note": "", "note_upper": ""}}
+
+--- OK reflex://state/vars/reflex___state____state.mcpapp___mcpapp____counter_state/doubled ---
+{"state": "reflex___state____state.mcpapp___mcpapp____counter_state", "var": "doubled", "computed": true, "value": 0}
+
+--- OK reflex://state/vars/reflex___state____state.mcpapp___mcpapp____counter_state/uncached_marker ---
+{"state": "reflex___state____state.mcpapp___mcpapp____counter_state", "var": "uncached_marker", "computed": true, "value": "c=0"}
+
+--- OK reflex://state/vars/reflex___state____state.mcpapp___mcpapp____counter_state/history ---
+{"state": "reflex___state____state.mcpapp___mcpapp____counter_state", "var": "history", "computed": false, "value": []}
+
+--- OK reflex://state/events/reflex___state____state.mcpapp___mcpapp____counter_state ---
+{"state": "reflex___state____state.mcpapp___mcpapp____counter_state", "events": [{"name": "mcpapp___mcpapp____counter_state.increment", "state": "mcpapp___mcpapp____counter_state", "handler": "increment", "rest_path": "/_reflex/event/mcpapp___mcpapp____counter_state/increment", "summary": "Bump the count by one.", "description": "Bump the count by one.", "parameters": [], "upload": null}, {"name": "mcpapp___mcpapp____counter_state.add", "state": "mcpapp___mcpapp____counter_state", "handler": "add", "rest_path": "/_reflex/event/mcpapp___mcpapp____counter_state/add", "summary": "Add an arbitrary amount to the count.", "description": "Add an arbitrary amount to the count.", "parameters": [{"nam
+
+--- OK reflex://state/events/reflex___state____state.mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state ---
+{"state": "reflex___state____state.mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state", "events": [{"name": "mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state.set_note", "state": "mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state", "handler": "set_note", "rest_path": "/_reflex/event/mcpapp___mcpapp____counter_state.mcpapp___mcpapp____child_state/set_note", "summary": "Set the note.", "description": "Set the note.", "parameters": [{"name": "note", "require
+
+--- ERR reflex://state/vars/reflex___state____state.mcpapp___mcpapp____counter_state/no_such_var ---
+McpError: Error creating resource from template: Error creating resource from template: 'no_such_var' is not a frontend or computed var on 'reflex___state____state.mcpapp___mcpapp____counter_state'. Backend (server-only) vars are not exposed; read `reflex://state/vars/reflex___state____state.mcpapp___mcpapp____counter_state` to list the readable vars.
+
+--- ERR reflex://state/vars/reflex___state____state.mcpapp___mcpapp____counter_state/_private_attr ---
+McpError: Error creating resource from template: Error creating resource from template: '_private_attr' is not a frontend or computed var on 'reflex___state____state.mcpapp___mcpapp____counter_state'. Backend (server-only) vars are not exposed; read `reflex://state/vars/reflex___state____state.mcpapp___mcpapp____counter_state` to list the readable vars.
+
+--- OK reflex://event/mcpapp___mcpapp____counter_state.add ---
+{"name": "mcpapp___mcpapp____counter_state.add", "state": "mcpapp___mcpapp____counter_state", "handler": "add", "rest_path": "/_reflex/event/mcpapp___mcpapp____counter_state/add", "summary": "Add an arbitrary amount to the count.", "description": "Add an arbitrary amount to the count.", "parameters": [{"name": "amount", "required": true, "type": "integer"}], "upload": null}
+
+--- add payload={'amount': 'not-an-int'} ---
+Error executing tool queue_event: unsupported operand type(s) for +=: 'int' and 'str'
+
+--- add payload={'amount': 1.5} ---
+{
+  "event": "mcpapp___mcpapp____counter_state.add",
+  "delta": {
+    "reflex___state____state": {
+      "router": {
+        "session": {
+          "client_token": "",
+          "client_ip": "0.0.0.0",
+          "session_id": ""
+        },
+        "headers": {
+          "host": "",
+          "origin": "",
+          "upgrade": "",
+          "connection": "",
+          "cookie": "",
+          "pragm
+
+--- add payload={'amount': None} ---
+Error executing tool queue_event: unsupported operand type(s) for +=: 'float' and 'NoneType'
+
+--- add payload={'amount': 1, 'extra': 'x'} ---
+Error executing tool queue_event: Event handler add received extra argument extra.
+
+--- add payload={} ---
+Error executing tool queue_event: CounterState.add() missing 1 required positional argument: 'amount'
+
+--- OK reflex://state/vars/reflex___state____state.mcpapp___mcpapp____counter_state/count ---
+{"state": "reflex___state____state.mcpapp___mcpapp____counter_state", "var": "count", "computed": false, "value": 1.5}
+
+--- set_label with query ---
+{
+  "event": "mcpapp___mcpapp____counter_state.set_label",
+  "delta": {
+    "reflex___state____state": {
+      "router": {
+        "session": {
+          "client_token": "",
+          "client_ip": "0.0.0.0",
+          "session_id": ""
+        },
+        "headers": {
+          "host": "",
+          "origin": "",
+          "upgrade": "",
+          "connection": "",
+          "cookie": "",
+          "pragma": "",
+          "cache_control": "",
+          "user_agent": "",
+          "sec_websocket_version": "",
+          "sec_websocket_key": "",
+          "sec_websocket_extensions": "",
+          "accept_encoding": "",
+          "accept_language": "",
+          "raw_headers": {}
+        },
+      

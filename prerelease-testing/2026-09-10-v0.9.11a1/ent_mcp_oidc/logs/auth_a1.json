@@ -1,0 +1,462 @@
+{
+ "label": "a1",
+ "steps": [
+  {
+   "step": "anon_index",
+   "hits": "hits=0",
+   "email": "no-user",
+   "provider": "",
+   "memo": "memo:anon",
+   "secret_label": "secret=top-secret",
+   "shared_label": "shared=default-shared",
+   "note_echo": "echo=top-secret",
+   "secret_note_raw": "top-secret",
+   "cs": "cs-clicks: 0",
+   "url": "http://localhost:5410/"
+  },
+  {
+   "step": "anon_raw_html",
+   "has_top_secret": false,
+   "has_default_shared": false,
+   "length": 3587
+  },
+  {
+   "step": "anon_public_events",
+   "hits": "hits=1",
+   "email": "no-user",
+   "provider": "",
+   "memo": "memo:anon",
+   "secret_label": "secret=top-secret",
+   "shared_label": "shared=default-shared",
+   "note_echo": "echo=top-secret",
+   "secret_note_raw": "top-secret",
+   "cs": "cs-clicks: 1",
+   "url": "http://localhost:5410/"
+  },
+  {
+   "step": "anon_after_poison_shared",
+   "hits": "hits=2",
+   "email": "no-user",
+   "provider": "",
+   "memo": "memo:anon",
+   "secret_label": "secret=top-secret",
+   "shared_label": "shared=default-shared",
+   "note_echo": "echo=top-secret",
+   "secret_note_raw": "top-secret",
+   "cs": "cs-clicks: 1",
+   "url": "http://localhost:5410/"
+  },
+  {
+   "step": "anon_after_poison_field",
+   "hits": "hits=3",
+   "email": "no-user",
+   "provider": "",
+   "memo": "memo:anon",
+   "secret_label": "secret=top-secret",
+   "shared_label": "shared=default-shared",
+   "note_echo": "echo=FIELD-SECRET",
+   "secret_note_raw": "top-secret",
+   "cs": "cs-clicks: 1",
+   "url": "http://localhost:5410/"
+  },
+  {
+   "step": "anon_protected_event",
+   "url": "http://localhost:5410/login?redirect_to=%2F"
+  },
+  {
+   "step": "anon_protected_bg_event",
+   "url": "http://localhost:5410/login?redirect_to=%2F"
+  },
+  {
+   "step": "anon_secret_page",
+   "url": "http://localhost:5410/login?redirect_to=%2Fsecret",
+   "heading": "<absent:TimeoutError>",
+   "body": "Sign in\nLogin with Generic"
+  },
+  {
+   "step": "login_page",
+   "url": "http://localhost:5410/login",
+   "body": "Sign in\nLogin with Generic"
+  },
+  {
+   "step": "login_buttons",
+   "buttons": [
+    "Login with Generic"
+   ]
+  },
+  {
+   "step": "clicked_provider",
+   "label": "generic"
+  },
+  {
+   "step": "after_login_click",
+   "url": "http://localhost:5410/",
+   "body": "home\nsecret\nlogin\nlogout\npublic\n\nhits=3\n\ngeneric\n\nalice@example.test\n\nmemo:alice@example.test\n\ncs-clicks: 1\n\ncs-click\nbumpset-secretslow-secret\n\nsecret=FIELD-SECRET!\n\nshared=SERVER-ONLY-SECRET\n\necho=FIELD-SECRET!\n\nFIELD-SECRET!\n\npoison-sharedpoison-field"
+  },
+  {
+   "step": "post_login_index",
+   "hits": "hits=3",
+   "email": "alice@example.test",
+   "provider": "generic",
+   "memo": "memo:alice@example.test",
+   "secret_label": "secret=FIELD-SECRET!",
+   "shared_label": "shared=SERVER-ONLY-SECRET",
+   "note_echo": "echo=FIELD-SECRET!",
+   "secret_note_raw": "FIELD-SECRET!",
+   "cs": "cs-clicks: 1",
+   "url": "http://localhost:5410/"
+  },
+  {
+   "step": "auth_protected_event",
+   "hits": "hits=3",
+   "email": "alice@example.test",
+   "provider": "generic",
+   "memo": "memo:alice@example.test",
+   "secret_label": "secret=changed",
+   "shared_label": "shared=SERVER-ONLY-SECRET",
+   "note_echo": "echo=changed",
+   "secret_note_raw": "changed",
+   "cs": "cs-clicks: 1",
+   "url": "http://localhost:5410/"
+  },
+  {
+   "step": "auth_protected_bg_event",
+   "hits": "hits=3",
+   "email": "alice@example.test",
+   "provider": "generic",
+   "memo": "memo:alice@example.test",
+   "secret_label": "secret=changed!",
+   "shared_label": "shared=SERVER-ONLY-SECRET",
+   "note_echo": "echo=changed!",
+   "secret_note_raw": "changed!",
+   "cs": "cs-clicks: 1",
+   "url": "http://localhost:5410/"
+  },
+  {
+   "step": "auth_secret_page",
+   "url": "http://localhost:5410/secret",
+   "heading": "secret page",
+   "email": "alice@example.test",
+   "secret_label": "secret=changed!"
+  },
+  {
+   "step": "auth_reload",
+   "url": "http://localhost:5410/secret",
+   "email": "alice@example.test"
+  },
+  {
+   "step": "auth_second_tab",
+   "url": "http://localhost:5410/secret",
+   "email": "alice@example.test"
+  },
+  {
+   "step": "after_logout",
+   "url": "http://localhost:5410/",
+   "body": "home\nsecret\nlogin\nlogout\npublic\n\nhits=3\n\nno-user\n\nmemo:anon\n\ncs-clicks: 1\n\ncs-click\nbumpset-secretslow-secret\n\nsecret=top-secret\n\nshared=default-shared\n\necho=top-secret\n\ntop-secret\n\npoison-sharedpoison-field"
+  },
+  {
+   "step": "post_logout_index",
+   "hits": "hits=3",
+   "email": "no-user",
+   "provider": "",
+   "memo": "memo:anon",
+   "secret_label": "secret=top-secret",
+   "shared_label": "shared=default-shared",
+   "note_echo": "echo=top-secret",
+   "secret_note_raw": "top-secret",
+   "cs": "cs-clicks: 1",
+   "url": "http://localhost:5410/"
+  },
+  {
+   "step": "post_logout_secret",
+   "url": "http://localhost:5410/login?redirect_to=%2Fsecret",
+   "heading": "<absent:TimeoutError>"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on pagehide"
+  }
+ ],
+ "pageerrors": [],
+ "failed_requests": [
+  {
+   "url": "http://localhost:9810/_reflex/cookies/sync",
+   "err": "net::ERR_ABORTED"
+  },
+  {
+   "url": "http://localhost:9810/_reflex/cookies/sync",
+   "err": "net::ERR_ABORTED"
+  }
+ ],
+ "http_errors": [],
+ "idp_log": [
+  "GET /.well-known/openid-configuration",
+  "GET /jwks",
+  "GET /.well-known/openid-configuration",
+  "GET /authorize {\"client_id\": \"test-client\", \"redirect_uri\": \"http://localhost:5410/callback\", \"scope\": \"openid email profile\", \"state\": \"F7H4v7KshtvH0O3lHh__kLxR_9w1vqHkxx6iyK0NXvpMNDNEnHU_ATr-MUQudl-GywAgHa1MV_oLEjdH8Y0Wxg\", \"code_challenge\": \"ik2nL25yvoIru1PacbNt0xvJCXZ731Tj3RwtMhIybbM\", \"code_challenge_method\": \"S256\", \"response_type\": \"code\", \"response_mode\": \"query\"}",
+  "POST /token grant=authorization_code keys=['code', 'code_verifier', 'grant_type', 'redirect_uri', 'scope']",
+  "PKCE OK",
+  "GET /jwks",
+  "GET /userinfo valid=True",
+  "GET /userinfo valid=True",
+  "GET /logout {\"state\": \"WNkK0J7gaBWRWl4-xZPmE41AAbbyRQRHznucOps1WpvLB-qpVjgYIB5pN4iMEffulIOeuSGA7AHEbFPtf7SwYw\", \"id_token_hint\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5LTEifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojk4OTkiLCJzdWIiOiJhbGljZSIsImF1ZCI6InRlc3QtY2xpZW50IiwiaWF0IjoxNzg5MDk0ODM0LCJleHAiOjE3ODkwOTg0MzQsImVtYWlsIjoiYWxpY2VAZXhhbXBsZS50ZXN0IiwibmFtZSI6IlVzZXIgYWxpY2UiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhbGljZSIsImF0X2hhc2giOiJOeTNqWUk2dzFDTlp6eU5QdVVzclJRIn0.Z6gklGrjxhuQzZj0eKWCSeqgeRih6Tz1KUN2J5K6SomWK9zY1VEeIyfc2M6bVHYjvLHOXOuPbQCAoxK45DZf3o9km6op6i9JnedB8rQ1MoyKg6isXuo7EV0SJq_EwPwzwr3PIU2aOckDdMxp2wsu7xYjoPZ8-zgwnDHJ1aVwF8Jlup8jpL8bdauuQE8EiBI33NVRAOU4bugiqlOpTWC1AbHhlVEr6DgkC_3W7_7ibSUZl9ZFKEmShHYtW7iTNmGBBa-O2GMauUXSL7u8kj35VuO1Fl7r13UU-5DRFHpqwvIODQS190i2UmnflOUfcv8dm1cCT5fSHzo-es4GO1iBnA\", \"post_logout_redirect_uri\": \"http://localhost:5410/\"}"
+ ]
+}

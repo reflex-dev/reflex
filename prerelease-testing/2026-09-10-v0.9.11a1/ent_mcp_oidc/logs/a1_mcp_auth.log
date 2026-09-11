@@ -1,0 +1,83 @@
+
+--- GET /.well-known/oauth-protected-resource/_reflex/mcp ---
+200 {"resource":"http://localhost:9810/_reflex/mcp","authorization_servers":["http://localhost:9810/"],"bearer_methods_supported":["header"]}
+
+--- GET /.well-known/oauth-authorization-server ---
+200 {"issuer":"http://localhost:9810/","authorization_endpoint":"http://localhost:9810/authorize","token_endpoint":"http://localhost:9810/token","registration_endpoint":"http://localhost:9810/register-oidc-client","response_types_supported":["code"],"grant_types_supported":["authorization_code","refresh_token"],"token_endpoint_auth_methods_supported":["client_secret_post","client_secret_basic"],"revocation_endpoint":"http://localhost:9810/revoke","revocation_endpoint_auth_methods_supported":["client
+
+--- GET /.well-known/openid-configuration ---
+404 Not Found
+
+--- unauth MCP ---
+401 WWW-Authenticate=Bearer error="invalid_token", error_description="Authentication required", resource_metadata="http://localhost:9810/.well-known/oauth-protected-resource/_reflex/mcp" {"error": "invalid_token", "error_description": "Authentication required"}
+
+--- POST /register ---
+404 Not Found
+
+--- anon token ---
+200 {"access_token": "-U0X4Cx74GdUq9I1AfVQV57iqJw7yXXXIUMh2iHYYbc", "token_type": "Bearer", "expires_in": 3600, "session": "anonymous"}
+
+--- events visible to anon MCP session ---
+["authapp___authapp____public_state.bump", "authapp___authapp____public_state.poison_field", "authapp___authapp____public_state.poison_shared", "authapp___authapp____public_state.set_secret", "authapp___authapp____public_state.slow_secret", "reflex___istate___dynamic____whoami_n1.click"]
+
+--- queue authapp___authapp____public_state.bump ---
+{
+  "event": "authapp___authapp____public_state.bump",
+  "delta": {
+    "reflex___state____state": {
+      "router": {
+        "session": {
+          "client_token": "",
+          "client_ip": "0.0.0.0",
+          "session_id": ""
+        },
+        "headers": {
+          "host": "",
+          "origin": "",
+          "upgrade": "",
+          "connection": "",
+          "cookie": "",
+          "pragma": "",
+          "cache_control": "",
+          "user_agent": "",
+          "sec_websocket_versio
+
+--- queue authapp___authapp____public_state.poison_field ---
+{
+  "event": "authapp___authapp____public_state.poison_field",
+  "delta": {
+    "reflex___state____state.authapp___authapp____public_state": {
+      "note_echo": "echo=FIELD-SECRET",
+      "hits_label": "hits=2",
+      "secret_note": "top-secret",
+      "hits": 2
+    }
+  }
+}
+
+--- queue authapp___authapp____public_state.set_secret ---
+Error executing tool queue_event: `authapp___authapp____public_state.set_secret` requires an authenticated session, but this session is anonymous. Re-run the OAuth authorization flow (discovered via the MCP server's WWW-Authenticate / protected-resource metadata) to establish a new session.
+
+--- queue authapp___authapp____public_state.slow_secret ---
+Error executing tool queue_event: `authapp___authapp____public_state.slow_secret` requires an authenticated session, but this session is anonymous. Re-run the OAuth authorization flow (discovered via the MCP server's WWW-Authenticate / protected-resource metadata) to establish a new session.
+
+--- read reflex___state____state.authapp___authapp____public_state ---
+{"reflex___state____state.authapp___authapp____public_state": {"hits": 2, "hits_label": "hits=2", "note_echo": "echo=FIELD-SECRET", "secret_note": "top-secret"}}
+
+--- read hits ---
+{"state": "reflex___state____state.authapp___authapp____public_state", "var": "hits", "computed": false, "value": 2}
+
+--- read secret_note ---
+{"state": "reflex___state____state.authapp___authapp____public_state", "var": "secret_note", "computed": false, "value": "top-secret"}
+
+--- read secret_label ERR ---
+McpError: Error creating resource from template: Error creating resource from template: 'secret_label' on 'reflex___state____state.authapp___authapp____public_state' is not accessible for the current session (it is protected and the session is not authorized for it).
+
+--- read shared_label ERR ---
+McpError: Error creating resource from template: Error creating resource from template: 'shared_label' on 'reflex___state____state.authapp___authapp____public_state' is not accessible for the current session (it is protected and the session is not authorized for it).
+
+--- read note_echo ---
+{"state": "reflex___state____state.authapp___authapp____public_state", "var": "note_echo", "computed": true, "value": "echo=FIELD-SECRET"}
+
+--- read reflex___state____state.reflex_enterprise___auth___user_state____auth_user_state ERR ---
+McpError: Error creating resource from template: Error creating resource from template: Unknown state 'reflex___state____state.reflex_enterprise___auth___user_state____auth_user_state'. Use a fully-qualified state name from `reflex://state` (the root is `reflex___state____state`).
