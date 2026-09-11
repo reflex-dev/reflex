@@ -17,7 +17,7 @@ def DynamicComponents():
     from reflex.components.dynamic import bundle_library
 
     bundle_library(rx.text())
-    bundle_library(rx.icon("banana"))
+    bundle_library(rx.hstack(rx.el.div(rx.icon("banana"))))
 
     class DynamicComponentsState(rx.State):
         value: int = 10

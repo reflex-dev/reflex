@@ -4,6 +4,7 @@ import dataclasses
 from pathlib import Path
 
 import pytest
+from reflex_base.components.component import field
 from reflex_base.components.dynamic import (
     _reset_bundled_libraries_for_compile,
     bundle_library,
@@ -49,21 +50,41 @@ def test_dynamic_component_codegen_rewrites_bundled_library_subpath() -> None:
 
 
 @pytest.mark.parametrize("reactive", [False, True])
-def test_component_registration_bundles_subpaths_before_serialization(reactive: bool):
+@pytest.mark.parametrize("placement", ["direct", "nested", "libraryless", "prop"])
+def test_component_registration_bundles_subpaths_before_serialization(
+    reactive: bool, placement: str
+):
     """Prebundle a component that is absent from the initial state.
 
     Args:
         reactive: Whether the component uses a named dynamic-icon import.
+        placement: Where the icon appears in the registered prototype.
     """
     icon = rx.icon(Var("icon_name").to(str)) if reactive else rx.icon("apple")
+    if placement == "nested":
+        prototype = rx.hstack(rx.el.div(icon))
+    elif placement == "libraryless":
+        prototype = rx.el.div(rx.hstack(icon))
+    elif placement == "prop":
+
+        class ComponentWithSlot(rx.Component):
+            """A component accepting a tree through a component-valued prop."""
+
+            tag = "ComponentWithSlot"
+            library = "slot-library"
+            slot: rx.Component | None = field(default=None)
+
+        prototype = ComponentWithSlot.create(slot=rx.hstack(rx.el.div(icon)))
+    else:
+        prototype = icon
     subpath = (
         "lucide-react/dynamic.mjs"
         if reactive
         else "lucide-react/dist/esm/icons/apple.mjs"
     )
     with RegistrationContext() as context:
-        bundle_library(icon)
-        bundle_library(icon)
+        bundle_library(prototype)
+        bundle_library(prototype)
         assert context.bundled_libraries.count(subpath) == 1
         with context.fork():
             _reset_bundled_libraries_for_compile()
@@ -71,9 +92,10 @@ def test_component_registration_bundles_subpaths_before_serialization(reactive: 
             assert f'from "{subpath}";' in app_root_code
             assert 'from "lucide-react";' not in app_root_code
             assert RegistrationContext.get().bundled_libraries.count(subpath) == 1
-            code = serializers.serialize(icon)
+            code = serializers.serialize(prototype)
         assert isinstance(code, str)
         assert f"window.__reflex['{subpath}']" in code
+        assert "cdn.jsdelivr.net/npm/" not in code
 
 
 @pytest.mark.parametrize("reactive", [False, True])

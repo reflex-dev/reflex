@@ -90,9 +90,10 @@ def bundle_library(component: Union["Component", str]) -> None:
 
     Explicit app registrations survive compilation, including registrations in
     modules first imported while evaluating a page. Passing a component bundles
-    its rendered library imports, including subpaths, even when it is absent
-    from the initial state. Components present in the initial state have their
-    imports bundled automatically.
+    the rendered library imports of its entire tree, including children,
+    component-valued props, and subpaths, even when absent from the initial
+    state. Components present in the initial state have their imports bundled
+    automatically.
 
     Args:
         component: A library name string or a prototype component instance to bundle.
@@ -113,7 +114,7 @@ def bundle_library(component: Union["Component", str]) -> None:
             "to bundle_library(), for example bundle_library(rx.icon('apple'))."
         )
         raise TypeError(msg)
-    component_imports = component._get_imports()
+    component_imports = component._get_all_imports()
     if not component_imports:
         msg = "Component must have a library to bundle."
         raise DynamicComponentMissingLibraryError(msg)
