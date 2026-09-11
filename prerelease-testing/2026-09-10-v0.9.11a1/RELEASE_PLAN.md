@@ -7,10 +7,11 @@ or trivially small to fix. Everything else is filed and fixed after.
 **Status: the campaign has covered every surface this train touches.** Clusters completed: smoke,
 packaging, hmr_runtime, hybrid_property, bg_rehydrate, event_hotpath, up_counter_todo_clock,
 up_upload_traversal_quiz, up_dataviz_local_lorem, ent_aggrid, ent_map_dnd_flow, ent_mcp_oidc,
-ent_mantine_highcharts_tickets, otel, components_bumps, orch_probes — **every reflex-enterprise
-demo has now been run on both reflex versions**. Not run for want of budget, and none of them
-covering a surface this train changes: config_assets_cli, memo_hash, reverify_prev and four further
-reflex-examples apps.
+ent_mantine_highcharts_tickets, otel, components_bumps, orch_probes, config_assets_cli,
+frontend_path_ssr — **every reflex-enterprise demo has now been run on both reflex versions, and
+every bug fix and performance claim in the 0.9.11a1 changelog has been exercised**. Not run for
+want of budget: memo_hash (#6947, a naming-cache change with no user-visible surface),
+reverify_prev, and four further reflex-examples apps.
 
 ## Bottom line so far
 
@@ -89,6 +90,7 @@ identical against a live OIDC provider; and all four 0.9.9a1 enterprise breakage
 | 026 | Custom code touching `window` fails export with an opaque prerender 500 | low | The compiler knows which component emitted the block; a diagnostic is cheap. |
 | 030 | State-delta key ordering changed between 0.9.10.post2 and 0.9.11a1 | low | Same keys and values; only text-comparing snapshot tests downstream would notice. Worth one release-note line. |
 | 034 | Seven pre-existing component-library rough edges | low | Surfaced by the bump sweep, all reproduce on 0.9.10.post2. See `components_bumps/NOTES.md` ISSUE-2…ISSUE-10. |
+| 037 | `REFLEX_SSR=false` serves every prod route but `/` as 404 | low | Pre-existing, but #7044 makes this configuration newly usable with `frontend_path`, so more people are about to hit it. Crawlers and uptime checks see live pages as errors. |
 
 ### reflex-enterprise (downstream tracker)
 - **FINDING-035**: `rxe.EventHandlerAPIPlugin` serves a 500 for its own OpenAPI document because
@@ -166,6 +168,13 @@ Recorded so the next campaign knows what was already exercised and can spend its
   returning the delta, and the row persisted to sqlite.
 - **In-place upgrade** of three reflex-examples apps (`local-component`, `lorem-stream`,
   `data_visualisation`) keeping the venv, the app directory, `.web/` and the sqlite database.
+- **#7044** (`frontend_path` + `REFLEX_SSR=false`): both `reflex export` and `reflex run --env prod`
+  fail on 0.9.10.post2 with exactly the documented `FileNotFoundError` and succeed on 0.9.11a1, and
+  the resulting prod deployment works end to end in a browser under the sub-path.
+- **#7039** (shared assets): a stale `assets/external` symlink is repointed on 0.9.11a1 and silently
+  left pointing at the wrong file on 0.9.10.post2. The concurrent-first-create half of the claim
+  could not be provoked on this filesystem on either version.
+- **#7050** (CLI startup): ~2.3x faster on every subcommand (0.40 s → 0.17 s for `reflex --help`).
 - **reflex-release 0.1.1a1** against a real worktree of the release branch: `packages`, `detect`
   (all 17 changelog packages already tagged at the versions under test), `check-dev-pins` (passes on
   the branch, correctly fails on `main`, which is the designed dev-floor mechanism), `check-headings`
