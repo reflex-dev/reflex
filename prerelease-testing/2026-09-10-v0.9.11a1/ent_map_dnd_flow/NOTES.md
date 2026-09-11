@@ -545,3 +545,165 @@ verification/bundle_library_reset/logs/dndbundle_module_0911a1.log  ValueError, 
 verification/bundle_library_reset/logs/dndbundle_page_0911a1.log    workaround, App running
 verification/bundle_library_reset/logs/dndbundle_module_0910post2.log  baseline, identical
 ```
+
+## VERIFICATION: A hook-bearing component used directly inside rx.foreach compiles with no warning and then throws ReferenceError in the browser, blanking the whole page
+
+**Verdict: CONFIRMED — genuine reflex-core defect, and BROADER than ISSUE B described.
+NOT a regression (identical on 0.9.10.post2). NOT enterprise-specific: reproduces with
+`rx.upload` and `rx.form` on plain `reflex==0.9.11a1` with no reflex-enterprise installed.
+Severity for this release train: medium (pre-existing, supported `@rx.memo` workaround);
+as a standalone framework bug: high.**
+
+Independent verifier, reproduced from the written repro in a fresh working dir
+(`$SB/apps/verify2_ent_map_dnd_flow_1/`), reserved ports 5844-5847 / 10244-10247, one dev
+server at a time. All servers killed afterwards (`5844..5847` all return 000).
+
+### Refutation attempts (all failed to explain it away)
+
+| Hypothesis | Result |
+|---|---|
+| Environment quirk (proxy / ports / cwd shadowing / missing NO_PROXY) | No. `NO_PROXY` set client-side only; `reflex.__file__` asserted to live under `$SB/envs/`; three different apps on three different port pairs all fail identically. Sibling routes in the *same* app render clean. |
+| API misuse / documented behaviour | No. `docs/library/dynamic-rendering/foreach.md` (229 lines on the release branch) never mentions hooks, `@rx.memo`, or any restriction; `git grep -niE "hook.*foreach\|foreach.*hook"` over `docs/ reflex/ packages/` returns nothing. `Foreach.create` validates the iterable type and rejects `ComponentState`, but has no hook check. |
+| Enterprise (`rxe.dnd`) bug, not framework | No. Reproduced on `$SB/envs/smoke` (reflex 0.9.11a1, **no** reflex-enterprise) with core `rx.upload` and core `rx.form`. |
+| Pre-existing on 0.9.10.post2 | **Yes** — confirmed by my own baseline run. Claimant's `regression=false` is correct. The mechanism also predates the memoize rewrite: the legacy `StatefulComponent` pass (`86382e2f9~1:packages/reflex-base/.../component.py:2385`) collected a `Foreach` whole in exactly the same way. |
+| Flaky | No. Deterministic on every load of every affected route, in both versions. |
+
+### Minimal repro (pure reflex, no enterprise)
+
+`verification/foreach_hook_scope/pureforeach/` — one app, seven routes:
+
+| route | body | 0.9.11a1 | 0.9.10.post2 |
+|---|---|---|---|
+| `/` | `rx.foreach(rx.Var.create(["a","b"]), chip)` where `chip` is an `rx.el.Div` subclass whose `add_hooks()` interpolates its own prop | **ReferenceError, page blank, 0 chips** | same |
+| `/state` | same, iterating `S.items` (a State var) | **ReferenceError, page blank, 0 chips** | same |
+| `/upload` | `rx.foreach(S.items, lambda iid: rx.upload(..., id=iid))` — **core reflex component** | **ReferenceError, page blank, 0 uploads** | same |
+| `/form` | `rx.foreach(S.items, lambda iid: rx.form(..., on_submit=lambda _d: S.note(iid)))` — **core reflex component** | renders, but **clicking submit throws `ReferenceError: iid_rx_state_ is not defined`; the event never reaches the backend — silent no-op** | same |
+| `/memo` | same chip wrapped in `@rx.memo` | 2 chips, clean console | same |
+| `/plain` | one chip, no foreach | 1 chip, clean console | same |
+| `/click` | `rx.button(on_click=S.note(iid))` in a foreach | 2 buttons, clean — inline arrow stays inside the `.map()` | same |
+
+`rx.upload` and `rx.form(on_submit=...)` inside `rx.foreach` are the important additions:
+both are core, both are ordinary user code, neither is mentioned in ISSUE B.
+The `/form` variant is the worst mode — nothing crashes, nothing renders wrong, the submit
+just silently does nothing except a console error, and the single hoisted
+`handleSubmit_<hash>` is shared by every iteration so it could not have been per-item
+correct even if the identifier resolved.
+
+### Exact commands
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+W=$SB/apps/verify2_ent_map_dnd_flow_1
+V=/home/user/reflex/prerelease-testing/2026-09-10-v0.9.11a1/ent_map_dnd_flow/verification/foreach_hook_scope
+
+# A. pure reflex 0.9.11a1 (no reflex-enterprise)
+mkdir -p $W && tar -C $V -cf - pureforeach | tar -C $W -xf -
+cd $W/pureforeach && REFLEX_TELEMETRY_ENABLED=false CI=1 \
+    $SB/envs/smoke/bin/reflex run --frontend-port 5844 --backend-port 10244
+cd $W && NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python drivers/probe_routes.py \
+    http://localhost:5844 $W/shots/pure_0911a1 \
+    '/|[data-chip="1"]' '/state|[data-chip="1"]' '/memo|[data-chip="1"]' \
+    '/plain|[data-chip="1"]' '/upload|[data-chip="1"]' '/form|[data-chip="1"]' '/click|[data-chip="1"]'
+cd $W && NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python drivers/probe_form_submit.py \
+    http://localhost:5844 $W/shots/pure_0911a1
+
+# B. same app on reflex 0.9.10.post2 (fresh copy, no shared .web)
+cd $W/pureforeach_base && REFLEX_TELEMETRY_ENABLED=false CI=1 \
+    $SB/envs/base0910/bin/reflex run --frontend-port 5845 --backend-port 10245
+#   ... same two probe commands against http://localhost:5845
+
+# C. claimant's exact enterprise repro (reflex 0.9.11a1 + reflex-enterprise 0.9.5)
+cd $W/foreachhook && REFLEX_TELEMETRY_ENABLED=false CI=1 \
+    $SB/envs/ent/bin/reflex run --frontend-port 5846 --backend-port 10246
+cd $W && NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python drivers/probe_routes.py \
+    http://localhost:5846 $W/shots/dnd_0911a1 '/|[draggable="true"]' '/memo|[draggable="true"]'
+```
+
+C reproduced the claim verbatim: `/` -> `matches: 0`, body "An error occurred while
+rendering this page ... ReferenceError: iid_rx_state_ is not defined at Foreach
+(http://localhost:5846/app_components/foreachhook/foreachhook.jsx:44:15)"; `/memo` -> 2
+draggables, clean console.
+
+### Mechanism (release branch `origin/r/pre-2026.09.10-34457666442`)
+
+1. `IterTag.render_component()` —
+   `packages/reflex-base/src/reflex_base/components/tags/iter_tag.py:76-113` — calls
+   `render_fn(self.get_arg_var())`, where `get_arg_var()` (`iter_tag.py:57-70`) is a bare
+   `Var(_js_expr="<param>_rx_state_")`, i.e. **the name of the JS `.map()` callback
+   parameter**. Any hook the produced component builds by interpolating that Var is a
+   string containing `<param>_rx_state_`.
+2. `Foreach.create` —
+   `packages/reflex-components-core/src/reflex_components_core/core/foreach.py:110-112` —
+   deliberately keeps that rendered component in `self.children` ("Keep a ref to a rendered
+   component to determine correct imports/hooks/styles").
+3. `Component._get_all_hooks()` —
+   `packages/reflex-base/src/reflex_base/components/component.py:2041-2063` — flattens
+   `child._get_all_hooks()` for every descendant into one dict emitted **at the enclosing
+   React function scope**. It has no notion of the closure `Foreach` introduces, so the
+   loop-scoped hook escapes the `.map()`.
+4. `Foreach._memoization_mode = MemoizationMode(recursive=False)`
+   (`.../core/foreach.py:34`) makes it a snapshot boundary, so
+   `MemoizeStatefulPlugin.enter_component` (`reflex/compiler/plugins/memoize.py:232-295`)
+   wraps the whole Foreach into one memo component and seals its descendants. The hooks
+   therefore land at the top of the generated `Foreach_comp_<hash>` function, directly
+   above the `Array.prototype.map.call(...)` that declares the variable they reference.
+
+Generated proof (`verification/foreach_hook_scope/logs/pureforeach_memo_module_0911a1.jsx`,
+identical shape in `..._0910post2.jsx`):
+
+```js
+export const Foreach_comp_c6156ae8..._bade3042 = memo(({children}) => {
+    const reflex___state____state__pureforeach___pureforeach___s = useContext(...)
+const chip_label = iid_rx_state_;                      // <-- not defined at this scope
+    return(
+        Array.prototype.map.call(...items ?? [], ((iid_rx_state_, index_...) => ( ... )))
+    )
+});
+```
+
+and for `rx.upload`:
+
+```js
+const { getRootProps: xdvxrcsn, ... } = useDropzone(({ ..., ["id"] : iid_rx_state_, ... }));
+```
+
+Note the second, independent wrongness: even if the identifier resolved, **one** hoisted
+`useDrag`/`useDropzone`/`handleSubmit` is shared by all N iterations, so per-item hooks can
+never be correct inside a `rx.foreach` render function. The supported spelling really is
+`@rx.memo` (which lifts the body into its own React component and passes the loop value as
+a prop — see `MemoChip_bade3042` in the same generated module).
+
+### Assessment vs the original ISSUE B
+
+* Verdict, regression status and downstream status as claimed: **all correct**.
+* "generic codegen behaviour of rx.foreach": correct, and not tied to enterprise.
+* Scope understated: it is not only third-party/enterprise hook components. Core
+  `rx.upload` and core `rx.form(on_submit=...)` are hit, and the `rx.form` mode fails
+  **silently** (no crash, no blank page, submit just never fires).
+* The suggested fix (compile-time error pointing at `@rx.memo` when a component built
+  inside a `foreach` render function contributes a hook whose text contains the loop
+  variable) is sound and cheap: the arg name is already known at
+  `iter_tag.py:57` / `foreach.py:_render`, and the child's hooks are already collected at
+  `foreach.py:111`. A substring check over `component._get_all_hooks()` for
+  `arg_var_name` / `index_var_name` at that point would catch every case above with no
+  runtime cost. Not a 0.9.11a1 blocker (pre-existing), but worth a real bug.
+
+### Evidence
+
+* App source: `verification/foreach_hook_scope/pureforeach/pureforeach/pureforeach.py`
+* Drivers: `verification/foreach_hook_scope/drivers/probe_routes.py`,
+  `.../drivers/probe_form_submit.py`
+* Probe output: `verification/foreach_hook_scope/logs/pure_probe_0911a1.txt`,
+  `.../pure_probe_0910post2.txt`, `.../pure_form_submit_0911a1.txt`,
+  `.../pure_form_submit_0910post2.txt`, `.../dnd_probe_0911a1.txt`
+* Generated JSX: `verification/foreach_hook_scope/logs/pureforeach_memo_module_0911a1.jsx`,
+  `.../pureforeach_memo_module_0910post2.jsx`,
+  `.../dnd_memo_module_excerpt_0911a1.txt`
+* Screenshots: `verification/foreach_hook_scope/shots/pure_0911a1_*.png`,
+  `.../pure_0910post2_*.png`, `.../dnd_0911a1_{root,memo}.png`
+
+### Side observation (not a new finding)
+
+The three `Invalid DOM property stroke-linecap/stroke-linejoin/stroke-width` console errors
+that precede every ReferenceError here are ISSUE C, already filed by the claimant; my runs
+reproduce them on both 0.9.11a1 and 0.9.10.post2, confirming that one too.

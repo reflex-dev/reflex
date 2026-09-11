@@ -1,0 +1,38 @@
+root | matches= 0 | An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page migh
+    CE: error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap
+    CE: error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin
+    CE: error: Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth
+    CE: error: %o
+
+%s
+
+%s
+ ReferenceError: iid_rx_state_ is not defined
+    at _c3 (http://localhost:5845/app_components/pureforeach/pureforeach.jsx:30:22)
+  
+state | matches= 0 | An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page migh
+    CE: error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap
+    CE: error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin
+    CE: error: Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth
+    CE: error: %o
+
+%s
+
+%s
+ ReferenceError: iid_rx_state_ is not defined
+    at Foreach (http://localhost:5845/app_components/pureforeach/pureforeach.jsx:46:22
+memo | matches= 2 | memo |  | a |  | b
+plain | matches= 1 | plain |  | a
+upload | matches= 0 | An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page migh
+    CE: error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap
+    CE: error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin
+    CE: error: Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth
+    CE: error: %o
+
+%s
+
+%s
+ ReferenceError: iid_rx_state_ is not defined
+    at Foreach (http://localhost:5845/app_components/pureforeach/pureforeach.jsx:85:13
+form | matches= 2 | form |  | go | go
+click | matches= 2 | click |  | a | b

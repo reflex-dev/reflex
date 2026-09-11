@@ -1,0 +1,56 @@
+{
+  "root": {
+    "matches": 0,
+    "body_text": "",
+    "console_errors": [
+      "error: Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep)"
+    ],
+    "page_errors": []
+  },
+  "state": {
+    "matches": 0,
+    "body_text": "An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | ReferenceError: iid_rx_state_ is not defined | ReferenceError: iid_rx_state_ is not defined |     at Foreach (http://localhost:",
+    "console_errors": [
+      "error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap",
+      "error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin",
+      "error: Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth",
+      "error: %o\n\n%s\n\n%s\n ReferenceError: iid_rx_state_ is not defined\n    at Foreach (http://localhost:5844/app_components/pureforeach/pureforeach.jsx:46:22)\n    at Object.react_stack_bottom_frame (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:12866:12)\n    at renderWithHooks (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:4213:19)\n    at updateFunctionComponent (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:5569:16)\n    at updateSimpleMemoComponent (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:5432:11)\n    at updateMemoComponent (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:5407:294)\n    at beginWork (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:6210:21)\n    at runWithFiberInDEV (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:851:66)\n    at performUnitOfWork (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:8429:92)\n    at workLoopSync (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:8325:37) The above error occurred in the <Foreach> component. React will try to recreate this component tree from scratch using the error boundary you provided, m."
+    ],
+    "page_errors": []
+  },
+  "memo": {
+    "matches": 2,
+    "body_text": "memo |  | a |  | b",
+    "console_errors": [],
+    "page_errors": []
+  },
+  "plain": {
+    "matches": 1,
+    "body_text": "plain |  | a",
+    "console_errors": [],
+    "page_errors": []
+  },
+  "upload": {
+    "matches": 0,
+    "body_text": "An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | ReferenceError: iid_rx_state_ is not defined | ReferenceError: iid_rx_state_ is not defined |     at Foreach (http://localhost:",
+    "console_errors": [
+      "error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap",
+      "error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin",
+      "error: Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth",
+      "error: %o\n\n%s\n\n%s\n ReferenceError: iid_rx_state_ is not defined\n    at Foreach (http://localhost:5844/app_components/pureforeach/pureforeach.jsx:85:13)\n    at Object.react_stack_bottom_frame (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:12866:12)\n    at renderWithHooks (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:4213:19)\n    at updateFunctionComponent (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:5569:16)\n    at updateSimpleMemoComponent (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:5432:11)\n    at updateMemoComponent (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:5407:294)\n    at beginWork (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:6210:21)\n    at runWithFiberInDEV (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:851:66)\n    at performUnitOfWork (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:8429:92)\n    at workLoopSync (http://localhost:5844/node_modules/.vite/deps/react-dom_client.js?v=94427c6e:8325:37) The above error occurred in the <Foreach> component. React will try to recreate this component tree from scratch using the error boundary you provided, m."
+    ],
+    "page_errors": []
+  },
+  "form": {
+    "matches": 2,
+    "body_text": "form |  | go | go",
+    "console_errors": [],
+    "page_errors": []
+  },
+  "click": {
+    "matches": 2,
+    "body_text": "click |  | a | b",
+    "console_errors": [],
+    "page_errors": []
+  }
+}

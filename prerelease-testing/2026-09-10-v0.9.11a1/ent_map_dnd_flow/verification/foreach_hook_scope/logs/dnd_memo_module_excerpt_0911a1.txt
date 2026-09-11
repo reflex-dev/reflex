@@ -1,0 +1,11 @@
+
+export const Foreach_comp_ed23c483e151ec024977977c059886ef_4bdb9ba2 = memo(({children}) => {
+    const [draggableCollectedParams, drag_ref_udaxihhe, drag_preview_ref_xdvxrcsn] = (useDrag(({ ["type"] : "X", ["item"] : ({ ["id"] : iid_rx_state_ }), ["collect"] : ((monitor) => ({ ["is_dragging"] : isTrue((monitor.isDragging())), ["can_drag"] : (monitor.canDrag()) })) }), []));
+
+
+
+    return(
+        Array.prototype.map.call(["a", "b"] ?? [],((iid_rx_state_,index_5108c9bae48dce884e0ec2205fb6f897)=>(jsx("div",{css:({ ["opacity"] : (draggableCollectedParams?.["is_dragging"] ? 0.5 : 1) }),key:index_5108c9bae48dce884e0ec2205fb6f897,ref:drag_ref_udaxihhe},jsx(RadixThemesText,{as:"p"},iid_rx_state_)))))
+    )
+});
+Foreach_comp_ed23c483e151ec024977977c059886ef_4bdb9ba2.displayName = "Foreach";
