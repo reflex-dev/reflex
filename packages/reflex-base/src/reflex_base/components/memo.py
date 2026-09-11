@@ -28,9 +28,14 @@ from typing import (
 from reflex_components_core.base.fragment import Fragment
 
 from reflex_base import constants
-from reflex_base.components.component import Component
+from reflex_base.components.component import (
+    BaseComponent,
+    Component,
+    _field_values_equal,
+)
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
+    _var_data_key,
     get_memoization_strategy,
 )
 from reflex_base.constants.compiler import (
@@ -43,7 +48,7 @@ from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console, format, memo_paths
 from reflex_base.utils.deterministic_hash import deterministic_hash
-from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
@@ -1835,6 +1840,70 @@ def _create_component_wrapper(
     return _MemoComponentWrapper(definition)
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class _MemoBodyAnalysis:
+    """Artifacts of a memo body, reusable until its compilation caches are cleared."""
+
+    component_type: type[Component]
+    rendered: dict
+    style: Any
+    style_data_key: tuple | None
+    imports: ParsedImportDict
+    internal_hooks: dict[str, VarData | None]
+    hook: str | None
+    added_hooks: dict[str, VarData | None]
+    custom_code: str | None
+    added_custom_code: tuple[list[str], ...]
+    dynamic_import: str | None
+    app_wraps: dict[tuple[int, str], Component]
+
+    def can_reuse(self, styled: Component) -> bool:
+        """Check whether root styling and copying preserved the analyzed inputs.
+
+        Args:
+            styled: Its copy after applying the current app's root style.
+
+        Returns:
+            Whether emission can use the recorded render and artifacts.
+        """
+        return (
+            type(styled) is self.component_type
+            and type(styled).__copy__ is BaseComponent.__copy__
+            and _var_data_key(styled.style._var_data) == self.style_data_key
+            and _field_values_equal(styled.style, self.style)
+        )
+
+
+def _analyze_memo_body(
+    component: Component, rendered: dict, artifacts: tuple[Any, ...]
+) -> _MemoBodyAnalysis:
+    """Retain the already-collected passthrough artifacts for module emission.
+
+    Args:
+        component: The body whose children have been replaced by a hole.
+        rendered: The body's rendered JSX representation.
+        artifacts: The existing content-hash inputs from ``_component_artifacts``.
+
+    Returns:
+        Analysis shared by content hashing and module emission.
+    """
+    _, imports, internal, hook, added, custom, *remaining = artifacts
+    return _MemoBodyAnalysis(
+        component_type=type(component),
+        rendered=rendered,
+        style=copy(component.style),
+        style_data_key=_var_data_key(component.style._var_data),
+        imports=imports,
+        internal_hooks=internal,
+        hook=hook,
+        added_hooks=added,
+        custom_code=custom,
+        added_custom_code=tuple(remaining[:-2]),
+        dynamic_import=remaining[-2],
+        app_wraps=remaining[-1],
+    )
+
+
 def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[Any]:
     """Yield everything besides the render that identifies a memo body.
 
@@ -1893,9 +1962,18 @@ def component_hash(component: Component, *, recursive: bool) -> str:
     Returns:
         The hex digest content hash.
     """
-    return deterministic_hash(
-        component.render(), *_component_artifacts(component, recursive=recursive)
-    )
+    if recursive or not component.children:
+        return deterministic_hash(
+            component.render(), *_component_artifacts(component, recursive=recursive)
+        )
+    rendered = component.render()
+    artifacts = tuple(_component_artifacts(component, recursive=False))
+    digest = deterministic_hash(rendered, *artifacts)
+    analyses = RegistrationContext.ensure_context()._memo_body_analyses
+    if digest not in analyses:
+        analyses[digest] = _analyze_memo_body(component, rendered, artifacts)
+    vars(component)["_memo_analysis_key"] = digest
+    return digest
 
 
 def memo_tag(component: Component) -> str:
@@ -1918,6 +1996,20 @@ def memo_tag(component: Component) -> str:
         f"{type(component).__qualname__}_{component.tag or 'Comp'}_"
         f"{component_hash(component, recursive=recursive)}"
     ).capitalize()
+
+
+_PASSTHROUGH_PARAMS = (
+    MemoParam(
+        name="children",
+        kind=MemoParamKind.CHILDREN,
+        annotation=Var[Component],
+        parameter_kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        js_prop_name="children",
+        placeholder_name="children",
+        kind_data=None,
+        default=inspect.Parameter.empty,
+    ),
+)
 
 
 def create_passthrough_component_memo(
@@ -1992,36 +2084,30 @@ def create_passthrough_component_memo(
         object.__setattr__(new_component, "_get_all_refs", component._get_all_refs)
         return new_component
 
-    # Evaluate once to compute the tag from the rendered memo body shape.
-    # ``_create_component_definition`` evaluates again internally; that second
-    # pass appends another, identical hole to ``captured_hole_child``, and the
-    # ``captured_hole_child[0]`` read below picks up the first.
-    params = _analyze_params(passthrough, for_component=True)
-    preview = _normalize_component_return(_evaluate_memo_function(passthrough, params))
-    if preview is None:
-        msg = (
-            "`create_passthrough_component_memo` requires a component that "
-            "normalizes to `rx.Component`."
-        )
-        raise TypeError(msg)
+    # The compiler owns this fixed signature; no user annotations need resolving.
+    params = _PASSTHROUGH_PARAMS
+    rest_target_fields: set[str] = set()
+    preview = _evaluate_component_body(passthrough, params, rest_target_fields)
     tag = memo_tag(preview)
 
     passthrough.__name__ = format.to_snake_case(tag)
     passthrough.__qualname__ = passthrough.__name__
     passthrough.__module__ = __name__
 
-    definition = _create_component_definition(passthrough, Component, source_module)
     # ``export_name`` is the content-hashed tag, which reads as noise in the
     # React DevTools tree. Name the memo after the Python class it wraps.
-    replacements: dict[str, Any] = {
-        "auto_memo_wrapper": True,
-        "display_name": type(component).__qualname__,
-    }
-    if definition.export_name != tag:
-        replacements["export_name"] = tag
-    if captured_hole_child:
-        replacements["passthrough_hole_child"] = captured_hole_child[0]
-    definition = dataclasses.replace(definition, **replacements)
+    definition = MemoComponentDefinition(
+        fn=passthrough,
+        python_name=passthrough.__name__,
+        params=params,
+        source_module=source_module,
+        export_name=tag,
+        _component=_LazyBody.ready(preview),
+        _rest_target_fields=rest_target_fields,
+        auto_memo_wrapper=True,
+        display_name=type(component).__qualname__,
+        passthrough_hole_child=captured_hole_child[0] if captured_hole_child else None,
+    )
 
     return _create_component_wrapper(definition), definition
 

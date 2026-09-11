@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from reflex.app import App
     from reflex.state import BaseState
+    from reflex_base.components.memo import _MemoBodyAnalysis
     from reflex_base.config import Config
     from reflex_base.event import EventHandler
     from reflex_base.vars.base import Var
@@ -72,6 +73,9 @@ class RegistrationContext(BaseContext):
     _app: App | None = dataclasses.field(default=None, repr=False)
     _memoized_event_triggers: dict[tuple[str, int], tuple[Any, Var]] = (
         dataclasses.field(default_factory=dict, repr=False)
+    )
+    _memo_body_analyses: dict[str, _MemoBodyAnalysis] = dataclasses.field(
+        default_factory=dict, repr=False
     )
 
     @property
