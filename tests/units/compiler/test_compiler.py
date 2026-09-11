@@ -441,6 +441,66 @@ def test_compile_app_root_omits_radix_window_library_by_default():
     assert "@radix-ui/themes" not in code
 
 
+def test_compile_preserves_app_bundle_registrations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Keep module-level registrations available to pages and the emitted bundle.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext() as context:
+
+        class FrontendLibraryPlugin(rx.plugins.Plugin):
+            """Contribute a library only while the plugin is configured."""
+
+            def get_frontend_dependencies(self, **context) -> tuple[str, ...]:
+                """Return the library contributed by this plugin.
+
+                Returns:
+                    The frontend dependency to bundle.
+                """
+                return ("compile-only-library",)
+
+        config = rx.Config(app_name="bundle_test", plugins=[FrontendLibraryPlugin()])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        bundle_library("d3-format@3.1.0")
+        app = rx.App()
+        seen = []
+        use_radix = True
+
+        def index():
+            """Record the registrations visible during page evaluation.
+
+            Returns:
+                A component that optionally enables Radix for this compile.
+            """
+            seen.append(tuple(RegistrationContext.get().bundled_libraries))
+            return rx.text("hello") if use_radix else rx.el.div("hello")
+
+        app.add_page(index)
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+        assert seen
+        assert all("d3-format" in libraries for libraries in seen)
+        assert "d3-format" in context.bundled_libraries
+        _, code = compiler.compile_app_root(rx.el.div())
+        assert 'import * as d3_format from "d3-format";' in code
+        assert '"d3-format": d3_format' in code
+        assert "compile-only-library" in context.bundled_libraries
+        assert "@radix-ui/themes" in context.bundled_libraries
+
+        config.plugins.clear()
+        use_radix = False
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+        assert all("d3-format" in libraries for libraries in seen)
+        assert "d3-format" in context.bundled_libraries
+        assert "compile-only-library" not in context.bundled_libraries
+        assert "@radix-ui/themes" not in context.bundled_libraries
+
+
 def test_compile_app_root_omits_hydrate_fallback_by_default():
     """Apps without a hydrate_fallback should not export a HydrateFallback."""
     reset_bundled_libraries()

@@ -31,6 +31,31 @@ def test_default_bundled_libraries_shim():
     assert _default_bundled_libraries() == dynamic.DEFAULT_BUNDLED_LIBRARIES
 
 
+def test_bundle_registrations_survive_fork_and_respect_explicit_reset():
+    """Forked contexts retain app bundles, and resetting one clears them only there."""
+    with RegistrationContext() as original:
+        dynamic.bundle_library("app-library@1.0.0")
+        with original.fork() as forked:
+            dynamic._reset_bundled_libraries_for_compile()
+            assert "app-library" in forked.bundled_libraries
+            dynamic.reset_bundled_libraries()
+            dynamic._reset_bundled_libraries_for_compile()
+            assert forked.bundled_libraries == _default_bundled_libraries()
+
+        dynamic._reset_bundled_libraries_for_compile()
+        assert "app-library" in original.bundled_libraries
+
+
+def test_repeated_app_bundle_registrations_do_not_accumulate():
+    """Registration from reevaluated page functions does not grow the bundle registry."""
+    with RegistrationContext() as context:
+        for _ in range(3):
+            dynamic._reset_bundled_libraries_for_compile()
+            dynamic.bundle_library("app-library@1.0.0")
+            dynamic.bundle_library("app-library")
+            assert context.bundled_libraries.count("app-library") == 1
+
+
 def test_bundled_libraries_shim_warns(mocker):
     """Reading a relocated global emits a deprecation warning."""
     deprecate = mocker.patch("reflex_base.utils.console.deprecate")

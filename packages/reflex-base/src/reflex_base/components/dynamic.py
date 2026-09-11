@@ -71,12 +71,23 @@ def get_cdn_url(lib: str) -> str:
 
 def reset_bundled_libraries() -> None:
     """Reset the bundled library registry to its default values."""
-    bundled = RegistrationContext.ensure_context().bundled_libraries
-    bundled[:] = _default_bundled_libraries()
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = _default_bundled_libraries()
+    context._explicit_bundled_libraries.clear()
 
 
-def bundle_library(component: Union["Component", str]):
-    """Bundle a library with the component.
+def _reset_bundled_libraries_for_compile() -> None:
+    """Clear compiler-derived libraries while retaining app registrations."""
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = _default_bundled_libraries()
+    context.bundled_libraries.extend(context._explicit_bundled_libraries)
+
+
+def bundle_library(component: Union["Component", str]) -> None:
+    """Register a library for dynamic components.
+
+    Module-level registrations survive compilation. Registrations made while
+    evaluating pages or visiting components belong to the current compile.
 
     Args:
         component: The component to bundle the library with.
@@ -84,14 +95,35 @@ def bundle_library(component: Union["Component", str]):
     Raises:
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
-    bundled = RegistrationContext.ensure_context().bundled_libraries
-    if isinstance(component, str):
-        bundled.append(format_library_name(component))
-        return
-    if component.library is None:
+    # Compiler contexts import components, which also use this module.
+    from reflex_base.plugins.compiler import CompileContext
+
+    _bundle_library(component, explicit=CompileContext.__context_var__.get() is None)
+
+
+def _bundle_library(
+    component: Union["Component", str], *, explicit: bool = False
+) -> None:
+    """Register a library, optionally retaining it across compiler resets.
+
+    Args:
+        component: The component or library to bundle.
+        explicit: Whether this registration belongs to the app rather than a compile.
+
+    Raises:
+        DynamicComponentMissingLibraryError: If the component has no library.
+    """
+    library = component if isinstance(component, str) else component.library
+    if library is None:
         msg = "Component must have a library to bundle."
         raise DynamicComponentMissingLibraryError(msg)
-    bundled.append(format_library_name(component.library))
+    library = format_library_name(library)
+    context = RegistrationContext.ensure_context()
+    if explicit:
+        if library in context._explicit_bundled_libraries:
+            return
+        context._explicit_bundled_libraries[library] = None
+    context.bundled_libraries.append(library)
 
 
 def load_dynamic_serializer():
