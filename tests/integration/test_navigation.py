@@ -8,7 +8,7 @@ from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness
 
-from .utils import SessionStorage, poll_for_navigation
+from .utils import SessionStorage, click_element, poll_for_navigation
 
 
 def NavigationApp():
@@ -69,26 +69,19 @@ def test_navigation_app(navigation_app: AppHarness):
     ss = SessionStorage(driver)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
 
-    internal_link = driver.find_element(By.ID, "internal")
-
     with poll_for_navigation(driver):
-        internal_link.click()
+        click_element(driver, By.ID, "internal")
     assert urlsplit(driver.current_url).path == "/internal"
     with poll_for_navigation(driver):
         driver.back()
 
-    external_link = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "external")
-    )
-    external2_link = driver.find_element(By.ID, "external2")
-
-    external_link.click()
+    click_element(driver, By.ID, "external")
     # Expect a new tab to open
     AppHarness.expect(lambda: len(driver.window_handles) == 2)
 
     # Switch back to the main tab
     driver.switch_to.window(driver.window_handles[0])
 
-    external2_link.click()
+    click_element(driver, By.ID, "external2")
     # Expect another new tab to open
     AppHarness.expect(lambda: len(driver.window_handles) == 3)
