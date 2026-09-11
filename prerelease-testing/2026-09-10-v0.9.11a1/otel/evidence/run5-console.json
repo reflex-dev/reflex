@@ -1,0 +1,46 @@
+[
+ {
+  "type": "log",
+  "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+ },
+ {
+  "type": "debug",
+  "text": "[vite] connecting..."
+ },
+ {
+  "type": "debug",
+  "text": "[vite] connected."
+ },
+ {
+  "type": "info",
+  "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+ },
+ {
+  "type": "error",
+  "text": "Access to fetch at 'http://localhost:9591/v1/traces' from origin 'http://localhost:5182' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+ },
+ {
+  "type": "error",
+  "text": "Failed to load resource: net::ERR_FAILED"
+ },
+ {
+  "type": "error",
+  "text": "Access to fetch at 'http://localhost:9591/v1/traces' from origin 'http://localhost:5182' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+ },
+ {
+  "type": "error",
+  "text": "Failed to load resource: net::ERR_FAILED"
+ },
+ {
+  "type": "error",
+  "text": "Access to fetch at 'http://localhost:9591/v1/traces' from origin 'http://localhost:5182' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+ },
+ {
+  "type": "error",
+  "text": "Failed to load resource: net::ERR_FAILED"
+ },
+ {
+  "type": "log",
+  "text": "Disconnect websocket on pagehide"
+ }
+]

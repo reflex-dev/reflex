@@ -1,0 +1,41 @@
+opentelemetry.instrumentation.asgi | http.server.active_requests | unit={request} | attrs={"http.request.method": "GET", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.active_requests | unit={request} | attrs={"http.request.method": "OPTIONS", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.active_requests | unit={request} | attrs={"http.request.method": "POST", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.request.body.size | unit=By | attrs={"http.request.method": "POST", "http.response.status_code": 200, "network.protocol.version": "1.1", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.request.duration | unit=s | attrs={"http.request.method": "GET", "http.response.status_code": 200, "network.protocol.version": "1.1", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.request.duration | unit=s | attrs={"http.request.method": "GET", "http.response.status_code": 405, "network.protocol.version": "1.1", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.request.duration | unit=s | attrs={"http.request.method": "OPTIONS", "http.response.status_code": 200, "network.protocol.version": "1.1", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.request.duration | unit=s | attrs={"http.request.method": "POST", "http.response.status_code": 200, "network.protocol.version": "1.1", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.response.body.size | unit=By | attrs={"http.request.method": "GET", "http.response.status_code": 200, "network.protocol.version": "1.1", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.response.body.size | unit=By | attrs={"http.request.method": "GET", "http.response.status_code": 405, "network.protocol.version": "1.1", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.response.body.size | unit=By | attrs={"http.request.method": "OPTIONS", "http.response.status_code": 200, "network.protocol.version": "1.1", "url.scheme": "http"}
+opentelemetry.instrumentation.asgi | http.server.response.body.size | unit=By | attrs={"http.request.method": "POST", "http.response.status_code": 200, "network.protocol.version": "1.1", "url.scheme": "http"}
+reflex | reflex.event.duration | unit=s | attrs={"error.type": "ValueError", "reflex.event.background": false, "reflex.event.name": "reflex___state____state.otelapp___otelapp___s.boom"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.hydrate"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.otelapp___otelapp____other.deep"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.otelapp___otelapp___s.chain"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.otelapp___otelapp___s.handle_upload"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.otelapp___otelapp___s.on_load_second"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.otelapp___otelapp___s.user_span"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": false, "reflex.event.name": "reflex___state____state.set_is_hydrated"}
+reflex | reflex.event.duration | unit=s | attrs={"reflex.event.background": true, "reflex.event.name": "reflex___state____state.otelapp___otelapp___s.bg"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.hydrate"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.deep"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.bg"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.boom"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.chain"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.handle_upload"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.on_load_second"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.user_span"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal"}
+reflex | reflex.state.acquire.duration | unit=s | attrs={"reflex.event.name": "reflex___state____state.set_is_hydrated"}
+reflex | reflex.websocket.connections | unit={connection} | attrs={}
+reflex | reflex.websocket.message.size | unit=By | attrs={"network.io.direction": "receive"}
+reflex | reflex.websocket.message.size | unit=By | attrs={"network.io.direction": "transmit"}
+
+39 distinct (scope, metric, attribute-set) combinations

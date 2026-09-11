@@ -1,0 +1,24 @@
+Adding reflex-otel to a project still on the previous stable (reflex 0.9.10.post2)
+
+  $ uv pip install --python <venv> 'reflex==0.9.10.post2'
+  $ uv pip install --python <venv> --prerelease=allow 'reflex-otel==0.1.0a1'
+   - reflex-base==0.9.10.post2
+   + reflex-base==0.9.11a1
+   + reflex-otel==0.1.0a1                      (no error, no warning)
+
+  $ <venv>/bin/python -c "import importlib.metadata as m; print(m.version('reflex'), m.version('reflex-base'))"
+  0.9.10.post2 0.9.11a1
+
+  $ uv pip check
+  Found 1 incompatibility
+  The package `reflex` requires `reflex-base==0.9.10.post2`, but `0.9.11a1` is installed
+
+  reflex 0.9.10.post2's app.py and compiler/compiler.py contain 0 occurrences of "otel",
+  so in this mixed environment the instrumentor would enable the reflex-base trace points
+  (event spans, state-acquire metric) but the ASGI middleware would never be installed and
+  no reflex.compile / websocket-size / websocket-connection telemetry would ever be produced.
+
+  Pinning reflex explicitly makes the resolver refuse, which is the correct outcome:
+  $ uv pip install 'reflex==0.9.10.post2' 'reflex-otel==0.1.0a1'
+  ... reflex==0.9.10.post2 depends on reflex-base==0.9.10.post2, we can conclude that
+      reflex==0.9.10.post2 and all versions of reflex-otel are incompatible.

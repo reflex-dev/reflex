@@ -1,0 +1,22 @@
+- reflex.compile [INTERNAL] trace=332c97b4 span=2d6df8 parent=ROOT pid=spans-22072.jsonl
+  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "backend_startup"}
+- HTTP /_event/ [SERVER] trace=50fba2cc span=6f151e parent=ROOT pid=spans-22072.jsonl
+  attrs {"url.scheme": "ws", "server.address": "0.0.0.0:9588", "server.port": 9588, "network.protocol.version": "1.1", "url.path": "/_event/", "user_agent.original": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36", "client.address": "127.0.0.1", "client.port": 59948, "url.query": "token=REDACTED&EIO=4&transport=websocket", "http.response.status_code": 200}
+- reflex___state____state.hydrate [CONSUMER] trace=158a3972 span=f3e173 parent=ROOT pid=spans-22072.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.hydrate", "reflex.event.background": false, "reflex.event.txid": "18d7690b8e05", "session.id": "0583ea67a9cf4b8e", "code.function.name": "reflex.state.State.hydrate"}
+- reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [CONSUMER] trace=67859f4e span=018335 parent=ROOT pid=spans-22072.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "reflex.event.background": false, "reflex.event.txid": "cf719804ea45", "session.id": "0583ea67a9cf4b8e", "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"}
+- reflex___state____state.reflex___istate___dynamic____counter_n1.bump [CONSUMER] trace=7be7b0dc span=6220ef parent=ROOT pid=spans-22072.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.reflex___istate___dynamic____counter_n1.bump", "reflex.event.background": false, "reflex.event.txid": "6dbae01278f3", "session.id": "0583ea67a9cf4b8e", "code.function.name": "otelapp.otelapp.Counter_n1.bump"}
+- reflex___state____state.reflex___istate___dynamic____counter_n1.bump [CONSUMER] trace=67adf6b5 span=be06ea parent=ROOT pid=spans-22072.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.reflex___istate___dynamic____counter_n1.bump", "reflex.event.background": false, "reflex.event.txid": "eb998cd8c25a", "session.id": "0583ea67a9cf4b8e", "code.function.name": "otelapp.otelapp.Counter_n1.bump"}
+- reflex___state____state.reflex___istate___dynamic____counter_n2.bump [CONSUMER] trace=523ee324 span=c73221 parent=ROOT pid=spans-22072.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.reflex___istate___dynamic____counter_n2.bump", "reflex.event.background": false, "reflex.event.txid": "f3e2ed8b8d20", "session.id": "0583ea67a9cf4b8e", "code.function.name": "otelapp.otelapp.Counter_n2.bump"}
+- reflex___state____state.otelapp___otelapp____combo_state.add [CONSUMER] trace=938b6112 span=30f33c parent=ROOT pid=spans-22072.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____combo_state.add", "reflex.event.background": false, "reflex.event.txid": "22b4c90353c2", "session.id": "0583ea67a9cf4b8e", "code.function.name": "otelapp.otelapp.ComboState.add"}
+- reflex___state____state.otelapp___otelapp____combo_state.toggle [CONSUMER] trace=99209b2a span=7c90c2 parent=ROOT pid=spans-22072.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____combo_state.toggle", "reflex.event.background": false, "reflex.event.txid": "916dbf097cc4", "session.id": "0583ea67a9cf4b8e", "code.function.name": "otelapp.otelapp.ComboState.toggle"}
+- GET /otel/flush [SERVER] trace=30b65d09 span=d72874 parent=ROOT pid=spans-22072.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9588", "server.port": 9588, "network.protocol.version": "1.1", "url.path": "/otel/flush", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": 49218, "http.response.status_code": 200}
+
+TOTAL 10 spans, 10 roots

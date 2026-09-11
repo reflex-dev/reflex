@@ -1,0 +1,35 @@
+reflex.compile span tree is lost for the initial compile of `reflex run` (dev)
+
+A) dev `reflex run`, programmatic providers, BatchSpanProcessor(schedule_delay_millis=500)
+   -> dumps/run1: the compile worker (pid 16485) exported only two children, and their
+      parent span was never exported at all (dangling parent_id 0x90279b1930468e2b):
+
+      reflex.compile.pages       [INTERNAL] trace=74594770 span=b9906209 parent=30468e2b  (pid 16485)
+      reflex.compile.copy_assets [INTERNAL] trace=74594770 span=85d1fff9 parent=30468e2b  (pid 16485)
+
+   The backend worker's own compile (trigger=backend_startup) exported fine.
+
+B) dev `reflex run`, OTLP/HTTP exporter configured from OTEL_* (OTEL_BSP_SCHEDULE_DELAY=1000)
+   -> recv/run3, recv/run4, recv/run10: `grep -c initial traces.jsonl` == 0.
+      Only trigger=backend_startup / hot_reload compiles ever arrive. NOTHING from the
+      initial compile, not even orphans.
+
+C) `reflex export --frontend-only` (compile runs in the CLI process) -> full tree:
+      reflex.compile trigger=export
+        reflex.compile.pages / .copy_assets / .install_frontend_packages / .write
+
+D) `reflex run --env prod` -> full tree with trigger=initial (recv/run6). Only the dev path loses it.
+
+E) Hot reload in dev -> full tree with trigger=hot_reload (dumps/run1 spans-17844.jsonl).
+
+Mechanism: reflex/reflex.py::_compile_app() runs the initial compile inside
+`concurrent.futures.ProcessPoolExecutor(max_workers=1)` when granian is used, and a
+multiprocessing fork worker exits through os._exit(), so atexit never runs and the
+TracerProvider is never shut down:
+
+  $ python -c "
+  import atexit, concurrent.futures, os
+  def child(): atexit.register(lambda: print('ATEXIT RAN')); return os.getpid()
+  with concurrent.futures.ProcessPoolExecutor(max_workers=1) as ex: print(ex.submit(child).result())
+  "
+  19736                      <- 'ATEXIT RAN' is never printed

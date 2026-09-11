@@ -1,0 +1,2 @@
+33:[FRONTEND_EXC] Exception: OtelExportError: OtelPlugin: exporting browser spans to http://localhost:9591/v1/traces failed: Fetch request encountered a network error (TypeError: Failed to fetch). A collector on another origin must allow CORS requests from this page.
+38:[FRONTEND_EXC] Exception: ProbeError: probe manual error

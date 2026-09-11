@@ -1,0 +1,52 @@
+[
+ {
+  "ev": "open",
+  "url": "ws://localhost:5182/?token=Z1inS150C27d",
+  "t": 1789090254.9836667
+ },
+ {
+  "ev": "open",
+  "url": "ws://localhost:9582/_event/?token=d4c8d9f6-866a-469c-c8ee-07f65c30830a&EIO=4&transport=websocket",
+  "t": 1789090255.185881
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-e09f255ff4b1a61268cd7d53130c3e20-0cac8f11c0b5b85c-01\"}]",
+  "t": 1789090255.208797
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-53c76c11e059ff524a05a677dfbeba44-2779f3e1c41332e3-01\"}]",
+  "t": 1789090255.2088892
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-eb4be7541b86ba152e632a41ba495232-c87a8f6083332e28-01\"}]",
+  "t": 1789090258.3509405
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-b610a2f82981fb4123a3eb934aabd8ac-dcefd0a1d88cf137-01\"}]",
+  "t": 1789090258.6259046
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-b06ae7ba12170934a2266c16a231f43c-3f5949fb6edc7484-01\"}]",
+  "t": 1789090258.9099083
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.chain\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-3f9b5171f3d208769f204b3fe955d339-416232be97f5198c-01\"}]",
+  "t": 1789090259.1947343
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/second\",\"asPath\":\"/second\"},\"traceparent\":\"00-0cd2896ad01db81b741ca3d74b27dc69-54f0330a8e08fe8d-01\"}]",
+  "t": 1789090260.0694838
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-5de0d00f395e0f650723da31d166a8bc-ea7a2150b495d7be-01\"}]",
+  "t": 1789090261.6298103
+ }
+]

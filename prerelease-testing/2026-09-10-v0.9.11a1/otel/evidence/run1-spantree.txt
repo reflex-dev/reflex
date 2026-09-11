@@ -1,0 +1,66 @@
+- reflex.compile.pages [INTERNAL] trace=74594770 span=906209 parent=468e2b pid=spans-16485.jsonl
+- reflex.compile.copy_assets [INTERNAL] trace=74594770 span=d1fff9 parent=468e2b pid=spans-16485.jsonl
+- reflex.compile [INTERNAL] trace=afe396f9 span=d54dd2 parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "backend_startup"}
+- GET /otel/flush [SERVER] trace=ad86b4e7 span=a246aa parent=ROOT pid=spans-16520.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9580", "server.port": 9580, "network.protocol.version": "1.1", "url.path": "/otel/flush", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": 33314, "http.response.status_code": 200}
+- HTTP /_event/ [SERVER] trace=e1a3a2dc span=16930c parent=ROOT pid=spans-16520.jsonl
+  attrs {"url.scheme": "ws", "server.address": "0.0.0.0:9580", "server.port": 9580, "network.protocol.version": "1.1", "url.path": "/_event/", "user_agent.original": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36", "client.address": "127.0.0.1", "client.port": 53304, "url.query": "token=REDACTED&EIO=4&transport=websocket", "http.response.status_code": 200}
+- reflex___state____state.hydrate [CONSUMER] trace=f40c3cbc span=485173 parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.hydrate", "reflex.event.background": false, "reflex.event.txid": "fb5b9571e9e3", "session.id": "a9bb50b11ce05dc9", "code.function.name": "reflex.state.State.hydrate"}
+- reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [CONSUMER] trace=bf930f8f span=28a28b parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "reflex.event.background": false, "reflex.event.txid": "f74005cd3fb0", "session.id": "a9bb50b11ce05dc9", "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"}
+- reflex___state____state.otelapp___otelapp___s.inc [CONSUMER] trace=e31acc6a span=ae302f parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "57f066cf6dcb", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.S.inc"}
+- reflex___state____state.otelapp___otelapp___s.inc [CONSUMER] trace=be468484 span=4fb4c0 parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "3b951e1a8a1a", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.S.inc"}
+- reflex___state____state.otelapp___otelapp___s.inc [CONSUMER] trace=f3e91210 span=9e3535 parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "ebd4718916c7", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.S.inc"}
+- reflex___state____state.otelapp___otelapp___s.chain [CONSUMER] trace=0f0782a7 span=97e5c4 parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.chain", "reflex.event.background": false, "reflex.event.txid": "ebe3d7d41538", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.S.chain"}
+  - reflex___state____state.otelapp___otelapp____other.h [INTERNAL] trace=0f0782a7 span=9a59a6 parent=97e5c4 pid=spans-16520.jsonl
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "f995a943e5c4", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "ebe3d7d41538"}
+  - reflex___state____state.otelapp___otelapp____other.deep [INTERNAL] trace=0f0782a7 span=1a3155 parent=97e5c4 pid=spans-16520.jsonl
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.deep", "reflex.event.background": false, "reflex.event.txid": "e181f5d080b5", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.Other.deep", "reflex.event.parent_txid": "ebe3d7d41538"}
+    - reflex___state____state.otelapp___otelapp____other.h [INTERNAL] trace=0f0782a7 span=4e6169 parent=1a3155 pid=spans-16520.jsonl
+      attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "5bdb2f569b44", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "e181f5d080b5"}
+- reflex___state____state.otelapp___otelapp___s.user_span [CONSUMER] trace=7cf56250 span=547c16 parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.user_span", "reflex.event.background": false, "reflex.event.txid": "08887ec945a5", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.S.user_span"}
+  - reflex___state____state.otelapp___otelapp____other.h [INTERNAL] trace=7cf56250 span=02fdfa parent=547c16 pid=spans-16520.jsonl
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "5fc5aed9638c", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "08887ec945a5"}
+- reflex___state____state.otelapp___otelapp___s.bg [CONSUMER] trace=b278f543 span=be85d8 parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.bg", "reflex.event.background": true, "reflex.event.txid": "aeb2e8623f78", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.S.bg"}
+- reflex___state____state.otelapp___otelapp___s.boom [CONSUMER] trace=148196a4 span=a87dfa parent=ROOT pid=spans-16520.jsonl EVENTS=exception STATUS=ERROR:ValueError: boom from handler
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.boom", "reflex.event.background": false, "reflex.event.txid": "5a73a88ad87d", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.S.boom"}
+- OPTIONS /_upload [SERVER] trace=5eb96b8e span=ef4997 parent=ROOT pid=spans-16520.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9580", "server.port": 9580, "network.protocol.version": "1.1", "url.path": "/_upload", "http.request.method": "OPTIONS", "user_agent.original": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36", "client.address": "127.0.0.1", "client.port": 57262, "http.response.status_code": 200}
+- POST /_upload [SERVER] trace=48360096 span=dbeb78 parent=ROOT pid=spans-16520.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9580", "server.port": 9580, "network.protocol.version": "1.1", "url.path": "/_upload", "http.request.method": "POST", "user_agent.original": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36", "client.address": "127.0.0.1", "client.port": 57262, "http.response.status_code": 200}
+  - reflex___state____state.otelapp___otelapp___s.handle_upload [INTERNAL] trace=48360096 span=e26995 parent=dbeb78 pid=spans-16520.jsonl
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.handle_upload", "reflex.event.background": false, "reflex.event.txid": "5da3e82d51a6", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.S.handle_upload"}
+- reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [CONSUMER] trace=eb266739 span=75df7f parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "reflex.event.background": false, "reflex.event.txid": "0e96c220fa30", "session.id": "a9bb50b11ce05dc9", "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"}
+  - reflex___state____state.otelapp___otelapp___s.on_load_second [INTERNAL] trace=eb266739 span=4ea032 parent=75df7f pid=spans-16520.jsonl
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.on_load_second", "reflex.event.background": false, "reflex.event.txid": "312e42acf25e", "session.id": "a9bb50b11ce05dc9", "code.function.name": "otelapp.otelapp.S.on_load_second", "reflex.event.parent_txid": "0e96c220fa30"}
+  - reflex___state____state.set_is_hydrated [INTERNAL] trace=eb266739 span=631afc parent=75df7f pid=spans-16520.jsonl
+    attrs {"reflex.event.name": "reflex___state____state.set_is_hydrated", "reflex.event.background": false, "reflex.event.txid": "cc1627a03a9e", "session.id": "a9bb50b11ce05dc9", "code.function.name": "reflex.state.State.set_is_hydrated", "reflex.event.parent_txid": "0e96c220fa30"}
+- reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [CONSUMER] trace=f905da26 span=9f5fb9 parent=ROOT pid=spans-16520.jsonl
+  attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "reflex.event.background": false, "reflex.event.txid": "33c74e377fb2", "session.id": "a9bb50b11ce05dc9", "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"}
+- GET /otel/flush [SERVER] trace=503b8c1e span=38fead parent=ROOT pid=spans-16520.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9580", "server.port": 9580, "network.protocol.version": "1.1", "url.path": "/otel/flush", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": 35264, "http.response.status_code": 200}
+- GET /otel/flush [SERVER] trace=fe190907 span=3747a5 parent=ROOT pid=spans-16520.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9580", "server.port": 9580, "network.protocol.version": "1.1", "url.path": "/otel/flush", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": 42766, "http.response.status_code": 200}
+- GET /_upload [SERVER] trace=500f1ded span=67bd63 parent=ROOT pid=spans-16520.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9580", "server.port": 9580, "network.protocol.version": "1.1", "url.path": "/_upload", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": 58292, "url.query": "token=REDACTED", "http.response.status_code": 405}
+- GET /otel/flush [SERVER] trace=d20d761c span=3973e9 parent=ROOT pid=spans-16520.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9580", "server.port": 9580, "network.protocol.version": "1.1", "url.path": "/otel/flush", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": 58304, "http.response.status_code": 200}
+- reflex.compile [INTERNAL] trace=c3c3251a span=bb8bfc parent=ROOT pid=spans-17844.jsonl
+  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "hot_reload"}
+  - reflex.compile.pages [INTERNAL] trace=c3c3251a span=755c36 parent=bb8bfc pid=spans-17844.jsonl
+  - reflex.compile.copy_assets [INTERNAL] trace=c3c3251a span=524d35 parent=bb8bfc pid=spans-17844.jsonl
+  - reflex.compile.install_frontend_packages [INTERNAL] trace=c3c3251a span=9f41c3 parent=bb8bfc pid=spans-17844.jsonl
+  - reflex.compile.write [INTERNAL] trace=c3c3251a span=e23950 parent=bb8bfc pid=spans-17844.jsonl
+- GET /otel/flush [SERVER] trace=9421d46b span=285844 parent=ROOT pid=spans-17844.jsonl
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9580", "server.port": 9580, "network.protocol.version": "1.1", "url.path": "/otel/flush", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": 39872, "http.response.status_code": 200}
+
+TOTAL 35 spans, 24 roots

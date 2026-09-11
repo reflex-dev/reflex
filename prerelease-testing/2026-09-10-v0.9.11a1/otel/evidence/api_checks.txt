@@ -1,0 +1,34 @@
+============================================================
+second_instrument_noop
+   {"enabled": true, "same_tracer": true, "is_instrumented": true}
+============================================================
+uninstrument_then_instrument
+   {"after_instrument": [true, true], "after_uninstrument": [false, false, "<reflex_base.otel._NoOpInstrument object at 0x7f35719acb40>"], "after_reinstrument": [true, true]}
+============================================================
+otel_sdk_disabled
+   {"enabled": false, "asgi": "None"}
+============================================================
+excluded_urls_empty_string
+   {"excluded": "<opentelemetry.util.http.ExcludeList object at 0x7fc741d3fad0>"}
+============================================================
+excluded_urls_default
+   {"excluded": "<opentelemetry.util.http.ExcludeList object at 0x7ff53e5c6510>"}
+============================================================
+env_excluded_urls
+   {"excluded": "<opentelemetry.util.http.ExcludeList object at 0x7f3b4b796ed0>"}
+============================================================
+semconv_optin_default
+   {"OTEL_SEMCONV_STABILITY_OPT_IN": "http"}
+============================================================
+semconv_optin_respects_user
+   {"OTEL_SEMCONV_STABILITY_OPT_IN": "http/dup"}
+============================================================
+plugin_sample_rate_validation
+   {"-0.1": "ValueError: sample_rate must be between 0 and 1, got -0.1.", "0": "ok", "0.5": "ok", "1": "ok", "1.5": "ValueError: sample_rate must be between 0 and 1, got 1.5."}
+============================================================
+exporter_env_without_sdk_warns
+   {"enabled": true, "provider": "ProxyTracerProvider"}
+   stderr:          ^^^^^^^^^^^^^^^^^^^^^^^^^^ |   File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/opentelemetry/sdk/_configuration/__init__.py", line 145, in _import_config_components |     raise RuntimeError( | RuntimeError: Requested component 'otlp_proto_grpc' not found in entry point 'opentelemetry_traces_exporter'
+============================================================
+remote_context_hostile_input
+   {"bad_types": {"trace_id": "00000000000000000000000000000000", "remote": false, "baggage": {}}, "garbage": {"trace_id": "00000000000000000000000000000000", "remote": false, "baggage": {}}, "valid": {"trace_id": "4bf92f3577b34da6a3ce929d0e0e4736", "remote": true, "baggage": {}}, "baggage_only": {"trace_id": "00000000000000000000000000000000", "remote": false, "baggage": {}}}

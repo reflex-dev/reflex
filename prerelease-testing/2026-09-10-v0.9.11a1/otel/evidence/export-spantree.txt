@@ -1,0 +1,8 @@
+- reflex.compile [SPAN_KIND_INTERNAL] svc=otelapp-export scope=reflex trace=2cc41489 span=eb9bbc parent=ROOT
+  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "export"}
+  - reflex.compile.pages [SPAN_KIND_INTERNAL] svc=otelapp-export scope=reflex trace=2cc41489 span=9c6b14 parent=eb9bbc
+  - reflex.compile.copy_assets [SPAN_KIND_INTERNAL] svc=otelapp-export scope=reflex trace=2cc41489 span=d0e217 parent=eb9bbc
+  - reflex.compile.install_frontend_packages [SPAN_KIND_INTERNAL] svc=otelapp-export scope=reflex trace=2cc41489 span=363580 parent=eb9bbc
+  - reflex.compile.write [SPAN_KIND_INTERNAL] svc=otelapp-export scope=reflex trace=2cc41489 span=2070e1 parent=eb9bbc
+
+TOTAL 5 spans, 1 roots

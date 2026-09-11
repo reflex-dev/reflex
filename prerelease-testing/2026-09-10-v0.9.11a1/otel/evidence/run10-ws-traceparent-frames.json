@@ -1,0 +1,12 @@
+[
+ {
+  "ev": "open",
+  "url": "ws://localhost:5187/?token=FdBXnAWX2L9n",
+  "t": 1789091147.7858312
+ },
+ {
+  "ev": "open",
+  "url": "ws://localhost:9587/_event/?token=5e9c0e05-584a-4271-d75c-605a68e9d470&EIO=4&transport=websocket",
+  "t": 1789091147.9871485
+ }
+]

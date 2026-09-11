@@ -1,0 +1,156 @@
+- reflex.compile [SPAN_KIND_INTERNAL] svc=otelapp-be scope=reflex trace=6672f87d span=bda74d parent=ROOT
+  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "backend_startup"}
+- web_vital.TTFB [1] svc=otelapp-frontend scope=reflex trace=7f70b780 span=a9fcfe parent=ROOT
+  attrs {"web_vital.name": "TTFB", "web_vital.value": 21.800000000745058, "web_vital.rating": "good", "web_vital.id": "v6-1789090116051-1150410819502", "web_vital.navigation_type": "navigate"}
+- web_vital.FCP [1] svc=otelapp-frontend scope=reflex trace=021d68f7 span=7ae0f5 parent=ROOT
+  attrs {"web_vital.name": "FCP", "web_vital.value": 1764, "web_vital.rating": "good", "web_vital.id": "v6-1789090116050-8805644466587", "web_vital.navigation_type": "navigate"}
+- web_vital.LCP [1] svc=otelapp-frontend scope=reflex trace=b4bc6bcb span=4c2255 parent=ROOT
+  attrs {"web_vital.name": "LCP", "web_vital.value": 1764, "web_vital.rating": "good", "web_vital.id": "v6-1789090116051-7708559674753", "web_vital.navigation_type": "navigate"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=90b15fa4 span=196212 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "mount", "react.render.actual_duration_ms": 23.199999999254942, "react.render.base_duration_ms": 21.09999999962747}
+- HTTP /_event/ [SPAN_KIND_SERVER] svc=otelapp-be scope=opentelemetry.instrumentation.asgi trace=2979f3d8 span=f19e4a parent=ROOT
+  attrs {"url.scheme": "ws", "server.address": "0.0.0.0:9582", "server.port": "9582", "network.protocol.version": "1.1", "url.path": "/_event/", "user_agent.original": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36", "client.address": "127.0.0.1", "client.port": "53680", "url.query": "token=REDACTED&EIO=4&transport=websocket", "http.response.status_code": "200"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=f7a44502 span=795db6 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 2.199999997392297, "react.render.base_duration_ms": 13.699999993667006}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=f40ac04b span=3cbfad parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.09999999962747097, "react.render.base_duration_ms": 13.699999993667006}
+- socket.connect [1] svc=otelapp-frontend scope=reflex trace=6fbcad7e span=f4484e parent=ROOT
+  attrs {"reflex.socket.connect_count": 1}
+- reflex___state____state.hydrate [4] svc=otelapp-frontend scope=reflex trace=06af7a7b span=7be699 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.hydrate"}
+  - reflex___state____state.hydrate [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=06af7a7b span=4ca3bf parent=7be699
+    attrs {"reflex.event.name": "reflex___state____state.hydrate", "reflex.event.background": false, "reflex.event.txid": "638625c5b9b0", "session.id": "13213960afb8fc98", "code.function.name": "reflex.state.State.hydrate"}
+- reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [4] svc=otelapp-frontend scope=reflex trace=4eb1e44c span=878f32 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal"}
+  - reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=4eb1e44c span=acbee1 parent=878f32
+    attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "reflex.event.background": false, "reflex.event.txid": "d655da4487f8", "session.id": "13213960afb8fc98", "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=6af99643 span=613711 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.900000000372529, "react.render.base_duration_ms": 11.799999993294477}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=ec434196 span=4aedc8 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.09999999962747097, "react.render.base_duration_ms": 11.799999993294477}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=7bfb7cd2 span=848791 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.30000000074505806, "react.render.base_duration_ms": 11.399999992921948}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=15278597 span=b64487 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.2999999988824129, "react.render.base_duration_ms": 11.399999992921948}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=c929883c span=807c83 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 14.099999999627471, "react.render.base_duration_ms": 11.600000003352761}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=8f5e20c0 span=317a1f parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.19999999925494194, "react.render.base_duration_ms": 11.500000001862645}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=bbb2045e span=519c20 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0, "react.render.base_duration_ms": 11.500000001862645}
+- reflex___state____state.otelapp___otelapp___s.inc [4] svc=otelapp-frontend scope=reflex trace=3533de71 span=87c99c parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc"}
+  - reflex___state____state.otelapp___otelapp___s.inc [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=3533de71 span=13f00c parent=87c99c
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "465dd2e5ee32", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.S.inc"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=a36aa730 span=1ffe88 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.2000000011175871, "react.render.base_duration_ms": 11.50000000372529}
+- reflex___state____state.otelapp___otelapp___s.inc [4] svc=otelapp-frontend scope=reflex trace=33a9edad span=fb0feb parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc"}
+  - reflex___state____state.otelapp___otelapp___s.inc [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=33a9edad span=95e061 parent=fb0feb
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "4e81b1b95034", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.S.inc"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=121b0fb2 span=fe7e01 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.3999999985098839, "react.render.base_duration_ms": 11.600000001490116}
+- reflex___state____state.otelapp___otelapp___s.inc [4] svc=otelapp-frontend scope=reflex trace=37681da0 span=203ac1 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc"}
+  - reflex___state____state.otelapp___otelapp___s.inc [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=37681da0 span=9021e7 parent=203ac1
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "a476e742d05c", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.S.inc"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=6012a9bd span=fe2b11 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.3000000026077032, "react.render.base_duration_ms": 11.40000000409782}
+- reflex___state____state.otelapp___otelapp___s.chain [4] svc=otelapp-frontend scope=reflex trace=c67a36a4 span=40d012 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.chain"}
+  - reflex___state____state.otelapp___otelapp___s.chain [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=c67a36a4 span=61e602 parent=40d012
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.chain", "reflex.event.background": false, "reflex.event.txid": "8355c77c0be1", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.S.chain"}
+    - reflex___state____state.otelapp___otelapp____other.h [SPAN_KIND_INTERNAL] svc=otelapp-be scope=reflex trace=c67a36a4 span=03e054 parent=61e602
+      attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "332e412f454d", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "8355c77c0be1"}
+    - reflex___state____state.otelapp___otelapp____other.deep [SPAN_KIND_INTERNAL] svc=otelapp-be scope=reflex trace=c67a36a4 span=9497f3 parent=61e602
+      attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.deep", "reflex.event.background": false, "reflex.event.txid": "65dc3bb349ee", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.Other.deep", "reflex.event.parent_txid": "8355c77c0be1"}
+      - reflex___state____state.otelapp___otelapp____other.h [SPAN_KIND_INTERNAL] svc=otelapp-be scope=reflex trace=c67a36a4 span=e7000d parent=9497f3
+        attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "1c3e3de05198", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "65dc3bb349ee"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=9a7da77e span=53fe43 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.5, "react.render.base_duration_ms": 11.600000003352761}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=7dafe514 span=59aca1 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.40000000037252903, "react.render.base_duration_ms": 11.700000004842877}
+- reflex___state____state.otelapp___otelapp___s.user_span [4] svc=otelapp-frontend scope=reflex trace=3523ae07 span=eaa3f8 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.user_span"}
+  - reflex___state____state.otelapp___otelapp___s.user_span [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=3523ae07 span=c3d308 parent=eaa3f8
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.user_span", "reflex.event.background": false, "reflex.event.txid": "e5c72e7d218f", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.S.user_span"}
+    - user.work [SPAN_KIND_INTERNAL] svc=otelapp-be scope=my.app trace=3523ae07 span=480480 parent=c3d308
+      attrs {"user.attr": "hello"}
+    - reflex___state____state.otelapp___otelapp____other.h [SPAN_KIND_INTERNAL] svc=otelapp-be scope=reflex trace=3523ae07 span=d41057 parent=c3d308
+      attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "0163e5588427", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "e5c72e7d218f"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=253ee330 span=cc24f4 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.09999999962747097, "react.render.base_duration_ms": 11.400000002235174}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=afd006c3 span=8e5a50 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.2999999988824129, "react.render.base_duration_ms": 11.500000001862645}
+- reflex___state____state.otelapp___otelapp___s.bg [4] svc=otelapp-frontend scope=reflex trace=176cb83d span=4e630b parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.bg"}
+  - reflex___state____state.otelapp___otelapp___s.bg [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=176cb83d span=c5554e parent=4e630b
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.bg", "reflex.event.background": true, "reflex.event.txid": "f8868ffbc288", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.S.bg"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=70fc618e span=f03fcc parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.19999999925494194, "react.render.base_duration_ms": 11.400000002235174}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=d6d61671 span=7d32bb parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.30000000074505806, "react.render.base_duration_ms": 11.50000000372529}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=b387d0f2 span=faac5f parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.30000000074505806, "react.render.base_duration_ms": 11.50000000372529}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=b11cfe8a span=5f56d0 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.40000000037252903, "react.render.base_duration_ms": 11.600000003352761}
+- reflex___state____state.otelapp___otelapp___s.boom [4] svc=otelapp-frontend scope=reflex trace=96c63a42 span=542e0e parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.boom"}
+  - reflex___state____state.otelapp___otelapp___s.boom [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=96c63a42 span=810f00 parent=542e0e EVENTS=exception STATUS={'message': 'ValueError: boom from handler', 'code': 'STATUS_CODE_ERROR'}
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.boom", "reflex.event.background": false, "reflex.event.txid": "78dc55eee9cf", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.S.boom"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=01fd023a span=99f17a parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 1.199999999254942, "react.render.base_duration_ms": 11.000000001862645}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=bc4b5636 span=391e12 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.6999999992549419, "react.render.base_duration_ms": 10.400000002235174}
+- reflex___state____state.otelapp___otelapp___s.handle_upload [4] svc=otelapp-frontend scope=reflex trace=35bf864d span=29a88a parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.handle_upload"}
+  - POST /_upload [SPAN_KIND_SERVER] svc=otelapp-be scope=opentelemetry.instrumentation.asgi trace=35bf864d span=9db818 parent=29a88a
+    attrs {"url.scheme": "http", "server.address": "0.0.0.0:9582", "server.port": "9582", "network.protocol.version": "1.1", "url.path": "/_upload", "http.request.method": "POST", "user_agent.original": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36", "client.address": "127.0.0.1", "client.port": "47852", "http.response.status_code": "200"}
+    - reflex___state____state.otelapp___otelapp___s.handle_upload [SPAN_KIND_INTERNAL] svc=otelapp-be scope=reflex trace=35bf864d span=c5a5e0 parent=9db818
+      attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.handle_upload", "reflex.event.background": false, "reflex.event.txid": "1194fe68b07c", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.S.handle_upload"}
+- OPTIONS /_upload [SPAN_KIND_SERVER] svc=otelapp-be scope=opentelemetry.instrumentation.asgi trace=7e02513e span=3ccfac parent=ROOT
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9582", "server.port": "9582", "network.protocol.version": "1.1", "url.path": "/_upload", "http.request.method": "OPTIONS", "user_agent.original": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36", "client.address": "127.0.0.1", "client.port": "47852", "http.response.status_code": "200"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=119949f8 span=957b67 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.09999999962747097, "react.render.base_duration_ms": 10.200000001117587}
+- web_vital.INP [1] svc=otelapp-frontend scope=reflex trace=60f66f70 span=3b5b9a parent=ROOT
+  attrs {"web_vital.name": "INP", "web_vital.value": 40, "web_vital.rating": "good", "web_vital.id": "v6-1789090116051-7254702484350", "web_vital.navigation_type": "navigate"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=21afbbe2 span=e99da3 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 2.699999997392297, "react.render.base_duration_ms": 6.699999999254942}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=7437efc6 span=efee5c parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.6999999992549419, "react.render.base_duration_ms": 5.700000001117587}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=b21733d9 span=a8bcd5 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 2.5, "react.render.base_duration_ms": 3.400000000372529}
+- reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [4] svc=otelapp-frontend scope=reflex trace=a2393fb6 span=e94957 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal"}
+  - reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=a2393fb6 span=c3c9fb parent=e94957
+    attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "reflex.event.background": false, "reflex.event.txid": "7e32148f0e01", "session.id": "13213960afb8fc98", "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"}
+    - reflex___state____state.otelapp___otelapp___s.on_load_second [SPAN_KIND_INTERNAL] svc=otelapp-be scope=reflex trace=a2393fb6 span=309772 parent=c3c9fb
+      attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.on_load_second", "reflex.event.background": false, "reflex.event.txid": "8ee4e7c9787d", "session.id": "13213960afb8fc98", "code.function.name": "otelapp.otelapp.S.on_load_second", "reflex.event.parent_txid": "7e32148f0e01"}
+    - reflex___state____state.set_is_hydrated [SPAN_KIND_INTERNAL] svc=otelapp-be scope=reflex trace=a2393fb6 span=3f678b parent=c3c9fb
+      attrs {"reflex.event.name": "reflex___state____state.set_is_hydrated", "reflex.event.background": false, "reflex.event.txid": "1c5d8db1b262", "session.id": "13213960afb8fc98", "code.function.name": "reflex.state.State.set_is_hydrated", "reflex.event.parent_txid": "7e32148f0e01"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=08a6f065 span=343f44 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.09999999962747097, "react.render.base_duration_ms": 3.400000000372529}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=3fa0cbd3 span=5ff61f parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.09999999962747097, "react.render.base_duration_ms": 3.400000000372529}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=8fc1436c span=c3f55e parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.19999999925494194, "react.render.base_duration_ms": 3.400000000372529}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=27f589aa span=237f9d parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.09999999962747097, "react.render.base_duration_ms": 3.300000000745058}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=80de5b25 span=b3e33e parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.5999999977648258, "react.render.base_duration_ms": 3.199999999254942}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=d04843e7 span=92d5b8 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 4.299999998882413, "react.render.base_duration_ms": 4.600000001490116}
+- reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [4] svc=otelapp-frontend scope=reflex trace=fcc3f9fd span=febff8 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal"}
+  - reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [SPAN_KIND_CONSUMER] svc=otelapp-be scope=reflex trace=fcc3f9fd span=54abb5 parent=febff8
+    attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "reflex.event.background": false, "reflex.event.txid": "08d9ae171396", "session.id": "13213960afb8fc98", "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=09cb299c span=7223e6 parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.09999999962747097, "react.render.base_duration_ms": 4.700000001117587}
+- react.render [1] svc=otelapp-frontend scope=reflex trace=14b549cb span=3c5bee parent=ROOT
+  attrs {"react.profiler.id": "app", "react.render.phase": "update", "react.render.actual_duration_ms": 0.2000000011175871, "react.render.base_duration_ms": 4.700000001117587}
+- socket.disconnect [1] svc=otelapp-frontend scope=reflex trace=46b7a4f1 span=f2ce6c parent=ROOT
+  attrs {"reflex.socket.disconnect_reason": "io client disconnect"}
+- web_vital.CLS [1] svc=otelapp-frontend scope=reflex trace=33875f1b span=83e1ff parent=ROOT
+  attrs {"web_vital.name": "CLS", "web_vital.value": 0, "web_vital.rating": "good", "web_vital.id": "v6-1789090116257-3900772607578", "web_vital.navigation_type": "navigate"}
+
+TOTAL 77 spans, 57 roots

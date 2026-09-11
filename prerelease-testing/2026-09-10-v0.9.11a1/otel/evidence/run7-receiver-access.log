@@ -1,0 +1,27 @@
+receiver listening on 127.0.0.1:9590 cors=True out=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/otel/recv/run7
+POST /v1/traces ctype=application/x-protobuf len=384 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=3126 origin=None traceparent=None cors=True
+POST /v1/traces ctype=application/x-protobuf len=961 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=2693 origin=None traceparent=None cors=True
+POST /v1/traces ctype=application/x-protobuf len=567 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=6255 origin=None traceparent=None cors=True
+POST /v1/traces ctype=application/x-protobuf len=2433 origin=None traceparent=None cors=True
+POST /v1/traces ctype=application/x-protobuf len=1629 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=9611 origin=None traceparent=None cors=True
+POST /v1/traces ctype=application/x-protobuf len=1459 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=11239 origin=None traceparent=None cors=True
+POST /v1/traces ctype=application/x-protobuf len=659 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=11048 origin=None traceparent=None cors=True
+POST /v1/traces ctype=application/x-protobuf len=788 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True
+POST /v1/metrics ctype=application/x-protobuf len=10807 origin=None traceparent=None cors=True

@@ -1,0 +1,21 @@
+Adversarial client trace context test (scripts/ws_traceparent.py against run10, port 9587)
+Five events were pushed straight onto the socket.io connection with crafted fields.
+Backend spans read back from the OTLP receiver (recv/run10/traces.jsonl):
+
+  (trace_id, parent_span_id, span name, kind, session.id)
+  ('11111111111111111111111111111111', '2222222222222222', 'inc',   CONSUMER, '4f1ca9b7d828f242')   <- sampled_parent  joined the client trace
+  ('55555555555555555555555555555555', '6666666666666666', 'chain', CONSUMER, '4f1ca9b7d828f242')   <- hostile_baggage joined, baggage dropped
+  ('55555555555555555555555555555555', 'deb436e1af72eaeb', 'h',     INTERNAL, ...)
+  ('55555555555555555555555555555555', 'deb436e1af72eaeb', 'deep',  INTERNAL, ...)
+  ('55555555555555555555555555555555', 'd3e8e5264b3d8e86', 'h',     INTERNAL, ...)
+  ('2ac718edb284baaae58817d5a68ef1e3', 'ROOT', 'inc', CONSUMER, ...)   <- garbage traceparent -> new root trace
+  ('c9666b95891c4920369a25a72b766314', 'ROOT', 'inc', CONSUMER, ...)   <- non-string traceparent/tracestate -> new root trace
+
+  trace 33333333... (traceparent flags=00, i.e. client says "not sampled"): 0 spans recorded
+  "leakme" (planted baggage value) present in the export: False
+  client token 9e02c8b4-ac55-4064-a2b2-7bb89e0d6b04 present in the export: False
+
+All five events were processed normally by the app (count 1..5 observed in the deltas).
+Confirms: only string traceparent/tracestate are read, baggage is ignored, hostile input
+never raises, the client's sampled=0 decision is honoured by the parent-based sampler
+(documented behaviour; OTEL_TRACES_SAMPLER=always_on overrides it).

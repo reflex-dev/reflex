@@ -1,0 +1,13 @@
+======================================================================
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke
+JSON:{"reflex_file": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/smoke/lib/python3.11/site-packages/reflex/__init__.py", "otel_modules_after_import_reflex": [], "otel_modules_before": [], "enabled": false, "asgi_middleware": "None", "reflex_otel_installed": false, "context_api_bound": false, "tracer_bound": false, "span_returns": "None", "compile_span_returns": "None", "capture_context": "None"}
+======================================================================
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel
+JSON:{"reflex_file": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/otel/lib/python3.11/site-packages/reflex/__init__.py", "otel_modules_after_import_reflex": [], "otel_modules_before": [], "enabled": false, "asgi_middleware": "None", "reflex_otel_installed": true, "context_api_bound": false, "tracer_bound": false, "span_returns": "None", "compile_span_returns": "None", "capture_context": "None"}
+======================================================================
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/base0910
+
+STDERR Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+ModuleNotFoundError: No module named 'reflex_base.otel'
+

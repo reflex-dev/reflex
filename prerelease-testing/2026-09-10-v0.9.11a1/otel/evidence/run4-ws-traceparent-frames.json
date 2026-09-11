@@ -1,0 +1,67 @@
+[
+ {
+  "ev": "open",
+  "url": "ws://localhost:5182/?token=bf9WMqJGmziv",
+  "t": 1789090115.9594793
+ },
+ {
+  "ev": "open",
+  "url": "ws://localhost:9582/_event/?token=8aeb079c-eb8b-476e-f4e1-6f4471159179&EIO=4&transport=websocket",
+  "t": 1789090116.1625986
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.hydrate\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-2bbee850804db8191a5255bc06af7a7b-867f7a383c7be699-01\"}]",
+  "t": 1789090116.1776228
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-02169482fe6b224c2a4062eb4eb1e44c-e42f4f8a24878f32-01\"}]",
+  "t": 1789090116.1777227
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-791d167855f34ff3d1aa0b113533de71-9a1cd9638987c99c-01\"}]",
+  "t": 1789090119.3271728
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-2f0175d1edfac9ded4faf04d33a9edad-49cad8d64efb0feb-01\"}]",
+  "t": 1789090119.6181283
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.inc\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-4ff458dfc0ba5cafac97732837681da0-d89a2aab74203ac1-01\"}]",
+  "t": 1789090119.8994079
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.chain\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-092fe31cabff8d6e70a19b78c67a36a4-adfbd3e64d40d012-01\"}]",
+  "t": 1789090120.1823597
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.user_span\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-3b552a78c70f8293e5f8aca73523ae07-b5768f790feaa3f8-01\"}]",
+  "t": 1789090121.015959
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.bg\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-3b861ae8524a7013f0c6b797176cb83d-264dc2d0b24e630b-01\"}]",
+  "t": 1789090121.8479335
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.otelapp___otelapp___s.boom\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-f33d3717295d1cc356151ebc96c63a42-f631198e4d542e0e-01\"}]",
+  "t": 1789090123.381308
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/second\",\"asPath\":\"/second\"},\"traceparent\":\"00-2d310e0eca4a437026675503a2393fb6-01a7f5e14de94957-01\"}]",
+  "t": 1789090126.5960612
+ },
+ {
+  "ev": "sent",
+  "payload": "42/_event,[\"event\",{\"name\":\"reflex___state____state.reflex___state____on_load_internal_state.on_load_internal\",\"router_data\":{\"pathname\":\"/\",\"asPath\":\"/\"},\"traceparent\":\"00-bf0a11e8aaf108af4950024dfcc3f9fd-a258fa3cd9febff8-01\"}]",
+  "t": 1789090128.1875105
+ }
+]

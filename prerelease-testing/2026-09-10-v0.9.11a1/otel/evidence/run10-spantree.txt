@@ -1,0 +1,46 @@
+- reflex.compile [SPAN_KIND_INTERNAL] svc=otelapp-autoinstr scope=reflex trace=658c2801 span=36c8c5 parent=ROOT
+  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "backend_startup"}
+- GET /otel/flush [SPAN_KIND_SERVER] svc=otelapp-autoinstr scope=opentelemetry.instrumentation.asgi trace=503edd78 span=438e5d parent=ROOT
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9587", "server.port": "9587", "network.protocol.version": "1.1", "url.path": "/otel/flush", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": "48526", "http.response.status_code": "200"}
+- HTTP /_event/ [SPAN_KIND_SERVER] svc=otelapp-autoinstr scope=opentelemetry.instrumentation.asgi trace=57f8d538 span=143ac3 parent=ROOT
+  attrs {"url.scheme": "ws", "server.address": "0.0.0.0:9587", "server.port": "9587", "network.protocol.version": "1.1", "url.path": "/_event/", "user_agent.original": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36", "client.address": "127.0.0.1", "client.port": "47616", "url.query": "token=REDACTED&EIO=4&transport=websocket", "http.response.status_code": "200"}
+- reflex___state____state.hydrate [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=01354fef span=28b056 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.hydrate", "reflex.event.background": false, "reflex.event.txid": "1e458d687d18", "session.id": "c2281f77609d29c6", "code.function.name": "reflex.state.State.hydrate"}
+- reflex___state____state.reflex___state____on_load_internal_state.on_load_internal [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=9c062072 span=4c78ff parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.reflex___state____on_load_internal_state.on_load_internal", "reflex.event.background": false, "reflex.event.txid": "1a4bee08f57c", "session.id": "c2281f77609d29c6", "code.function.name": "reflex.state.OnLoadInternalState.on_load_internal"}
+- reflex___state____state.otelapp___otelapp___s.inc [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=2d05b768 span=db2510 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "2355173256c2", "session.id": "c2281f77609d29c6", "code.function.name": "otelapp.otelapp.S.inc"}
+- reflex___state____state.otelapp___otelapp___s.inc [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=85f30400 span=a7d1ce parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "6011e1294ea6", "session.id": "c2281f77609d29c6", "code.function.name": "otelapp.otelapp.S.inc"}
+- reflex___state____state.otelapp___otelapp___s.inc [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=3e978814 span=fef65a parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "cc18e72ab98f", "session.id": "c2281f77609d29c6", "code.function.name": "otelapp.otelapp.S.inc"}
+- reflex___state____state.otelapp___otelapp___s.chain [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=479b4222 span=b15c45 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.chain", "reflex.event.background": false, "reflex.event.txid": "8656c967d5af", "session.id": "c2281f77609d29c6", "code.function.name": "otelapp.otelapp.S.chain"}
+  - reflex___state____state.otelapp___otelapp____other.h [SPAN_KIND_INTERNAL] svc=otelapp-autoinstr scope=reflex trace=479b4222 span=dbae3d parent=b15c45
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "b701f9d4b516", "session.id": "c2281f77609d29c6", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "8656c967d5af"}
+  - reflex___state____state.otelapp___otelapp____other.deep [SPAN_KIND_INTERNAL] svc=otelapp-autoinstr scope=reflex trace=479b4222 span=dcc1a3 parent=b15c45
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.deep", "reflex.event.background": false, "reflex.event.txid": "6c58476d1228", "session.id": "c2281f77609d29c6", "code.function.name": "otelapp.otelapp.Other.deep", "reflex.event.parent_txid": "8656c967d5af"}
+    - reflex___state____state.otelapp___otelapp____other.h [SPAN_KIND_INTERNAL] svc=otelapp-autoinstr scope=reflex trace=479b4222 span=d6f044 parent=dcc1a3
+      attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "c18b9104c495", "session.id": "c2281f77609d29c6", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "6c58476d1228"}
+- HTTP /_event/ [SPAN_KIND_SERVER] svc=otelapp-autoinstr scope=opentelemetry.instrumentation.asgi trace=d4227c1a span=949791 parent=ROOT
+  attrs {"url.scheme": "ws", "server.address": "0.0.0.0:9587", "server.port": "9587", "network.protocol.version": "1.1", "url.path": "/_event/", "user_agent.original": "Python/3.11 websockets/17.1", "client.address": "127.0.0.1", "client.port": "44802", "url.query": "token=REDACTED&EIO=4&transport=websocket", "http.response.status_code": "200"}
+- reflex___state____state.hydrate [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=9664ff54 span=df8947 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.hydrate", "reflex.event.background": false, "reflex.event.txid": "916086c19a6a", "session.id": "4f1ca9b7d828f242", "code.function.name": "reflex.state.State.hydrate"}
+- reflex___state____state.otelapp___otelapp___s.inc [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=11111111 span=072f16 parent=222222
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "3e45dd11417d", "session.id": "4f1ca9b7d828f242", "code.function.name": "otelapp.otelapp.S.inc"}
+- reflex___state____state.otelapp___otelapp___s.chain [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=55555555 span=72eaeb parent=666666
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.chain", "reflex.event.background": false, "reflex.event.txid": "7fe683833759", "session.id": "4f1ca9b7d828f242", "code.function.name": "otelapp.otelapp.S.chain"}
+  - reflex___state____state.otelapp___otelapp____other.h [SPAN_KIND_INTERNAL] svc=otelapp-autoinstr scope=reflex trace=55555555 span=ba69ce parent=72eaeb
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "2df343c45dbf", "session.id": "4f1ca9b7d828f242", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "7fe683833759"}
+  - reflex___state____state.otelapp___otelapp____other.deep [SPAN_KIND_INTERNAL] svc=otelapp-autoinstr scope=reflex trace=55555555 span=3d8e86 parent=72eaeb
+    attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.deep", "reflex.event.background": false, "reflex.event.txid": "725c063251f6", "session.id": "4f1ca9b7d828f242", "code.function.name": "otelapp.otelapp.Other.deep", "reflex.event.parent_txid": "7fe683833759"}
+    - reflex___state____state.otelapp___otelapp____other.h [SPAN_KIND_INTERNAL] svc=otelapp-autoinstr scope=reflex trace=55555555 span=aab8a6 parent=3d8e86
+      attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp____other.h", "reflex.event.background": false, "reflex.event.txid": "2b7aa805f538", "session.id": "4f1ca9b7d828f242", "code.function.name": "otelapp.otelapp.Other.h", "reflex.event.parent_txid": "725c063251f6"}
+- reflex___state____state.otelapp___otelapp___s.inc [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=a68ef1e3 span=34f541 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "0e5499faaeb5", "session.id": "4f1ca9b7d828f242", "code.function.name": "otelapp.otelapp.S.inc"}
+- reflex___state____state.otelapp___otelapp___s.inc [SPAN_KIND_CONSUMER] svc=otelapp-autoinstr scope=reflex trace=2b766314 span=28c2d6 parent=ROOT
+  attrs {"reflex.event.name": "reflex___state____state.otelapp___otelapp___s.inc", "reflex.event.background": false, "reflex.event.txid": "87d0f30f1931", "session.id": "4f1ca9b7d828f242", "code.function.name": "otelapp.otelapp.S.inc"}
+- GET /otel/flush [SPAN_KIND_SERVER] svc=otelapp-autoinstr scope=opentelemetry.instrumentation.asgi trace=483709ef span=498530 parent=ROOT
+  attrs {"url.scheme": "http", "server.address": "0.0.0.0:9587", "server.port": "9587", "network.protocol.version": "1.1", "url.path": "/otel/flush", "http.request.method": "GET", "user_agent.original": "curl/8.5.0", "client.address": "127.0.0.1", "client.port": "51376", "http.response.status_code": "200"}
+
+TOTAL 22 spans, 16 roots

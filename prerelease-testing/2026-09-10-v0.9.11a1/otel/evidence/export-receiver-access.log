@@ -1,0 +1,2 @@
+receiver listening on 127.0.0.1:9590 cors=True out=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/apps/otel/recv/export
+POST /v1/traces ctype=application/x-protobuf len=763 origin=None traceparent=None cors=True

@@ -1,0 +1,7 @@
+[
+ {
+  "ev": "open",
+  "url": "ws://localhost:5185/_event/?token=3492324b-96a0-4ec7-a562-d3d4778513eb&EIO=4&transport=websocket",
+  "t": 1789090883.1968837
+ }
+]
