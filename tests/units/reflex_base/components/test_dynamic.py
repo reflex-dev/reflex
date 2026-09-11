@@ -4,7 +4,10 @@ import importlib
 
 import pytest
 from reflex_base.components import dynamic
+from reflex_base.components.component import Component
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.utils.exceptions import DynamicComponentMissingLibraryError
+from reflex_base.utils.imports import ImportVar, ParsedImportDict
 
 from reflex.components import dynamic as reflex_dynamic
 
@@ -54,6 +57,53 @@ def test_repeated_app_bundle_registrations_do_not_accumulate():
             dynamic.bundle_library("app-library@1.0.0")
             dynamic.bundle_library("app-library")
             assert context.bundled_libraries.count("app-library") == 1
+
+
+@pytest.mark.parametrize("library", [None, "unused-library@1.0.0"])
+def test_component_bundles_its_rendered_imports(library: str | None):
+    """Bundle the declared imports even when they differ from component.library.
+
+    Args:
+        library: The component's absent or overridden nominal library.
+    """
+
+    class SpecializedComponent(Component):
+        """A component that replaces its library imports."""
+
+        tag = "Widget"
+
+        def _get_imports(self) -> ParsedImportDict:
+            """Declare the modules used by the specialized component.
+
+            Returns:
+                Rendered modules, an install-only dependency, and a stylesheet.
+            """
+            return {
+                "@test/library@1.0.0": [
+                    ImportVar("Widget", package_path="/widget.mjs"),
+                    ImportVar("helper", package_path="/widget.mjs"),
+                ],
+                "test-helper@1.0.0": [ImportVar("helper", package_path="")],
+                "test-root@1.0.0": [ImportVar("Root")],
+                "install-only": [ImportVar(None, render=False)],
+                "": [ImportVar("theme.css")],
+            }
+
+    with RegistrationContext() as context:
+        dynamic.bundle_library(SpecializedComponent.create(library=library))
+        dynamic._reset_bundled_libraries_for_compile()
+        assert context.bundled_libraries == [
+            *_default_bundled_libraries(),
+            "@test/library/widget.mjs",
+            "test-helper",
+            "test-root",
+        ]
+
+
+def test_component_without_imports_cannot_be_bundled():
+    """Report components that have no libraries to register."""
+    with pytest.raises(DynamicComponentMissingLibraryError):
+        dynamic.bundle_library(Component.create())
 
 
 @pytest.mark.parametrize("library", ["app-library", "react"])

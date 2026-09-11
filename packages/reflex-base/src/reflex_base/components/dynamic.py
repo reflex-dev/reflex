@@ -88,8 +88,9 @@ def bundle_library(component: Union["Component", str]) -> None:
     """Register a library for dynamic components.
 
     Explicit app registrations survive compilation, including registrations in
-    modules first imported while evaluating a page. Passing a component also
-    registers its library subpaths, even when it is absent from the initial state.
+    modules first imported while evaluating a page. Passing a component bundles
+    its rendered library imports, including subpaths, even when it is absent
+    from the initial state.
 
     Args:
         component: The component to bundle the library with.
@@ -100,17 +101,18 @@ def bundle_library(component: Union["Component", str]) -> None:
     if isinstance(component, str):
         _bundle_library(component, explicit=True)
         return
-    if component.library is None:
+    component_imports = component._get_imports()
+    if not component_imports:
         msg = "Component must have a library to bundle."
         raise DynamicComponentMissingLibraryError(msg)
-    library = format_library_name(component.library)
-    _bundle_library(library, explicit=True)
-    for imported_library, fields in component._get_imports().items():
-        if format_library_name(imported_library) != library:
+    for library, fields in component_imports.items():
+        if not library:
             continue
+        library = format_library_name(library)
         for field in fields:
-            if field.render and field.package_path not in ("", "/"):
-                _bundle_library(library + field.package_path, explicit=True)
+            if field.render:
+                subpath = field.package_path if field.package_path != "/" else ""
+                _bundle_library(library + subpath, explicit=True)
 
 
 def _bundle_library(library: str, *, explicit: bool = False) -> None:

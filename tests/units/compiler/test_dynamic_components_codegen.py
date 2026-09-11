@@ -68,6 +68,7 @@ def test_component_registration_bundles_subpaths_before_serialization(reactive: 
             _reset_bundled_libraries_for_compile()
             _, app_root_code = compiler.compile_app_root(rx.el.div())
             assert f'from "{subpath}";' in app_root_code
+            assert 'from "lucide-react";' not in app_root_code
             assert RegistrationContext.get().bundled_libraries.count(subpath) == 1
             code = serializers.serialize(icon)
         assert isinstance(code, str)
@@ -97,6 +98,59 @@ def test_explicit_subpath_registration_does_not_require_package_root(reactive: b
     assert isinstance(code, str)
     assert f"window.__reflex['{subpath}']" in code
     assert "cdn.jsdelivr.net/npm/lucide-react" not in code
+
+
+@pytest.mark.parametrize("library", ["test-library@1.0.0", "@test/library@1.0.0"])
+@pytest.mark.parametrize("is_default", [False, True])
+def test_component_registration_uses_import_var_subpath(library: str, is_default: bool):
+    """Bundle a specialized component's module without its unused package root.
+
+    Args:
+        library: The versioned package containing the component.
+        is_default: Whether the specialized module exports the component by default.
+    """
+
+    class SubpathComponent(rx.Component):
+        """A component that declares its deep import through import_var."""
+
+        tag = "Widget"
+        alias = "DeepWidget"
+
+        @property
+        def import_var(self) -> ImportVar:
+            """Import the component directly from its specialized module.
+
+            Returns:
+                The component's default or named subpath import.
+            """
+            return ImportVar(
+                self.tag,
+                alias=self.alias,
+                is_default=is_default,
+                package_path="/deep.mjs",
+            )
+
+    component = SubpathComponent.create(library=library)
+    root = library.removesuffix("@1.0.0")
+    subpath = f"{root}/deep.mjs"
+    with RegistrationContext() as context:
+        bundle_library(component)
+        with context.fork() as forked:
+            _reset_bundled_libraries_for_compile()
+            _, app_root_code = compiler.compile_app_root(rx.el.div())
+            assert f'from "{root}";' not in app_root_code
+            assert f'from "{subpath}";' in app_root_code
+            assert root not in forked.bundled_libraries
+            code = serializers.serialize(component)
+            assert root not in forked.bundled_libraries
+    assert isinstance(code, str)
+    declaration = (
+        f"const DeepWidget = window.__reflex['{subpath}'].default"
+        if is_default
+        else f"const {{Widget: DeepWidget}} = window.__reflex['{subpath}']"
+    )
+    assert declaration in code
+    assert "cdn.jsdelivr.net/npm/" not in code
 
 
 @pytest.mark.parametrize(
