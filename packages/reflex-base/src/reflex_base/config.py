@@ -297,10 +297,10 @@ def _is_plain_path_segment(segment: str) -> bool:
         segment: One slash-delimited, non-empty segment of a configured path prefix.
 
     Returns:
-        False for ``.`` and ``..``, and for anything Windows would treat as a
-        separator, drive, or root: backslashes, ``C:``-style prefixes, UNC paths.
+        False for empty segments, trailing dots or spaces, and anything Windows
+        would treat as a separator, drive, or root.
     """
-    if segment == "..":
+    if segment.endswith((".", " ")):
         return False
     windows = PureWindowsPath(segment)
     return not windows.anchor and windows.parts == (segment,)
@@ -612,14 +612,18 @@ class Config(BaseConfig):
         # frontend_path also names the directory below the build output that the
         # built frontend is relocated into and served from, so every segment must
         # be a plain directory name on POSIX and Windows alike.
-        for segment in self.frontend_path.split("/"):
-            if segment and not _is_plain_path_segment(segment):
-                msg = (
-                    f"frontend_path {self.frontend_path!r} contains {segment!r}, "
-                    "which is not a plain directory name "
-                    "(no '.', '..', backslashes, or drive letters)."
-                )
-                raise ConfigError(msg)
+        if self.frontend_path not in ("", "/"):
+            for segment in (
+                self.frontend_path.removeprefix("/").removesuffix("/").split("/")
+            ):
+                if not _is_plain_path_segment(segment):
+                    msg = (
+                        f"frontend_path {self.frontend_path!r} contains {segment!r}, "
+                        "which is not a plain directory name "
+                        "(no empty segments, trailing dots or spaces, backslashes, "
+                        "or drive letters)."
+                    )
+                    raise ConfigError(msg)
 
         if self.backend_path and not self.backend_path.startswith("/"):
             self.backend_path = f"/{self.backend_path}"

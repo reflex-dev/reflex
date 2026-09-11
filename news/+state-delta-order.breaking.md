@@ -1,0 +1,1 @@
+State deltas may emit state entries and variable keys in a different order. Values are unchanged, but downstream snapshots or tests comparing serialized deltas as text may need updating; compare parsed JSON objects or normalize key order instead.

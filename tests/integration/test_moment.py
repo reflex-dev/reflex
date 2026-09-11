@@ -130,7 +130,9 @@ def test_moment_locales_are_isolated(driver: WebDriver) -> None:
             == "Thursday 14 March 2024"
         )
     )
-    assert driver.find_element(By.ID, "moment-french").text == "jeudi 14 mars 2024"
+    AppHarness.expect(
+        lambda: driver.find_element(By.ID, "moment-french").text == "jeudi 14 mars 2024"
+    )
     driver.find_element(By.ID, "plain-link").click()
     AppHarness.expect(
         lambda: (
