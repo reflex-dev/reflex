@@ -1,0 +1,1 @@
+`@rx.var(cache=False)` vars now remember what they last sent to the frontend. They are still recomputed on every state update, but the value is only included in the delta when it actually changed, so an uncached var whose value stays the same no longer causes needless network traffic and re-renders.

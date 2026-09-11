@@ -8,6 +8,7 @@ import copy
 import dataclasses
 import datetime
 import functools
+import hashlib
 import inspect
 import json
 import logging
@@ -25,6 +26,7 @@ from typing import (
     Annotated,
     Any,
     ClassVar,
+    Final,
     Generic,
     Literal,
     NoReturn,
@@ -53,7 +55,7 @@ from reflex_base.utils.exceptions import (
     VarDependencyError,
     VarTypeError,
 )
-from reflex_base.utils.format import format_state_name
+from reflex_base.utils.format import format_state_name, json_dumps
 from reflex_base.utils.imports import (
     ImmutableImportDict,
     ImmutableParsedImportDict,
@@ -2249,6 +2251,47 @@ class FakeComputedVarBaseClass(property):
     __pydantic_run_validation__ = False
 
 
+# Marker for a value that has no delta key. Compared by identity and never stored
+# on a state instance, so it is safe from serialization round trips.
+_UNKEYABLE_VALUE: Final = object()
+
+# Types whose instances are immutable and cheap to compare directly. float is
+# deliberately absent: NaN is not equal to itself, so floats are keyed by their
+# serialized form instead of comparing equal to nothing forever.
+_ATOMIC_DELTA_VALUE_TYPES: Final = frozenset({str, int, bool, type(None)})
+
+# Size of the digest used to key non-atomic delta values.
+_DELTA_VALUE_DIGEST_SIZE: Final = 16
+
+
+def _delta_value_key(value: Any) -> Any:
+    """Get a comparable, alias-free key for a value going into a delta.
+
+    Immutable scalars are keyed by themselves, paired with their type so that
+    Python-equal but JSON-distinct values (``1`` and ``True``) do not collide.
+    Everything else is keyed by a digest of its serialized form: that is exactly
+    what the client receives, so a value without a registered serializer keys by
+    the ``null`` the client would get, it cannot be invalidated by a later
+    in-place mutation of the value, and it stays small no matter how big the
+    value is.
+
+    Args:
+        value: The value to key.
+
+    Returns:
+        The key, or ``_UNKEYABLE_VALUE`` if the value cannot be serialized.
+    """
+    value_type = type(value)
+    if value_type in _ATOMIC_DELTA_VALUE_TYPES:
+        return (value_type, value)
+    try:
+        return hashlib.blake2b(
+            json_dumps(value).encode(), digest_size=_DELTA_VALUE_DIGEST_SIZE
+        ).digest()
+    except Exception:
+        return _UNKEYABLE_VALUE
+
+
 def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
     """Check if the object is a ComputedVar.
 
@@ -2482,6 +2525,51 @@ class ComputedVar(Var[RETURN_TYPE]):
             An attribute name.
         """
         return f"__last_updated_{self._js_expr}"
+
+    @property
+    def _last_delta_key_attr(self) -> str:
+        """The attribute used to store the key of the last value sent in a delta.
+
+        Returns:
+            An attribute name.
+        """
+        return f"__last_delta_{self._js_expr}"
+
+    def _record_delta_value(self, instance: BaseState, value: Any, token: str) -> bool:
+        """Record the value an uncached var contributes to the delta.
+
+        Uncached vars are recomputed for every delta, but recomputing does not
+        imply the value changed. Keeping a key for the last value that was sent
+        to the client allows an unchanged value to be omitted from the delta,
+        avoiding a needless re-render on the frontend.
+
+        The client token is recorded alongside the key because a single state
+        instance can serve several clients (linked shared states): a value that
+        was already sent to one client still has to be sent to the others.
+
+        Args:
+            instance: The state instance that the computed var is attached to.
+            value: The freshly computed value.
+            token: The client token the delta is being produced for.
+
+        Returns:
+            Whether the value differs from the last recorded value and should
+            therefore be included in the delta.
+        """
+        attr = self._last_delta_key_attr
+        key = _delta_value_key(value)
+        if key is _UNKEYABLE_VALUE:
+            # The value can never be compared, so it always has to be sent.
+            with contextlib.suppress(AttributeError):
+                delattr(instance, attr)
+            return True
+        recorded = (token, key)
+        if getattr(instance, attr, None) == recorded:
+            return False
+        setattr(instance, attr, recorded)
+        # Ensure the recorded value gets serialized to redis.
+        instance._was_touched = True
+        return True
 
     def needs_update(self, instance: BaseState) -> bool:
         """Check if the computed var needs to be updated.
