@@ -913,6 +913,16 @@ class EventChain(EventActionsMixin):
             # Trust that the caller knows what they're doing passing an EventChain directly
             return value
 
+        # A handler bound to one trigger always produces the same chain, so
+        # every call site sharing the handler shares one instance. The cache
+        # lives on the handler, which is never pickled or copied.
+        bound_chains = None
+        if not event_chain_kwargs and isinstance(value, EventHandler):
+            bound_chains = value.__dict__.setdefault("_bound_chains", {})
+            bound = bound_chains.get((id(args_spec), key))
+            if bound is not None and bound[0] is args_spec:
+                return bound[1]
+
         # If the input is a single event handler, wrap it in a list.
         if isinstance(value, (EventHandler, EventSpec)):
             value = [value]
@@ -952,12 +962,14 @@ class EventChain(EventActionsMixin):
             for e in events
         ]
 
-        # Return the event chain.
-        return cls(
+        chain = cls(
             events=events,
             args_spec=args_spec,
             **event_chain_kwargs,
         )
+        if bound_chains is not None:
+            bound_chains[id(args_spec), key] = args_spec, chain
+        return chain
 
 
 @dataclasses.dataclass(

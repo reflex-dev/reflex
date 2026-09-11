@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from reflex.state import BaseState
     from reflex_base.config import Config
     from reflex_base.event import EventHandler
+    from reflex_base.vars.base import Var
 
 
 def _default_bundled_libraries() -> list[str]:
@@ -69,6 +70,9 @@ class RegistrationContext(BaseContext):
         repr=False,
     )
     _app: App | None = dataclasses.field(default=None, repr=False)
+    _memoized_event_triggers: dict[tuple[str, int], tuple[Any, Var]] = (
+        dataclasses.field(default_factory=dict, repr=False)
+    )
 
     @property
     def app(self) -> App:

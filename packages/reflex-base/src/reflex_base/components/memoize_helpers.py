@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING
 from reflex_base.components.component import BaseComponent, Component
 from reflex_base.constants import EventTriggers
 from reflex_base.event import EventChain, EventSpec
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
@@ -100,6 +101,9 @@ def get_memoized_event_triggers(
         A dict mapping event trigger name to memoized_triger.
     """
     trigger_memo: dict[str, Var] = {}
+    if not component.event_triggers:
+        return trigger_memo
+    cache = RegistrationContext.ensure_context()._memoized_event_triggers
     for event_trigger, event_args in component._get_vars_from_event_triggers(
         component.event_triggers
     ):
@@ -112,8 +116,17 @@ def get_memoized_event_triggers(
             continue
 
         event = component.event_triggers[event_trigger]
-        rendered_chain = LiteralVar.create(event)
+        cache_key = (event_trigger, id(event))
+        cached = cache.get(cache_key)
+        if cached is not None and cached[0] is event:
+            trigger_memo[event_trigger] = cached[1]
+            continue
 
+        rendered_chain = LiteralVar.create(event)
+        rendered_data = rendered_chain._get_all_var_data()
+        event_var_data = [
+            data for arg in event_args if (data := arg._get_all_var_data()) is not None
+        ]
         chain_hash = md5(
             str(rendered_chain).encode("utf-8"), usedforsecurity=False
         ).hexdigest()
@@ -122,18 +135,13 @@ def get_memoized_event_triggers(
         var_deps = ["addEvents", "ReflexEvent"]
         var_deps.extend(_get_deps_from_event_trigger(event))
 
-        event_var_data = []
-        for arg in event_args:
-            var_data = arg._get_all_var_data()
-            if var_data is None:
-                continue
-            event_var_data.append(var_data)
+        for var_data in event_var_data:
             for hook in var_data.hooks:
                 var_deps.extend(_get_hook_deps(hook))
 
         memo_var_data = VarData.merge(
             *event_var_data,
-            rendered_chain._get_all_var_data(),
+            rendered_data,
             VarData(
                 hooks=[
                     f"const {memo_name} = useCallback({rendered_chain!s}, [{', '.join(var_deps)}])"
@@ -142,9 +150,11 @@ def get_memoized_event_triggers(
             ),
         )
 
-        trigger_memo[event_trigger] = Var(
+        trigger_memo[event_trigger] = memo_var = Var(
             _js_expr=memo_name, _var_type=EventChain, _var_data=memo_var_data
         )
+        # Hold the chain so its id cannot be recycled while the entry lives.
+        cache[cache_key] = event, memo_var
     return trigger_memo
 
 
