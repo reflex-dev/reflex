@@ -45,6 +45,7 @@ from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
+from starlette.testclient import TestClient
 from starlette_admin.auth import AuthProvider
 
 import reflex as rx
@@ -437,6 +438,43 @@ def test_initialize_with_admin_dashboard(
     assert app.admin_dash is not None
     assert len(app.admin_dash.models) > 0
     assert app.admin_dash.models[0] == test_model
+
+
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
+@pytest.mark.parametrize("with_transformer", [False, True])
+def test_admin_dashboard_routes_remain_reversible(
+    test_model: type[Model],
+    mocker: MockerFixture,
+    tmp_path: Path,
+    with_transformer: bool,
+):
+    """Serve admin pages through the public ASGI app with working named routes.
+
+    Args:
+        test_model: A model to list in the dashboard.
+        mocker: The mock fixture for skipping frontend compilation.
+        tmp_path: The directory for the dashboard database.
+        with_transformer: Whether another Starlette application wraps the API.
+    """
+    conf = rx.Config(app_name="testing", db_url=f"sqlite:///{tmp_path / 'admin.db'}")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(
+        admin_dash=AdminDash(models=[test_model]),
+        api_transformer=Starlette() if with_transformer else None,
+    )
+    mocker.patch.object(app, "_compile")
+    api = app()
+    assert isinstance(api, Starlette)
+    assert str(api.url_path_for("admin:index")) == "/admin/"
+    with TestClient(api) as client:
+        response = client.get("/admin/")
+    assert response.status_code == 200
+    assert "Reflex Admin Dashboard" in response.text
 
 
 @pytest.mark.skipif(
