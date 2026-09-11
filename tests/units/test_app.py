@@ -2661,8 +2661,8 @@ def test_compile_writes_app_wrap_memo_components(
     toast_symbol = memo_paths.mirrored_symbol(
         "MemoizedToastProvider", _compile_app.__module__
     )
-    assert f"export const {overlay_symbol} = memo" in memo_sources
-    assert f"export const {toast_symbol} = memo" in memo_sources
+    assert f"const {overlay_symbol} = memo" in memo_sources
+    assert f"const {toast_symbol} = memo" in memo_sources
 
 
 def test_compile_dry_run_does_not_prune_or_write_manifest(

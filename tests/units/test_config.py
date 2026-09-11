@@ -905,6 +905,26 @@ def test_disable_plugins_bad_env_spec_warns(
     )
 
 
+def test_get_config_ignores_another_project_on_sys_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A project without rxconfig must not inherit an installed app's config."""
+    foreign = tmp_path / "foreign"
+    foreign.mkdir()
+    (foreign / "rxconfig.py").write_text(
+        'from reflex_base.config import Config\nconfig = Config(app_name="foreign")\n'
+    )
+    project = tmp_path / "project"
+    project.mkdir()
+    monkeypatch.syspath_prepend(str(foreign))
+
+    config = reflex_base.config._get_config(project)
+
+    assert config.app_name == ""
+    assert config.frontend_path == ""
+    assert "rxconfig" not in sys.modules
+
+
 def test_get_config_loads_once_for_shared_context(monkeypatch: pytest.MonkeyPatch):
     """Concurrent first access to a shared context loads the config exactly once.
 
