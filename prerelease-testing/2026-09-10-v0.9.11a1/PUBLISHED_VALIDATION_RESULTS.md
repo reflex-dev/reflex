@@ -133,6 +133,17 @@ bundles only when `isinstance(value, Component)`, so a callable that reflex-ente
 `LiteralLambdaVar` — whose component is reachable only through the Var's `_get_all_var_data()` —
 is never seen.
 
+The other half is reflex-enterprise's: `LiteralLambdaVar._validate_and_extend_return_expr`
+(`reflex_enterprise/vars.py:121` in 0.9.5) already has that var data in hand and raises on the first
+unbundled package rather than registering it, so a caller cannot bundle first. Either enterprise
+registers what it finds / exposes a non-validating construction, or the mechanism goes away in
+favour of function-style `rx.memo` for ag-grid-style callback props — which would also remove the
+bespoke `__reflex['<pkg>']?.<tag>` runtime lookup. Note the ordering constraint either way: in
+`compile_app` the non-compiling branches call `_compile_initial_state` *before*
+`_reset_bundled_libraries_for_compile()` and plugin dependency registration
+(`reflex/compiler/compiler.py:1234`/`:1254` vs `:1264-1271`), so registering at that point cannot
+repair a frontend that was already built.
+
 Evidence: `out/f018_a1_dev.json`, `out/f018_a2_dev.json`, `logs/minrx_a1_dev.tail.log`,
 `logs/minrx_a2_clean.tail.log`, driver `scripts/drive_018.py`.
 
