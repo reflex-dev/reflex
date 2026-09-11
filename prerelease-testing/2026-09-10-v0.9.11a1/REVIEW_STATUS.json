@@ -1,0 +1,1100 @@
+{
+  "observed_at_utc": "2026-09-11T16:58:26.569856+00:00",
+  "github": {
+    "reflex": {
+      "i7088": {
+        "number": 7088,
+        "title": "uv cannot install the Reflex sdist because its pyproject references absent workspace members",
+        "url": "https://github.com/reflex-dev/reflex/issues/7088",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7089": {
+        "number": 7089,
+        "title": "A backend-only run leaves .web/nocompile and makes the next full run skip compilation",
+        "url": "https://github.com/reflex-dev/reflex/issues/7089",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7090": {
+        "number": 7090,
+        "title": "frontend_path is stripped twice for routes beginning with the prefix text",
+        "url": "https://github.com/reflex-dev/reflex/issues/7090",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7091": {
+        "number": 7091,
+        "title": "A state var named _get_was_touched silently disables disk-state persistence",
+        "url": "https://github.com/reflex-dev/reflex/issues/7091",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7092": {
+        "number": 7092,
+        "title": "Cloud JSON commands report success and empty results after authentication or dependency failures",
+        "url": "https://github.com/reflex-dev/reflex/issues/7092",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7093": {
+        "number": 7093,
+        "title": "REFLEX_USE_NPM=1 silently persists the npm choice after the environment variable is removed",
+        "url": "https://github.com/reflex-dev/reflex/issues/7093",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7094": {
+        "number": 7094,
+        "title": "ErrorBoundary fallback emits invalid SVG DOM property warnings",
+        "url": "https://github.com/reflex-dev/reflex/issues/7094",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7095": {
+        "number": 7095,
+        "title": "Initial dev compilation loses OpenTelemetry spans when its worker exits",
+        "url": "https://github.com/reflex-dev/reflex/issues/7095",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7096": {
+        "number": 7096,
+        "title": "Non-compiling backend workers lose bundled-library metadata and can drop the entire hydrate delta",
+        "url": "https://github.com/reflex-dev/reflex/issues/7096",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7097": {
+        "number": 7097,
+        "title": "Radix form.message force_match without match is always visible and leaks forceMatch to the DOM",
+        "url": "https://github.com/reflex-dev/reflex/issues/7097",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7098": {
+        "number": 7098,
+        "title": "Radix components emit Emotion first-child SSR errors on every dev page load",
+        "url": "https://github.com/reflex-dev/reflex/issues/7098",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7099": {
+        "number": 7099,
+        "title": "Mixing literal and reactive Moment locales emits duplicate defineLocale deprecation warnings",
+        "url": "https://github.com/reflex-dev/reflex/issues/7099",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7100": {
+        "number": 7100,
+        "title": "Unsupported Moment options silently become CSS during the react-moment migration",
+        "url": "https://github.com/reflex-dev/reflex/issues/7100",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7101": {
+        "number": 7101,
+        "title": "Document or validate Plotly layout title objects instead of silently dropping string titles",
+        "url": "https://github.com/reflex-dev/reflex/issues/7101",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7102": {
+        "number": 7102,
+        "title": "Adding rx.toast.provider duplicates every toast because the default overlay already mounts a provider",
+        "url": "https://github.com/reflex-dev/reflex/issues/7102",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7103": {
+        "number": 7103,
+        "title": "Toast documentation mentions ToastAction without a usable public import",
+        "url": "https://github.com/reflex-dev/reflex/issues/7103",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7104": {
+        "number": 7104,
+        "title": "Form submissions include null entries for non-input children with ids",
+        "url": "https://github.com/reflex-dev/reflex/issues/7104",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i6575": {
+        "number": 6575,
+        "title": "Recharts component props (strokeDasharray, tickFormatter) are routed to wrapperStyle and never reach the Recharts component",
+        "url": "https://github.com/reflex-dev/reflex/issues/6575",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i6972": {
+        "number": 6972,
+        "title": "`reflex run --json --loglevel debug`: granian's own startup/shutdown lines are plain text on stdout, breaking JSON-lines parsing",
+        "url": "https://github.com/reflex-dev/reflex/issues/6972",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i6973": {
+        "number": 6973,
+        "title": "rx.Model with table=True on a bare install raises bare TypeError instead of \"pip install reflex[db]\" guidance",
+        "url": "https://github.com/reflex-dev/reflex/issues/6973",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i6975": {
+        "number": 6975,
+        "title": "compile_app() discards user bundle_library() registrations, and the dynamic serializer never rewrites subpath imports of bundled libs",
+        "url": "https://github.com/reflex-dev/reflex/issues/6975",
+        "state": "CLOSED",
+        "stateReason": "COMPLETED",
+        "closedAt": "2026-09-11T16:37:52Z",
+        "timelineItems": {
+          "nodes": [
+            {
+              "createdAt": "2026-09-11T16:37:52Z",
+              "closer": {
+                "__typename": "PullRequest",
+                "number": 7109,
+                "url": "https://github.com/reflex-dev/reflex/pull/7109",
+                "title": "Preserve dynamic component bundles and discover initial-state imports",
+                "mergedAt": "2026-09-11T16:37:51Z",
+                "mergeCommit": {
+                  "oid": "ca85f2c0c7aa4ffb844a2c4bc66eb632cac5a39e"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "i6977": {
+        "number": 6977,
+        "title": "rx.plotly silently drops the id prop (react-plotly.js expects divId)",
+        "url": "https://github.com/reflex-dev/reflex/issues/6977",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i6978": {
+        "number": 6978,
+        "title": "CachedVarOperation masks AttributeErrors from cached var computations as unchained \"VarAttributeError: Attribute _cached_get_all_var_data not found\"",
+        "url": "https://github.com/reflex-dev/reflex/issues/6978",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i6983": {
+        "number": 6983,
+        "title": "Prod mode serves HTTP 404 status for direct loads of valid dynamic-route URLs (SPA fallback body renders fine)",
+        "url": "https://github.com/reflex-dev/reflex/issues/6983",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7074": {
+        "number": 7074,
+        "title": "Substate field shadowing a parent's base var is silently dropped (wrong value, non-reactive class access)",
+        "url": "https://github.com/reflex-dev/reflex/issues/7074",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i7111": {
+        "number": 7111,
+        "title": "Declare Lucide deep imports through import_var instead of _get_imports",
+        "url": "https://github.com/reflex-dev/reflex/issues/7111",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "p7085": {
+        "number": 7085,
+        "title": "Document Moment mount callbacks as a breaking change",
+        "url": "https://github.com/reflex-dev/reflex/pull/7085",
+        "state": "MERGED",
+        "mergedAt": "2026-09-11T06:46:21Z",
+        "headRefOid": "5f247af2688e1cf534370d5504c2124e3daebab5",
+        "mergeCommit": {
+          "oid": "df96a1b6253c63804ba0a007c23641d80816a063"
+        },
+        "files": {
+          "nodes": [
+            {
+              "path": "docs/library/data-display/moment.md"
+            },
+            {
+              "path": "packages/reflex-components-moment/news/+moment-mount-event.breaking.md"
+            },
+            {
+              "path": "packages/reflex-components-moment/src/reflex_components_moment/moment.py"
+            },
+            {
+              "path": "pyi_hashes.json"
+            }
+          ]
+        }
+      },
+      "p7086": {
+        "number": 7086,
+        "title": "Correct the OTLP HTTP exporter setup examples",
+        "url": "https://github.com/reflex-dev/reflex/pull/7086",
+        "state": "MERGED",
+        "mergedAt": "2026-09-11T06:47:23Z",
+        "headRefOid": "916aa09cab918300b65bbda2442d44cb06eac814",
+        "mergeCommit": {
+          "oid": "8b86181602c5534e518ed467d1cee10a17eb45e5"
+        },
+        "files": {
+          "nodes": [
+            {
+              "path": "docs/api-reference/observability.md"
+            },
+            {
+              "path": "packages/reflex-otel/README.md"
+            },
+            {
+              "path": "packages/reflex-otel/news/+http-exporter-setup.docs.md"
+            }
+          ]
+        }
+      },
+      "p7087": {
+        "number": 7087,
+        "title": "Note potentially breaking state-delta key ordering",
+        "url": "https://github.com/reflex-dev/reflex/pull/7087",
+        "state": "MERGED",
+        "mergedAt": "2026-09-11T06:47:48Z",
+        "headRefOid": "6a083e82265492df16cd4d36a9e7b3c08f3be96a",
+        "mergeCommit": {
+          "oid": "05f201ac99ffa2721985b63fba55578823c980c0"
+        },
+        "files": {
+          "nodes": [
+            {
+              "path": "news/+state-delta-order.breaking.md"
+            }
+          ]
+        }
+      },
+      "p7105": {
+        "number": 7105,
+        "title": "Complete frontend_path validation for Win32-trimmed and empty segments",
+        "url": "https://github.com/reflex-dev/reflex/pull/7105",
+        "state": "MERGED",
+        "mergedAt": "2026-09-11T06:49:09Z",
+        "headRefOid": "4404c19621ed4c73a71b9f0c788a72541cbe1905",
+        "mergeCommit": {
+          "oid": "17e9ed398d3118f7fb4ab5bc17e49e7ab842160e"
+        },
+        "files": {
+          "nodes": [
+            {
+              "path": "packages/reflex-base/news/+frontend-path-trimming.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/src/reflex_base/config.py"
+            },
+            {
+              "path": "tests/units/test_config.py"
+            }
+          ]
+        }
+      },
+      "p7106": {
+        "number": 7106,
+        "title": "Preserve hybrid_property frontend types on current Pyright",
+        "url": "https://github.com/reflex-dev/reflex/pull/7106",
+        "state": "MERGED",
+        "mergedAt": "2026-09-11T06:50:18Z",
+        "headRefOid": "dfdbc7a99aa603a0a437cd0803590304d252818f",
+        "mergeCommit": {
+          "oid": "4959c474a4252a52649568e3b332d8398f1e8e0d"
+        },
+        "files": {
+          "nodes": [
+            {
+              "path": "packages/reflex-base/news/+hybrid-property-pyright.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/src/reflex_base/vars/hybrid_property.py"
+            },
+            {
+              "path": "tests/units/vars/test_hybrid_property.py"
+            }
+          ]
+        }
+      },
+      "p7107": {
+        "number": 7107,
+        "title": "Restore AdminDash route lookup through the public ASGI app",
+        "url": "https://github.com/reflex-dev/reflex/pull/7107",
+        "state": "MERGED",
+        "mergedAt": "2026-09-11T06:52:09Z",
+        "headRefOid": "f639343d073d7cf8a8268300c42dfc59a8c2eb4a",
+        "mergeCommit": {
+          "oid": "e8be69c78e65807fef19455bd79384a4029eef2a"
+        },
+        "files": {
+          "nodes": [
+            {
+              "path": "news/+admin-reverse-routing.bugfix.md"
+            },
+            {
+              "path": "reflex/app.py"
+            },
+            {
+              "path": "tests/units/test_app.py"
+            }
+          ]
+        }
+      },
+      "p7108": {
+        "number": 7108,
+        "title": "Give forked backend workers distinct socket-owner identities",
+        "url": "https://github.com/reflex-dev/reflex/pull/7108",
+        "state": "MERGED",
+        "mergedAt": "2026-09-11T06:54:16Z",
+        "headRefOid": "312c8635bc8f37e5ee3479ada1ce2d9601688949",
+        "mergeCommit": {
+          "oid": "0c4ee52f4a5c6c7c6fcab2446c6672f6c2f9b72b"
+        },
+        "files": {
+          "nodes": [
+            {
+              "path": "news/+forked-worker-token-identity.bugfix.md"
+            },
+            {
+              "path": "reflex/app.py"
+            },
+            {
+              "path": "reflex/utils/token_manager.py"
+            },
+            {
+              "path": "tests/units/test_app.py"
+            }
+          ]
+        }
+      },
+      "p7109": {
+        "number": 7109,
+        "title": "Preserve dynamic component bundles and discover initial-state imports",
+        "url": "https://github.com/reflex-dev/reflex/pull/7109",
+        "state": "MERGED",
+        "mergedAt": "2026-09-11T16:37:51Z",
+        "headRefOid": "3edbe5bd0283cff037b9b54b9eeaad7d35f224f8",
+        "mergeCommit": {
+          "oid": "ca85f2c0c7aa4ffb844a2c4bc66eb632cac5a39e"
+        },
+        "files": {
+          "nodes": [
+            {
+              "path": "news/+preserve-app-bundles.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/news/+bundle-component-trees.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/news/+bundle-library-argument-validation.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/news/+bundle-library-subpaths.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/news/+dynamic-component-default-exports.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/news/+preserve-app-bundles.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/src/reflex_base/compiler/templates.py"
+            },
+            {
+              "path": "packages/reflex-base/src/reflex_base/components/dynamic.py"
+            },
+            {
+              "path": "packages/reflex-base/src/reflex_base/registry.py"
+            },
+            {
+              "path": "packages/reflex-components-radix/news/+compile-derived-bundles.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-components-radix/src/reflex_components_radix/plugin.py"
+            },
+            {
+              "path": "reflex/compiler/compiler.py"
+            },
+            {
+              "path": "reflex/compiler/utils.py"
+            },
+            {
+              "path": "tests/integration/test_dynamic_components.py"
+            },
+            {
+              "path": "tests/units/compiler/test_compiler.py"
+            },
+            {
+              "path": "tests/units/compiler/test_dynamic_components_codegen.py"
+            },
+            {
+              "path": "tests/units/reflex_base/components/test_dynamic.py"
+            }
+          ]
+        }
+      },
+      "p7110": {
+        "number": 7110,
+        "title": "Isolate Moment component locales across siblings and routes",
+        "url": "https://github.com/reflex-dev/reflex/pull/7110",
+        "state": "MERGED",
+        "mergedAt": "2026-09-11T07:12:08Z",
+        "headRefOid": "835f01e888b50ea2b78f79e057b3c423fd3feaf9",
+        "mergeCommit": {
+          "oid": "8b393b587ae5f011acb01e1ba439db0009269dec"
+        },
+        "files": {
+          "nodes": [
+            {
+              "path": "docs/library/data-display/moment.md"
+            },
+            {
+              "path": "packages/reflex-components-moment/news/+isolate-moment-locales.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-components-moment/src/reflex_components_moment/moment.py"
+            },
+            {
+              "path": "pyi_hashes.json"
+            },
+            {
+              "path": "tests/integration/test_moment.py"
+            },
+            {
+              "path": "tests/units/reflex_components_moment/test_moment.py"
+            }
+          ]
+        }
+      },
+      "p7016": {
+        "number": 7016,
+        "title": "Fix bundled library subpath serialization",
+        "url": "https://github.com/reflex-dev/reflex/pull/7016",
+        "state": "CLOSED",
+        "mergedAt": null,
+        "headRefOid": "f8b7f638db3a2d9387f15fec9d9a3ae935174912",
+        "mergeCommit": null,
+        "files": {
+          "nodes": [
+            {
+              "path": "news/7016.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/news/7016.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/src/reflex_base/components/dynamic.py"
+            },
+            {
+              "path": "packages/reflex-base/src/reflex_base/registry.py"
+            },
+            {
+              "path": "packages/reflex-components-radix/news/7016.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-components-radix/src/reflex_components_radix/plugin.py"
+            },
+            {
+              "path": "reflex/compiler/compiler.py"
+            },
+            {
+              "path": "tests/integration/test_dynamic_components.py"
+            },
+            {
+              "path": "tests/units/compiler/test_compiler.py"
+            },
+            {
+              "path": "tests/units/compiler/test_dynamic_components_codegen.py"
+            }
+          ]
+        }
+      },
+      "p6996": {
+        "number": 6996,
+        "title": "Serve SPA fallback with 200 for routable paths in prod static serving",
+        "url": "https://github.com/reflex-dev/reflex/pull/6996",
+        "state": "OPEN",
+        "mergedAt": null,
+        "headRefOid": "319b3eb129780c544af8649371b72bac81277a66",
+        "mergeCommit": null,
+        "files": {
+          "nodes": [
+            {
+              "path": "news/6996.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/news/6996.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-base/src/reflex_base/constants/base.py"
+            },
+            {
+              "path": "reflex/app.py"
+            },
+            {
+              "path": "reflex/compiler/compiler.py"
+            },
+            {
+              "path": "reflex/utils/exec.py"
+            },
+            {
+              "path": "reflex/utils/precompressed_staticfiles.py"
+            },
+            {
+              "path": "tests/integration/test_precompressed_frontend.py"
+            },
+            {
+              "path": "tests/units/test_app.py"
+            },
+            {
+              "path": "tests/units/utils/test_exec.py"
+            },
+            {
+              "path": "tests/units/utils/test_precompressed_staticfiles.py"
+            }
+          ]
+        }
+      },
+      "p6833": {
+        "number": 6833,
+        "title": "fix(recharts): stop routing component props to wrapperStyle",
+        "url": "https://github.com/reflex-dev/reflex/pull/6833",
+        "state": "OPEN",
+        "mergedAt": null,
+        "headRefOid": "65083f476a4470f9ee2b1ee68f8f6b1c7e581b57",
+        "mergeCommit": null,
+        "files": {
+          "nodes": [
+            {
+              "path": "news/6575.bugfix.md"
+            },
+            {
+              "path": "packages/reflex-components-recharts/src/reflex_components_recharts/cartesian.py"
+            },
+            {
+              "path": "pyi_hashes.json"
+            },
+            {
+              "path": "tests/units/components/recharts/test_cartesian.py"
+            }
+          ]
+        }
+      }
+    },
+    "enterprise": {
+      "i225": {
+        "number": 225,
+        "title": "Shipped AG Grid demos have stale bundle paths, broken datasource URLs, and incompatible chart configuration",
+        "url": "https://github.com/reflex-dev/reflex-enterprise/issues/225",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i226": {
+        "number": 226,
+        "title": "MCP state event resources silently return an empty list for unknown state names",
+        "url": "https://github.com/reflex-dev/reflex-enterprise/issues/226",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i227": {
+        "number": 227,
+        "title": "Check for PyYAML when EventHandlerAPIPlugin is enabled instead of serving a broken OpenAPI endpoint",
+        "url": "https://github.com/reflex-dev/reflex-enterprise/issues/227",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i228": {
+        "number": 228,
+        "title": "Importing reflex_enterprise adds unused auth substates to deltas without frontend dispatchers",
+        "url": "https://github.com/reflex-dev/reflex-enterprise/issues/228",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i229": {
+        "number": 229,
+        "title": "Only advertise MCP event rest_path when EventHandlerAPIPlugin is active",
+        "url": "https://github.com/reflex-dev/reflex-enterprise/issues/229",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      },
+      "i230": {
+        "number": 230,
+        "title": "Popup logout clears shared tokens before the popup reaches the OIDC end_session_endpoint",
+        "url": "https://github.com/reflex-dev/reflex-enterprise/issues/230",
+        "state": "OPEN",
+        "stateReason": null,
+        "closedAt": null,
+        "timelineItems": {
+          "nodes": []
+        }
+      }
+    }
+  },
+  "pypi": {
+    "reflex": {
+      "version": "0.9.11a2",
+      "metadata_url": "https://pypi.org/pypi/reflex/0.9.11a2/json",
+      "requires_dist": [
+        "click>=8.2",
+        "granian[reload]>=2.7.4",
+        "httpx<1.0,>=0.26",
+        "packaging<27,>=24.2",
+        "psutil<8.0,>=7.0.0; sys_platform == \"win32\"",
+        "python-multipart<1.0,>=0.0.32",
+        "python-socketio<6.0,>=5.12.0",
+        "redis<8.0,>=6.4",
+        "reflex-base==0.9.11a2",
+        "reflex-components-code>=0.9.0",
+        "reflex-components-core>=0.9.6",
+        "reflex-components-dataeditor>=0.9.0",
+        "reflex-components-gridjs>=0.9.0",
+        "reflex-components-lucide>=0.9.0",
+        "reflex-components-markdown>=0.9.0",
+        "reflex-components-moment>=0.9.0",
+        "reflex-components-plotly>=0.9.0",
+        "reflex-components-radix>=0.9.2",
+        "reflex-components-react-player>=0.9.0",
+        "reflex-components-recharts>=0.9.0",
+        "reflex-components-sonner>=0.9.0",
+        "reflex-hosting-cli>=0.1.71",
+        "rich<16,>=13",
+        "starlette>=1.3.1",
+        "typing-extensions>=4.13.0",
+        "wrapt<2.4,>=1.17.0",
+        "alembic<2.0,>=1.15.2; extra == \"db\"",
+        "pydantic<3.0,>=2.12.0; extra == \"db\"",
+        "sqlmodel<0.1,>=0.0.24; extra == \"db\"",
+        "reflex-base[pydantic]; extra == \"pydantic\"",
+        "psutil<8.0,>=7.0.0; extra == \"testing\"",
+        "selenium<5.0,>=4.0.0; extra == \"testing\"",
+        "uvicorn<1.0,>=0.34.0; extra == \"testing\""
+      ],
+      "files": [
+        {
+          "filename": "reflex-0.9.11a2-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/b9/7b/24b5b339273544fa188f0b3cab7eef871ae115afca9fa572e63ed98bd1ab/reflex-0.9.11a2-py3-none-any.whl",
+          "digests": {
+            "blake2b_256": "b97b24b5b339273544fa188f0b3cab7eef871ae115afca9fa572e63ed98bd1ab",
+            "md5": "4bbc30527a90f72d8535d7bb0a404de8",
+            "sha256": "ac0ad138b219dfa3c4cc32befe78cc45ec56377801a18286ba1d383187e8420e"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:53:29.206433Z",
+          "yanked": false
+        },
+        {
+          "filename": "reflex-0.9.11a2.tar.gz",
+          "url": "https://files.pythonhosted.org/packages/d1/24/3ea0444c08f2efeab6d4e14767c71d9364a284ec434cbfdd09e2fc6ef429/reflex-0.9.11a2.tar.gz",
+          "digests": {
+            "blake2b_256": "d1243ea0444c08f2efeab6d4e14767c71d9364a284ec434cbfdd09e2fc6ef429",
+            "md5": "fc899e6dccbd4201565b0bc480a8c2bc",
+            "sha256": "eac3f38e4c6ed130d8a70cd6445a3f13f4d316efeb13c09ae84fdd56478e3d73"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:53:30.757883Z",
+          "yanked": false
+        }
+      ]
+    },
+    "reflex-base": {
+      "version": "0.9.11a2",
+      "metadata_url": "https://pypi.org/pypi/reflex-base/0.9.11a2/json",
+      "requires_dist": [
+        "packaging<27,>=24.2",
+        "platformdirs<5.0,>=4.3.7",
+        "rich<16,>=13",
+        "typing-extensions>=4.13.0",
+        "pydantic<3.0,>=2.12.0; extra == \"pydantic\""
+      ],
+      "files": [
+        {
+          "filename": "reflex_base-0.9.11a2-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/c9/2d/685de4e35358a3c37b4030c24cd014fa76786018dd3acef967884bee92a5/reflex_base-0.9.11a2-py3-none-any.whl",
+          "digests": {
+            "blake2b_256": "c92d685de4e35358a3c37b4030c24cd014fa76786018dd3acef967884bee92a5",
+            "md5": "dbc77d996974aec339114ed471fd3d96",
+            "sha256": "5bf95cbc84450a8da400a003aca6ec20412c9e0a99c17fddf78b75be22083d65"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:50:19.186256Z",
+          "yanked": false
+        },
+        {
+          "filename": "reflex_base-0.9.11a2.tar.gz",
+          "url": "https://files.pythonhosted.org/packages/35/c6/94ecb84e8dcfda28ac3163c436ffb31a2b4b48250accc105fa9955d63fec/reflex_base-0.9.11a2.tar.gz",
+          "digests": {
+            "blake2b_256": "35c694ecb84e8dcfda28ac3163c436ffb31a2b4b48250accc105fa9955d63fec",
+            "md5": "a1b0ef21f83bc95cf3038582f9f1940d",
+            "sha256": "ad8ac1dcbd3642a04cc70b5479dd68e6258f849bcae780fb3c6a1318daa67c4d"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:50:20.379374Z",
+          "yanked": false
+        }
+      ]
+    },
+    "reflex-components-moment": {
+      "version": "0.9.4a2",
+      "metadata_url": "https://pypi.org/pypi/reflex-components-moment/0.9.4a2/json",
+      "requires_dist": [
+        "reflex-base>=0.9.0"
+      ],
+      "files": [
+        {
+          "filename": "reflex_components_moment-0.9.4a2-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/30/86/882f4e26f468836a9ca016dc74a15e626c169721361d1d9f2786d6a08516/reflex_components_moment-0.9.4a2-py3-none-any.whl",
+          "digests": {
+            "blake2b_256": "3086882f4e26f468836a9ca016dc74a15e626c169721361d1d9f2786d6a08516",
+            "md5": "379e4294c8723aaa64fdba1de21d6628",
+            "sha256": "4c5cecebab3889578ce75d45e9f8e1551415a5435309133d7c2c411d18557cd5"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:50:19.076120Z",
+          "yanked": false
+        },
+        {
+          "filename": "reflex_components_moment-0.9.4a2.tar.gz",
+          "url": "https://files.pythonhosted.org/packages/b8/0d/a1693ef41183a92286795090199bb6c04db9b325d3e5ef56bcf2e8a17ab5/reflex_components_moment-0.9.4a2.tar.gz",
+          "digests": {
+            "blake2b_256": "b80da1693ef41183a92286795090199bb6c04db9b325d3e5ef56bcf2e8a17ab5",
+            "md5": "ef251d3e08065d6960d2ece18d6b1e9e",
+            "sha256": "a5931670ab5839f4a0a703957002bdfd0fe4728008d8a91b24a98ce358800d5d"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:50:20.132049Z",
+          "yanked": false
+        }
+      ]
+    },
+    "reflex-components-radix": {
+      "version": "0.9.9a2",
+      "metadata_url": "https://pypi.org/pypi/reflex-components-radix/0.9.9a2/json",
+      "requires_dist": [
+        "reflex-base>=0.9.7",
+        "reflex-components-core>=0.9.5",
+        "reflex-components-lucide>=0.9.0"
+      ],
+      "files": [
+        {
+          "filename": "reflex_components_radix-0.9.9a2-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/7e/da/2e24d93538e8f68efb8ca8fa2a96e28b960aa82faaa77297cc64e1ba6f95/reflex_components_radix-0.9.9a2-py3-none-any.whl",
+          "digests": {
+            "blake2b_256": "7eda2e24d93538e8f68efb8ca8fa2a96e28b960aa82faaa77297cc64e1ba6f95",
+            "md5": "ee96b5d6bbde1c4bdaf5c172ed92732d",
+            "sha256": "11e5272e53d45b7106db635c0d00fc0e3adaa7764beb6c59550f1d91d49292c7"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:50:16.286389Z",
+          "yanked": false
+        },
+        {
+          "filename": "reflex_components_radix-0.9.9a2.tar.gz",
+          "url": "https://files.pythonhosted.org/packages/a1/f5/fb4a93c324561a9d03fe8f031f11d796a7c06ad0f4b302b430b86635aabf/reflex_components_radix-0.9.9a2.tar.gz",
+          "digests": {
+            "blake2b_256": "a1f5fb4a93c324561a9d03fe8f031f11d796a7c06ad0f4b302b430b86635aabf",
+            "md5": "f86bcc09c1f47d2fe58b2d176acdf7e1",
+            "sha256": "9b05af656a4920ded0049603b52bcd79856d6466f86c204aa8abe65353c78d34"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:50:17.536161Z",
+          "yanked": false
+        }
+      ]
+    },
+    "reflex-otel": {
+      "version": "0.1.0a2",
+      "metadata_url": "https://pypi.org/pypi/reflex-otel/0.1.0a2/json",
+      "requires_dist": [
+        "opentelemetry-api<2.0,>=1.30.0",
+        "opentelemetry-instrumentation-asgi<1.0,>=0.49b0",
+        "opentelemetry-instrumentation<1.0,>=0.49b0",
+        "reflex-base>=0.9.11a1"
+      ],
+      "files": [
+        {
+          "filename": "reflex_otel-0.1.0a2-py3-none-any.whl",
+          "url": "https://files.pythonhosted.org/packages/e2/c6/3e20e7c2375969a9705341fc1315c27de22362cc4ee8a217680b6084a4bd/reflex_otel-0.1.0a2-py3-none-any.whl",
+          "digests": {
+            "blake2b_256": "e2c63e20e7c2375969a9705341fc1315c27de22362cc4ee8a217680b6084a4bd",
+            "md5": "acb4c6db3158dc1317d352cd30c1328e",
+            "sha256": "e5480376263d95910db670bc65d103a4cbcfabe9578b0eb8fbe681b6a6263d5f"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:50:16.424437Z",
+          "yanked": false
+        },
+        {
+          "filename": "reflex_otel-0.1.0a2.tar.gz",
+          "url": "https://files.pythonhosted.org/packages/aa/0f/eb437eedf74d2abe3f63eb4b9f2505c4601f1321f867eca9fe0bbec46407/reflex_otel-0.1.0a2.tar.gz",
+          "digests": {
+            "blake2b_256": "aa0feb437eedf74d2abe3f63eb4b9f2505c4601f1321f867eca9fe0bbec46407",
+            "md5": "24e1aa534b35a91216074710d0033c05",
+            "sha256": "7ae545254e5514d2edf7fbff29dc793abb06edc434df47accfdfbbb348542e7c"
+          },
+          "upload_time_iso_8601": "2026-09-11T16:50:17.278186Z",
+          "yanked": false
+        }
+      ]
+    }
+  },
+  "release_mapping": [
+    {
+      "pr": 7085,
+      "main_merge_commit": "df96a1b6253c63804ba0a007c23641d80816a063",
+      "release_commit": "b4d7f12980e21d390311d2b3f91a1df7d4c9478c",
+      "tag": "reflex-components-moment-v0.9.4a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": true
+    },
+    {
+      "pr": 7086,
+      "main_merge_commit": "8b86181602c5534e518ed467d1cee10a17eb45e5",
+      "release_commit": "1103176e363228adb86b8dd572ca347a23dd10b7",
+      "tag": "reflex-otel-v0.1.0a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": true
+    },
+    {
+      "pr": 7087,
+      "main_merge_commit": "05f201ac99ffa2721985b63fba55578823c980c0",
+      "release_commit": "a526e2bbf6f6e722d39737801a42f0222b819349",
+      "tag": "v0.9.11a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": true
+    },
+    {
+      "pr": 7105,
+      "main_merge_commit": "17e9ed398d3118f7fb4ab5bc17e49e7ab842160e",
+      "release_commit": "25d9e5064f711a22b9f7d70607da5b9b63c796d5",
+      "tag": "reflex-base-v0.9.11a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": true
+    },
+    {
+      "pr": 7106,
+      "main_merge_commit": "4959c474a4252a52649568e3b332d8398f1e8e0d",
+      "release_commit": "9bd64cc99f359562d62d12175c1b8a1943700f43",
+      "tag": "reflex-base-v0.9.11a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": true
+    },
+    {
+      "pr": 7107,
+      "main_merge_commit": "e8be69c78e65807fef19455bd79384a4029eef2a",
+      "release_commit": "a6f2b22e43f35e995b291fc051d4655819b46335",
+      "tag": "v0.9.11a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": true
+    },
+    {
+      "pr": 7108,
+      "main_merge_commit": "0c4ee52f4a5c6c7c6fcab2446c6672f6c2f9b72b",
+      "release_commit": "e40941151abac2a65adbbd97b2ab6e1486649d18",
+      "tag": "v0.9.11a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": true
+    },
+    {
+      "pr": 7109,
+      "main_merge_commit": "ca85f2c0c7aa4ffb844a2c4bc66eb632cac5a39e",
+      "release_commit": "6d3c9ed9b8ada1a7509490cf9109fbb78258360b",
+      "tag": "v0.9.11a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": false
+    },
+    {
+      "pr": 7109,
+      "main_merge_commit": "ca85f2c0c7aa4ffb844a2c4bc66eb632cac5a39e",
+      "release_commit": "6d3c9ed9b8ada1a7509490cf9109fbb78258360b",
+      "tag": "reflex-base-v0.9.11a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": false
+    },
+    {
+      "pr": 7109,
+      "main_merge_commit": "ca85f2c0c7aa4ffb844a2c4bc66eb632cac5a39e",
+      "release_commit": "6d3c9ed9b8ada1a7509490cf9109fbb78258360b",
+      "tag": "reflex-components-radix-v0.9.9a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": false
+    },
+    {
+      "pr": 7110,
+      "main_merge_commit": "8b393b587ae5f011acb01e1ba439db0009269dec",
+      "release_commit": "8c0f68bc0389bef250e1be287efdf194a472585a",
+      "tag": "reflex-components-moment-v0.9.4a2",
+      "tag_commit": "1cd7b6637522f74ade0b2c60d4007ccbdfc502dc",
+      "stable_patch_ids_match": true
+    }
+  ],
+  "verification_scope": "GitHub status, main/release patch comparison (with #7109 adaptation), PyPI metadata, and changed runtime source bytes in downloaded wheels. No installed-package behavioral revalidation or deployed-documentation validation was performed.",
+  "pr_7109_release_adaptation": {
+    "note": "Release branch lacks main-only lazy bundling; the cherry-pick adapts compiler integration and tests to the eager release implementation. Main unit/browser results are not published-package validation.",
+    "shared_code_equal": {
+      "reflex/compiler/utils.py:_compile_initial_state": true,
+      "reflex/compiler/compiler.py:_get_window_libraries": true,
+      "packages/reflex-base/src/reflex_base/components/dynamic.py": true
+    }
+  },
+  "wheel_source_checks": [
+    {
+      "package": "reflex",
+      "filename": "reflex-0.9.11a2-py3-none-any.whl",
+      "artifact_sha256_verified": true,
+      "runtime_files_identical_to_release_tag": [
+        "reflex/app.py",
+        "reflex/compiler/compiler.py",
+        "reflex/compiler/utils.py",
+        "reflex/utils/token_manager.py"
+      ]
+    },
+    {
+      "package": "reflex-base",
+      "filename": "reflex_base-0.9.11a2-py3-none-any.whl",
+      "artifact_sha256_verified": true,
+      "runtime_files_identical_to_release_tag": [
+        "reflex_base/compiler/templates.py",
+        "reflex_base/components/dynamic.py",
+        "reflex_base/config.py",
+        "reflex_base/registry.py",
+        "reflex_base/vars/hybrid_property.py"
+      ]
+    },
+    {
+      "package": "reflex-components-moment",
+      "filename": "reflex_components_moment-0.9.4a2-py3-none-any.whl",
+      "artifact_sha256_verified": true,
+      "runtime_files_identical_to_release_tag": [
+        "reflex_components_moment/moment.py"
+      ]
+    },
+    {
+      "package": "reflex-components-radix",
+      "filename": "reflex_components_radix-0.9.9a2-py3-none-any.whl",
+      "artifact_sha256_verified": true,
+      "runtime_files_identical_to_release_tag": [
+        "reflex_components_radix/plugin.py"
+      ]
+    },
+    {
+      "package": "reflex-otel",
+      "filename": "reflex_otel-0.1.0a2-py3-none-any.whl",
+      "artifact_sha256_verified": true,
+      "runtime_files_identical_to_release_tag": []
+    }
+  ]
+}

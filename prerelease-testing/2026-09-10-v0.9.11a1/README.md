@@ -6,9 +6,15 @@ reflex-components-radix 0.9.9a1, -code 0.9.5a1, -moment 0.9.4a1, -plotly 0.9.6a1
 -recharts 0.9.3a1, -sonner 0.9.3a1, reflex-hosting-cli 0.1.72a1, reflex-release 0.1.1a1
 and the brand-new **reflex-otel 0.1.0a1**.
 
-**Start with [FINDINGS.md](./FINDINGS.md)** — executive summary, numbered findings with
-repros and evidence, and per-cluster summaries. [RELEASE_PLAN.md](./RELEASE_PLAN.md)
-triages them into fix-before-release vs file-as-issue.
+**For the remediation handoff, start with [RELEASE_PLAN.md](./RELEASE_PLAN.md)** —
+maintainer decisions, final PR/issue disposition, and exact published target versions.
+[PUBLISHED_VALIDATION.md](./PUBLISHED_VALIDATION.md) gives the independent reviewer
+installation rules and observable acceptance checks; [REVIEW_STATUS.json](./REVIEW_STATUS.json)
+records the GitHub/PyPI evidence snapshot. Published-package runtime validation is pending.
+
+[FINDINGS.md](./FINDINGS.md) preserves the original a1 observations, numbered findings,
+reproductions, evidence, and cluster summaries. Its original recommendations are historical;
+the updated release plan is authoritative for this remediation batch's scope.
 
 ## Method
 
