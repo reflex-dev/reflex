@@ -708,6 +708,13 @@ class EnvironmentVariables:
     # Whether to run Granian in a spawn process. This enables Reflex to pick up on environment variable changes between hot reloads.
     REFLEX_STRICT_HOT_RELOAD: EnvVar[bool] = env_var(False)
 
+    # The multiprocessing start method for production backend workers. Unset means "fork" wherever
+    # the interpreter itself defaults to a fork-based method (Linux), so workers share the app
+    # preloaded by the supervisor. Set to "spawn" for apps that are not fork-safe.
+    REFLEX_BACKEND_START_METHOD: EnvVar[
+        Literal["fork", "spawn", "forkserver"] | None
+    ] = env_var(None)
+
     # The path to the reflex log file. If not set, the log file will be stored in the reflex user directory.
     REFLEX_LOG_FILE: EnvVar[Path | None] = env_var(None)
 

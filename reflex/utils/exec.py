@@ -785,6 +785,43 @@ def run_uvicorn_backend_prod(
     )
 
 
+def _backend_start_method() -> str | None:
+    """Resolve the multiprocessing start method for production backend workers.
+
+    Returns:
+        The start method to force, or None to keep the interpreter default.
+    """
+    if (method := environment.REFLEX_BACKEND_START_METHOD.get()) is not None:
+        return method
+    import multiprocessing
+
+    # Python defaults to fork (<3.14) or forkserver (3.14+) on Linux and to
+    # spawn elsewhere; only where fork is already the platform norm do we rely
+    # on it so workers can share the supervisor's pages.
+    if multiprocessing.get_start_method() in ("fork", "forkserver"):
+        return "fork"
+    return None
+
+
+def _preload_for_fork(app_target: str | None) -> None:
+    """Import the app in the supervisor so forked workers share its pages.
+
+    Args:
+        app_target: The ASGI app target; None means the reflex app, which is
+            imported here. Any other target lives in an already-loaded module.
+    """
+    import gc
+
+    from reflex.utils import prerequisites
+
+    if app_target is None:
+        prerequisites.get_app()
+    # Freezing keeps worker GC passes from writing to the preloaded objects'
+    # headers, which would copy-on-write the shared pages private again.
+    gc.collect()
+    gc.freeze()
+
+
 def run_granian_backend_prod(
     host: str, port: int, loglevel: LogLevel, app_target: str | None = None
 ):
@@ -796,11 +833,18 @@ def run_granian_backend_prod(
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
     """
+    import multiprocessing
+
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
 
     logger.debug("Using Granian for backend")
+
+    if (start_method := _backend_start_method()) is not None:
+        multiprocessing.set_start_method(start_method, force=True)
+        if start_method == "fork":
+            _preload_for_fork(app_target)
 
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),
