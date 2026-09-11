@@ -73,6 +73,88 @@ DEFAULT_MEMO_WRAPPER: FunctionVar = FunctionStringVar.create(
     _var_data=VarData(imports={"react": [ImportVar(tag="memo")]}),
 )
 
+# React's default memo comparator compares each prop by identity. This wrapper
+# opts into comparing the serialized props instead, which is useful for memo
+# props represented by freshly-created but equal objects.
+BY_VALUE_MEMO_WRAPPER: FunctionVar = FunctionStringVar.create(
+    "(Component) => memo(Component, (prevProps, nextProps) => "
+    "JSON.stringify(prevProps) === JSON.stringify(nextProps))",
+    _var_data=VarData(imports={"react": [ImportVar(tag="memo")]}),
+)
+
+# Function memos share one module-level cache. Identity mode uses a Map trie so
+# multiple call sites with different argument tuples remain cached concurrently.
+_DEFAULT_FUNCTION_MEMO_WRAPPER: FunctionVar = FunctionStringVar.create(
+    "(fn) => { const resultKey = Symbol(); const cache = new Map(); "
+    "return (...args) => { let node = cache; for (const arg of args) { "
+    "if (!node.has(arg)) node.set(arg, new Map()); node = node.get(arg); } "
+    "if (!node.has(resultKey)) node.set(resultKey, fn(...args)); "
+    "return node.get(resultKey); }; }"
+)
+
+# Value mode uses serialized argument tuples as cache keys.
+_BY_VALUE_FUNCTION_MEMO_WRAPPER: FunctionVar = FunctionStringVar.create(
+    "(fn) => { const cache = new Map(); return (...args) => { "
+    "const key = JSON.stringify(args); "
+    "if (!cache.has(key)) cache.set(key, fn(...args)); return cache.get(key); }; }"
+)
+
+
+def _is_valid_js_identifier(name: str) -> bool:
+    """Return whether a name contains valid JavaScript identifier characters.
+
+    Args:
+        name: The name to validate.
+
+    Returns:
+        Whether ``name`` is structurally valid as a JavaScript identifier.
+    """
+    if name.isidentifier():
+        return True
+    if not name or name[0] not in "_$":
+        return False
+    return all(
+        char in "_$" or "a" <= char <= "z" or "A" <= char <= "Z" or "0" <= char <= "9"
+        for char in name[1:]
+    )
+
+
+def _validate_memo_name(name: str) -> None:
+    """Validate a memo name before adding its JavaScript-safe suffix.
+
+    Args:
+        name: The unsuffixed JavaScript identifier to validate.
+
+    Raises:
+        ValueError: If ``name`` contains invalid JavaScript identifier characters.
+    """
+    if not name or not _is_valid_js_identifier(name):
+        msg = (
+            f"`@rx.memo` name {name!r} must contain valid JavaScript identifier "
+            "characters."
+        )
+        raise ValueError(msg)
+
+
+def _compose_memo_wrappers(outer: Var, inner: Var) -> FunctionVar:
+    """Compose two memo wrappers while preserving their imports.
+
+    Args:
+        outer: The wrapper applied last.
+        inner: The wrapper applied directly to the memo body.
+
+    Returns:
+        A wrapper equivalent to ``outer(inner(value))``.
+    """
+    return FunctionStringVar.create(
+        f"(value) => ({outer})(({inner})(value))",
+        _var_data=VarData.merge(
+            outer._get_all_var_data(),
+            inner._get_all_var_data(),
+        ),
+    )
+
+
 # Base ``Component`` props a memo accepts without an ``rx.RestProp`` (with a
 # deprecation warning). Only ``key`` qualifies: React consumes it at the
 # reconciliation layer, so it takes effect on the rendered element even though
@@ -290,8 +372,10 @@ class MemoDefinition:
 class MemoFunctionDefinition(MemoDefinition):
     """A memo that compiles to a JavaScript function."""
 
+    export_name: str
     _function: _LazyBody[ArgsFunctionOperation]
     imported_var: FunctionVar
+    wrapper: Var | None = _DEFAULT_FUNCTION_MEMO_WRAPPER
 
     @property
     def function(self) -> ArgsFunctionOperation:
@@ -325,6 +409,10 @@ class MemoComponentDefinition(MemoDefinition):
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
     # its own and ``None`` pulls in nothing.
     wrapper: Var | None = DEFAULT_MEMO_WRAPPER
+    # Whether components in the explicit memo's children are eligible for
+    # compiler auto-memoization. The default keeps the explicit memo as the
+    # memoization boundary.
+    recursive: bool = False
     # Set for definitions the compiler's auto-memoize pass creates (see
     # ``create_passthrough_component_memo``). Instances of such a definition
     # are the auto-memo boundary itself, so the pass must not wrap them again.
@@ -386,6 +474,9 @@ class MemoComponent(Component):
     # introspection (e.g. compile telemetry) can recover the underlying type
     # without parsing the wrapper's auto-generated class name.
     _wrapped_component_type: ClassVar[type[Component] | None] = None
+    # Whether children of an explicit memo are eligible for compiler
+    # auto-memoization. Auto-generated wrappers always set this to ``True``.
+    _memo_recursive: ClassVar[bool] = True
 
     def _validate_component_children(self, children: list[Component]) -> None:
         """Skip direct parent/child validation for memo wrapper instances.
@@ -430,6 +521,7 @@ def _get_memo_component_class(
     wrapped_component_type: type[Component] = Component,
     source_module: str | None = None,
     auto_memo_wrapper: bool = False,
+    recursive: bool = False,
 ) -> type[MemoComponent]:
     """Get the component subclass for a memo export.
 
@@ -452,6 +544,8 @@ def _get_memo_component_class(
             boundary, so they opt out of being auto-memoized themselves;
             user-authored ``@rx.memo`` components do not, so their stateful
             props land in a generated wrapper instead of the page module.
+        recursive: Whether components inside an explicit memo are eligible for
+            compiler auto-memoization.
 
     Returns:
         A cached component subclass with the tag set at class definition time.
@@ -465,8 +559,9 @@ def _get_memo_component_class(
         "tag": symbol,
         "library": library,
         "_wrapped_component_type": wrapped_component_type,
+        "_memo_recursive": auto_memo_wrapper or recursive,
     }
-    if auto_memo_wrapper:
+    if auto_memo_wrapper or not recursive:
         attrs["_memoization_mode"] = MemoizationMode(
             disposition=MemoizationDisposition.NEVER
         )
@@ -512,9 +607,9 @@ def _memo_registry_key(definition: MemoDefinition) -> tuple[str, str | None]:
     Returns:
         The ``(name, source_module)`` registry key for the memo.
     """
-    if isinstance(definition, MemoComponentDefinition):
+    if isinstance(definition, (MemoComponentDefinition, MemoFunctionDefinition)):
         return definition.export_name, definition.source_module
-    return definition.python_name, definition.source_module
+    raise TypeError(type(definition))
 
 
 def _is_memo_reregistration(
@@ -1789,6 +1884,7 @@ class _MemoComponentWrapper:
             type(component),
             definition.source_module,
             definition.auto_memo_wrapper,
+            definition.recursive,
         )._create(
             children=list(children),
             memo_definition=definition,
@@ -2113,21 +2209,36 @@ def _warn_legacy_base_props(fn_name: str, prop_names: Sequence[str]) -> None:
 def _memo_impl(
     fn: Callable[..., Any],
     wrapper: Var | None,
+    by_value: bool,
+    recursive: bool,
+    name: str | None,
 ) -> _MemoComponentWrapper | _MemoFunctionWrapper:
     """Analyze and register a memo definition for a decorated function.
 
     Args:
         fn: The function to memoize.
-        wrapper: The JS wrapper for a component-returning memo, or ``None``
-            for no wrapper.
+        wrapper: The JS wrapper for the emitted function, or ``None`` for no
+            wrapper.
+        by_value: Whether to compare props by serialized value instead of
+            React's default prop identity comparison.
+        recursive: Whether to auto-memoize hook-bearing components inside the
+            explicitly memoized component.
+        name: Optional override for the compiled memo name.
 
     Returns:
         The wrapped function or component factory.
 
     Raises:
-        TypeError: If the return annotation is not supported, or a non-default
-            ``wrapper`` is given for a var-returning memo.
+        TypeError: If the return annotation is not supported, ``recursive`` is
+            enabled for a var-returning memo, or ``by_value`` is combined with
+            ``wrapper=None``.
+        ValueError: If the memo name is not a valid JavaScript identifier.
     """
+    memo_name = fn.__name__ if name is None else name
+    if not isinstance(memo_name, str):
+        msg = "`@rx.memo` name must be a string."
+        raise ValueError(msg)
+
     hints = get_type_hints(fn, include_extras=True)
     return_annotation = hints.get("return", inspect.Signature.empty)
     missing_return = return_annotation is inspect.Signature.empty
@@ -2142,13 +2253,35 @@ def _memo_impl(
             f"`rx.Var[...]`, got `{return_annotation}`."
         )
         raise TypeError(msg)
-    if not is_component and wrapper is not DEFAULT_MEMO_WRAPPER:
-        msg = (
-            "`@rx.memo` only supports `wrapper=` on component-returning memos; "
-            f"`{fn.__name__}` returns `rx.Var[...]`, which compiles to a plain "
-            "function."
-        )
+    export_name = format.to_title_case(memo_name) if is_component else memo_name
+    _validate_memo_name(export_name)
+    if name is not None:
+        export_name += CAMEL_CASE_MEMO_MARKER
+    if not is_component:
+        if recursive:
+            msg = (
+                "`@rx.memo` only supports `recursive=True` on component-returning "
+                f"memos; `{fn.__name__}` returns `rx.Var[...]`."
+            )
+            raise TypeError(msg)
+        if wrapper is DEFAULT_MEMO_WRAPPER:
+            wrapper = _DEFAULT_FUNCTION_MEMO_WRAPPER
+    if by_value and wrapper is None:
+        msg = "`by_value=True` requires a memo wrapper; it cannot use `wrapper=None`."
         raise TypeError(msg)
+    if by_value:
+        assert wrapper is not None
+        value_wrapper = (
+            BY_VALUE_MEMO_WRAPPER if is_component else _BY_VALUE_FUNCTION_MEMO_WRAPPER
+        )
+        default_wrapper = (
+            DEFAULT_MEMO_WRAPPER if is_component else _DEFAULT_FUNCTION_MEMO_WRAPPER
+        )
+        wrapper = (
+            value_wrapper
+            if wrapper is default_wrapper
+            else _compose_memo_wrappers(value_wrapper, wrapper)
+        )
 
     defaulted_params: list[str] = []
     missing_params: list[str] = []
@@ -2176,10 +2309,10 @@ def _memo_impl(
         rest_target_fields: set[str] = set()
         definition = MemoComponentDefinition(
             fn=fn,
-            python_name=fn.__name__,
+            python_name=memo_name,
             params=params,
             source_module=source_module,
-            export_name=format.to_title_case(fn.__name__),
+            export_name=export_name,
             _component=_LazyBody(
                 lambda: _evaluate_component_body(fn, params, rest_target_fields),
                 placeholder=Fragment.create(),
@@ -2187,20 +2320,23 @@ def _memo_impl(
             _rest_target_fields=rest_target_fields,
             _runtime_inferred_params=frozenset(missing_params),
             wrapper=wrapper,
+            recursive=recursive,
         )
         memo_callable = _create_component_wrapper(definition)
     else:
         definition = MemoFunctionDefinition(
             fn=fn,
-            python_name=fn.__name__,
+            python_name=memo_name,
             params=params,
             source_module=source_module,
+            export_name=export_name,
             _function=_LazyBody(lambda: _evaluate_function_body(fn, params)),
             imported_var=_imported_function_var(
-                fn.__name__,
+                export_name,
                 _annotation_inner_type(return_annotation),
                 source_module=source_module,
             ),
+            wrapper=wrapper,
         )
         memo_callable = _create_function_wrapper(definition)
 
@@ -2225,18 +2361,20 @@ def memo(fn: Callable[..., Var[_MemoVarT]]) -> _MemoFunctionWrapper: ...
 def memo() -> _MemoDecorator: ...
 @overload
 def memo(
-    *, wrapper: Var | None
-) -> Callable[[Callable[..., Component]], _MemoComponentWrapper]: ...
+    *,
+    wrapper: Var | None = DEFAULT_MEMO_WRAPPER,
+    by_value: bool = False,
+    recursive: bool = False,
+    name: str | None = None,
+) -> _MemoDecorator: ...
 def memo(
     fn: Callable[..., Any] | None = None,
     *,
     wrapper: Var | None = DEFAULT_MEMO_WRAPPER,
-) -> (
-    _MemoComponentWrapper
-    | _MemoFunctionWrapper
-    | _MemoDecorator
-    | Callable[[Callable[..., Component]], _MemoComponentWrapper]
-):
+    by_value: bool = False,
+    recursive: bool = False,
+    name: str | None = None,
+) -> _MemoComponentWrapper | _MemoFunctionWrapper | _MemoDecorator:
     """Create a memo from a function.
 
     The decorated function's body is **not** executed here. Only signature-level
@@ -2252,26 +2390,47 @@ def memo(
     Args:
         fn: The function to memoize. When omitted, returns a decorator that
             applies the given keyword arguments (``@rx.memo(wrapper=...)``).
-        wrapper: The JS function the compiled function component is wrapped in.
-            Defaults to React's ``memo``; pass another ``Var`` (typically an
-            ``rx.vars.FunctionStringVar`` carrying its own imports) to swap the
-            wrapper, or ``None`` to export the bare function component. Only
-            supported on component-returning memos.
+        wrapper: The JS function the compiled component or function is wrapped
+            in. Component memos default to React's ``memo``; function memos
+            default to a return-value cache keyed by argument identity. Pass
+            another ``Var`` (typically an ``rx.vars.FunctionStringVar``
+            carrying its own imports) to swap the wrapper, or ``None`` to
+            export the bare component or function.
+        by_value: When ``True``, compare serialized props by value instead of
+            identity for component memos, and cache function results by
+            serialized argument values.
+        recursive: When ``True``, allow compiler auto-memoization of
+            hook-bearing components inside this explicit component memo. Not
+            supported on function memos.
+        name: Optional compiled memo name. This is useful when decorating a
+            lambda, whose default name is ``<lambda>``.
 
     Returns:
         The wrapped function or component factory, or — when ``fn`` is omitted
         — a decorator applying the keyword arguments.
 
     Raises:
-        TypeError: If the return annotation is not supported, or a non-default
-            ``wrapper`` is given for a var-returning memo.
+        TypeError: If the return annotation is not supported, ``recursive`` is
+            enabled for a var-returning memo, or ``by_value`` is combined with
+            ``wrapper=None``.
+        ValueError: If the memo name is not a valid JavaScript identifier.
     """
     if fn is None:
-        return cast("_MemoDecorator", partial(_memo_impl, wrapper=wrapper))
-    return _memo_impl(fn, wrapper)
+        return cast(
+            "_MemoDecorator",
+            partial(
+                _memo_impl,
+                wrapper=wrapper,
+                by_value=by_value,
+                recursive=recursive,
+                name=name,
+            ),
+        )
+    return _memo_impl(fn, wrapper, by_value, recursive, name)
 
 
 __all__ = [
+    "BY_VALUE_MEMO_WRAPPER",
     "DEFAULT_MEMO_WRAPPER",
     "EMPTY_VAR_COMPONENT",
     "MEMOS",
