@@ -1,4 +1,4 @@
-# Findings — reflex 0.9.11a1 pre-release testing (2026-09-10) — DRAFT, campaign in progress
+# Findings — reflex 0.9.11a1 pre-release testing (2026-09-10)
 
 Independent end-to-end exploration of the `r/pre-2026.09.10-34457666442` release train. All
 installs PyPI-only in isolated uv venvs (never from a checkout); every sample app run for real
@@ -6,9 +6,11 @@ installs PyPI-only in isolated uv venvs (never from a checkout); every sample ap
 console / network capture; claimed issues re-reproduced by independent adversarial verifier
 agents from the written repro alone. Baselines against the previous stable, reflex 0.9.10.post2.
 
-Campaign status: the orchestrated fan-out was interrupted twice by the organisation's monthly
-spend limit (10:00 and ~14:30 UTC) and resumed from cache each time. This file is updated as
-clusters complete; the per-cluster `NOTES.md` files are authoritative for detail.
+Campaign status: complete. Every claim in the 0.9.11a1 changelog has been exercised and every
+reflex-enterprise demo has been run on both reflex versions. The orchestrated fan-out was
+interrupted repeatedly by the organisation's monthly spend limit and was resumed from cache each
+time; the later clusters were run in the foreground instead. The per-cluster `NOTES.md` files are
+authoritative for detail.
 
 ## Versions under test (all published on PyPI, verified with check_release_versions.py)
 
@@ -22,7 +24,7 @@ Environment: Linux container, 4 CPU / 15 GB, Node v22.22.2, reflex-managed Bun 1
 bun 1.3.11 also present), Python 3.11.15 primary (3.10/3.12/3.13/3.14 via uv), Chromium via
 Playwright, outbound via an egress proxy, redis-server available.
 
-## Executive summary (interim)
+## Executive summary
 
 Verified changelog claims (not findings): `reflex[testing]` + `AppHarness` runs an app end to end
 (4/4 pytest checks) while a bare install raises an `ImportError` naming the extra (#6974/#7008);
@@ -41,6 +43,10 @@ startup 0.66 s → 0.13 s (#7050). Ten reflex-examples apps... (pending: four do
 Packaging: all 121 `.pyi` stubs ship correctly in wheel and sdist for all 17 packages.
 
 What needs a decision or a fix before final:
+- FINDING-033 (regression, downstream, medium, CONFIRMED): with `reflex-components-moment` 0.9.4a1
+  a `locale=` on one `rx.moment` changes the language of every other moment on the page, in dev and
+  prod. Bisected to the component bump alone. **The one item worth holding the train for**; see
+  RELEASE_PLAN.md.
 - FINDING-001 (process): `reflex-otel 0.1.0a1` failed to publish from the release run (PyPI
   trusted publisher not configured for the new project); published manually 17 min later.
 - FINDING-002 (regression, downstream, low): `rx.moment` `on_change` fires at mount under
@@ -50,9 +56,20 @@ What needs a decision or a fix before final:
   `RedisTokenManager.instance_id`. Measured: 4/6 delivered on 0.9.11a1 with 9 workers, 6/6 with one
   worker, 0/6 on 0.9.10.post2 with 8 workers. Not new, but it swallows the #7073 hydrate this train
   adds.
-- Several verifier verdicts still pending (hybrid_property typing claim; bg_rehydrate items).
+Later clusters added: enterprise MCP and OIDC driven end to end against a purpose-built OIDC
+provider, the remaining enterprise demos, three reflex-examples apps upgraded in place, the six
+component-library bumps in dev and prod, `frontend_path` + `REFLEX_SSR=false` (#7044), shared-asset
+linking (#7039), CLI startup (#7050), the telemetry context fix (#6960) and the memoization naming
+caches (#6947). All but the moment bump came back clean or pre-existing.
 
-Index (confirmed = independently re-reproduced by a verifier; claimed = verification pending):
+Index (confirmed = independently re-reproduced by a verifier; claimed = verification pending).
+Findings 030-037 were found in the foreground clusters that closed the campaign:
+FINDING-030 delta key ordering changed (LOW, new); FINDING-031 and FINDING-032 enterprise MCP
+resource quirks (LOW, pre-existing); **FINDING-033 the `rx.moment` locale leak (MEDIUM, regression)
+— CONFIRMED**; FINDING-034 seven component-library rough edges (LOW, pre-existing); FINDING-035 the
+enterprise OpenAPI document 500s without `pyyaml` (LOW, pre-existing); FINDING-036 a delta sent for
+substates the page has no dispatcher for (LOW, pre-existing); FINDING-037 `REFLEX_SSR=false` serves
+every prod route but `/` as 404 (LOW, pre-existing).
 - FINDING-001: reflex-otel 0.1.0a1 not published by the release run (PROCESS, resolved)
 - FINDING-002: rx.moment on_change fires at mount with react-moment 2.0.2 (LOW, regression, downstream) — CONFIRMED
 - FINDING-003: prod multi-worker + redis: cross-worker deltas silently dropped, swallowing the new #7073 hydrate (HIGH, pre-existing) — CONFIRMED (orchestrator; single-worker control delivers 6/6)
@@ -452,7 +469,7 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
   call sites — the confusing outcome of "it installed, so it should work".
 - Evidence: `otel/evidence/mixed-env-0910-plus-otel.txt`.
 
-## Cluster summaries (interim)
+## Cluster summaries
 
 ### `smoke` (orchestrator) — clean
 Blank template on 0.9.11a1, dev and prod: 0 console/page/network errors; Bun 1.4.0 installed,
@@ -541,6 +558,53 @@ clean single-document JSON on stdout. Gaps: FINDING-012 to FINDING-015.
 counter, todo, clock, linkinbio: baseline → in-place → cold identical (md5-identical screenshots),
 Bun 1.3.11→1.4.0 migration clean, lockfile stays v1, `context.js` removed, package.json diff is
 exactly the announced pins.
+
+### `ent_mcp_oidc` (solo) — NO REGRESSION on the two surfaces the user named
+The enterprise MCP plugin and the whole OIDC flow, driven against a purpose-built local OIDC
+provider (discovery, JWKS, PKCE S256, refresh, userinfo, RP-initiated logout). 22 recorded browser
+steps **byte-identical** across reflex 0.9.11a1 and 0.9.10.post2; the MCP protocol runs differ only
+in delta key ordering (FINDING-030). Protected-value withholding, page and handler guards
+(foreground and background), reload and second-tab persistence, and an anonymous MCP session
+correctly scoped to `auth=False` handlers all hold. Two pre-existing MCP-resource quirks:
+FINDING-031, FINDING-032.
+
+### `components_bumps` — ONE REGRESSION (FINDING-033), everything else clean
+All six bumped component libraries in dev and prod against the previous stable. The moment bump
+leaks a literal `locale=` to every other `rx.moment` on the page; code/plotly/radix/recharts/sonner
+behave the same as or better than 0.9.10.post2. Seven pre-existing rough edges: FINDING-034.
+
+### `up_dataviz_local_lorem` (solo) — no regression on in-place upgrade
+`local-component`, `lorem-stream` and `data_visualisation` upgraded in place — same venv, same app
+directory, same `.web/`, same sqlite database. Two of the three are step-for-step identical; the
+third differs only in random lorem word counts. Also verified `reflex-release` 0.1.1a1 against a
+real worktree of the release branch.
+
+### `ent_mantine_highcharts_tickets` (solo) — no regression; enterprise sweep complete
+`mantine`, `highcharts` and `tickets` identical across versions on every structural count and
+route. The tickets demo's `EventHandlerAPIPlugin` works over REST (bearer, delta, persisted row)
+but 500s on its own OpenAPI document (FINDING-035), and every page logs a delta addressed to
+substates it has no dispatcher for (FINDING-036).
+
+### `config_assets_cli` (solo) — both claims hold, no findings
+#7039's stale-link half is a clean pass/fail and 0.9.11a1 fixes it (0.9.10.post2 keeps serving the
+wrong file); its concurrent-first-create half could not be provoked on this filesystem on either
+version. #7050 CLI startup is ~2.3× faster on every subcommand.
+
+### `frontend_path_ssr` (solo) — #7044 verified, one pre-existing find
+`reflex export` and `reflex run --env prod` with `frontend_path` + `REFLEX_SSR=false` fail on
+0.9.10.post2 with exactly the documented `FileNotFoundError` and succeed on 0.9.11a1; the prod
+deployment then works end to end in a browser under the sub-path. Every route but `/` is answered
+with HTTP 404 under `REFLEX_SSR=false` on both versions: FINDING-037.
+
+### `telemetry_ctx` (solo) — #6960 verified, no findings
+An `rxconfig.py` that logs its importing thread shows the re-import on `reflex-telemetry_0` under
+0.9.10.post2 and its absence under 0.9.11a1.
+
+### `memo_hash` (solo) — #6947 verified, no findings
+Two `AppHarness` apps compiled in one pytest process, each with a same-named `rx.memo` used under
+`rx.foreach`, emit distinct memoized names while still sharing the names of genuinely identical
+framework components; neither app's output is disturbed by the other's compile. 5/5 checks pass.
+
 
 ## FINDING-030: state-delta key ordering changed between 0.9.10.post2 and 0.9.11a1 (LOW, new)
 
