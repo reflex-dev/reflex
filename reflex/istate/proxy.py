@@ -651,7 +651,7 @@ class MutableProxy(wrapt.ObjectProxy):
         Returns:
             The result of the wrapped function.
         """
-        self._self_state.dirty_vars.add(self._self_field_name)
+        self._self_state._record_dirty_var(self._self_field_name)
         self._self_state._mark_dirty()
         if wrapped is not None:
             return wrapped(*args, **(kwargs or {}))
