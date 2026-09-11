@@ -65,6 +65,7 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - FINDING-016: `reflex run --json` stdout still carries 9 plain-text granian lines, breaking strict JSON-lines parsing (LOW, pre-existing, previous campaign's FINDING-013)
 - FINDING-017: `rx.plotly` still emits `id` rather than `divId`, so the id never reaches the DOM, unchanged by the react-plotly.js 4.1.0 bump (LOW, pre-existing, previous campaign's FINDING-020)
 - FINDING-018: dev mode: one unserializable state var drops the ENTIRE hydrate delta on every page load, silently reverting session state and showing a raw internal ValueError to the user (HIGH, pre-existing, triggered downstream) — claimed
+- FINDING-021: a single `REFLEX_USE_NPM=1` run converts a project to npm permanently and silently (LOW, pre-existing); the previous campaign's FINDING-018 did NOT reproduce
 - FINDING-019: four shipped reflex-enterprise 0.9.5 defects that block its own demos (stale bundle path, ModelWrapper URL encoding, ag-grid/ag-charts version mismatch, `column_def()` dropping unknown kwargs) (MEDIUM, pre-existing, downstream)
 
 ## FINDING-001: reflex-otel 0.1.0a1 not published by the release run (PROCESS, resolved)
@@ -316,6 +317,18 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 4. `ag_grid.column_def()` silently drops unknown kwargs, which is why `ag_grid_finance`'s
    `checkbox_selection=True` yields no selectable rows and its chart never renders.
 - Evidence: `ent_aggrid/NOTES.md` ISSUES 1, 5, 4, 7 with per-route reports under `shots/`.
+
+## FINDING-021: one `REFLEX_USE_NPM=1` run converts a project to npm permanently (LOW, pre-existing)
+
+- Cluster: `orch_probes` | Regression: no | Also closes the previous campaign's FINDING-018, which
+  did **not** reproduce here: the npm → bun switch is clean.
+- Three runs of a fresh blank app in one directory: with `REFLEX_USE_NPM=1`, npm installs everything
+  under node 22 and the page is clean; the **next** run, with no env var, silently uses npm again,
+  because reflex chooses the installer from the persisted lockfile; deleting
+  `reflex.lock/package-lock.json` and `.web/package-lock.json` restores bun 1.4.0 and writes
+  `bun.lock`. Nothing announces the sticky state, and while it lasts the project never gets the Bun
+  1.4 lockfile behaviour this train ships.
+- Evidence: `orch_probes/NOTES.md`, `orch_probes/logs/{npm_run,bun_after_npm,bun_after_rmlock}.trimmed.log`.
 
 ## Cluster summaries (interim)
 

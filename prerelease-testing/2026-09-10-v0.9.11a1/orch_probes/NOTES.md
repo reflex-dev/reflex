@@ -156,3 +156,23 @@ still emits a React `id` prop and never `divId`, which is the only identifier re
 `Plot` forwards to the container div. The plotly bump to react-plotly.js 4.1.0 in this train does
 not change that, so the previous campaign's end-to-end result (chart renders,
 `document.getElementById('the-plot')` is null) still stands. Pre-existing, low.
+
+## `REFLEX_USE_NPM=1` on 0.9.11a1: works, but the choice sticks silently
+
+Fresh blank app, three consecutive runs in the same directory (`logs/npm_run.trimmed.log`,
+`bun_after_npm.trimmed.log`, `bun_after_rmlock.trimmed.log`):
+
+| run | env | installer actually used | frontend | persisted lockfile |
+|---|---|---|---|---|
+| 1 | `REFLEX_USE_NPM=1` | npm (node 22.22.2) | 200, page clean in Chromium | `reflex.lock/package-lock.json` |
+| 2 | *(no env var)* | **npm again** | 200 | `package-lock.json` |
+| 3 | *(no env var)*, after `rm reflex.lock/package-lock.json .web/package-lock.json` | bun 1.4.0 | 200 | `bun.lock` |
+
+- The npm path is healthy on this train: postcss-import 17 and the rest install under node 22, the
+  dev server starts, and the driven page is clean (0 console errors, 0 failed requests).
+- The previous campaign's FINDING-018 (a *failed* npm run persisting an inconsistent lock that breaks
+  subsequent runs) did **not** reproduce: the npm → bun switch is clean once the npm lockfile is gone.
+- What is surprising: reflex picks the installer from the persisted lockfile, so a single
+  `REFLEX_USE_NPM=1` run converts the project to npm permanently. Run 2 used npm with no env var and
+  nothing announcing it. A user who tries npm once silently keeps npm — and never gets the Bun 1.4
+  lockfile behaviour this train is about. Deleting the npm lockfile is the undocumented remedy.

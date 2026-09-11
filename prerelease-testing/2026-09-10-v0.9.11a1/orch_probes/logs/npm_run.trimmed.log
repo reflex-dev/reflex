@@ -1,0 +1,300 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/smoke/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='npmapp', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'plugins', 'telemetry_enabled', 
+'app_name'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, 
+plugins=[SitemapPlugin(trailing_slash='preserve'), 
+TailwindV4Plugin(config={'plugins': ['@tailwindcss/typography@0.5.20']}), 
+RadixThemesPlugin(theme={"name": "RadixThemesTheme", "props": 
+["accentColor:\"blue\"", "css:{...theme.styles.global[':root'], 
+...theme.styles.global.body}"], "children": []})], disable_plugins=[], 
+transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+envs/smoke/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/opt/node22/bin/npm', 
+'/root/.local/share/reflex/bun/bin/bun']
+Debug: Using package executer at: [['/opt/node22/bin/npm'], 
+['/root/.local/share/reflex/bun/bin/bun']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3060
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8060
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3060 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3060 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3060 is not in use.
+Debug: Checking if Backend port: 8060 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8060 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8060 is not in use.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.03s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 18/17 0:00:00
+Debug: Running command: ['/opt/node22/bin/npm', 'add', '--legacy-peer-deps', 
+'-d', 'postcss-import@17.0.0', '@react-router/fs-routes@8.3.1', 
+'@tailwindcss/postcss@4.3.0', 'vite@8.2.2', '@tailwindcss/typography@0.5.20', 
+'postcss@8.5.26', '@react-router/dev@8.3.1', '@emotion/react@11.14.0', 
+'tailwindcss@4.3.0', 'autoprefixer@10.5.4', '--loglevel', 'silly']
+Debug: Installing frontend development dependencies
+Debug: npm info using npm@10.9.7
+Debug: npm info using node@v22.22.2
+load:file:/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/s
+cratchpad/apps/orch_npm/.web/.npmrc
+@react-router/fs-routes@8.3.1 @tailwindcss/postcss@4.3.0 vite@8.2.2 
+@tailwindcss/typography@0.5.20 postcss@8.5.26 @react-router/dev@8.3.1 
+@emotion/react@11.14.0 tailwindcss@4.3.0 autoprefixer@10.5.4
+"postcss-import@17.0.0" "@react-router/fs-routes@8.3.1" 
+"@tailwindcss/postcss@4.3.0" "vite@8.2.2" "@tailwindcss/typography@0.5.20" 
+"postcss@8.5.26" "@react-router/dev@8.3.1" "@emotion/react@11.14.0" 
+"tailwindcss@4.3.0" "autoprefixer@10.5.4" "--loglevel" "silly"
+dir:/root/.npm/_logs/2026-09-11T00_48_50_609Z-
+maxEntrySize:1080033280
+cache-miss
+(cache miss)
+set size:undefined disposed:false
+full:https://registry.npmjs.org/@react-router%2ffs-routes cache-miss
+https://registry.npmjs.org/@react-router%2ffs-routes 230ms (cache miss)
+full:https://registry.npmjs.org/@react-router%2ffs-routes set size:undefined 
+disposed:false
+full:https://registry.npmjs.org/@tailwindcss%2fpostcss cache-miss
+126ms (cache miss)
+full:https://registry.npmjs.org/@tailwindcss%2fpostcss set size:undefined 
+disposed:false
+miss)
+size:undefined disposed:false
+full:https://registry.npmjs.org/@tailwindcss%2ftypography cache-miss
+https://registry.npmjs.org/@tailwindcss%2ftypography 69ms (cache miss)
+full:https://registry.npmjs.org/@tailwindcss%2ftypography set size:undefined 
+disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+full:https://registry.npmjs.org/@react-router%2fdev cache-miss
+131ms (cache miss)
+full:https://registry.npmjs.org/@react-router%2fdev set size:undefined 
+disposed:false
+cache-miss
+(cache miss)
+set size:undefined disposed:false
+cache-miss
+(cache miss)
+size:undefined disposed:false
+cache-miss
+(cache miss)
+size:undefined disposed:false
+8.3.1
+0.5.20
+cache-miss
+cache-miss
+cache-miss
+(cache miss)
+set size:undefined disposed:false
+full:https://registry.npmjs.org/@emotion%2fserialize cache-miss
+(cache miss)
+set size:undefined disposed:false
+full:https://registry.npmjs.org/@emotion%2fbabel-plugin cache-miss
+62ms (cache miss)
+full:https://registry.npmjs.org/@emotion%2fbabel-plugin set size:undefined 
+disposed:false
+full:https://registry.npmjs.org/@emotion%2fweak-memoize cache-miss
+73ms (cache miss)
+full:https://registry.npmjs.org/@emotion%2fserialize set size:undefined 
+disposed:false
+full:https://registry.npmjs.org/hoist-non-react-statics cache-miss
+(cache miss)
+set size:undefined disposed:false
+@emotion/use-insertion-effect-with-fallbacks@^1.2.0
+full:https://registry.npmjs.org/@emotion%2fuse-insertion-effect-with-fallbacks 
+cache-miss
+72ms (cache miss)
+full:https://registry.npmjs.org/hoist-non-react-statics set size:undefined 
+disposed:false
+84ms (cache miss)
+full:https://registry.npmjs.org/@emotion%2fweak-memoize set size:undefined 
+disposed:false
+size:undefined disposed:false
+https://registry.npmjs.org/@emotion%2fuse-insertion-effect-with-fallbacks 67ms 
+(cache miss)
+full:https://registry.npmjs.org/@emotion%2fuse-insertion-effect-with-fallbacks 
+set size:undefined disposed:false
+size:undefined disposed:false
+cache-miss
+size:undefined disposed:false
+cache-miss
+size:undefined disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+updated)
+size:undefined disposed:false
+cache-miss
+updated)
+size:undefined disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+(cache miss)
+set size:undefined disposed:false
+cache-miss
+(cache miss)
+set size:undefined disposed:false
+full:https://registry.npmjs.org/@babel%2ftraverse cache-miss
+(cache miss)
+set size:undefined disposed:false
+cache-miss
+(cache miss)
+full:https://registry.npmjs.org/@babel%2ftraverse set size:undefined 
+disposed:false
+full:https://registry.npmjs.org/@babel%2fgenerator cache-miss
+(cache miss)
+set size:undefined disposed:false
+full:https://registry.npmjs.org/@react-router%2fnode cache-miss
+(cache miss)
+full:https://registry.npmjs.org/@babel%2fgenerator set size:undefined 
+disposed:false
+full:https://registry.npmjs.org/babel-dead-code-elimination cache-miss
+(cache miss)
+set size:undefined disposed:false
+full:https://registry.npmjs.org/@remix-run%2fnode-fetch-server cache-miss
+https://registry.npmjs.org/babel-dead-code-elimination 107ms (cache miss)
+full:https://registry.npmjs.org/babel-dead-code-elimination set size:undefined 
+disposed:false
+cache-miss
+173ms (cache miss)
+full:https://registry.npmjs.org/@react-router%2fnode set size:undefined 
+disposed:false
+cache-miss
+size:766699 disposed:false
+full:https://registry.npmjs.org/@alloc%2fquick-lru cache-miss
+https://registry.npmjs.org/@remix-run%2fnode-fetch-server 70ms (cache miss)
+full:https://registry.npmjs.org/@remix-run%2fnode-fetch-server set 
+size:undefined disposed:false
+full:https://registry.npmjs.org/@tailwindcss%2fnode cache-miss
+updated)
+size:undefined disposed:false
+full:https://registry.npmjs.org/@tailwindcss%2foxide cache-miss
+(cache miss)
+full:https://registry.npmjs.org/@alloc%2fquick-lru set size:undefined 
+disposed:false
+full:https://registry.npmjs.org/postcss-selector-parser cache-miss
+45ms (cache miss)
+full:https://registry.npmjs.org/postcss-selector-parser set size:undefined 
+disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+149ms (cache miss)
+full:https://registry.npmjs.org/@tailwindcss%2fnode set size:undefined 
+disposed:false
+cache-miss
+189ms (cache miss)
+full:https://registry.npmjs.org/@tailwindcss%2foxide set size:undefined 
+disposed:false
+full:https://registry.npmjs.org/postcss-value-parser cache-miss
+(cache miss)
+size:undefined disposed:false
+cache-miss
+(cache miss)
+size:undefined disposed:false
+cache-miss
+64ms (cache miss)
+full:https://registry.npmjs.org/postcss-value-parser set size:undefined 
+disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+full:https://registry.npmjs.org/postcss-value-parser cache-miss
+hit)
+full:https://registry.npmjs.org/postcss-value-parser set size:73526 
+disposed:false
+cache-miss
+(cache miss)
+set size:undefined disposed:false
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+size:54291 disposed:false
+cache-miss
+updated)
+size:undefined disposed:false
+cache-miss
+(cache miss)
+size:undefined disposed:false
+revalidated)
+size:182472 disposed:false
+miss)
+size:undefined disposed:false
+@emotion/react@11.14.0 want: ^7.18.3
+@emotion/react@11.14.0 want: ^11.13.5
+@emotion/react@11.14.0 want: ^11.14.0
+@emotion/react@11.14.0 want: ^1.3.3
+@emotion/use-insertion-effect-with-fallbacks@1.2.0 OK for: 
+@emotion/react@11.14.0 want: ^1.2.0
+@emotion/react@11.14.0 want: ^1.4.2
+@emotion/react@11.14.0 want: ^0.4.0
+@emotion/react@11.14.0 want: ^3.3.1
+cache-miss
+cache-miss
+cache-miss
+miss)
+size:undefined disposed:false
+cache-miss
+updated)
+size:undefined disposed:false
+full:https://registry.npmjs.org/@emotion%2fmemoize cache-miss
+miss)
+size:undefined disposed:false
+full:https://registry.npmjs.org/convert-source-map cache-miss

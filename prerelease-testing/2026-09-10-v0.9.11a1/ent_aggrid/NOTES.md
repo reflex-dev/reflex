@@ -739,3 +739,189 @@ than only in dev-mode terms. No matching issue found in reflex-dev/reflex.
 Processes started for this verification (all killed): dev servers on 5804/10204 (0.9.11a1)
 and 5805/10205 (0.9.10.post2), pure-reflex control on 5806/10206, prod + deploy-like backend
 on 5807.
+
+## VERIFICATION: reflex-base still masks any AttributeError raised inside a CachedVarOperation cached computation as a bogus, uncaused VarAttributeError
+
+Independent adversarial verification (third verifier agent, 2026-09-11). Reproduced from the
+written repro alone in my own working dir `$SB/apps/verify2_ent_aggrid_2/` with the shared
+read-only venvs `$SB/envs/smoke` (reflex + reflex-base 0.9.11a1), `$SB/envs/base0910`
+(reflex + reflex-base 0.9.10.post2) and `$SB/envs/ent` (0.9.11a1 + rxe 0.9.5). The claimant's
+app copies, venvs and running processes were not used. Reserved ports 5808-5811 / 10208-10211;
+all processes exited on their own (both `reflex run`s exit 1 at compile) and nothing was left
+running. Artifacts: `verification/issue3_masked_attrerror/`.
+
+### VERDICT: CONFIRMED — a genuine, deterministic reflex-base defect, pre-existing (not a regression). The claim is true but *understates* it in two ways, and omits that it is already tracked upstream.
+
+| claim | verdict |
+|---|---|
+| `_cached_get_all_var_data` raising `AttributeError` surfaces as `VarAttributeError: Attribute _cached_get_all_var_data not found.`, `__cause__`/`__context__` both `None` | **CONFIRMED** verbatim, traceback ends at `base.py:2128 -> :2120 -> :1471` exactly as written |
+| Identical on reflex 0.9.10.post2, i.e. not a regression | **CONFIRMED** by my own baseline (offline probe *and* a full `reflex run`, identical text and identical line numbers) |
+| downstream: false (defect is in reflex-base) | **CONFIRMED** |
+| severity medium | **AGREE** for the framework; **non-blocking** for this release train |
+| scope "inside a CachedVarOperation cached computation" | **UNDERSTATED** — see corrections 1 and 2 |
+| implicitly novel (no upstream issue mentioned) | **NOT NOVEL** — see correction 3 |
+
+### Reproduction (mine)
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+W=$SB/apps/verify2_ent_aggrid_2                      # never /home/user/reflex (cwd shadowing)
+cd $W
+$SB/envs/smoke/bin/python    probes/probe_mask_core.py out/mask_core_a1.json
+$SB/envs/base0910/bin/python probes/probe_mask_core.py out/mask_core_0910.json
+```
+
+`probe_mask_core.py` is my own rewrite of the claimed repro plus controls. Output identical on
+both versions (`logs/probe_mask_core_a1.log`, `logs/probe_mask_core_0910.log`):
+
+| case | result |
+|---|---|
+| A `_cached_get_all_var_data` raises `AttributeError` | `VarAttributeError: Attribute _cached_get_all_var_data not found.`, cause `None`, real text absent from the traceback |
+| B `_cached_var_name` raises, via `str(var)` | `VarAttributeError: Attribute _cached_var_name not found.` — same masking |
+| D same computation raises `ValueError` | propagates intact — only `AttributeError` is eaten |
+| E1 plain class, failing `@property`, **no** `__getattr__` | real `AttributeError` propagates |
+| E2 plain class, failing `@property`, **with** `__getattr__` | masked the same way |
+
+E1/E2 settle the "is this reflex's fault or Python's?" question: the swallow is standard
+CPython `__getattr__`-fallback behaviour, but reflex is the one that installs a `__getattr__`
+on every `Var`, and the replacement message asserts something false (`_cached_get_all_var_data`
+*does* exist) while dropping the cause. Nothing in `tests/units` asserts this behaviour, so it
+is not intended/documented — it is an unfixed trap.
+
+### Correction 1 (makes it worse) — no Var subclass and no reflex-enterprise are needed; ordinary app code hits it, and a real `reflex run` dies with the bogus message
+
+`LiteralArrayVar._cached_var_name` / `LiteralObjectVar._cached_var_name`
+(`reflex_base/vars/sequence.py:618`, `reflex_base/vars/object.py:432`) call
+`LiteralVar.create(element)` **lazily, inside
+the cached property**. So any user-registered `@rx.serializer` that raises `AttributeError` —
+a one-character typo in an attribute name — is masked.
+
+25-line pure-reflex app (`verification/issue3_masked_attrerror/app/`), no rxe, no ag_grid, no
+hand-written `Var`:
+
+```python
+class Point:
+    def __init__(self, x: int): self.x = x
+
+@rx.serializer
+def serialize_point(p: Point) -> str:
+    return p.label          # typo: Point has no .label
+
+def index():
+    return rx.vstack(rx.heading("mask repro"),
+                     rx.foreach([Point(1), Point(2)], lambda p: rx.text(p.to_string())))
+```
+
+```bash
+cd $W/maskapp && REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/smoke/bin/reflex run --frontend-port 5808 --backend-port 10208
+```
+
+exit 1, ending in (`logs/maskapp_run_a1.trimmed.log`):
+
+```
+File ".../reflex/compiler/plugins/memoize.py", line 189, in _should_memoize
+    var_data = prop_var._get_all_var_data()
+File ".../reflex_base/vars/base.py", line 2128, in _get_all_var_data
+File ".../reflex_base/vars/base.py", line 2120, in __getattr__
+File ".../reflex_base/vars/base.py", line 1471, in __getattr__
+reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found.
+```
+
+`serialize_point`, `maskapp.py` and `'Point' object has no attribute 'label'` appear **nowhere**
+in the output — the user's own file is not in the stack at all. Baseline `reflex run` with
+`$SB/envs/base0910` on ports 5809/10209 (`logs/maskapp_run_0910.trimmed.log`): byte-identical,
+same line numbers 2128/2120/1471. Not a regression.
+
+Survey of app-level shapes, identical on both versions
+(`probes/probe_app_shapes.py`, `logs/probe_app_shapes_{a1,0910}.log`, `out/app_shapes_*.json`):
+
+| shape | reflex 0.9.11a1 = 0.9.10.post2 |
+|---|---|
+| `rx.foreach([Point(1)], …).render()` | MASKED `VarAttributeError: Attribute _cached_var_name not found.` |
+| `rx.box(custom_attrs={"data-p": [Point(1)]}).render()` | MASKED, same |
+| `str(rx.Var.create([Point(1)]))`, `str(rx.Var.create((Point(1),)))`, `str(rx.cond(True, [Point(1)], []))` | MASKED, same |
+| `str(rx.Var.create({"k": [Point(1)]}))` | MASKED as `TypeError: __str__ returned non-string (type ArrayCastedVar)` |
+| `rx.box(custom_attrs={"data-p": {"a": Point(1)}}).render()` | MASKED as `RecursionError: maximum recursion depth exceeded` |
+| `rx.box(style={"…": [Point(1)]}).render()`, `rx.Var.create([Point(1)]).json()` | real `AttributeError` surfaces (these paths serialize eagerly) |
+
+### Correction 2 — the second failure mode is worse than the reported one and the claim does not mention it
+
+When the masked attribute is looked up on a Mapping-typed var, `ObjectVar.__getattr__`
+(`reflex_base/vars/object.py:312`) does not raise at all — it **fabricates an
+`ObjectItemOperation`** and returns it as the value of `_cached_var_name`. The user then gets
+`TypeError: __str__ returned non-string (type ObjectItemOperation)` or a `RecursionError`,
+with no `VarAttributeError` anywhere to hint at the mechanism.
+
+This is the shape the historical enterprise failure actually takes. Simulating the removed
+`dynamic.bundled_libraries` attribute against rxe 0.9.5 (`probes/probe_rxe_shape.py`,
+`logs/probe_rxe_shape_a1.log`, run with `$SB/envs/ent`):
+
+```
+top_level_callable        -> AttributeError: module 'reflex.components.dynamic' has no attribute 'bundled_libraries'   (visible)
+callable_in_list_of_dicts -> TypeError: __str__ returned non-string (type ObjectItemOperation)                          (masked)
+```
+
+`list[dict]` is exactly how ag_grid column defs are declared, which supports the claimant's
+"this is what made the 0.9.9a1 breakage undebuggable" — though I did not rebuild a reflex
+0.9.9a1 + rxe 0.9.4 stack to re-verify that historical instance directly.
+
+### Correction 3 — already filed upstream; this is "still open", not a discovery
+
+`reflex-dev/reflex#6978` — *"CachedVarOperation masks AttributeErrors from cached var
+computations as unchained VarAttributeError: Attribute _cached_get_all_var_data not found"* —
+was opened **2026-08-28** by `masenf` (label `bug`, Linear `ENG-11817`), out of the previous
+campaign. It contains the same minimal repro, the same root-cause analysis, the same suggested
+fix, and even the `ObjectItemOperation` fabrication note. It is still open and unassigned.
+The NOTES entry should reference it: the finding for this train is "known bug #6978 not fixed
+in 0.9.11a1", which is accurate but carries no release-QA novelty.
+
+### Mechanism, named at file:line (installed 0.9.11a1 wheel; identical text on `origin/r/pre-2026.09.10-34457666442` at `packages/reflex-base/src/reflex_base/vars/base.py`)
+
+1. `base.py:2052-2076` — `cached_property.__get__` runs `GLOBAL_CACHE[unique_id] = self._func(instance)`
+   with no exception handling.
+2. `base.py:2128` — `CachedVarOperation._get_all_var_data` returns `self._cached_get_all_var_data`;
+   the `AttributeError` escapes `__getattribute__`, and CPython clears it before the fallback.
+3. `base.py:2104-2120` — `CachedVarOperation.__getattr__` is invoked instead and delegates to the
+   next class in the MRO.
+4. `base.py:1456-1471` — `Var.__getattr__` sees a leading underscore and raises
+   `VarAttributeError(f"Attribute {name} not found.")` with no `from exc`. (For Mapping vars,
+   `object.py:312` `ObjectVar.__getattr__` intercepts first and returns a fabricated var — correction 2.)
+
+### The suggested fix works — verified
+
+Monkeypatching `cached_property.__get__` to re-raise `AttributeError` as a chained
+non-`AttributeError` (`probes/probe_fix_demo.py`, `logs/probe_fix_demo_a1.log`) turns all three
+masked app-level cases into:
+
+```
+CachedComputationError: Computing cached property LiteralArrayVar._cached_var_name raised
+AttributeError: 'Point' object has no attribute 'label'
+  __cause__: AttributeError("'Point' object has no attribute 'label'")
+  user function serialize_point present in traceback: True
+```
+
+Nine lines in `cached_property.__get__` recover the real error and the user's own frame in
+every case tested.
+
+### Refutations ruled out
+
+- **Environment / proxy / ports / cwd shadowing:** the core repro is offline, needs no network
+  and no server; every run asserts `reflex.__file__` under `$SB/envs/…`; the two `reflex run`s
+  used my reserved ports and failed during `Compile pages`, before any request.
+- **Flaky:** deterministic, 100% across 2 reflex versions x 6 probes x 11 app shapes.
+- **API misuse / documented behaviour:** no test in `tests/units` pins this behaviour, and the
+  message is factually wrong about the attribute existing. Correction 1 shows a plain typo in a
+  user's own serializer is enough — no exotic API use required.
+- **Demo/example-app bug:** no — the minimal repro is 25 lines of pure reflex.
+- **Pre-existing rather than new:** **yes**, confirmed by my own 0.9.10.post2 baseline in both
+  the offline probe and a full app run; and by upstream #6978, filed against 0.9.9a1.
+
+### Severity (my judgement)
+
+- **reflex 0.9.11a1 release: not a blocker, not a regression.** Nothing in this train touches it.
+- **reflex framework: medium.** Purely a diagnosability defect (no wrong runtime output, no data
+  loss), but it converts an ordinary user typo into an error that names an internal attribute the
+  user has never heard of and omits their own stack frame entirely, and in the Mapping case into
+  a `TypeError`/`RecursionError` with no signal at all. The fix is small and local
+  (`cached_property.__get__`), and #6978 is already open with the same conclusion.
