@@ -83,6 +83,83 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     assert seen["value"] == "True"
 
 
+@pytest.mark.parametrize(
+    ("strict", "default_method", "expected"),
+    [
+        (True, "forkserver", "start:spawn"),
+        (False, "forkserver", "start:fork"),
+        (False, "fork", "start:fork"),
+        (False, "spawn", None),
+    ],
+)
+def test_set_dev_start_method(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    strict: bool,
+    default_method: str,
+    expected: str | None,
+):
+    """Strict hot reload spawns; otherwise the platform rule decides."""
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, str(strict))
+    monkeypatch.delenv(environment.REFLEX_BACKEND_START_METHOD.name, raising=False)
+    calls: list[str] = []
+    mocker.patch.object(
+        multiprocessing, "get_start_method", return_value=default_method
+    )
+    mocker.patch.object(
+        multiprocessing,
+        "set_start_method",
+        side_effect=lambda method, force=False: calls.append(f"start:{method}"),
+    )
+
+    exec_utils.set_dev_start_method()
+
+    assert calls == ([expected] if expected else [])
+
+
+@pytest.mark.parametrize(("start_method", "frozen"), [("fork", True), ("spawn", False)])
+def test_run_granian_backend_freezes_only_for_fork(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    start_method: str,
+    frozen: bool,
+):
+    """Forked reload workers share a frozen heap; the app is never preloaded."""
+    monkeypatch.setenv(environment.REFLEX_BACKEND_START_METHOD.name, start_method)
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+    granian_server = pytest.importorskip("granian.server")
+    calls: list[str] = []
+
+    class FakeGranian:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def on_reload(self, _callback):
+            pass
+
+        def serve(self):
+            calls.append("serve")
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    mocker.patch.object(exec_utils, "reset_dev_backend_reload_marker")
+    mocker.patch.object(multiprocessing, "set_start_method")
+    mocker.patch.object(multiprocessing, "get_start_method", return_value=start_method)
+    mocker.patch.object(
+        prerequisites, "get_app", side_effect=lambda: calls.append("preload")
+    )
+    mocker.patch.object(gc, "freeze", side_effect=lambda: calls.append("freeze"))
+
+    exec_utils.run_granian_backend(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    assert calls == (["freeze", "serve"] if frozen else ["serve"])
+
+
 def test_with_development_condition_sets_node_and_bun_options():
     """Both runtime option vars gain the development condition flag."""
     env = exec_utils._with_development_condition({})

@@ -360,6 +360,7 @@ def _compile_app(*, avoid_dirty_check: bool = True):
     if exec.should_use_granian() and avoid_dirty_check:
         import concurrent.futures
 
+        exec.set_dev_start_method()
         with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
             compile_future = executor.submit(app_task, *args, **kwargs)
             return_result = compile_future.result()

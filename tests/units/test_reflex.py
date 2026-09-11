@@ -9,6 +9,7 @@ import sys
 
 import click.testing
 import pytest
+from pytest_mock import MockerFixture
 
 from reflex import reflex
 
@@ -384,3 +385,42 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+def test_compile_app_sets_start_method_before_compile_pool(mocker: MockerFixture):
+    """The start method is fixed before the compile pool spawns any process."""
+    from unittest import mock
+
+    from reflex.utils import exec as exec_utils
+    from reflex.utils import prerequisites
+
+    calls: list[str] = []
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    mocker.patch.object(exec_utils, "should_prerender_routes", return_value=False)
+    mocker.patch.object(
+        exec_utils,
+        "set_dev_start_method",
+        side_effect=lambda: calls.append("start_method"),
+    )
+    mocker.patch.object(prerequisites, "compile_or_validate_app")
+
+    class FakeExecutor:
+        def __init__(self, *_args, **_kwargs):
+            calls.append("pool")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def submit(self, *_args, **_kwargs):
+            future = mock.Mock()
+            future.result.return_value = True
+            return future
+
+    mocker.patch("concurrent.futures.ProcessPoolExecutor", FakeExecutor)
+
+    reflex._compile_app()
+
+    assert calls == ["start_method", "pool"]
