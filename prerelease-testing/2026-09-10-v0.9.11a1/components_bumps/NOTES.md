@@ -370,3 +370,127 @@ Every server started for this cluster (dev 5220/9620, prod 5221, baseline dev 52
 prod 5224, leak repros 5223/9623, 5226/9626, 5227/9627, mixed 5225/9625) was killed; a final
 `ps` showed no granian / react-router / bun / chromium process of this cluster alive and no
 listener left in the 5220-5239 / 9620-9639 range.
+
+## VERIFICATION: rx.moment: one component's locale= now sets the language of every other rx.moment on the page (react-moment 2.0.2)
+
+**Verdict: CONFIRMED (independent repro), severity MEDIUM, regression TRUE (with one correction), downstream TRUE.**
+Independent adversarial verification, rebuilt from the written repro in a separate working dir
+(`$SB/apps/verify2_components_bumps_0/`), with the shared venvs, my own ports (frontend 5920-5923,
+backend 10320-10323) and my own Playwright driver. The claimant's numbers reproduce exactly.
+
+**Correction to the claim (not a refutation):** the locale bleed itself is *not* new — it is
+pre-existing in the wrapper's design and 0.9.10.post2 only *masked it in one common ordering*.
+On 0.9.10.post2 the identical bleed appears as soon as a user navigates from a page without a
+locale to a page with `locale="fr"` and back (verified below, `results/twopage_base.json`).
+What 0.9.11a1 changes is that the masking is gone, so a single page now leaks on first load with
+no navigation at all. The headline table in ISSUE-1 is accurate as written.
+
+### Environments / commands (all from `$SB`, never from /home/user/reflex)
+
+```
+SB=/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+W=$SB/apps/verify2_components_bumps_0
+DRV="NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 $SB/envs/driver/bin/python"
+
+# venvs: $SB/envs/smoke (reflex 0.9.11a1 + reflex-components-moment 0.9.4a1),
+#        $SB/envs/base0910 (reflex 0.9.10.post2 + reflex-components-moment 0.9.3),
+#        $SB/envs/verify2_components_bumps_0 = bisect env, built with:
+cd $SB && uv venv $SB/envs/verify2_components_bumps_0 --python 3.11 && \
+  uv pip install --python $SB/envs/verify2_components_bumps_0/bin/python --prerelease=allow \
+  'reflex==0.9.11a1' 'reflex-components-moment==0.9.3'
+
+# 1 alpha dev            (app W/leak, three moments, one locale="fr")
+cd $W/leak       && REFLEX_TELEMETRY_ENABLED=false $SB/envs/smoke/bin/reflex run --frontend-port 5920 --backend-port 10320
+cd $W && eval $DRV drive.py http://localhost:5920/ $W/out/alpha_dev.json
+# 2 baseline dev         (byte-identical source, run with 0.9.10.post2)
+cd $W/leak_base  && REFLEX_TELEMETRY_ENABLED=false $SB/envs/base0910/bin/reflex run --frontend-port 5921 --backend-port 10321
+cd $W && eval $DRV drive.py http://localhost:5921/ $W/out/base_dev.json
+# 3 alpha prod           (one port for both)
+cd $W/leak       && REFLEX_TELEMETRY_ENABLED=false $SB/envs/smoke/bin/reflex run --env prod --frontend-port 5922 --backend-port 5922
+cd $W && eval $DRV drive.py http://localhost:5922/ $W/out/alpha_prod.json
+# 4 bisect: alpha CORE + moment wrapper 0.9.3 (react-moment 1.2.2)
+cd $W/leak_mixed && REFLEX_TELEMETRY_ENABLED=false $SB/envs/verify2_components_bumps_0/bin/reflex run --frontend-port 5920 --backend-port 10320
+cd $W && eval $DRV drive.py http://localhost:5920/ $W/out/mixed_dev.json
+# 5 two-page probe (control + blast radius): "/" has NO locale prop anywhere, "/fr" has one
+cd $W/twopage      && ... $SB/envs/smoke/bin/reflex    run --frontend-port 5921 --backend-port 10321
+cd $W/twopage_base && ... $SB/envs/base0910/bin/reflex run --frontend-port 5922 --backend-port 10322
+cd $W && eval $DRV drive_twopage.py http://localhost:5921 $W/out/twopage_alpha.json   # home -> /fr -> home
+```
+
+### Results (my runs)
+
+| run | stack | `plain` (no locale prop) | `fromnow` (no locale prop) | `french` (locale="fr") |
+|---|---|---|---|---|
+| alpha dev | 0.9.11a1 + moment 0.9.4a1 | **jeudi 14 mars 2024** | **il y a 7 ans** | jeudi 14 mars 2024 |
+| alpha prod | 0.9.11a1 + moment 0.9.4a1 | **jeudi 14 mars 2024** | **il y a 7 ans** | jeudi 14 mars 2024 |
+| baseline dev | 0.9.10.post2 + moment 0.9.3 | Thursday 14 March 2024 | 7 years ago | jeudi 14 mars 2024 |
+| bisect dev | **0.9.11a1 core** + moment **0.9.3** | Thursday 14 March 2024 | 7 years ago | jeudi 14 mars 2024 |
+
+Identical after a full reload. Console clean in every run (only the known-benign HydrateFallback /
+vite / React-DevTools lines); no page errors, no failed requests. So: the `reflex-components-moment`
+0.9.3 -> 0.9.4a1 bump (react-moment 1.2.2 -> 2.0.2) owns it, core reflex does not — the bisect is
+confirmed independently.
+
+Two-page probe (`W/twopage`, home has no locale prop at all, `/fr` has one):
+
+| stack | home, fresh load | /fr | home again after client-side nav |
+|---|---|---|---|
+| alpha | Thursday 14 March 2024 / 7 years ago | jeudi 14 mars 2024 | **jeudi 14 mars 2024 / il y a 7 ans** |
+| baseline 0.9.10.post2 | Thursday 14 March 2024 / 7 years ago | jeudi 14 mars 2024 | **jeudi 14 mars 2024 / il y a 7 ans** |
+
+Two things follow: (a) the alpha is not "French by default" — a page with no locale import renders
+English, so the `locale=` component really is the cause; (b) the cross-page bleed is **pre-existing**
+(same on 0.9.10.post2), i.e. once the locale module has been evaluated the whole SPA session
+switches language, and the same URL renders differently depending on navigation history.
+
+### Mechanism (file:line)
+
+1. `packages/reflex-components-moment/src/reflex_components_moment/moment.py:127-128` (identical in
+   0.9.3 and 0.9.4a1; installed copy `$SB/envs/smoke/lib/python3.11/site-packages/reflex_components_moment/moment.py:127`)
+   emits a bare side-effect import for a literal locale:
+   ```python
+   if isinstance(self.locale, LiteralVar):
+       imports[""] = f"moment/locale/{self.locale._var_value}"
+   ```
+   Compiled page (`W/leak/.web/app/routes/_index.jsx:5`): `import "moment/locale/fr"`.
+   moment's `defineLocale()` sets the **process-wide default locale** as a documented side effect,
+   so the app default becomes `fr` the moment that module is evaluated.
+2. Both react-moment versions resolve a *missing* `locale` prop to that global:
+   - 2.0.2 `node_modules/react-moment/dist/index.mjs`, `getDatetime` (minified `tt`):
+     `let s = props.locale ?? settings.locale ?? i.locale();` then `u = i(r, m, s)`.
+   - 1.2.2 `node_modules/react-moment/dist/index.js`, `getDatetime`:
+     `i = t.globalLocale ? t.globalLocale : i || t.globalMoment.locale()`.
+3. The behavioural difference is an accident of 1.2.2's bundle: react-moment 1.2.2 **bundles
+   moment-duration-format inside its dist** and runs its init at import time
+   (`…function D(e){…e.updateLocale("en",c)}…,D(e),D},o=[n(1)]` in `dist/index.js`), and moment's
+   `updateLocale(name, …)` also re-sets the global locale to `name` — i.e. importing react-moment
+   1.2.2 silently resets the default back to `en`. In the single-page app the page module's
+   `import "moment/locale/fr"` runs *before* react-moment is dynamically imported (`ClientSide(() =>
+   import('react-moment'))`), so on 0.9.10.post2 the reset lands last and hides the bleed.
+   react-moment 2.0.2 instead loads duration-format optionally through an esbuild `require` shim
+   (`ct()` -> `et("moment-duration-format")`), which throws in the browser and is swallowed
+   (`moment-duration-format` is an *optional* peer dep and is not even installed unless
+   `duration=`/`duration_from_now=` is used), so no `updateLocale("en")` happens and `fr` stays the
+   default. This also explains the ordering sensitivity in ISSUE-1: whichever locale-touching module
+   is evaluated last wins, which is why the two-page case leaks on both versions.
+
+Refutations considered and ruled out: environment/proxy (all local, `--noproxy`, console+network
+clean); cwd shadowing (apps live under `$SB/apps/...`, run only with venv binaries); API misuse or
+documented behaviour (`docs/library/data-display/moment.md` says nothing about locale being global;
+the prop doc is "The locale to use when rendering", i.e. per component); pre-existing on
+0.9.10.post2 (baseline run by me — English for the single-page case, so the first-load behaviour is
+genuinely new); demo-app bug (repro is 3 lines of framework API); flakiness (reproduced on 6
+independent server runs, dev and prod, plus reloads).
+
+Severity: medium. Silent, no console warning, purely a localization/correctness defect (no crash,
+no data loss) but it hits any app that localizes one date and leaves the rest at the default, and
+0.9.11a1 makes it reachable without navigation. A fix direction that stays inside the wrapper: pass
+the resolved locale explicitly on every `Moment` (or wrap the app in react-moment 2.x's
+`MomentProvider`), or restore the previous default after the locale side-effect import.
+
+Evidence (my own): `verification/moment_locale/leak/` (minimal repro app),
+`verification/moment_locale/twopage/` (control + cross-page probe),
+`verification/moment_locale/drive.py`, `.../drive_twopage.py`,
+`verification/moment_locale/results/{alpha_dev,base_dev,alpha_prod,mixed_dev,twopage_alpha,twopage_base}.json`
+plus the matching `.png` screenshots, `verification/moment_locale/logs/*.tail.log`.
+All servers/browsers started for this verification were killed; ports 5920-5923 / 10320-10323 are free.

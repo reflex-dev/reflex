@@ -1,0 +1,19 @@
+{
+  "url": "http://localhost:5922/",
+  "console": [
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "log: Disconnect websocket on page navigation"
+  ],
+  "page_errors": [],
+  "failed": [],
+  "first_load": {
+    "plain": "jeudi 14 mars 2024",
+    "fromnow": "il y a 7 ans",
+    "french": "jeudi 14 mars 2024"
+  },
+  "after_reload": {
+    "plain": "jeudi 14 mars 2024",
+    "fromnow": "il y a 7 ans",
+    "french": "jeudi 14 mars 2024"
+  }
+}

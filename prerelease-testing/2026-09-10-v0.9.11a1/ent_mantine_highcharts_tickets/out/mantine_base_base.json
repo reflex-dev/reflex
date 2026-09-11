@@ -1,0 +1,314 @@
+{
+ "routes": {
+  "/": {
+   "url": "http://localhost:5461/",
+   "before": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 0,
+    "canvas": 0,
+    "text_len": 326
+   },
+   "text": "Mantine demo\n\nA collection of examples using Mantine in Reflex.\n\nExample\n\nSource\n\nDates\n\nA collection of examples using Mantine Dates components in Reflex.\n\nPill\n\nA pill is a small, rounded component that can be used to represent a single value or a small set of values.\n\nTags Input\n\nA simple Tags Input example using Mantine.",
+   "clicks": [
+    {
+     "i": 0,
+     "label": "",
+     "counts": {
+      "svg": 6,
+      "buttons": 4,
+      "inputs": 0,
+      "rows": 0,
+      "highcharts": 0,
+      "mantine": 0,
+      "canvas": 0,
+      "text_len": 349
+     }
+    },
+    {
+     "i": 1,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 2,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 3,
+     "err": "TimeoutError"
+    }
+   ],
+   "after": {
+    "svg": 6,
+    "buttons": 4,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 0,
+    "canvas": 0,
+    "text_len": 349
+   }
+  },
+  "/dates": {
+   "url": "http://localhost:5461/dates",
+   "before": {
+    "svg": 16,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "mantine": 387,
+    "canvas": 0,
+    "text_len": 935
+   },
+   "text": "Dates\nMantine demo\n\nA collection of examples using Mantine Dates components in Reflex.\n\nExample\n\nSource\n\nCalendar\n\nSeptember 2026\nMo\tTu\tWe\tTh\tFr\tSa\tSu\n31\t1\t2\t3\t4\t5\t6\n7\t8\t9\t10\t11\t12\t13\n14\t15\t16\t17\t18\t19\t20\n21\t22\t23\t24\t25\t26\t27\n28\t29\t30\t1\t2\t3\t4\n\nDateTimePicker\n\nPick a Date\nPick date\n\nDatePicker\n\nSeptember 2026\nMo\tTu\tWe\tTh\tFr\tSa\tSu\n31\t1\t2\t3\t4\t5\t6\n7\t8\t9\t10\t11\t12\t13\n14\t15\t16\t17\t18\t19\t20\n21\t22\t23\t24\t25\t",
+   "clicks": [
+    {
+     "i": 0,
+     "label": "Dates",
+     "counts": {
+      "svg": 17,
+      "buttons": 156,
+      "inputs": 10,
+      "rows": 23,
+      "highcharts": 0,
+      "mantine": 387,
+      "canvas": 0,
+      "text_len": 957
+     }
+    },
+    {
+     "i": 1,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 2,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 3,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 4,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 5,
+     "err": "TimeoutError"
+    }
+   ],
+   "after": {
+    "svg": 17,
+    "buttons": 156,
+    "inputs": 10,
+    "rows": 23,
+    "highcharts": 0,
+    "mantine": 387,
+    "canvas": 0,
+    "text_len": 957
+   }
+  },
+  "/pill": {
+   "url": "http://localhost:5461/pill",
+   "before": {
+    "svg": 7,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 16,
+    "canvas": 0,
+    "text_len": 200
+   },
+   "text": "Pill\nMantine demo\n\nA pill is a small, rounded component that can be used to represent a single value or a small set of values.\n\nExample\n\nSource\n\nDefault\nDefault\nDefault\nDefault\nDefault\nDefault\nDefault",
+   "clicks": [
+    {
+     "i": 0,
+     "label": "Pill",
+     "counts": {
+      "svg": 8,
+      "buttons": 5,
+      "inputs": 0,
+      "rows": 0,
+      "highcharts": 0,
+      "mantine": 16,
+      "canvas": 0,
+      "text_len": 222
+     }
+    },
+    {
+     "i": 1,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 2,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 3,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 4,
+     "err": "TimeoutError"
+    }
+   ],
+   "after": {
+    "svg": 8,
+    "buttons": 5,
+    "inputs": 0,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 16,
+    "canvas": 0,
+    "text_len": 222
+   }
+  },
+  "/tags-input": {
+   "url": "http://localhost:5461/tags-input",
+   "before": {
+    "svg": 8,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 20,
+    "canvas": 0,
+    "text_len": 137
+   },
+   "text": "Tags Input\nMantine demo\n\nA simple Tags Input example using Mantine.\n\nExample\n\nSource\n\nTagsInput\n\nThis is a TagsInput component\n\nTag1\nTag2",
+   "clicks": [
+    {
+     "i": 0,
+     "label": "Tags Input",
+     "counts": {
+      "svg": 9,
+      "buttons": 6,
+      "inputs": 2,
+      "rows": 0,
+      "highcharts": 0,
+      "mantine": 20,
+      "canvas": 0,
+      "text_len": 159
+     }
+    },
+    {
+     "i": 1,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 2,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 3,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 4,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 5,
+     "err": "TimeoutError"
+    }
+   ],
+   "after": {
+    "svg": 9,
+    "buttons": 6,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 20,
+    "canvas": 0,
+    "text_len": 159
+   }
+  }
+ },
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "console_errors": []
+}

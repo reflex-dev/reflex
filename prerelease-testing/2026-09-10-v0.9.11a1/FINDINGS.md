@@ -657,3 +657,50 @@ Found while exercising the six bumped component libraries; every one reproduces 
 * recharts axes have no `tick_formatter`; the unsupported prop is swallowed as a style.
 * Adding `rx.toast.provider` to a page renders every toast twice; `ToastAction` is not importable
   from `rx`; `on_submit` form data includes every child `id=` as a null key.
+
+## FINDING-035: the enterprise event-handler API serves a 500 for its own OpenAPI document (LOW, pre-existing, reflex-enterprise)
+
+`rxe.EventHandlerAPIPlugin` publishes an OpenAPI spec at `/_reflex/events/openapi.yaml` and
+advertises it from `/.well-known/api-catalog`. The catalog works; the document it points at
+returns `500 Internal Server Error` on a clean install:
+
+```
+File ".../reflex_enterprise/plugins/event_handler_api.py", line 1686, in openapi_response
+  schema = schemas.get_schema(routes=routes)
+  ...
+  assert yaml is not None, "`pyyaml` must be installed to use parse_docstring."
+AssertionError: `pyyaml` must be installed to use parse_docstring.
+```
+
+starlette's `SchemaGenerator` needs PyYAML, and nothing in the dependency chain pulls it in —
+`pyyaml` is absent from every venv built for this campaign (`reflex`, `reflex[db]`,
+`reflex-enterprise`, `reflex-enterprise[mcp]`); starlette declares it only under its `full` extra.
+
+Repro: run `reflex-enterprise/demos/tickets` (`ent_mantine_highcharts_tickets/runpair.sh tickets
+ent 5452 9852 a1 / /ticket`), then
+`curl -L http://localhost:9852/_reflex/events/openapi.yaml` → 500 on **both** reflex 0.9.11a1 and
+0.9.10.post2, so pre-existing, not a regression.
+
+Confirmed fix: `uv pip install pyyaml` into the same venv and the endpoint returns a 27 KB
+document (`ent_mantine_highcharts_tickets/out/tickets_openapi_with_pyyaml.yaml`). Declaring
+`pyyaml` (or `starlette[full]`) alongside the plugin is all it needs. The REST event API itself is
+unaffected — `POST /_reflex/event/<state>/<handler>` with an app-issued bearer returns 200, the
+delta, and a persisted row.
+
+## FINDING-036: a delta is sent for substates the page has no dispatcher for (LOW, pre-existing)
+
+Every page of the enterprise `tickets` demo logs, twice, on both reflex versions:
+
+```
+Cannot process state update: no dispatch function for substate(s)
+"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state",
+"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state". Try ...
+```
+
+The app configures no auth plugin; importing `reflex_enterprise` is enough to define those states,
+and the backend then includes them in the delta while the compiled page carries no dispatcher for
+them. Nothing visibly breaks, but every user of an enterprise app sees two console errors on every
+page load, and a real delta addressed to a missing substate would be swallowed the same way.
+
+Repro and evidence: `ent_mantine_highcharts_tickets/out/tickets_a1.json` and
+`out/tickets_base_base.json`, `console_errors` in each. Identical on 0.9.10.post2 — pre-existing.

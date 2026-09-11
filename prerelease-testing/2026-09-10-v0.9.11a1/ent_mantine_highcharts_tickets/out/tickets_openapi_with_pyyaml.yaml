@@ -1,0 +1,894 @@
+components:
+  responses:
+    RateLimited:
+      description: Rate limit exceeded for this session token; retry after the `Retry-After`
+        header.
+    StreamedDelta:
+      content:
+        application/x-ndjson:
+          schema:
+            type: object
+      description: Streamed state deltas as newline-delimited JSON.
+    Unauthorized:
+      description: Missing, invalid, or expired Bearer token.
+  securitySchemes:
+    BearerToken:
+      description: 'An app-issued token identifying the session: an anonymous grant
+        from `POST /_reflex/auth/token`, or an OAuth 2.1 access token.'
+      scheme: bearer
+      type: http
+info:
+  contact:
+    email: info@reflex.dev
+    name: Reflex Maintainers
+  description: "Auto-generated API for Reflex event handlers.\n\n## Authentication\n\
+    \nAll endpoints require an **app-issued** Bearer token passed via the `Authorization`\
+    \ header \u2014 caller-invented tokens are rejected.\n\nFor an **anonymous session**\
+    \ (no user identity; only public handlers are reachable when the app enforces\
+    \ auth), request a token from `POST /_reflex/auth/token`:\n\n```\ncurl -X POST\
+    \ <server>/_reflex/auth/token\n```\n\nThe response carries `access_token` and\
+    \ `expires_in`; the token is bound to a fresh server-side session. Reuse it across\
+    \ calls to address the same session:\n\n```\nAuthorization: Bearer <access_token>\n\
+    ```\n\nFor an **authenticated session** (when the app is configured with an AuthPlugin\
+    \ + MCPPlugin), complete the app's OAuth 2.1 authorization flow \u2014 discovered\
+    \ via the MCP endpoint's protected-resource metadata \u2014 and use the issued\
+    \ access token the same way.\n\nCalls are rate limited per token; a `429` response\
+    \ carries a `Retry-After` header. The token endpoint is rate limited per client\
+    \ IP.\n\n## Pages\n\nThe following pages are defined in the app. Pages with `on_load`\
+    \ handlers automatically trigger the referenced endpoint when a user navigates\
+    \ to them.\n\n- `http://localhost:5452/index` -- on_load triggers `POST /_reflex/event/tickets___tickets____ticket_state/load_tickets`\n\
+    - `http://localhost:5452/ticket` -- on_load triggers `POST /_reflex/event/tickets___tickets____ticket_state/load_ticket_detail`"
+  license:
+    name: Apache 2.0
+    url: https://opensource.org/licenses/Apache-2.0
+  title: tickets API
+  version: 1.0.0
+openapi: 3.0.0
+paths:
+  /_reflex/event/tickets___tickets____ticket_state/apply_query:
+    post:
+      description: apply_query
+      operationId: TicketState_apply_query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                query:
+                  type: string
+              required:
+              - query
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: apply_query
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/back_to_list:
+    post:
+      description: back_to_list
+      operationId: TicketState_back_to_list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: back_to_list
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/clear_all:
+    post:
+      description: Delete every ticket (no arguments).
+      operationId: TicketState_clear_all
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Delete every ticket (no arguments).
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/create_ticket:
+    post:
+      description: Create a new IT support ticket.
+      operationId: TicketState_create_ticket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                assignee:
+                  default: ''
+                  type: string
+                description:
+                  default: ''
+                  type: string
+                priority:
+                  default: medium
+                  type: string
+                title:
+                  type: string
+              required:
+              - title
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Create a new IT support ticket.
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/delete_ticket:
+    post:
+      description: Delete a ticket permanently.
+      operationId: TicketState_delete_ticket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                ticket_id:
+                  type: string
+              required:
+              - ticket_id
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Delete a ticket permanently.
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/load_ticket_detail:
+    post:
+      description: load_ticket_detail
+      operationId: TicketState_load_ticket_detail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: load_ticket_detail
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/load_tickets:
+    post:
+      description: Load paginated and filtered tickets from the database using query
+        params.
+      operationId: TicketState_load_tickets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Load paginated and filtered tickets from the database using query params.
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/next_page:
+    post:
+      description: next_page
+      operationId: TicketState_next_page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: next_page
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/open_ticket_detail:
+    post:
+      description: open_ticket_detail
+      operationId: TicketState_open_ticket_detail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                ticket_id:
+                  type: string
+              required:
+              - ticket_id
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: open_ticket_detail
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/prev_page:
+    post:
+      description: prev_page
+      operationId: TicketState_prev_page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: prev_page
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/reset_filters:
+    post:
+      description: reset_filters
+      operationId: TicketState_reset_filters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: reset_filters
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/save_ticket_detail:
+    post:
+      description: save_ticket_detail
+      operationId: TicketState_save_ticket_detail
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: save_ticket_detail
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/seed:
+    post:
+      description: Replace the ticket list with a handful of fake samples.
+      operationId: TicketState_seed
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Replace the ticket list with a handful of fake samples.
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_draft_assignee:
+    post:
+      description: Set the draft-ticket assignee field.
+      operationId: TicketState_set_draft_assignee
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Set the draft-ticket assignee field.
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_draft_description:
+    post:
+      description: Set the draft-ticket description field.
+      operationId: TicketState_set_draft_description
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Set the draft-ticket description field.
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_draft_priority:
+    post:
+      description: Set the draft-ticket priority field.
+      operationId: TicketState_set_draft_priority
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Set the draft-ticket priority field.
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_draft_title:
+    post:
+      description: Set the draft-ticket title field (used by the UI form).
+      operationId: TicketState_set_draft_title
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Set the draft-ticket title field (used by the UI form).
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_edit_assignee:
+    post:
+      description: set_edit_assignee
+      operationId: TicketState_set_edit_assignee
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_edit_assignee
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_edit_description:
+    post:
+      description: set_edit_description
+      operationId: TicketState_set_edit_description
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_edit_description
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_edit_priority:
+    post:
+      description: set_edit_priority
+      operationId: TicketState_set_edit_priority
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_edit_priority
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_edit_status:
+    post:
+      description: set_edit_status
+      operationId: TicketState_set_edit_status
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_edit_status
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_edit_title:
+    post:
+      description: set_edit_title
+      operationId: TicketState_set_edit_title
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_edit_title
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_page_size:
+    post:
+      description: set_page_size
+      operationId: TicketState_set_page_size
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_page_size
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_priority_filter:
+    post:
+      description: set_priority_filter
+      operationId: TicketState_set_priority_filter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_priority_filter
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_query_text:
+    post:
+      description: set_query_text
+      operationId: TicketState_set_query_text
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_query_text
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_sort_by:
+    post:
+      description: set_sort_by
+      operationId: TicketState_set_sort_by
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_sort_by
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_sort_dir:
+    post:
+      description: set_sort_dir
+      operationId: TicketState_set_sort_dir
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_sort_dir
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_status:
+    post:
+      description: Set the status of a ticket.
+      operationId: TicketState_set_status
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                status:
+                  type: string
+                ticket_id:
+                  type: string
+              required:
+              - ticket_id
+              - status
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Set the status of a ticket.
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/set_status_filter:
+    post:
+      description: set_status_filter
+      operationId: TicketState_set_status_filter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: set_status_filter
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/submit_draft:
+    post:
+      description: Create a ticket from the draft fields and clear the form.
+      operationId: TicketState_submit_draft
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Create a ticket from the draft fields and clear the form.
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/toggle_new_ticket_form:
+    post:
+      description: toggle_new_ticket_form
+      operationId: TicketState_toggle_new_ticket_form
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: toggle_new_ticket_form
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/toggle_sort:
+    post:
+      description: toggle_sort
+      operationId: TicketState_toggle_sort
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                value:
+                  type: string
+              required:
+              - value
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: toggle_sort
+      tags:
+      - TicketState
+  /_reflex/event/tickets___tickets____ticket_state/update_ticket:
+    post:
+      description: 'Only non-empty fields are applied, so clients can send partial
+
+        updates.'
+      operationId: TicketState_update_ticket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                assignee:
+                  default: ''
+                  type: string
+                description:
+                  default: ''
+                  type: string
+                priority:
+                  default: ''
+                  type: string
+                status:
+                  default: ''
+                  type: string
+                ticket_id:
+                  type: string
+                title:
+                  default: ''
+                  type: string
+              required:
+              - ticket_id
+              type: object
+        required: true
+      responses:
+        '200':
+          $ref: '#/components/responses/StreamedDelta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Update fields on an existing ticket.
+      tags:
+      - TicketState
+  /_reflex/retrieve_state:
+    post:
+      description: Return the full root state `.dict()` for the session bound to the
+        app-issued Bearer token. Unlike `hydrate`, this endpoint does not reset client
+        storage vars.
+      operationId: retrieve_state
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties: {}
+              type: object
+        required: false
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+          description: The full state dict as JSON.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+      summary: Retrieve the full client state.
+      tags:
+      - system
+security:
+- BearerToken: []
+servers:
+- url: http://localhost:9852
+tags:
+- description: Framework-level endpoints (state retrieval, etc.).
+  name: system
+- description: Event handlers on `TicketState`.
+  name: TicketState

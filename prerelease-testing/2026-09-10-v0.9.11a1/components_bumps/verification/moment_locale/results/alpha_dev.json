@@ -1,0 +1,26 @@
+{
+  "url": "http://localhost:5920/",
+  "console": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  "page_errors": [],
+  "failed": [],
+  "first_load": {
+    "plain": "jeudi 14 mars 2024",
+    "fromnow": "il y a 7 ans",
+    "french": "jeudi 14 mars 2024"
+  },
+  "after_reload": {
+    "plain": "jeudi 14 mars 2024",
+    "fromnow": "il y a 7 ans",
+    "french": "jeudi 14 mars 2024"
+  }
+}

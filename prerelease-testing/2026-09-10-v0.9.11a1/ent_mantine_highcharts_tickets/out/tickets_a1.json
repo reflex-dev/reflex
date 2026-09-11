@@ -1,0 +1,219 @@
+{
+ "routes": {
+  "/": {
+   "url": "http://localhost:5452/",
+   "before": {
+    "svg": 6,
+    "buttons": 16,
+    "inputs": 1,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 0,
+    "canvas": 0,
+    "text_len": 469
+   },
+   "text": "IT Ticketing\n\nManual test bed for the EventHandlerAPIPlugin. Open /docs in any OpenAPI viewer pointed at /_reflex/events/openapi.yaml, or hit /.well-known/api-catalog.\n\nOpen: 0\n\nTotal: 0\n\nSeed\n\u22ef\nNew Ticket\nall\nall\nopen\nin_progress\nclosed\nall\nall\nlow\nmedium\nhigh\nApply\n\nSort\n\ncreated_at\ncreated_at\nupdated_at\ntitle\npriority\nstatus\nassignee\ndesc\nasc\ndesc\n\nPage size\n\n20\n10\n20\n50\n100\nPrev\n\nPage 1 / 1\n\nN",
+   "clicks": [
+    {
+     "i": 0,
+     "label": "",
+     "counts": {
+      "svg": 6,
+      "buttons": 16,
+      "inputs": 1,
+      "rows": 0,
+      "highcharts": 0,
+      "mantine": 0,
+      "canvas": 0,
+      "text_len": 469
+     }
+    },
+    {
+     "i": 1,
+     "label": "Seed",
+     "counts": {
+      "svg": 6,
+      "buttons": 16,
+      "inputs": 1,
+      "rows": 0,
+      "highcharts": 0,
+      "mantine": 0,
+      "canvas": 0,
+      "text_len": 469
+     }
+    },
+    {
+     "i": 2,
+     "label": "\u22ef",
+     "counts": {
+      "svg": 6,
+      "buttons": 16,
+      "inputs": 1,
+      "rows": 0,
+      "highcharts": 0,
+      "mantine": 0,
+      "canvas": 0,
+      "text_len": 479
+     }
+    },
+    {
+     "i": 3,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 4,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 5,
+     "err": "TimeoutError"
+    }
+   ],
+   "after": {
+    "svg": 6,
+    "buttons": 16,
+    "inputs": 1,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 0,
+    "canvas": 0,
+    "text_len": 479
+   }
+  },
+  "/ticket": {
+   "url": "http://localhost:5452/ticket",
+   "before": {
+    "svg": 3,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 0,
+    "canvas": 0,
+    "text_len": 158
+   },
+   "text": "Ticket detail\n\nReview and edit a ticket.\n\nBack to tickets\n\nTicket ID:\n\nEdit ticket\n\nTitle\n\nDescription\n\nStatus\n\nopen\n\nPriority\n\nmedium\n\nAssignee\n\nSave changes",
+   "clicks": [
+    {
+     "i": 0,
+     "label": "",
+     "counts": {
+      "svg": 3,
+      "buttons": 5,
+      "inputs": 2,
+      "rows": 0,
+      "highcharts": 0,
+      "mantine": 0,
+      "canvas": 0,
+      "text_len": 158
+     }
+    },
+    {
+     "i": 1,
+     "label": "Back to tickets",
+     "counts": {
+      "svg": 3,
+      "buttons": 5,
+      "inputs": 2,
+      "rows": 0,
+      "highcharts": 0,
+      "mantine": 0,
+      "canvas": 0,
+      "text_len": 158
+     }
+    },
+    {
+     "i": 2,
+     "label": "open",
+     "counts": {
+      "svg": 4,
+      "buttons": 5,
+      "inputs": 2,
+      "rows": 0,
+      "highcharts": 0,
+      "mantine": 0,
+      "canvas": 0,
+      "text_len": 182
+     }
+    },
+    {
+     "i": 3,
+     "err": "TimeoutError"
+    },
+    {
+     "i": 4,
+     "err": "TimeoutError"
+    }
+   ],
+   "after": {
+    "svg": 4,
+    "buttons": 5,
+    "inputs": 2,
+    "rows": 0,
+    "highcharts": 0,
+    "mantine": 0,
+    "canvas": 0,
+    "text_len": 182
+   }
+  }
+ },
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "error",
+   "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\", \"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\". Try"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "error",
+   "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\", \"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\". Try"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "console_errors": [
+  {
+   "type": "error",
+   "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\", \"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\". Try"
+  },
+  {
+   "type": "error",
+   "text": "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.reflex_enterprise___auth___oidc___state____is_iframed_state\", \"reflex___state____state.reflex_enterprise___auth___oidc___state____generic_oidc_auth_state\". Try"
+  }
+ ]
+}
