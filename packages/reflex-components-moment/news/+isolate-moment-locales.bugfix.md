@@ -1,0 +1,1 @@
+Keep `rx.moment` locales independent: components without a `locale` render in English even when another component or route imports a different locale. Explicit `locale="en"` also works without importing a nonexistent locale module.

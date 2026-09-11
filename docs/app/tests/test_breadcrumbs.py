@@ -1,7 +1,9 @@
 """Tests for docs breadcrumbs."""
 
 import importlib
+from types import SimpleNamespace
 
+import pytest
 import reflex as rx
 
 
@@ -60,3 +62,65 @@ def test_resolve_breadcrumb_href_returns_none_for_missing_route():
         docpage_module._resolve_breadcrumb_href("/hosting", {"/hosting/deploy/"})
         is None
     )
+
+
+@pytest.mark.parametrize(
+    "deploy_url,frontend_path,base",
+    [
+        ("https://reflex.dev", "/docs", "https://reflex.dev/docs"),
+        ("http://localhost:3000", "/docs", "http://localhost:3000/docs"),
+        (
+            "https://staging.example.com/",
+            "/preview/docs/",
+            "https://staging.example.com/preview/docs",
+        ),
+        ("https://docs.example.com/", "", "https://docs.example.com"),
+    ],
+)
+def test_structured_breadcrumbs_use_real_canonical_routes(
+    monkeypatch, deploy_url, frontend_path, base
+):
+    """Structured navigation names existing pages and includes the docs root."""
+    docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    monkeypatch.setattr(
+        "reflex_site_shared.utils.url.get_config",
+        lambda: SimpleNamespace(deploy_url=deploy_url, frontend_path=frontend_path),
+    )
+    monkeypatch.setattr(
+        docpage_module,
+        "_REGISTERED_DOC_ROUTES",
+        {
+            "/enterprise/overview/",
+            "/enterprise/auth/overview/",
+            "/enterprise/auth/testing/",
+        },
+    )
+    data = docpage_module.breadcrumb_data("/enterprise/auth/testing/", "Testing")
+    assert data["@type"] == "BreadcrumbList"
+    items = data["itemListElement"]
+    assert [item["position"] for item in items] == list(range(1, len(items) + 1))
+    assert [item["item"] for item in items] == [
+        base + "/",
+        base + "/enterprise/overview/",
+        base + "/enterprise/auth/overview/",
+        base + "/enterprise/auth/testing/",
+    ]
+
+
+@pytest.mark.parametrize("path", ["/", ""])
+def test_root_breadcrumb_has_one_location(path, monkeypatch):
+    """The docs root must not repeat itself as the current location."""
+    docpage_module = importlib.import_module("reflex_docs.templates.docpage.docpage")
+    monkeypatch.setattr(
+        "reflex_site_shared.utils.url.get_config",
+        lambda: SimpleNamespace(deploy_url="https://reflex.dev", frontend_path="/docs"),
+    )
+    items = docpage_module.breadcrumb_data(path, "Documentation")["itemListElement"]
+    assert items == [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Documentation",
+            "item": "https://reflex.dev/docs/",
+        }
+    ]
