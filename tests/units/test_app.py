@@ -7,6 +7,8 @@ import functools
 import io
 import json
 import logging
+import multiprocessing
+import pickle
 import re
 import unittest.mock
 import uuid
@@ -73,9 +75,16 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
-from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
+from reflex.state import (
+    BaseState,
+    OnLoadInternalState,
+    State,
+    StateUpdate,
+    reload_state_module,
+)
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
+from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
 from .conftest import active_tracer, chdir, metric_points
 from .states import GenState
@@ -87,6 +96,8 @@ from .states.upload import (
 )
 
 if TYPE_CHECKING:
+    from multiprocessing.connection import Connection
+
     from sqlalchemy.engine.base import Engine
 
 
@@ -3216,6 +3227,85 @@ def test_call_app():
     app._compile = unittest.mock.Mock()
     api = app()
     assert isinstance(api, Starlette)
+
+
+def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection):
+    """Run the server startup path in a forked worker and report delta routing.
+
+    Args:
+        app: The application created before the fork.
+        redis: The mock Redis connection carrying another worker's socket record.
+        sender: The pipe used to report the worker's result.
+    """
+
+    async def probe():
+        """Start event processing and publish a delta to the socket owner."""
+        async with app._setup_event_processor():
+            assert app.event_namespace is not None
+            manager = app.event_namespace._token_manager
+            assert isinstance(manager, RedisTokenManager)
+            published = await manager.emit_lost_and_found(
+                "client", StateUpdate(delta={"state": {"count": 1}})
+            )
+            sender.send((
+                manager.instance_id,
+                published,
+                redis.publish.call_args.args if published else None,
+            ))
+
+    try:
+        asyncio.run(probe())
+    finally:
+        sender.close()
+
+
+@pytest.mark.skipif(
+    "fork" not in multiprocessing.get_all_start_methods(),
+    reason="Requires a server that forks after importing the app",
+)
+def test_forked_workers_publish_deltas_to_the_socket_owner():
+    """Give forked workers distinct identities before routing backend deltas."""
+    app = App()
+    app._state_manager = StateManagerMemory()
+    redis = AsyncMock()
+    manager = RedisTokenManager(redis)
+    assert app.event_namespace is not None
+    app.event_namespace._token_manager = manager
+    owner_id = manager.instance_id
+    redis.get.return_value = pickle.dumps(
+        SocketRecord(instance_id=owner_id, sid="remote")
+    )
+    workers = multiprocessing.get_context("fork")
+    worker_ids = set()
+
+    for _ in range(2):
+        receiver, sender = workers.Pipe(duplex=False)
+        process = workers.Process(
+            target=_probe_worker_token_identity, args=(app, redis, sender)
+        )
+        process.start()
+        sender.close()
+        try:
+            assert receiver.poll(10), "The forked worker did not report a result"
+            worker_id, published, publish_args = receiver.recv()
+            process.join(timeout=10)
+            assert process.exitcode == 0
+            assert published, "A live socket owned by another worker was discarded"
+            assert worker_id != owner_id
+            assert worker_id not in worker_ids
+            worker_ids.add(worker_id)
+            assert publish_args[0] == f"channel:token_manager_lost_and_found_{owner_id}"
+            record = pickle.loads(publish_args[1])
+            assert record.token == "client"
+            assert record.update.delta == {"state": {"count": 1}}
+        finally:
+            receiver.close()
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=10)
+            process.close()
+
+    assert manager.instance_id == owner_id
 
 
 @pytest.fixture

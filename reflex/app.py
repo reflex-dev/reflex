@@ -718,13 +718,22 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @contextlib.asynccontextmanager
     async def _setup_event_processor(self) -> AsyncIterator[None]:
+        """Configure event processing with a fresh worker socket identity.
+
+        Yields:
+            None while the event processor is active.
+        """
+        # The app may have been imported before the server forked its workers.
+        event_namespace = self.event_namespace
+        if event_namespace is not None:
+            event_namespace._token_manager._reset_instance_id()
         # Create the event processor.
         self._event_processor = BaseStateEventProcessor(
             middleware=self, backend_exception_handler=self.backend_exception_handler
         )
         async with self._event_processor.configure(
             state_manager=self.state_manager,
-            event_namespace=self.event_namespace,
+            event_namespace=event_namespace,
         ):
             yield
 
