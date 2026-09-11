@@ -1,0 +1,4 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using Python 3.11.15 environment at: env/env-a2
+Checked 40 packages in 0.57ms
+All installed packages are compatible

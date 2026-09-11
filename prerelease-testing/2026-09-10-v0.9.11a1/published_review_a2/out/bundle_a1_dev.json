@@ -1,0 +1,155 @@
+{
+ "base": "http://localhost:5501",
+ "steps": [
+  {
+   "step": "1_initial_load",
+   "initial-icon": 0,
+   "dynamic-icon": 0,
+   "count": null
+  },
+  {
+   "step": "1b_window_reflex_keys",
+   "count": 5,
+   "lucide": []
+  },
+  {
+   "step": "2_after_activate",
+   "initial-icon": 0,
+   "dynamic-icon": 0,
+   "count": null
+  },
+  {
+   "step": "2b_window_reflex_keys",
+   "count": 5,
+   "lucide": []
+  },
+  {
+   "step": "3_increment_unavailable",
+   "reason": "no #inc button rendered"
+  },
+  {
+   "step": "5_after_deactivate",
+   "initial-icon": 0,
+   "dynamic-icon": 0,
+   "count": null
+  },
+  {
+   "step": "6_after_reactivate",
+   "initial-icon": 0,
+   "dynamic-icon": 0,
+   "count": null
+  },
+  {
+   "step": "7_after_reload",
+   "initial-icon": 0,
+   "dynamic-icon": 0,
+   "count": null
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [
+  {
+   "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/tag.mjs",
+   "err": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/apple.mjs",
+   "err": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/tag.mjs",
+   "err": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/apple.mjs",
+   "err": "net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "http_errors": [],
+ "window_reflex_keys_initial": [
+  "$/utils/context",
+  "$/utils/state",
+  "@emotion/react",
+  "@radix-ui/themes",
+  "react"
+ ],
+ "window_reflex_keys_after": [
+  "$/utils/context",
+  "$/utils/state",
+  "@emotion/react",
+  "@radix-ui/themes",
+  "react"
+ ],
+ "console_errors": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ]
+}

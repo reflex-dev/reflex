@@ -1,0 +1,80 @@
+    at 
+file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scra
+tchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node.
+js:33951:71
+    at onwarn 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/.vite-temp/vite.config.js.
+timestamp-1789148856252-f8954139c7cef.mjs:234:5)
+    at onwarn 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/@react-router/dev/dist/vit
+e.js:2574:23)
+    at 
+file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scra
+tchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node.
+js:33951:28
+    at onRollupLog 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:33946:65)
+    at onLog 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:33710:4)
+    at 
+file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scra
+tchpad/review_a2/apps/localeapp_a1/.web/node_modules/rolldown/dist/shared/create
+-bundler-option-kXHnIt4b.mjs:48:26
+    at logger 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/rolldown/dist/shared/creat
+e-bundler-option-kXHnIt4b.mjs:39:3)
+    at aggregateBindingErrorsIntoJsError 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/rolldown/dist/shared/error
+-CRNyaqoL.mjs:48:18)
+    at unwrapBindingResult 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/rolldown/dist/shared/error
+-CRNyaqoL.mjs:18:128)
+    at #build 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/rolldown/dist/shared/rolld
+own-B-jRyK4b.mjs:133:34)
+    at async buildEnvironment 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:33821:66)
+    at async Object.build 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:34242:19)
+    at async buildApp 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/@react-router/dev/dist/vit
+e.js:1537:8)
+    at async buildApp 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/@react-router/dev/dist/vit
+e.js:794:6)
+    at async Object.buildApp 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/@react-router/dev/dist/vit
+e.js:2202:8)
+    at async Object.buildApp 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:34238:38)
+    at async build 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/@react-router/dev/dist/bui
+ld-Ou3B3epu.js:16:2) {
+  errors: [Getter/Setter]
+}
+error: script "export" exited with code 1
+
+
+
+Run with --loglevel debug  for the full log.
+Creating Production Build:  ━━━━━━━━━━━━━━━━━╸                   50% 2/4 0:00:03

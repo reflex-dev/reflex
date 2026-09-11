@@ -1,0 +1,318 @@
+{
+ "base": "http://localhost:5491",
+ "routes": {
+  "1_home_french_first": {
+   "home-french": "jeudi 14 mars 2024",
+   "home-plain": "Thursday 14 March 2024",
+   "home-fromnow": "7 years ago",
+   "home-tonow": "in 7 years",
+   "home-title": "Thursday",
+   "home-duration": "4 years, 2 months, 13 days",
+   "_title_attr": "Thursday 14 March 2024"
+  },
+  "2_reverse_french_last": {
+   "rev-plain": "jeudi 14 mars 2024",
+   "rev-fromnow": "il y a 7 ans",
+   "rev-tonow": "dans 7 ans",
+   "rev-title": "jeudi",
+   "rev-duration": "4 years, 2 months, 13 days",
+   "rev-french": "jeudi 14 mars 2024",
+   "_title_attr": "jeudi 14 mars 2024"
+  },
+  "3_english_only": {
+   "eng-plain": "Thursday 14 March 2024",
+   "eng-fromnow": "7 years ago",
+   "eng-tonow": "in 7 years",
+   "eng-title": "Thursday",
+   "eng-duration": "4 years, 2 months, 13 days",
+   "_title_attr": "Thursday 14 March 2024"
+  },
+  "4_explicit_en": {
+   "_ROUTE_FAILED": "TimeoutError",
+   "_body": ""
+  },
+  "5_english_after_client_nav_from_french": {
+   "eng-plain": "Thursday 14 March 2024",
+   "eng-fromnow": "7 years ago",
+   "eng-tonow": "in 7 years",
+   "eng-title": "Thursday",
+   "eng-duration": "4 years, 2 months, 13 days",
+   "_title_attr": "Thursday 14 March 2024"
+  },
+  "6_english_after_reload": {
+   "eng-plain": "Thursday 14 March 2024",
+   "eng-fromnow": "7 years ago",
+   "eng-tonow": "in 7 years",
+   "eng-title": "Thursday",
+   "eng-duration": "4 years, 2 months, 13 days",
+   "_title_attr": "Thursday 14 March 2024"
+  },
+  "7_reactive_initial_fr": {
+   "react-var": "jeudi 14 mars 2024",
+   "react-plain": "Thursday 14 March 2024",
+   "react-fromnow": "7 years ago",
+   "react-tonow": "in 7 years",
+   "react-title": "Thursday",
+   "react-duration": "4 years, 2 months, 13 days",
+   "_title_attr": "Thursday 14 March 2024"
+  },
+  "8_reactive_en": {
+   "react-var": "Thursday 14 March 2024",
+   "react-plain": "Thursday 14 March 2024",
+   "react-fromnow": "7 years ago",
+   "react-tonow": "in 7 years",
+   "react-title": "Thursday",
+   "react-duration": "4 years, 2 months, 13 days",
+   "_title_attr": "Thursday 14 March 2024"
+  },
+  "9_reactive_empty": {
+   "react-var": "Thursday 14 March 2024",
+   "react-plain": "Thursday 14 March 2024",
+   "react-fromnow": "7 years ago",
+   "react-tonow": "in 7 years",
+   "react-title": "Thursday",
+   "react-duration": "4 years, 2 months, 13 days",
+   "_title_attr": "Thursday 14 March 2024"
+  },
+  "10_reactive_fr_again": {
+   "react-var": "jeudi 14 mars 2024",
+   "react-plain": "Thursday 14 March 2024",
+   "react-fromnow": "7 years ago",
+   "react-tonow": "in 7 years",
+   "react-title": "Thursday",
+   "react-duration": "4 years, 2 months, 13 days",
+   "_title_attr": "Thursday 14 March 2024"
+  },
+  "11_english_after_reactive": {
+   "eng-plain": "Thursday 14 March 2024",
+   "eng-fromnow": "7 years ago",
+   "eng-tonow": "in 7 years",
+   "eng-title": "Thursday",
+   "eng-duration": "4 years, 2 months, 13 days",
+   "_title_attr": "Thursday 14 March 2024"
+  }
+ },
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  },
+  {
+   "type": "error",
+   "text": "Error loading route module `/app/routes/[en]._index.jsx`, reloading page..."
+  },
+  {
+   "type": "error",
+   "text": "TypeError: Failed to fetch dynamically imported module: http://localhost:5491/app/routes/[en]._index.jsx?import"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [
+  {
+   "url": "http://localhost:5491/app/routes/[en]._index.jsx?import",
+   "err": "net::ERR_ABORTED"
+  },
+  {
+   "url": "http://localhost:5491/node_modules/.vite/deps/rolldown-runtime-B-lAHAz2.js?v=e5dd5ea2",
+   "err": "net::ERR_ABORTED"
+  },
+  {
+   "url": "http://localhost:5491/node_modules/.vite/deps/moment-mcyr78PQ.js?v=e5dd5ea2",
+   "err": "net::ERR_ABORTED"
+  }
+ ],
+ "http_errors": [
+  {
+   "url": "http://localhost:5491/app/routes/[en]._index.jsx?import",
+   "status": 500
+  }
+ ],
+ "locale_requests": [
+  {
+   "url": "http://localhost:5491/node_modules/.vite/deps/moment_locale_fr.js?v=0fd28038"
+  },
+  {
+   "url": "http://localhost:5491/node_modules/.vite/deps/moment_locale_fr.js?v=0fd28038"
+  },
+  {
+   "url": "http://localhost:5491/node_modules/.vite/deps/moment_locale_fr.js?v=0fd28038"
+  },
+  {
+   "url": "http://localhost:5491/node_modules/.vite/deps/moment_min_locales.js?v=24e20662"
+  },
+  {
+   "url": "http://localhost:5491/node_modules/.vite/deps/moment_min_locales.js?v=e5dd5ea2"
+  }
+ ],
+ "console_errors": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  },
+  {
+   "type": "error",
+   "text": "Error loading route module `/app/routes/[en]._index.jsx`, reloading page..."
+  },
+  {
+   "type": "error",
+   "text": "TypeError: Failed to fetch dynamically imported module: http://localhost:5491/app/routes/[en]._index.jsx?import"
+  }
+ ],
+ "defineLocale_warnings": []
+}

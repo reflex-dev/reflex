@@ -1,0 +1,80 @@
+%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdirection%3A%22row%
+22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bcss%3A(%7B%20%5B%22color%2
+2%5D%20%3A%20%22green%22%20%7D)%2Cid%3A%22dynamic-icon%22%2Cref%3Aref_dynamic_ic
+on%7D)))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dec%22%2ConClick%3A((_e)%2
+0%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.bundleapp___bund
+leapp____state.set_count%22%2C%20(%7B%20%5B%22count%22%5D%20%3A%20-1%20%7D)%2C%2
+0(%7B%20%20%7D)))%5D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dec%7D)%2C
+%20%22-%22))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3A%22p%22%2Cid%3A%22count%22%
+2Cref%3Aref_count%7D)%2C%200))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22inc%
+22%2ConClick%3A((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____
+state.bundleapp___bundleapp____state.set_count%22%2C%20(%7B%20%5B%22count%22%5D%
+20%3A%201%20%7D)%2C%20(%7B%20%20%7D)))%5D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2
+Cref%3Aref_inc%7D)%2C%20%22%2B%22))))%0A%20%20)%0A%7D
+
+5:56:21 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch 
+dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideTag%
+20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2Bes
+m%2Fdist%2Fesm%2Ficons%2Ftag.mjs%22%0Aconst%20React%20%3D%20window.__reflex.reac
+t%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0Acon
+st%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5D%0A
+const%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2Fstat
+e%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%20con
+st%20ref_initial_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_initial_icon%22%5D
+%20%3D%20ref_initial_icon%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(Luci
+deTag%2C%20(%7Bcss%3A(%7B%20%5B%22color%22%5D%20%3A%20%22red%22%20%7D)%2Cid%3A%2
+2initial-icon%22%2Cref%3Aref_initial_icon%7D)))%0A%20%20)%0A%7D
+
+5:56:21 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch 
+dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideTag%
+20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2Bes
+m%2Fdist%2Fesm%2Ficons%2Ftag.mjs%22%0Aconst%20React%20%3D%20window.__reflex.reac
+t%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0Acon
+st%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5D%0A
+const%20%7BpyOr%2Crefs%7D%20%3D%20window%5B'__reflex'%5D%5B%22%24%2Futils%2Fstat
+e%22%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20%7B%0A%20%20con
+st%20ref_initial_icon%20%3D%20useRef(null)%3B%20refs%5B%22ref_initial_icon%22%5D
+%20%3D%20ref_initial_icon%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(Luci
+deTag%2C%20(%7Bcss%3A(%7B%20%5B%22color%22%5D%20%3A%20%22red%22%20%7D)%2Cid%3A%2
+2initial-icon%22%2Cref%3Aref_initial_icon%7D)))%0A%20%20)%0A%7D
+
+5:56:21 PM [vite] (client) [Unhandled rejection] TypeError: Failed to fetch 
+dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideAppl
+e%20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2B
+esm%2Fdist%2Fesm%2Ficons%2Fapple.mjs%22%0Aconst%20React%20%3D%20window.__reflex.
+react%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0
+Aconst%20%7BFragment%2CuseEffect%2CuseRef%7D%20%3D%20window.__reflex%5B'react'%5
+D%0Aconst%20%7BButton%3A%20RadixThemesButton%2CFlex%3A%20RadixThemesFlex%2CText%
+3A%20RadixThemesText%7D%20%3D%20window.__reflex%5B'%40radix-ui%2Fthemes'%5D%0Aco
+nst%20%7BReflexEvent%2CapplyEventActions%2CpyOr%2Crefs%7D%20%3D%20window%5B'__re
+flex'%5D%5B%22%24%2Futils%2Fstate%22%5D%0Aconst%20%7BaddEvents%7D%20%3D%20window
+%5B'__reflex'%5D%5B%22%24%2Futils%2Fcontext%22%5D%0A%0Aexport%20default%20functi
+on%20MySSRComponent%20()%20%7B%0A%20%20const%20ref_dynamic_icon%20%3D%20useRef(n
+ull)%3B%20refs%5B%22ref_dynamic_icon%22%5D%20%3D%20ref_dynamic_icon%3B%0Aconst%2
+0ref_dec%20%3D%20useRef(null)%3B%20refs%5B%22ref_dec%22%5D%20%3D%20ref_dec%3B%0A
+const%20ref_count%20%3D%20useRef(null)%3B%20refs%5B%22ref_count%22%5D%20%3D%20re
+f_count%3B%0Aconst%20ref_inc%20%3D%20useRef(null)%3B%20refs%5B%22ref_inc%22%5D%2
+0%3D%20ref_inc%3B%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixThemesFlex
+%2C%20(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdirection%3A%22row%
+22%2Cgap%3A%223%22%7D)%2C%20(jsx(LucideApple%2C%20(%7Bcss%3A(%7B%20%5B%22color%2
+2%5D%20%3A%20%22green%22%20%7D)%2Cid%3A%22dynamic-icon%22%2Cref%3Aref_dynamic_ic
+on%7D)))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22dec%22%2ConClick%3A((_e)%2
+0%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____state.bundleapp___bund
+leapp____state.set_count%22%2C%20(%7B%20%5B%22count%22%5D%20%3A%20-1%20%7D)%2C%2
+0(%7B%20%20%7D)))%5D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2Cref%3Aref_dec%7D)%2C
+%20%22-%22))%2C%20(jsx(RadixThemesText%2C%20(%7Bas%3A%22p%22%2Cid%3A%22count%22%
+2Cref%3Aref_count%7D)%2C%200))%2C%20(jsx(RadixThemesButton%2C%20(%7Bid%3A%22inc%
+22%2ConClick%3A((_e)%20%3D%3E%20(addEvents(%5B(ReflexEvent(%22reflex___state____
+state.bundleapp___bundleapp____state.set_count%22%2C%20(%7B%20%5B%22count%22%5D%
+20%3A%201%20%7D)%2C%20(%7B%20%20%7D)))%5D%2C%20%5B_e%5D%2C%20(%7B%20%20%7D))))%2
+Cref%3Aref_inc%7D)%2C%20%22%2B%22))))%0A%20%20)%0A%7D
+
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

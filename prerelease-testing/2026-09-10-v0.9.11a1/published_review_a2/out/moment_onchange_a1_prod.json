@@ -1,0 +1,250 @@
+{
+ "url": "http://localhost:5517/",
+ "wait_seconds": 8.0,
+ "phases": [
+  [
+   "18:17:15",
+   "goto"
+  ],
+  [
+   "18:17:15",
+   "mounted"
+  ],
+  [
+   "18:17:23",
+   "reload"
+  ],
+  [
+   "18:17:24",
+   "remounted"
+  ],
+  [
+   "18:17:32",
+   "nav_to_other"
+  ],
+  [
+   "18:17:35",
+   "nav_back"
+  ],
+  [
+   "18:17:35",
+   "client_remounted"
+  ],
+  [
+   "18:17:43",
+   "done"
+  ]
+ ],
+ "frames": [
+  [
+   "18:17:15.335",
+   "ws#1",
+   "hydrate",
+   null
+  ],
+  [
+   "18:17:15.335",
+   "ws#1",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:17:15.340",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:17:15"
+   }
+  ],
+  [
+   "18:17:15.341",
+   "ws#1",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "18:17:15.341",
+   "ws#1",
+   "zero_change",
+   {
+    "date": "18:17:15"
+   }
+  ],
+  [
+   "18:17:18.341",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:17:18"
+   }
+  ],
+  [
+   "18:17:21.341",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:17:21"
+   }
+  ],
+  [
+   "18:17:24.065",
+   "ws#2",
+   "hydrate",
+   null
+  ],
+  [
+   "18:17:24.065",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:17:24.065",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:17:24"
+   }
+  ],
+  [
+   "18:17:24.065",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "18:17:24.065",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "18:17:24"
+   }
+  ],
+  [
+   "18:17:27.065",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:17:27"
+   }
+  ],
+  [
+   "18:17:30.065",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:17:30"
+   }
+  ],
+  [
+   "18:17:32.669",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:17:35.211",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:17:35.213",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:17:35"
+   }
+  ],
+  [
+   "18:17:35.213",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "18:17:35.213",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "18:17:35"
+   }
+  ],
+  [
+   "18:17:38.214",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:17:38"
+   }
+  ],
+  [
+   "18:17:41.215",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:17:41"
+   }
+  ]
+ ],
+ "counts_after_load": {
+  "tick_count": "tick_count=3",
+  "static_count": "static_count=1",
+  "zero_count": "zero_count=1",
+  "tick_log": "tick_log=18:17:15,18:17:18,18:17:21",
+  "static_log": "static_log=2020-01-02 03:04",
+  "zero_log": "zero_log=18:17:15"
+ },
+ "counts_after_reload": {
+  "tick_count": "tick_count=6",
+  "static_count": "static_count=2",
+  "zero_count": "zero_count=2",
+  "tick_log": "tick_log=18:17:15,18:17:18,18:17:21,18:17:24,18:17:27,18:17:30",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=18:17:15,18:17:24"
+ },
+ "counts_after_client_nav": {
+  "tick_count": "tick_count=9",
+  "static_count": "static_count=3",
+  "zero_count": "zero_count=3",
+  "tick_log": "tick_log=18:17:15,18:17:18,18:17:21,18:17:24,18:17:27,18:17:30,18:17:35,18:17:38,18:17:41",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=18:17:15,18:17:24,18:17:35"
+ },
+ "interval_time_outerHTML": "<time datetime=\"2026-09-11T18:17:21.340Z\">18:17:21</time>",
+ "static_innerHTML": "<time datetime=\"2020-01-02T03:04:05.000Z\">2020-01-02 03:04</time>",
+ "websockets": [
+  [
+   "open",
+   "18:17:15",
+   "ws://localhost:5517/_event/?token=fe41b142-0ede-4a41-dcb7-32edfa9f503b&EIO=4&transport=websocket"
+  ],
+  [
+   "close",
+   "18:17:23",
+   "ws://localhost:5517/_event/?token=fe41b142-0ede-4a41-dcb7-32edfa9f503b&EIO=4&transport=websocket"
+  ],
+  [
+   "open",
+   "18:17:24",
+   "ws://localhost:5517/_event/?token=fe41b142-0ede-4a41-dcb7-32edfa9f503b&EIO=4&transport=websocket"
+  ]
+ ],
+ "console": [
+  [
+   "error",
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  [
+   "log",
+   "Disconnect websocket on page navigation"
+  ]
+ ],
+ "page_errors": []
+}

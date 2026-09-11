@@ -1,0 +1,31 @@
+{
+ "reflex": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/review_a2/env/env-a2/lib/python3.11/site-packages/reflex/__init__.py",
+ "cases": {
+  "library_string": "accepted",
+  "exact_subpath_string": "accepted",
+  "component_instance": "accepted",
+  "component_class_not_instance": "TypeError: Pass a library name as a str or a prototype Component instance to bundle_library(), for example bundle_library(rx.icon('apple')).",
+  "integer": "TypeError: Pass a library name as a str or a prototype Component instance to bundle_library(), for example bundle_library(rx.icon('apple')).",
+  "none": "TypeError: Pass a library name as a str or a prototype Component instance to bundle_library(), for example bundle_library(rx.icon('apple')).",
+  "list": "TypeError: Pass a library name as a str or a prototype Component instance to bundle_library(), for example bundle_library(rx.icon('apple'))."
+ },
+ "after_cases": [
+  "$/utils/context",
+  "$/utils/state",
+  "@emotion/react",
+  "@radix-ui/themes",
+  "d3-format",
+  "lucide-react/dist/esm/icons/apple.mjs",
+  "react"
+ ],
+ "duplicate_registration_stable": true,
+ "final": [
+  "$/utils/context",
+  "$/utils/state",
+  "@emotion/react",
+  "@radix-ui/themes",
+  "d3-format",
+  "lucide-react/dist/esm/icons/apple.mjs",
+  "react"
+ ]
+}

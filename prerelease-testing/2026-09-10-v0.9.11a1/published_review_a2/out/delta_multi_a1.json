@@ -1,0 +1,128 @@
+{
+ "base": "http://localhost:5497",
+ "frames_before_click": 6,
+ "frames_total": 8,
+ "deltas_after_click": [
+  {
+   "reflex___state____state.deltaapp___deltaapp____counter": {
+    "count_rx_state_": 1,
+    "marker_rx_state_": "c=1",
+    "doubled_rx_state_": 2,
+    "label_rx_state_": "n1",
+    "flags_rx_state_": {
+     "a": false,
+     "b": true
+    },
+    "history_rx_state_": [
+     1
+    ]
+   }
+  },
+  {
+   "reflex___state____state.deltaapp___deltaapp____sibling": {
+    "seen_rx_state_": 1,
+    "note_upper_rx_state_": "SEEN1",
+    "note_rx_state_": "seen1"
+   },
+   "reflex___state____state.deltaapp___deltaapp____counter": {
+    "marker_rx_state_": "c=1"
+   }
+  }
+ ],
+ "deltas_hydrate": [
+  {
+   "reflex___state____state": {
+    "is_hydrated_rx_state_": false,
+    "router_rx_state_": {
+     "session": {
+      "client_token": "0f7b44b8-0639-4de2-a696-e39df3ae6f14",
+      "client_ip": "127.0.0.1",
+      "session_id": "aJk_BTwv_bUSzRj9AAAB"
+     },
+     "headers": {
+      "host": "localhost:9897",
+      "origin": "http://localhost:5497",
+      "upgrade": "websocket",
+      "connection": "Upgrade",
+      "cookie": "",
+      "pragma": "no-cache",
+      "cache_control": "no-cache",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+      "sec_websocket_version": "13",
+      "sec_websocket_key": "poH27jLwZEsHh2iXt62sxg==",
+      "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+      "accept_encoding": "gzip, deflate, br, zstd",
+      "accept_language": "en-US,en;q=0.9",
+      "raw_headers": {
+       "accept-encoding": "gzip, deflate, br, zstd",
+       "accept-language": "en-US,en;q=0.9",
+       "asgi-scope-client": "127.0.0.1",
+       "cache-control": "no-cache",
+       "connection": "Upgrade",
+       "host": "localhost:9897",
+       "origin": "http://localhost:5497",
+       "pragma": "no-cache",
+       "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+       "sec-websocket-key": "poH27jLwZEsHh2iXt62sxg==",
+       "sec-websocket-protocol": "0.9.11a1",
+       "sec-websocket-version": "13",
+       "upgrade": "websocket",
+       "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+      }
+     },
+     "page": {
+      "host": "http://localhost:5497",
+      "path": "/reactive",
+      "raw_path": "/reactive",
+      "full_path": "http://localhost:5497/reactive",
+      "full_raw_path": "http://localhost:5497/reactive",
+      "params": {}
+     },
+     "url": {
+      "scheme": "http",
+      "netloc": "localhost:5497",
+      "origin": "http://localhost:5497",
+      "path": "/reactive",
+      "query": "",
+      "query_parameters": {},
+      "fragment": "",
+      "href": "http://localhost:5497/reactive"
+     },
+     "route_id": "/reactive"
+    }
+   },
+   "reflex___state____state.deltaapp___deltaapp____counter": {
+    "count_rx_state_": 0,
+    "doubled_rx_state_": 0,
+    "flags_rx_state_": {
+     "a": true
+    },
+    "history_rx_state_": [],
+    "label_rx_state_": "start",
+    "marker_rx_state_": "c=0"
+   },
+   "reflex___state____state.reflex___state____frontend_event_exception_state": {},
+   "reflex___state____state.reflex___state____update_vars_internal_state": {},
+   "reflex___state____state.deltaapp___deltaapp____sibling": {
+    "note_rx_state_": "",
+    "note_upper_rx_state_": "",
+    "seen_rx_state_": 0
+   },
+   "reflex___state____state.reflex___istate___shared____shared_state_base_internal": {},
+   "reflex___state____state.reflex___state____on_load_internal_state": {}
+  },
+  {
+   "reflex___state____state.deltaapp___deltaapp____counter": {
+    "marker_rx_state_": "c=0"
+   }
+  },
+  {
+   "reflex___state____state": {
+    "is_hydrated_rx_state_": true
+   },
+   "reflex___state____state.deltaapp___deltaapp____counter": {
+    "marker_rx_state_": "c=0"
+   }
+  }
+ ]
+}

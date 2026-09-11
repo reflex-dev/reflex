@@ -1,0 +1,106 @@
+{
+ "base": "http://127.0.0.1:5503",
+ "steps": [
+  {
+   "step": "1_initial_load",
+   "initial-icon": 1,
+   "dynamic-icon": 0,
+   "count": null
+  },
+  {
+   "step": "1b_window_reflex_keys",
+   "count": 7,
+   "lucide": [
+    "lucide-react/dist/esm/icons/apple.mjs",
+    "lucide-react/dist/esm/icons/tag.mjs"
+   ]
+  },
+  {
+   "step": "2_after_activate",
+   "initial-icon": 0,
+   "dynamic-icon": 1,
+   "count": "0"
+  },
+  {
+   "step": "2b_window_reflex_keys",
+   "count": 7,
+   "lucide": [
+    "lucide-react/dist/esm/icons/apple.mjs",
+    "lucide-react/dist/esm/icons/tag.mjs"
+   ]
+  },
+  {
+   "step": "3_after_two_increments",
+   "initial-icon": 0,
+   "dynamic-icon": 1,
+   "count": "2"
+  },
+  {
+   "step": "4_after_decrement",
+   "initial-icon": 0,
+   "dynamic-icon": 1,
+   "count": "1"
+  },
+  {
+   "step": "5_after_deactivate",
+   "initial-icon": 1,
+   "dynamic-icon": 0,
+   "count": null
+  },
+  {
+   "step": "6_after_reactivate",
+   "initial-icon": 0,
+   "dynamic-icon": 1,
+   "count": "1"
+  },
+  {
+   "step": "7_after_reload",
+   "initial-icon": 0,
+   "dynamic-icon": 1,
+   "count": "1"
+  },
+  {
+   "step": "8_increment_after_reload",
+   "initial-icon": 0,
+   "dynamic-icon": 1,
+   "count": "2"
+  }
+ ],
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  }
+ ],
+ "pageerrors": [],
+ "failed": [],
+ "http_errors": [],
+ "window_reflex_keys_initial": [
+  "$/utils/context",
+  "$/utils/state",
+  "@emotion/react",
+  "@radix-ui/themes",
+  "lucide-react/dist/esm/icons/apple.mjs",
+  "lucide-react/dist/esm/icons/tag.mjs",
+  "react"
+ ],
+ "window_reflex_keys_after": [
+  "$/utils/context",
+  "$/utils/state",
+  "@emotion/react",
+  "@radix-ui/themes",
+  "lucide-react/dist/esm/icons/apple.mjs",
+  "lucide-react/dist/esm/icons/tag.mjs",
+  "react"
+ ],
+ "console_errors": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  }
+ ]
+}

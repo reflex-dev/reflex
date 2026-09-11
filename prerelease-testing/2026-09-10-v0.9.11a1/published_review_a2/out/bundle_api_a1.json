@@ -1,0 +1,33 @@
+{
+ "reflex": "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/review_a2/env/env-a1/lib/python3.11/site-packages/reflex/__init__.py",
+ "cases": {
+  "library_string": "accepted",
+  "exact_subpath_string": "accepted",
+  "component_instance": "accepted",
+  "component_class_not_instance": "AttributeError: 'TextNamespace' object has no attribute 'library'",
+  "integer": "AttributeError: 'int' object has no attribute 'library'",
+  "none": "AttributeError: 'NoneType' object has no attribute 'library'",
+  "list": "AttributeError: 'list' object has no attribute 'library'"
+ },
+ "after_cases": [
+  "$/utils/context",
+  "$/utils/state",
+  "@emotion/react",
+  "@radix-ui/themes",
+  "d3-format",
+  "lucide-react/dist/esm/icons/apple.mjs",
+  "react"
+ ],
+ "duplicate_registration_stable": false,
+ "final": [
+  "$/utils/context",
+  "$/utils/state",
+  "@emotion/react",
+  "@radix-ui/themes",
+  "d3-format",
+  "d3-format",
+  "d3-format",
+  "lucide-react/dist/esm/icons/apple.mjs",
+  "react"
+ ]
+}

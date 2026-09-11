@@ -1,0 +1,80 @@
+      at async TransformPluginContext.transform 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:28119:4)
+      at async EnvironmentPluginContainer.transform 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:30932:14)
+      at async loadAndTransform 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:20671:26)
+      at async viteTransformMiddleware 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:25205:20)
+5:45:29 PM [vite] (client) [console.error] Error loading route module 
+`/app/routes/[en]._index.jsx`, reloading page...
+5:45:29 PM [vite] (client) [console.error] TypeError: Failed to fetch 
+dynamically imported module: 
+http://localhost:5491/app/routes/[en]._index.jsx?import
+5:46:00 PM [vite] Internal server error: Failed to resolve import 
+"moment/locale/en" from "app/routes/[en]._index.jsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: 
+/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/
+review_a2/apps/localeapp_a1/.web/app/routes/[en]._index.jsx:6:7
+  6  |  import { Flex as RadixThemesFlex, Link as RadixThemesLink, Text as 
+RadixThemesText } from "@radix-ui/themes";
+  7  |  import { ClientSide } from "$/utils/context";
+  8  |  import "moment/locale/en";
+     |          ^
+  9  |  import "moment-duration-format";
+  10 |  import { jsx } from "@emotion/react";
+      at TransformPluginContext._formatLog 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:31147:39)
+      at TransformPluginContext.error 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:31144:14)
+      at normalizeUrl 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:28083:18)
+      at async 
+file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scra
+tchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node.
+js:28153:30
+      at async Promise.all (index 8)
+      at async TransformPluginContext.transform 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:28119:4)
+      at async EnvironmentPluginContainer.transform 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:30932:14)
+      at async loadAndTransform 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:20671:26)
+      at async viteTransformMiddleware 
+(file:///tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scr
+atchpad/review_a2/apps/localeapp_a1/.web/node_modules/vite/dist/node/chunks/node
+.js:25205:20)
+5:46:00 PM [vite] (client) [console.error] Error loading route module 
+`/app/routes/[en]._index.jsx`, reloading page...
+5:46:00 PM [vite] (client) [console.error] TypeError: Failed to fetch 
+dynamically imported module: 
+http://localhost:5491/app/routes/[en]._index.jsx?import
+5:46:58 PM [vite] (client) dependency optimized: moment/min/locales
+5:46:58 PM [vite] (client) optimized dependencies changed. reloading
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

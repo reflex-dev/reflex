@@ -1,0 +1,80 @@
+Debug: [timing] Write to Disk: 0.00s
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 
+'export']
+Debug: Creating Production Build
+Debug: $ react-router build
+Debug: Using Vite Environment API
+Debug: vite v8.2.2 building client environment for production...
+Debug: transforming...
+Debug: ✓ 417 modules transformed.
+Debug: rendering chunks...
+Debug: computing gzip size...
+Debug: build/client/.vite/manifest.json                            3.15 kB │ 
+gzip:  0.59 kB
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css   698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/client/assets/reflex-env-C_Lq1587.js                  0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/client/assets/_index-BTmLKFmL.js                      2.61 kB │ 
+gzip:  0.96 kB
+Debug: build/client/assets/_page-b_._index-CRAJXYLm.js             2.61 kB │ 
+gzip:  0.97 kB
+Debug: build/client/assets/_item_.__item_id_._index-bw2c7ENv.js    2.62 kB │ 
+gzip:  0.97 kB
+Debug: build/client/assets/_404_._index-B-ZV7mQt.js                2.67 kB │ 
+gzip:  1.00 kB
+Debug: build/client/assets/rehydrate_app-CmTsimRu.js               3.68 kB │ 
+gzip:  0.75 kB
+Debug: build/client/assets/errorBoundaries-BNQPJewV.js           121.57 kB │ 
+gzip: 39.79 kB
+Debug: build/client/assets/text-field-Dc3x79dF.js                172.69 kB │ 
+gzip: 52.82 kB
+Debug: build/client/assets/entry.client-BMMizPZy.js              182.30 kB │ 
+gzip: 57.69 kB
+Debug: build/client/assets/root-DADsgcah.js                      302.58 kB │ 
+gzip: 85.31 kB
+Debug: 
+Debug: ✓ built in 1.55s
+Debug: vite v8.2.2 building ssr environment for production...
+Debug: transforming...
+Debug: ⚠️ Paths with dynamic/splat params cannot be prerendered when using 
+`prerender: true`. You may want to use the `prerender()` API to prerender the 
+following paths:
+Debug:   - item/:item_id
+Debug:   - *
+Debug: ✓ 27 modules transformed.
+Debug: rendering chunks...
+Debug: 
+Debug: ✓ 1 asset cleaned from React Router server build.
+Debug: build/client/assets/__reflex_global_styles-NccINl-w.css
+Debug: 
+Debug: computing gzip size...
+Debug: build/server/.vite/manifest.json                           0.76 kB │ 
+gzip:  0.30 kB
+Debug: build/server/assets/__reflex_global_styles-NccINl-w.css  698.26 kB │ 
+gzip: 84.10 kB
+Debug: build/server/assets/reflex-env-C_Lq1587.js                 0.30 kB │ 
+gzip:  0.20 kB
+Debug: build/server/index.js                                     63.13 kB │ 
+gzip: 15.05 kB
+Debug: 
+Debug: ✓ built in 424ms
+Debug: Prerender (html): / -> build/client/index.html
+Debug: Prerender (html): /page-b -> build/client/page-b/index.html
+Debug: Prerender (html): SPA Fallback -> build/client/__spa-fallback.html
+Creating Production Build:  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 4/4 0:00:02
+Debug: Copying .web/build/client/page-b/index.html to 
+.web/build/client/page-b.html
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/review_a2/apps/xwapp/.web/compress-static.js'), 
+PosixPath('/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/
+scratchpad/review_a2/apps/xwapp/.web/build/client'), 'gzip']
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:3232/
+Debug: Using Granian for backend
+[INFO] Starting granian (main PID: 9428)
+[INFO] Listening at: http://0.0.0.0:3232
+[INFO] Spawning worker-1 with PID: 9492
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1

@@ -1,0 +1,4 @@
+requests=40 distinct_pids=9 distinct_instance_ids=1 token_manager=RedisTokenManager
+pids: [8913, 8915, 8917, 8919, 8921, 8923, 8931, 8936, 8938]
+instance_ids: ['111c1448-c960-40c8-b1c8-b0d5d13b01ea']
+local_tokens per pid: {8919: [], 8938: [], 8917: [], 8931: [], 8923: [], 8915: [], 8921: [], 8936: [], 8913: []}

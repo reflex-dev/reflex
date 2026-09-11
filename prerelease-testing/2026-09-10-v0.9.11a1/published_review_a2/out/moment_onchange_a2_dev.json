@@ -1,0 +1,360 @@
+{
+ "url": "http://localhost:5514/",
+ "wait_seconds": 8.0,
+ "phases": [
+  [
+   "18:14:58",
+   "goto"
+  ],
+  [
+   "18:15:00",
+   "mounted"
+  ],
+  [
+   "18:15:08",
+   "reload"
+  ],
+  [
+   "18:15:09",
+   "remounted"
+  ],
+  [
+   "18:15:17",
+   "nav_to_other"
+  ],
+  [
+   "18:15:19",
+   "nav_back"
+  ],
+  [
+   "18:15:19",
+   "client_remounted"
+  ],
+  [
+   "18:15:27",
+   "done"
+  ]
+ ],
+ "frames": [
+  [
+   "18:14:59.693",
+   "ws#1",
+   "hydrate",
+   null
+  ],
+  [
+   "18:14:59.693",
+   "ws#1",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:14:59.754",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:14:59"
+   }
+  ],
+  [
+   "18:14:59.755",
+   "ws#1",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "18:14:59.755",
+   "ws#1",
+   "zero_change",
+   {
+    "date": "18:14:59"
+   }
+  ],
+  [
+   "18:14:59.755",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:14:59"
+   }
+  ],
+  [
+   "18:14:59.755",
+   "ws#1",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "18:14:59.755",
+   "ws#1",
+   "zero_change",
+   {
+    "date": "18:14:59"
+   }
+  ],
+  [
+   "18:15:02.755",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:15:02"
+   }
+  ],
+  [
+   "18:15:05.754",
+   "ws#1",
+   "tick",
+   {
+    "date": "18:15:05"
+   }
+  ],
+  [
+   "18:15:08.544",
+   "ws#2",
+   "hydrate",
+   null
+  ],
+  [
+   "18:15:08.544",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:15:08.564",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:15:08"
+   }
+  ],
+  [
+   "18:15:08.564",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "18:15:08.564",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "18:15:08"
+   }
+  ],
+  [
+   "18:15:08.565",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:15:08"
+   }
+  ],
+  [
+   "18:15:08.565",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "18:15:08.565",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "18:15:08"
+   }
+  ],
+  [
+   "18:15:11.566",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:15:11"
+   }
+  ],
+  [
+   "18:15:14.566",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:15:14"
+   }
+  ],
+  [
+   "18:15:17.198",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:15:19.787",
+   "ws#2",
+   "on_load_internal",
+   null
+  ],
+  [
+   "18:15:19.789",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:15:19"
+   }
+  ],
+  [
+   "18:15:19.789",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "18:15:19.789",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "18:15:19"
+   }
+  ],
+  [
+   "18:15:19.790",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:15:19"
+   }
+  ],
+  [
+   "18:15:19.790",
+   "ws#2",
+   "static_change",
+   {
+    "date": "2020-01-02 03:04"
+   }
+  ],
+  [
+   "18:15:19.790",
+   "ws#2",
+   "zero_change",
+   {
+    "date": "18:15:19"
+   }
+  ],
+  [
+   "18:15:22.790",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:15:22"
+   }
+  ],
+  [
+   "18:15:25.791",
+   "ws#2",
+   "tick",
+   {
+    "date": "18:15:25"
+   }
+  ]
+ ],
+ "counts_after_load": {
+  "tick_count": "tick_count=4",
+  "static_count": "static_count=2",
+  "zero_count": "zero_count=2",
+  "tick_log": "tick_log=18:14:59,18:14:59,18:15:02,18:15:05",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=18:14:59,18:14:59"
+ },
+ "counts_after_reload": {
+  "tick_count": "tick_count=8",
+  "static_count": "static_count=4",
+  "zero_count": "zero_count=4",
+  "tick_log": "tick_log=18:14:59,18:14:59,18:15:02,18:15:05,18:15:08,18:15:08,18:15:11,18:15:14",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=18:14:59,18:14:59,18:15:08,18:15:08"
+ },
+ "counts_after_client_nav": {
+  "tick_count": "tick_count=12",
+  "static_count": "static_count=6",
+  "zero_count": "zero_count=6",
+  "tick_log": "tick_log=18:14:59,18:14:59,18:15:02,18:15:05,18:15:08,18:15:08,18:15:11,18:15:14,18:15:19,18:15:19,18:15:22,18:15:25",
+  "static_log": "static_log=2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04,2020-01-02 03:04",
+  "zero_log": "zero_log=18:14:59,18:14:59,18:15:08,18:15:08,18:15:19,18:15:19"
+ },
+ "interval_time_outerHTML": "<time datetime=\"2026-09-11T18:15:05.753Z\">18:15:05</time>",
+ "static_innerHTML": "<time datetime=\"2020-01-02T03:04:05.000Z\">2020-01-02 03:04</time>",
+ "websockets": [
+  [
+   "open",
+   "18:14:59",
+   "ws://localhost:5514/?token=VL-KtXpu56XD"
+  ],
+  [
+   "open",
+   "18:14:59",
+   "ws://localhost:9924/_event/?token=3618dd18-3b09-4d62-fbda-2c8439bbb0ba&EIO=4&transport=websocket"
+  ],
+  [
+   "close",
+   "18:15:08",
+   "ws://localhost:9924/_event/?token=3618dd18-3b09-4d62-fbda-2c8439bbb0ba&EIO=4&transport=websocket"
+  ],
+  [
+   "open",
+   "18:15:08",
+   "ws://localhost:5514/?token=VL-KtXpu56XD"
+  ],
+  [
+   "open",
+   "18:15:08",
+   "ws://localhost:9924/_event/?token=3618dd18-3b09-4d62-fbda-2c8439bbb0ba&EIO=4&transport=websocket"
+  ]
+ ],
+ "console": [
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  [
+   "log",
+   "Disconnect websocket on page navigation"
+  ],
+  [
+   "log",
+   "💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  ],
+  [
+   "debug",
+   "[vite] connecting..."
+  ],
+  [
+   "debug",
+   "[vite] connected."
+  ],
+  [
+   "info",
+   "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+ ],
+ "page_errors": []
+}

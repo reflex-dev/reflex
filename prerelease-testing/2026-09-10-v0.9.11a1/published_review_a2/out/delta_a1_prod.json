@@ -1,0 +1,88 @@
+{
+ "base": "http://localhost:5494",
+ "frames_before_click": 4,
+ "frames_total": 5,
+ "deltas_after_click": [
+  {
+   "reflex___state____state.localeapp___localeapp____locale_state": {
+    "loc_rx_state_": "en"
+   }
+  }
+ ],
+ "deltas_hydrate": [
+  {
+   "reflex___state____state": {
+    "is_hydrated_rx_state_": false,
+    "router_rx_state_": {
+     "session": {
+      "client_token": "30f2cbe7-3e49-4c5e-ab3c-8b15b95bba5e",
+      "client_ip": "127.0.0.1",
+      "session_id": "A8rKPJIekSLdBGFbAAAN"
+     },
+     "headers": {
+      "host": "localhost:5494",
+      "origin": "http://localhost:5494",
+      "upgrade": "websocket",
+      "connection": "Upgrade",
+      "cookie": "",
+      "pragma": "no-cache",
+      "cache_control": "no-cache",
+      "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36",
+      "sec_websocket_version": "13",
+      "sec_websocket_key": "izjWW9Vp5XpFxumKrk5LKA==",
+      "sec_websocket_extensions": "permessage-deflate; client_max_window_bits",
+      "accept_encoding": "gzip, deflate, br, zstd",
+      "accept_language": "en-US,en;q=0.9",
+      "raw_headers": {
+       "accept-encoding": "gzip, deflate, br, zstd",
+       "accept-language": "en-US,en;q=0.9",
+       "asgi-scope-client": "127.0.0.1",
+       "cache-control": "no-cache",
+       "connection": "Upgrade",
+       "host": "localhost:5494",
+       "origin": "http://localhost:5494",
+       "pragma": "no-cache",
+       "sec-websocket-extensions": "permessage-deflate; client_max_window_bits",
+       "sec-websocket-key": "izjWW9Vp5XpFxumKrk5LKA==",
+       "sec-websocket-protocol": "0.9.11a1",
+       "sec-websocket-version": "13",
+       "upgrade": "websocket",
+       "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"
+      }
+     },
+     "page": {
+      "host": "http://localhost:5494",
+      "path": "/reactive",
+      "raw_path": "/reactive/",
+      "full_path": "http://localhost:5494/reactive",
+      "full_raw_path": "http://localhost:5494/reactive/",
+      "params": {}
+     },
+     "url": {
+      "scheme": "http",
+      "netloc": "localhost:5494",
+      "origin": "http://localhost:5494",
+      "path": "/reactive/",
+      "query": "",
+      "query_parameters": {},
+      "fragment": "",
+      "href": "http://localhost:5494/reactive/"
+     },
+     "route_id": "/reactive"
+    }
+   },
+   "reflex___state____state.reflex___istate___shared____shared_state_base_internal": {},
+   "reflex___state____state.localeapp___localeapp____locale_state": {
+    "loc_rx_state_": "fr"
+   },
+   "reflex___state____state.reflex___state____frontend_event_exception_state": {},
+   "reflex___state____state.reflex___state____update_vars_internal_state": {},
+   "reflex___state____state.reflex___state____on_load_internal_state": {}
+  },
+  {
+   "reflex___state____state": {
+    "is_hydrated_rx_state_": true
+   }
+  }
+ ]
+}

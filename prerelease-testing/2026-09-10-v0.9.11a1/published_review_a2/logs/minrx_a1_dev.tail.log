@@ -1,0 +1,80 @@
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-ent-a1/lib/python3.11/site-packages/socketio/async_server.py"
+, line 180, in emit
+    await self.manager.emit(event, data, namespace, room=room,
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-ent-a1/lib/python3.11/site-packages/socketio/async_manager.py
+", line 40, in emit
+    encoded_packet = pkt.encode()
+                     ^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-ent-a1/lib/python3.11/site-packages/socketio/packet.py", line
+64, in encode
+    encoded_packet += self.json.dumps(data, separators=(',', ':'))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-ent-a1/lib/python3.11/site-packages/reflex/app.py", line 
+1975, in _sio_dumps
+    data = format.json_dumps(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-ent-a1/lib/python3.11/site-packages/reflex_base/utils/format.
+py", line 734, in json_dumps
+    return json.dumps(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-ent-a1/lib/python3.11/site-packages/reflex_base/utils/seriali
+zers.py", line 176, in serialize
+    serialized = serializer(value)
+                 ^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-ent-a1/lib/python3.11/site-packages/reflex_enterprise/vars.py
+", line 284, in serialize_lambda
+    return serialize_lambda_var(LiteralLambdaVar.create(func))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-ent-a1/lib/python3.11/site-packages/reflex_enterprise/vars.py
+", line 244, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-ent-a1/lib/python3.11/site-packages/reflex_enterprise/vars.py
+", line 166, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library @radix-ui/themes is not bundled. Use `from 
+reflex.components.dynamic import bundle_library; 
+bundle_library('@radix-ui/themes') to enable it it.
+
+
+[ERROR] Unexpected exit from worker-1
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:5511/
+  ➜  Network: http://192.0.2.2:5511/  eth0
+6:09:59 PM [vite] (client) [optimizer] bundling dependencies...
+6:12:11 PM [vite] (ssr) connected.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

@@ -1,0 +1,9 @@
+a1 key order per state:
+   deltaapp___deltaapp____counter ['count_rx_state_', 'marker_rx_state_', 'doubled_rx_state_', 'label_rx_state_', 'flags_rx_state_', 'history_rx_state_']
+   deltaapp___deltaapp____sibling ['seen_rx_state_', 'note_upper_rx_state_', 'note_rx_state_']
+a2 key order per state:
+   deltaapp___deltaapp____counter ['doubled_rx_state_', 'count_rx_state_', 'label_rx_state_', 'flags_rx_state_', 'history_rx_state_', 'marker_rx_state_']
+   deltaapp___deltaapp____sibling ['note_rx_state_', 'note_upper_rx_state_', 'seen_rx_state_']
+
+per-state key order differs: True
+NORMALISED PARSED JSON EQUAL: True

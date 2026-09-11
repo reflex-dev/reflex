@@ -1,0 +1,68 @@
+{
+ "base": "http://localhost:9914",
+ "label": "a2-tx",
+ "routes": {
+  "/ping": {
+   "status": 200,
+   "bytes": 6,
+   "has_nomatchfound": false
+  },
+  "/admin": {
+   "status": 200,
+   "bytes": 13239,
+   "has_nomatchfound": false
+  },
+  "/admin/": {
+   "status": 200,
+   "bytes": 13239,
+   "has_nomatchfound": false
+  },
+  "/admin/widget/list": {
+   "status": 200,
+   "bytes": 55244,
+   "has_nomatchfound": false
+  },
+  "/admin/widget/create": {
+   "status": 200,
+   "bytes": 16569,
+   "has_nomatchfound": false
+  },
+  "/admin/login": {
+   "status": 404,
+   "bytes": 11874,
+   "has_nomatchfound": false
+  }
+ },
+ "assets": {
+  "/admin/static/css/panel_widget.css?v=1": {
+   "status": 200,
+   "bytes": 240
+  },
+  "/admin/static/css/select2-tabler.css?v=1": {
+   "status": 200,
+   "bytes": 4351
+  },
+  "/admin/static/css/vendor/fontawesome.min.css?v=7.2.0": {
+   "status": 200,
+   "bytes": 75767
+  },
+  "/admin/static/css/vendor/tabler-theme.min.css?v=1.4.0": {
+   "status": 200,
+   "bytes": 3896
+  },
+  "/admin/static/css/vendor/tabler.min.css?v=1.4.0": {
+   "status": 200,
+   "bytes": 536098
+  }
+ },
+ "links": [
+  "http://localhost:9914/admin/",
+  "http://localhost:9914/admin/static/css/panel_widget.css?v=1",
+  "http://localhost:9914/admin/static/css/select2-tabler.css?v=1",
+  "http://localhost:9914/admin/static/css/vendor/fontawesome.min.css?v=7.2.0",
+  "http://localhost:9914/admin/static/css/vendor/tabler-theme.min.css?v=1.4.0",
+  "http://localhost:9914/admin/static/css/vendor/tabler.min.css?v=1.4.0",
+  "http://localhost:9914/admin/widget/create",
+  "http://localhost:9914/admin/widget/list"
+ ]
+}

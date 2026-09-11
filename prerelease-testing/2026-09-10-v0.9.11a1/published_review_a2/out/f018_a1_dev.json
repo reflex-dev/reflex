@@ -1,0 +1,67 @@
+{
+ "base": "http://localhost:5511",
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  }
+ ],
+ "pageerrors": [],
+ "ws_recv": 18,
+ "steps": {
+  "0_initial": {
+   "count": "0",
+   "loaded": "on_load-ran",
+   "hydrated": "hydrated"
+  },
+  "1_after_three_clicks": {
+   "count": "3",
+   "loaded": "on_load-ran",
+   "hydrated": "hydrated"
+  },
+  "2_after_reload": {
+   "count": "0",
+   "loaded": "on_load-ran",
+   "hydrated": "hydrated"
+  },
+  "3_after_one_more_click": {
+   "count": "4",
+   "loaded": "on_load-ran",
+   "hydrated": "hydrated"
+  }
+ },
+ "console_errors": [],
+ "verdict": "FAIL: reload showed '0' then a click gave '4'"
+}

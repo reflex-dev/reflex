@@ -1,0 +1,250 @@
+[
+ {
+  "t": 1789149024.2507856,
+  "path": "/v1/traces",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 318,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149028.579193,
+  "path": "/v1/traces",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 379,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149118.595456,
+  "path": "/v1/traces",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 956,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149121.584148,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3992,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149122.5996237,
+  "path": "/v1/traces",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 1270,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149124.6029658,
+  "path": "/v1/traces",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 923,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149126.5878303,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3655,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149131.59189,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149134.607448,
+  "path": "/v1/traces",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 783,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149136.595622,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3512,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149141.5996513,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149146.6032941,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149151.6066384,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149156.610312,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149161.613572,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149166.6172314,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149171.6205332,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149176.6239042,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149181.6272738,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149186.630795,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149191.634416,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149196.638111,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149201.6420643,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149206.6454391,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149211.6489418,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149216.6528223,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149221.6563795,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149226.6599019,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149231.6638408,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149236.668054,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ },
+ {
+  "t": 1789149241.6717062,
+  "path": "/v1/metrics",
+  "content_type": "application/x-protobuf",
+  "content_encoding": null,
+  "bytes": 3463,
+  "user_agent": "OTel-OTLP-Exporter-Python/1.44.0"
+ }
+]

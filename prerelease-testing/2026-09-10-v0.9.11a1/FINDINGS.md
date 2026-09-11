@@ -954,3 +954,31 @@ Detail and repros in `ent_mantine_highcharts_tickets/NOTES.md` ISSUE-3, ISSUE-6 
 * An unknown route renders reflex's `404: Page not found` page with HTTP **200** in dev and **404** in
   prod, so a dev-mode smoke test that asserts on status codes silently passes.
 
+
+## Phase 7 — validation of the published 0.9.11a2 batch (2026-09-11)
+
+Full results, environment manifest and evidence: [PUBLISHED_VALIDATION_RESULTS.md](./PUBLISHED_VALIDATION_RESULTS.md),
+answering the maintainer handoff in [PUBLISHED_VALIDATION.md](./PUBLISHED_VALIDATION.md). Every row
+re-ran the original failing repro against packages installed from PyPI only, with the a1 stack kept
+running beside it as a same-machine control that had to fail first.
+
+| # | finding | verdict |
+| --- | --- | --- |
+| 002 | `rx.moment` `on_change` at mount | verified documented/accepted behaviour (dev and prod numbers identical on a1 and a2; release notes match, including the dev-only Strict-Mode doubling) |
+| 003 | cross-worker delta delivery | **verified fixed** (9 distinct worker identities vs 1 shared; 6/6 delivered live vs 1/6 needing a click to catch up) |
+| 005 | `hybrid_property` class-level typing | **verified fixed** (correct on pyright 1.1.411/412/414 including inherited, container, optional and explicit `.var`; all `Any` on a1 at 1.1.414) |
+| 014 | `frontend_path` validation | **verified fixed** (trailing dot/space and empty segments now rejected; valid prefixes still build and export with SSR on and off) |
+| 022 | `bundle_library()` / dynamic components | **verified fixed** in dev, prod, and with a prebuilt frontend served to a fresh non-compiling backend; exactly the two Lucide subpaths bundled, no CDN fallback, documented `TypeError`, duplicate-free registration |
+| 025 | `rx.AdminDash` | **verified fixed** on starlette-admin 1.0.1, 1.0.0 and 0.17.1, with static assets and an API transformer; a1 is 500 `NoMatchFound` |
+| 027 | reflex-otel documented recipe | **verified fixed** — a real local OTLP/HTTP collector received 5 trace and 3 metric requests |
+| 030 | delta key ordering | verified documented/accepted behaviour (ordering differs, normalised parsed JSON is equal) |
+| 033 | `rx.moment` locale isolation | **verified fixed** in dev and prod, both component orders, relative dates and title attributes, reactive locale switching; a1 also cannot build in prod with `locale="en"` |
+
+**The one failure is not a claimed fix.** The adjacent 018 check regressed: the minimized repro
+(a state var holding a Python callable that renders a Radix component, via reflex-enterprise's
+`LiteralLambdaVar`) still loses its state on reload under a1, and under **a2 the backend worker now
+exits during startup** with `ValueError: Library @radix-ui/themes is not bundled`, so the app does
+not run at all. Deterministic, including from a cold `.web`. Smallest reproduction in
+PUBLISHED_VALIDATION_RESULTS.md.
+
+Blocked: every hosted-documentation check — `reflex.dev` is unreachable from this container.

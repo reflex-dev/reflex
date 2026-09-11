@@ -1,0 +1,28 @@
+=== a1 frontend_path cases ===
+  ACCEPTED  '/ok'
+  ACCEPTED  '/a/b'
+  ACCEPTED  '/trail.'
+  ACCEPTED  '/trail '
+  ACCEPTED  '/a//b'
+  ACCEPTED  '//lead'
+  ACCEPTED  '/ok/'
+  rejected  '/..' -> ConfigError
+  rejected  '/a/../b' -> ConfigError
+  ACCEPTED  '/con'
+  ACCEPTED  '/a/b.'
+  ACCEPTED  ''
+  ACCEPTED  '/'
+=== a2 frontend_path cases ===
+  ACCEPTED  '/ok'
+  ACCEPTED  '/a/b'
+  rejected  '/trail.' -> ConfigError
+  rejected  '/trail ' -> ConfigError
+  rejected  '/a//b' -> ConfigError
+  rejected  '//lead' -> ConfigError
+  ACCEPTED  '/ok/'
+  rejected  '/..' -> ConfigError
+  rejected  '/a/../b' -> ConfigError
+  ACCEPTED  '/con'
+  rejected  '/a/b.' -> ConfigError
+  ACCEPTED  ''
+  ACCEPTED  '/'

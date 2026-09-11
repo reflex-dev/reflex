@@ -1,0 +1,80 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+──────────────────────────── Initializing bundleapp ────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized bundleapp. Install dependencies from `requirements.txt` 
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: Invalid icon tag: alert. Please use one of the following: badge_alert, 
+book_alert, circle_alert, clock_alert, cloud_alert, octagon_alert, search_alert,
+shield_alert, triangle_alert, align_center_vertical, ...
+See full list at https://reflex.dev/docs/library/data-display/icon/#icons-list. 
+Using 'circle_help' icon instead.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/review_a2/env/env-a2/lib/python3.11/site-packages/reflex_components_radix/plugi
+n.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 14/13 0:00:00
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+App running at: http://localhost:5500/
+Backend running at: http://0.0.0.0:9900
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.bundleapp___bundleapp____state due to unpicklable 
+object. This state will not be persisted. Pickle error: Can't pickle <function 
+State.set_count at 0x7febd7b59ee0>: it's not the same object as 
+bundleapp.bundleapp.State.set_count. Consider `pip install 'dill>=0.3.8'` for 
+more exotic serialization support.")
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.bundleapp___bundleapp____state due to unpicklable 
+object. This state will not be persisted. Pickle error: Can't pickle <function 
+State.set_count at 0x7febd7b59ee0>: it's not the same object as 
+bundleapp.bundleapp.State.set_count. Consider `pip install 'dill>=0.3.8'` for 
+more exotic serialization support.")
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.bundleapp___bundleapp____state due to unpicklable 
+object. This state will not be persisted. Pickle error: Can't pickle <function 
+State.set_count at 0x7febd7b59ee0>: it's not the same object as 
+bundleapp.bundleapp.State.set_count. Consider `pip install 'dill>=0.3.8'` for 
+more exotic serialization support.")
+Error processing write queue: StateSerializationError("Failed to serialize state
+reflex___state____state.bundleapp___bundleapp____state due to unpicklable 
+object. This state will not be persisted. Pickle error: Can't pickle <function 
+State.set_count at 0x7febd7b59ee0>: it's not the same object as 
+bundleapp.bundleapp.State.set_count. Consider `pip install 'dill>=0.3.8'` for 
+more exotic serialization support.")
+[ERROR] Unexpected exit from worker-1
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:5500/
+  ➜  Network: http://192.0.2.2:5500/  eth0
+5:54:30 PM [vite] (client) [optimizer] bundling dependencies...
+5:54:55 PM [vite] (ssr) connected.
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

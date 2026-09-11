@@ -1,0 +1,4 @@
+requests=40 distinct_pids=9 distinct_instance_ids=9 token_manager=RedisTokenManager
+pids: [8863, 8866, 8868, 8870, 8872, 8880, 8887, 8892, 8896]
+instance_ids: ['0fff12a6-75fb-49f1-8baf-f78a22789204', '211df50f-a7b0-4722-a7e3-00c97c66748f', '37e73229-ac72-4a0b-8d81-7cda408e8428', '3ba2bbc0-3c4b-4767-9467-88a8d3e176ed', '8669e7a3-592d-46bd-80a0-f44d96a31634', 'bc870d2e-46cc-4b1b-9775-c9615e3ac2e8', 'e2b01e79-337f-44f1-9979-39fde0caa16f', 'e630d181-ee28-4d27-ada4-20bc1ef069ab', 'fe0b6f7c-fb18-4e0e-ab47-bfd8fdb8bfcf']
+local_tokens per pid: {8896: [], 8887: [], 8863: [], 8868: [], 8872: [], 8866: [], 8892: [], 8880: [], 8870: []}

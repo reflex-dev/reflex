@@ -1,0 +1,31 @@
+  -> visiting /
+[1_home_french_first] {"home-french": "jeudi 14 mars 2024", "home-plain": "Thursday 14 March 2024", "home-fromnow": "7 years ago", "home-tonow": "in 7 years", "home-title": "Thursday", "home-duration": "4 years, 2 months, 13 days", "_title_attr": "Thursday 14 March 2024"}
+  -> visiting /reverse
+[2_reverse_french_last] {"rev-plain": "jeudi 14 mars 2024", "rev-fromnow": "il y a 7 ans", "rev-tonow": "dans 7 ans", "rev-title": "jeudi", "rev-duration": "4 years, 2 months, 13 days", "rev-french": "jeudi 14 mars 2024", "_title_attr": "jeudi 14 mars 2024"}
+  -> visiting /english
+[3_english_only] {"eng-plain": "Thursday 14 March 2024", "eng-fromnow": "7 years ago", "eng-tonow": "in 7 years", "eng-title": "Thursday", "eng-duration": "4 years, 2 months, 13 days", "_title_attr": "Thursday 14 March 2024"}
+  -> visiting /en
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/review_a2/drive_locale.py", line 64, in <module>
+    visit(page, "/en", "4_explicit_en")
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/review_a2/drive_locale.py", line 43, in visit
+    page.wait_for_selector("#ready", timeout=60000, state="attached")
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/driver/lib/python3.11/site-packages/playwright/sync_api/_generated.py", line 9033, in wait_for_selector
+    self._sync(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/driver/lib/python3.11/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/driver/lib/python3.11/site-packages/playwright/_impl/_page.py", line 427, in wait_for_selector
+    return await self._main_frame.wait_for_selector(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/driver/lib/python3.11/site-packages/playwright/_impl/_frame.py", line 394, in wait_for_selector
+    await self._channel.send(
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/driver/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad/envs/driver/lib/python3.11/site-packages/playwright/_impl/_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.wait_for_selector: Timeout 60000ms exceeded.
+Call log:
+  - waiting for locator("#ready")
+

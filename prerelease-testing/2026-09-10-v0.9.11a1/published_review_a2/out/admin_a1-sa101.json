@@ -1,0 +1,38 @@
+{
+ "base": "http://localhost:9913",
+ "label": "a1-sa101",
+ "routes": {
+  "/ping": {
+   "status": 200,
+   "bytes": 6,
+   "has_nomatchfound": false
+  },
+  "/admin": {
+   "status": 500,
+   "bytes": 21,
+   "has_nomatchfound": false
+  },
+  "/admin/": {
+   "status": 500,
+   "bytes": 21,
+   "has_nomatchfound": false
+  },
+  "/admin/widget/list": {
+   "status": 500,
+   "bytes": 21,
+   "has_nomatchfound": false
+  },
+  "/admin/widget/create": {
+   "status": 500,
+   "bytes": 21,
+   "has_nomatchfound": false
+  },
+  "/admin/login": {
+   "status": 500,
+   "bytes": 21,
+   "has_nomatchfound": false
+  }
+ },
+ "assets": {},
+ "links": []
+}

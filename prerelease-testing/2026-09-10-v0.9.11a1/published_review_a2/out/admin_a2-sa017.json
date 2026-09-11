@@ -1,0 +1,43 @@
+{
+ "base": "http://localhost:9912",
+ "label": "a2-sa017",
+ "routes": {
+  "/ping": {
+   "status": 200,
+   "bytes": 6,
+   "has_nomatchfound": false
+  },
+  "/admin": {
+   "status": 200,
+   "bytes": 3955,
+   "has_nomatchfound": false
+  },
+  "/admin/": {
+   "status": 200,
+   "bytes": 3955,
+   "has_nomatchfound": false
+  },
+  "/admin/widget/list": {
+   "status": 200,
+   "bytes": 15853,
+   "has_nomatchfound": false
+  },
+  "/admin/widget/create": {
+   "status": 200,
+   "bytes": 7366,
+   "has_nomatchfound": false
+  },
+  "/admin/login": {
+   "status": 404,
+   "bytes": 3499,
+   "has_nomatchfound": false
+  }
+ },
+ "assets": {},
+ "links": [
+  "http://localhost:9912/admin/",
+  "http://localhost:9912/admin/statics/css/fontawesome.min.css",
+  "http://localhost:9912/admin/statics/css/tabler.min-1.1.0.css",
+  "http://localhost:9912/admin/widget/list"
+ ]
+}

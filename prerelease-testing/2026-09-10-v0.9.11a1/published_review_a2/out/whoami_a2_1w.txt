@@ -1,0 +1,3 @@
+requests=20 distinct_pids=1 distinct_instance_ids=1 token_manager=RedisTokenManager
+pids: [9492]
+instance_ids: ['a6a4b7d3-fb48-49ba-95bb-91716a246527']
