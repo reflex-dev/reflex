@@ -65,6 +65,9 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - FINDING-016: `reflex run --json` stdout still carries 9 plain-text granian lines, breaking strict JSON-lines parsing (LOW, pre-existing, previous campaign's FINDING-013)
 - FINDING-017: `rx.plotly` still emits `id` rather than `divId`, so the id never reaches the DOM, unchanged by the react-plotly.js 4.1.0 bump (LOW, pre-existing, previous campaign's FINDING-020)
 - FINDING-018: dev mode: one unserializable state var drops the ENTIRE hydrate delta on every page load, silently reverting session state and showing a raw internal ValueError to the user (HIGH, pre-existing, triggered downstream) — claimed
+- FINDING-022: `bundle_library()` at app-module scope is discarded before pages are evaluated, and the error tells you to do what you already did (MEDIUM, pre-existing) — seen independently by three clusters
+- FINDING-023: a hook-bearing component used directly inside `rx.foreach` compiles silently, then throws `ReferenceError` and blanks the page (MEDIUM, pre-existing)
+- FINDING-024: reflex's own error boundary logs three React "Invalid DOM property" errors every time it renders (LOW, pre-existing)
 - FINDING-021: a single `REFLEX_USE_NPM=1` run converts a project to npm permanently and silently (LOW, pre-existing); the previous campaign's FINDING-018 did NOT reproduce
 - FINDING-019: four shipped reflex-enterprise 0.9.5 defects that block its own demos (stale bundle path, ModelWrapper URL encoding, ag-grid/ag-charts version mismatch, `column_def()` dropping unknown kwargs) (MEDIUM, pre-existing, downstream)
 
@@ -330,6 +333,40 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
   1.4 lockfile behaviour this train ships.
 - Evidence: `orch_probes/NOTES.md`, `orch_probes/logs/{npm_run,bun_after_npm,bun_after_rmlock}.trimmed.log`.
 
+## FINDING-022: module-scope `bundle_library()` is discarded before pages are evaluated (MEDIUM, pre-existing)
+
+- Clusters: `ent_map_dnd_flow` (pure-reflex probe), `ent_aggrid` (verifier's secondary finding), and
+  the previous campaign's FINDING-017 | Regression: no (present since reflex 0.9.2)
+- `compile_app()` calls `reset_bundled_libraries()` (`reflex/compiler/compiler.py:1212`) *after* the
+  app module has been imported, so a `bundle_library("...")` call at module scope — the placement the
+  documentation and the error message both steer users to — is wiped before any page is evaluated.
+  The compile then fails with `ValueError: Library ... is not bundled. Use ... bundle_library(...)`,
+  telling the user to do exactly what they did.
+- Repro without reflex-enterprise: an app whose module scope calls `bundle_library("d3-format")` and
+  prints the active registration context's bundled libraries at import, after `rx.App()`, and inside
+  the page function; `reflex export --frontend-only --no-zip` shows the library present at import
+  and gone at page evaluation. `ent_map_dnd_flow/bundlectx/`.
+- Three independent observations in this campaign make this the most-corroborated framework finding.
+
+## FINDING-023: a hook-bearing component inside `rx.foreach` compiles, then blanks the page (MEDIUM, pre-existing)
+
+- Cluster: `ent_map_dnd_flow` | Regression: no
+- Using a component that emits a React hook (here `rxe.dnd.draggable`, which emits `useDrag`) as the
+  render function of `rx.foreach` compiles with no warning; the generated hook call is then hoisted
+  out of the `.map()` closure while still referencing the loop variable, so the browser throws
+  `ReferenceError: iid_rx_state_ is not defined at Foreach (...)` and the error boundary replaces the
+  whole page. Wrapping the same body in `@rx.memo` works.
+- Repro: `ent_map_dnd_flow/foreachhook/` (two routes, one broken and one memo-wrapped, plus a driver).
+
+## FINDING-024: the error boundary logs three invalid-DOM-property errors whenever it renders (LOW, pre-existing)
+
+- Cluster: `ent_map_dnd_flow` (also seen by `hmr_runtime`) | Regression: no
+- Every time the framework's own `ErrorBoundary` fallback renders, React logs
+  `Invalid DOM property 'stroke-linecap'` / `'stroke-linejoin'` / `'stroke-width'` — kebab-case
+  attributes passed through `custom_attrs` at `reflex_components_core/base/error_boundary.py:85`.
+  They appear *above* the real exception in the console, so the first thing a user debugging a crash
+  reads is three framework warnings.
+
 ## Cluster summaries (interim)
 
 ### `smoke` (orchestrator) — clean
@@ -384,6 +421,17 @@ deprecation shims, and reflex-enterprise 0.9.5 reads bundled libraries from the 
 Python-callable renderers and formatters, `@rx.memo` row counters, `@rxe.static` dialogs, cell editing,
 master-detail, tree data, pivot, selection, fill handle, grid-state round-trip and the finance app's
 fetch/pagination/filter/sort all work. Every failure is pre-existing (FINDING-018, FINDING-019).
+
+### `ent_map_dnd_flow` (pass 11, anomaly 8, skipped 5, fail 2) — NO REGRESSION; four 0.9.9a1 breakages fixed
+map, dnd and flow run unmodified on 0.9.11a1 with reflex-enterprise 0.9.5: map 13/13 plus 7 new checks,
+dnd 18/18 (identical on a real 0.9.10.post2 baseline), flow 11/11 plus 9 new deletion/persistence
+checks, and a purpose-built map+dnd+flow app at 20/20, with zero page errors, console errors, 4xx/5xx
+or server tracebacks. Last campaign's FINDING-001/021/022/023 are all fixed, including a `can_drop`
+lambda pulling `format` from a bundled `d3-format` driving real drops in the browser. The two FAILs
+are FINDING-022 and FINDING-023. **Coverage gap, recorded honestly**: prod mode could not be tested
+on either version, because reflex-enterprise gates `reflex run --env prod` and `reflex export` behind
+a paid subscription that `CI=1` does not bypass, and the agent declined to set the app-harness flag
+purely to get around a licence check.
 
 ### `orch_probes` (orchestrator) — 2 fixed items confirmed, 4 pre-existing gaps
 AppHarness now names `reflex[testing]` in its error (previous FINDING-016 fixed); `reflex_base.otel`

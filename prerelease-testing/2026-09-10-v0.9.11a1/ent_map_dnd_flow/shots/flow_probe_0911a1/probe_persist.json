@@ -1,0 +1,356 @@
+{
+  "initial": {
+    "count": 11,
+    "positions": [
+      [
+        -200.0,
+        -30.0
+      ],
+      [
+        150.0,
+        0.0
+      ],
+      [
+        0.0,
+        100.0
+      ],
+      [
+        300.0,
+        100.0
+      ],
+      [
+        220.0,
+        200.0
+      ],
+      [
+        -170.0,
+        250.0
+      ],
+      [
+        -120.0,
+        300.0
+      ],
+      [
+        80.0,
+        300.0
+      ],
+      [
+        -40.0,
+        570.0
+      ],
+      [
+        150.0,
+        650.0
+      ],
+      [
+        350.0,
+        500.0
+      ]
+    ]
+  },
+  "after_drag": {
+    "count": 11,
+    "positions": [
+      [
+        -200.0,
+        -30.0
+      ],
+      [
+        150.0,
+        0.0
+      ],
+      [
+        0.0,
+        100.0
+      ],
+      [
+        300.0,
+        100.0
+      ],
+      [
+        220.0,
+        200.0
+      ],
+      [
+        -170.0,
+        250.0
+      ],
+      [
+        -120.0,
+        300.0
+      ],
+      [
+        80.0,
+        300.0
+      ],
+      [
+        -40.0,
+        570.0
+      ],
+      [
+        150.0,
+        650.0
+      ],
+      [
+        350.0,
+        500.0
+      ]
+    ]
+  },
+  "after_hard_reload": {
+    "count": 11,
+    "positions": [
+      [
+        -200.0,
+        -30.0
+      ],
+      [
+        150.0,
+        0.0
+      ],
+      [
+        0.0,
+        100.0
+      ],
+      [
+        300.0,
+        100.0
+      ],
+      [
+        220.0,
+        200.0
+      ],
+      [
+        -170.0,
+        250.0
+      ],
+      [
+        -120.0,
+        300.0
+      ],
+      [
+        80.0,
+        300.0
+      ],
+      [
+        -40.0,
+        570.0
+      ],
+      [
+        150.0,
+        650.0
+      ],
+      [
+        350.0,
+        500.0
+      ]
+    ]
+  },
+  "after_delete": {
+    "count": 10,
+    "positions": [
+      [
+        -200.0,
+        -30.0
+      ],
+      [
+        150.0,
+        0.0
+      ],
+      [
+        0.0,
+        100.0
+      ],
+      [
+        300.0,
+        100.0
+      ],
+      [
+        220.0,
+        200.0
+      ],
+      [
+        -170.0,
+        250.0
+      ],
+      [
+        -120.0,
+        300.0
+      ],
+      [
+        80.0,
+        300.0
+      ],
+      [
+        -40.0,
+        570.0
+      ],
+      [
+        150.0,
+        650.0
+      ]
+    ]
+  },
+  "after_delete_reload": {
+    "count": 10,
+    "positions": [
+      [
+        -200.0,
+        -30.0
+      ],
+      [
+        150.0,
+        0.0
+      ],
+      [
+        0.0,
+        100.0
+      ],
+      [
+        300.0,
+        100.0
+      ],
+      [
+        220.0,
+        200.0
+      ],
+      [
+        -170.0,
+        250.0
+      ],
+      [
+        -120.0,
+        300.0
+      ],
+      [
+        80.0,
+        300.0
+      ],
+      [
+        -40.0,
+        570.0
+      ],
+      [
+        150.0,
+        650.0
+      ]
+    ]
+  },
+  "after_spa_back": {
+    "count": 10,
+    "positions": [
+      [
+        -200.0,
+        -30.0
+      ],
+      [
+        150.0,
+        0.0
+      ],
+      [
+        0.0,
+        100.0
+      ],
+      [
+        300.0,
+        100.0
+      ],
+      [
+        220.0,
+        200.0
+      ],
+      [
+        -170.0,
+        250.0
+      ],
+      [
+        -120.0,
+        300.0
+      ],
+      [
+        80.0,
+        300.0
+      ],
+      [
+        -40.0,
+        570.0
+      ],
+      [
+        150.0,
+        650.0
+      ]
+    ]
+  },
+  "delete_key": {
+    "selected": 1,
+    "count": 10,
+    "positions": [
+      [
+        -200.0,
+        -30.0
+      ],
+      [
+        150.0,
+        0.0
+      ],
+      [
+        0.0,
+        100.0
+      ],
+      [
+        300.0,
+        100.0
+      ],
+      [
+        220.0,
+        200.0
+      ],
+      [
+        -170.0,
+        250.0
+      ],
+      [
+        -120.0,
+        300.0
+      ],
+      [
+        80.0,
+        300.0
+      ],
+      [
+        -40.0,
+        570.0
+      ],
+      [
+        150.0,
+        650.0
+      ]
+    ]
+  },
+  "console_tail": [
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "log: Disconnect websocket on page navigation",
+    "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "debug: [vite] connecting...",
+    "debug: [vite] connected.",
+    "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ]
+}

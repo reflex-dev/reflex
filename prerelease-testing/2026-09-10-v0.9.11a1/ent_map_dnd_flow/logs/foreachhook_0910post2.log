@@ -1,0 +1,119 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/entbase/lib/python3.11/site-packages/reflex_components_radix/plugin.py:72)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 16/15 0:00:00
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+App running at: http://localhost:5148/
+Backend running at: http://0.0.0.0:9548
+[Reflex Frontend Exception]
+ ReferenceError: iid_rx_state_ is not defined
+ReferenceError: iid_rx_state_ is not defined
+    at Foreach 
+(http://localhost:5148/app_components/foreachhook/foreachhook.jsx:44:15)
+    at Object.react_stack_bottom_frame 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:12
+866:12)
+    at renderWithHooks 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:42
+13:19)
+    at updateFunctionComponent 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:55
+69:16)
+    at updateSimpleMemoComponent 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:54
+32:11)
+    at updateMemoComponent 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:54
+07:294)
+    at beginWork 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:62
+10:21)
+    at runWithFiberInDEV 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:85
+1:66)
+    at performUnitOfWork 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:84
+29:92)
+    at workLoopSync 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:83
+25:37)
+
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:5148/
+  ➜  Network: http://192.0.2.2:5148/  eth0
+12:56:01 AM [vite] (ssr) connected.
+12:56:03 AM [vite] (client) [console.error] Invalid DOM property 
+`stroke-linecap`. Did you mean `strokeLinecap`?
+12:56:03 AM [vite] (client) [console.error] Invalid DOM property 
+`stroke-linejoin`. Did you mean `strokeLinejoin`?
+12:56:03 AM [vite] (client) [console.error] Invalid DOM property `stroke-width`.
+Did you mean `strokeWidth`?
+12:56:03 AM [vite] (client) [console.error] ReferenceError: iid_rx_state_ is not
+defined
+    at Foreach 
+(http://localhost:5148/app_components/foreachhook/foreachhook.jsx:44:15)
+    at Object.react_stack_bottom_frame 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:12
+866:12)
+    at renderWithHooks 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:42
+13:19)
+    at updateFunctionComponent 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:55
+69:16)
+    at updateSimpleMemoComponent 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:54
+32:11)
+    at updateMemoComponent 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:54
+07:294)
+    at beginWork 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:62
+10:21)
+    at runWithFiberInDEV 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:85
+1:66)
+    at performUnitOfWork 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:84
+29:92)
+    at workLoopSync 
+(http://localhost:5148/node_modules/.vite/deps/react-dom_client.js?v=a9b28efd:83
+25:37)
+
+The above error occurred in the <Foreach> component.
+
+React will try to recreate this component tree from scratch using the error 
+boundary you provided, m.
+
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

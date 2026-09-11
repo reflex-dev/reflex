@@ -1,0 +1,19 @@
+reflex_components_core/base/error_boundary.py (installed 0.9.9):
+                                    width="25vmin",
+                                    view_box="0 0 24 24",
+                                    class_name="lucide lucide-frown-icon lucide-frown",
+                                    custom_attrs={
+                                        "fill": "none",
+                                        "stroke": "currentColor",
+                                        "stroke-width": "2",
+                                        "stroke-linecap": "round",
+                                        "stroke-linejoin": "round",
+                                    },
+                                ),
+                                h2(
+                                    "An error occurred while rendering this page.",
+                                    font_size="5vmin",
+                                    font_weight="bold",
+
+generated .web JSX (kebab-case props reach the DOM element):
+jsx("svg", ({className:"lucide lucide-frown-icon lucide-frown",fill:"none",stroke:"currentColor","stroke-linecap":"round","stroke-linejoin":"round","stroke-width":"2",viewBox:"0 0 24 24",width:"25vmin",xmlns:"http://www.w3.org/2000/svg"}

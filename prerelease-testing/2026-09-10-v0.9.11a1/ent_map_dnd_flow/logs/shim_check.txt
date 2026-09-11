@@ -1,0 +1,17 @@
+=== reflex 0.9.11a1 + reflex-enterprise 0.9.5 deprecation shims ===
+reflex 0.9.11a1 | reflex-base 0.9.11a1 | reflex-enterprise 0.9.5
+
+--- from reflex.page import DECORATED_PAGES ---
+DeprecationWarning: reflex.page.DECORATED_PAGES has been deprecated in version 
+0.9.9. Decorated pages now live on the active RegistrationContext. Use 
+RegistrationContext.ensure_context().decorated_pages to read the list of 
+(render_fn, kwargs) entries. It will be completely removed in 1.0. (<string>:6)
+OK defaultdict
+
+--- reflex.components.dynamic.bundled_libraries ---
+DeprecationWarning: reflex_base.components.dynamic.bundled_libraries has been 
+deprecated in version 0.9.9. The bundled library list now lives on the active 
+RegistrationContext. Use RegistrationContext.ensure_context().bundled_libraries 
+to read it, or bundle_library()/reset_bundled_libraries() to modify it. It will 
+be completely removed in 1.0. (<string>:11)
+OK ['react', '@emotion/react', '$/utils/context', '$/utils/state']

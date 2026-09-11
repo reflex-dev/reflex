@@ -1,0 +1,12 @@
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(rxconfig.py:3)
+───────────────────────────── Starting Reflex App ──────────────────────────────
+DeprecationWarning: console.error has been deprecated in version 0.9.9. use 
+logger.error(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/80e73324-c7fe-59d8-8ec8-f4f4dc3b5b67/scratchpad
+/envs/ent/lib/python3.11/site-packages/reflex_enterprise/app.py:120)
+`reflex-enterprise` is free to use but you must be logged in. Run `reflex login`
+or set the environment variable REFLEX_ACCESS_TOKEN with your token.

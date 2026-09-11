@@ -1,0 +1,24 @@
+{
+  "before": [
+    0.0,
+    100.0
+  ],
+  "after_drag": [
+    106.8,
+    166.7
+  ],
+  "after_hard_reload": [
+    106.8,
+    166.7
+  ],
+  "after_spa_back": [
+    106.8,
+    166.7
+  ],
+  "multiselect": {
+    "selected": 8,
+    "before": 11,
+    "after": 3
+  },
+  "multiselect_after_reload": 3
+}

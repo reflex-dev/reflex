@@ -1,0 +1,19 @@
+{
+  "raw": {
+    "draggables": 0,
+    "body_text": "An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nReferenceError: iid_rx_state_ is not defined\nReferenceError: iid_rx_state_ ",
+    "console_errors": [
+      "error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap",
+      "error: Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin",
+      "error: Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth",
+      "error: %o\n\n%s\n\n%s\n ReferenceError: iid_rx_state_ is not defined\n    at Foreach (http://localhost:5147/app_components/foreachhook/foreachhook.jsx:44:15)\n    at Object.react_stack_bottom_frame (http://localhost:5147/node_modules/.vite/deps/react-dom_client.js?v=a0d4ecef:12866:12)\n    at renderWithHooks (http://localhost:5147/node_modules/.vite/deps/react-dom_client.js?v=a0d4ecef:4213:19)\n    at updateFunctionComponent (http://localhost:5147/node_modules/.vite/deps/react-dom_client.js?v=a0d4ecef:5569:16)\n    at updateSimpleMemoComponent (http://localhost:5147/node_modules/.vite/deps/react-dom_client.js?v=a0d4ecef:5432:11)\n    at updateMemoComponent (http://localhost:5147/node_modules/.vite/deps/react-dom_client.js?v=a0d4ecef:5407:294)\n    at beginWork (http://localhost:5147/node_modules/.vite/deps/react-dom_client.js?v=a0d4ecef:6210:21)\n    at runWithFiberInDEV (http://localhost:5147/node_modules/.vite/deps/react-dom_client.js?v=a0d4ecef:851:66)\n    at performUnitOfWork (http://localhost:5147/node_modules/.vite/deps/react-dom_client.js?v=a0d4ecef:8429:92)\n    at workLoopSync (http://localhost:5147/node_modules/.vite/deps/react-dom_client.js?v=a0d4ecef:8325:37) The above error occurred in the <Foreach> component. React will try to recreate this component tree from scratch using the error boundary you provided, m."
+    ],
+    "page_errors": []
+  },
+  "memo": {
+    "draggables": 2,
+    "body_text": "memo foreach\n\na\n\nb",
+    "console_errors": [],
+    "page_errors": []
+  }
+}
