@@ -195,7 +195,7 @@ class DefaultPagePlugin(Plugin):
             if (description := getattr(page, "description", None)) is not None:
                 meta_args["description"] = description
 
-            utils.add_meta(component, **meta_args)
+            component = utils.add_meta(component, **meta_args)
         except Exception as err:
             if hasattr(err, "add_note"):
                 err.add_note(f"Happened while evaluating page {page.route!r}")

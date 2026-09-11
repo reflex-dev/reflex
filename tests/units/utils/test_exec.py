@@ -116,3 +116,22 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
 
     assert exec_utils.arbitrate_ssr(True) is False
+
+
+@pytest.mark.parametrize("cache_enabled", [False, True])
+def test_uvicorn_markdown_reload_requires_compile_cache(
+    cache_enabled, tmp_path, monkeypatch, mocker
+):
+    """The default backend reloader keeps its Python-only behavior."""
+    uvicorn = pytest.importorskip("uvicorn")
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", str(cache_enabled))
+    mocker.patch.object(
+        exec_utils, "get_dev_backend_reload_marker", return_value=tmp_path / "marker"
+    )
+    mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    run = mocker.patch.object(uvicorn, "run")
+    exec_utils.run_uvicorn_backend("localhost", 8000, exec_utils.LogLevel.INFO)
+    assert run.call_args.kwargs["reload_includes"] == (
+        ["*.py", "*.md", "*.mdx"] if cache_enabled else ["*.py"]
+    )

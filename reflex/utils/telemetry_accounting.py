@@ -101,8 +101,12 @@ def _collect_compile_event_payload(
     return {
         "plugins_enabled": [p.__class__.__name__ for p in config.plugins],
         "plugins_disabled": [p.__name__ for p in config.disable_plugins],
-        "pages_count": len(app._pages),
-        "component_counts": _count_components(app._pages.values()),
+        "pages_count": len(app._unevaluated_pages.keys() | app._pages.keys()),
+        "component_counts": (
+            app._cached_component_counts
+            if app._cached_component_counts is not None
+            else _count_components(app._pages.values())
+        ),
         "states": [_collect_state_stats(s) for s in user_states],
         "features_used": _collect_features_used(app, config, user_states),
         "duration_ms": ctx.elapsed_ms(),

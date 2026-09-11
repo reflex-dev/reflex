@@ -134,6 +134,46 @@ def test_compile_imports(import_dict: ParsedImportDict, test_dicts: list[dict]):
         )
 
 
+def test_compile_stylesheets_skips_unchanged_copy(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """An unchanged asset stylesheet is not rewritten into .web on recompile.
+
+    Vite watches .web/styles, so a rewrite with identical content still fires
+    an HMR update on every dev reload.
+
+    Args:
+        tmp_path: The test directory.
+        mocker: Pytest mocker object.
+    """
+    project = tmp_path / "test_project"
+    project.mkdir()
+    assets_dir = project / "assets"
+    assets_dir.mkdir()
+    (assets_dir / "style.css").write_text("button { color: blue }")
+
+    mocker.patch("reflex.compiler.compiler.Path.cwd", return_value=project)
+    mocker.patch(
+        "reflex.compiler.compiler.get_web_dir",
+        return_value=project / constants.Dirs.WEB,
+    )
+    mocker.patch(
+        "reflex.compiler.utils.get_web_dir", return_value=project / constants.Dirs.WEB
+    )
+
+    compiler.compile_root_stylesheet(["/style.css"])
+    target = project / constants.Dirs.WEB / "styles" / "style.css"
+    stat_before = target.stat()
+
+    compiler.compile_root_stylesheet(["/style.css"])
+    stat_after = target.stat()
+    assert stat_after.st_mtime_ns == stat_before.st_mtime_ns
+
+    (assets_dir / "style.css").write_text("button { color: red }")
+    compiler.compile_root_stylesheet(["/style.css"])
+    assert target.read_text() == "button { color: red }"
+
+
 def test_compile_stylesheets(tmp_path: Path, mocker: MockerFixture):
     """Test that stylesheets compile correctly.
 
@@ -1540,3 +1580,96 @@ def test_no_ssr_dynamic_import_names_the_client_side_wrapper():
     from reflex_components_plotly.plotly import Plotly
 
     assert Plotly.create()._get_dynamic_imports().endswith(', "Plot")')
+
+
+@pytest.mark.parametrize("fresh_page", [False, True])
+def test_incremental_compile_runs_plugin_outputs(
+    tmp_path, monkeypatch, mocker, fresh_page
+):
+    """Cache hits still refresh plugin assets and scheduled output tasks."""
+    from reflex.compiler import disk_cache
+
+    class OutputPlugin(rx.plugins.Plugin):
+        """Contribute a task, static asset and non-idempotent modifier."""
+
+        def pre_compile(self, **context):
+            """Schedule outputs through the normal plugin lifecycle.
+
+            Args:
+                context: Compiler capabilities.
+            """
+            context["add_save_task"](lambda: ("task.txt", "task"))
+            context["add_modify_task"]("page.txt", lambda text: text + "!")
+
+        def get_static_assets(self, **context):
+            """Return a plugin asset.
+
+            Args:
+                context: Compiler capabilities.
+
+            Returns:
+                The static asset.
+            """
+            return [(Path("asset.txt"), "asset")]
+
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+    monkeypatch.setenv("REFLEX_WEB_WORKDIR", str(tmp_path))
+    mocker.patch("reflex.app.reload_config")
+    app = rx.App()
+    app.add_page(lambda: rx.el.div("page"), route="index")
+    plugin = OutputPlugin()
+    config = rx.Config(app_name="testing", plugins=[plugin])
+    mocker.patch.object(compiler, "get_config", return_value=config)
+    mocker.patch.object(app, "_should_compile", return_value=True)
+
+    def rebuild(*args, outputs, **kwargs):
+        """Stage a regenerated page when simulating a cache miss.
+
+        Args:
+            args: Application arguments.
+            outputs: Compiler output mapping.
+            kwargs: Rebuild options.
+
+        Returns:
+            Whether the incremental rebuild succeeded.
+        """
+        if fresh_page:
+            outputs[tmp_path / "page.txt"] = "new"
+        return True
+
+    mocker.patch.object(disk_cache, "try_incremental_rebuild", side_effect=rebuild)
+    mocker.patch.object(
+        disk_cache,
+        "load_manifest",
+        return_value={"plugin_sources": {str(tmp_path / "page.txt"): "base"}},
+    )
+    (tmp_path / "page.txt").write_text("base!")
+    assert compiler.compile_app(app, use_rich=False)
+    assert (tmp_path / "asset.txt").read_text() == "asset"
+    assert (tmp_path / "task.txt").read_text() == "task"
+    assert (tmp_path / "page.txt").read_text() == ("new!" if fresh_page else "base!")
+
+
+def test_preloaded_app_skips_incremental_reuse(monkeypatch, mocker):
+    """Unobserved import-time reads require a full compile for preloaded apps."""
+    from reflex.compiler import disk_cache
+
+    mocker.patch("reflex.app.reload_config")
+    app = rx.App()
+    config = rx.Config(app_name="testing", app_module_import="testing")
+    mocker.patch.object(compiler, "get_config", return_value=config)
+    mocker.patch.object(app, "_should_compile", return_value=True)
+    reuse = mocker.patch.object(
+        disk_cache, "try_incremental_rebuild", return_value=True
+    )
+    monkeypatch.setenv("REFLEX_COMPILE_CACHE", "1")
+
+    class FullCompileReached(Exception):
+        """Stop before full-compile side effects."""
+
+    mocker.patch.object(
+        compiler, "make_compile_progress", side_effect=FullCompileReached
+    )
+    with pytest.raises(FullCompileReached):
+        compiler.compile_app(app, use_rich=False)
+    reuse.assert_not_called()

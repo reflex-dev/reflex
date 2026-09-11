@@ -11,6 +11,7 @@ import functools
 import inspect
 import json
 import logging
+import random
 import re
 import string
 import uuid
@@ -45,7 +46,6 @@ from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import exceptions, imports, serializers, types
 from reflex_base.utils.compat import annotations_from_namespace
-from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
     UntypedComputedVarError,
@@ -3302,12 +3302,54 @@ def get_uuid_string_var() -> Var:
 # Set of unique variable names.
 USED_VARIABLES = set()
 
+_UNIQUE_NAME_RNG = random.Random(42)
 
-@once
-def _rng():
-    import random
 
-    return random.Random(42)
+def reset_unique_variable_names() -> None:
+    """Reset the deterministic unique-name generator to its initial state.
+
+    Names only need to be unique within one compile, so resetting before each
+    compile makes auto-generated ref names reproducible.
+    """
+    USED_VARIABLES.clear()
+    _UNIQUE_NAME_RNG.seed(42)
+
+
+def seed_unique_variable_names(seed: str) -> None:
+    """Start a fresh, seed-determined name sequence (one per compiled page).
+
+    Generated names are order-dependent, so a process-wide sequence gives a
+    page different names depending on which pages compiled before it. An
+    incremental compile of a subset of pages would then reuse names that
+    other, cached pages already hold. Seeding per page from its route makes
+    each page's names a function of the page alone.
+
+    Args:
+        seed: The page route (or another stable label).
+    """
+    USED_VARIABLES.clear()
+    _UNIQUE_NAME_RNG.seed(f"reflex-unique-names:{seed}")
+
+
+def unique_variable_name_state() -> tuple[Any, frozenset[str]]:
+    """Capture the generator state so a page's sequence can resume later.
+
+    Returns:
+        An opaque state for :func:`restore_unique_variable_name_state`.
+    """
+    return _UNIQUE_NAME_RNG.getstate(), frozenset(USED_VARIABLES)
+
+
+def restore_unique_variable_name_state(state: tuple[Any, frozenset[str]]) -> None:
+    """Resume a page's name sequence captured by :func:`unique_variable_name_state`.
+
+    Args:
+        state: The captured state.
+    """
+    rng_state, used = state
+    _UNIQUE_NAME_RNG.setstate(rng_state)
+    USED_VARIABLES.clear()
+    USED_VARIABLES.update(used)
 
 
 def get_unique_variable_name() -> str:
@@ -3316,7 +3358,7 @@ def get_unique_variable_name() -> str:
     Returns:
         The unique variable name.
     """
-    name = "".join([_rng().choice(string.ascii_lowercase) for _ in range(8)])
+    name = "".join([_UNIQUE_NAME_RNG.choice(string.ascii_lowercase) for _ in range(8)])
     if name not in USED_VARIABLES:
         USED_VARIABLES.add(name)
         return name
