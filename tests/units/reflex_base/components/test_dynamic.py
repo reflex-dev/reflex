@@ -1,6 +1,7 @@
 """Tests for the compatibility shims in reflex_base.components.dynamic."""
 
 import importlib
+from typing import Any
 
 import pytest
 from reflex_base.components import dynamic
@@ -104,6 +105,27 @@ def test_component_without_imports_cannot_be_bundled():
     """Report components that have no libraries to register."""
     with pytest.raises(DynamicComponentMissingLibraryError):
         dynamic.bundle_library(Component.create())
+
+
+@pytest.mark.parametrize(
+    "component",
+    [None, 42, {}, [], object(), Component, Component.create],
+    ids=["none", "integer", "dict", "list", "object", "component-class", "factory"],
+)
+def test_bundle_library_rejects_invalid_inputs(component: Any):
+    """Explain the supported arguments instead of leaking implementation errors.
+
+    Args:
+        component: An invalid public API argument.
+    """
+    with RegistrationContext() as context:
+        with pytest.raises(
+            TypeError,
+            match="library name as a str or a prototype Component instance",
+        ):
+            dynamic.bundle_library(component)
+        assert context.bundled_libraries == _default_bundled_libraries()
+        assert not context._explicit_bundled_libraries
 
 
 @pytest.mark.parametrize("library", ["app-library", "react"])

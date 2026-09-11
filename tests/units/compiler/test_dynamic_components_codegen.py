@@ -64,6 +64,7 @@ def test_component_registration_bundles_subpaths_before_serialization(reactive: 
     with RegistrationContext() as context:
         bundle_library(icon)
         bundle_library(icon)
+        assert context.bundled_libraries.count(subpath) == 1
         with context.fork():
             _reset_bundled_libraries_for_compile()
             _, app_root_code = compiler.compile_app_root(rx.el.div())

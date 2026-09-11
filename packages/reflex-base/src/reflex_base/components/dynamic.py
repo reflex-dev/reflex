@@ -93,14 +93,24 @@ def bundle_library(component: Union["Component", str]) -> None:
     from the initial state.
 
     Args:
-        component: The component to bundle the library with.
+        component: A library name string or a prototype component instance to bundle.
 
     Raises:
+        TypeError: If the argument is not a library name string or component instance.
         DynamicComponentMissingLibraryError: Raised when a dynamic component is missing a library.
     """
     if isinstance(component, str):
         _bundle_library(component, explicit=True)
         return
+    # Component imports this module, so defer the runtime import.
+    from reflex_base.components.component import Component
+
+    if not isinstance(component, Component):
+        msg = (
+            "Pass a library name as a str or a prototype Component instance "
+            "to bundle_library(), for example bundle_library(rx.icon('apple'))."
+        )
+        raise TypeError(msg)
     component_imports = component._get_imports()
     if not component_imports:
         msg = "Component must have a library to bundle."
