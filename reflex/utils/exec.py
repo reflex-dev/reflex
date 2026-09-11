@@ -660,17 +660,21 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port: The app port
         loglevel: The log level.
     """
+    import multiprocessing
+
     logger.debug("Using Granian for backend")
 
-    if environment.REFLEX_STRICT_HOT_RELOAD.get():
-        import multiprocessing
-
-        multiprocessing.set_start_method("spawn", force=True)
+    set_dev_start_method()
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
     from reflex_base.environment import _load_dotenv_from_env
+
+    # The app itself is not imported here: the reload worker must load it
+    # fresh on every restart. Only the framework pages are shared.
+    if multiprocessing.get_start_method() == "fork":
+        _freeze_for_fork()
 
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
@@ -785,6 +789,66 @@ def run_uvicorn_backend_prod(
     )
 
 
+def _backend_start_method() -> str | None:
+    """Resolve the multiprocessing start method for backend workers.
+
+    Returns:
+        The start method to force, or None to keep the interpreter default.
+    """
+    if (method := environment.REFLEX_BACKEND_START_METHOD.get()) is not None:
+        return method
+    import multiprocessing
+
+    # Python defaults to fork (<3.14) or forkserver (3.14+) on Linux and to
+    # spawn elsewhere; only where fork is already the platform norm do we rely
+    # on it so workers can share the supervisor's pages.
+    if multiprocessing.get_start_method() in ("fork", "forkserver"):
+        return "fork"
+    return None
+
+
+def set_dev_start_method() -> None:
+    """Fix the multiprocessing start method for the development backend.
+
+    Strict hot reload spawns workers; otherwise the platform rule of
+    ``_backend_start_method`` applies. Call this before the first child
+    process starts, or a forkserver started for the compile pool stays alive
+    for the whole session.
+    """
+    import multiprocessing
+
+    if environment.REFLEX_STRICT_HOT_RELOAD.get():
+        multiprocessing.set_start_method("spawn", force=True)
+    elif (start_method := _backend_start_method()) is not None:
+        multiprocessing.set_start_method(start_method, force=True)
+
+
+def _freeze_for_fork() -> None:
+    """Freeze the heap so forked workers keep the supervisor's pages shared.
+
+    Without this, worker GC passes write to the inherited objects' headers,
+    which copies the shared pages private again.
+    """
+    import gc
+
+    gc.collect()
+    gc.freeze()
+
+
+def _preload_for_fork(app_target: str | None) -> None:
+    """Import the app in the supervisor so forked workers share its pages.
+
+    Args:
+        app_target: The ASGI app target; None means the reflex app, which is
+            imported here. Any other target lives in an already-loaded module.
+    """
+    from reflex.utils import prerequisites
+
+    if app_target is None:
+        prerequisites.get_app()
+    _freeze_for_fork()
+
+
 def run_granian_backend_prod(
     host: str, port: int, loglevel: LogLevel, app_target: str | None = None
 ):
@@ -796,11 +860,18 @@ def run_granian_backend_prod(
         loglevel: The log level.
         app_target: The ASGI app target to run. Defaults to the reflex app instance.
     """
+    import multiprocessing
+
     from granian.constants import Interfaces
     from granian.log import LogLevels
     from granian.server import Server as Granian
 
     logger.debug("Using Granian for backend")
+
+    if (start_method := _backend_start_method()) is not None:
+        multiprocessing.set_start_method(start_method, force=True)
+        if start_method == "fork":
+            _preload_for_fork(app_target)
 
     granian_app = Granian(
         target=app_target or get_app_instance_from_file(),

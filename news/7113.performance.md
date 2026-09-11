@@ -1,0 +1,1 @@
+The `reflex run` backend reload worker is now forked from the supervisor on Linux instead of started through a forkserver, so framework code is shared copy-on-write and the extra forkserver processes are gone. Set `REFLEX_BACKEND_START_METHOD=spawn` or `REFLEX_STRICT_HOT_RELOAD=1` for apps that are not fork-safe.
