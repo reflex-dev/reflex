@@ -71,6 +71,9 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
 - FINDING-016: `reflex run --json` stdout still carries 9 plain-text granian lines, breaking strict JSON-lines parsing (LOW, pre-existing, previous campaign's FINDING-013)
 - FINDING-017: `rx.plotly` still emits `id` rather than `divId`, so the id never reaches the DOM, unchanged by the react-plotly.js 4.1.0 bump (LOW, pre-existing, previous campaign's FINDING-020)
 - FINDING-018: dev mode: one unserializable state var drops the ENTIRE hydrate delta on every page load, silently reverting session state and showing a raw internal ValueError to the user (HIGH, pre-existing, triggered downstream) — claimed
+- FINDING-027: reflex-otel's documented env-var setup exports nothing and logs a traceback twice, because the recipe's exporter package does not match the protocol `OTEL_TRACES_EXPORTER=otlp` resolves to (MEDIUM, new feature, trivially small) — the first thing a user of the new package will copy
+- FINDING-028: the initial `reflex.compile` span tree is never exported in dev, lost with the compile worker (LOW, new feature)
+- FINDING-029: installing reflex-otel next to reflex 0.9.10.post2 silently upgrades reflex-base and leaves an inconsistent environment (LOW, new package metadata)
 - FINDING-026: `add_custom_code` JS touching `window` fails `reflex export` with an opaque prerender 500 that never names the offending code (LOW, pre-existing)
 - FINDING-025: `rx.AdminDash` serves HTTP 500 on every `/admin` route on both versions and both starlette-admin generations, so this train's AdminDash changelog line is not observable end to end (MEDIUM-HIGH impact, pre-existing) — isolated against a plain Starlette app
 - FINDING-022: `bundle_library()` at app-module scope is discarded before pages are evaluated, and the error tells you to do what you already did (MEDIUM, pre-existing) — seen independently by three clusters
@@ -413,6 +416,42 @@ Index (confirmed = independently re-reproduced by a verifier; claimed = verifica
   `orch_probes/logs/memo_export_new.tail.log` (0.9.11a1) and `memo_export_base_window.tail.log`
   (0.9.10.post2).
 
+## FINDING-027: reflex-otel's documented env-var setup exports nothing (MEDIUM, new feature, small fix)
+
+- Cluster: `otel` | Regression: n/a (new package) | Changelog: reflex-otel 0.1.0a1 (#6899)
+- The recipe printed verbatim in reflex-otel's README and in `docs/api-reference/observability.md`
+  installs `opentelemetry-exporter-otlp-proto-http` and then sets `OTEL_TRACES_EXPORTER=otlp`. With
+  opentelemetry-sdk 1.44.0 that name resolves to **otlp_proto_grpc**, which the documented pip line
+  does not install. `_configure_sdk_from_environment()` logs the whole traceback (twice) and
+  `_instrument()` continues, so the app reports otel enabled while sitting on a `ProxyTracerProvider`
+  and the collector is never contacted.
+- Fix is small: document `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf` (or install the grpc exporter, or
+  default the protocol when only the http exporter is present), and treat the configuration failure as
+  fatal rather than continuing with tracing "enabled".
+- Evidence: `otel/evidence/run9-readme-env-traceback.txt`, `run9-receiver-access-EMPTY.log`.
+- Everything else in the recipe space works: programmatic providers and
+  `opentelemetry-instrument reflex run` both export correctly, as does the browser plugin.
+
+## FINDING-028: the initial `reflex.compile` span tree is never exported in dev (LOW, new feature)
+
+- Cluster: `otel` | Regression: n/a | Changelog: reflex-base 0.9.11a1 (#6900), README "one
+  `reflex.compile` span per app compile ... with the stages as child spans"
+- Under dev `reflex run` the initial compile happens in a `ProcessPoolExecutor` worker that exits via
+  `os._exit`, so neither `atexit` nor provider shutdown runs: with OTLP the tree never arrives, and
+  with a fast batch processor only two stage children escape, pointing at a parent span id that was
+  never exported. Prod, `reflex export` and hot reload all export the full tree.
+- Evidence: `otel/evidence/compile-span-loss.txt`, `run1-spantree.txt`.
+
+## FINDING-029: reflex-otel upgrades reflex-base out from under reflex (LOW, new package metadata)
+
+- Cluster: `otel` | Regression: n/a
+- `reflex-otel` depends on `reflex-base>=0.9.11a1` but not on `reflex`, so installing it into a
+  reflex 0.9.10.post2 environment silently upgrades reflex-base to 0.9.11a1 and breaks reflex's
+  exact pin. No error, no warning; `uv pip check` afterwards reports the incompatibility. The mixed
+  environment imports fine and produces partial telemetry, because reflex 0.9.10.post2 has no otel
+  call sites — the confusing outcome of "it installed, so it should work".
+- Evidence: `otel/evidence/mixed-env-0910-plus-otel.txt`.
+
 ## Cluster summaries (interim)
 
 ### `smoke` (orchestrator) — clean
@@ -467,6 +506,20 @@ deprecation shims, and reflex-enterprise 0.9.5 reads bundled libraries from the 
 Python-callable renderers and formatters, `@rx.memo` row counters, `@rxe.static` dialogs, cell editing,
 master-detail, tree data, pivot, selection, fill handle, grid-state round-trip and the finance app's
 fetch/pagination/filter/sort all work. Every failure is pre-existing (FINDING-018, FINDING-019).
+
+### `otel` (pass 31, anomaly 9, fail 3) — the new package works; three defects, one small and worth fixing now
+The whole OpenTelemetry surface was exercised end to end with a hand-written OTLP receiver: one span
+per handler run named after the event, CONSUMER for websocket events with INTERNAL chained children
+three levels deep, recorded exceptions, `session.id` as a truncated hash with the raw token absent
+from the export, `/ping` excluded, the websocket token query parameter redacted, all four `reflex.*`
+metrics plus the ASGI middleware's, browser PRODUCER spans joining the backend trace over both the
+websocket and uploads, web vitals and React render timing, prod mode, hot reload, nine granian
+workers, a second `instrument()` as a no-op, and hostile client trace context handled safely.
+Inertness holds: `import reflex` pulls in no opentelemetry modules even with reflex-otel installed.
+The three FAILs are FINDING-027, FINDING-028 and FINDING-029. Also worth a maintainer's eye: the
+PR descriptions for #6899 and #6901 describe behaviour the shipped code does not have (SERVER vs
+CONSUMER span kind, and an endpoint fallback that was deliberately dropped), while README and docs
+are correct — release notes assembled from PR text would inherit the errors.
 
 ### `ent_map_dnd_flow` (pass 11, anomaly 8, skipped 5, fail 2) — NO REGRESSION; four 0.9.9a1 breakages fixed
 map, dnd and flow run unmodified on 0.9.11a1 with reflex-enterprise 0.9.5: map 13/13 plus 7 new checks,

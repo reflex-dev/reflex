@@ -6,8 +6,8 @@ or trivially small to fix. Everything else is filed and fixed after.
 
 **Status: DRAFT — the campaign is still running.** Clusters completed at the time of writing:
 smoke, packaging, hmr_runtime, hybrid_property, bg_rehydrate, event_hotpath, up_counter_todo_clock,
-up_upload_traversal_quiz, ent_aggrid, ent_map_dnd_flow, orch_probes. Still outstanding:
-otel (running), components_bumps, ent_mcp_oidc, config_assets_cli, memo_hash, reverify_prev,
+up_upload_traversal_quiz, ent_aggrid, ent_map_dnd_flow, otel, orch_probes. Still outstanding:
+components_bumps (running), ent_mcp_oidc, config_assets_cli, memo_hash, reverify_prev,
 ent_mantine_highcharts_tickets and four more reflex-examples apps.
 
 ## Bottom line so far
@@ -30,8 +30,12 @@ breakages are fixed.
   (changelog + docs) or restore the old semantics with a guard in the wrapper. Small either way.
 
 ### High impact and/or trivially small
-- *(none identified so far — the high-severity findings below are all pre-existing, and the
-  campaign's remaining clusters have not reported)*
+- **FINDING-027 — reflex-otel's documented env-var setup exports nothing** (medium, new package).
+  The recipe in reflex-otel's README and in `docs/api-reference/observability.md` installs the HTTP
+  exporter and then sets `OTEL_TRACES_EXPORTER=otlp`, which resolves to gRPC; the instrumentor logs a
+  traceback twice, reports otel enabled, and exports nothing. This is the first thing a user of a
+  brand-new package will copy, and the fix is a documentation line plus, ideally, making the
+  configuration failure fatal instead of continuing. Small, and it lands with the package's debut.
 
 ## File as issues, fix after release
 
@@ -58,6 +62,9 @@ breakages are fixed.
 | 021 | One `REFLEX_USE_NPM=1` run converts a project to npm permanently | low | Silent and undocumented; deleting the npm lockfile is the remedy. |
 | 024 | Error boundary logs three invalid-DOM-property errors | low | Above the real exception, on every crash page. |
 | 006 | uv cannot build the `reflex` sdist | low | Monorepo `[tool.uv.sources]` ships in the sdist; pip builds it fine. |
+| 028 | Initial `reflex.compile` span tree never exported in dev | low | Lost with the compile worker's `os._exit`; prod and export are fine. |
+| 029 | reflex-otel upgrades reflex-base out from under reflex | low | Depends on reflex-base but not reflex, so it silently breaks reflex's exact pin. |
+| 026 | Custom code touching `window` fails export with an opaque prerender 500 | low | The compiler knows which component emitted the block; a diagnostic is cheap. |
 
 ### reflex-enterprise (downstream tracker)
 - **FINDING-019**: four defects in reflex-enterprise 0.9.5 that break its own demos — the stale
@@ -82,10 +89,14 @@ breakages are fixed.
    release or `/admin` needs fixing.
 2. **The `rx.moment` behaviour change (FINDING-002).** Bug fix or breaking change? Upstream calls it
    breaking; our changelog does not mention the behaviour at all.
-3. **The `hybrid_property` typing promise (FINDING-005).** The changelog states the class-level type
+3. **Release notes assembled from PR text (otel).** The descriptions of #6899 and #6901 state
+   behaviour the shipped code does not have: the frontend event span is CONSUMER, not SERVER, and the
+   browser plugin deliberately has no endpoint fallback to `OTEL_EXPORTER_OTLP_*`. README and the docs
+   page are correct; only the PR text is stale. Worth catching before notes are written.
+4. **The `hybrid_property` typing promise (FINDING-005).** The changelog states the class-level type
    resolves to the frontend var. True on pyright 1.1.411, `Any` from 1.1.412 onward — i.e. for every
    user who does not pin the repo's checker. Fix the overloads or qualify the claim.
-4. **Enterprise prod coverage.** `reflex run --env prod` and `reflex export` could not be exercised
+5. **Enterprise prod coverage.** `reflex run --env prod` and `reflex export` could not be exercised
    for any enterprise demo: reflex-enterprise gates them behind a paid subscription that `CI=1` does
    not bypass, and the agents declined to set the app-harness flag purely to get past a licence
    check. If enterprise prod mode should be covered by this campaign, the team needs to supply a
@@ -93,7 +104,8 @@ breakages are fixed.
 
 ## Suggested sequencing
 
-1. Before release: decide (1)-(3) above; the only code change any of them might need is small.
+1. Before release: fix FINDING-027 (a docs line, plus making the failed configuration fatal) and
+   decide (1)-(4) below; the only code change any of the decisions might need is small.
 2. First post-release batch, in this order: FINDING-003 (devalues a shipped fix), FINDING-018
    (silent state loss with a user-visible internal error), FINDING-022 and FINDING-013 (both make
    other failures hard to diagnose), FINDING-025.
