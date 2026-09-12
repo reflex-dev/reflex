@@ -29,6 +29,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from pytest_mock import MockerFixture
 from reflex_base import otel
 from reflex_base.components.component import Component
+from reflex_base.config import get_config
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
@@ -4783,10 +4784,16 @@ def test_register_channel_rejects_a_duplicate_name():
         app.register_channel(_ProbeChannel())
 
 
-def test_register_channel_requires_state():
-    """A stateless app has no event websocket to carry a channel."""
+@pytest.mark.parametrize("state", [None, State])
+def test_register_channel_requires_the_event_websocket(state: type[State] | None):
+    """Without state there is no transport, whatever `_state` was passed.
+
+    A supplied `_state` does not set one up on its own: `enable_state=False`
+    skips the setup that creates the event namespace and its route.
+    """
     with RegistrationContext.get().fork():
-        app = App(enable_state=False)
+        app = App(_state=state, enable_state=False)
+    assert app.event_namespace is None
 
     with pytest.raises(RuntimeError, match="needs the event websocket"):
         app.register_channel(_ProbeChannel())
@@ -4795,9 +4802,14 @@ def test_register_channel_requires_state():
 def test_register_channel_requires_the_websocket_transport(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    """Channels are a plain-WebSocket feature; Socket.IO cannot carry them."""
-    monkeypatch.setenv("REFLEX_TRANSPORT", "socketio")
+    """Channels are a plain-WebSocket feature; Socket.IO cannot carry them.
+
+    The transport is patched on the loaded config rather than requested
+    through the environment: building a Socket.IO app would need the optional
+    python-socketio package, which this check has nothing to do with.
+    """
     app = App(enable_state=True)
+    monkeypatch.setattr(get_config(), "transport", "socketio")
 
     with pytest.raises(RuntimeError, match="requires the plain WebSocket transport"):
         app.register_channel(_ProbeChannel())

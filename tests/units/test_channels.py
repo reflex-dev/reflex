@@ -4,7 +4,12 @@ from typing import Any
 
 import pytest
 
-from reflex.channels import Channel, ChannelSession, validate_channel_name
+from reflex.channels import (
+    MAX_MESSAGE_BUFFERS,
+    Channel,
+    ChannelSession,
+    validate_channel_name,
+)
 
 
 class CollectingChannel(Channel):
@@ -158,3 +163,80 @@ def test_sessions_of_one_token_are_tracked_together():
     channel.forget_session(first)
 
     assert channel._sessions == {"tok1": {second}}
+
+
+def test_forgotten_session_reports_itself_closed():
+    """A session whose client went away reports it, for handlers mid-await."""
+    channel = CollectingChannel()
+    session = channel.session("sid1")
+    assert session.open is True
+
+    channel.forget_session(session)
+
+    assert session.open is False
+
+
+@pytest.mark.asyncio
+async def test_send_rejects_more_attachments_than_a_frame_holds():
+    """An oversized message raises instead of building an unsendable frame."""
+    channel = CollectingChannel()
+    session = channel.session("sid1")
+    buffers = [b"\x00"] * (MAX_MESSAGE_BUFFERS + 1)
+
+    with pytest.raises(ValueError, match="attachments"):
+        await session.send("push", None, buffers)
+
+    assert channel.sent == []
+
+
+@pytest.mark.asyncio
+async def test_room_fan_out_rejects_oversized_messages_before_delivering():
+    """A fan-out that cannot be framed reaches nobody, rather than some."""
+    channel = CollectingChannel()
+    channel.session("sid1").join("all")
+    channel.session("sid2").join("all")
+
+    with pytest.raises(ValueError, match="attachments"):
+        await channel.send_to_room(
+            "all", "push", None, [b""] * (MAX_MESSAGE_BUFFERS + 1)
+        )
+
+    assert channel.sent == []
+
+
+@pytest.mark.asyncio
+async def test_send_accepts_the_full_attachment_budget():
+    """The limit is inclusive, so a channel can use all of it."""
+    channel = CollectingChannel()
+    session = channel.session("sid1")
+
+    await session.send("push", None, [b""] * MAX_MESSAGE_BUFFERS)
+
+    assert len(channel.sent) == 1
+
+
+@pytest.mark.parametrize("name", [42, b"bytes", None])
+def test_channel_with_an_unusable_name_reports_it(name: Any):
+    """A non-string name fails with the explicit error, not a TypeError."""
+
+    class BadChannel(CollectingChannel):
+        pass
+
+    BadChannel.name = name  # pyright: ignore[reportAttributeAccessIssue]
+
+    with pytest.raises(ValueError, match="Invalid channel name"):
+        BadChannel()
+
+
+def test_channel_without_a_name_reports_it():
+    """A channel that never declared a name fails the same way."""
+
+    class NamelessChannel(Channel):
+        async def on_message(
+            self, session: ChannelSession, event: str, data: Any, buffers: list[bytes]
+        ) -> None:
+            """Ignore inbound messages."""
+            return
+
+    with pytest.raises(ValueError, match="Invalid channel name"):
+        NamelessChannel()

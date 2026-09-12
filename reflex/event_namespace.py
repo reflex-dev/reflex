@@ -795,9 +795,10 @@ class WebsocketEventNamespace(BaseEventNamespace):
             otel.record_message_size(len(frame), "receive")
         try:
             event, data, channel_name, buffers = decode_channel_frame(frame)
-        except ValueError:
+        except (ValueError, RecursionError):
             # A Reflex client never sends malformed frames; close instead of
-            # logging per frame.
+            # logging per frame. Deeply nested JSON exhausts the decoder's
+            # stack, which is malformed input all the same.
             logger.debug(f"Closing session {sid}: malformed binary frame.")
             return 1002
         await self._handle_channel_message(sid, channel_name, event, data, buffers)
@@ -852,7 +853,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
             otel.record_message_size(utf8_size(text), "receive")
         try:
             message = json.loads(text)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, RecursionError):
+            # Deeply nested JSON exhausts the decoder's stack rather than
+            # failing to parse; both are just a malformed frame here.
             message = None
         if (
             not isinstance(message, list)

@@ -40,16 +40,16 @@ MAX_MESSAGE_BUFFERS = 64
 ChannelSender = Callable[[str, str, str, Any, Sequence[bytes]], Awaitable[None]]
 
 
-def validate_channel_name(name: str) -> None:
+def validate_channel_name(name: Any) -> None:
     """Check a channel name against the wire format.
 
     Args:
-        name: The channel name.
+        name: The channel name declared by a Channel subclass.
 
     Raises:
-        ValueError: If the name is unusable on the wire.
+        ValueError: If the name is missing or unusable on the wire.
     """
-    if not _NAME_PATTERN.fullmatch(name):
+    if not isinstance(name, str) or not _NAME_PATTERN.fullmatch(name):
         msg = (
             f"Invalid channel name {name!r}: expected 1-64 characters from "
             "[A-Za-z0-9_./:-]."
@@ -77,6 +77,11 @@ class ChannelSession:
 
     _rooms: set[str]
 
+    # Whether the client is still connected. A handler that awaits (a rebuild,
+    # a thread hop) can come back to a session whose socket is gone; anything
+    # expensive or long-lived should check before proceeding.
+    open: bool = True
+
     async def send(
         self, event: str, data: Any = None, buffers: Sequence[bytes] = ()
     ) -> None:
@@ -86,7 +91,18 @@ class ChannelSession:
             event: The message name.
             data: The JSON-serializable metadata.
             buffers: Binary attachments delivered alongside the metadata.
+
+        Raises:
+            ValueError: If the message carries more attachments than a frame
+                may hold. Raised before anything is sent, so a fan-out fails
+                whole rather than reaching some clients.
         """
+        if len(buffers) > MAX_MESSAGE_BUFFERS:
+            msg = (
+                f"Channel message {event!r} carries {len(buffers)} attachments, "
+                f"over the {MAX_MESSAGE_BUFFERS} a frame may hold."
+            )
+            raise ValueError(msg)
         await self._send(self.sid, self.channel.name, event, data, buffers)
 
     def join(self, room: str) -> None:
@@ -131,7 +147,7 @@ class Channel(ABC):
 
     def __init__(self):
         """Initialize the channel's session and room bookkeeping."""
-        validate_channel_name(type(self).name)
+        validate_channel_name(getattr(type(self), "name", None))
         # Sessions by client token, for token-addressed sends.
         self._sessions: dict[str, set[ChannelSession]] = {}
         # Room name to member sessions.
@@ -249,6 +265,7 @@ class Channel(ABC):
         Args:
             session: The session going away.
         """
+        session.open = False
         for room in tuple(session._rooms):
             session.leave(room)
         sessions = self._sessions.get(session.client_token)

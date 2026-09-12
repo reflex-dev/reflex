@@ -492,7 +492,9 @@ class App(MiddlewareMixin, LifespanMixin):
             RuntimeError: If the app cannot serve channels, or the name is taken.
         """
         name = type(channel).name
-        if self._state is None:
+        if self.event_namespace is None:
+            # A supplied `_state` is not enough: without enable_state the app
+            # never sets up a transport, so the channel would be unreachable.
             msg = (
                 f"Channel {name!r} needs the event websocket, which exists only "
                 "when state is enabled (rx.App(enable_state=True), the default)."

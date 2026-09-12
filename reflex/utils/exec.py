@@ -707,7 +707,11 @@ def _uvicorn_websocket_args() -> list[str]:
     options = uvicorn_websocket_options()
     return [
         *("--ws-max-size", str(options["ws_max_size"])),
-        *([] if options["ws_per_message_deflate"] else ["--no-ws-per-message-deflate"]),
+        # A BOOLEAN-valued option, not a flag: uvicorn rejects --no-... forms.
+        *(
+            "--ws-per-message-deflate",
+            str(options["ws_per_message_deflate"]).lower(),
+        ),
     ]
 
 

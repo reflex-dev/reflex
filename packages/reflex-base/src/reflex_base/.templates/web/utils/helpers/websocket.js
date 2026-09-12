@@ -249,8 +249,14 @@ class ReflexChannel extends LocalEmitter {
    * @param buffers Binary attachments (ArrayBuffers or typed arrays).
    */
   emit(event, data, buffers = []) {
+    // Serialize now, connected or not: a queued frame must carry what was
+    // emitted, not whatever the caller's payload and typed arrays hold by the
+    // time the channel opens.
+    const frame = buffers?.length
+      ? encodeChannelFrame(event, data, this.name, buffers)
+      : stringifyFrame([event, data, this.name]);
     if (this.connected && this._transport) {
-      this._transport.emitChannel(this.name, event, data, buffers);
+      this._transport._send(frame);
       return;
     }
     if (this._queue.length >= MAX_QUEUED_CHANNEL_MESSAGES) {
@@ -258,7 +264,7 @@ class ReflexChannel extends LocalEmitter {
       // "connect"; drop the oldest rather than grow without bound.
       this._queue.shift();
     }
-    this._queue.push([event, data, buffers]);
+    this._queue.push(frame);
   }
 
   /**
@@ -301,10 +307,9 @@ class ReflexChannel extends LocalEmitter {
       this.connected = true;
       const queued = this._queue;
       this._queue = [];
-      for (const [queuedEvent, queuedData, queuedBuffers] of queued) {
-        // Through emit(), so a transport that went away mid-flush re-queues
-        // rather than throwing.
-        this.emit(queuedEvent, queuedData, queuedBuffers);
+      for (const frame of queued) {
+        // Back onto the transport's own queue if it went away mid-flush.
+        this._transport._send(frame);
       }
       this._emitLocal("connect");
       return;
@@ -328,7 +333,10 @@ export const getChannel = (name) => {
     channel = new ReflexChannel(name);
     channels.set(name, channel);
     if (channelsUnsupportedReason !== null) {
-      channel._unsupported(channelsUnsupportedReason);
+      // After this turn: the caller registers its "error" handler on the
+      // handle we are still returning.
+      const reason = channelsUnsupportedReason;
+      queueMicrotask(() => channel._unsupported(reason));
     } else if (activeTransport !== null) {
       channel._attach(activeTransport);
     }
@@ -631,17 +639,27 @@ export class ReflexWebSocket extends LocalEmitter {
   }
 
   /**
+   * Drop the socket as a transport failure, which the event loop reconnects
+   * from -- unlike disconnect(), which reports an intentional close.
+   * @param reason The disconnect reason to report.
+   */
+  _dropConnection(reason) {
+    if (this._ws && this.connected) {
+      this._closeReason = reason;
+      this._ws.close();
+    }
+  }
+
+  /**
    * (Re)arm the dead-connection watchdog; fires when no message (heartbeat
    * included) arrives within the server's ping interval + timeout.
    */
   _resetWatchdog() {
     this._clearWatchdog();
-    this._watchdogTimer = setTimeout(() => {
-      if (this._ws && this.connected) {
-        this._closeReason = "ping timeout";
-        this._ws.close();
-      }
-    }, this._watchdogMs);
+    this._watchdogTimer = setTimeout(
+      () => this._dropConnection("ping timeout"),
+      this._watchdogMs,
+    );
   }
 
   /**

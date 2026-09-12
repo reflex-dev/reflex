@@ -30,9 +30,18 @@ def ChannelApp():
       probeChannel.on("disconnect", () => {
         window.__probe.connected = false;
       });
-      // Drop the underlying socket the way a network blip would, so the test
-      // can watch the channel come back with the app's own reconnect.
-      window.__probe.drop = () => probeChannel._transport._ws.close();
+      // Drop the socket the way the transport's own watchdog does on a dead
+      // connection, so the test exercises the supported reconnect path.
+      window.__probe.drop = () => probeChannel._transport._dropConnection("test");
+      // Emit while down, then mutate what was passed: the queued message must
+      // still carry the values it was emitted with.
+      window.__probe.pushThenMutate = (n) => {
+        const meta = { n };
+        const bytes = new Uint8Array([1, 2, 3, 4]);
+        probeChannel.emit("push", meta, [bytes]);
+        meta.n = -1;
+        bytes.fill(9);
+      };
       probeChannel.on("error", (error) => {
         window.__probe.errors.push(error);
       });
@@ -170,8 +179,9 @@ def test_channel_reopens_and_flushes_after_a_reconnect(
 
     page.evaluate("window.__probe.drop()")
     page.wait_for_function("window.__probe.connected === false")
-    # Emitted while the socket is down: queued, not lost.
-    page.evaluate("window.__probe.push(9)")
+    # Emitted while the socket is down: queued, not lost, and not rewritten by
+    # what the caller did with the payload afterwards.
+    page.evaluate("window.__probe.pushThenMutate(9)")
     # Reconnects are retried with backoff, which outlasts the default wait on
     # a machine busy building the frontend.
     page.wait_for_function(f"window.__probe.connects > {connects}", timeout=30_000)

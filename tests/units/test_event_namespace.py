@@ -7,6 +7,7 @@ import logging
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock
@@ -876,8 +877,11 @@ def test_binary_frame_codec_matches_the_client(tmp_path: Path):
     buffers = [b"\x01\x02\x03", b"", bytes(range(24))]
     frame = encode_channel_frame("payload", {"fig": "f1", "n": 3}, "probe", buffers)
     script = tmp_path / "codec.mjs"
+    # A file URL, not a path: an absolute Windows path is neither a valid ESM
+    # specifier nor a valid JS string literal (its separators are escapes).
+    template = json.dumps(WEBSOCKET_JS_TEMPLATE.as_uri())
     script.write_text(f"""
-import {{ encodeChannelFrame, decodeChannelFrame }} from "{WEBSOCKET_JS_TEMPLATE}";
+import {{ encodeChannelFrame, decodeChannelFrame }} from {template};
 
 const fromPython = Uint8Array.from(Buffer.from(process.argv[2], "base64"));
 const [event, data, channel, buffers] = decodeChannelFrame(fromPython.buffer);
@@ -896,8 +900,10 @@ console.log(JSON.stringify({{
         [NODE, str(script), base64.b64encode(frame).decode()],
         capture_output=True,
         text=True,
-        check=True,
+        check=False,
     )
+
+    assert result.returncode == 0, result.stderr
     decoded = json.loads(result.stdout)
 
     assert decoded["event"] == "payload"
@@ -1005,3 +1011,60 @@ async def test_interrupted_open_leaves_no_session_behind(
 
     assert channel._rooms == {}
     assert channel._sessions == {}
+
+
+@pytest.mark.asyncio
+async def test_disconnect_marks_the_session_closed(
+    namespace: WebsocketEventNamespace, mock_app: Mock
+):
+    """The session a channel holds reports the disconnect to its handlers."""
+    channel = RecordingChannel()
+    mock_app._channels = {"probe": channel}
+    websocket = FakeWebSocket()
+    websocket.feed([OPEN_MESSAGE, None, "probe"])
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert [session.open for session in channel.opened] == [False]
+
+
+@pytest.mark.asyncio
+async def test_deeply_nested_frame_closes_connection(
+    namespace: WebsocketEventNamespace,
+):
+    """A frame the JSON decoder cannot recurse through closes the connection.
+
+    Deep nesting exhausts the decoder's stack instead of failing to parse, and
+    a RecursionError escaping the receive loop would drop the session with a
+    traceback rather than a protocol close.
+    """
+    depth = sys.getrecursionlimit() * 200
+    websocket = FakeWebSocket()
+    websocket.feed("[" * depth + "]" * depth)
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1002
+
+
+@pytest.mark.asyncio
+async def test_unparseable_binary_header_closes_connection(
+    namespace: WebsocketEventNamespace, mock_app: Mock, mocker
+):
+    """A binary header that exhausts the decoder closes the connection too.
+
+    The header size cap bounds how deep an inbound header can nest, and how
+    deep is too deep depends on the interpreter, so the decoder's failure is
+    simulated rather than provoked.
+    """
+    mock_app._channels = {"probe": RecordingChannel()}
+    mocker.patch(
+        "reflex.event_namespace.decode_channel_frame",
+        side_effect=RecursionError("too deep"),
+    )
+    websocket = FakeWebSocket()
+    websocket.feed(encode_channel_frame("push", None, "probe", [b"\x00"]))
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code == 1002

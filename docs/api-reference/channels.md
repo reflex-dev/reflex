@@ -64,6 +64,10 @@ await session.send("tick", {"symbol": "RFX", "price": 42.0})
 await self.send_to_room("RFX", "tick", {"price": 42.0})
 ```
 
+A handler that awaits — a rebuild, a thread hop — can come back to a session
+whose client has gone; `session.open` reports that before you commit to
+expensive or long-lived work.
+
 Rooms and sessions are local to the worker holding the connection. A client
 reconnecting to another worker opens its session there, so anything that must
 outlive a connection belongs in Reflex state, not in the channel.

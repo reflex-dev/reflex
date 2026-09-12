@@ -222,18 +222,30 @@ def test_run_uvicorn_backend_passes_the_socket_policy(
     assert kwargs["ws_max_size"] == exec_utils._uvicorn_ws_max_size()
 
 
-def test_uvicorn_websocket_args_match_the_options(monkeypatch: pytest.MonkeyPatch):
-    """The command line form carries the same policy as the keyword form."""
-    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", "false")
-    args = exec_utils._uvicorn_websocket_args()
+@pytest.mark.parametrize("deflate", [True, False])
+def test_uvicorn_websocket_args_match_the_options(
+    monkeypatch: pytest.MonkeyPatch, deflate: bool
+):
+    """Uvicorn's own CLI accepts the args, and reads the same policy from them.
 
-    assert "--no-ws-per-message-deflate" in args
-    assert args[args.index("--ws-max-size") + 1] == str(
-        exec_utils.uvicorn_websocket_options()["ws_max_size"]
+    The Windows production backend passes these on a command line, where a
+    misspelled option is not a wrong setting but a server that refuses to
+    start, so they are checked against uvicorn's parser rather than a
+    hand-written expectation.
+    """
+    pytest.importorskip("uvicorn")
+    from uvicorn.main import main as uvicorn_cli
+
+    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", str(deflate).lower())
+    options = exec_utils.uvicorn_websocket_options()
+
+    context = uvicorn_cli.make_context(
+        "uvicorn", [*exec_utils._uvicorn_websocket_args(), "app:app"]
     )
 
-    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", "true")
+    assert context.params["ws_per_message_deflate"] is deflate
     assert "--no-ws-per-message-deflate" not in exec_utils._uvicorn_websocket_args()
+    assert context.params["ws_max_size"] == options["ws_max_size"]
 
 
 def test_uvicorn_worker_carries_the_socket_policy(monkeypatch: pytest.MonkeyPatch):
