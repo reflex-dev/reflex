@@ -13,7 +13,6 @@ from importlib.util import find_spec
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
-from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
@@ -431,12 +430,25 @@ class BaseStateEventProcessor(EventProcessor):
             )
 
             # re-assign only when the value is set and different
-            if router_data and state.router_data != router_data:
-                # assignment will recurse into substates and force recalculation of
-                # dependent ComputedVar (dynamic route variables)
-                state.router_data = router_data
-                if state.router != (router := RouterData.from_router_data(router_data)):
-                    state.router = router
+            if (
+                router_data
+                and (previous_router_data := state.router_data) != router_data
+            ):
+                # only the router vars whose backing keys changed are rebuilt
+                # and re-sent; session/headers stay put across navigations.
+                merged_router_data = state._update_router_vars(
+                    router_data, previous_router_data
+                )
+                # Store what it merged rather than the payload: a partial one
+                # would otherwise drop the keys it omits for the next event.
+                # Only when that actually differs, though -- a payload that
+                # merges to what is already there changed nothing, and the
+                # assignment would still dirty router_data and mark the state
+                # touched, persisting it for an event that moved nothing.
+                # The assignment recurses into substates and forces
+                # recalculation of dependent ComputedVar (dynamic route vars).
+                if merged_router_data != previous_router_data:
+                    state.router_data = merged_router_data
 
             # Preprocess the event.
             if (

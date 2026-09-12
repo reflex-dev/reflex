@@ -13,14 +13,15 @@ import pickle
 import re
 import unittest.mock
 import uuid
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import pytest_asyncio
 import reflex_base
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -69,7 +70,7 @@ from reflex.compiler.compiler import (
 )
 from reflex.compiler.plugins import default_page_plugins
 from reflex.environment import environment
-from reflex.istate.data import RouterData
+from reflex.istate.data import RouterData, URLData
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
@@ -334,9 +335,9 @@ def test_add_page_set_route_dynamic(index_page: ComponentCallable):
     assert app._pages.keys() == {"test/[dynamic]"}
     assert "dynamic" in app._state.computed_vars
     assert app._state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
-        EmptyState.get_full_name(): {constants.ROUTER},
+        EmptyState.get_full_name(): {"router_page"},
     }
-    assert constants.ROUTER in app._state()._var_dependencies
+    assert "router_page" in app._state()._var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
@@ -1965,9 +1966,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert arg_name in app._state.vars
     assert arg_name in app._state.computed_vars
     assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
-        DynamicState.get_full_name(): {constants.ROUTER},
+        DynamicState.get_full_name(): {"router_page"},
     }
-    assert constants.ROUTER in app._state()._var_dependencies
+    assert "router_page" in app._state()._var_dependencies
 
     substate_token = BaseStateToken(ident=token, cls=DynamicState)
     exp_vals = ["foo", "foobar", "baz"]
@@ -2001,6 +2002,16 @@ async def test_dynamic_route_var_route_change_completed_on_load(
             val=exp_val,
         )
         exp_router = RouterData.from_router_data(on_load_internal.router_data)
+        # Only the navigation-scoped router vars change (no session/headers in
+        # the router_data), so only those land in the delta.
+        exp_router_delta = {
+            "router_page" + FIELD_MARKER: exp_router._page,
+            "router_url" + FIELD_MARKER: URLData.from_url(exp_router.url),
+        }
+        if exp_index == 0:
+            # Every navigation here matches the same route, so the route_id
+            # only changes on the first one.
+            exp_router_delta["router_route_id" + FIELD_MARKER] = exp_router.route_id
         async with mock_base_state_event_processor as processor:
             await processor.enqueue(
                 token,
@@ -2014,7 +2025,7 @@ async def test_dynamic_route_var_route_change_completed_on_load(
                     State.get_full_name(): {
                         arg_name + FIELD_MARKER: exp_val,
                         constants.CompileVars.IS_HYDRATED + FIELD_MARKER: False,
-                        "router" + FIELD_MARKER: exp_router,
+                        **exp_router_delta,
                     },
                     DynamicState.get_full_name(): {
                         f"comp_{arg_name}" + FIELD_MARKER: exp_val,
@@ -4477,6 +4488,210 @@ def test_client_error_constants_match_frontend():
         f'const ERROR_TYPE_STATE_UPDATE = "{constants.ClientErrorType.STATE_UPDATE}"'
         in state_js
     )
+
+
+@pytest_asyncio.fixture
+async def event_namespace_with_processor_mock() -> AsyncGenerator[EventNamespace, None]:
+    """An EventNamespace whose app has a mocked event processor.
+
+    Yields:
+        The EventNamespace instance.
+    """
+    app = App()
+    app._event_processor = Mock(enqueue=AsyncMock())
+    event_namespace = EventNamespace("/event", app)
+    yield event_namespace
+    # The token manager is backed by redis when one is configured; drop the
+    # tokens these tests link so they do not show up in another test's
+    # enumeration of the shared instance. Awaited rather than run in a fresh
+    # loop via asyncio.run: the redis client is bound to the test's loop.
+    await event_namespace._token_manager.disconnect_all()
+
+
+def _connect_environ(token: str) -> dict[str, Any]:
+    return {
+        "QUERY_STRING": f"token={token}",
+        "asgi.scope": {
+            "headers": [
+                (b"origin", b"http://localhost:3000"),
+                (b"user-agent", b"test-agent"),
+            ],
+            "client": ("127.0.0.1", 1234),
+        },
+    }
+
+
+def _client_event_payload() -> dict[str, Any]:
+    return {
+        "name": "state.hydrate",
+        "router_data": {"pathname": "/", "query": {}, "asPath": "/"},
+        "payload": {},
+    }
+
+
+@pytest.mark.asyncio
+async def test_on_event_uses_connect_time_router_data(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """on_event merges the connection-scoped router_data gathered at connect.
+
+    Headers, client IP, and session id are computed once in on_connect; the
+    per-event path must not re-read the connection environ at all.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    await event_namespace.on_connect("sid1", _connect_environ(token))
+    assert "sid1" in event_namespace._static_router_data
+
+    # The per-event path must not re-read the connection environ.
+    event_namespace.app.sio = Mock(
+        get_environ=Mock(side_effect=AssertionError("environ must not be consulted"))
+    )
+    await event_namespace.on_event("sid1", _client_event_payload())
+
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    enqueue_mock.assert_called_once()
+    enqueued_token, event = enqueue_mock.call_args[0]
+    assert enqueued_token == token
+    assert event.router_data[constants.RouteVar.CLIENT_TOKEN] == token
+    assert event.router_data[constants.RouteVar.SESSION_ID] == "sid1"
+    assert event.router_data[constants.RouteVar.CLIENT_IP] == "127.0.0.1"
+    assert event.router_data[constants.RouteVar.HEADERS] == {
+        "origin": "http://localhost:3000",
+        "user-agent": "test-agent",
+        "asgi-scope-client": "127.0.0.1",
+    }
+    assert event.router_data[constants.RouteVar.PATH] == "/404"
+    assert event.router_data[constants.RouteVar.QUERY] == {}
+
+    # Disconnect drops the cached connection data.
+    event_namespace.on_disconnect("sid1")
+    assert "sid1" not in event_namespace._static_router_data
+
+
+@pytest.mark.asyncio
+async def test_link_token_to_sid_records_the_connecting_identity(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+    mocker: MockerFixture,
+):
+    """The session var carries the token the state was loaded under.
+
+    Duplicate-token handling hands back a fresh token, and the state is loaded
+    under it. Leaving `router_session.client_token` empty until the first event
+    would let anything reading it in between -- a background task, a
+    shared-state link -- address the wrong state tree.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+        mocker: pytest-mock fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    state = Mock()
+    state.router_data = {}
+    mocker.patch.object(
+        event_namespace.app.state_manager,
+        "modify_state",
+        Mock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=state))),
+    )
+
+    # No duplicate: the connecting token is recorded.
+    await event_namespace.link_token_to_sid("sid1", token)
+    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == token
+    assert state.router_session.client_token == token
+    assert state.router_session.session_id == "sid1"
+
+    # Duplicate: the *new* token is recorded, not the one the client sent.
+    # The duplicate branch emits the replacement token to the client, which
+    # needs a server the bare namespace does not have.
+    event_namespace.emit = AsyncMock()  # pyright: ignore[reportAttributeAccessIssue]
+    new_token = "a-fresh-token"
+    mocker.patch.object(
+        event_namespace._token_manager,
+        "link_token_to_sid",
+        AsyncMock(return_value=new_token),
+    )
+    await event_namespace.link_token_to_sid("sid2", token)
+    assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == new_token
+    assert state.router_session.client_token == new_token
+    assert state.router_session.session_id == "sid2"
+
+
+@pytest.mark.asyncio
+async def test_on_event_does_not_share_the_cached_headers(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """Each event gets its own headers mapping, not the cached one.
+
+    The headers reach `state.router_data`, a plain mutable dict, so sharing
+    the cached mapping would let a handler mutating it corrupt the connection
+    cache for every later event on the socket.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    await event_namespace.on_connect("sid1", _connect_environ(token))
+    cached_headers = event_namespace._static_router_data["sid1"][
+        constants.RouteVar.HEADERS
+    ]
+
+    await event_namespace.on_event("sid1", _client_event_payload())
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    _, event = enqueue_mock.call_args[0]
+    event_headers = event.router_data[constants.RouteVar.HEADERS]
+
+    assert event_headers == cached_headers
+    assert event_headers is not cached_headers
+    # Mutating what the handler sees must not reach the connection cache.
+    event_headers["user-agent"] = "mutated"
+    assert cached_headers["user-agent"] == "test-agent"
+
+    enqueue_mock.reset_mock()
+    await event_namespace.on_event("sid1", _client_event_payload())
+    _, next_event = enqueue_mock.call_args[0]
+    assert (
+        next_event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
+    )
+
+
+@pytest.mark.asyncio
+async def test_on_event_falls_back_to_environ_without_connect(
+    token: str,
+    event_namespace_with_processor_mock: EventNamespace,
+):
+    """on_event computes and caches the static router_data if connect was missed.
+
+    Args:
+        token: A token.
+        event_namespace_with_processor_mock: The event namespace fixture.
+    """
+    event_namespace = event_namespace_with_processor_mock
+    await event_namespace._token_manager.link_token_to_sid(token, "sid1")
+    event_namespace.app.sio = Mock(
+        get_environ=Mock(return_value=_connect_environ(token))
+    )
+
+    await event_namespace.on_event("sid1", _client_event_payload())
+    await event_namespace.on_event("sid1", _client_event_payload())
+
+    # The environ is only consulted once; the result is cached for the sid.
+    event_namespace.app.sio.get_environ.assert_called_once()
+    enqueue_mock = cast(AsyncMock, event_namespace.app.event_processor.enqueue)
+    assert enqueue_mock.call_count == 2
+    for call in enqueue_mock.call_args_list:
+        _, event = call[0]
+        assert event.router_data[constants.RouteVar.SESSION_ID] == "sid1"
+        assert (
+            event.router_data[constants.RouteVar.HEADERS]["user-agent"] == "test-agent"
+        )
 
 
 @pytest.mark.parametrize("compile_raises", [False, True])

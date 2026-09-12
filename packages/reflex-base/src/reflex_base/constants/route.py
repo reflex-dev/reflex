@@ -11,9 +11,27 @@ class RouteArgType(SimpleNamespace):
     LIST = "arg_list"
 
 
-# the name of the backend var containing path and client information
+# the name of the state attribute exposing path and client information
 ROUTER = "router"
 ROUTER_DATA = "router_data"
+
+# The names of the per-field base vars holding router data on the root state.
+# Session and headers are constant for the lifetime of a websocket connection,
+# while page, url, and route_id change on every navigation; keeping them in
+# separate vars means a navigation delta only re-sends the navigation fields.
+ROUTER_SESSION = "router_session"
+ROUTER_HEADERS = "router_headers"
+ROUTER_PAGE = "router_page"
+ROUTER_URL = "router_url"
+ROUTER_ROUTE_ID = "router_route_id"
+
+ROUTER_VARS = (
+    ROUTER_SESSION,
+    ROUTER_HEADERS,
+    ROUTER_PAGE,
+    ROUTER_URL,
+    ROUTER_ROUTE_ID,
+)
 
 
 class RouteVar(SimpleNamespace):

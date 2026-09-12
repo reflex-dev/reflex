@@ -25,7 +25,9 @@ from typing import (
     Final,
     ParamSpec,
     TypeVar,
+    cast,
     get_type_hints,
+    overload,
 )
 
 from reflex_base import constants
@@ -73,7 +75,15 @@ from typing_extensions import Self
 import reflex.istate.dynamic
 from reflex import event
 from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
-from reflex.istate.data import RouterData
+from reflex.istate.data import (
+    HeaderData,
+    PageData,
+    ReflexURL,
+    RouterData,
+    RouterDataVar,
+    SessionData,
+    URLData,
+)
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
@@ -376,6 +386,124 @@ def _is_user_descriptor(value: Any) -> bool:
     return not is_computed_var(value)
 
 
+def _router_fget(self: BaseState) -> RouterData:
+    """Assemble the RouterData view over the per-field router vars.
+
+    Args:
+        self: The state instance.
+
+    Returns:
+        The RouterData for the current connection and page.
+    """
+    return RouterData(
+        session=self.router_session,
+        headers=self.router_headers,
+        _page=self.router_page,
+        # URLData.href always holds a ReflexURL at runtime (see URLData).
+        url=cast("ReflexURL", self.router_url.href),
+        route_id=self.router_route_id,
+    )
+
+
+def _router_fset(self: BaseState, value: RouterData) -> None:
+    """Decompose a RouterData assignment into the per-field router vars.
+
+    Args:
+        self: The state instance.
+        value: The RouterData to store.
+    """
+    self.router_session = value.session
+    self.router_headers = value.headers
+    self.router_page = value._page
+    self.router_url = URLData.from_url(value.url)
+    self.router_route_id = value.route_id
+
+
+def _get_router_var(cls: type[BaseState]) -> RouterDataVar:
+    """Get (or build and cache) the router switchboard var for a state class.
+
+    Args:
+        cls: The state class the ``router`` attribute was accessed on.
+
+    Returns:
+        The RouterDataVar over the root state's per-field router vars.
+    """
+    root_cls = cls.get_root_state()
+    router_var = root_cls.__dict__.get("_reflex_router_var")
+    if router_var is None:
+        base_vars = root_cls.base_vars
+        if constants.ROUTER_SESSION not in base_vars:
+            # BaseState itself and mixins never initialize base vars; give
+            # introspection-style access an unbound switchboard.
+            return RouterDataVar(_js_expr="", _var_type=RouterData)
+        router_var = RouterDataVar.create(
+            session=base_vars[constants.ROUTER_SESSION],
+            headers=base_vars[constants.ROUTER_HEADERS],
+            page=base_vars[constants.ROUTER_PAGE],
+            url=base_vars[constants.ROUTER_URL],
+            route_id=base_vars[constants.ROUTER_ROUTE_ID],
+        )
+        setattr(root_cls, "_reflex_router_var", router_var)  # noqa: B010
+    return router_var
+
+
+class _RouterDescriptor(property):
+    """Property exposing the per-field router vars as a single ``router`` attribute.
+
+    Instance access composes a ``RouterData`` view from the per-field router
+    vars and assignment decomposes one into them, so existing reads and writes
+    of ``state.router`` keep working unchanged. Class-level access returns the
+    ``RouterDataVar`` switchboard, resolving ``State.router.<attr>`` to the
+    underlying per-field base var. Subclassing ``property`` keeps the state
+    field machinery from treating this as a base var and lets ComputedVar
+    dependency tracking recurse into the getter, so any computed var reading
+    ``self.router`` depends on the per-field vars.
+    """
+
+    if TYPE_CHECKING:
+
+        @overload
+        def __get__(self, instance: None, owner: type, /) -> RouterDataVar: ...
+
+        @overload
+        def __get__(self, instance: BaseState, owner: type, /) -> RouterData: ...
+
+        def __get__(self, instance: Any, owner: type | None = None, /) -> Any:
+            """Get the switchboard var (class) or RouterData view (instance).
+
+            Args:
+                instance: The state instance, or None for class access.
+                owner: The class through which the attribute was accessed.
+
+            Returns:
+                The RouterDataVar for class access, or the RouterData view.
+            """
+
+        def __set__(self, instance: Any, value: RouterData) -> None:
+            """Set the router data on the instance.
+
+            Args:
+                instance: The state instance.
+                value: The RouterData to store.
+            """
+
+    else:
+
+        def __get__(self, instance: Any, owner: type | None = None, /):
+            """Get the switchboard var (class) or RouterData view (instance).
+
+            Args:
+                instance: The state instance, or None for class access.
+                owner: The class through which the attribute was accessed.
+
+            Returns:
+                The RouterDataVar for class access, or the RouterData view.
+            """
+            if instance is None:
+                return _get_router_var(owner)
+            return super().__get__(instance, owner)
+
+
 all_base_state_classes: dict[str, None] = {}
 
 # Instance bookkeeping fields and framework methods read on every event. They
@@ -494,8 +622,27 @@ class BaseState(EvenMoreBasicBaseState):
         default_factory=builtins.dict, is_var=False
     )
 
-    # The router data for the current page
-    router: Field[RouterData] = field(default_factory=RouterData)
+    # The per-connection session data (constant for the socket lifetime).
+    router_session: Field[SessionData] = field(default_factory=SessionData)
+
+    # The headers of the connection request (constant for the socket lifetime).
+    router_headers: Field[HeaderData] = field(default_factory=HeaderData)
+
+    # The page data for the current page (deprecated; params feeds dynamic route vars).
+    router_page: Field[PageData] = field(default_factory=PageData)
+
+    # The parsed URL of the current page.
+    router_url: Field[URLData] = field(default_factory=URLData)
+
+    # The route pattern that matched the current page.
+    router_route_id: Field[str] = field(default="")
+
+    # Switchboard for the router vars above: instance reads compose a
+    # RouterData view, writes decompose into the per-field vars, and class
+    # access returns the RouterDataVar. Deliberately not a Field: storing each
+    # kind of router data in its own base var means a navigation delta only
+    # re-sends the navigation-scoped vars, not session/headers.
+    router = _RouterDescriptor(_router_fget, _router_fset)
 
     # Whether the state has ever been touched since instantiation.
     _was_touched: bool = field(default=False, is_var=False)
@@ -730,6 +877,11 @@ class BaseState(EvenMoreBasicBaseState):
             **cls.inherited_vars,
             **cls.base_vars,
             **cls.computed_vars,
+            # `router` is a switchboard over the per-field router vars rather
+            # than a field of its own, but it is usable as a Var everywhere one
+            # is accepted, so it is listed here (and thus inherited by
+            # substates). It has no backing field, so it never reaches a delta.
+            constants.ROUTER: _get_router_var(cls),
         }
         cls.event_handlers = {}
 
@@ -995,6 +1147,19 @@ class BaseState(EvenMoreBasicBaseState):
                 # Do not perform dep calculation when cache=False (these are always dirty).
                 continue
             for state_name, dvar_set in cvar._deps(objclass=cls).items():
+                if constants.ROUTER in dvar_set:
+                    # Legacy explicit dependency on the pre-split `router` var:
+                    # depend on all the per-field router vars instead.
+                    console.deprecate(
+                        feature_name='ComputedVar deps=["router"]',
+                        reason="the router var was split; depend on the specific"
+                        ' router var instead (e.g. deps=["router_url"]).',
+                        deprecation_version="0.9.9",
+                        removal_version="1.0",
+                    )
+                    dvar_set = (dvar_set - {constants.ROUTER}) | set(
+                        constants.ROUTER_VARS
+                    )
                 state_cls = cls.get_root_state().get_class_substate(state_name)
                 for dvar in dvar_set:
                     defining_state_cls = state_cls
@@ -1091,7 +1256,9 @@ class BaseState(EvenMoreBasicBaseState):
         """
         hints = cls._get_type_hints()
         for name, computed_var_ in cls._get_computed_vars():
-            if name in hints:
+            # `router` is not a field, but shadowing the descriptor would
+            # silently break router access for the whole state tree.
+            if name in hints or name == constants.ROUTER:
                 msg = f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsBaseVarsError(msg)
 
@@ -1125,6 +1292,11 @@ class BaseState(EvenMoreBasicBaseState):
                 "dirty_vars",
                 "dirty_substates",
                 "router_data",
+                # Listed in `vars` but backed by no field of its own, so a
+                # `router` annotation must never become a base var that would
+                # half-shadow the descriptor. Substates are already covered by
+                # `inherited_vars` above; this catches a root state class.
+                constants.ROUTER,
             }
             | types.RESERVED_BACKEND_VAR_NAMES
         )
@@ -1511,7 +1683,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         def argsingle_factory(param: str):
             def inner_func(self: BaseState) -> str:
-                return self.router._page.params.get(param, "")
+                return self.router_page.params.get(param, "")
 
             inner_func.__name__ = param
 
@@ -1519,7 +1691,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         def arglist_factory(param: str):
             def inner_func(self: BaseState) -> list[str]:
-                return self.router._page.params.get(param, [])
+                return self.router_page.params.get(param, [])
 
             inner_func.__name__ = param
 
@@ -1536,7 +1708,7 @@ class BaseState(EvenMoreBasicBaseState):
             dynamic_vars[param] = DynamicRouteVar(
                 fget=func,
                 auto_deps=False,
-                deps=["router"],
+                deps=[constants.ROUTER_PAGE],
                 _var_data=VarData.from_state(cls, param),
             )
             setattr(cls, param, dynamic_vars[param])
@@ -1714,7 +1886,7 @@ class BaseState(EvenMoreBasicBaseState):
         # Reset the base vars.
         fields = self.get_fields()
         for prop_name in self.base_vars:
-            if prop_name == constants.ROUTER:
+            if prop_name in constants.ROUTER_VARS:
                 continue  # never reset the router data
             field = fields[prop_name]
             if default_factory := field.default_factory:
@@ -1731,6 +1903,86 @@ class BaseState(EvenMoreBasicBaseState):
         # Recursively reset the substates.
         for substate in self.substates.values():
             substate.reset()
+
+    def _update_router_vars(
+        self,
+        router_data: builtins.dict[str, Any],
+        previous_router_data: builtins.dict[str, Any],
+    ) -> builtins.dict[str, Any]:
+        """Update the per-field router vars from a new router_data dict.
+
+        Each var is rebuilt only when the router_data keys it derives from
+        changed, so connection-scoped data (session, headers) is not recomputed
+        on every navigation, and is then assigned only when the rebuilt value
+        actually differs -- different keys can still yield an equal value (an
+        absent key and an empty one both produce the default), and assigning
+        regardless would dirty the var, mark the state touched, and persist it.
+
+        A key missing from ``router_data`` carries no information about the
+        value it feeds, so the previous one is carried forward rather than
+        letting the constructors default it away: a payload holding only the
+        navigation keys must not empty the connection-scoped vars, nor rebuild
+        the page and URL without the origin header that gives them their host.
+
+        Args:
+            router_data: The new router_data dict.
+            previous_router_data: The router_data dict this state last saw.
+
+        Returns:
+            The router_data to store on the state: the new values over the
+            previous ones, so a partial payload does not drop keys for the
+            next comparison either.
+        """
+        # Merging also makes an absent key compare equal to what it replaced,
+        # so it is not read as a change without a special case for it.
+        merged = (
+            {**previous_router_data, **router_data}
+            if previous_router_data
+            else router_data
+        )
+        get = merged.get
+        prev_get = previous_router_data.get
+
+        headers_changed = prev_get(constants.RouteVar.HEADERS) != get(
+            constants.RouteVar.HEADERS
+        )
+        # Only the origin header feeds the URL/page host, so the navigation
+        # vars must not be rebuilt for a change to any other header.
+        origin_changed = headers_changed and (
+            prev_get(constants.RouteVar.HEADERS, {}).get("origin", "")
+            != get(constants.RouteVar.HEADERS, {}).get("origin", "")
+        )
+
+        if (
+            any(
+                prev_get(key) != get(key)
+                for key in (
+                    constants.RouteVar.CLIENT_TOKEN,
+                    constants.RouteVar.SESSION_ID,
+                    constants.RouteVar.CLIENT_IP,
+                )
+            )
+            and (session := SessionData.from_router_data(merged)) != self.router_session
+        ):
+            self.router_session = session
+        if (
+            headers_changed
+            and (headers := HeaderData.from_router_data(merged)) != self.router_headers
+        ):
+            self.router_headers = headers
+        if (
+            origin_changed
+            or prev_get(constants.RouteVar.PATH) != get(constants.RouteVar.PATH)
+            or prev_get(constants.RouteVar.ORIGIN) != get(constants.RouteVar.ORIGIN)
+            or prev_get(constants.RouteVar.QUERY) != get(constants.RouteVar.QUERY)
+        ):
+            if (page := PageData.from_router_data(merged)) != self.router_page:
+                self.router_page = page
+            if (url := URLData.from_router_data(merged)) != self.router_url:
+                self.router_url = url
+            if (route_id := get(constants.RouteVar.PATH, "")) != self.router_route_id:
+                self.router_route_id = route_id
+        return merged
 
     @classmethod
     @functools.lru_cache
@@ -1844,7 +2096,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise RuntimeError(msg)
         state_in_redis = await state_manager.get_state(
-            token=BaseStateToken(ident=self.router.session.client_token, cls=state_cls),
+            token=BaseStateToken(ident=self.router_session.client_token, cls=state_cls),
             top_level=False,
             for_state_instance=self,
         )
@@ -2222,7 +2474,8 @@ class BaseState(EvenMoreBasicBaseState):
         state = state.copy()
         if state.get("parent_state") is not None:
             # Do not serialize router data in substates (only the root state).
-            state.pop("router", None)
+            for router_var in constants.ROUTER_VARS:
+                state.pop(router_var, None)
             state.pop("router_data", None)
         # Never serialize parent_state or substates.
         state.pop("parent_state", None)
@@ -2243,6 +2496,10 @@ class BaseState(EvenMoreBasicBaseState):
         """
         state["parent_state"] = None
         state["substates"] = {}
+        # Pre-split pickles stored a RouterData under `router`, which is now a
+        # descriptor; drop it so unpickling does not route through the setter.
+        # The schema check in _deserialize discards such states anyway.
+        state.pop("router", None)
         for key, value in state.items():
             object.__setattr__(self, key, value)
 
@@ -2619,7 +2876,7 @@ class OnLoadInternalState(State):
             The list of events to queue for on load handling.
         """
         load_events = RegistrationContext.get().app.get_load_events(
-            self.router.url.path
+            self.router_url.path
         )
         if not load_events:
             self.is_hydrated = True
