@@ -339,9 +339,12 @@ class BaseEventNamespace(ABC):
         """
         # Determine the token for this SID
         if (token := self.sid_to_token.get(sid)) is None:
-            logger.warning(
-                f"Received event from session {sid} with no associated token. This may indicate a bug. Event data: {data}"
-            )
+            # The mapping is dropped when a token moves to another socket or
+            # its record goes stale, so a live connection can reach this and
+            # keep sending. Log it per frame at debug, without the
+            # client-controlled payload: at warning level it would be a log
+            # flood and an injection vector both.
+            logger.debug(f"Ignoring event from session {sid} with no linked token.")
             return
 
         # Both transports JSON-decode the frame, so a Reflex client's event
@@ -885,6 +888,12 @@ class WebsocketEventNamespace(BaseEventNamespace):
             # Ordered by frequency: events are the hot path, heartbeat pongs
             # arrive once per ping interval.
             if event == _EVENT:
+                if sid not in self.sid_to_token:
+                    # The token moved to another socket or its record went
+                    # stale: nothing this session sends can be served, and a
+                    # reconnect is how it gets a working one back.
+                    logger.debug(f"Closing session {sid}: its token is gone.")
+                    return 1008
                 await self.handle_event(sid, data, scope)
             elif event == PONG_MESSAGE:
                 # Receiving it already refreshed the liveness deadline.

@@ -1197,3 +1197,41 @@ async def test_large_metadata_is_bounded_only_by_the_message_limit(
 
     assert websocket.close_code is None
     assert channel.messages == [("payload", metadata, [b"\x00\x01"])]
+
+
+@pytest.mark.asyncio
+async def test_event_from_a_session_whose_token_went_away_closes_it(
+    namespace: WebsocketEventNamespace, mock_app: Mock, caplog
+):
+    """A session that loses its token mid-connection is closed, not left logging.
+
+    The token manager drops the mapping when a token moves to another socket
+    or its record goes stale, while that socket stays open and sending.
+    Everything it sends is unservable, so answering each frame with a warning
+    that embeds the client's payload is both a log flood and an injection
+    vector.
+    """
+
+    class LosesItsToken(FakeWebSocket):
+        """Drops the token mapping once the connection is already serving."""
+
+        async def receive(self) -> dict[str, Any]:
+            message = await super().receive()
+            namespace.sid_to_token.clear()
+            return message
+
+    websocket = LosesItsToken()
+    websocket.feed(
+        ["ping"],
+        ["event", {"name": "state.on_click", "payload": {"x": "\n[fake] log line"}}],
+    )
+
+    with caplog.at_level(logging.DEBUG):
+        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+        await _drain_tasks()
+
+    assert websocket.close_code == 1008
+    mock_app.event_processor.enqueue.assert_not_awaited()
+    # Nothing the client sent reached the log, at any level.
+    assert "[fake] log line" not in caplog.text
+    assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
