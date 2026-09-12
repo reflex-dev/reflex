@@ -1,40 +1,106 @@
-import { useEffect, useState, createElement } from "react";
-import { codeToHtml } from "shiki";
+import { useEffect, useRef, useState, createElement } from "react";
 
-/**
- * Code component that uses Shiki to convert code to HTML and render it.
- *
- * @param code - The code to be highlighted.
- * @param theme - The theme to be used for highlighting.
- * @param language - The language of the code.
- * @param transformers - The transformers to be applied to the code.
- * @param decorations - The decorations to be applied to the code.
- * @param divProps - Additional properties to be passed to the div element.
- * @returns The rendered code block.
- */
+/** Render readable code during SSR and highlight only near the viewport. */
 export function Code({
   code,
   theme,
+  themes,
   language,
   transformers,
   decorations,
   ...divProps
 }) {
-  const [codeResult, setCodeResult] = useState("");
+  const container = useRef(null);
+  const [highlighted, setHighlighted] = useState(null);
+
   useEffect(() => {
-    async function fetchCode() {
-      const result = await codeToHtml(code, {
-        lang: language,
-        theme,
-        transformers,
-        decorations,
-      });
-      setCodeResult(result);
+    let active = true;
+    let observer;
+    let idle;
+    const highlight = () => {
+      const run = async () => {
+        try {
+          const { codeToHtml } = await import("shiki");
+          const html = await codeToHtml(code, {
+            lang: language,
+            ...(themes ? { themes } : { theme }),
+            transformers,
+            decorations,
+          });
+          if (active) {
+            setHighlighted({
+              code,
+              language,
+              theme,
+              themes,
+              transformers,
+              decorations,
+              html,
+            });
+          }
+        } catch (error) {
+          // Unsupported grammars or a failed download must leave code readable.
+          console.warn("Unable to highlight code block", error);
+        }
+      };
+      if ("requestIdleCallback" in window) {
+        idle = window.requestIdleCallback(run, { timeout: 1000 });
+      } else {
+        idle = window.setTimeout(run, 0);
+      }
+    };
+    if ("IntersectionObserver" in window) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            observer.disconnect();
+            highlight();
+          }
+        },
+        { rootMargin: "200px" },
+      );
+      observer.observe(container.current);
+    } else {
+      highlight();
     }
-    fetchCode();
-  }, [code, language, theme, transformers, decorations]);
-  return createElement("div", {
-    dangerouslySetInnerHTML: { __html: codeResult },
-    ...divProps,
-  });
+    return () => {
+      active = false;
+      observer?.disconnect();
+      if ("cancelIdleCallback" in window) window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+    };
+  }, [code, language, theme, themes, transformers, decorations]);
+
+  if (
+    highlighted?.code === code &&
+    highlighted.language === language &&
+    highlighted.theme === theme &&
+    highlighted.themes === themes &&
+    highlighted.transformers === transformers &&
+    highlighted.decorations === decorations
+  ) {
+    return createElement("div", {
+      ...divProps,
+      ref: container,
+      dangerouslySetInnerHTML: { __html: highlighted.html },
+    });
+  }
+  return createElement(
+    "div",
+    { ...divProps, ref: container },
+    createElement(
+      "pre",
+      { className: "shiki", tabIndex: 0 },
+      createElement(
+        "code",
+        null,
+        ...code
+          .split("\n")
+          .flatMap((line, index) => [
+            index > 0 ? "\n" : null,
+            createElement("span", { className: "line", key: index }, line),
+          ]),
+      ),
+    ),
+  );
 }

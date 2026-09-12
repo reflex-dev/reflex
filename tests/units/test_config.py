@@ -207,6 +207,13 @@ def test_invalid_frontend_compression_formats(base_config_values: dict[str, Any]
         "/\\\\",
         "/app/\\",
         "\\\\server\\share",
+        "/app.",
+        "/app ",
+        "/ .",
+        "/.. ",
+        "/app./sub",
+        "//srv",
+        "/app//sub",
     ],
 )
 def test_frontend_path_rejects_unsafe_segments(
@@ -226,14 +233,17 @@ def test_frontend_path_rejects_unsafe_segments(
     ("frontend_path", "expected"),
     [
         ("v1.2/..app/.hidden", "/v1.2/..app/.hidden"),
-        ("/app//sub", "/app//sub"),
+        ("", ""),
+        ("/", "/"),
+        ("/app/", "/app/"),
+        ("/my app", "/my app"),
         ("/v1:beta", "/v1:beta"),
     ],
 )
 def test_frontend_path_allows_plain_names(
     base_config_values: dict[str, Any], frontend_path: str, expected: str
 ):
-    """Names merely containing dots or colons, and empty segments, are not traversal.
+    """Plain names and an optional trailing slash remain supported.
 
     Args:
         base_config_values: Minimal valid Config kwargs.
@@ -904,6 +914,26 @@ def test_disable_plugins_bad_env_spec_warns(
         for r in caplog.records
         if r.levelno == logging.WARNING
     )
+
+
+def test_get_config_ignores_another_project_on_sys_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A project without rxconfig must not inherit an installed app's config."""
+    foreign = tmp_path / "foreign"
+    foreign.mkdir()
+    (foreign / "rxconfig.py").write_text(
+        'from reflex_base.config import Config\nconfig = Config(app_name="foreign")\n'
+    )
+    project = tmp_path / "project"
+    project.mkdir()
+    monkeypatch.syspath_prepend(str(foreign))
+
+    config = reflex_base.config._get_config(project)
+
+    assert config.app_name == ""
+    assert config.frontend_path == ""
+    assert "rxconfig" not in sys.modules
 
 
 def test_get_config_loads_once_for_shared_context(monkeypatch: pytest.MonkeyPatch):

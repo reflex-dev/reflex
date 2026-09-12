@@ -20,8 +20,13 @@ Configure the SDK the way you prefer:
 
   ```bash
   OTEL_SERVICE_NAME=myapp OTEL_TRACES_EXPORTER=otlp OTEL_METRICS_EXPORTER=otlp \
-  OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318 reflex run
+    OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4318 reflex run
   ```
+
+  Install `opentelemetry-exporter-otlp-proto-http` for this HTTP/protobuf
+  configuration. Without the protocol setting, `otlp` defaults to gRPC and
+  requires the separate gRPC exporter package.
 
 - Or build the providers yourself and pass them:
   `ReflexInstrumentor().instrument(tracer_provider=provider, meter_provider=meter_provider)`.

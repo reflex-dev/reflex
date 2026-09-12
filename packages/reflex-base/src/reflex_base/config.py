@@ -9,7 +9,7 @@ import threading
 import urllib.parse
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
-from importlib.util import find_spec
+from importlib.machinery import PathFinder
 from pathlib import Path, PureWindowsPath
 from types import ModuleType
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Literal
@@ -177,6 +177,7 @@ class BaseConfig:
         react_strict_mode: Whether to use React strict mode.
         frontend_compression_formats: Pre-compressed frontend asset formats to generate for production builds. Supported values are "gzip", "brotli", and "zstd". Use an empty list to disable build-time pre-compression.
         frontend_packages: Additional frontend packages to install.
+        frontend_lazy_bundled_libraries: Load optional dynamic-component libraries when a dynamic component is first evaluated, rather than importing their full namespaces on every page. Defaults to False for compatibility with scripts that read window.__reflex directly.
         state_manager_mode: Indicate which type of state manager to use.
         redis_lock_expiration: Maximum expiration lock time for redis state manager.
         redis_lock_warning_threshold: Maximum lock time before warning for redis state manager.
@@ -243,6 +244,8 @@ class BaseConfig:
 
     frontend_packages: list[str] = dataclasses.field(default_factory=list)
 
+    frontend_lazy_bundled_libraries: bool = False
+
     state_manager_mode: constants.StateManagerMode = constants.StateManagerMode.DISK
 
     redis_lock_expiration: int = constants.Expiration.LOCK
@@ -294,10 +297,10 @@ def _is_plain_path_segment(segment: str) -> bool:
         segment: One slash-delimited, non-empty segment of a configured path prefix.
 
     Returns:
-        False for ``.`` and ``..``, and for anything Windows would treat as a
-        separator, drive, or root: backslashes, ``C:``-style prefixes, UNC paths.
+        False for empty segments, trailing dots or spaces, and anything Windows
+        would treat as a separator, drive, or root.
     """
-    if segment == "..":
+    if segment.endswith((".", " ")):
         return False
     windows = PureWindowsPath(segment)
     return not windows.anchor and windows.parts == (segment,)
@@ -609,14 +612,18 @@ class Config(BaseConfig):
         # frontend_path also names the directory below the build output that the
         # built frontend is relocated into and served from, so every segment must
         # be a plain directory name on POSIX and Windows alike.
-        for segment in self.frontend_path.split("/"):
-            if segment and not _is_plain_path_segment(segment):
-                msg = (
-                    f"frontend_path {self.frontend_path!r} contains {segment!r}, "
-                    "which is not a plain directory name "
-                    "(no '.', '..', backslashes, or drive letters)."
-                )
-                raise ConfigError(msg)
+        if self.frontend_path not in ("", "/"):
+            for segment in (
+                self.frontend_path.removeprefix("/").removesuffix("/").split("/")
+            ):
+                if not _is_plain_path_segment(segment):
+                    msg = (
+                        f"frontend_path {self.frontend_path!r} contains {segment!r}, "
+                        "which is not a plain directory name "
+                        "(no empty segments, trailing dots or spaces, backslashes, "
+                        "or drive letters)."
+                    )
+                    raise ConfigError(msg)
 
         if self.backend_path and not self.backend_path.startswith("/"):
             self.backend_path = f"/{self.backend_path}"
@@ -982,20 +989,18 @@ def _get_config(project_root: Path | None = None) -> Config:
             # RegistrationContexts hold independent Config instances.
             sys.modules.pop(constants.Config.MODULE, None)
             if _config_module_deps_root != project_root:
-                # Evict the previous project's dependencies before probing:
-                # find_spec answers from sys.modules, so modules left behind by
-                # another project directory would fake the existence check
-                # below. Same-root loads skip this so the modules the app
-                # imported stay the ones rxconfig.py sees.
+                # Evict the previous project's dependencies so this project's
+                # rxconfig.py imports its own, not same-named modules another
+                # project directory left behind. Same-root loads skip this so
+                # the modules the app imported stay the ones rxconfig.py sees.
                 for dep in _config_module_deps:
                     sys.modules.pop(dep, None)
                 _config_module_deps.clear()
                 _config_module_deps_root = project_root
-            # only import the module if it exists. If a module spec exists then
-            # the module exists.
-            if not find_spec(constants.Config.MODULE):
-                # we need this condition to ensure that a ModuleNotFound error is not thrown when
-                # running unit/integration tests or during `reflex init`.
+            # Only the requested project may supply rxconfig; searching all of
+            # sys.path can pick up an unrelated editable app during reflex init.
+            # PathFinder also supports a project-local rxconfig package.
+            if PathFinder.find_spec(constants.Config.MODULE, [cwd]) is None:
                 return Config(app_name="", _skip_plugins_checks=True)
             with _record_imports() as recorder:
                 try:
