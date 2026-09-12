@@ -1076,12 +1076,18 @@ def _count_events(config: MinifyConfig) -> int:
 
 
 @overload
-def _open_minify_session(*, require_exists: Literal[True] = True) -> MinifyConfig: ...
+def _open_minify_session(
+    *, require_exists: Literal[True] = True, for_json: bool = False
+) -> MinifyConfig: ...
 @overload
-def _open_minify_session(*, require_exists: Literal[False]) -> MinifyConfig | None: ...
+def _open_minify_session(
+    *, require_exists: Literal[False], for_json: bool = False
+) -> MinifyConfig | None: ...
 
 
-def _open_minify_session(*, require_exists: bool = True) -> MinifyConfig | None:
+def _open_minify_session(
+    *, require_exists: bool = True, for_json: bool = False
+) -> MinifyConfig | None:
     """Run the standard minify-CLI prelude.
 
     Compiles the user's app (so dynamic states register) and loads
@@ -1091,6 +1097,8 @@ def _open_minify_session(*, require_exists: bool = True) -> MinifyConfig | None:
     Args:
         require_exists: When ``True`` (default), missing ``minify.json`` is
             a fatal error. When ``False``, returns ``None`` instead.
+        for_json: Whether the command writes a machine-readable document, in
+            which case stdout is claimed before the app logs anything.
 
     Returns:
         The parsed config, or ``None`` if ``require_exists`` is ``False`` and
@@ -1101,6 +1109,9 @@ def _open_minify_session(*, require_exists: bool = True) -> MinifyConfig | None:
         _get_minify_json_path,
         _load_minify_config_uncached,
     )
+
+    if for_json:
+        log.reserve_stdout()
 
     exists = _get_minify_json_path().exists()
     if require_exists and not exists:
@@ -1234,16 +1245,6 @@ def minify_list(output_json: bool):
     from reflex.minify import get_state_full_path
     from reflex.state import BaseState, State
 
-    # Claim stdout before loading the app: the dry-run compile logs warnings,
-    # which would otherwise land in the middle of the JSON document.
-    if output_json:
-        log.reserve_stdout()
-
-    # Claim stdout before loading the app: the dry-run compile logs warnings,
-    # which would otherwise land in the middle of the JSON document.
-    if output_json:
-        log.reserve_stdout()
-
     class EventHandlerData(TypedDict):
         """Type for event handler data in state tree."""
 
@@ -1260,7 +1261,7 @@ def minify_list(output_json: bool):
         substates: list[StateTreeData]
 
     # CLI inspection shows config contents regardless of env var settings.
-    config = _open_minify_session(require_exists=False)
+    config = _open_minify_session(require_exists=False, for_json=output_json)
     states_map = config["states"] if config else {}
     events_map = config["events"] if config else {}
 
@@ -1386,12 +1387,7 @@ def minify_lookup(output_json: bool, minified_path: str):
     from reflex.minify import collect_all_states, get_state_full_path, get_state_module
     from reflex.state import State
 
-    # Claim stdout before loading the app: the dry-run compile logs warnings,
-    # which would otherwise land in the middle of the JSON document.
-    if output_json:
-        log.reserve_stdout()
-
-    config = _open_minify_session()
+    config = _open_minify_session(for_json=output_json)
 
     # Build lookup: full_path -> minified_id (None if no entry).
     path_to_id: dict[str, str | None] = {}

@@ -354,13 +354,10 @@ def ensure_minify_resolver_for_active_context() -> None:
 
     if not _get_minify_json_path().exists():
         return
-    ctx = RegistrationContext.ensure_context()
-    if (
-        isinstance(ctx.name_resolver, MinifyNameResolver)
-        and ctx.name_resolver.config is not None
-    ):
+    resolver = RegistrationContext.ensure_context().name_resolver
+    if isinstance(resolver, MinifyNameResolver) and resolver.config is not None:
         return
-    ctx.set_name_resolver(MinifyNameResolver.from_disk())
+    install_minify_resolver()
 
 
 def scheme_digest() -> str:
@@ -662,7 +659,8 @@ def validate_minify_config(
             for mid, handlers in _find_duplicate_ids(state_events.items()).items()
         )
 
-    code_state_paths = {get_state_full_path(s) for s in all_states}
+    code_event_keys = collect_handler_names(all_states)
+    code_state_paths = set(code_event_keys)
 
     # Check for missing states (in code but not in config)
     missing: list[str] = [
@@ -688,11 +686,6 @@ def validate_minify_config(
         if state_path not in code_state_paths
     )
 
-    code_event_keys: dict[str, set[str]] = {}
-    for state_cls in all_states:
-        state_path = get_state_full_path(state_cls)
-        code_event_keys[state_path] = set(state_cls.event_handlers.keys())
-
     for state_path, state_events in config["events"].items():
         if state_path not in code_event_keys:
             warnings.append(f"Orphaned events for state: {state_path}")
@@ -704,6 +697,23 @@ def validate_minify_config(
             )
 
     return errors, warnings, missing
+
+
+def collect_handler_names(
+    states: Iterable[type[BaseState]],
+) -> dict[str, set[str]]:
+    """Map each state's config path to the handler names defined on it.
+
+    Args:
+        states: The state classes to inventory.
+
+    Returns:
+        ``state_path -> {handler_name}`` for every given state.
+    """
+    return {
+        get_state_full_path(state_cls): set(state_cls.event_handlers)
+        for state_cls in states
+    }
 
 
 def sync_minify_config(
@@ -726,13 +736,8 @@ def sync_minify_config(
         The updated configuration.
     """
     all_states = collect_all_states(root_state)
-    code_state_paths = {get_state_full_path(s) for s in all_states}
-
-    # Build current event keys by state
-    code_events_by_state: dict[str, set[str]] = {}
-    for state_cls in all_states:
-        state_path = get_state_full_path(state_cls)
-        code_events_by_state[state_path] = set(state_cls.event_handlers.keys())
+    code_events_by_state = collect_handler_names(all_states)
+    code_state_paths = set(code_events_by_state)
 
     new_states: dict[str, StateEntry] = {
         k: StateEntry(id=v["id"], parent=v["parent"])
