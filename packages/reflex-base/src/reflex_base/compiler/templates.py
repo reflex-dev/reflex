@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 from collections.abc import Iterable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
@@ -10,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from reflex_base import constants
 from reflex_base.constants import Hooks
 from reflex_base.utils import memo_paths
-from reflex_base.utils.format import format_state_name, json_dumps
+from reflex_base.utils.format import format_state_name, json_dumps, orjson_dumps
 from reflex_base.vars.base import VarData
 
 if TYPE_CHECKING:
@@ -220,7 +219,7 @@ def app_root_template(
     lazy_imports_setup = ""
     if lazy_window_libraries:
         loaders = "\n".join(
-            f"    {json.dumps(lib_path)}: () => import({json.dumps(lib_path)}),"
+            f"    {orjson_dumps(lib_path)}: () => import({orjson_dumps(lib_path)}),"
             for _, lib_path in lazy_window_libraries
         )
         # Register before child effects run, including an initially mounted
@@ -441,11 +440,11 @@ export const initialState = {initial_state_json}
 
 export const defaultColorMode = {default_color_mode}
 export const StateContexts = {{{state_contexts_str}}};
-export const clientStorage = {"{}" if client_storage is None else json.dumps(client_storage)}
+export const clientStorage = {"{}" if client_storage is None else orjson_dumps(client_storage)}
 
 {state_str}
 
-export const isDevMode = {json.dumps(is_dev_mode)};
+export const isDevMode = {orjson_dumps(is_dev_mode)};
 
 // The static runtime reads these through the registry, so this module is the
 // only one Vite re-executes when they change.
@@ -590,7 +589,7 @@ def page_template(
 
     hooks_str = _render_hooks(hooks)
     display_name_str = (
-        f"Component.displayName = {json.dumps(f'Component({route})')};\n"
+        f"Component.displayName = {orjson_dumps(f'Component({route})')};\n"
         if route
         else ""
     )
@@ -633,7 +632,7 @@ def package_json_template(
     """
     # Ensure "type" is not duplicated since it's always set to "module"
     additional_keys.pop("type", None)
-    return json.dumps({
+    return orjson_dumps({
         "name": additional_keys.pop("name", "reflex"),
         "type": "module",
         "scripts": scripts,
@@ -676,7 +675,7 @@ def vite_config_template(
     if allowed_hosts is True:
         allowed_hosts_line = "\n    allowedHosts: true,"
     elif isinstance(allowed_hosts, list) and allowed_hosts:
-        allowed_hosts_line = f"\n    allowedHosts: {json.dumps(allowed_hosts)},"
+        allowed_hosts_line = f"\n    allowedHosts: {orjson_dumps(allowed_hosts)},"
     else:
         allowed_hosts_line = ""
     # Dev-only: prebundle the browser's React from React's production files
@@ -979,7 +978,7 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     # ``display_name`` is resolved by the caller (``compile_experimental_component_memo``),
     # which is the layer that knows the memo's clean export name — the JS symbol
     # here carries a module hash and would make a poor label.
-    display_name = json.dumps(component["display_name"])
+    display_name = orjson_dumps(component["display_name"])
     if component.get("pure_wrapper"):
         # Keep the label assignment inside the pure initializer, so bundlers
         # can remove the entire unused export from a shared component module.

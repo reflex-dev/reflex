@@ -1,7 +1,6 @@
 """This module provides utilities for managing JavaScript runtimes like Node.js and Bun."""
 
 import functools
-import json
 import logging
 import os
 import tempfile
@@ -17,6 +16,7 @@ from reflex_base.utils.exceptions import SystemPackageMissingError
 from rich.markup import escape
 
 from reflex.utils import console, frontend_skeleton, net, path_ops, processes
+from reflex.utils.format import orjson_loads
 from reflex.utils.prerequisites import get_web_dir, windows_check_onedrive_in_path
 
 logger = logging.getLogger(__name__)
@@ -440,8 +440,8 @@ def _existing_web_package_sections() -> tuple[set[str], set[str]]:
     if not web_pkg_json_path.exists():
         return set(), set()
     try:
-        data = json.loads(web_pkg_json_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+        data = orjson_loads(web_pkg_json_path.read_bytes())
+    except (ValueError, OSError) as e:
         logger.warning(
             f"Failed to read {web_pkg_json_path}: {e}; skipping existing package check."
         )

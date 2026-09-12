@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import inspect
 import json
 import os
@@ -11,6 +12,11 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 from rich.markup import escape as escape_markup
+
+try:
+    import orjson  # pyright: ignore[reportMissingImports]
+except ImportError:
+    orjson = None
 
 from reflex_base import constants
 from reflex_base.utils import exceptions
@@ -400,7 +406,7 @@ def format_prop(
         if isinstance(prop, str):
             if is_wrapped(prop, "{"):
                 return prop
-            return json_dumps(prop)
+            return orjson_dumps(prop)
 
         # For dictionaries, convert any properties to strings.
         if isinstance(prop, dict):
@@ -498,7 +504,7 @@ def format_event(event_spec: EventSpec) -> str:
             name._js_expr,
             (
                 wrap(
-                    json.dumps(val._js_expr).strip('"').replace("`", "\\`"),
+                    orjson_dumps(val._js_expr).strip('"').replace("`", "\\`"),
                     "`",
                 )
                 if val._var_is_string
@@ -697,6 +703,17 @@ def format_library_name(library_fullname: str | dict[str, Any]) -> str:
     return lib
 
 
+# orjson has no passthrough option for Enum/uuid.UUID, so a serializer
+# registered for one would be silently bypassed. Fall back to the stdlib.
+_orjson_registry_shadowed = False
+
+
+def _mark_orjson_registry_shadowed() -> None:
+    """Stop using orjson because the serializer registry now shadows it."""
+    global _orjson_registry_shadowed
+    _orjson_registry_shadowed = True
+
+
 _serialize: Callable[[Any], Any] | None = None
 
 
@@ -732,6 +749,350 @@ def json_dumps(obj: Any, **kwargs) -> str:
     kwargs.setdefault("default", _get_serialize())
 
     return json.dumps(obj, **kwargs)
+
+
+# Types orjson serializes natively but Reflex has its own serializers for:
+# route them through default= so both backends agree. Dataclasses would
+# otherwise become field dicts instead of e.g. a Color's CSS string, and
+# datetimes would use an ISO 'T' separator instead of the space-separated
+# form that ``serializers.serialize_datetime`` produces.
+_ORJSON_PASSTHROUGH_OPTS = (
+    (orjson.OPT_PASSTHROUGH_DATACLASS | orjson.OPT_PASSTHROUGH_DATETIME)
+    if orjson is not None
+    else 0
+)
+
+
+def _orjson_default(o: Any) -> Any:
+    """Serialize a value orjson does not handle natively.
+
+    Args:
+        o: The value orjson could not serialize.
+
+    Returns:
+        A value orjson can serialize.
+    """
+    # orjson hands float subclasses to default (unlike str/int/list/dict ones);
+    # the stdlib serializes them as plain numbers, so coerce to match.
+    if isinstance(o, float):
+        return float(o)
+    return _get_serialize()(o)
+
+
+def _serialize_or_raise(o: Any) -> Any:
+    """Serialize a custom type, raising when nothing can serialize it.
+
+    ``serializers.serialize`` returns None for an unregistered type, which
+    ``json`` then writes as ``null``. Every ``orjson_dumps`` call site replaced
+    a bare ``json.dumps`` that raised instead, and a silent ``null`` in a
+    generated artifact is a dropped tailwind entry or package.json field.
+
+    Args:
+        o: The value to serialize.
+
+    Returns:
+        A JSON-representable value.
+
+    Raises:
+        TypeError: If no serializer applies to the value.
+    """
+    from reflex_base.utils import serializers
+
+    if serializers.get_serializer(type(o)) is None and not (
+        dataclasses.is_dataclass(o) and not isinstance(o, type)
+    ):
+        msg = f"Object of type {type(o).__name__} is not JSON serializable"
+        raise TypeError(msg)
+    return serializers.serialize(o)
+
+
+def _orjson_default_strict(o: Any) -> Any:
+    """Serialize a value orjson does not handle, rejecting unregistered types.
+
+    Args:
+        o: The value orjson could not serialize.
+
+    Returns:
+        A value orjson can serialize.
+    """
+    # orjson hands float subclasses to default (unlike str/int/list/dict ones);
+    # the stdlib serializes them as plain numbers, so coerce to match.
+    if isinstance(o, float):
+        return float(o)
+    return _serialize_or_raise(o)
+
+
+def _utf8_safe(out: str, obj: Any, **kwargs: Any) -> str:
+    """Re-escape output that a UTF-8 writer would reject.
+
+    ``ensure_ascii=False`` leaves lone surrogates (e.g. a path decoded with
+    ``surrogateescape``) raw, and every caller hands the result to a UTF-8
+    writer -- a file, or the socket transport. ``isascii`` keeps the check off
+    the common path.
+
+    Args:
+        out: The serialized output.
+        obj: The object that produced it, for a re-dump.
+        kwargs: The keyword arguments used for the original dump.
+
+    Returns:
+        A JSON string that encodes as UTF-8.
+    """
+    if out.isascii():
+        return out
+    try:
+        out.encode("utf-8")
+    except UnicodeEncodeError:
+        return json_dumps(obj, **{**kwargs, "ensure_ascii": True})
+    return out
+
+
+def _json_dumps_like_orjson(obj: Any, **kwargs: Any) -> str:
+    """Serialize with the stdlib, matching orjson's output byte for byte.
+
+    Generated artifacts (``package.json``, config files, ``pyi_hashes.json``)
+    must not depend on whether the optional extra is installed. Two-space
+    indentation already agrees between the backends; only the separators of
+    non-indented output differ.
+
+    Args:
+        obj: The object to serialize.
+        kwargs: Optional keyword arguments (indent, sort_keys, ensure_ascii).
+
+    Returns:
+        A JSON string.
+    """
+    if kwargs.get("indent") is None:
+        kwargs["separators"] = (",", ":")
+    kwargs.setdefault("default", _serialize_or_raise)
+    return _utf8_safe(json_dumps(obj, **kwargs), obj, **kwargs)
+
+
+def orjson_dumps(obj: Any, **kwargs) -> str:
+    """Serialize obj to a JSON string, using orjson when available.
+
+    Custom types go through ``serializers.serialize``, and an unregistered one
+    raises ``TypeError`` as the bare ``json.dumps`` these calls replaced did.
+    Supports orjson's two-space indentation and key sorting, falling back to
+    the stdlib for unsupported arguments or values.
+
+    Output is byte-identical with and without orjson installed, except for
+    floats below 1e-4: orjson renders those with its own shortest
+    representation (``0.00001``, ``1e-7``) where the stdlib emits ``1e-05`` and
+    ``1e-07``. Artifact hashes do not depend on this -- ``get_package_json_and_hash``
+    serializes with the stdlib -- but a byte comparison against a file rendered
+    by the other backend can report a spurious change.
+
+    Use ``orjson_dumps_socket`` for socket payloads: it also escapes user
+    strings that collide with the sentinels the frontend reviver strips.
+
+    Args:
+        obj: The object to serialize.
+        kwargs: Optional keyword arguments (indent, sort_keys, ensure_ascii).
+
+    Returns:
+        A JSON string.
+    """
+    if type(obj) is str and not kwargs:
+        # Hot path: every string literal Var serializes one bare string, and
+        # neither the indent/sort options nor the non-finite float scan below
+        # can apply to it.
+        if orjson is not None:
+            try:
+                return orjson.dumps(obj).decode()
+            except TypeError:
+                # orjson rejects strings that are not valid UTF-8. Escaping is
+                # the only output a UTF-8 writer downstream can accept.
+                return json.dumps(obj)
+        return _utf8_safe(json.dumps(obj, ensure_ascii=False), obj)
+
+    indent = None
+    if kwargs:
+        indent = kwargs.get("indent")
+        if (
+            # orjson only supports two-space indentation and always emits UTF-8.
+            indent not in (None, 2)
+            or kwargs.get("ensure_ascii")
+            or kwargs.keys() - {"indent", "sort_keys", "ensure_ascii"}
+        ):
+            kwargs.setdefault("default", _serialize_or_raise)
+            return json_dumps(obj, **kwargs)
+
+    if orjson is None or _orjson_registry_shadowed:
+        return _json_dumps_like_orjson(obj, **kwargs)
+
+    option = _ORJSON_PASSTHROUGH_OPTS
+    if indent:
+        option |= orjson.OPT_INDENT_2
+    if kwargs.get("sort_keys"):
+        option |= orjson.OPT_SORT_KEYS
+
+    try:
+        out = orjson.dumps(obj, default=_orjson_default_strict, option=option)
+    except TypeError:
+        # The stdlib handles values orjson rejects, such as large integers, and
+        # re-raises for a genuinely unserializable one.
+        return _json_dumps_like_orjson(obj, **kwargs)
+
+    if b"null" in out:
+        # That null may be a NaN/Infinity orjson dropped, which the stdlib
+        # keeps as a bare token -- a valid literal in the JS this renders.
+        # Re-serializing every null-bearing payload is what makes the output
+        # backend-independent, and these are compile-time artifacts.
+        return _json_dumps_like_orjson(obj, **kwargs)
+    return out.decode()
+
+
+def orjson_loads(data: str | bytes) -> Any:
+    """Deserialize a JSON string or bytes, using orjson when available.
+
+    Falls back to stdlib json.loads if orjson is not installed.
+
+    orjson keeps integers in ``-2**63..2**64-1`` exact and silently rounds
+    anything outside that to a float, so use stdlib ``json.loads`` for payloads
+    that may carry arbitrary-precision integers (the 128-bit ``project_hash``
+    in ``reflex.json``) or client-supplied ones (socket events, upload args).
+
+    Args:
+        data: JSON string or bytes to deserialize.
+
+    Returns:
+        The deserialized Python object.
+    """
+    if orjson is None:
+        return json.loads(data)
+    return orjson.loads(data)
+
+
+# Shared with the JS-side reviver in utils/helpers/json.js, which rewrites bare
+# NaN/Infinity tokens to these sentinel strings before parsing. Colliding user
+# strings get the escape prefix; the reviver strips one level.
+NAN_SENTINEL = "__reflex_nan__"
+INF_SENTINEL = "__reflex_inf__"
+NEG_INF_SENTINEL = "__reflex_neg_inf__"
+SENTINEL_ESCAPE_PREFIX = "__reflex_esc__"
+_SENTINELS = frozenset({NAN_SENTINEL, INF_SENTINEL, NEG_INF_SENTINEL})
+_SENTINEL_COMMON_PREFIX = "__reflex_"
+_SENTINEL_PREFIX_BYTES = b"__reflex_"
+_INF = float("inf")
+
+_ORJSON_SOCKET_OPTS = (
+    (orjson.OPT_NON_STR_KEYS | _ORJSON_PASSTHROUGH_OPTS) if orjson is not None else 0
+)
+
+
+def _replace_non_finite_floats(obj: Any) -> Any:
+    # Copy-on-write: only allocate a new container if a child actually
+    # changed. ``is`` works as a "did we replace this" check because
+    # unchanged values are returned as the same object.
+    if isinstance(obj, str):
+        if obj.startswith(_SENTINEL_COMMON_PREFIX) and (
+            obj in _SENTINELS or obj.startswith(SENTINEL_ESCAPE_PREFIX)
+        ):
+            return SENTINEL_ESCAPE_PREFIX + obj
+        return obj
+    if isinstance(obj, float):
+        if obj != obj:
+            return NAN_SENTINEL
+        if obj == _INF:
+            return INF_SENTINEL
+        if obj == -_INF:
+            return NEG_INF_SENTINEL
+        return obj
+    if isinstance(obj, dict):
+        new = None
+        for k, v in obj.items():
+            v2 = _replace_non_finite_floats(v)
+            if v2 is not v:
+                if new is None:
+                    new = dict(obj)
+                new[k] = v2
+        return new if new is not None else obj
+    if isinstance(obj, (list, tuple)):
+        new = None
+        for i, v in enumerate(obj):
+            v2 = _replace_non_finite_floats(v)
+            if v2 is not v:
+                if new is None:
+                    new = list(obj)
+                new[i] = v2
+        return new if new is not None else obj
+    return obj
+
+
+def _json_dumps_socket_fallback(obj: Any) -> str:
+    """Serialize a socket payload with stdlib json using dump-then-scan.
+
+    Bare NaN/Infinity tokens are restored by the frontend's bare-token
+    rewriter, so the sentinel walk only runs when the output contains the
+    sentinel prefix (a possible collision). The re-dump must escape strings
+    produced by ``serializers.serialize`` for custom types (e.g. the delta
+    inside a ``StateUpdate``), which the plain walker cannot reach — hence
+    the walking ``default`` callback.
+
+    Both dumps go through ``_utf8_safe``: a lone surrogate (which orjson
+    rejects, routing the payload here) would otherwise produce a string the
+    socket transport cannot encode.
+
+    Args:
+        obj: The object to serialize.
+
+    Returns:
+        A compact JSON string ready for socket emit.
+    """
+    kwargs: dict[str, Any] = {"separators": (",", ":")}
+    out = json_dumps(obj, **kwargs)
+    if _SENTINEL_COMMON_PREFIX not in out:
+        return _utf8_safe(out, obj, **kwargs)
+
+    from reflex_base.utils import serializers
+
+    def _default(o: Any) -> Any:
+        return _replace_non_finite_floats(serializers.serialize(o))
+
+    kwargs["default"] = _default
+    walked = _replace_non_finite_floats(obj)
+    return _utf8_safe(json_dumps(walked, **kwargs), walked, **kwargs)
+
+
+def orjson_dumps_socket(obj: Any, **kwargs: Any) -> str:
+    """Serialize obj for socket emit, preserving non-finite floats.
+
+    Routes custom types through ``serializers.serialize`` (matching the stdlib
+    ``json_dumps`` behavior). NaN/Infinity survive as bare tokens (stdlib) or
+    sentinel strings (collision escaping); the frontend restores both.
+
+    Tries orjson first and keeps its output only when the payload provably
+    contains no non-finite float, i.e. when no ``null`` was emitted. orjson
+    collapses NaN/Infinity to ``null``, which is indistinguishable from a
+    genuine ``None``, and telling the two apart means visiting every value in
+    Python -- measurably more expensive than letting the stdlib serialize the
+    payload once. So an ambiguous payload is handed to the stdlib instead.
+
+    Accepts and ignores ``**kwargs`` so the callable is compatible with
+    socket.io's encoder, which calls ``dumps(data, separators=(',', ':'))``.
+    Output is compact in both backends.
+
+    Args:
+        obj: The object to serialize.
+        kwargs: Ignored (compat with socket.io's encoder signature).
+
+    Returns:
+        A JSON string ready for socket emit.
+    """
+    del kwargs  # Output is always compact; socket.io's separators arg is moot.
+    if orjson is None or _orjson_registry_shadowed:
+        return _json_dumps_socket_fallback(obj)
+
+    try:
+        out = orjson.dumps(obj, default=_orjson_default, option=_ORJSON_SOCKET_OPTS)
+    except TypeError:
+        # Payloads orjson can't represent even via default (e.g. int > 64-bit).
+        return _json_dumps_socket_fallback(obj)
+
+    if b"null" not in out and _SENTINEL_PREFIX_BYTES not in out:
+        return out.decode()
+    return _json_dumps_socket_fallback(obj)
 
 
 def collect_form_dict_names(form_dict: dict[str, Any]) -> dict[str, Any]:
