@@ -432,6 +432,47 @@ class BaseEventNamespace(ABC):
         # Emit the test event.
         await self.emit(_PING, "pong", to=sid)
 
+    def _within_error_budget(self, sid: str) -> bool:
+        """Whether another error-level record for this session fits the budget.
+
+        Error-level logging driven by client traffic -- a reported frontend
+        error, a channel handler a message made raise -- is budgeted per
+        session and per time window, so no client can flood the backend logs
+        or starve the reports of other sessions.
+
+        Args:
+            sid: The session id.
+
+        Returns:
+            Whether the record may be written.
+        """
+        # Rate limit per session so a client cannot flood the backend logs.
+        error_count = self._client_error_counts.get(sid, 0)
+        if error_count >= self._MAX_CLIENT_ERRORS_PER_SID:
+            return False
+
+        # Also bound total entries per time window: per-SID budgets reset on
+        # reconnect, so they alone do not stop scripted reconnect loops.
+        now = time.monotonic()
+        if now - self._client_error_window_start > self._CLIENT_ERROR_WINDOW_SECONDS:
+            self._client_error_window_start = now
+            self._client_error_window_count = 0
+        if self._client_error_window_count >= self._MAX_CLIENT_ERRORS_PER_WINDOW:
+            if self._client_error_window_count == self._MAX_CLIENT_ERRORS_PER_WINDOW:
+                # Warn once per window so suppression is visible in the logs
+                # and a flooding client cannot silently starve reports from
+                # other sessions.
+                self._client_error_window_count += 1
+                logger.warning(
+                    f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
+                    f"client-triggered errors in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
+                    "suppressing further reports for this window."
+                )
+            return False
+        self._client_error_window_count += 1
+        self._client_error_counts[sid] = error_count + 1
+        return True
+
     async def handle_client_error(self, sid: str, data: Any) -> None:
         """Handle errors reported by the frontend.
 
@@ -465,31 +506,8 @@ class BaseEventNamespace(ABC):
             logger.debug(f"Ignoring client_error report from unknown SID {sid}.")
             return
 
-        # Rate limit per session so a client cannot flood the backend logs.
-        error_count = self._client_error_counts.get(sid, 0)
-        if error_count >= self._MAX_CLIENT_ERRORS_PER_SID:
+        if not self._within_error_budget(sid):
             return
-
-        # Also bound total entries per time window: per-SID budgets reset on
-        # reconnect, so they alone do not stop scripted reconnect loops.
-        now = time.monotonic()
-        if now - self._client_error_window_start > self._CLIENT_ERROR_WINDOW_SECONDS:
-            self._client_error_window_start = now
-            self._client_error_window_count = 0
-        if self._client_error_window_count >= self._MAX_CLIENT_ERRORS_PER_WINDOW:
-            if self._client_error_window_count == self._MAX_CLIENT_ERRORS_PER_WINDOW:
-                # Warn once per window so suppression is visible in the logs
-                # and a flooding client cannot silently starve reports from
-                # other sessions.
-                self._client_error_window_count += 1
-                logger.warning(
-                    f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
-                    f"client_error reports in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
-                    "suppressing further reports for this window."
-                )
-            return
-        self._client_error_window_count += 1
-        self._client_error_counts[sid] = error_count + 1
 
         error_type = format.sanitize_client_log_value(data.get("error_type", "unknown"))
         if error_type == constants.ClientErrorType.DISPATCH_MISSING:
@@ -779,10 +797,17 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 return
             await session.channel.on_message(session, event, data, buffers)
         except Exception:
-            logger.exception(
-                f"Error handling {event!r} on channel {channel_name!r} "
-                f"for session {sid}."
-            )
+            # A client can keep sending whatever made the handler raise, so
+            # the traceback is budgeted like any other client-triggered error.
+            if self._within_error_budget(sid):
+                logger.exception(
+                    f"Error handling {event!r} on channel {channel_name!r} "
+                    f"for session {sid}."
+                )
+            else:
+                logger.debug(
+                    f"Suppressed a repeated channel handler error for session {sid}."
+                )
 
     async def _handle_binary_frame(
         self, sid: str, frame: bytes, max_size: int

@@ -1259,3 +1259,41 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
     # Nothing the client sent reached the log, at any level.
     assert "[fake] log line" not in caplog.text
     assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []
+
+
+@pytest.mark.asyncio
+async def test_a_failing_channel_handler_cannot_flood_the_logs(
+    namespace: WebsocketEventNamespace, mock_app: Mock, caplog
+):
+    """Tracebacks from a handler a client keeps breaking are budgeted.
+
+    The connection survives a raising handler, which is what lets a client
+    send the same message again; without a budget each repeat would write
+    another traceback.
+    """
+
+    class BoomChannel(Channel):
+        name = "boom"
+
+        async def on_message(self, session, event, data, buffers) -> None:
+            """Fail the way a handler meeting unexpected metadata would."""
+            raise KeyError(data)
+
+    mock_app._channels = {"boom": BoomChannel()}
+    attempts = namespace._MAX_CLIENT_ERRORS_PER_SID * 4
+    websocket = FakeWebSocket()
+    websocket.feed(
+        [OPEN_MESSAGE, None, "boom"],
+        *([["go", {"n": 1}, "boom"]] * attempts),
+        ["ping"],
+    )
+
+    with caplog.at_level(logging.DEBUG):
+        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+        await _drain_tasks()
+
+    tracebacks = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert len(tracebacks) == namespace._MAX_CLIENT_ERRORS_PER_SID
+    # The connection is still serving: a channel bug is not the client's fault.
+    assert websocket.close_code is None
+    assert ["ping", "pong"] in websocket.sent
