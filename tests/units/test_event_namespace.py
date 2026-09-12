@@ -1200,17 +1200,32 @@ async def test_large_metadata_is_bounded_only_by_the_message_limit(
 
 
 @pytest.mark.asyncio
-async def test_event_from_a_session_whose_token_went_away_closes_it(
-    namespace: WebsocketEventNamespace, mock_app: Mock, caplog
+@pytest.mark.parametrize(
+    "frame",
+    [
+        pytest.param(["event", {"name": "state.on_click", "payload": {}}], id="event"),
+        pytest.param(["push", {"x": 1}, "probe"], id="channel"),
+        pytest.param(None, id="channel-binary"),
+    ],
+)
+async def test_frames_from_a_session_whose_token_went_away_close_it(
+    namespace: WebsocketEventNamespace, mock_app: Mock, caplog, frame: Any
 ):
-    """A session that loses its token mid-connection is closed, not left logging.
+    """A session that loses its token mid-connection is closed, whatever it sends.
 
     The token manager drops the mapping when a token moves to another socket
-    or its record goes stale, while that socket stays open and sending.
-    Everything it sends is unservable, so answering each frame with a warning
-    that embeds the client's payload is both a log flood and an injection
-    vector.
+    or its record goes stale, while that socket stays open. Nothing it sends
+    can be served after that: an event has no token to enqueue under, and a
+    channel message would keep invoking handlers under a token that has moved
+    on. The payload stays out of the log as well -- at warning level, per
+    frame, it would be a log flood and an injection vector both.
     """
+    channel = RecordingChannel(accepts_binary=True)
+    mock_app._channels = {"probe": channel}
+    if frame is None:
+        frame = encode_channel_frame(
+            "push", {"x": "\n[fake] log line"}, "probe", [b"!"]
+        )
 
     class LosesItsToken(FakeWebSocket):
         """Drops the token mapping once the connection is already serving."""
@@ -1221,10 +1236,7 @@ async def test_event_from_a_session_whose_token_went_away_closes_it(
             return message
 
     websocket = LosesItsToken()
-    websocket.feed(
-        ["ping"],
-        ["event", {"name": "state.on_click", "payload": {"x": "\n[fake] log line"}}],
-    )
+    websocket.feed([OPEN_MESSAGE, None, "probe"], frame)
 
     with caplog.at_level(logging.DEBUG):
         await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
@@ -1232,6 +1244,7 @@ async def test_event_from_a_session_whose_token_went_away_closes_it(
 
     assert websocket.close_code == 1008
     mock_app.event_processor.enqueue.assert_not_awaited()
+    assert channel.messages == []
     # Nothing the client sent reached the log, at any level.
     assert "[fake] log line" not in caplog.text
     assert [r for r in caplog.records if r.levelno >= logging.WARNING] == []

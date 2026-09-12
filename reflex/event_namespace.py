@@ -888,12 +888,6 @@ class WebsocketEventNamespace(BaseEventNamespace):
             # Ordered by frequency: events are the hot path, heartbeat pongs
             # arrive once per ping interval.
             if event == _EVENT:
-                if sid not in self.sid_to_token:
-                    # The token moved to another socket or its record went
-                    # stale: nothing this session sends can be served, and a
-                    # reconnect is how it gets a working one back.
-                    logger.debug(f"Closing session {sid}: its token is gone.")
-                    return 1008
                 await self.handle_event(sid, data, scope)
             elif event == PONG_MESSAGE:
                 # Receiving it already refreshed the liveness deadline.
@@ -986,6 +980,16 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 if received["type"] == "websocket.disconnect":
                     break
                 last_received = time.monotonic()
+                if sid not in self._token_manager.sid_to_token:
+                    # The token moved to another socket or its record went
+                    # stale. Nothing this session sends can be served -- not
+                    # events, not channel messages, which would otherwise keep
+                    # invoking handlers under a token that has moved on -- and
+                    # a reconnect is how it gets a working session back.
+                    logger.debug(f"Closing session {sid}: its token is gone.")
+                    close_code = 1008
+                    await websocket.close(code=close_code)
+                    break
                 text = received.get("text")
                 if text is not None:
                     close_code = await self._handle_frame(
