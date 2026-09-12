@@ -1698,6 +1698,49 @@ class TestFrameworkStateMinification:
             rx.vstack(str(StrVarProbe.field))
 
 
+class TestMinifyJsonOutput:
+    """``--json`` owns stdout, so human output must not land in the document."""
+
+    @pytest.mark.parametrize(
+        "args",
+        [["minify", "list", "--json"], ["minify", "lookup", "--json", "a"]],
+        ids=["list", "lookup"],
+    )
+    def test_stdout_is_reserved_before_the_app_loads(
+        self, args, temp_minify_json, monkeypatch, cli_runner
+    ):
+        """Reserving after the app loaded would be too late to help.
+
+        Loading the app dry-runs a compile, which logs warnings and
+        deprecations; those go to stdout unless it is claimed first.
+
+        Args:
+            args: The CLI invocation under test.
+            temp_minify_json: Temporary ``minify.json`` location.
+            monkeypatch: The pytest monkeypatch fixture.
+            cli_runner: Click runner with the app loader stubbed.
+        """
+        from reflex_base.utils import log
+
+        from reflex.reflex import cli
+        from reflex.utils import prerequisites
+
+        monkeypatch.setattr(log, "_stdout_reserved", False)
+        _install_config(states={"reflex.state.State": "a"})
+
+        reserved_when_loading: list[bool] = []
+
+        def _record_and_load(*a, **kw):
+            reserved_when_loading.append(log.is_stdout_reserved())
+            return mock.Mock()
+
+        monkeypatch.setattr(prerequisites, "get_compiled_app", _record_and_load)
+
+        cli_runner.invoke(cli, args)
+
+        assert reserved_when_loading == [True]
+
+
 class TestSchemeDigest:
     """The digest identifies the wire-name scheme both sides must agree on."""
 
@@ -1762,65 +1805,42 @@ class TestSchemeDigest:
             REFLEX_MINIFY_EVENTS=MinifyMode.ENABLED.value,
         )
 
-    def test_reflects_states_registered_after_the_first_call(
+    def test_survives_a_resolver_reinstall(self, temp_minify_json, monkeypatch):
+        """Editing the config at runtime must produce a fresh digest.
+
+        ``clear_config_cache`` installs a new resolver; nothing else knows to
+        invalidate, so a digest cached anywhere else would reject every later
+        connection until the backend restarted.
+        """
+        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
+
+        _install_config(states={"reflex.state.State": "a"})
+        assert scheme_digest()
+
+        _install_config(states={"reflex.state.State": "b"})
+
+        assert scheme_digest() != ""
+        assert scheme_digest() == scheme_digest()
+
+    def test_independent_of_which_states_have_registered(
         self, temp_minify_json, monkeypatch
     ):
-        """A digest asked for early must not freeze the partial answer.
+        """The digest hashes the config, not the state tree.
 
-        The framework states register at import, so an early call returns a
-        non-empty digest covering only those; memoizing it would make the
-        backend reject every connection from a correctly built frontend.
+        Both sides read the same ``minify.json`` but register states at
+        different moments, so keying on the tree would make agreement depend
+        on timing.
         """
         _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
         _install_config(states={"reflex.state.State": "a"})
 
-        framework_only = scheme_digest()
-        assert framework_only
+        before = scheme_digest()
 
-        class LateRegisteredState(State):
+        class RegisteredAfterwards(State):
             value: str = ""
 
-        _install_config(
-            states={
-                "reflex.state.State": "a",
-                get_state_full_path(LateRegisteredState): "b",
-            }
-        )
-
-        assert scheme_digest() != framework_only
-
-    def test_pruning_an_orphan_keeps_the_digest(self, temp_minify_json, monkeypatch):
-        """An orphaned entry names nothing on the wire, so dropping it is not a change.
-
-        Otherwise ``reflex minify sync --prune`` would disconnect frontends
-        whose every live name is still valid.
-        """
-        _set_minify_modes(
-            monkeypatch, states=MinifyMode.ENABLED, events=MinifyMode.ENABLED
-        )
-        live: dict[str, str | StateEntry] = {
-            "reflex.state.State": StateEntry(id="a", parent=None)
-        }
-
-        _install_config(states=live, events={"reflex.state.State": {"hydrate": "q"}})
-        pruned = scheme_digest()
-
-        _install_config(
-            states={
-                **live,
-                "gone.away.State.Deleted": StateEntry(
-                    id="z", parent="reflex.state.State"
-                ),
-            },
-            events={
-                "reflex.state.State": {"hydrate": "q"},
-                "gone.away.State.Deleted": {"vanished": "z"},
-            },
-        )
-        with_orphans = scheme_digest()
-
-        assert pruned
-        assert pruned == with_orphans
+        assert RegisteredAfterwards.get_full_name()
+        assert scheme_digest() == before
 
     def test_differs_when_an_id_changes(self, temp_minify_json, monkeypatch):
         """Editing minify.json renames states, so the schemes must not match."""

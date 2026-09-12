@@ -1234,6 +1234,16 @@ def minify_list(output_json: bool):
     from reflex.minify import get_state_full_path
     from reflex.state import BaseState, State
 
+    # Claim stdout before loading the app: the dry-run compile logs warnings,
+    # which would otherwise land in the middle of the JSON document.
+    if output_json:
+        log.reserve_stdout()
+
+    # Claim stdout before loading the app: the dry-run compile logs warnings,
+    # which would otherwise land in the middle of the JSON document.
+    if output_json:
+        log.reserve_stdout()
+
     class EventHandlerData(TypedDict):
         """Type for event handler data in state tree."""
 
@@ -1375,6 +1385,11 @@ def minify_lookup(output_json: bool, minified_path: str):
 
     from reflex.minify import collect_all_states, get_state_full_path, get_state_module
     from reflex.state import State
+
+    # Claim stdout before loading the app: the dry-run compile logs warnings,
+    # which would otherwise land in the middle of the JSON document.
+    if output_json:
+        log.reserve_stdout()
 
     config = _open_minify_session()
 

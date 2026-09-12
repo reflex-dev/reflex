@@ -218,49 +218,42 @@ class MinifyNameResolver:
         default_factory=dict, repr=False
     )
 
+    _digest: str | None = dataclasses.field(default=None, repr=False)
+
     def digest(self) -> str:
-        """Digest the wire names this resolver produces for the registered states.
+        """Digest the wire names this resolver rewrites.
 
-        Only live names are hashed: an orphaned config entry names nothing on
-        the wire, so retaining or pruning one must not look like a mismatch.
+        The config and both modes are fixed for the life of an instance, so the
+        result is memoized here. Installing another resolver -- which is what
+        editing ``minify.json`` or toggling a mode at runtime does -- yields a
+        fresh instance and therefore a fresh digest, with no invalidation to
+        coordinate. Deliberately independent of which states have registered:
+        keying on that made the answer depend on when it was first asked for.
+
         A map is skipped entirely when its ``REFLEX_MINIFY_*`` mode is off, so
-        toggling a mode does register as a mismatch.
-
-        The result is deliberately not memoized: it reflects the states
-        registered so far, which a caller asking too early would freeze in
-        place. Callers that need it repeatedly cache it themselves, once they
-        know the state tree is complete.
+        toggling a mode registers as a mismatch just as editing the file does.
 
         Returns:
             A short hex digest, or ``""`` when no name is rewritten.
         """
-        if self.config is None or not (self.states_enabled or self.events_enabled):
+        if self._digest is None:
+            self._digest = self._compute_digest()
+        return self._digest
+
+    def _compute_digest(self) -> str:
+        """Hash the config entries that reach the wire.
+
+        Returns:
+            A short hex digest, or ``""`` when no name is rewritten.
+        """
+        if self.config is None:
             return ""
-        return self._compute_digest(self.config)
-
-    def _compute_digest(self, config: MinifyConfig) -> str:
-        """Hash the live portion of ``config``.
-
-        Args:
-            config: The loaded ``minify.json``.
-
-        Returns:
-            A short hex digest, or ``""`` when no name is rewritten.
-        """
-        states: dict[str, str] = {}
-        events: dict[str, dict[str, str]] = {}
-        for state_cls in collect_all_states():
-            path = get_state_full_path(state_cls)
-            if self.states_enabled and (entry := config["states"].get(path)):
-                states[path] = entry["id"]
-            if self.events_enabled and (configured := config["events"].get(path)):
-                live = {
-                    name: minified
-                    for name, minified in configured.items()
-                    if name in state_cls.event_handlers
-                }
-                if live:
-                    events[path] = live
+        states = (
+            {path: entry["id"] for path, entry in self.config["states"].items()}
+            if self.states_enabled
+            else {}
+        )
+        events = self.config["events"] if self.events_enabled else {}
         if not states and not events:
             return ""
         payload = json.dumps(
@@ -374,8 +367,8 @@ def scheme_digest() -> str:
     """Digest the wire-name scheme the active resolver produces.
 
     A frontend bundle and the backend it talks to must agree on what the names
-    on the wire mean. The result is memoized on the resolver instance, so
-    installing another resolver produces a fresh digest without coordination.
+    on the wire mean. Memoized on the resolver instance, so installing another
+    resolver produces a fresh digest without coordination.
 
     Returns:
         A short hex digest, or ``""`` when no name is rewritten.
