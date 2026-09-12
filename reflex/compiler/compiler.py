@@ -249,6 +249,19 @@ def _resolve_default_color_mode(theme: Component | None) -> str:
     return get_config().default_color_mode
 
 
+def _event_name(state_cls: type[BaseState], handler_name: str) -> str:
+    """Resolve the wire name of a handler defined on a state class.
+
+    Args:
+        state_cls: The state class declaring the handler.
+        handler_name: The handler's Python name.
+
+    Returns:
+        The event name under the active name resolver.
+    """
+    return format_event_handler(state_cls.event_handlers[handler_name])
+
+
 def _internal_event_names() -> templates.InternalEventNames:
     """Resolve the framework event names the context module dispatches.
 
@@ -258,17 +271,12 @@ def _internal_event_names() -> templates.InternalEventNames:
     return templates.InternalEventNames(
         main_state_name=State.get_name(),
         hydrate=get_hydrate_event_name(),
-        # ``@event()`` types this attribute as an EventCallback; the class dict
-        # holds the EventHandler it was rewritten into. The two below use
-        # ``@typing_event``, which types the attribute as the EventHandler.
-        on_load_internal=format_event_handler(
-            OnLoadInternalState.event_handlers["on_load_internal"]
+        on_load_internal=_event_name(OnLoadInternalState, "on_load_internal"),
+        update_vars_internal=_event_name(
+            UpdateVarsInternalState, "update_vars_internal"
         ),
-        update_vars_internal=format_event_handler(
-            UpdateVarsInternalState.update_vars_internal
-        ),
-        handle_frontend_exception=format_event_handler(
-            FrontendEventExceptionState.handle_frontend_exception
+        handle_frontend_exception=_event_name(
+            FrontendEventExceptionState, "handle_frontend_exception"
         ),
     )
 
