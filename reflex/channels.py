@@ -35,6 +35,11 @@ _NAME_PATTERN = re.compile(r"[A-Za-z0-9_./:-]{1,64}")
 # direction. Bounds the work a single inbound frame can ask for.
 MAX_MESSAGE_BUFFERS = 64
 
+# Names a client-side channel handle reports its own lifecycle under. A
+# message may not use them, or a consumer could not tell an application
+# message from the transport event it is named after.
+RESERVED_EVENTS = frozenset({"connect", "disconnect", "error"})
+
 # Sends one channel message to a connected session: (sid, channel, event,
 # data, buffers). Supplied by the transport when the session opens.
 ChannelSender = Callable[[str, str, str, Any, Sequence[bytes]], Awaitable[None]]
@@ -93,10 +98,17 @@ class ChannelSession:
             buffers: Binary attachments delivered alongside the metadata.
 
         Raises:
-            ValueError: If the message carries more attachments than a frame
-                may hold. Raised before anything is sent, so a fan-out fails
-                whole rather than reaching some clients.
+            ValueError: If the message name is reserved, or it carries more
+                attachments than a frame may hold. Raised before anything is
+                sent, so a fan-out fails whole rather than reaching some
+                clients.
         """
+        if event in RESERVED_EVENTS:
+            msg = (
+                f"Channel message name {event!r} is reserved: the client-side "
+                "handle reports its own lifecycle under it."
+            )
+            raise ValueError(msg)
         if len(buffers) > MAX_MESSAGE_BUFFERS:
             msg = (
                 f"Channel message {event!r} carries {len(buffers)} attachments, "
@@ -142,7 +154,7 @@ class Channel(ABC):
 
     # Whether inbound messages from this channel may carry binary
     # attachments. Off by default: a channel that never expects binary
-    # should not accept the allocation.
+    # answers an error instead of handing one to its handler.
     accepts_binary: ClassVar[bool] = False
 
     def __init__(self):

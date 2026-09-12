@@ -33,6 +33,13 @@ def ChannelApp():
       // Drop the socket the way the transport's own watchdog does on a dead
       // connection, so the test exercises the supported reconnect path.
       window.__probe.drop = () => probeChannel._transport._dropConnection("test");
+      // Drop and emit in the same tick: the socket is CLOSING but the channel
+      // still reports connected, so the frame queues on the transport rather
+      // than on the channel.
+      window.__probe.dropThenEmit = (n) => {
+        probeChannel._transport._dropConnection("test");
+        probeChannel.emit("push", { n }, [new Uint8Array([1, 2, 3, 4])]);
+      };
       // Emit while down, then mutate what was passed: the queued message must
       // still carry the values it was emitted with.
       window.__probe.pushThenMutate = (n) => {
@@ -190,3 +197,28 @@ def test_channel_reopens_and_flushes_after_a_reconnect(
     received = page.evaluate("window.__probe.received[0]")
     assert received["data"] == {"n": 9, "sizes": [4]}
     assert received["bytes"] == [4, 3, 2, 1]
+
+
+def test_frame_queued_on_the_transport_survives_the_reconnect(
+    channel_app: AppHarness, page: Page
+):
+    """A frame emitted as the socket drops is delivered once it is back.
+
+    Such a frame waits on the transport's own queue, so the channel has to be
+    reopened before that queue is flushed -- otherwise it reaches the backend
+    ahead of its `_open` and is answered with `channel_not_open`.
+
+    Args:
+        channel_app: Running AppHarness instance.
+        page: Playwright page fixture.
+    """
+    _connected_probe(channel_app, page)
+    connects = page.evaluate("window.__probe.connects")
+
+    page.evaluate("window.__probe.dropThenEmit(5)")
+    page.wait_for_function(f"window.__probe.connects > {connects}", timeout=30_000)
+    page.wait_for_function("window.__probe.received.length > 0", timeout=30_000)
+
+    received = page.evaluate("window.__probe.received[0]")
+    assert received["data"] == {"n": 5, "sizes": [4]}
+    assert page.evaluate("window.__probe.errors") == []

@@ -6,6 +6,7 @@ import pytest
 
 from reflex.channels import (
     MAX_MESSAGE_BUFFERS,
+    RESERVED_EVENTS,
     Channel,
     ChannelSession,
     validate_channel_name,
@@ -240,3 +241,16 @@ def test_channel_without_a_name_reports_it():
 
     with pytest.raises(ValueError, match="Invalid channel name"):
         NamelessChannel()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("event", sorted(RESERVED_EVENTS))
+async def test_send_rejects_reserved_message_names(event: str):
+    """A message may not impersonate the client handle's lifecycle events."""
+    channel = CollectingChannel()
+    session = channel.session("sid1")
+
+    with pytest.raises(ValueError, match="reserved"):
+        await session.send(event, {"anything": True})
+
+    assert channel.sent == []

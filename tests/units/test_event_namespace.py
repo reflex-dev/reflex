@@ -20,7 +20,12 @@ from starlette.routing import WebSocketRoute
 
 from reflex import event_namespace
 from reflex.app import App
-from reflex.channels import Channel, ChannelSession
+from reflex.channels import (
+    MAX_MESSAGE_BUFFERS,
+    RESERVED_EVENTS,
+    Channel,
+    ChannelSession,
+)
 from reflex.event_namespace import (
     CHANNEL_ERROR_MESSAGE,
     CLOSE_MESSAGE,
@@ -153,7 +158,12 @@ async def test_handshake_and_token_link(namespace: WebsocketEventNamespace):
     assert websocket.accepted
     assert websocket.accepted_subprotocol == "0.0.1"
     assert websocket.sent[0][0] == HANDSHAKE_MESSAGE
-    assert set(websocket.sent[0][1]) == {"ping_interval", "ping_timeout", "protocol"}
+    assert set(websocket.sent[0][1]) == {
+        "ping_interval",
+        "ping_timeout",
+        "protocol",
+        "max_message_size",
+    }
     assert websocket.sent[0][1]["protocol"] == PROTOCOL_VERSION
     await _drain_tasks()
     # The session was linked and unlinked again on disconnect.
@@ -1067,3 +1077,34 @@ def test_decoding_a_too_deeply_nested_header_is_a_value_error(mocker):
 
     with pytest.raises(ValueError, match="nested too deeply"):
         decode_channel_frame(frame)
+
+
+@pytest.mark.asyncio
+async def test_handshake_advertises_the_message_limit(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
+):
+    """The client needs the inbound limit to refuse an oversized frame itself."""
+    monkeypatch.setenv("REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE", "4096")
+    websocket = FakeWebSocket()
+    websocket.feed()
+
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.sent[0][1]["max_message_size"] == 4096
+
+
+def test_client_limits_match_the_protocol():
+    """The client enforces the same caps the backend closes the connection over.
+
+    Both ends declare them independently; a client cap that drifted above the
+    backend's would turn a loud local error back into a dropped connection.
+    """
+    template = WEBSOCKET_JS_TEMPLATE.read_text()
+
+    assert f"const MAX_MESSAGE_BUFFERS = {MAX_MESSAGE_BUFFERS};" in template
+    reserved = re.search(r"const LIFECYCLE_EVENTS = new Set\(\[([^\]]+)\]\);", template)
+    assert reserved is not None
+    assert {name.strip().strip('"') for name in reserved.group(1).split(",")} == set(
+        RESERVED_EVENTS
+    )

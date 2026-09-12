@@ -958,6 +958,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
                         "ping_interval": ping_interval,
                         "ping_timeout": ping_timeout,
                         "protocol": PROTOCOL_VERSION,
+                        # So a client can refuse an oversized frame itself
+                        # rather than lose the connection to one.
+                        "max_message_size": max_message_size,
                     },
                 ])
             )

@@ -24,6 +24,16 @@ const FRAME_ALIGNMENT = 8;
 // Messages a channel buffers while it is not open, oldest dropped first.
 const MAX_QUEUED_CHANNEL_MESSAGES = 64;
 
+// Attachments one channel message may carry (must match
+// reflex.channels.MAX_MESSAGE_BUFFERS). The backend closes the connection over
+// a frame that breaks its limits, so they are enforced here, where the mistake
+// is, rather than losing the app's socket for it.
+const MAX_MESSAGE_BUFFERS = 64;
+
+// A channel handle reports its own lifecycle under these names, so a message
+// may not use them (must match reflex.channels.RESERVED_EVENTS).
+const LIFECYCLE_EVENTS = new Set(["connect", "disconnect", "error"]);
+
 // Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
 // Rewrite them outside string literals so JSON.parse accepts the payload.
 // 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal, so it is
@@ -249,12 +259,25 @@ class ReflexChannel extends LocalEmitter {
    * @param buffers Binary attachments (ArrayBuffers or typed arrays).
    */
   emit(event, data, buffers = []) {
+    if (buffers?.length > MAX_MESSAGE_BUFFERS) {
+      throw new Error(
+        `Channel message "${event}" carries ${buffers.length} attachments, ` +
+          `over the ${MAX_MESSAGE_BUFFERS} a frame may hold.`,
+      );
+    }
     // Serialize now, connected or not: a queued frame must carry what was
     // emitted, not whatever the caller's payload and typed arrays hold by the
     // time the channel opens.
     const frame = buffers?.length
       ? encodeChannelFrame(event, data, this.name, buffers)
       : stringifyFrame([event, data, this.name]);
+    const limit = this._transport?._maxMessageSize;
+    if (limit && frame.byteLength > limit) {
+      throw new Error(
+        `Channel message "${event}" is ${frame.byteLength} bytes, over the ` +
+          `${limit} the backend accepts (REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE).`,
+      );
+    }
     if (this.connected && this._transport) {
       this._transport._send(frame);
       return;
@@ -316,6 +339,12 @@ class ReflexChannel extends LocalEmitter {
     }
     if (event === CHANNEL_ERROR_MESSAGE) {
       this._emitLocal("error", data);
+      return;
+    }
+    if (LIFECYCLE_EVENTS.has(event)) {
+      // The backend rejects these names; a frame carrying one is not from a
+      // Reflex backend and must not be mistaken for the handle's own events.
+      console.error(`Ignoring channel message named "${event}" (reserved)`);
       return;
     }
     this._emitLocal(event, data, buffers);
@@ -413,6 +442,8 @@ export class ReflexWebSocket extends LocalEmitter {
     this._connectTimeoutMs = 20 * 1000;
     this._connectTimer = null;
     this._closeReason = null;
+    // The backend's inbound message limit, learned from the handshake.
+    this._maxMessageSize = null;
     // Network emulation and OS offline do not interrupt established
     // websockets, so treat the browser's offline event as a disconnect.
     // Localhost connections keep working offline.
@@ -614,11 +645,10 @@ export class ReflexWebSocket extends LocalEmitter {
       this._watchdogMs = (payload.ping_interval + payload.ping_timeout) * 1000;
       this._resetWatchdog();
       this.connected = true;
-      const queue = this._sendQueue;
-      this._sendQueue = [];
-      for (const frame of queue) {
-        this._ws.send(frame);
-      }
+      this._maxMessageSize = payload.max_message_size ?? null;
+      // Open the channels first: a frame queued on the transport for one of
+      // them has to arrive after its _open, or the backend has no session to
+      // dispatch it to and answers channel_not_open.
       if ((payload.protocol ?? 1) >= CHANNEL_PROTOCOL_VERSION) {
         attachChannels(this);
       } else {
@@ -627,6 +657,11 @@ export class ReflexWebSocket extends LocalEmitter {
         disableChannels(
           "This backend predates channel support; upgrade Reflex to use channels.",
         );
+      }
+      const queue = this._sendQueue;
+      this._sendQueue = [];
+      for (const frame of queue) {
+        this._ws.send(frame);
       }
       this._emitLocal("connect");
       return;

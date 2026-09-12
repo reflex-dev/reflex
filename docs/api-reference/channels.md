@@ -50,8 +50,22 @@ A package can register its channel from a plugin's `post_compile` hook instead,
 which runs at backend startup with the live app.
 
 Every field of an inbound message is client-controlled and unvalidated. A
-handler that raises is logged and the connection keeps serving, so a channel
-bug never drops the app's socket.
+handler that raises is logged and the connection keeps serving, so a failing
+handler never drops the app's socket.
+
+Handlers run inline on their connection's receive loop, which keeps messages
+in order and lets a slow channel push back on its client. It also means a
+handler that awaits something slow stalls that connection — its state updates
+wait, its heartbeat replies stop, and after `REFLEX_SOCKET_INTERVAL +
+REFLEX_SOCKET_TIMEOUT` the server closes it as unresponsive. Hand long work to
+`asyncio.to_thread` (or a task) and answer when it finishes:
+
+```python
+async def on_message(self, session, event, data, buffers):
+    rows = await asyncio.to_thread(expensive_query, data["filter"])
+    if session.open:
+        await session.send("rows", {"count": len(rows)}, [rows.tobytes()])
+```
 
 ## Sending to clients
 
@@ -92,9 +106,14 @@ class Frames(rx.channels.Channel):
         await session.send("frame", {"rows": len(buffers[0]) // 8}, buffers)
 ```
 
-A message may carry up to 64 attachments. Inbound frames are capped by
+A message may carry up to 64 attachments, and a frame may not exceed
 `REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` (1 MB by default); raise it if clients
-send larger payloads.
+send larger payloads. Both limits are enforced where the message is built —
+`session.send` raises and `channel.emit` throws — because a frame that broke
+them on the wire would cost the app its whole websocket.
+
+`connect`, `disconnect` and `error` are reserved message names: the client
+handle reports its own lifecycle under them, so `session.send` refuses them.
 
 ## Using a channel from the frontend
 
