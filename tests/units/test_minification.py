@@ -1805,23 +1805,6 @@ class TestSchemeDigest:
             REFLEX_MINIFY_EVENTS=MinifyMode.ENABLED.value,
         )
 
-    def test_survives_a_resolver_reinstall(self, temp_minify_json, monkeypatch):
-        """Editing the config at runtime must produce a fresh digest.
-
-        ``clear_config_cache`` installs a new resolver; nothing else knows to
-        invalidate, so a digest cached anywhere else would reject every later
-        connection until the backend restarted.
-        """
-        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
-
-        _install_config(states={"reflex.state.State": "a"})
-        assert scheme_digest()
-
-        _install_config(states={"reflex.state.State": "b"})
-
-        assert scheme_digest() != ""
-        assert scheme_digest() == scheme_digest()
-
     def test_independent_of_which_states_have_registered(
         self, temp_minify_json, monkeypatch
     ):
@@ -1843,7 +1826,12 @@ class TestSchemeDigest:
         assert scheme_digest() == before
 
     def test_differs_when_an_id_changes(self, temp_minify_json, monkeypatch):
-        """Editing minify.json renames states, so the schemes must not match."""
+        """Editing minify.json renames states, so the schemes must not match.
+
+        ``_install_config`` reinstalls the resolver, which is the only thing
+        that invalidates the digest: a value cached anywhere that outlives the
+        resolver would fail here rather than reject every later connection.
+        """
         _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
 
         _install_config(states={"reflex.state.State": "a"})
