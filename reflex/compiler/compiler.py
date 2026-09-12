@@ -1465,14 +1465,14 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
-    compile_results.append(
+    compile_results.extend([
         compile_contexts(
             app._state,
             radix_themes_plugin.get_theme(),
             component_imports=all_imports,
-        )
-    )
-    compile_results.append(utils._compile_bundled_libraries())
+        ),
+        utils._compile_bundled_libraries(),
+    ])
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))

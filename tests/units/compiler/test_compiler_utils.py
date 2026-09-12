@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from reflex_base.registry import RegistrationContext
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
 from reflex_components_core.el.elements.metadata import Link
@@ -11,7 +12,6 @@ from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
 from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
-from reflex_base.registry import RegistrationContext
 from reflex.state import State
 from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
