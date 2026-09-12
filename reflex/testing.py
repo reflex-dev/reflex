@@ -40,7 +40,7 @@ import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
 from reflex.istate.shared import SharedState as SharedState  # To register it.
-from reflex.state import reload_state_module
+from reflex.state import State, reload_state_module
 from reflex.utils import js_runtimes
 from reflex.utils.exec import _with_development_condition
 from reflex.utils.export import export
@@ -215,9 +215,7 @@ class AppHarness:
         Returns:
             The full state name
         """
-        # NOTE: using State.get_name() somehow causes trouble here
-        # path = [State.get_name()] + [self.get_state_name(p) for p in path] # noqa: ERA001
-        path = ["reflex___state____state"] + [self.get_state_name(p) for p in path]
+        path = [State.get_name()] + [self.get_state_name(p) for p in path]
         return ".".join(path)
 
     def _get_globals_from_signature(self, func: Any) -> dict[str, Any]:

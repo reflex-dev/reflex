@@ -425,6 +425,27 @@ class RegistrationContext(BaseContext):
             reg.handler.__dict__.pop(_FORMATTED_NAME_CACHE_ATTR, None)
         self.refresh_keys()
 
+    def find_unbound_states(self) -> list[tuple[type[BaseState], str]]:
+        """Registered states whose Vars name a state the resolver has since renamed.
+
+        ``VarData.from_state`` captures ``get_full_name()`` when a state class is
+        created, so a resolver installed afterwards renames the class without
+        rebuilding its Vars. Only ``base_vars`` are inspected: their ``VarData``
+        names exactly one state, while a computed Var may merge several.
+
+        Returns:
+            ``(state_cls, name_its_vars_use)`` pairs; empty when all names agree.
+        """
+        unbound: list[tuple[type[BaseState], str]] = []
+        for cls in self.base_states.values():
+            full_name = cls.get_full_name()
+            for var in cls.base_vars.values():
+                var_data = var._get_all_var_data()
+                if var_data is not None and var_data.state not in ("", full_name):
+                    unbound.append((cls, var_data.state))
+                    break
+        return unbound
+
     def refresh_keys(self) -> None:
         """Re-key the name-keyed dicts using current ``get_full_name`` values.
 

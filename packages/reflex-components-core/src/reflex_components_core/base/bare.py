@@ -9,6 +9,7 @@ from typing import Any
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
 from reflex_base.components.tags import Tag
 from reflex_base.components.tags.tagless import Tagless
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.utils.decorator import once
 from reflex_base.utils.imports import ParsedImportDict
@@ -39,7 +40,9 @@ def validate_str(value: str):
         ValueError: If the value is a Var and the performance mode is set to raise.
     """
     perf_mode = get_performance_mode()
-    if perf_mode != PerformanceMode.OFF and value.startswith("reflex___state"):
+    # State Vars render as ``<state>.<field><FIELD_MARKER>``; the state segment
+    # is resolver-dependent (minify.json rewrites it), the marker is not.
+    if perf_mode != PerformanceMode.OFF and FIELD_MARKER in value:
         if perf_mode == PerformanceMode.WARN:
             logger.warning(
                 f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."

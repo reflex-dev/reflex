@@ -9,6 +9,7 @@ from reflex_base.registry import RegisteredEventHandler, RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
 from reflex.testing import chdir
+from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 
 def test_ensure_context_creates_if_missing():
@@ -421,3 +422,54 @@ def test_bundled_libraries_isolated_between_contexts():
 
     with RegistrationContext() as ctx_b:
         assert "some-extra-lib" not in ctx_b.bundled_libraries
+
+
+def test_find_unbound_states_is_empty_when_names_never_changed(
+    clean_registration_context: RegistrationContext,
+):
+    """States created under the active resolver are bound to their own names."""
+    import reflex as rx
+
+    class BoundState(rx.State):
+        value: str = ""
+
+    assert clean_registration_context.find_unbound_states() == []
+    assert BoundState.get_full_name()  # keeps the class referenced
+
+
+def test_find_unbound_states_reports_states_renamed_after_creation(
+    clean_registration_context: RegistrationContext,
+):
+    """A resolver installed after a state is created leaves its Vars behind."""
+    import reflex as rx
+
+    class LateRenamedState(rx.State):
+        value: str = ""
+
+    baked_name = LateRenamedState.get_full_name()
+
+    with temporary_resolver(stub_resolver(state_name="zzz", target=LateRenamedState)):
+        assert LateRenamedState.get_full_name() != baked_name
+        assert (
+            LateRenamedState,
+            baked_name,
+        ) in clean_registration_context.find_unbound_states()
+
+
+def test_find_unbound_states_skips_states_without_own_vars(
+    clean_registration_context: RegistrationContext,
+):
+    """A state with no base vars bakes no name, so renaming it is harmless."""
+    import reflex as rx
+
+    class NoVarsState(rx.State):
+        @rx.event
+        def do_thing(self):
+            pass
+
+    assert not NoVarsState.base_vars
+
+    with temporary_resolver(stub_resolver(state_name="zzz", target=NoVarsState)):
+        unbound = clean_registration_context.find_unbound_states()
+
+    assert all(cls is not NoVarsState for cls, _ in unbound)

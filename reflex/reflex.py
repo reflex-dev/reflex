@@ -1386,9 +1386,8 @@ def minify_lookup(output_json: bool, minified_path: str):
         path_to_id[path] = entry["id"] if entry is not None else None
 
     parts = minified_path.split(".")
-    # The framework root state is never minified, so it never contributes a
-    # minified segment. Accept a path copied verbatim from the frontend, which
-    # still carries the root's default name as its first segment.
+    # Accept a path copied verbatim from the frontend, which leads with the
+    # root state's own name; the lookup below walks from the root's children.
     if parts[0] == State.get_name():
         parts = parts[1:]
 

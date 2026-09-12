@@ -315,12 +315,14 @@ class InternalEventNames:
 
     Attributes:
         main_state_name: Name of the framework root ``State``.
+        hydrate: Full event name of ``hydrate``.
         on_load_internal: Full event name of ``on_load_internal``.
         update_vars_internal: Full event name of ``update_vars_internal``.
         handle_frontend_exception: Full event name of ``handle_frontend_exception``.
     """
 
     main_state_name: str
+    hydrate: str
     on_load_internal: str
     update_vars_internal: str
     handle_frontend_exception: str
@@ -406,7 +408,7 @@ export const onLoadInternalEvent = () => {{
 
 // The following events are sent when the websocket connects or reconnects.
 export const initialEvents = () => [
-    ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE}'),
+    ReflexEvent('{internal_events.hydrate}'),
     ...onLoadInternalEvent()
 ]
     """

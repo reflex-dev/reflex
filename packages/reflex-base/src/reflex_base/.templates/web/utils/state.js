@@ -147,8 +147,10 @@ export const isStateful = () => {
   if (event_queue.length === 0) {
     return false;
   }
+  // State events are `<full state name>.<handler>`; the trailing dot keeps a
+  // frontend-only event from matching a short (minified) root state name.
   return event_queue.some((event) =>
-    event.name.startsWith(app.main_state_name),
+    event.name.startsWith(app.main_state_name + "."),
   );
 };
 

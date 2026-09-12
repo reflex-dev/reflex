@@ -77,8 +77,10 @@ def MinificationApp():
     app.add_page(index)
 
 
-# Framework state classes (e.g. ``reflex.state.State``) are deliberately
-# absent — the resolver never minifies them.
+# Framework state classes (e.g. ``reflex.state.State``) bake their names when
+# ``reflex.state`` is first imported, which under AppHarness is pytest start-up,
+# before this config exists — so they are left out here and covered by the
+# subprocess tests in ``tests/units/test_minification.py``.
 _MINIFY_CONFIG = {
     "version": SCHEMA_VERSION,
     "states": {

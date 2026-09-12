@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import contextlib
 import json
-from collections.abc import Iterator
 from pathlib import Path
 from unittest import mock
 
@@ -34,6 +32,7 @@ from reflex.minify import (
     validate_minify_config,
 )
 from reflex.state import BaseState, State
+from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
 
 def _resolved_event_id(state_cls: type[BaseState], handler_name: str) -> str | None:
@@ -108,23 +107,38 @@ def _install_config(
     return config
 
 
-@contextlib.contextmanager
-def _temporary_resolver(resolver: NameResolver) -> Iterator[RegistrationContext]:
-    """Install ``resolver`` for the duration of the ``with`` block.
+def _run_in_fresh_interpreter(
+    tmp_path: Path, config: MinifyConfig, script: str, **env: str
+) -> None:
+    """Run ``script`` in a new interpreter rooted at a directory holding ``config``.
+
+    The framework states bake their names when ``reflex.state`` is first
+    imported, so anything that depends on their minified names needs an
+    interpreter that starts up with ``minify.json`` already in place.
 
     Args:
-        resolver: The resolver to install temporarily.
-
-    Yields:
-        The active registration context.
+        tmp_path: Directory to use as the app root.
+        config: The ``minify.json`` contents to write there.
+        script: Python source to execute; a non-zero exit fails the test.
+        env: Extra environment variables for the child process.
     """
-    ctx = RegistrationContext.get()
-    original = ctx.name_resolver
-    try:
-        ctx.set_name_resolver(resolver)
-        yield ctx
-    finally:
-        ctx.set_name_resolver(original)
+    import os
+    import subprocess
+    import sys
+    import textwrap
+
+    (tmp_path / MINIFY_JSON).write_text(json.dumps(config))
+    (tmp_path / "check.py").write_text(textwrap.dedent(script))
+
+    result = subprocess.run(
+        [sys.executable, "-c", "import check"],
+        cwd=tmp_path,
+        env={**os.environ, **env},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 @pytest.fixture
@@ -138,33 +152,6 @@ def cli_runner(monkeypatch: pytest.MonkeyPatch) -> CliRunner:
 
     monkeypatch.setattr(prerequisites, "get_compiled_app", lambda *a, **kw: mock.Mock())
     return CliRunner()
-
-
-def _stub_resolver(
-    *,
-    state_name: str | None = None,
-    target: type[BaseState] = State,
-    handler_prefix: str | None = None,
-) -> NameResolver:
-    """Build a tiny one-off :class:`NameResolver` for tests.
-
-    Args:
-        state_name: Override returned for ``target`` (else ``None``).
-        target: Which state class the override scopes to.
-        handler_prefix: When set, prefixes every handler name.
-
-    Returns:
-        A resolver with the requested behavior.
-    """
-
-    class _Stub:
-        def resolve_state_name(self, state_cls):
-            return state_name if state_cls is target else None
-
-        def resolve_handler_name(self, state_cls, handler_name):
-            return f"{handler_prefix}{handler_name}" if handler_prefix else None
-
-    return _Stub()
 
 
 class TestIntToMinifiedName:
@@ -520,15 +507,15 @@ class TestValidateMinifyConfig:
         assert not errors, f"Unexpected errors: {errors}"
         assert any("Orphaned state" in w for w in warnings)
 
-    def test_validate_ignores_framework_states_in_missing(self):
-        """Framework states/handlers omitted from a user-only config aren't missing."""
+    def test_validate_reports_missing_framework_states(self):
+        """Framework states are ordinary states: omitting them is a gap to sync."""
 
         class UserOnlyState(State):
             def do_thing(self):
                 pass
 
         user_path = get_state_full_path(UserOnlyState)
-        # Config omits framework reflex.state.State entries.
+        # Config omits the framework reflex.state.State entries.
         config: MinifyConfig = {
             "version": SCHEMA_VERSION,
             "states": {user_path: StateEntry(id="a", parent="reflex.state.State")},
@@ -537,8 +524,8 @@ class TestValidateMinifyConfig:
 
         _errors, _warnings, missing = validate_minify_config(config, State)
 
-        assert not any(entry.startswith("state:reflex.state.") for entry in missing)
-        assert not any(entry.startswith("event:reflex.state.") for entry in missing)
+        assert "state:reflex.state.State" in missing
+        assert "event:reflex.state.State.hydrate" in missing
         assert f"state:{user_path}" not in missing
         assert f"event:{user_path}.do_thing" not in missing
 
@@ -1514,7 +1501,7 @@ class TestNameResolverProtocol:
 
     def test_set_name_resolver_propagates_through_get_name(self):
         """A custom resolver swaps ``BaseState.get_name`` for the targeted class."""
-        with _temporary_resolver(_stub_resolver(state_name="fixed_name")):
+        with temporary_resolver(stub_resolver(state_name="fixed_name")):
             assert State.get_name() == "fixed_name"
 
     def test_set_name_resolver_propagates_through_format_event_handler(self):
@@ -1522,15 +1509,15 @@ class TestNameResolverProtocol:
         from reflex.state import OnLoadInternalState
         from reflex.utils.format import format_event_handler
 
-        with _temporary_resolver(_stub_resolver(handler_prefix="px_")):
+        with temporary_resolver(stub_resolver(handler_prefix="px_")):
             formatted = format_event_handler(OnLoadInternalState.on_load_internal)  # pyright: ignore[reportArgumentType]
             assert formatted.endswith(".px_on_load_internal")
 
     def test_resolver_swap_clears_lru_caches(self):
         """``set_name_resolver`` invalidates per-class name caches immediately."""
-        with _temporary_resolver(_stub_resolver(state_name="first")) as ctx:
+        with temporary_resolver(stub_resolver(state_name="first")) as ctx:
             assert State.get_full_name() == "first"
-            ctx.set_name_resolver(_stub_resolver(state_name="second"))
+            ctx.set_name_resolver(stub_resolver(state_name="second"))
             assert State.get_full_name() == "second"
 
     def test_chain_of_resolvers(self):
@@ -1556,8 +1543,8 @@ class TestNameResolverProtocol:
                         return v
                 return None
 
-        chain = Chain(_stub_resolver(state_name="from_first"), DefaultNameResolver())
-        with _temporary_resolver(chain):
+        chain = Chain(stub_resolver(state_name="from_first"), DefaultNameResolver())
+        with temporary_resolver(chain):
             assert State.get_name() == "from_first"
 
 
@@ -1639,26 +1626,92 @@ class TestMinifyNameResolver:
         assert resolver.resolve_handler_name(State, "any") is None
 
 
+class TestFrameworkStateMinification:
+    """Framework states are ordinary states to the resolver."""
+
+    def test_root_state_name_follows_config(self, temp_minify_json, monkeypatch):
+        """``reflex.state.State`` is renamed like any other configured state."""
+        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
+        _install_config(states={"reflex.state.State": "a"})
+
+        assert State.get_name() == "a"
+
+    def test_hydrate_event_name_resolves_its_handler(
+        self, temp_minify_json, monkeypatch
+    ):
+        """The hydrate name resolves its handler, however it is reached.
+
+        The frontend sends whatever this returns, so a literal ``.hydrate``
+        suffix here would never reach the minified registry key.
+        """
+        from reflex_base.event import (
+            get_event,
+            get_hydrate_event,
+            get_hydrate_event_name,
+        )
+
+        _set_minify_modes(
+            monkeypatch, states=MinifyMode.ENABLED, events=MinifyMode.ENABLED
+        )
+        _install_config(
+            states={"reflex.state.State": "a"},
+            events={"reflex.state.State": {"hydrate": "q"}},
+        )
+
+        state = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+        assert get_hydrate_event_name() == "a.q"
+        assert get_hydrate_event(state) == "a.q"
+        assert get_event(state, "hydrate") == "a.q"
+        assert "a.q" in RegistrationContext.get().event_handlers
+
+    def test_stringified_var_still_flagged_when_root_is_minified(
+        self, temp_minify_json, monkeypatch, mocker
+    ):
+        """The perf-mode check keys on the field marker, not the root state name."""
+        from reflex_base.environment import PerformanceMode
+
+        import reflex as rx
+
+        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
+
+        class StrVarProbe(State):
+            field: int = 1
+
+        _install_config(
+            states={
+                "reflex.state.State": StateEntry(id="a", parent=None),
+                get_state_full_path(StrVarProbe): StateEntry(
+                    id="b", parent="reflex.state.State"
+                ),
+            }
+        )
+        assert State.get_name() == "a"
+
+        mocker.patch(
+            "reflex_components_core.base.bare.get_performance_mode",
+            return_value=PerformanceMode.RAISE,
+        )
+
+        with pytest.raises(ValueError, match="displayed as a string"):
+            rx.vstack(str(StrVarProbe.field))
+
+
 class TestImportTimeInstall:
     """Importing reflex.state must install the resolver before states register."""
 
     def test_resolver_active_before_any_state_registers(self, tmp_path):
         """A fresh interpreter registers user states under their minified name."""
-        import os
-        import subprocess
-        import sys
-        import textwrap
-
-        config: MinifyConfig = {
-            "version": SCHEMA_VERSION,
-            "states": {
-                "myapp.State.Foo": StateEntry(id="f", parent="reflex.state.State")
+        _run_in_fresh_interpreter(
+            tmp_path,
+            {
+                "version": SCHEMA_VERSION,
+                "states": {
+                    "check.State.Foo": StateEntry(id="f", parent="reflex.state.State")
+                },
+                "events": {},
             },
-            "events": {},
-        }
-        (tmp_path / MINIFY_JSON).write_text(json.dumps(config))
-        (tmp_path / "myapp.py").write_text(
-            textwrap.dedent("""
+            """
                 from reflex_base.registry import RegistrationContext
                 import reflex.state
                 resolver = RegistrationContext.ensure_context().name_resolver
@@ -1666,18 +1719,9 @@ class TestImportTimeInstall:
                 class Foo(reflex.state.State):
                     pass
                 assert Foo.get_name() == "f", Foo.get_name()
-            """)
+            """,
+            REFLEX_MINIFY_STATES=MinifyMode.ENABLED.value,
         )
-
-        result = subprocess.run(
-            [sys.executable, "-c", "import myapp"],
-            cwd=tmp_path,
-            env={**os.environ, "REFLEX_MINIFY_STATES": MinifyMode.ENABLED.value},
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        assert result.returncode == 0, result.stderr
 
     def test_no_resolver_installed_without_config(self, temp_minify_json: Path) -> None:
         """Without a ``minify.json`` the zero-cost default resolver stays in place."""
@@ -1700,3 +1744,67 @@ class TestImportTimeInstall:
 
         assert isinstance(ctx.name_resolver, MinifyNameResolver)
         assert ctx.name_resolver.config is not None
+
+    def test_framework_event_names_reach_registered_handlers(self, tmp_path):
+        """The names the context module emits are the keys the backend dispatches on."""
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {
+                "reflex.state.State": StateEntry(id="a", parent=None),
+                "reflex.state.State.FrontendEventExceptionState": StateEntry(
+                    id="b", parent="reflex.state.State"
+                ),
+                "reflex.state.State.OnLoadInternalState": StateEntry(
+                    id="c", parent="reflex.state.State"
+                ),
+                "reflex.state.State.UpdateVarsInternalState": StateEntry(
+                    id="d", parent="reflex.state.State"
+                ),
+            },
+            "events": {
+                "reflex.state.State": {"hydrate": "a"},
+                "reflex.state.State.FrontendEventExceptionState": {
+                    "handle_frontend_exception": "a"
+                },
+                "reflex.state.State.OnLoadInternalState": {"on_load_internal": "a"},
+                "reflex.state.State.UpdateVarsInternalState": {
+                    "update_vars_internal": "a"
+                },
+            },
+        }
+        _run_in_fresh_interpreter(
+            tmp_path,
+            config,
+            """
+                from reflex_base.event import get_hydrate_event
+                from reflex_base.registry import RegistrationContext
+
+                from reflex.compiler.compiler import _internal_event_names
+                from reflex.state import State
+
+                assert State.get_name() == "a", State.get_name()
+
+                names = _internal_event_names()
+                assert names.main_state_name == "a", names
+                assert names.hydrate == "a.a", names
+
+                handlers = RegistrationContext.ensure_context().event_handlers
+                for wire_name in (
+                    names.hydrate,
+                    names.on_load_internal,
+                    names.update_vars_internal,
+                    names.handle_frontend_exception,
+                ):
+                    assert wire_name in handlers, (wire_name, sorted(handlers))
+
+                # The middleware compares against this; it must agree with the
+                # name the compiler just told the frontend to send.
+                root = State(_reflex_internal_init=True)
+                assert get_hydrate_event(root) == names.hydrate
+
+                # Nothing was renamed after its Vars captured the old name.
+                assert RegistrationContext.ensure_context().find_unbound_states() == []
+            """,
+            REFLEX_MINIFY_STATES=MinifyMode.ENABLED.value,
+            REFLEX_MINIFY_EVENTS=MinifyMode.ENABLED.value,
+        )

@@ -241,22 +241,8 @@ class MinifyNameResolver:
             events_enabled=environment.REFLEX_MINIFY_EVENTS.get() == MinifyMode.ENABLED,
         )
 
-    def _is_minify_allowed(self, state_cls: type[BaseState], enabled: bool) -> bool:
-        """Whether ``state_cls`` is eligible for minification under the given mode.
-
-        Args:
-            state_cls: The state class being resolved.
-            enabled: Whether the relevant ``REFLEX_MINIFY_*`` env var is on.
-
-        Returns:
-            ``True`` when the env var is on and ``state_cls`` is user-defined.
-        """
-        return enabled and not _is_framework_state(state_cls)
-
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
-        if self.config is None or not self._is_minify_allowed(
-            state_cls, self.states_enabled
-        ):
+        if self.config is None or not self.states_enabled:
             return None
         cached = self._state_cache.get(state_cls)
         if cached is not None:
@@ -271,26 +257,13 @@ class MinifyNameResolver:
     def resolve_handler_name(  # noqa: D102
         self, state_cls: type[BaseState], handler_name: str
     ) -> str | None:
-        if self.config is None or not self._is_minify_allowed(
-            state_cls, self.events_enabled
-        ):
+        if self.config is None or not self.events_enabled:
             return None
         per_state = self._event_cache.get(state_cls)
         if per_state is None:
             per_state = self.config["events"].get(get_state_full_path(state_cls), {})
             self._event_cache[state_cls] = per_state
         return per_state.get(handler_name)
-
-
-#: Modules whose ``BaseState`` subclasses can never be minified — their
-#: :class:`Var` hooks are baked at framework-import time before any user
-#: resolver can run. ``reflex.istate.dynamic`` is *not* listed: that's where
-#: ``ComponentState.create()`` puts user-owned dynamic classes.
-_FRAMEWORK_STATE_MODULES: frozenset[str] = frozenset({
-    "reflex.state",
-    "reflex.istate.shared",
-    "reflex.custom_components.custom_components",
-})
 
 
 def get_state_module(state_cls: type[BaseState]) -> str:
@@ -307,18 +280,6 @@ def get_state_module(state_cls: type[BaseState]) -> str:
         The dotted module name.
     """
     return getattr(state_cls, "__original_module__", None) or state_cls.__module__
-
-
-def _is_framework_state(state_cls: type[BaseState]) -> bool:
-    """Whether ``state_cls`` is one of the framework's own state classes.
-
-    Args:
-        state_cls: The state class to check.
-
-    Returns:
-        ``True`` if ``state_cls`` belongs to a known framework module.
-    """
-    return get_state_module(state_cls) in _FRAMEWORK_STATE_MODULES
 
 
 def install_minify_resolver() -> None:
@@ -638,18 +599,15 @@ def validate_minify_config(
 
     code_state_paths = {get_state_full_path(s) for s in all_states}
 
-    # Framework states are never minified, so don't report them as missing.
-    user_states = [s for s in all_states if not _is_framework_state(s)]
-
     # Check for missing states (in code but not in config)
     missing: list[str] = [
         f"state:{state_path}"
-        for state_path in (get_state_full_path(s) for s in user_states)
+        for state_path in (get_state_full_path(s) for s in all_states)
         if state_path not in config["states"]
     ]
 
     # Check for missing events (in code but not in config)
-    for state_cls in user_states:
+    for state_cls in all_states:
         state_path = get_state_full_path(state_cls)
         state_events = config["events"].get(state_path, {})
         missing.extend(

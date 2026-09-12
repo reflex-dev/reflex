@@ -31,6 +31,7 @@ from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
+from reflex_base.event import get_hydrate_event_name
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
@@ -254,10 +255,12 @@ def _internal_event_names() -> templates.InternalEventNames:
     Returns:
         The names under the active name resolver.
     """
-    # ``@event(...)`` types the attribute as an EventCallback; the registry
-    # holds the EventHandler the class rewrote it into.
     return templates.InternalEventNames(
         main_state_name=State.get_name(),
+        hydrate=get_hydrate_event_name(),
+        # ``@event()`` types this attribute as an EventCallback; the class dict
+        # holds the EventHandler it was rewritten into. The two below use
+        # ``@typing_event``, which types the attribute as the EventHandler.
         on_load_internal=format_event_handler(
             OnLoadInternalState.event_handlers["on_load_internal"]
         ),
@@ -790,6 +793,32 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
     return output_path, code
 
 
+def _assert_state_names_are_bound() -> None:
+    """Check that no state was renamed after its Vars captured the old name.
+
+    Raises:
+        ReflexError: If a name resolver was installed after a state class was
+            created, leaving its Vars pointing at a context nothing provides.
+    """
+    unbound = RegistrationContext.ensure_context().find_unbound_states()
+    if not unbound:
+        return
+    details = "\n".join(
+        f"  {cls.__module__}.{cls.__qualname__}: Vars use {baked!r}, "
+        f"compiler emits {cls.get_full_name()!r}"
+        for cls, baked in unbound
+    )
+    msg = (
+        "These states were renamed after their Vars were created, so the compiled "
+        f"frontend would read contexts it never provides:\n{details}\n"
+        "A name resolver (e.g. minify.json) must be installed before the state "
+        "classes are imported, which Reflex does when the app directory is the "
+        "working directory at import time. In-process test harnesses that import "
+        "Reflex first must run with REFLEX_MINIFY_STATES=disabled."
+    )
+    raise ReflexError(msg)
+
+
 def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
@@ -806,6 +835,8 @@ def compile_contexts(
     Returns:
         The path and code of the compiled context.
     """
+    _assert_state_names_are_bound()
+
     # Get the path for the output file.
     output_path = utils.get_context_path()
 

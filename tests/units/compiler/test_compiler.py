@@ -1588,11 +1588,13 @@ def test_context_template_renders_internal_event_names():
         state_name="reflex___state____state",
         internal_events=InternalEventNames(
             main_state_name="reflex___state____state",
+            hydrate="reflex___state____state.g",
             on_load_internal="reflex___state____state.a.b",
             update_vars_internal="reflex___state____state.c.d",
             handle_frontend_exception="reflex___state____state.e.f",
         ),
     )
+    assert "ReflexEvent('reflex___state____state.g')" in rendered
     assert "ReflexEvent('reflex___state____state.a.b')" in rendered
     assert "'reflex___state____state.c.d'" in rendered
     assert 'handle_frontend_exception = "reflex___state____state.e.f"' in rendered

@@ -2,6 +2,7 @@
 
 import copy
 import dataclasses
+import functools
 import inspect
 import logging
 import sys
@@ -1910,19 +1911,50 @@ def get_event(state: "BaseState", event: str):
     Returns:
         The event.
     """
-    return f"{state.get_name()}.{event}"
+    from reflex_base.registry import RegistrationContext
+
+    state_cls = type(state)
+    # The handler name is resolver-dependent (minify.json rewrites it), so it
+    # cannot be interpolated raw; states without their own copy keep it as-is.
+    ctx = RegistrationContext.try_get()
+    resolved = event if ctx is None else ctx.get_handler_name(state_cls, event)
+    return f"{state.get_name()}.{resolved}"
+
+
+@functools.lru_cache(maxsize=1)
+def _hydrate_handler() -> EventHandler:
+    """Look up the one ``hydrate`` handler, defined on the root ``State``.
+
+    Returns:
+        The framework's hydrate event handler.
+    """
+    from reflex.state import State
+
+    return State.event_handlers[constants.CompileVars.HYDRATE]
+
+
+def get_hydrate_event_name() -> str:
+    """Get the wire name of the framework hydrate event.
+
+    The compiler, the event processor and the hydrate middleware must all name
+    it identically, so they share this one resolution.
+
+    Returns:
+        The hydrate event name under the active name resolver.
+    """
+    return format.format_event_handler(_hydrate_handler())
 
 
 def get_hydrate_event(state: "BaseState") -> str:
     """Get the name of the hydrate event for the state.
 
     Args:
-        state: The state.
+        state: Any state in the tree; the hydrate handler is the root's.
 
     Returns:
         The name of the hydrate event.
     """
-    return get_event(state, constants.CompileVars.HYDRATE)
+    return get_hydrate_event_name()
 
 
 def _values_returned_from_event(event_spec_annotations: list[Any]) -> list[Any]:
@@ -3123,6 +3155,7 @@ class EventNamespace:
 
     get_event = staticmethod(get_event)
     get_hydrate_event = staticmethod(get_hydrate_event)
+    get_hydrate_event_name = staticmethod(get_hydrate_event_name)
     fix_events = staticmethod(fix_events)
     call_event_handler = staticmethod(call_event_handler)
     call_event_fn = staticmethod(call_event_fn)
