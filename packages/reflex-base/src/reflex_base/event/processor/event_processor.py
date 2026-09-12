@@ -773,11 +773,14 @@ class EventProcessor:
                         self._enqueue_for_token(
                             entry=entry, registered_handler=registered_handler
                         )
-                except Exception:
+                except Exception as ex:
                     # Log the error and continue processing the next events.
                     logger.exception(
                         f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                     )
+                    # Surface it client-side too: an event that never reaches a
+                    # handler produces no update, so the page would just stall.
+                    await self._handle_backend_exception(ex, entry.ctx)
                 queue.task_done()
         if self._queue_task is asyncio.current_task():
             self._queue_task = None

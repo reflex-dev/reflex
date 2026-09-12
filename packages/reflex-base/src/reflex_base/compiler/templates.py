@@ -338,6 +338,7 @@ def context_template(
     internal_events: InternalEventNames | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
+    scheme_digest: str = "",
 ):
     """Template for the context file.
 
@@ -352,6 +353,8 @@ def context_template(
         disable_react_owner_stacks: Whether to emit the snippet that disables
             React's dev-build owner-stack capture (an Error() constructed per
             created element, whose cost grows with render depth).
+        scheme_digest: Digest of the wire-name scheme this bundle was built
+            with, sent on connect so the backend can detect a mismatch.
 
     Returns:
         Rendered context file content as string.
@@ -487,6 +490,10 @@ export const clientStorage = {"{}" if client_storage is None else json.dumps(cli
 
 export const isDevMode = {json.dumps(is_dev_mode)};
 
+// Identifies the wire-name scheme this bundle was built with; the backend
+// rejects a connection whose scheme does not match its own.
+export const schemeDigest = {json.dumps(scheme_digest)};
+
 // The static runtime reads these through the registry, so this module is the
 // only one Vite re-executes when they change.
 registerApp({{
@@ -500,6 +507,7 @@ registerApp({{
   initialEvents,
   isDevMode,
   defaultColorMode,
+  schemeDigest,
 }});
 
 export function addEvents(events, args, event_actions) {{

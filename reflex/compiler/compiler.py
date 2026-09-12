@@ -53,6 +53,7 @@ from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
+from reflex.minify import scheme_digest
 from reflex.state import (
     BaseState,
     FrontendEventExceptionState,
@@ -317,6 +318,7 @@ def _compile_contexts(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
+            scheme_digest=scheme_digest(),
         )
         if state
         else templates.context_template(

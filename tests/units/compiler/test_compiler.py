@@ -1608,6 +1608,22 @@ def test_context_template_renders_internal_event_names():
         assert f"  {name},\n" in registered
 
 
+def test_context_template_carries_the_scheme_digest():
+    """The bundle advertises the wire-name scheme it was built against."""
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        scheme_digest="abc123",
+    )
+
+    assert 'export const schemeDigest = "abc123"' in rendered
+    # The static runtime reads it through the registry to send it on connect.
+    registered = rendered[rendered.index("registerApp({") :]
+    assert "  schemeDigest,\n" in registered
+
+
 def test_context_template_requires_internal_events_with_state():
     """A stateful context without resolved framework event names is refused."""
     from reflex_base.compiler.templates import context_template

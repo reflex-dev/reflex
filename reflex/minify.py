@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import dataclasses
 import functools
+import hashlib
 import json
 import logging
 from collections.abc import Iterable
@@ -317,6 +318,39 @@ def ensure_minify_resolver_for_active_context() -> None:
     ctx.set_name_resolver(MinifyNameResolver.from_disk())
 
 
+@functools.lru_cache(maxsize=1)
+def scheme_digest() -> str:
+    """Digest the wire-name scheme the active resolver produces.
+
+    A frontend bundle and the backend it talks to must agree on what the names
+    on the wire mean. Only the parts that reach the wire are digested: a map is
+    included when its ``REFLEX_MINIFY_*`` mode is on, so toggling a mode is a
+    mismatch just like editing ``minify.json`` is.
+
+    Returns:
+        A short hex digest, or ``""`` when no name is rewritten.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    ctx = RegistrationContext.try_get()
+    resolver = ctx.name_resolver if ctx is not None else None
+    if not isinstance(resolver, MinifyNameResolver) or resolver.config is None:
+        return ""
+
+    scheme = {
+        "states": {
+            path: entry["id"] for path, entry in resolver.config["states"].items()
+        }
+        if resolver.states_enabled
+        else {},
+        "events": resolver.config["events"] if resolver.events_enabled else {},
+    }
+    if not scheme["states"] and not scheme["events"]:
+        return ""
+    payload = json.dumps(scheme, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
 def clear_config_cache() -> None:
     """Reload ``minify.json`` and propagate the new names through the registry.
 
@@ -325,6 +359,7 @@ def clear_config_cache() -> None:
     """
     get_minify_config.cache_clear()
     is_mode_enabled.cache_clear()
+    scheme_digest.cache_clear()
     install_minify_resolver()
 
 

@@ -24,6 +24,7 @@ const CLIENT_ERROR_EVENT = "client_error";
 // Client error types (must match reflex_base/constants/event.py ClientErrorType)
 const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
+const SCHEME_MISMATCH_EVENT = "scheme_mismatch";
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
@@ -596,7 +597,7 @@ export const connect = async (
     transports: transports,
     protocols: [reflexEnvironment.version],
     autoUnref: false,
-    query: { token: getToken() },
+    query: { token: getToken(), scheme: app.schemeDigest ?? "" },
     reconnection: false, // Reconnection will be handled manually.
   });
   socket.current.wait_connect = !socket.current.connected;
@@ -724,6 +725,17 @@ export const connect = async (
       error_type: ERROR_TYPE_STATE_UPDATE,
     });
   };
+
+  // The backend resolves wire names with its own copy of the minification
+  // scheme. If it disagrees with the one this bundle was built against, every
+  // name we send is meaningless to it, so stop before the first event.
+  socket.current.on(SCHEME_MISMATCH_EVENT, (detail) => {
+    backend_state_mismatch = true;
+    event_queue.length = 0;
+    console.error(
+      `Cannot talk to the backend: it resolves state and event names with a different minification scheme (frontend "${detail?.frontend ?? ""}", backend "${detail?.backend ?? ""}"). Try refreshing the page or clearing your browser cache. If you are the developer of this app, rebuild the frontend against the same minify.json the backend is running.`,
+    );
+  });
 
   // On each received message, queue the updates and events.
   socket.current.on("event", (update) => {

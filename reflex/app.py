@@ -76,6 +76,7 @@ from reflex.compiler.compiler import readable_name_from_component
 from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
+from reflex.minify import scheme_digest
 from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,
@@ -2083,6 +2084,22 @@ class EventNamespace(AsyncNamespace):
             logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
+
+        # Unlike the version check above, a scheme mismatch is fatal: every name
+        # the client sends would resolve to the wrong handler, or to none.
+        client_scheme = next(iter(query_params.get("scheme", [])), "")
+        server_scheme = scheme_digest()
+        if client_scheme != server_scheme:
+            logger.warning(
+                f"Frontend minification scheme {client_scheme!r} for session {sid} "
+                f"does not match the backend scheme {server_scheme!r}."
+            )
+            await self.emit(
+                str(constants.SocketEvent.SCHEME_MISMATCH),
+                {"frontend": client_scheme, "backend": server_scheme},
+                to=sid,
+            )
+            return
         if otel.enabled:
             otel.record_connection(1)
 

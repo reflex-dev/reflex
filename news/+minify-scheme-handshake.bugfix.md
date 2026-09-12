@@ -1,0 +1,1 @@
+A frontend bundle now sends the digest of the state and event name scheme it was built with when it opens its websocket. A backend running a different `minify.json`, or with different `REFLEX_MINIFY_*` modes, reports the mismatch and the page stops sending events instead of silently failing to hydrate.

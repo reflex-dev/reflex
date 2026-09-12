@@ -1152,3 +1152,26 @@ async def test_event_spans_chain_parent_child(token: str, otel_exporter):
         == parent.attributes[otel.ATTR_EVENT_TXID]
     )
     assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)
+
+
+async def test_unregistered_event_reaches_the_exception_handler(token: str):
+    """An event with no handler is reported, not just logged.
+
+    Such an event produces no update, so without this the page would stall
+    with nothing but a server-side traceback to explain it.
+
+    Args:
+        token: The client token.
+    """
+    seen: list[Exception] = []
+    processor = EventProcessor(
+        backend_exception_handler=seen.append, graceful_shutdown_timeout=2
+    )
+    processor.configure()
+
+    async with processor as ep:
+        await ep.enqueue(token, Event(name="no.such.handler"))
+
+    assert len(seen) == 1
+    assert isinstance(seen[0], KeyError)
+    assert "no.such.handler" in str(seen[0])

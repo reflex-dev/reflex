@@ -28,6 +28,7 @@ from reflex.minify import (
     is_mode_enabled,
     minified_name_to_int,
     save_minify_config,
+    scheme_digest,
     sync_minify_config,
     validate_minify_config,
 )
@@ -1695,6 +1696,56 @@ class TestFrameworkStateMinification:
 
         with pytest.raises(ValueError, match="displayed as a string"):
             rx.vstack(str(StrVarProbe.field))
+
+
+class TestSchemeDigest:
+    """The digest identifies the wire-name scheme both sides must agree on."""
+
+    def test_empty_without_minification(self, temp_minify_json):
+        """No config in force means no name is rewritten, so nothing to agree on."""
+        assert scheme_digest() == ""
+
+    def test_empty_when_config_present_but_modes_off(
+        self, temp_minify_json, monkeypatch
+    ):
+        """A config nobody applies leaves the wire names untouched."""
+        _set_minify_modes(
+            monkeypatch, states=MinifyMode.DISABLED, events=MinifyMode.DISABLED
+        )
+        _install_config(states={"reflex.state.State": "a"})
+
+        assert scheme_digest() == ""
+
+    def test_differs_when_a_mode_is_toggled(self, temp_minify_json, monkeypatch):
+        """Turning events on renames handlers, so the schemes must not match."""
+        config_states: dict[str, str | StateEntry] = {"reflex.state.State": "a"}
+        config_events = {"reflex.state.State": {"hydrate": "q"}}
+
+        _set_minify_modes(
+            monkeypatch, states=MinifyMode.ENABLED, events=MinifyMode.DISABLED
+        )
+        _install_config(states=config_states, events=config_events)
+        states_only = scheme_digest()
+
+        _set_minify_modes(monkeypatch, events=MinifyMode.ENABLED)
+        _install_config(states=config_states, events=config_events)
+        both = scheme_digest()
+
+        assert states_only
+        assert both
+        assert states_only != both
+
+    def test_differs_when_an_id_changes(self, temp_minify_json, monkeypatch):
+        """Editing minify.json renames states, so the schemes must not match."""
+        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
+
+        _install_config(states={"reflex.state.State": "a"})
+        before = scheme_digest()
+
+        _install_config(states={"reflex.state.State": "b"})
+        after = scheme_digest()
+
+        assert before != after
 
 
 class TestImportTimeInstall:
