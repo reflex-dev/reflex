@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.constants.colors import Color
+from reflex_base.constants.compiler import MemoizationMode
 from reflex_base.vars.base import Var
 
 from reflex_components_core.el.elements.inline import ReferrerPolicy
@@ -274,9 +275,15 @@ class Source(VoidBaseHTML):
 
 
 class Svg(BaseHTML):
-    """Display the svg element."""
+    """Display the svg element.
+
+    The svg root and its descendants render as a single memoized component,
+    so ``defs`` and the elements that reference them by id share one render
+    scope and hook vars such as ``rx.vars.use_id()`` resolve to one value.
+    """
 
     tag = "svg"
+    _memoization_mode = MemoizationMode(recursive=False)
     width: Var[str | int] = field(doc="The width of the svg.")
     height: Var[str | int] = field(doc="The height of the svg.")
     xmlns: Var[str] = field(doc="The XML namespace declaration.")
