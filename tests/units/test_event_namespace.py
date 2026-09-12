@@ -73,6 +73,8 @@ class FakeWebSocket:
         self.accepted_subprotocol: str | None = None
         self.accepted = False
         self.close_code: int | None = None
+        # Starlette refuses a second close; set to model one already sent.
+        self.refuse_close = False
         self._incoming: asyncio.Queue = asyncio.Queue()
 
     async def accept(self, subprotocol: str | None = None):
@@ -89,7 +91,14 @@ class FakeWebSocket:
         self.sent.append(data)
 
     async def close(self, code: int = 1000):
-        """Record the close call."""
+        """Record the close call.
+
+        Raises:
+            RuntimeError: If the connection was already closed.
+        """
+        if self.refuse_close:
+            message = 'Cannot call "send" once a close message has been sent.'
+            raise RuntimeError(message)
         self.close_code = code
 
     async def receive(self) -> dict[str, Any]:
@@ -591,9 +600,12 @@ def test_protocol_message_names_match_the_client():
         "PONG_MESSAGE": PONG_MESSAGE,
         "OPEN_MESSAGE": OPEN_MESSAGE,
         "OPENED_MESSAGE": OPENED_MESSAGE,
-        "CLOSE_MESSAGE": CLOSE_MESSAGE,
         "CHANNEL_ERROR_MESSAGE": CHANNEL_ERROR_MESSAGE,
     }
+    # CLOSE_MESSAGE is missing on purpose: a browser handle is shared by every
+    # component that asks for the channel, so it never closes one by itself and
+    # the backend frees the session on disconnect.
+    assert "CLOSE_MESSAGE" not in declarations
 
 
 class RecordingChannel(Channel):
@@ -878,6 +890,32 @@ async def test_channel_frame_with_non_string_name_closes_connection(
 
 NODE = shutil.which("node") or ""
 
+# The client template as a JS string literal. A file URL, not a path: an
+# absolute Windows path is neither a valid ESM specifier nor a valid JS string
+# literal (its separators are escapes).
+CLIENT_MODULE = json.dumps(WEBSOCKET_JS_TEMPLATE.as_uri())
+
+
+def _run_client_script(tmp_path: Path, source: str, *args: str) -> Any:
+    """Run a script against the client template, returning the JSON it printed.
+
+    Args:
+        tmp_path: Where to write the script.
+        source: The script source, importing from CLIENT_MODULE.
+        args: Command line arguments for the script.
+
+    Returns:
+        The parsed JSON the script wrote to stdout.
+    """
+    script = tmp_path / "client.mjs"
+    script.write_text(source)
+    result = subprocess.run(
+        [NODE, str(script), *args], capture_output=True, text=True, check=False
+    )
+
+    assert result.returncode == 0, result.stderr
+    return json.loads(result.stdout)
+
 
 @pytest.mark.skipif(not NODE, reason="Requires node to run the client codec")
 def test_binary_frame_codec_matches_the_client(tmp_path: Path):
@@ -888,12 +926,10 @@ def test_binary_frame_codec_matches_the_client(tmp_path: Path):
     """
     buffers = [b"\x01\x02\x03", b"", bytes(range(24))]
     frame = encode_channel_frame("payload", {"fig": "f1", "n": 3}, "probe", buffers)
-    script = tmp_path / "codec.mjs"
-    # A file URL, not a path: an absolute Windows path is neither a valid ESM
-    # specifier nor a valid JS string literal (its separators are escapes).
-    template = json.dumps(WEBSOCKET_JS_TEMPLATE.as_uri())
-    script.write_text(f"""
-import {{ encodeChannelFrame, decodeChannelFrame }} from {template};
+    decoded = _run_client_script(
+        tmp_path,
+        f"""
+import {{ encodeChannelFrame, decodeChannelFrame }} from {CLIENT_MODULE};
 
 const fromPython = Uint8Array.from(Buffer.from(process.argv[2], "base64"));
 const [event, data, channel, buffers] = decodeChannelFrame(fromPython.buffer);
@@ -907,16 +943,9 @@ console.log(JSON.stringify({{
     aligned: buffers.every((b) => b.byteOffset % 8 === 0),
     encoded: Buffer.from(encoded).toString("base64"),
 }}));
-""")
-    result = subprocess.run(
-        [NODE, str(script), base64.b64encode(frame).decode()],
-        capture_output=True,
-        text=True,
-        check=False,
+""",
+        base64.b64encode(frame).decode(),
     )
-
-    assert result.returncode == 0, result.stderr
-    decoded = json.loads(result.stdout)
 
     assert decoded["event"] == "payload"
     assert decoded["data"] == {"fig": "f1", "n": 3}
@@ -1094,6 +1123,68 @@ async def test_handshake_advertises_the_message_limit(
     assert websocket.sent[0][1]["max_message_size"] == 4096
 
 
+@pytest.mark.asyncio
+async def test_closing_a_connection_the_heartbeat_already_closed_is_not_an_error(
+    namespace: WebsocketEventNamespace,
+):
+    """A close code decided over a frame may find the socket already gone.
+
+    The heartbeat closes an unresponsive session from its own task, so the
+    receive loop's own close can land on a connection starlette has already
+    said goodbye on. Teardown still has to finish.
+    """
+    websocket = FakeWebSocket()
+    # No channels, so a binary frame is a close-worthy protocol error.
+    websocket.feed(b"\x00")
+    websocket.refuse_close = True
+
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert "tok1" not in namespace.token_to_sid
+
+
+@pytest.mark.asyncio
+async def test_handler_error_counters_do_not_outlive_their_sessions(
+    namespace: WebsocketEventNamespace, mock_app: Mock
+):
+    """Per-session error counters are dropped when the session goes away.
+
+    A close hook runs after the disconnect bookkeeping, so a failing one logs
+    through the budget once the counter it uses has already been dropped --
+    recreating it for a session that no longer exists.
+    """
+
+    class FailingChannel(Channel):
+        name = "probe"
+
+        async def on_message(
+            self, session: ChannelSession, event: str, data: Any, buffers: list[bytes]
+        ) -> None:
+            """Accept anything; only the close hook matters here."""
+
+        async def on_close(self, session: ChannelSession) -> None:
+            """Fail the way a buggy close hook would.
+
+            Args:
+                session: The session being closed.
+
+            Raises:
+                RuntimeError: Always.
+            """
+            message = "boom"
+            raise RuntimeError(message)
+
+    mock_app._channels = {"probe": FailingChannel()}
+    for index in range(3):
+        websocket = FakeWebSocket(query_string=f"token=tok{index}".encode())
+        websocket.feed([OPEN_MESSAGE, None, "probe"])
+        await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+        await _drain_tasks()
+
+    assert namespace._handler_error_budget.counts == {}
+
+
 def test_client_limits_match_the_protocol():
     """The client enforces the same caps the backend closes the connection over.
 
@@ -1120,9 +1211,10 @@ def test_client_refuses_frames_the_backend_would_close_over(tmp_path: Path):
     opens (checked again when the limit arrives), and multibyte text, whose
     UTF-8 size is what the backend measures.
     """
-    script = tmp_path / "limits.mjs"
-    script.write_text(f"""
-import {{ getChannel }} from {json.dumps(WEBSOCKET_JS_TEMPLATE.as_uri())};
+    report = _run_client_script(
+        tmp_path,
+        f"""
+import {{ getChannel }} from {CLIENT_MODULE};
 
 const result = {{ sent: 0, errors: [] }};
 const transport = {{ _maxMessageSize: 1024, _send: () => {{ result.sent += 1; }} }};
@@ -1153,13 +1245,9 @@ queued._transport = transport;
 queued._receive("_opened", null, []);
 
 console.log(JSON.stringify(result));
-""")
-    result = subprocess.run(
-        [NODE, str(script)], capture_output=True, text=True, check=False
+""",
     )
 
-    assert result.returncode == 0, result.stderr
-    report = json.loads(result.stdout)
     assert "1024" in report["tooBig"]
     # 400 characters: a length check would have passed it, a byte check does not.
     multibyte = re.search(r"is (\d+) bytes", report["multibyte"])
@@ -1167,6 +1255,95 @@ console.log(JSON.stringify(result));
     assert 1024 < int(multibyte.group(1)) < 4 * 400
     assert report["errors"] == ["message_too_large"]
     # Only the message that fits was ever handed to the transport.
+    assert report["sent"] == 1
+
+
+@pytest.mark.skipif(not NODE, reason="Requires node to run the client")
+def test_client_drops_queued_channel_frames_on_a_backend_without_channels(
+    tmp_path: Path,
+):
+    """A downgraded backend must not receive the channel frames still queued.
+
+    A frame the transport queued for a channel (its socket closed mid-flush)
+    outlives the connection it was meant for. Handing it to a backend that
+    predates channels answers with a close, taking the state updates queued
+    behind it down too.
+    """
+    report = _run_client_script(
+        tmp_path,
+        f"""
+import {{ ReflexWebSocket, encodeChannelFrame }} from {CLIENT_MODULE};
+
+// Built without dialing: only the handshake path is under test.
+const sent = [];
+const transport = Object.create(ReflexWebSocket.prototype);
+transport._callbacks = {{}};
+transport._connectTimer = null;
+transport._watchdogTimer = null;
+transport.connected = false;
+transport._ws = {{ send: (frame) => sent.push(frame), readyState: 1 }};
+transport._sendQueue = [
+    JSON.stringify(["state_event", {{ token: "t" }}]),
+    JSON.stringify(["push", {{ n: 1 }}, "probe"]),
+    encodeChannelFrame("frame", {{ n: 2 }}, "probe", [new Uint8Array([1, 2, 3])]),
+];
+
+transport._onMessage(
+    JSON.stringify([
+        "_handshake",
+        {{ ping_interval: 25, ping_timeout: 120, protocol: 1 }},
+    ]),
+);
+transport._clearWatchdog();
+
+console.log(
+    JSON.stringify({{
+        flushed: sent.map((frame) =>
+            typeof frame === "string" ? frame : "binary"
+        ),
+        queued: transport._sendQueue.length,
+    }}),
+);
+""",
+    )
+
+    # The app's own event still goes out; neither channel frame does.
+    assert report["flushed"] == ['["state_event",{"token":"t"}]']
+    assert report["queued"] == 0
+
+
+@pytest.mark.skipif(not NODE, reason="Requires node to run the client")
+def test_client_ignores_an_opened_for_a_channel_that_moved_on(tmp_path: Path):
+    """An _opened from a transport the channel has left changes nothing.
+
+    Flushing against the transport it names would mean reaching for one the
+    channel no longer holds; the queue is owed to whichever transport it
+    attaches to next.
+    """
+    report = _run_client_script(
+        tmp_path,
+        f"""
+import {{ getChannel }} from {CLIENT_MODULE};
+
+const sent = [];
+const channel = getChannel("probe");
+channel.emit("push", {{ n: 1 }});
+// Detached: the transport that this _opened answers is gone.
+channel._receive("_opened", null, []);
+const afterStale = {{ connected: channel.connected, queued: channel._queue.length }};
+
+channel._transport = {{ _maxMessageSize: null, _send: (f) => sent.push(f) }};
+channel._receive("_opened", null, []);
+
+console.log(
+    JSON.stringify({{ afterStale, connected: channel.connected, sent: sent.length }}),
+);
+""",
+    )
+
+    assert report["afterStale"] == {"connected": False, "queued": 1}
+    # The message survives for the transport the channel does attach to.
+    assert report["connected"] is True
     assert report["sent"] == 1
 
 

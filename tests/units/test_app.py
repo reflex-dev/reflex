@@ -4400,7 +4400,7 @@ async def test_client_error_reporting_is_rate_limited_per_sid(
     task = event_namespace.on_disconnect("known_sid")
     if task is not None:
         await task
-    assert "known_sid" not in event_namespace._client_error_counts
+    assert "known_sid" not in event_namespace._client_error_budget.counts
 
 
 @pytest.mark.asyncio
@@ -4433,7 +4433,7 @@ async def test_client_error_reporting_bounded_across_reconnects(
         == 1
     )
     # Once the window elapses, errors are reported again (not silenced forever).
-    event_namespace._client_error_window_start -= (
+    event_namespace._client_error_budget.window_start -= (
         EventNamespace._CLIENT_ERROR_WINDOW_SECONDS + 1
     )
     event_namespace.sid_to_token["sid_fresh"] = "token_fresh"

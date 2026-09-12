@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import json
 import logging
 import time
@@ -190,19 +191,80 @@ def decode_channel_frame(frame: bytes) -> tuple[str, Any, str, list[bytes]]:
     return event, data, channel, buffers
 
 
+@dataclasses.dataclass
+class _ErrorBudget:
+    """Bounds error-level logging driven by one kind of client traffic.
+
+    Per session, because one client must not fill the log; and per time
+    window, because per-session budgets reset on reconnect and so do not stop
+    scripted reconnect loops.
+    """
+
+    # What the budget covers, for the message that announces suppression.
+    label: str
+
+    max_per_session: int
+    max_per_window: int
+    window_seconds: float
+
+    counts: dict[str, int] = dataclasses.field(default_factory=dict)
+    window_start: float = 0.0
+    window_count: int = 0
+
+    def allows(self, sid: str) -> bool:
+        """Whether another record for this session fits the budget.
+
+        Args:
+            sid: The session id.
+
+        Returns:
+            Whether the record may be written.
+        """
+        session_count = self.counts.get(sid, 0)
+        if session_count >= self.max_per_session:
+            return False
+        now = time.monotonic()
+        if now - self.window_start > self.window_seconds:
+            self.window_start = now
+            self.window_count = 0
+        if self.window_count >= self.max_per_window:
+            if self.window_count == self.max_per_window:
+                # Warn once per window so suppression is visible in the logs
+                # and a flooding client cannot silently starve reports from
+                # other sessions.
+                self.window_count += 1
+                logger.warning(
+                    f"More than {self.max_per_window} {self.label} in "
+                    f"{self.window_seconds:.0f}s; suppressing further reports "
+                    "for this window."
+                )
+            return False
+        self.window_count += 1
+        self.counts[sid] = session_count + 1
+        return True
+
+    def forget(self, sid: str) -> None:
+        """Drop a disconnected session's counter.
+
+        Args:
+            sid: The session id.
+        """
+        self.counts.pop(sid, None)
+
+
 class BaseEventNamespace(ABC):
     """Transport-agnostic handler for client event sessions."""
 
     # The application object.
     app: App
 
-    # Maximum error-level log entries a single session may produce via the
-    # client_error event before further reports from it are dropped.
+    # Maximum error-level log entries a single session may produce, per kind
+    # of client-triggered error, before further ones from it are dropped.
     _MAX_CLIENT_ERRORS_PER_SID = 5
 
-    # Process-wide bound on error-level client_error log entries per time
-    # window; per-SID budgets alone reset on reconnect, so scripted
-    # reconnects could otherwise flood the logs.
+    # Process-wide bound on those entries per time window; per-SID budgets
+    # alone reset on reconnect, so scripted reconnects could otherwise flood
+    # the logs.
     _CLIENT_ERROR_WINDOW_SECONDS = 60.0
     _MAX_CLIENT_ERRORS_PER_WINDOW = 20
 
@@ -219,12 +281,29 @@ class BaseEventNamespace(ABC):
         # Use TokenManager for distributed duplicate tab prevention
         self._token_manager = TokenManager.create()
 
-        # Number of client_error reports logged per SID, for rate limiting.
-        self._client_error_counts: dict[str, int] = {}
+        # Client-reported errors and server-side handler failures are both
+        # driven by client traffic, but a client chooses how many reports it
+        # sends while a handler traceback means a real bug, so one cannot be
+        # allowed to suppress the other.
+        self._client_error_budget = self._error_budget("client_error reports")
+        self._handler_error_budget = self._error_budget("handler errors")
 
-        # Start time and count of the current process-wide client_error window.
-        self._client_error_window_start = 0.0
-        self._client_error_window_count = 0
+    @classmethod
+    def _error_budget(cls, label: str) -> _ErrorBudget:
+        """Build a budget for one kind of client-triggered error logging.
+
+        Args:
+            label: What the budget covers, for the suppression message.
+
+        Returns:
+            The budget.
+        """
+        return _ErrorBudget(
+            label=label,
+            max_per_session=cls._MAX_CLIENT_ERRORS_PER_SID,
+            max_per_window=cls._MAX_CLIENT_ERRORS_PER_WINDOW,
+            window_seconds=cls._CLIENT_ERROR_WINDOW_SECONDS,
+        )
 
     @property
     def token_to_sid(self) -> Mapping[str, str]:
@@ -300,7 +379,8 @@ class BaseEventNamespace(ABC):
         """
         if otel.enabled:
             otel.record_connection(-1)
-        self._client_error_counts.pop(sid, None)
+        self._client_error_budget.forget(sid)
+        self._handler_error_budget.forget(sid)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -456,47 +536,6 @@ class BaseEventNamespace(ABC):
         # Emit the test event.
         await self.emit(_PING, "pong", to=sid)
 
-    def _within_error_budget(self, sid: str) -> bool:
-        """Whether another error-level record for this session fits the budget.
-
-        Error-level logging driven by client traffic -- a reported frontend
-        error, a channel handler a message made raise -- is budgeted per
-        session and per time window, so no client can flood the backend logs
-        or starve the reports of other sessions.
-
-        Args:
-            sid: The session id.
-
-        Returns:
-            Whether the record may be written.
-        """
-        # Rate limit per session so a client cannot flood the backend logs.
-        error_count = self._client_error_counts.get(sid, 0)
-        if error_count >= self._MAX_CLIENT_ERRORS_PER_SID:
-            return False
-
-        # Also bound total entries per time window: per-SID budgets reset on
-        # reconnect, so they alone do not stop scripted reconnect loops.
-        now = time.monotonic()
-        if now - self._client_error_window_start > self._CLIENT_ERROR_WINDOW_SECONDS:
-            self._client_error_window_start = now
-            self._client_error_window_count = 0
-        if self._client_error_window_count >= self._MAX_CLIENT_ERRORS_PER_WINDOW:
-            if self._client_error_window_count == self._MAX_CLIENT_ERRORS_PER_WINDOW:
-                # Warn once per window so suppression is visible in the logs
-                # and a flooding client cannot silently starve reports from
-                # other sessions.
-                self._client_error_window_count += 1
-                logger.warning(
-                    f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
-                    f"client-triggered errors in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
-                    "suppressing further reports for this window."
-                )
-            return False
-        self._client_error_window_count += 1
-        self._client_error_counts[sid] = error_count + 1
-        return True
-
     def _log_handler_failure(
         self, sid: str, message: str, error: BaseException
     ) -> None:
@@ -510,7 +549,7 @@ class BaseEventNamespace(ABC):
             message: What failed.
             error: The exception to attach.
         """
-        if self._within_error_budget(sid):
+        if self._handler_error_budget.allows(sid):
             logger.error(message, exc_info=error)
         else:
             logger.debug(f"Suppressed a repeated handler error for session {sid}.")
@@ -548,7 +587,7 @@ class BaseEventNamespace(ABC):
             logger.debug(f"Ignoring client_error report from unknown SID {sid}.")
             return
 
-        if not self._within_error_budget(sid):
+        if not self._client_error_budget.allows(sid):
             return
 
         error_type = format.sanitize_client_log_value(data.get("error_type", "unknown"))
@@ -872,6 +911,22 @@ class WebsocketEventNamespace(BaseEventNamespace):
         return None
 
     @staticmethod
+    async def _close_quietly(websocket: WebSocket, code: int) -> None:
+        """Close a connection, tolerating one the heartbeat already closed.
+
+        The heartbeat closes from its own task, so a close code decided while
+        a frame was in flight can arrive at a socket that is already gone.
+
+        Args:
+            websocket: The client websocket connection.
+            code: The close code.
+        """
+        try:
+            await websocket.close(code=code)
+        except RuntimeError:
+            logger.debug("Connection was already closed.", exc_info=True)
+
+    @staticmethod
     def _accept_inbound(sid: str, payload: str | bytes, max_size: int) -> int | None:
         """Apply the message size policy to a received frame, and account for it.
 
@@ -1040,7 +1095,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
             )
             if sid not in self._token_manager.sid_to_token:
                 # No token was linked; not a Reflex client.
-                await websocket.close(code=1008)
+                await self._close_quietly(websocket, 1008)
                 return
             while True:
                 received = await websocket.receive()
@@ -1054,8 +1109,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
                     # invoking handlers under a token that has moved on -- and
                     # a reconnect is how it gets a working session back.
                     logger.debug(f"Closing session {sid}: its token is gone.")
-                    close_code = 1008
-                    await websocket.close(code=close_code)
+                    await self._close_quietly(websocket, 1008)
                     break
                 text = received.get("text")
                 if text is not None:
@@ -1073,7 +1127,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
                     logger.debug(f"Closing session {sid}: received a binary frame.")
                     close_code = 1003
                 if close_code is not None:
-                    await websocket.close(code=close_code)
+                    await self._close_quietly(websocket, close_code)
                     break
         except WebSocketDisconnect:
             pass
@@ -1084,6 +1138,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
             # shutdown must not leave the token linked to a dead session.
             cleanup_task = self.handle_disconnect(sid)
             await self._close_channel_sessions(sid)
+            # A close hook that raised logged through the handler budget,
+            # which recreated the counter handle_disconnect had just dropped.
+            self._handler_error_budget.forget(sid)
             if cleanup_task is not None:
                 # Await the token cleanup so an immediate reconnect is not
                 # treated as a duplicate tab; shielded so cancellation (e.g.

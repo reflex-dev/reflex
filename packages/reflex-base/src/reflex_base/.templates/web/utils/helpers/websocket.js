@@ -9,7 +9,6 @@ const PING_MESSAGE = "_ping";
 const PONG_MESSAGE = "_pong";
 const OPEN_MESSAGE = "_open";
 const OPENED_MESSAGE = "_opened";
-const CLOSE_MESSAGE = "_close";
 const CHANNEL_ERROR_MESSAGE = "_error";
 
 // Backend protocol version that speaks channels. A backend older than this
@@ -95,6 +94,24 @@ const channelFrame = (event, data, channel, buffers) =>
   buffers?.length
     ? encodeChannelFrame(event, data, channel, buffers)
     : stringifyFrame([event, data, channel]);
+
+/**
+ * Whether a parsed frame names a channel, which only a channel message does.
+ * @param message The parsed frame.
+ * @returns Whether it carries a channel name after the event and its payload.
+ */
+const isChannelMessage = (message) =>
+  Array.isArray(message) && message.length > 2;
+
+/**
+ * Whether a serialized frame carries a channel message.
+ * @param frame The serialized text or binary frame.
+ * @returns True for a binary frame, or a text frame naming a channel.
+ */
+const isChannelFrame = (frame) =>
+  // Only channel messages carry attachments, so only they go out binary.
+  typeof frame !== "string" ||
+  isChannelMessage(parseJsonLenient(frame, undefined));
 
 /**
  * Whether a serialized frame is over the backend's inbound message limit.
@@ -372,6 +389,11 @@ class ReflexChannel extends LocalEmitter {
    */
   _receive(event, data, buffers) {
     if (event === OPENED_MESSAGE) {
+      if (this._transport === null) {
+        // A straggler from a transport this channel is no longer on; the queue
+        // belongs to whichever transport it attaches to next.
+        return;
+      }
       this.connected = true;
       const queued = this._queue;
       this._queue = [];
@@ -711,6 +733,12 @@ export class ReflexWebSocket extends LocalEmitter {
         disableChannels(
           "This backend predates channel support; upgrade Reflex to use channels.",
         );
+        // A channel frame queued against an earlier connection would reach a
+        // backend that closes the socket over it, costing the app its state
+        // updates too.
+        this._sendQueue = this._sendQueue.filter(
+          (frame) => !isChannelFrame(frame),
+        );
       }
       const queue = this._sendQueue;
       this._sendQueue = [];
@@ -720,7 +748,7 @@ export class ReflexWebSocket extends LocalEmitter {
       this._emitLocal("connect");
       return;
     }
-    if (message.length > 2) {
+    if (isChannelMessage(message)) {
       channels.get(message[2])?._receive(event, payload, []);
       return;
     }
