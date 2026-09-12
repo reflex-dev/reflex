@@ -2759,12 +2759,9 @@ class ComponentState(State, mixin=True):
 
         Args:
             children: The children of the component.
-            _state_key: Names this instance's state instead of the creation
-                order. Unkeyed instances are numbered as they are created, so
-                adding or reordering a ``create()`` call renames the ones after
-                it -- which moves their entry in ``minify.json`` and repoints
-                any frontend already served. A key must be unique among the
-                instances of this component.
+            _state_key: Names this instance's state. Must be a valid Python
+                identifier and unique among the instances of this component.
+                Unkeyed instances are named by creation order instead.
             props: The props of the component.
 
         Returns:
@@ -2784,10 +2781,12 @@ class ComponentState(State, mixin=True):
                     f"got {_state_key!r}."
                 )
                 raise ValueError(msg)
-            state_cls_name = f"{cls.__name__}_{_state_key}"
+            # Doubled separator: an unkeyed name is always ``_n`` followed by
+            # digits, so no key can produce one.
+            state_cls_name = f"{cls.__name__}__{_state_key}"
         else:
-            # Keyed instances are skipped, so adding one leaves the numbering
-            # of the unkeyed instances alone.
+            # Keyed instances do not advance the counter, so adding one leaves
+            # the unkeyed names alone.
             cls._per_component_state_instance_count += 1
             state_cls_name = (
                 f"{cls.__name__}_n{cls._per_component_state_instance_count}"
