@@ -11,6 +11,7 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base.environment import environment
 from reflex_base.utils import serializers
+from reflex_base.utils.decorator import once
 
 from reflex.utils import exec as exec_utils
 
@@ -265,9 +266,47 @@ def test_uvicorn_worker_carries_the_socket_policy(monkeypatch: pytest.MonkeyPatc
     assert ReflexUvicornWorker.CONFIG_KWARGS["ws_per_message_deflate"] is False
 
 
+@pytest.fixture
+def fresh_uvicorn_warnings(mocker: MockerFixture) -> None:
+    """Give each test its own `once` caches for the uvicorn warnings.
+
+    They are cached for the life of the process, so a warning another test
+    already triggered would otherwise silently not be emitted again.
+    """
+    for name in ("_warn_about_uvicorn_websockets", "_warn_user_about_uvicorn"):
+        warned = getattr(exec_utils, name)
+        # Re-wrapping would paper over a dropped `once`, so require it first:
+        # a single run asks `should_use_granian()` several times.
+        assert hasattr(warned, "__wrapped__"), f"{name} must stay `once`-cached"
+        mocker.patch.object(exec_utils, name, once(warned.__wrapped__))
+
+
+def test_auto_detected_uvicorn_is_announced_once(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog,
+    fresh_uvicorn_warnings: None,
+):
+    """A single run asks repeatedly; the notice belongs in the log once."""
+    monkeypatch.delenv("REFLEX_USE_GRANIAN", raising=False)
+    mocker.patch.object(
+        exec_utils.importlib.util, "find_spec", side_effect=lambda name: object()
+    )
+
+    with caplog.at_level(logging.WARNING):
+        assert exec_utils.should_use_granian() is False
+        assert exec_utils.should_use_granian() is False
+
+    assert caplog.text.count("This behavior will change in 0.8.0") == 1
+
+
 @pytest.mark.parametrize("use_granian", ["0", "1"])
 def test_forcing_uvicorn_warns_about_a_missing_websocket_library(
-    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch, caplog, use_granian: str
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog,
+    fresh_uvicorn_warnings: None,
+    use_granian: str,
 ):
     """Choosing uvicorn explicitly still reports that it cannot serve websockets.
 

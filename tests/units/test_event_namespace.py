@@ -1170,22 +1170,30 @@ console.log(JSON.stringify(result));
     assert report["sent"] == 1
 
 
-def test_large_metadata_is_bounded_only_by_the_message_limit():
+@pytest.mark.asyncio
+async def test_large_metadata_is_bounded_only_by_the_message_limit(
+    namespace: WebsocketEventNamespace, mock_app: Mock
+):
     """Metadata is limited by the frame size, not by a second hidden cap.
 
     The same metadata sent without attachments travels as a text frame, which
     only the message limit applies to; a binary frame that rejected it would
     close the connection over a payload the client had no way to know was too
-    big -- the handshake advertises one limit.
+    big -- the handshake advertises one limit. Driven through the receive path,
+    because that is where such a frame would be turned into a close.
     """
+    channel = RecordingChannel(accepts_binary=True)
+    mock_app._channels = {"probe": channel}
+    # Far past any header-shaped cap, far under the 1 MB message limit.
     metadata = {"spec": "x" * (128 * 1024)}
-    frame = encode_channel_frame("payload", metadata, "probe", [b"\x00\x01"])
-
-    event, data, channel, buffers = decode_channel_frame(frame)
-
-    assert (event, data, channel, buffers) == (
-        "payload",
-        metadata,
-        "probe",
-        [b"\x00\x01"],
+    websocket = FakeWebSocket()
+    websocket.feed(
+        [OPEN_MESSAGE, None, "probe"],
+        encode_channel_frame("payload", metadata, "probe", [b"\x00\x01"]),
     )
+
+    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
+    await _drain_tasks()
+
+    assert websocket.close_code is None
+    assert channel.messages == [("payload", metadata, [b"\x00\x01"])]
