@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
@@ -17,6 +18,7 @@ from opentelemetry import trace
 from reflex_base import otel
 from starlette.routing import WebSocketRoute
 
+from reflex import event_namespace
 from reflex.app import App
 from reflex.channels import Channel, ChannelSession
 from reflex.event_namespace import (
@@ -1047,24 +1049,21 @@ async def test_deeply_nested_frame_closes_connection(
     assert websocket.close_code == 1002
 
 
-@pytest.mark.asyncio
-async def test_unparseable_binary_header_closes_connection(
-    namespace: WebsocketEventNamespace, mock_app: Mock, mocker
-):
-    """A binary header that exhausts the decoder closes the connection too.
+def test_decoding_a_too_deeply_nested_header_is_a_value_error(mocker):
+    """A header the decoder cannot recurse through fails like any bad frame.
 
-    The header size cap bounds how deep an inbound header can nest, and how
-    deep is too deep depends on the interpreter, so the decoder's failure is
-    simulated rather than provoked.
+    Callers handle malformed frames by catching ValueError; that the decoder
+    signals deep nesting with RecursionError is its own business, and the
+    header size cap makes how deep is too deep interpreter-specific, so the
+    failure is simulated rather than provoked.
     """
-    mock_app._channels = {"probe": RecordingChannel()}
-    mocker.patch(
-        "reflex.event_namespace.decode_channel_frame",
-        side_effect=RecursionError("too deep"),
+    # Only this module's reference to json, so nothing else loses its decoder.
+    mocker.patch.object(
+        event_namespace,
+        "json",
+        SimpleNamespace(loads=Mock(side_effect=RecursionError("too deep"))),
     )
-    websocket = FakeWebSocket()
-    websocket.feed(encode_channel_frame("push", None, "probe", [b"\x00"]))
-    await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
-    await _drain_tasks()
+    frame = encode_channel_frame("push", None, "probe", [b"\x00"])
 
-    assert websocket.close_code == 1002
+    with pytest.raises(ValueError, match="nested too deeply"):
+        decode_channel_frame(frame)

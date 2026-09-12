@@ -133,7 +133,15 @@ def decode_channel_frame(frame: bytes) -> tuple[str, Any, str, list[bytes]]:
     if header_size > _MAX_FRAME_HEADER_SIZE or 4 + header_size > len(frame):
         msg = f"Binary frame declares an unusable header size {header_size}."
         raise ValueError(msg)
-    header = json.loads(frame[4 : 4 + header_size])
+    try:
+        header = json.loads(frame[4 : 4 + header_size])
+    except RecursionError as ex:
+        # The JSON decoder recurses per nesting level, so a header nested
+        # deeper than its stack allows never parses. That is malformed input
+        # like any other, and callers should not have to know that the
+        # decoder signals it differently.
+        msg = "Binary frame header is nested too deeply."
+        raise ValueError(msg) from ex
     match header:
         case [str(event), data, str(channel), [*lengths]] if all(
             isinstance(length, int) and not isinstance(length, bool) and length >= 0
@@ -795,10 +803,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
             otel.record_message_size(len(frame), "receive")
         try:
             event, data, channel_name, buffers = decode_channel_frame(frame)
-        except (ValueError, RecursionError):
+        except ValueError:
             # A Reflex client never sends malformed frames; close instead of
-            # logging per frame. Deeply nested JSON exhausts the decoder's
-            # stack, which is malformed input all the same.
+            # logging per frame.
             logger.debug(f"Closing session {sid}: malformed binary frame.")
             return 1002
         await self._handle_channel_message(sid, channel_name, event, data, buffers)
