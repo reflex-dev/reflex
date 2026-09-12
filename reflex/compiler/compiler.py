@@ -1241,6 +1241,7 @@ def compile_app(
                 logger.debug(f"BE Evaluating stateful page: {route}")
                 app._compile_page(route, save_page=False)
         if app._state is not None:
+            utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
@@ -1261,6 +1262,7 @@ def compile_app(
 
         app._write_stateful_pages_marker()
         if app._state is not None:
+            utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
@@ -1463,13 +1465,14 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
-    compile_results.append(
+    compile_results.extend([
         compile_contexts(
             app._state,
             radix_themes_plugin.get_theme(),
             component_imports=all_imports,
-        )
-    )
+        ),
+        utils._compile_bundled_libraries(),
+    ])
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
