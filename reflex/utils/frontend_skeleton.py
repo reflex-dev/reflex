@@ -12,8 +12,8 @@ from reflex_base.environment import environment
 from reflex_base.plugins.embed import get_embed_plugin
 
 from reflex.compiler import templates
-from reflex.compiler.utils import write_file
 from reflex.utils import net, path_ops
+from reflex.utils.path_ops import write_file
 from reflex.utils.prerequisites import get_project_hash, get_web_dir
 from reflex.utils.registry import get_npm_registry
 

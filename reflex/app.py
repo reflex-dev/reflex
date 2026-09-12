@@ -677,13 +677,22 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @contextlib.asynccontextmanager
     async def _setup_event_processor(self) -> AsyncIterator[None]:
+        """Configure event processing with a fresh worker socket identity.
+
+        Yields:
+            None while the event processor is active.
+        """
+        # The app may have been imported before the server forked its workers.
+        event_namespace = self.event_namespace
+        if event_namespace is not None:
+            event_namespace._token_manager._reset_instance_id()
         # Create the event processor.
         self._event_processor = BaseStateEventProcessor(
             middleware=self, backend_exception_handler=self.backend_exception_handler
         )
         async with self._event_processor.configure(
             state_manager=self.state_manager,
-            event_namespace=self.event_namespace,
+            event_namespace=event_namespace,
         ):
             yield
 
@@ -770,10 +779,8 @@ class App(MiddlewareMixin, LifespanMixin):
 
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
         # Make sure Reflex contexts are attached for each request.
-        top_asgi_app.mount(
-            "",
-            self._context_middleware(asgi_app),
-        )
+        top_asgi_app.add_middleware(self._context_middleware)
+        top_asgi_app.mount("", asgi_app)
         App._add_cors(top_asgi_app)
         if otel.asgi_middleware is not None:
             return otel.asgi_middleware(top_asgi_app)
@@ -1380,6 +1387,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
+        admin_dash = self.admin_dash
+        if not admin_dash or not admin_dash.models:
+            return
+
         try:
             from starlette_admin.contrib.sqla.admin import Admin
             from starlette_admin.contrib.sqla.view import ModelView
@@ -1392,24 +1403,21 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self._api:
             return
 
-        admin_dash = self.admin_dash
+        # Build the admin dashboard
+        # The first positional argument is `engine` before starlette-admin
+        # 1.0 and `session_provider` (which still accepts an Engine) after,
+        # so pass it positionally to support both.
+        admin = admin_dash.admin or Admin(
+            get_engine(),
+            title="Reflex Admin Dashboard",
+            logo_url="https://reflex.dev/Reflex.svg",
+        )
 
-        if admin_dash and admin_dash.models:
-            # Build the admin dashboard
-            # The first positional argument is `engine` before starlette-admin
-            # 1.0 and `session_provider` (which still accepts an Engine) after,
-            # so pass it positionally to support both.
-            admin = admin_dash.admin or Admin(
-                get_engine(),
-                title="Reflex Admin Dashboard",
-                logo_url="https://reflex.dev/Reflex.svg",
-            )
+        for model in admin_dash.models:
+            view = admin_dash.view_overrides.get(model, ModelView)
+            admin.add_view(view(model))
 
-            for model in admin_dash.models:
-                view = admin_dash.view_overrides.get(model, ModelView)
-                admin.add_view(view(model))
-
-            admin.mount_to(self._api)
+        admin.mount_to(self._api)
 
     def _get_frontend_packages(
         self,
