@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from os import getcwd
 from pathlib import Path
 from types import ModuleType
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from packaging import version
 from reflex_base import constants
@@ -459,8 +459,31 @@ def get_redis() -> Redis | None:
         return Redis.from_url(
             redis_url,
             retry_on_error=[RedisError],
+            **_redis_driver_kwargs(),
         )
     return None
+
+
+def _redis_driver_kwargs() -> dict[str, Any]:
+    """Pin redis-py's own version so it is not resolved per connection.
+
+    redis-py >= 7 looks its version up through ``importlib.metadata`` every
+    time a connection object is created, which scans ``sys.path`` and reads
+    package metadata on the event loop. Passing the version up front skips
+    that lookup.
+
+    Returns:
+        Keyword arguments for the redis client constructor.
+    """
+    import redis
+
+    try:
+        # Imported dynamically: the module only exists in redis-py >= 7.
+        driver_info = importlib.import_module("redis.driver_info")
+    except ImportError:
+        # redis-py < 7 takes lib_version directly.
+        return {"lib_version": redis.__version__}
+    return {"driver_info": driver_info.DriverInfo(lib_version=redis.__version__)}
 
 
 def get_redis_sync() -> RedisSync | None:

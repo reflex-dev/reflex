@@ -1,0 +1,1 @@
+Keep blocking filesystem and metadata work off the backend event loop: the disk state manager now reads state files in a worker thread, precompressed static file serving stats sidecar files off the loop, and the redis client is created with its library version pinned so redis-py no longer scans `sys.path` on every new connection.
