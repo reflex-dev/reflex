@@ -217,6 +217,59 @@ class MinifyNameResolver:
     _event_cache: dict[type[BaseState], dict[str, str]] = dataclasses.field(
         default_factory=dict, repr=False
     )
+    _digest: str = dataclasses.field(default="", repr=False)
+
+    def digest(self) -> str:
+        """Digest the wire names this resolver produces for the registered states.
+
+        Only live names are hashed: an orphaned config entry names nothing on
+        the wire, so retaining or pruning one must not look like a mismatch.
+        A map is skipped entirely when its ``REFLEX_MINIFY_*`` mode is off, so
+        toggling a mode does register as a mismatch.
+
+        Only a non-empty result is memoized: the states are walked, so asking
+        before they register would otherwise freeze an empty answer in place.
+
+        Returns:
+            A short hex digest, or ``""`` when no name is rewritten.
+        """
+        if self.config is None or not (self.states_enabled or self.events_enabled):
+            return ""
+        if not self._digest:
+            self._digest = self._compute_digest(self.config)
+        return self._digest
+
+    def _compute_digest(self, config: MinifyConfig) -> str:
+        """Hash the live portion of ``config``.
+
+        Args:
+            config: The loaded ``minify.json``.
+
+        Returns:
+            A short hex digest, or ``""`` when no name is rewritten.
+        """
+        states: dict[str, str] = {}
+        events: dict[str, dict[str, str]] = {}
+        for state_cls in collect_all_states():
+            path = get_state_full_path(state_cls)
+            if self.states_enabled and (entry := config["states"].get(path)):
+                states[path] = entry["id"]
+            if self.events_enabled and (configured := config["events"].get(path)):
+                live = {
+                    name: minified
+                    for name, minified in configured.items()
+                    if name in state_cls.event_handlers
+                }
+                if live:
+                    events[path] = live
+        if not states and not events:
+            return ""
+        payload = json.dumps(
+            {"states": states, "events": events},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return hashlib.sha256(payload.encode()).hexdigest()[:16]
 
     @classmethod
     def from_disk(cls) -> MinifyNameResolver:
@@ -318,14 +371,12 @@ def ensure_minify_resolver_for_active_context() -> None:
     ctx.set_name_resolver(MinifyNameResolver.from_disk())
 
 
-@functools.lru_cache(maxsize=1)
 def scheme_digest() -> str:
     """Digest the wire-name scheme the active resolver produces.
 
     A frontend bundle and the backend it talks to must agree on what the names
-    on the wire mean. Only the parts that reach the wire are digested: a map is
-    included when its ``REFLEX_MINIFY_*`` mode is on, so toggling a mode is a
-    mismatch just like editing ``minify.json`` is.
+    on the wire mean. The result is memoized on the resolver instance, so
+    installing another resolver produces a fresh digest without coordination.
 
     Returns:
         A short hex digest, or ``""`` when no name is rewritten.
@@ -334,21 +385,9 @@ def scheme_digest() -> str:
 
     ctx = RegistrationContext.try_get()
     resolver = ctx.name_resolver if ctx is not None else None
-    if not isinstance(resolver, MinifyNameResolver) or resolver.config is None:
+    if not isinstance(resolver, MinifyNameResolver):
         return ""
-
-    scheme = {
-        "states": {
-            path: entry["id"] for path, entry in resolver.config["states"].items()
-        }
-        if resolver.states_enabled
-        else {},
-        "events": resolver.config["events"] if resolver.events_enabled else {},
-    }
-    if not scheme["states"] and not scheme["events"]:
-        return ""
-    payload = json.dumps(scheme, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+    return resolver.digest()
 
 
 def clear_config_cache() -> None:
@@ -359,7 +398,6 @@ def clear_config_cache() -> None:
     """
     get_minify_config.cache_clear()
     is_mode_enabled.cache_clear()
-    scheme_digest.cache_clear()
     install_minify_resolver()
 
 

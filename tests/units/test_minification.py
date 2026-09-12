@@ -1735,6 +1735,66 @@ class TestSchemeDigest:
         assert both
         assert states_only != both
 
+    def test_same_scheme_digests_identically_across_processes(self, tmp_path):
+        """Both sides compute the digest independently; they must agree.
+
+        Same-process stability is not enough: the frontend digest is baked at
+        compile time and the backend recomputes it in another interpreter.
+        """
+        config: MinifyConfig = {
+            "version": SCHEMA_VERSION,
+            "states": {"reflex.state.State": StateEntry(id="a", parent=None)},
+            "events": {"reflex.state.State": {"hydrate": "q"}},
+        }
+        _run_in_fresh_interpreter(
+            tmp_path,
+            config,
+            """
+                from reflex.minify import scheme_digest
+                import reflex.state
+
+                first = scheme_digest()
+                assert first, "expected a digest with minification enabled"
+                assert scheme_digest() == first, "digest is not stable"
+                print(first)
+            """,
+            REFLEX_MINIFY_STATES=MinifyMode.ENABLED.value,
+            REFLEX_MINIFY_EVENTS=MinifyMode.ENABLED.value,
+        )
+
+    def test_pruning_an_orphan_keeps_the_digest(self, temp_minify_json, monkeypatch):
+        """An orphaned entry names nothing on the wire, so dropping it is not a change.
+
+        Otherwise ``reflex minify sync --prune`` would disconnect frontends
+        whose every live name is still valid.
+        """
+        _set_minify_modes(
+            monkeypatch, states=MinifyMode.ENABLED, events=MinifyMode.ENABLED
+        )
+        live: dict[str, str | StateEntry] = {
+            "reflex.state.State": StateEntry(id="a", parent=None)
+        }
+
+        _install_config(states=live, events={"reflex.state.State": {"hydrate": "q"}})
+        pruned = scheme_digest()
+
+        _install_config(
+            states={
+                **live,
+                "gone.away.State.Deleted": StateEntry(
+                    id="z", parent="reflex.state.State"
+                ),
+            },
+            events={
+                "reflex.state.State": {"hydrate": "q"},
+                "gone.away.State.Deleted": {"vanished": "z"},
+            },
+        )
+        with_orphans = scheme_digest()
+
+        assert pruned
+        assert pruned == with_orphans
+
     def test_differs_when_an_id_changes(self, temp_minify_json, monkeypatch):
         """Editing minify.json renames states, so the schemes must not match."""
         _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)

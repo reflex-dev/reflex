@@ -1175,3 +1175,35 @@ async def test_unregistered_event_reaches_the_exception_handler(token: str):
     assert len(seen) == 1
     assert isinstance(seen[0], KeyError)
     assert "no.such.handler" in str(seen[0])
+
+
+async def test_raising_exception_handler_does_not_stop_the_queue(token: str):
+    """A handler that raises must not take the remaining events down with it.
+
+    ``_process_queue`` is the sole consumer, so an escaping exception would
+    leave later events queued forever.
+
+    Args:
+        token: The client token.
+    """
+    _CALL_LOG.clear()
+
+    def explode(ex: Exception) -> None:
+        msg = "handler is broken"
+        raise RuntimeError(msg)
+
+    processor = EventProcessor(
+        backend_exception_handler=explode, graceful_shutdown_timeout=2
+    )
+    processor.configure()
+
+    async with processor as ep:
+        await ep.enqueue(token, Event(name="no.such.handler"))
+        current = await ep.enqueue(
+            token, Event.from_event_type(logging_event("after_failure"))[0]
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=2)
+
+    assert _CALL_LOG == [{"value": "after_failure"}], (
+        "the event queued after the handler failure never ran"
+    )

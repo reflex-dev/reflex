@@ -780,7 +780,15 @@ class EventProcessor:
                     )
                     # Surface it client-side too: an event that never reaches a
                     # handler produces no update, so the page would just stall.
-                    await self._handle_backend_exception(ex, entry.ctx)
+                    try:
+                        await self._handle_backend_exception(ex, entry.ctx)
+                    except Exception:
+                        # This is the sole queue consumer; a handler that raises
+                        # must not take the remaining events down with it.
+                        logger.exception(
+                            f"Backend exception handler failed for {entry.event} "
+                            f"[txid={entry.ctx.txid}]:"
+                        )
                 queue.task_done()
         if self._queue_task is asyncio.current_task():
             self._queue_task = None
