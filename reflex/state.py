@@ -2771,14 +2771,17 @@ class ComponentState(State, mixin=True):
             A new instance of the Component with an independent copy of the State.
 
         Raises:
-            ValueError: If ``_state_key`` is not usable as a name segment.
+            ValueError: If ``_state_key`` is not a string usable as a name segment.
         """
         from reflex.compiler.compiler import into_component
 
         if _state_key is not None:
-            if not _state_key.isidentifier():
+            # It becomes part of a class name, so anything that is not an
+            # identifier string is rejected here rather than further in.
+            if not isinstance(_state_key, str) or not _state_key.isidentifier():
                 msg = (
-                    f"_state_key must be a valid Python identifier, got {_state_key!r}."
+                    "_state_key must be a string that is a valid Python identifier, "
+                    f"got {_state_key!r}."
                 )
                 raise ValueError(msg)
             state_cls_name = f"{cls.__name__}_{_state_key}"

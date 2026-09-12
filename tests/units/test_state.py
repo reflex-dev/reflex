@@ -5437,10 +5437,22 @@ def test_component_state_key_survives_a_reorder():
     assert unkeyed_before.__name__ != unkeyed_after.__name__
 
 
-def test_component_state_rejects_an_unusable_key():
-    """A key becomes part of a class name, so it has to be an identifier."""
+@pytest.mark.parametrize(
+    "bad_key",
+    ["not an identifier", "1leading_digit", "", 1, ("a",)],
+    ids=["spaces", "digit", "empty", "int", "tuple"],
+)
+def test_component_state_rejects_an_unusable_key(bad_key):
+    """A key becomes part of a class name, so it has to be an identifier.
+
+    Keying a list of components by index is an easy thing to reach for, so a
+    non-string has to fail the same way as a malformed one.
+
+    Args:
+        bad_key: A key that cannot name a class.
+    """
     with pytest.raises(ValueError, match="valid Python identifier"):
-        KeyedCounter.create(_state_key="not an identifier")
+        KeyedCounter.create(_state_key=bad_key)
 
 
 def test_component_state_rejects_a_duplicate_key():
