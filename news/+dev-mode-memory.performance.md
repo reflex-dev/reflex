@@ -1,0 +1,1 @@
+Reduce `reflex run` and `reflex export` memory: the vite/react-router processes no longer keep their dependency pre-bundling arena resident (`MIMALLOC_ARENA_EAGER_COMMIT=0`, overridable from the environment), and error telemetry is sent through `urllib` so backend workers never import `httpx`.

@@ -19,6 +19,7 @@ _BASE_STYLESHEETS = ("custom-colors.css", "tailwind-theme.css")
 _FONT_STYLESHEET = "fonts.css"
 _PUBLIC_ASSETS = (
     "components/AlgoliaSearch.tsx",
+    "components/DeferredDemo.jsx",
     "components/GradientButton.tsx",
     "icons/search.svg",
 )

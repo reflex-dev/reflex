@@ -1,3 +1,14 @@
+## v0.9.9 (2026-09-11)
+
+### Bug Fixes
+
+- Avoid retaining stale Radix Themes library registrations when recompiling an app that no longer uses Radix components. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+
+### Miscellaneous
+
+- Bump the Radix primitives: `@radix-ui/react-accordion` 1.2.20, `@radix-ui/react-dialog` 1.1.23, and `@radix-ui/react-form` 0.1.16. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
 ## v0.9.8 (2026-08-28)
 
 ### Bug Fixes

@@ -1,0 +1,1 @@
+An `AttributeError` raised while computing a var, such as a typo inside an `@rx.serializer`, is now re-raised as a `ReflexRuntimeError` chained to the original error instead of a misleading `Attribute _cached_var_name not found` error.

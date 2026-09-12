@@ -1,12 +1,24 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
+import dataclasses
 import threading
+import traceback
 import typing
 from typing import Any, Literal, TypeVar
 
 import pytest
+from reflex_base.utils import serializers
+from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.utils.types import get_field_type
-from reflex_base.vars.base import EvenMoreBasicBaseState, Var, _linearize_bases, field
+from reflex_base.vars.base import (
+    CachedVarOperation,
+    EvenMoreBasicBaseState,
+    LiteralVar,
+    Var,
+    _linearize_bases,
+    cached_property_no_lock,
+    field,
+)
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
@@ -246,3 +258,47 @@ def test_linearize_bases_compares_by_identity() -> None:
             _linearize_bases((b, c)), created.__mro__[1:], strict=True
         )
     )
+
+
+def test_serializer_attribute_error_is_not_masked() -> None:
+    """An AttributeError raised inside a serializer surfaces chained, with its own frame."""
+
+    class Point:
+        pass
+
+    def serialize_point(value: Point) -> str:
+        return value.label  # pyright: ignore[reportAttributeAccessIssue]
+
+    serializers.serializer(serialize_point)
+    try:
+        with pytest.raises(ReflexRuntimeError, match=r"_cached_var_name") as exc_info:
+            str(LiteralVar.create([Point()]))
+    finally:
+        serializers.SERIALIZERS.pop(Point)
+        serializers.SERIALIZER_TYPES.pop(Point)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+    cause = exc_info.value.__cause__
+    assert isinstance(cause, AttributeError)
+    assert "'label'" in str(cause)
+    assert traceback.extract_tb(cause.__traceback__)[-1].name == "serialize_point"
+
+
+def test_cached_var_attribute_error_is_chained() -> None:
+    """An AttributeError raised in a cached var computation surfaces as the cause."""
+
+    @dataclasses.dataclass(eq=False, frozen=True, slots=True)
+    class BrokenVar(CachedVarOperation, Var):
+        @cached_property_no_lock
+        def _cached_var_name(self) -> str:
+            return "broken"
+
+        @cached_property_no_lock
+        def _cached_get_all_var_data(self):
+            msg = "the real error message"
+            raise AttributeError(msg)
+
+    with pytest.raises(ReflexRuntimeError, match="the real error message") as exc_info:
+        BrokenVar(_js_expr="")._get_all_var_data()
+    assert isinstance(exc_info.value.__cause__, AttributeError)
+    assert str(exc_info.value.__cause__) == "the real error message"
