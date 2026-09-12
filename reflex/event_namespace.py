@@ -497,6 +497,24 @@ class BaseEventNamespace(ABC):
         self._client_error_counts[sid] = error_count + 1
         return True
 
+    def _log_handler_failure(
+        self, sid: str, message: str, error: BaseException
+    ) -> None:
+        """Report a handler that raised, within the session's error budget.
+
+        A client can keep sending whatever made the handler raise, so the
+        traceback is budgeted like any other client-triggered error.
+
+        Args:
+            sid: The session id.
+            message: What failed.
+            error: The exception to attach.
+        """
+        if self._within_error_budget(sid):
+            logger.error(message, exc_info=error)
+        else:
+            logger.debug(f"Suppressed a repeated handler error for session {sid}.")
+
     async def handle_client_error(self, sid: str, data: Any) -> None:
         """Handle errors reported by the frontend.
 
@@ -701,10 +719,10 @@ class WebsocketEventNamespace(BaseEventNamespace):
         sessions[channel_name] = session
         try:
             await channel.on_open(session)
-        except Exception:
+        except Exception as exc:
             self._drop_channel_session(sid, channel_name)
-            logger.exception(
-                f"Error opening channel {channel_name!r} for session {sid}."
+            self._log_handler_failure(
+                sid, f"Error opening channel {channel_name!r} for session {sid}.", exc
             )
             await self._send_channel_error(
                 sid, channel_name, "open_failed", "The channel failed to open."
@@ -761,9 +779,8 @@ class WebsocketEventNamespace(BaseEventNamespace):
         for channel_name, session in sessions.items():
             await self._notify_channel_close(sid, channel_name, session)
 
-    @staticmethod
     async def _notify_channel_close(
-        sid: str, channel_name: str, session: ChannelSession
+        self, sid: str, channel_name: str, session: ChannelSession
     ) -> None:
         """Run a channel's close hook, logging a failure instead of raising.
 
@@ -774,9 +791,9 @@ class WebsocketEventNamespace(BaseEventNamespace):
         """
         try:
             await session.channel.on_close(session)
-        except Exception:
-            logger.exception(
-                f"Error closing channel {channel_name!r} for session {sid}."
+        except Exception as exc:
+            self._log_handler_failure(
+                sid, f"Error closing channel {channel_name!r} for session {sid}.", exc
             )
 
     async def _handle_channel_message(
@@ -820,18 +837,13 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 )
                 return
             await session.channel.on_message(session, event, data, buffers)
-        except Exception:
-            # A client can keep sending whatever made the handler raise, so
-            # the traceback is budgeted like any other client-triggered error.
-            if self._within_error_budget(sid):
-                logger.exception(
-                    f"Error handling {event!r} on channel {channel_name!r} "
-                    f"for session {sid}."
-                )
-            else:
-                logger.debug(
-                    f"Suppressed a repeated channel handler error for session {sid}."
-                )
+        except Exception as exc:
+            self._log_handler_failure(
+                sid,
+                f"Error handling {event!r} on channel {channel_name!r} "
+                f"for session {sid}.",
+                exc,
+            )
 
     async def _handle_binary_frame(
         self, sid: str, frame: bytes, max_size: int
@@ -960,11 +972,11 @@ class WebsocketEventNamespace(BaseEventNamespace):
             # instead of logging per frame.
             logger.debug(f"Closing session {sid}: undeserializable event.")
             return 1002
-        except Exception:
+        except Exception as exc:
             # A failing handler is a server-side bug: log it loudly; the
             # connection survives.
-            logger.exception(
-                f"Error handling socket event {event!r} for session {sid}."
+            self._log_handler_failure(
+                sid, f"Error handling socket event {event!r} for session {sid}.", exc
             )
         return None
 

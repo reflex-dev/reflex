@@ -1262,14 +1262,15 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
 
 
 @pytest.mark.asyncio
-async def test_a_failing_channel_handler_cannot_flood_the_logs(
-    namespace: WebsocketEventNamespace, mock_app: Mock, caplog
+@pytest.mark.parametrize("hook", ["on_open", "on_message", "on_close"])
+async def test_a_failing_channel_hook_cannot_flood_the_logs(
+    namespace: WebsocketEventNamespace, mock_app: Mock, caplog, hook: str
 ):
-    """Tracebacks from a handler a client keeps breaking are budgeted.
+    """Tracebacks from any handler a client keeps breaking are budgeted.
 
     The connection survives a raising handler, which is what lets a client
-    send the same message again; without a budget each repeat would write
-    another traceback.
+    send the frame again; without a budget each repeat writes another
+    traceback, whichever of the three hooks it lands in.
     """
 
     class BoomChannel(Channel):
@@ -1277,16 +1278,32 @@ async def test_a_failing_channel_handler_cannot_flood_the_logs(
 
         async def on_message(self, session, event, data, buffers) -> None:
             """Fail the way a handler meeting unexpected metadata would."""
-            raise KeyError(data)
+            if hook == "on_message":
+                raise KeyError(data)
+
+        async def on_open(self, session) -> None:
+            """Fail while setting the session up."""
+            if hook == "on_open":
+                raise KeyError(session.sid)
+
+        async def on_close(self, session) -> None:
+            """Fail while tearing the session down."""
+            if hook == "on_close":
+                raise KeyError(session.sid)
 
     mock_app._channels = {"boom": BoomChannel()}
     attempts = namespace._MAX_CLIENT_ERRORS_PER_SID * 4
+    # Reopening is what a client does after a failed open, and open/close is
+    # the only way to reach on_close repeatedly.
+    frames: list[Any] = []
+    for _ in range(attempts):
+        frames.append([OPEN_MESSAGE, None, "boom"])
+        if hook == "on_message":
+            frames.append(["go", {"n": 1}, "boom"])
+        elif hook == "on_close":
+            frames.append([CLOSE_MESSAGE, None, "boom"])
     websocket = FakeWebSocket()
-    websocket.feed(
-        [OPEN_MESSAGE, None, "boom"],
-        *([["go", {"n": 1}, "boom"]] * attempts),
-        ["ping"],
-    )
+    websocket.feed(*frames, ["ping"])
 
     with caplog.at_level(logging.DEBUG):
         await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
@@ -1294,6 +1311,7 @@ async def test_a_failing_channel_handler_cannot_flood_the_logs(
 
     tracebacks = [r for r in caplog.records if r.levelno >= logging.ERROR]
     assert len(tracebacks) == namespace._MAX_CLIENT_ERRORS_PER_SID
+    assert all(record.exc_info for record in tracebacks)
     # The connection is still serving: a channel bug is not the client's fault.
     assert websocket.close_code is None
     assert ["ping", "pong"] in websocket.sent
