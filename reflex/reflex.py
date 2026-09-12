@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
+import sys
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
@@ -1120,7 +1122,13 @@ def _open_minify_session(
         )
         raise SystemExit(1)
 
-    _load_app_for_minify()
+    # Loading the app runs arbitrary module-level code, which may write to
+    # stdout directly; reserving only covers Reflex's own logging, so send
+    # everything the import prints to stderr rather than into the document.
+    with (
+        contextlib.redirect_stdout(sys.stderr) if for_json else contextlib.nullcontext()
+    ):
+        _load_app_for_minify()
 
     if not exists:
         return None

@@ -1701,13 +1701,9 @@ class TestFrameworkStateMinification:
 class TestMinifyJsonOutput:
     """``--json`` owns stdout, so human output must not land in the document."""
 
-    @pytest.mark.parametrize(
-        "args",
-        [["minify", "list", "--json"], ["minify", "lookup", "--json", "a"]],
-        ids=["list", "lookup"],
-    )
+    @pytest.mark.parametrize("command", ["list", "lookup"])
     def test_stdout_is_reserved_before_the_app_loads(
-        self, args, temp_minify_json, monkeypatch, cli_runner
+        self, command, temp_minify_json, monkeypatch, cli_runner
     ):
         """Reserving after the app loaded would be too late to help.
 
@@ -1715,7 +1711,7 @@ class TestMinifyJsonOutput:
         deprecations; those go to stdout unless it is claimed first.
 
         Args:
-            args: The CLI invocation under test.
+            command: The ``reflex minify`` subcommand under test.
             temp_minify_json: Temporary ``minify.json`` location.
             monkeypatch: The pytest monkeypatch fixture.
             cli_runner: Click runner with the app loader stubbed.
@@ -1726,19 +1722,34 @@ class TestMinifyJsonOutput:
         from reflex.utils import prerequisites
 
         monkeypatch.setattr(log, "_stdout_reserved", False)
-        _install_config(states={"reflex.state.State": "a"})
+
+        class JsonOutputState(State):
+            pass
+
+        _install_config(
+            states={get_state_full_path(JsonOutputState): "b"},
+            include_state_root=True,
+        )
+        args = ["minify", command, "--json"]
+        if command == "lookup":
+            args.append("b")
 
         reserved_when_loading: list[bool] = []
 
-        def _record_and_load(*a, **kw):
+        def _noisy_load(*a, **kw):
             reserved_when_loading.append(log.is_stdout_reserved())
+            # Loading an app runs arbitrary module-level code; reserving only
+            # covers Reflex's own logging, not a raw write like this one.
+            print("noise from the app import")
             return mock.Mock()
 
-        monkeypatch.setattr(prerequisites, "get_compiled_app", _record_and_load)
+        monkeypatch.setattr(prerequisites, "get_compiled_app", _noisy_load)
 
-        cli_runner.invoke(cli, args)
+        result = cli_runner.invoke(cli, args)
 
         assert reserved_when_loading == [True]
+        assert "noise from the app import" not in result.stdout
+        json.loads(result.stdout)
 
 
 class TestSchemeDigest:
