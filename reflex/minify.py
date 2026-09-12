@@ -217,7 +217,6 @@ class MinifyNameResolver:
     _event_cache: dict[type[BaseState], dict[str, str]] = dataclasses.field(
         default_factory=dict, repr=False
     )
-    _digest: str = dataclasses.field(default="", repr=False)
 
     def digest(self) -> str:
         """Digest the wire names this resolver produces for the registered states.
@@ -227,17 +226,17 @@ class MinifyNameResolver:
         A map is skipped entirely when its ``REFLEX_MINIFY_*`` mode is off, so
         toggling a mode does register as a mismatch.
 
-        Only a non-empty result is memoized: the states are walked, so asking
-        before they register would otherwise freeze an empty answer in place.
+        The result is deliberately not memoized: it reflects the states
+        registered so far, which a caller asking too early would freeze in
+        place. Callers that need it repeatedly cache it themselves, once they
+        know the state tree is complete.
 
         Returns:
             A short hex digest, or ``""`` when no name is rewritten.
         """
         if self.config is None or not (self.states_enabled or self.events_enabled):
             return ""
-        if not self._digest:
-            self._digest = self._compute_digest(self.config)
-        return self._digest
+        return self._compute_digest(self.config)
 
     def _compute_digest(self, config: MinifyConfig) -> str:
         """Hash the live portion of ``config``.

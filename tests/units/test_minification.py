@@ -1762,6 +1762,33 @@ class TestSchemeDigest:
             REFLEX_MINIFY_EVENTS=MinifyMode.ENABLED.value,
         )
 
+    def test_reflects_states_registered_after_the_first_call(
+        self, temp_minify_json, monkeypatch
+    ):
+        """A digest asked for early must not freeze the partial answer.
+
+        The framework states register at import, so an early call returns a
+        non-empty digest covering only those; memoizing it would make the
+        backend reject every connection from a correctly built frontend.
+        """
+        _set_minify_modes(monkeypatch, states=MinifyMode.ENABLED)
+        _install_config(states={"reflex.state.State": "a"})
+
+        framework_only = scheme_digest()
+        assert framework_only
+
+        class LateRegisteredState(State):
+            value: str = ""
+
+        _install_config(
+            states={
+                "reflex.state.State": "a",
+                get_state_full_path(LateRegisteredState): "b",
+            }
+        )
+
+        assert scheme_digest() != framework_only
+
     def test_pruning_an_orphan_keeps_the_digest(self, temp_minify_json, monkeypatch):
         """An orphaned entry names nothing on the wire, so dropping it is not a change.
 

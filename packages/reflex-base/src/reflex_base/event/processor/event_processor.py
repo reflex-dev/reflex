@@ -778,6 +778,13 @@ class EventProcessor:
                     logger.exception(
                         f"Error processing event queue entry for {entry.event} [txid={entry.ctx.txid}]:"
                     )
+                    # Fail the future before anything else can raise: a caller
+                    # awaiting this entry would otherwise wait forever.
+                    if not future.done():
+                        future.set_exception(ex)
+                        with contextlib.suppress(BaseException):
+                            # Retrieve it so an un-awaited future doesn't warn.
+                            future.result()
                     # Surface it client-side too: an event that never reaches a
                     # handler produces no update, so the page would just stall.
                     try:

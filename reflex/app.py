@@ -2040,6 +2040,10 @@ class EventNamespace(AsyncNamespace):
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
 
+        # Wire-name scheme digest, resolved on the first connection. By then
+        # the app module has been imported, so the state tree is complete.
+        self._scheme_digest: str | None = None
+
     @property
     def token_to_sid(self) -> Mapping[str, str]:
         """Token to SID mapping for backward compatibility.
@@ -2088,7 +2092,9 @@ class EventNamespace(AsyncNamespace):
         # Unlike the version check above, a scheme mismatch is fatal: every name
         # the client sends would resolve to the wrong handler, or to none.
         client_scheme = next(iter(query_params.get("scheme", [])), "")
-        server_scheme = scheme_digest()
+        if self._scheme_digest is None:
+            self._scheme_digest = scheme_digest()
+        server_scheme = self._scheme_digest
         if client_scheme != server_scheme:
             logger.warning(
                 f"Frontend minification scheme {client_scheme!r} for session {sid} "
