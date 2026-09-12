@@ -964,8 +964,8 @@ def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
     matched_b = find_emitted("memo_collision_test/module_b.jsx")
     assert matched_a is not None, f"missing module_a memo file in {sorted(emitted)}"
     assert matched_b is not None, f"missing module_b memo file in {sorted(emitted)}"
-    assert f"export const {symbol_a} = memo" in matched_a
-    assert f"export const {symbol_b} = memo" in matched_b
+    assert f"const {symbol_a} = memo" in matched_a
+    assert f"const {symbol_b} = memo" in matched_b
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:

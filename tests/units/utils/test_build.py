@@ -170,6 +170,44 @@ def test_build_merges_static_output_into_prerendered_prefix_dir(
     assert not (static_dir / "assets").exists()
 
 
+@pytest.mark.parametrize("frontend_path", ["/docs", "/guide/docs"])
+def test_build_preserves_prerendered_pages_when_assets_collide(
+    tmp_path: Path, mocker: MockerFixture, frontend_path: str
+):
+    """Asset relocation must preserve route HTML and compress the final contents."""
+    static_dir = _patch_build(mocker, tmp_path, frontend_path=frontend_path)
+    prefix = static_dir / frontend_path.strip("/")
+    pages = {
+        "index.html": "<html><h1>Documentation</h1></html>",
+        "assets/overview/index.html": "<html>Assets overview</html>",
+        "components/props/index.html": "<html>Component props</html>",
+    }
+    for relative, content in pages.items():
+        page = prefix / relative
+        page.parent.mkdir(parents=True, exist_ok=True)
+        page.write_text(content)
+    _write_static_output(static_dir)
+    (static_dir / "components").mkdir()
+    (static_dir / "components" / "widget.js").write_text("export default 1")
+
+    def check_final_tree(directory: Path, formats: tuple[str, ...]):
+        """Check that compression sees the final route and asset contents."""
+        for relative, content in pages.items():
+            assert (prefix / relative).read_text() == content
+        assert (prefix / "assets/app.js").is_file()
+        assert (prefix / "components/widget.js").is_file()
+        assert (prefix / "404.html").read_text() == "<html>app</html>"
+        assert not (static_dir / "assets").exists()
+
+    compressor = mocker.patch(
+        "reflex.utils.build._compress_static_output", side_effect=check_final_tree
+    )
+    build.build()
+    compressor.assert_called_once()
+    for relative, content in pages.items():
+        assert (prefix / relative).read_text() == content
+
+
 def _patch_env_json(
     mocker: MockerFixture, tmp_path: Path, plugins: list[Plugin] | None = None
 ):

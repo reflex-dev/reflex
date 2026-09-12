@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import contextlib
 import contextvars
 import functools
 import io
 import json
 import logging
+import multiprocessing
+import pickle
 import re
 import unittest.mock
 import uuid
@@ -45,6 +48,7 @@ from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
+from starlette.testclient import TestClient
 from starlette_admin.auth import AuthProvider
 
 import reflex as rx
@@ -72,9 +76,16 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
-from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
+from reflex.state import (
+    BaseState,
+    OnLoadInternalState,
+    State,
+    StateUpdate,
+    reload_state_module,
+)
 from reflex.utils import build
 from reflex.utils import exec as exec_utils
+from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
 from .conftest import active_tracer, chdir, metric_points
 from .states import GenState
@@ -86,6 +97,8 @@ from .states.upload import (
 )
 
 if TYPE_CHECKING:
+    from multiprocessing.connection import Connection
+
     from sqlalchemy.engine.base import Engine
 
 
@@ -350,6 +363,23 @@ def test_socket_codec_preserves_large_ints():
     assert _SOCKET_JSON_CODEC.loads(f'{{"id": {big}}}')["id"] == big
 
 
+def test_setup_admin_dash_skips_optional_imports_without_config(
+    app: App, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A default app must not load the optional admin and database stacks."""
+    real_import = builtins.__import__
+
+    def import_without_admin(name, *args, **kwargs):
+        if name.startswith("starlette_admin") or name == "reflex.model":
+            msg = f"unexpected optional import: {name}"
+            raise AssertionError(msg)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", import_without_admin)
+
+    app._setup_admin_dash()
+
+
 def test_multiple_states_error(
     monkeypatch: pytest.MonkeyPatch,
     test_state: BaseState,
@@ -549,6 +579,43 @@ def test_initialize_with_admin_dashboard(
     assert app.admin_dash is not None
     assert len(app.admin_dash.models) > 0
     assert app.admin_dash.models[0] == test_model
+
+
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
+@pytest.mark.parametrize("with_transformer", [False, True])
+def test_admin_dashboard_routes_remain_reversible(
+    test_model: type[Model],
+    mocker: MockerFixture,
+    tmp_path: Path,
+    with_transformer: bool,
+):
+    """Serve admin pages through the public ASGI app with working named routes.
+
+    Args:
+        test_model: A model to list in the dashboard.
+        mocker: The mock fixture for skipping frontend compilation.
+        tmp_path: The directory for the dashboard database.
+        with_transformer: Whether another Starlette application wraps the API.
+    """
+    conf = rx.Config(app_name="testing", db_url=f"sqlite:///{tmp_path / 'admin.db'}")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(
+        admin_dash=AdminDash(models=[test_model]),
+        api_transformer=Starlette() if with_transformer else None,
+    )
+    mocker.patch.object(app, "_compile")
+    api = app()
+    assert isinstance(api, Starlette)
+    assert str(api.url_path_for("admin:index")) == "/admin/"
+    with TestClient(api) as client:
+        response = client.get("/admin/")
+    assert response.status_code == 200
+    assert "Reflex Admin Dashboard" in response.text
 
 
 @pytest.mark.skipif(
@@ -2773,8 +2840,8 @@ def test_compile_writes_app_wrap_memo_components(
     toast_symbol = memo_paths.mirrored_symbol(
         "MemoizedToastProvider", _compile_app.__module__
     )
-    assert f"export const {overlay_symbol} = memo" in memo_sources
-    assert f"export const {toast_symbol} = memo" in memo_sources
+    assert f"const {overlay_symbol} = memo" in memo_sources
+    assert f"const {toast_symbol} = memo" in memo_sources
 
 
 def test_compile_dry_run_does_not_prune_or_write_manifest(
@@ -3290,6 +3357,85 @@ def test_call_app():
     app._compile = unittest.mock.Mock()
     api = app()
     assert isinstance(api, Starlette)
+
+
+def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection):
+    """Run the server startup path in a forked worker and report delta routing.
+
+    Args:
+        app: The application created before the fork.
+        redis: The mock Redis connection carrying another worker's socket record.
+        sender: The pipe used to report the worker's result.
+    """
+
+    async def probe():
+        """Start event processing and publish a delta to the socket owner."""
+        async with app._setup_event_processor():
+            assert app.event_namespace is not None
+            manager = app.event_namespace._token_manager
+            assert isinstance(manager, RedisTokenManager)
+            published = await manager.emit_lost_and_found(
+                "client", StateUpdate(delta={"state": {"count": 1}})
+            )
+            sender.send((
+                manager.instance_id,
+                published,
+                redis.publish.call_args.args if published else None,
+            ))
+
+    try:
+        asyncio.run(probe())
+    finally:
+        sender.close()
+
+
+@pytest.mark.skipif(
+    "fork" not in multiprocessing.get_all_start_methods(),
+    reason="Requires a server that forks after importing the app",
+)
+def test_forked_workers_publish_deltas_to_the_socket_owner():
+    """Give forked workers distinct identities before routing backend deltas."""
+    app = App()
+    app._state_manager = StateManagerMemory()
+    redis = AsyncMock()
+    manager = RedisTokenManager(redis)
+    assert app.event_namespace is not None
+    app.event_namespace._token_manager = manager
+    owner_id = manager.instance_id
+    redis.get.return_value = pickle.dumps(
+        SocketRecord(instance_id=owner_id, sid="remote")
+    )
+    workers = multiprocessing.get_context("fork")
+    worker_ids = set()
+
+    for _ in range(2):
+        receiver, sender = workers.Pipe(duplex=False)
+        process = workers.Process(
+            target=_probe_worker_token_identity, args=(app, redis, sender)
+        )
+        process.start()
+        sender.close()
+        try:
+            assert receiver.poll(10), "The forked worker did not report a result"
+            worker_id, published, publish_args = receiver.recv()
+            process.join(timeout=10)
+            assert process.exitcode == 0
+            assert published, "A live socket owned by another worker was discarded"
+            assert worker_id != owner_id
+            assert worker_id not in worker_ids
+            worker_ids.add(worker_id)
+            assert publish_args[0] == f"channel:token_manager_lost_and_found_{owner_id}"
+            record = pickle.loads(publish_args[1])
+            assert record.token == "client"
+            assert record.update.delta == {"state": {"count": 1}}
+        finally:
+            receiver.close()
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=10)
+            process.close()
+
+    assert manager.instance_id == owner_id
 
 
 @pytest.fixture

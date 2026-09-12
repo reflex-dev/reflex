@@ -8,6 +8,7 @@ import os
 import platform
 import sys
 import threading
+import urllib.request
 import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -16,8 +17,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypedDict, cast
 
-from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
 from reflex_base import constants
 from reflex_base.config import get_config
 from reflex_base.environment import environment
@@ -247,6 +246,9 @@ def get_reflex_package_versions() -> dict[str, str]:
     Returns:
         A mapping of Reflex subpackage name to installed version, sorted by name.
     """
+    from packaging.requirements import Requirement
+    from packaging.utils import canonicalize_name
+
     try:
         requirements = importlib.metadata.requires("reflex") or ()
     except importlib.metadata.PackageNotFoundError:
@@ -441,10 +443,15 @@ def _prepare_event(
 
 
 def _send_event(event_data: _Event) -> bool:
-    import httpx
-
+    # urllib keeps httpx and its import cost out of the backend workers, which
+    # only ever send from here.
+    request = urllib.request.Request(
+        POSTHOG_API_URL,
+        data=orjson_dumps(event_data).encode(),
+        headers={"Content-Type": "application/json"},
+    )
     try:
-        httpx.post(POSTHOG_API_URL, json=event_data)
+        urllib.request.urlopen(request, timeout=5).close()
     except Exception:
         return False
     else:

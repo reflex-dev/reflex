@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from reflex_site_shared.components.docs_shell import (
     _docs_external_page_footer_memo,
+    docs_feedback_button,
     docs_feedback_button_toc,
     docs_left_sidebar,
     docs_page_footer,
@@ -18,13 +19,22 @@ from reflex_site_shared.templates.docs import docs_layout
 import reflex as rx
 
 
+def test_feedback_choices_are_individual_popover_triggers():
+    """Each feedback choice is a real button, without an interactive div parent."""
+    choices = docs_feedback_button().children[0]
+    assert choices.tag == "div"
+    assert len(choices.children) == 2
+    assert all("Trigger" in (child.tag or "") for child in choices.children)
+
+
 def test_shared_feedback_preserves_the_official_form_structure() -> None:
-    """Keep the official feedback form DOM and thumb-button props unchanged."""
+    """Keep the feedback form layout and accessible clear control."""
     rendered = str(docs_feedback_button_toc())
 
     assert "w-full gap-4 flex flex-col" in rendered
     assert "flex flex-col gap-4 w-full" in rendered
-    assert "aria-label" not in rendered
+    assert '"aria-label":"Clear input"' in rendered
+    assert 'jsx(Popover.Close,{"data-slot":"popover-close",render:' in rendered
 
 
 def test_docs_layout_rejects_conflicting_footer_factories() -> None:

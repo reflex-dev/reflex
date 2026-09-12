@@ -166,6 +166,7 @@ export const applyDelta = (state, delta) => {
  * @returns The evaluated component.
  */
 export const evalReactComponent = async (component) => {
+  await window.__reflex_load?.();
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
   }
