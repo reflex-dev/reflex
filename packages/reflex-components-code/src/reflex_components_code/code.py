@@ -485,6 +485,8 @@ class CodeBlock(Component, MarkdownComponentMap):
                 if copy_button is not None
                 else Button.create(
                     Icon.create(tag="copy"),
+                    aria_label="Copy code",
+                    type="button",
                     on_click=set_clipboard(code),
                     style=Style({"position": "absolute", "top": "0.5em", "right": "0"}),
                 )

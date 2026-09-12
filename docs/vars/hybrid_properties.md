@@ -39,7 +39,7 @@ class NameState(rx.State):
 
 def hybrid_full_name_example():
     return rx.vstack(
-        rx.heading(NameState.full_name),
+        rx.heading(NameState.full_name, as_="h3"),
         rx.input(value=NameState.first_name, on_change=NameState.set_first_name),
         rx.input(value=NameState.last_name, on_change=NameState.set_last_name),
     )
@@ -99,7 +99,7 @@ class GreetState(rx.State):
 
 def hybrid_greeting_example():
     return rx.vstack(
-        rx.heading(GreetState.greeting),
+        rx.heading(GreetState.greeting, as_="h3"),
         rx.input(value=GreetState.name, on_change=GreetState.set_name),
     )
 ```

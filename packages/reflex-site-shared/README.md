@@ -103,3 +103,7 @@ The default renderer uses the same `reflex-docgen` pipeline as Reflex's main
 documentation, including executable example fences, directives, tables, and
 the shared documentation component map. Generated component API pages can call
 the exported `render_docgen_document` helper directly.
+
+### Expensive documentation previews
+
+Add `defer` to a `python demo exec` fence to mount a heavy preview as it approaches the viewport. The example's source code remains in the initial HTML; the preview reserves 450px of height and stays mounted once shown. This is useful for pages containing many Plotly charts.

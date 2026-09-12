@@ -7,6 +7,18 @@ from pathlib import Path
 import pytest
 import reflex as rx
 
+from reflex_docs.pages.docs.metadata import docs_metadata
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [("Cli", "CLI"), ("Api Reference", "API Reference"), ("rx.html", "rx.html")],
+)
+def test_metadata_preserves_acronyms_and_code_identifiers(title, expected):
+    """Normalize standalone acronyms without rewriting component names."""
+    seo_title, _ = docs_metadata("/api-reference/cli/", title, None)
+    assert seo_title.startswith(expected + " · ")
+
 
 @pytest.fixture
 def routes_fixture():
@@ -325,3 +337,18 @@ def test_docs_do_not_link_to_retired_demo_apps():
             offenders[virtual] = found
 
     assert offenders == {}, f"Docs link to retired demo apps: {offenders}"
+
+
+def test_docs_titles_and_descriptions_are_unique(routes_fixture):
+    """Search snippets distinguish pages in different product sections."""
+    for attr in ("title", "description"):
+        values = [
+            (route.seo_title or route.title) if attr == "title" else route.description
+            for route in routes_fixture
+        ]
+        duplicates = {
+            value: count
+            for value, count in Counter(values).items()
+            if value and count > 1
+        }
+        assert duplicates == {}, (attr, duplicates)
