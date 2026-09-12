@@ -1,14 +1,17 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
 import builtins
+import logging
 import multiprocessing
 import os
+import sys
 from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base.environment import environment
 from reflex_base.utils import serializers
+from reflex_base.utils.decorator import once
 
 from reflex.utils import exec as exec_utils
 
@@ -191,3 +194,136 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
 
     assert exec_utils.arbitrate_ssr(True) is False
+
+
+@pytest.mark.parametrize("deflate", [True, False])
+def test_run_uvicorn_backend_passes_the_socket_policy(
+    tmp_path: Path,
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    deflate: bool,
+):
+    """The dev server gets the app's websocket size and compression settings."""
+    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", str(deflate).lower())
+    mocker.patch.object(
+        exec_utils,
+        "get_dev_backend_reload_marker",
+        return_value=tmp_path / exec_utils.DEV_BACKEND_RELOAD_MARKER,
+    )
+    mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    uvicorn = pytest.importorskip("uvicorn")
+    run = mocker.patch.object(uvicorn, "run")
+
+    exec_utils.run_uvicorn_backend(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    kwargs = run.call_args.kwargs
+    assert kwargs["ws_per_message_deflate"] is deflate
+    assert kwargs["ws_max_size"] == exec_utils._uvicorn_ws_max_size()
+
+
+@pytest.mark.parametrize("deflate", [True, False])
+def test_uvicorn_websocket_args_match_the_options(
+    monkeypatch: pytest.MonkeyPatch, deflate: bool
+):
+    """Uvicorn's own CLI accepts the args, and reads the same policy from them.
+
+    The Windows production backend passes these on a command line, where a
+    misspelled option is not a wrong setting but a server that refuses to
+    start, so they are checked against uvicorn's parser rather than a
+    hand-written expectation.
+    """
+    pytest.importorskip("uvicorn")
+    from uvicorn.main import main as uvicorn_cli
+
+    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", str(deflate).lower())
+    options = exec_utils.uvicorn_websocket_options()
+
+    context = uvicorn_cli.make_context(
+        "uvicorn", [*exec_utils._uvicorn_websocket_args(), "app:app"]
+    )
+
+    assert context.params["ws_per_message_deflate"] is deflate
+    assert "--no-ws-per-message-deflate" not in exec_utils._uvicorn_websocket_args()
+    assert context.params["ws_max_size"] == options["ws_max_size"]
+
+
+def test_uvicorn_worker_carries_the_socket_policy(monkeypatch: pytest.MonkeyPatch):
+    """The gunicorn worker class applies the settings gunicorn cannot pass on."""
+    pytest.importorskip("gunicorn")
+    pytest.importorskip("uvicorn")
+    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", "false")
+    # The class body reads the environment at import time.
+    sys.modules.pop("reflex.utils.uvicorn_worker", None)
+    from reflex.utils.uvicorn_worker import ReflexUvicornWorker
+
+    assert (
+        ReflexUvicornWorker.CONFIG_KWARGS.items()
+        >= exec_utils.uvicorn_websocket_options().items()
+    )
+    assert ReflexUvicornWorker.CONFIG_KWARGS["ws_per_message_deflate"] is False
+
+
+@pytest.fixture
+def fresh_uvicorn_warnings(mocker: MockerFixture) -> None:
+    """Give each test its own `once` caches for the uvicorn warnings.
+
+    They are cached for the life of the process, so a warning another test
+    already triggered would otherwise silently not be emitted again.
+    """
+    for name in ("_warn_about_uvicorn_websockets", "_warn_user_about_uvicorn"):
+        warned = getattr(exec_utils, name)
+        # Re-wrapping would paper over a dropped `once`, so require it first:
+        # a single run asks `should_use_granian()` several times.
+        assert hasattr(warned, "__wrapped__"), f"{name} must stay `once`-cached"
+        mocker.patch.object(exec_utils, name, once(warned.__wrapped__))
+
+
+def test_auto_detected_uvicorn_is_announced_once(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog,
+    fresh_uvicorn_warnings: None,
+):
+    """A single run asks repeatedly; the notice belongs in the log once."""
+    monkeypatch.delenv("REFLEX_USE_GRANIAN", raising=False)
+    mocker.patch.object(
+        exec_utils.importlib.util, "find_spec", side_effect=lambda name: object()
+    )
+
+    with caplog.at_level(logging.WARNING):
+        assert exec_utils.should_use_granian() is False
+        assert exec_utils.should_use_granian() is False
+
+    assert caplog.text.count("This behavior will change in 0.8.0") == 1
+
+
+@pytest.mark.parametrize("use_granian", ["0", "1"])
+def test_forcing_uvicorn_warns_about_a_missing_websocket_library(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog,
+    fresh_uvicorn_warnings: None,
+    use_granian: str,
+):
+    """Choosing uvicorn explicitly still reports that it cannot serve websockets.
+
+    That choice is the likeliest way to end up without a websocket library, so
+    the diagnostic cannot live only on the branch that auto-detects uvicorn.
+    """
+    monkeypatch.setenv("REFLEX_USE_GRANIAN", use_granian)
+    mocker.patch.object(
+        exec_utils.importlib.util,
+        "find_spec",
+        side_effect=lambda name: (
+            None if name in ("websockets", "wsproto") else object()
+        ),
+    )
+
+    with caplog.at_level(logging.WARNING):
+        assert exec_utils.should_use_granian() is (use_granian == "1")
+
+    warned = "has no websocket protocol library" in caplog.text
+    assert warned is (use_granian == "0")

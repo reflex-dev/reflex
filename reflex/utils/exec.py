@@ -420,10 +420,25 @@ def run_frontend_prod(host: str, port: int):
 
 
 @once
+def _warn_about_uvicorn_websockets():
+    """Warn when the selected uvicorn cannot serve websockets."""
+    if (
+        importlib.util.find_spec("websockets") is None
+        and importlib.util.find_spec("wsproto") is None
+    ):
+        logger.warning(
+            "Uvicorn has no websocket protocol library installed, so the default "
+            "WebSocket transport will not connect. Install `reflex[uvicorn]` or "
+            "use Granian (REFLEX_USE_GRANIAN=1)."
+        )
+
+
+@once
 def _warn_user_about_uvicorn():
     logger.warning(
         "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
     )
+    _warn_about_uvicorn_websockets()
 
 
 def should_use_granian():
@@ -433,7 +448,13 @@ def should_use_granian():
         True if Granian should be used.
     """
     if environment.REFLEX_USE_GRANIAN.is_set():
-        return environment.REFLEX_USE_GRANIAN.get()
+        use_granian = environment.REFLEX_USE_GRANIAN.get()
+        if not use_granian:
+            # Asking for uvicorn explicitly is the likeliest way to end up
+            # without a websocket library, so this check cannot live on the
+            # auto-detect branch alone.
+            _warn_about_uvicorn_websockets()
+        return use_granian
     if (
         importlib.util.find_spec("uvicorn") is None
         or importlib.util.find_spec("gunicorn") is None
@@ -657,7 +678,53 @@ def run_uvicorn_backend(host: str, port: int, loglevel: LogLevel):
         reload=True,
         reload_dirs=list(map(str, get_reload_paths())),
         reload_delay=0.1,
+        **uvicorn_websocket_options(),
     )
+
+
+def _uvicorn_ws_max_size() -> int:
+    """Websocket message size limit for uvicorn.
+
+    Never below uvicorn's 16 MiB default, so unrelated websocket endpoints
+    keep working; raised when the Reflex policy limit needs more.
+
+    Returns:
+        The message size limit in bytes.
+    """
+    return max(environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(), 16 * 1024 * 1024)
+
+
+def uvicorn_websocket_options() -> dict[str, Any]:
+    """The app's websocket policy as uvicorn settings.
+
+    Every uvicorn launch path applies these, including the gunicorn worker
+    class, which is how the production server receives options gunicorn itself
+    does not forward.
+
+    Returns:
+        The uvicorn configuration keyword arguments.
+    """
+    return {
+        "ws_max_size": _uvicorn_ws_max_size(),
+        "ws_per_message_deflate": environment.REFLEX_SOCKET_PER_MESSAGE_DEFLATE.get(),
+    }
+
+
+def _uvicorn_websocket_args() -> list[str]:
+    """The app's websocket policy as uvicorn command line arguments.
+
+    Returns:
+        The command line arguments.
+    """
+    options = uvicorn_websocket_options()
+    return [
+        *("--ws-max-size", str(options["ws_max_size"])),
+        # A BOOLEAN-valued option, not a flag: uvicorn rejects --no-... forms.
+        *(
+            "--ws-per-message-deflate",
+            str(options["ws_per_message_deflate"]).lower(),
+        ),
+    ]
 
 
 HOTRELOAD_IGNORE_EXTENSIONS = (
@@ -776,6 +843,7 @@ def run_uvicorn_backend_prod(
             *("--host", host),
             *("--port", str(port)),
             *("--workers", str(_get_backend_workers())),
+            *_uvicorn_websocket_args(),
             "--factory",
             app_module,
         ]
@@ -791,7 +859,10 @@ def run_uvicorn_backend_prod(
             "-m",
             "gunicorn",
             "--preload",
-            *("--worker-class", "uvicorn.workers.UvicornH11Worker"),
+            *(
+                "--worker-class",
+                "reflex.utils.uvicorn_worker.ReflexUvicornWorker",
+            ),
             *("--threads", str(_get_backend_workers())),
             *("--bind", f"{host}:{port}"),
             *env_args,

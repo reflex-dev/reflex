@@ -29,6 +29,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from pytest_mock import MockerFixture
 from reflex_base import otel
 from reflex_base.components.component import Component
+from reflex_base.config import get_config
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
@@ -54,14 +55,7 @@ from starlette_admin.auth import AuthProvider
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import (
-    App,
-    ComponentCallable,
-    EventNamespace,
-    _sio_dumps,
-    _sio_loads,
-    default_overlay_component,
-)
+from reflex.app import App, ComponentCallable, EventNamespace, default_overlay_component
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -76,6 +70,7 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
+from reflex.socketio_namespace import _sio_dumps, _sio_loads
 from reflex.state import (
     BaseState,
     OnLoadInternalState,
@@ -4237,7 +4232,7 @@ def client_error_console() -> Generator[dict[str, list[str]], None, None]:
             if key is not None:
                 captured[key].append(record.getMessage())
 
-    app_logger = logging.getLogger("reflex.app")
+    app_logger = logging.getLogger("reflex.event_namespace")
     handler = _CaptureHandler(level=logging.DEBUG)
     previous_level = app_logger.level
     app_logger.addHandler(handler)
@@ -4405,7 +4400,7 @@ async def test_client_error_reporting_is_rate_limited_per_sid(
     task = event_namespace.on_disconnect("known_sid")
     if task is not None:
         await task
-    assert "known_sid" not in event_namespace._client_error_counts
+    assert "known_sid" not in event_namespace._client_error_budget.counts
 
 
 @pytest.mark.asyncio
@@ -4438,7 +4433,7 @@ async def test_client_error_reporting_bounded_across_reconnects(
         == 1
     )
     # Once the window elapses, errors are reported again (not silenced forever).
-    event_namespace._client_error_window_start -= (
+    event_namespace._client_error_budget.window_start -= (
         EventNamespace._CLIENT_ERROR_WINDOW_SECONDS + 1
     )
     event_namespace.sid_to_token["sid_fresh"] = "token_fresh"
@@ -4758,3 +4753,63 @@ def test_compile_emits_stage_spans(
         parent = spans[name].parent
         assert parent is not None
         assert parent.span_id == root.get_span_context().span_id
+
+
+class _ProbeChannel(rx.channels.Channel):
+    """A channel that ignores everything, for registration tests."""
+
+    name = "probe"
+
+    async def on_message(self, session, event, data, buffers) -> None:
+        """Ignore inbound messages."""
+        return
+
+
+def test_register_channel_serves_the_channel():
+    """A registered channel is reachable by name for the transport."""
+    app = App(enable_state=True)
+    channel = _ProbeChannel()
+
+    app.register_channel(channel)
+
+    assert app._channels == {"probe": channel}
+
+
+def test_register_channel_rejects_a_duplicate_name():
+    """Two channels cannot claim the same name."""
+    app = App(enable_state=True)
+    app.register_channel(_ProbeChannel())
+
+    with pytest.raises(RuntimeError, match="already registered"):
+        app.register_channel(_ProbeChannel())
+
+
+@pytest.mark.parametrize("state", [None, State])
+def test_register_channel_requires_the_event_websocket(state: type[State] | None):
+    """Without state there is no transport, whatever `_state` was passed.
+
+    A supplied `_state` does not set one up on its own: `enable_state=False`
+    skips the setup that creates the event namespace and its route.
+    """
+    with RegistrationContext.get().fork():
+        app = App(_state=state, enable_state=False)
+    assert app.event_namespace is None
+
+    with pytest.raises(RuntimeError, match="needs the event websocket"):
+        app.register_channel(_ProbeChannel())
+
+
+def test_register_channel_requires_the_websocket_transport(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Channels are a plain-WebSocket feature; Socket.IO cannot carry them.
+
+    The transport is patched on the loaded config rather than requested
+    through the environment: building a Socket.IO app would need the optional
+    python-socketio package, which this check has nothing to do with.
+    """
+    app = App(enable_state=True)
+    monkeypatch.setattr(get_config(), "transport", "socketio")
+
+    with pytest.raises(RuntimeError, match="requires the plain WebSocket transport"):
+        app.register_channel(_ProbeChannel())
