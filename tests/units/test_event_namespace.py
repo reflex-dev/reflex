@@ -1228,11 +1228,20 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
         )
 
     class LosesItsToken(FakeWebSocket):
-        """Drops the token mapping once the connection is already serving."""
+        """Drops the token mapping once the channel is open and serving.
+
+        Not on the first frame: that one opens the channel, and losing the
+        token before it is dispatched would close the connection over the
+        open itself, leaving nothing for the frame under test to prove.
+        """
+
+        delivered = 0
 
         async def receive(self) -> dict[str, Any]:
             message = await super().receive()
-            namespace.sid_to_token.clear()
+            self.delivered += 1
+            if self.delivered == 2:
+                namespace.sid_to_token.clear()
             return message
 
     websocket = LosesItsToken()
@@ -1242,6 +1251,8 @@ async def test_frames_from_a_session_whose_token_went_away_close_it(
         await namespace.handle_websocket(websocket)  # pyright: ignore[reportArgumentType]
         await _drain_tasks()
 
+    # The channel was open and serving when its token went away.
+    assert len(channel.opened) == 1
     assert websocket.close_code == 1008
     mock_app.event_processor.enqueue.assert_not_awaited()
     assert channel.messages == []
