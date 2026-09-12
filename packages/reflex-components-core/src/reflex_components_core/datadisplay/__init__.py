@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from reflex_base.utils import lazy_loader
 
-# `code` and `dataeditor` used to live here; they now ship as the standalone
-# reflex-components-code and reflex-components-dataeditor packages, which
-# `reflex.components.datadisplay` maps onto.
+# `code_block` and `data_editor` ship as the standalone reflex-components-code
+# and reflex-components-dataeditor packages, which `reflex.components.datadisplay`
+# maps onto.
 _SUBMOD_ATTRS: dict[str, list[str]] = {
     "logo": ["logo"],
 }
