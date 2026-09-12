@@ -378,7 +378,7 @@ class ReflexChannel extends LocalEmitter {
           });
           continue;
         }
-        // Back onto the transport's own queue if it went away mid-flush.
+        // The transport re-queues it if its socket closed mid-flush.
         this._transport._send(frame);
       }
       this._emitLocal("connect");

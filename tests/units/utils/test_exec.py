@@ -1,6 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
 import builtins
+import logging
 import multiprocessing
 import os
 import sys
@@ -262,3 +263,28 @@ def test_uvicorn_worker_carries_the_socket_policy(monkeypatch: pytest.MonkeyPatc
         >= exec_utils.uvicorn_websocket_options().items()
     )
     assert ReflexUvicornWorker.CONFIG_KWARGS["ws_per_message_deflate"] is False
+
+
+@pytest.mark.parametrize("use_granian", ["0", "1"])
+def test_forcing_uvicorn_warns_about_a_missing_websocket_library(
+    mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch, caplog, use_granian: str
+):
+    """Choosing uvicorn explicitly still reports that it cannot serve websockets.
+
+    That choice is the likeliest way to end up without a websocket library, so
+    the diagnostic cannot live only on the branch that auto-detects uvicorn.
+    """
+    monkeypatch.setenv("REFLEX_USE_GRANIAN", use_granian)
+    mocker.patch.object(
+        exec_utils.importlib.util,
+        "find_spec",
+        side_effect=lambda name: (
+            None if name in ("websockets", "wsproto") else object()
+        ),
+    )
+
+    with caplog.at_level(logging.WARNING):
+        assert exec_utils.should_use_granian() is (use_granian == "1")
+
+    warned = "has no websocket protocol library" in caplog.text
+    assert warned is (use_granian == "0")

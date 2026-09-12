@@ -22,13 +22,18 @@ def ChannelApp():
     PROBE_SETUP = """
     if (typeof window !== "undefined") {
       const probeChannel = getChannel("probe");
-      window.__probe = { received: [], errors: [], connected: false, connects: 0 };
+      window.__probe = {
+        received: [], errors: [], connected: false, connects: 0, disconnects: 0,
+      };
       probeChannel.on("connect", () => {
         window.__probe.connected = true;
         window.__probe.connects += 1;
       });
       probeChannel.on("disconnect", () => {
         window.__probe.connected = false;
+        // Counted, not just flagged: the reconnect can restore the flag
+        // between two polls, but a count cannot be missed.
+        window.__probe.disconnects += 1;
       });
       // Drop the socket the way the transport's own watchdog does on a dead
       // connection, so the test exercises the supported reconnect path.
@@ -184,8 +189,9 @@ def test_channel_reopens_and_flushes_after_a_reconnect(
     _connected_probe(channel_app, page)
     connects = page.evaluate("window.__probe.connects")
 
+    disconnects = page.evaluate("window.__probe.disconnects")
     page.evaluate("window.__probe.drop()")
-    page.wait_for_function("window.__probe.connected === false")
+    page.wait_for_function(f"window.__probe.disconnects > {disconnects}")
     # Emitted while the socket is down: queued, not lost, and not rewritten by
     # what the caller did with the payload afterwards.
     page.evaluate("window.__probe.pushThenMutate(9)")

@@ -420,10 +420,8 @@ def run_frontend_prod(host: str, port: int):
 
 
 @once
-def _warn_user_about_uvicorn():
-    logger.warning(
-        "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
-    )
+def _warn_about_uvicorn_websockets():
+    """Warn when the selected uvicorn cannot serve websockets."""
     if (
         importlib.util.find_spec("websockets") is None
         and importlib.util.find_spec("wsproto") is None
@@ -435,6 +433,13 @@ def _warn_user_about_uvicorn():
         )
 
 
+def _warn_user_about_uvicorn():
+    logger.warning(
+        "Using Uvicorn for backend as it is installed. This behavior will change in 0.8.0 to use Granian by default."
+    )
+    _warn_about_uvicorn_websockets()
+
+
 def should_use_granian():
     """Whether to use Granian for backend.
 
@@ -442,7 +447,13 @@ def should_use_granian():
         True if Granian should be used.
     """
     if environment.REFLEX_USE_GRANIAN.is_set():
-        return environment.REFLEX_USE_GRANIAN.get()
+        use_granian = environment.REFLEX_USE_GRANIAN.get()
+        if not use_granian:
+            # Asking for uvicorn explicitly is the likeliest way to end up
+            # without a websocket library, so this check cannot live on the
+            # auto-detect branch alone.
+            _warn_about_uvicorn_websockets()
+        return use_granian
     if (
         importlib.util.find_spec("uvicorn") is None
         or importlib.util.find_spec("gunicorn") is None

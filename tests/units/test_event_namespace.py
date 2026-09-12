@@ -1137,6 +1137,8 @@ try {{
 }}
 try {{
     // 400 characters, 1200 UTF-8 bytes: only a byte-accurate check catches it.
+    // An escape rather than the character itself, so this script stays ASCII
+    // whatever encoding the test's locale writes it in.
     open.emit("push", "\\u20ac".repeat(400));
 }} catch (error) {{
     result.multibyte = error.message;
@@ -1166,3 +1168,24 @@ console.log(JSON.stringify(result));
     assert report["errors"] == ["message_too_large"]
     # Only the message that fits was ever handed to the transport.
     assert report["sent"] == 1
+
+
+def test_large_metadata_is_bounded_only_by_the_message_limit():
+    """Metadata is limited by the frame size, not by a second hidden cap.
+
+    The same metadata sent without attachments travels as a text frame, which
+    only the message limit applies to; a binary frame that rejected it would
+    close the connection over a payload the client had no way to know was too
+    big -- the handshake advertises one limit.
+    """
+    metadata = {"spec": "x" * (128 * 1024)}
+    frame = encode_channel_frame("payload", metadata, "probe", [b"\x00\x01"])
+
+    event, data, channel, buffers = decode_channel_frame(frame)
+
+    assert (event, data, channel, buffers) == (
+        "payload",
+        metadata,
+        "probe",
+        [b"\x00\x01"],
+    )

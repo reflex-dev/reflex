@@ -51,9 +51,6 @@ PROTOCOL_VERSION = 2
 # can view them as typed arrays without copying.
 _FRAME_ALIGNMENT = 8
 
-# Bound on the JSON header of a binary channel frame.
-_MAX_FRAME_HEADER_SIZE = 64 * 1024
-
 # Application-level socket event names, resolved once for the hot paths.
 _EVENT = str(constants.SocketEvent.EVENT)
 _PING = str(constants.SocketEvent.PING)
@@ -130,7 +127,9 @@ def decode_channel_frame(frame: bytes) -> tuple[str, Any, str, list[bytes]]:
         msg = "Binary frame is too short to hold a header length."
         raise ValueError(msg)
     header_size = int.from_bytes(frame[:4], "little")
-    if header_size > _MAX_FRAME_HEADER_SIZE or 4 + header_size > len(frame):
+    if 4 + header_size > len(frame):
+        # The frame is the only bound the header needs: the transport rejects
+        # one over the size limit before decoding it.
         msg = f"Binary frame declares an unusable header size {header_size}."
         raise ValueError(msg)
     try:
