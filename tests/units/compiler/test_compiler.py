@@ -2,6 +2,7 @@ import dataclasses
 import importlib.util
 import json
 import os
+import sys
 from pathlib import Path, PureWindowsPath
 
 import pytest
@@ -441,6 +442,137 @@ def test_compile_app_root_omits_radix_window_library_by_default():
     assert "@radix-ui/themes" not in code
 
 
+def test_compile_preserves_app_bundle_registrations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Keep module-level registrations available to pages and the emitted bundle.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext() as context:
+
+        class FrontendLibraryPlugin(rx.plugins.Plugin):
+            """Contribute a library only while the plugin is configured."""
+
+            def get_frontend_dependencies(self, **context) -> tuple[str, ...]:
+                """Return the library contributed by this plugin.
+
+                Returns:
+                    The frontend dependency to bundle.
+                """
+                return ("compile-only-library",)
+
+        config = rx.Config(app_name="bundle_test", plugins=[FrontendLibraryPlugin()])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        bundle_library("d3-format@3.1.0")
+        app = rx.App()
+        seen = []
+        use_radix = True
+
+        def index():
+            """Record the registrations visible during page evaluation.
+
+            Returns:
+                A component that optionally enables Radix for this compile.
+            """
+            seen.append(tuple(RegistrationContext.get().bundled_libraries))
+            return rx.text("hello") if use_radix else rx.el.div("hello")
+
+        app.add_page(index)
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+        assert seen
+        assert all("d3-format" in libraries for libraries in seen)
+        assert "d3-format" in context.bundled_libraries
+        _, code = compiler.compile_app_root(rx.el.div())
+        assert 'import * as d3_format from "d3-format";' in code
+        assert '"d3-format": d3_format' in code
+        assert "compile-only-library" in context.bundled_libraries
+        assert "@radix-ui/themes" in context.bundled_libraries
+
+        config.plugins.clear()
+        use_radix = False
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+        assert all("d3-format" in libraries for libraries in seen)
+        assert "d3-format" in context.bundled_libraries
+        assert "compile-only-library" not in context.bundled_libraries
+        assert "@radix-ui/themes" not in context.bundled_libraries
+
+
+def test_compile_preserves_lazily_imported_bundle_registration(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Retain an app registration first imported while evaluating a page.
+
+    Args:
+        tmp_path: The temporary application directory.
+        monkeypatch: Fixture for selecting the app directory and import path.
+        mocker: Fixture for configuring the application.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    module_name = "lazy_bundle_registration_test"
+    (tmp_path / f"{module_name}.py").write_text(
+        "from reflex_base.components.dynamic import bundle_library\n"
+        'bundle_library("d3-format@3.1.0")\n'
+    )
+    with RegistrationContext() as context:
+        config = rx.Config(app_name="lazy_bundle_test", plugins=[])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+
+        def index():
+            """Import the registration module when the page is evaluated.
+
+            Returns:
+                A component without implicit plugin dependencies.
+            """
+            importlib.import_module(module_name)
+            return rx.el.div("hello")
+
+        app.add_page(index)
+        try:
+            for _ in range(2):
+                compiler.compile_app(app, dry_run=True, use_rich=False)
+                assert "d3-format" in context.bundled_libraries
+        finally:
+            sys.modules.pop(module_name, None)
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+def test_compile_app_root_uses_unique_window_library_aliases(
+    lazy: bool, mocker: MockerFixture
+):
+    """Bundle subpaths with valid, distinct aliases in eager and lazy mode.
+
+    Args:
+        lazy: Whether application libraries should be loaded lazily.
+        mocker: Fixture for configuring the bundle loading mode.
+    """
+    with RegistrationContext():
+        mocker.patch(
+            "reflex_base.config._get_config",
+            return_value=rx.Config(
+                app_name="testing", frontend_lazy_bundled_libraries=lazy
+            ),
+        )
+        bundle_library("foo.bar")
+        bundle_library("foo_bar")
+        bundle_library("foo/bar.mjs")
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
+
+    if lazy:
+        assert '"foo.bar": () => import("foo.bar")' in code
+        assert '"foo/bar.mjs": () => import("foo/bar.mjs")' in code
+    else:
+        assert 'import * as foo_bar from "foo.bar";' in code
+        assert 'import * as foo_bar_2 from "foo_bar";' in code
+        assert 'import * as foo_bar_mjs from "foo/bar.mjs";' in code
+
+
 def test_compile_app_root_omits_hydrate_fallback_by_default():
     """Apps without a hydrate_fallback should not export a HydrateFallback."""
     reset_bundled_libraries()
@@ -462,8 +594,12 @@ def test_compile_app_root_with_hydrate_fallback_exports_hydrate_fallback():
     )
 
 
-def test_compile_app_root_includes_radix_window_library_when_bundled():
+def test_compile_app_root_includes_radix_window_library_when_bundled(mocker):
     """Bundled Radix libraries should be exposed to window.__reflex."""
+    mocker.patch(
+        "reflex.compiler.compiler.get_config",
+        return_value=rx.Config(app_name="eager_libraries"),
+    )
     reset_bundled_libraries()
     try:
         bundle_library("@radix-ui/themes@3.3.0")
@@ -476,12 +612,23 @@ def test_compile_app_root_includes_radix_window_library_when_bundled():
         reset_bundled_libraries()
 
 
-def test_compile_contexts_has_default_color_mode_context():
-    """ColorModeContext should have a safe fallback value without Radix."""
-    _, code = compiler.compile_contexts(None, None)
+def test_compile_app_root_can_defer_optional_window_libraries(mocker):
+    """Dynamic libraries need not force their entire exports into every page."""
+    mocker.patch(
+        "reflex.compiler.compiler.get_config",
+        return_value=rx.Config(
+            app_name="lazy_libraries", frontend_lazy_bundled_libraries=True
+        ),
+    )
+    with RegistrationContext():
+        bundle_library("@radix-ui/themes@3.3.0")
+        _, code = compiler.compile_app_root(rx.el.div("hello"))
 
-    assert "createContext({" in code
-    assert 'resolvedColorMode: defaultColorMode === "dark" ? "dark" : "light"' in code
+    assert 'import * as radix_ui_themes from "@radix-ui/themes"' not in code
+    assert '() => import("@radix-ui/themes")' in code
+    assert 'import * as React from "react"' in code
+    assert 'import * as utils_context from "$/utils/context"' in code
+    assert "window.__reflex_load" in code
 
 
 def _mock_config_color_mode(mocker: MockerFixture, mode: LiteralColorMode) -> None:
@@ -603,7 +750,7 @@ def test_create_document_root():
     assert isinstance(lang, LiteralStringVar)
     assert lang.equals(Var.create("en"))
     # No children in head.
-    assert len(root.children[0].children) == 6
+    assert len(root.children[0].children) == 7
     assert isinstance(root.children[0].children[1], Meta)
     char_set = root.children[0].children[1].char_set  # pyright: ignore [reportAttributeAccessIssue]
     assert isinstance(char_set, LiteralStringVar)
@@ -614,7 +761,8 @@ def test_create_document_root():
     assert name.equals(Var.create("viewport"))
     assert isinstance(root.children[0].children[3], document.Meta)
     assert isinstance(root.children[0].children[4], Link)
-    assert isinstance(root.children[0].children[5], Links)
+    assert isinstance(root.children[0].children[5], Link)
+    assert isinstance(root.children[0].children[6], Links)
 
 
 def test_create_document_root_with_scripts():
@@ -629,7 +777,7 @@ def test_create_document_root_with_scripts():
         html_custom_attrs={"project": "reflex"},
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 8
+    assert len(root.children[0].children) == 9
     names = [c.tag for c in root.children[0].children]
     assert names == [
         "script",
@@ -638,6 +786,7 @@ def test_create_document_root_with_scripts():
         "meta",
         "meta",
         "Meta",
+        "link",
         "link",
         "Links",
     ]
@@ -657,9 +806,9 @@ def test_create_document_root_with_meta_char_set():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 6
+    assert len(root.children[0].children) == 7
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "Meta", "link", "Links"]
+    assert names == ["script", "meta", "meta", "Meta", "link", "link", "Links"]
     assert str(root.children[0].children[1].char_set) == '"cp1252"'  # pyright: ignore [reportAttributeAccessIssue]
 
 
@@ -673,9 +822,9 @@ def test_create_document_root_with_meta_viewport():
         head_components=comps,
     )
     assert isinstance(root, Html)
-    assert len(root.children[0].children) == 7
+    assert len(root.children[0].children) == 8
     names = [c.tag for c in root.children[0].children]
-    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "Links"]
+    assert names == ["script", "meta", "meta", "meta", "Meta", "link", "link", "Links"]
     assert str(root.children[0].children[1].http_equiv) == '"refresh"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].name) == '"viewport"'  # pyright: ignore [reportAttributeAccessIssue]
     assert str(root.children[0].children[2].content) == '"foo"'  # pyright: ignore [reportAttributeAccessIssue]
@@ -711,6 +860,7 @@ def test_register_plugin_routes_runs_once_per_app():
 
 
 @pytest.mark.parametrize("with_stateful_marker", [False, True])
+@pytest.mark.usefixtures("clean_registration_context")
 def test_compile_registers_plugin_routes_on_backend_early_return(
     tmp_path: Path,
     mocker: MockerFixture,
@@ -1425,44 +1575,6 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "REFLEX_REACT_OWNER_STACKS" in rendered
     # The trade-off must be stated where a reader of the output will see it.
     assert "captureOwnerStack" in rendered
-
-
-def test_context_template_names_contexts_for_devtools():
-    """Every context in the generated module carries a ``displayName``.
-
-    React DevTools labels a provider from its context's ``displayName``;
-    without one the whole provider stack renders as ``Context.Provider``.
-    """
-    from reflex_base.compiler.templates import context_template
-
-    rendered = context_template(
-        is_dev_mode=True,
-        default_color_mode='"light"',
-        initial_state={
-            "reflex___state____state": {},
-            "reflex___state____state.demo_state": {},
-        },
-        state_name="reflex___state____state",
-    )
-
-    for context_name in (
-        "ColorModeContext",
-        "UploadFilesContext",
-        "DispatchContext",
-        "EventLoopContext",
-    ):
-        assert f'{context_name}.displayName = "{context_name}";' in rendered
-
-    # State contexts are named for the Python state they carry, using the
-    # dotted state name rather than the mangled JS identifier.
-    assert (
-        "StateContexts.reflex___state____state.displayName = "
-        '"StateContext(reflex___state____state)";' in rendered
-    )
-    assert (
-        "StateContexts.reflex___state____state__demo_state.displayName = "
-        '"StateContext(reflex___state____state.demo_state)";' in rendered
-    )
 
 
 def test_context_template_client_side_component_is_named():

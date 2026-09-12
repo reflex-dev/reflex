@@ -5,11 +5,33 @@ import asyncio
 import pytest
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
+from reflex_components_core.el.elements.metadata import Link
 
 from reflex.compiler.utils import compile_state, create_document_root
+from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
 from reflex.state import State
+from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
+
+
+def test_write_file_reexport() -> None:
+    """Existing compiler callers retain the shared file-writing helper."""
+    assert compiler_write_file is write_file
+
+
+def test_document_preloads_the_global_stylesheet():
+    """Render-blocking CSS should be discoverable alongside early resource hints."""
+    head = create_document_root().children[0]
+    links = [
+        child.render()["props"] for child in head.children if isinstance(child, Link)
+    ]
+    preload = next(props for props in links if 'rel:"preload"' in props)
+    stylesheet = next(props for props in links if 'rel:"stylesheet"' in props)
+    assert next(prop for prop in preload if prop.startswith("href:")) == next(
+        prop for prop in stylesheet if prop.startswith("href:")
+    )
+    assert 'as:"style"' in preload
 
 
 class CompileStateState(State):

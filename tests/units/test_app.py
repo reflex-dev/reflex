@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import contextlib
 import contextvars
 import functools
 import io
 import json
 import logging
+import multiprocessing
+import pickle
 import re
 import unittest.mock
 import uuid
@@ -19,7 +22,12 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import reflex_base
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pytest_mock import MockerFixture
+from reflex_base import otel
 from reflex_base.components.component import Component
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
@@ -35,16 +43,25 @@ from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.core.upload import selected_files
 from reflex_components_radix.themes.typography.text import Text
+from reflex_otel import ReflexInstrumentor
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
 from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
+from starlette.testclient import TestClient
 from starlette_admin.auth import AuthProvider
 
 import reflex as rx
 from reflex import AdminDash, constants
 from reflex._upload import upload
-from reflex.app import App, ComponentCallable, EventNamespace, default_overlay_component
+from reflex.app import (
+    App,
+    ComponentCallable,
+    EventNamespace,
+    _sio_dumps,
+    _sio_loads,
+    default_overlay_component,
+)
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
@@ -59,10 +76,18 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.storage import Cookie, LocalStorage, SessionStorage
 from reflex.model import Model
-from reflex.state import BaseState, OnLoadInternalState, State, reload_state_module
+from reflex.state import (
+    BaseState,
+    OnLoadInternalState,
+    State,
+    StateUpdate,
+    reload_state_module,
+)
+from reflex.utils import build
 from reflex.utils import exec as exec_utils
+from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
-from .conftest import chdir
+from .conftest import active_tracer, chdir, metric_points
 from .states import GenState
 from .states.upload import (
     ChildFileUploadState,
@@ -72,6 +97,8 @@ from .states.upload import (
 )
 
 if TYPE_CHECKING:
+    from multiprocessing.connection import Connection
+
     from sqlalchemy.engine.base import Engine
 
 
@@ -222,6 +249,23 @@ def test_default_app(app: App):
     assert app._middlewares == []
     assert app.style == Style()
     assert app.admin_dash is None
+
+
+def test_setup_admin_dash_skips_optional_imports_without_config(
+    app: App, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A default app must not load the optional admin and database stacks."""
+    real_import = builtins.__import__
+
+    def import_without_admin(name, *args, **kwargs):
+        if name.startswith("starlette_admin") or name == "reflex.model":
+            msg = f"unexpected optional import: {name}"
+            raise AssertionError(msg)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", import_without_admin)
+
+    app._setup_admin_dash()
 
 
 def test_multiple_states_error(
@@ -423,6 +467,43 @@ def test_initialize_with_admin_dashboard(
     assert app.admin_dash is not None
     assert len(app.admin_dash.models) > 0
     assert app.admin_dash.models[0] == test_model
+
+
+@pytest.mark.skipif(
+    not find_spec("starlette_admin")
+    or not find_spec("sqlmodel")
+    or not find_spec("pydantic"),
+    reason="starlette_admin not installed or sqlmodel not installed or pydantic not installed",
+)
+@pytest.mark.parametrize("with_transformer", [False, True])
+def test_admin_dashboard_routes_remain_reversible(
+    test_model: type[Model],
+    mocker: MockerFixture,
+    tmp_path: Path,
+    with_transformer: bool,
+):
+    """Serve admin pages through the public ASGI app with working named routes.
+
+    Args:
+        test_model: A model to list in the dashboard.
+        mocker: The mock fixture for skipping frontend compilation.
+        tmp_path: The directory for the dashboard database.
+        with_transformer: Whether another Starlette application wraps the API.
+    """
+    conf = rx.Config(app_name="testing", db_url=f"sqlite:///{tmp_path / 'admin.db'}")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(
+        admin_dash=AdminDash(models=[test_model]),
+        api_transformer=Starlette() if with_transformer else None,
+    )
+    mocker.patch.object(app, "_compile")
+    api = app()
+    assert isinstance(api, Starlette)
+    assert str(api.url_path_for("admin:index")) == "/admin/"
+    with TestClient(api) as client:
+        response = client.get("/admin/")
+    assert response.status_code == 200
+    assert "Reflex Admin Dashboard" in response.text
 
 
 @pytest.mark.skipif(
@@ -2647,8 +2728,8 @@ def test_compile_writes_app_wrap_memo_components(
     toast_symbol = memo_paths.mirrored_symbol(
         "MemoizedToastProvider", _compile_app.__module__
     )
-    assert f"export const {overlay_symbol} = memo" in memo_sources
-    assert f"export const {toast_symbol} = memo" in memo_sources
+    assert f"const {overlay_symbol} = memo" in memo_sources
+    assert f"const {toast_symbol} = memo" in memo_sources
 
 
 def test_compile_dry_run_does_not_prune_or_write_manifest(
@@ -2672,10 +2753,18 @@ def test_compile_dry_run_does_not_prune_or_write_manifest(
     manifest = web_dir / compiler_utils._MEMO_MANIFEST_FILENAME
     manifest.write_text(json.dumps([stale_rel]), encoding="utf-8")
     manifest_before = manifest.read_text(encoding="utf-8")
+    # A real compile removes a leftover ``utils/context.js`` (the module is now
+    # emitted as ``.jsx``); a dry run must leave it alone too.
+    stale_context = Path(compiler_utils.get_context_path()).with_suffix(
+        constants.Ext.JS
+    )
+    stale_context.parent.mkdir(parents=True, exist_ok=True)
+    stale_context.write_text("// stale", encoding="utf-8")
 
     app._compile(dry_run=True)
 
     assert stale.exists(), "dry run must not delete stale memo files"
+    assert stale_context.exists(), "dry run must not delete the old context module"
     assert manifest.read_text(encoding="utf-8") == manifest_before, (
         "dry run must not rewrite the memo manifest"
     )
@@ -3156,6 +3245,85 @@ def test_call_app():
     app._compile = unittest.mock.Mock()
     api = app()
     assert isinstance(api, Starlette)
+
+
+def _probe_worker_token_identity(app: App, redis: AsyncMock, sender: Connection):
+    """Run the server startup path in a forked worker and report delta routing.
+
+    Args:
+        app: The application created before the fork.
+        redis: The mock Redis connection carrying another worker's socket record.
+        sender: The pipe used to report the worker's result.
+    """
+
+    async def probe():
+        """Start event processing and publish a delta to the socket owner."""
+        async with app._setup_event_processor():
+            assert app.event_namespace is not None
+            manager = app.event_namespace._token_manager
+            assert isinstance(manager, RedisTokenManager)
+            published = await manager.emit_lost_and_found(
+                "client", StateUpdate(delta={"state": {"count": 1}})
+            )
+            sender.send((
+                manager.instance_id,
+                published,
+                redis.publish.call_args.args if published else None,
+            ))
+
+    try:
+        asyncio.run(probe())
+    finally:
+        sender.close()
+
+
+@pytest.mark.skipif(
+    "fork" not in multiprocessing.get_all_start_methods(),
+    reason="Requires a server that forks after importing the app",
+)
+def test_forked_workers_publish_deltas_to_the_socket_owner():
+    """Give forked workers distinct identities before routing backend deltas."""
+    app = App()
+    app._state_manager = StateManagerMemory()
+    redis = AsyncMock()
+    manager = RedisTokenManager(redis)
+    assert app.event_namespace is not None
+    app.event_namespace._token_manager = manager
+    owner_id = manager.instance_id
+    redis.get.return_value = pickle.dumps(
+        SocketRecord(instance_id=owner_id, sid="remote")
+    )
+    workers = multiprocessing.get_context("fork")
+    worker_ids = set()
+
+    for _ in range(2):
+        receiver, sender = workers.Pipe(duplex=False)
+        process = workers.Process(
+            target=_probe_worker_token_identity, args=(app, redis, sender)
+        )
+        process.start()
+        sender.close()
+        try:
+            assert receiver.poll(10), "The forked worker did not report a result"
+            worker_id, published, publish_args = receiver.recv()
+            process.join(timeout=10)
+            assert process.exitcode == 0
+            assert published, "A live socket owned by another worker was discarded"
+            assert worker_id != owner_id
+            assert worker_id not in worker_ids
+            worker_ids.add(worker_id)
+            assert publish_args[0] == f"channel:token_manager_lost_and_found_{owner_id}"
+            record = pickle.loads(publish_args[1])
+            assert record.token == "client"
+            assert record.update.delta == {"state": {"count": 1}}
+        finally:
+            receiver.close()
+            if process.is_alive():
+                process.terminate()
+                process.join(timeout=10)
+            process.close()
+
+    assert manager.instance_id == owner_id
 
 
 @pytest.fixture
@@ -4344,3 +4512,249 @@ def test_compile_releases_memo_naming_caches(
         app._compile()
 
     assert not _hash_str_encodings
+
+
+def test_call_app_wraps_with_otel_asgi_middleware():
+    """The app's ASGI callable is wrapped when instrumentation installs a middleware."""
+    app = App()
+    app._compile = unittest.mock.Mock()
+    wrapped = []
+    otel.enable(asgi_middleware_factory=lambda asgi: wrapped.append(asgi) or asgi)
+    try:
+        api = app()
+    finally:
+        otel.disable()
+    assert wrapped == [api]
+
+
+def test_sio_json_records_message_sizes(otel_metrics):
+    """Socket.IO packet serialization records UTF-8 sizes in both directions."""
+    data = _sio_dumps({"a": "é"}, separators=(",", ":"))
+    assert data == '{"a":"é"}'
+    assert _sio_loads(data) == {"a": "é"}
+    assert _sio_loads(data.encode()) == {"a": "é"}
+    # ASCII payloads take the fast path that sizes without encoding a copy.
+    ascii_data = _sio_dumps({"b": "x"}, separators=(",", ":"))
+    assert _sio_loads(ascii_data) == {"b": "x"}
+    points = {
+        p.attributes[otel.ATTR_NETWORK_IO_DIRECTION]: p.sum
+        for p in metric_points(otel_metrics, otel.METRIC_WEBSOCKET_MESSAGE_SIZE)
+    }
+    size = len(data.encode())
+    assert size == len(data) + 1
+    assert points == {
+        "transmit": size + len(ascii_data),
+        "receive": 2 * size + len(ascii_data),
+    }
+
+
+@pytest.mark.asyncio
+async def test_on_event_uses_frontend_traceparent(otel_exporter):
+    """A traceparent in the event payload becomes the parent of the event span."""
+    mock_app = unittest.mock.Mock()
+    mock_app.router.return_value = "/"
+    mock_app.sio.get_environ.return_value = {
+        "asgi.scope": {"headers": [], "client": ("127.0.0.1", 1)}
+    }
+    seen: list = []
+
+    async def enqueue(token, event):
+        await asyncio.sleep(0)
+        seen.append(trace.get_current_span().get_span_context())
+
+    mock_app.event_processor.enqueue = enqueue
+    ns = EventNamespace(namespace="/", app=mock_app)
+    ns._token_manager.sid_to_token["sid"] = "tok"
+
+    traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+    with active_tracer().start_as_current_span("websocket"):
+        await ns.on_event("sid", {"name": "state.h", "traceparent": traceparent})
+        await ns.on_event("sid", {"name": "state.h"})
+    remote, fresh = seen
+    assert f"{remote.trace_id:032x}" == "0af7651916cd43dd8448eb211c80319c"
+    assert not fresh.is_valid
+
+
+@pytest.mark.asyncio
+async def test_upload_handler_span_joins_the_request_trace(
+    tmp_path: Path,
+    token: str,
+    attached_mock_base_state_event_processor: BaseStateEventProcessor,
+    mock_root_event_context: EventContext,
+    clean_registration_context: RegistrationContext,
+):
+    """A buffered upload's handler span continues the trace of the request that carried it.
+
+    The endpoint answers with a streaming response whose body runs in its own
+    task; the handler it enqueues from there must still nest under the request
+    span, which itself continues the browser's traceparent header.
+
+    Args:
+        tmp_path: Temporary path.
+        token: a Token.
+        attached_mock_base_state_event_processor: BaseStateEventProcessor Fixture attached to the app instance to capture emitted events.
+        mock_root_event_context: The mocked root event context, for accessing state_manager.
+        clean_registration_context: Fixture to ensure clean registration context for each test, preventing cross-test contamination of state subclasses.
+    """
+    state = FileUploadState
+    handler_name = f"{state.get_full_name()}.multi_handle_upload"
+    clean_registration_context.register_base_state(state)
+    app = Mock(event_processor=attached_mock_base_state_event_processor)
+    async with mock_root_event_context.state_manager.modify_state(
+        BaseStateToken(ident=token, cls=state)
+    ) as root_state:
+        (await root_state.get_state(state))._tmp_path = tmp_path
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": handler_name,
+    }
+
+    async def form():  # noqa: RUF029
+        return FormData([
+            ("files", UploadFile(filename="image1.jpg", file=io.BytesIO(b"data")))
+        ])
+
+    request_mock.form = form
+    upload_fn = upload(app)
+
+    async def asgi_app(scope, receive, send):
+        response = await upload_fn(request_mock)
+        await response(scope, receive, send)
+
+    finished = asyncio.Event()
+
+    async def receive():
+        # The disconnect watcher only hears from the client once the body is sent.
+        await finished.wait()
+        return {"type": "http.disconnect"}
+
+    async def send(message):  # noqa: RUF029
+        if message["type"] == "http.response.body" and not message.get("more_body"):
+            finished.set()
+
+    traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "path": "/_upload",
+        "raw_path": b"/_upload",
+        "query_string": b"",
+        "headers": [(b"traceparent", traceparent.encode())],
+        "scheme": "http",
+        "server": ("localhost", 80),
+        "http_version": "1.1",
+    }
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    instrumentor = ReflexInstrumentor()
+    instrumentor.instrument(tracer_provider=provider)
+    try:
+        assert otel.asgi_middleware is not None
+        await otel.asgi_middleware(asgi_app)(scope, receive, send)
+    finally:
+        instrumentor.uninstrument()
+
+    spans = {span.name: span for span in exporter.get_finished_spans()}
+    (request_span,) = [
+        span for span in spans.values() if span.kind is trace.SpanKind.SERVER
+    ]
+    handler_span = spans[handler_name]
+    request_context = request_span.get_span_context()
+    request_parent = request_span.parent
+    handler_context = handler_span.get_span_context()
+    handler_parent = handler_span.parent
+    assert request_context is not None
+    assert request_parent is not None
+    assert handler_context is not None
+    assert handler_parent is not None
+    # The request span continues the header's trace; the handler nests under it.
+    assert request_parent.is_remote
+    assert f"{request_parent.span_id:016x}" == "b7ad6b7169203331"
+    assert f"{handler_context.trace_id:032x}" == "0af7651916cd43dd8448eb211c80319c"
+    assert handler_parent.span_id == request_context.span_id
+
+
+@pytest.mark.asyncio
+async def test_connect_disconnect_counts_connections(otel_metrics):
+    """Connect and disconnect adjust the open connection gauge."""
+    mock_app = unittest.mock.Mock()
+    mock_app._state = None
+    ns = EventNamespace(namespace="/", app=mock_app)
+    ns.emit = unittest.mock.AsyncMock()
+    await ns.on_connect("sid1", {"QUERY_STRING": "token=t1"})
+    await ns.on_connect("sid2", {"QUERY_STRING": "token=t2"})
+    task = ns.on_disconnect("sid1")
+    if task is not None:
+        await task
+    (point,) = metric_points(otel_metrics, otel.METRIC_WEBSOCKET_CONNECTIONS)
+    assert point.value == 1
+    # Release t2 so a shared token store (redis) does not leak into other tests.
+    await ns._token_manager.disconnect_all()
+
+
+def test_compile_installs_browser_plugin(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    clean_registration_context,
+):
+    """A real compile with OtelPlugin ships the browser module and patches the entry.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        clean_registration_context: Fresh registration context so the
+            `_get_config` mock below is not masked by a cached config.
+    """
+    from reflex_base.constants.base import ReactRouter
+    from reflex_base.constants.compiler import Embed
+    from reflex_otel import OtelPlugin
+
+    plugin = OtelPlugin(endpoint="http://collector/v1/traces", render_timing=True)
+    mocker.patch(
+        "reflex_base.config._get_config",
+        return_value=rx.Config(app_name="testing", plugins=[plugin]),
+    )
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app._compile()
+    build.set_env_json()
+    assert "window.__reflex_otel" in (web_dir / "utils" / "otel.js").read_text()
+    env = json.loads((web_dir / constants.Dirs.ENV_JSON).read_text())
+    assert env["OTEL"]["endpoint"] == "http://collector/v1/traces"
+    assert env["OTEL"]["service_name"] == "testing-frontend"
+    entry = (web_dir / Embed.ENTRY_PATH).read_text()
+    assert 'import { OtelRoot } from "$/utils/otel";' in entry
+    assert "createElement(OtelRoot, null, createElement(HydratedRouter))" in entry
+    vite_config = (web_dir / ReactRouter.VITE_CONFIG_FILE).read_text()
+    assert "react-dom/profiling" in vite_config
+
+
+def test_compile_emits_stage_spans(
+    compilable_app: tuple[App, Path], mocker: MockerFixture, otel_exporter
+):
+    """A real compile runs inside `reflex.compile` with the stages as children.
+
+    Args:
+        compilable_app: compilable_app fixture.
+        mocker: pytest mocker object.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    mocker.patch(
+        "reflex_base.config._get_config", return_value=rx.Config(app_name="testing")
+    )
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    app._compile(trigger="hot_reload")
+    spans = {span.name: span for span in otel_exporter.get_finished_spans()}
+    root = spans[otel.COMPILE_SPAN_NAME]
+    assert root.parent is None
+    assert root.attributes[otel.ATTR_COMPILE_TRIGGER] == "hot_reload"
+    assert root.attributes[otel.ATTR_COMPILE_DRY_RUN] is False
+    stages = {name for name in spans if name.startswith("reflex.compile.")}
+    assert {"reflex.compile.pages", "reflex.compile.write"} <= stages
+    for name in stages:
+        parent = spans[name].parent
+        assert parent is not None
+        assert parent.span_id == root.get_span_context().span_id

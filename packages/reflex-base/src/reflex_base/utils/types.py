@@ -688,7 +688,7 @@ def get_attribute_access_type(
     if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
         return get_field_type(cls, name)
-    if find_spec("sqlalchemy") and find_spec("sqlalchemy.orm"):
+    if isinstance(cls, type) and "sqlalchemy.orm" in sys.modules:
         import sqlalchemy
         from sqlalchemy.ext.associationproxy import AssociationProxyInstance
         from sqlalchemy.orm import (
@@ -698,16 +698,9 @@ def get_attribute_access_type(
             Relationship,
         )
 
-        from reflex.model import Model
+        sqlmodel_type = getattr(sys.modules.get("sqlmodel"), "SQLModel", None)
 
-        if find_spec("sqlmodel"):
-            from sqlmodel import SQLModel
-
-            sqlmodel_types = (Model, SQLModel)
-        else:
-            sqlmodel_types = (Model,)
-
-        if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
+        if issubclass(cls, DeclarativeBase):
             insp = sqlalchemy.inspect(cls)
             if name in insp.columns:
                 # check for list types
@@ -748,9 +741,9 @@ def get_attribute_access_type(
                         )
                     ]
         elif (
-            isinstance(cls, type)
+            sqlmodel_type is not None
             and not is_generic_alias(cls)
-            and issubclass(cls, sqlmodel_types)
+            and issubclass(cls, sqlmodel_type)
             # Probes for unannotated names must not trigger hint resolution,
             # which may fail on unresolvable ForwardRefs.
             and declares_annotation(cls, name)
