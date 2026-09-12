@@ -2085,6 +2085,11 @@ class EventNamespace(AsyncNamespace):
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
 
+        if otel.enabled:
+            # Counted before the scheme check: the socket is up either way, and
+            # on_disconnect decrements unconditionally.
+            otel.record_connection(1)
+
         # Unlike the version check above, a scheme mismatch is fatal: every name
         # the client sends would resolve to the wrong handler, or to none.
         client_scheme = next(iter(query_params.get("scheme", [])), "")
@@ -2099,9 +2104,6 @@ class EventNamespace(AsyncNamespace):
                 {"frontend": client_scheme, "backend": server_scheme},
                 to=sid,
             )
-            return
-        if otel.enabled:
-            otel.record_connection(1)
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.

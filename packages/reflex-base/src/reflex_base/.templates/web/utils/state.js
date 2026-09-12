@@ -132,6 +132,19 @@ export const getBackendURL = (url_str) => {
  *
  * @returns True if the backend is disabled, false otherwise.
  */
+/**
+ * Build the query the backend reads on connect.
+ *
+ * Used for reconnects too: dropping a field here makes the backend reject
+ * the connection, so the two call sites must not drift apart.
+ *
+ * @returns The socket handshake query.
+ */
+const handshakeQuery = () => ({
+  token: getToken(),
+  scheme: app.schemeDigest ?? "",
+});
+
 export const isBackendDisabled = () => {
   const cookie = document.cookie
     .split("; ")
@@ -597,7 +610,7 @@ export const connect = async (
     transports: transports,
     protocols: [reflexEnvironment.version],
     autoUnref: false,
-    query: { token: getToken(), scheme: app.schemeDigest ?? "" },
+    query: handshakeQuery(),
     reconnection: false, // Reconnection will be handled manually.
   });
   socket.current.wait_connect = !socket.current.connected;
@@ -626,7 +639,7 @@ export const connect = async (
     ) {
       socket.current.wait_connect = true;
       socket.current.rehydrate = true;
-      socket.current.io.opts.query = { token: getToken() }; // Update token for reconnect.
+      socket.current.io.opts.query = handshakeQuery(); // Refresh token/scheme.
       socket.current.connect();
     }
   };
@@ -1091,30 +1104,34 @@ export const useEventLoop = (
       return;
     }
 
+    // A stateless app exports no handler name, and an event without one
+    // reaches nothing on the backend.
+    const reportException = (info) => {
+      if (app.handle_frontend_exception) {
+        addEvents([
+          ReflexEvent(app.handle_frontend_exception, {
+            info,
+            component_stack: "",
+          }),
+        ]);
+      }
+    };
+
     window.onerror = function (msg, url, lineNo, columnNo, error) {
-      addEvents([
-        ReflexEvent(app.handle_frontend_exception, {
-          info: error.name + ": " + error.message + "\n" + error.stack,
-          component_stack: "",
-        }),
-      ]);
+      reportException(error.name + ": " + error.message + "\n" + error.stack);
       return false;
     };
 
     //NOTE: Only works in Chrome v49+
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
-      addEvents([
-        ReflexEvent(app.handle_frontend_exception, {
-          info:
-            event.reason?.name +
-            ": " +
-            event.reason?.message +
-            "\n" +
-            event.reason?.stack,
-          component_stack: "",
-        }),
-      ]);
+      reportException(
+        event.reason?.name +
+          ": " +
+          event.reason?.message +
+          "\n" +
+          event.reason?.stack,
+      );
       return false;
     };
   }, []);
