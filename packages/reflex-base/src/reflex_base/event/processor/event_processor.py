@@ -787,18 +787,32 @@ class EventProcessor:
                             future.result()
                     # Surface it client-side too: an event that never reaches a
                     # handler produces no update, so the page would just stall.
-                    try:
-                        await self._handle_backend_exception(ex, entry.ctx)
-                    except Exception:
-                        # This is the sole queue consumer; a handler that raises
-                        # must not take the remaining events down with it.
-                        logger.exception(
-                            f"Backend exception handler failed for {entry.event} "
-                            f"[txid={entry.ctx.txid}]:"
-                        )
+                    # Spawned rather than awaited: the handler emits over the
+                    # socket, and this is the only consumer draining the queue
+                    # for every token.
+                    self._spawn_backend_exception_handler(ex, entry.ctx)
                 queue.task_done()
         if self._queue_task is asyncio.current_task():
             self._queue_task = None
+
+    def _spawn_backend_exception_handler(
+        self, ex: Exception, ev_ctx: EventContext
+    ) -> None:
+        """Report ``ex`` to the backend exception handler in its own task.
+
+        Args:
+            ex: The exception to report.
+            ev_ctx: The event context the exception was raised under.
+        """
+        if self.backend_exception_handler is None:
+            return
+        task = self._tasks[ev_ctx.txid] = asyncio.create_task(
+            self._handle_backend_exception(ex, ev_ctx=ev_ctx),
+            name=f"reflex_backend_exception_handler|queue={ev_ctx.txid}|{time.time()}",
+        )
+        if sys.version_info < (3, 12):
+            task._event_ctx = ev_ctx  # pyright: ignore[reportAttributeAccessIssue]
+        task.add_done_callback(self._finish_task)
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None

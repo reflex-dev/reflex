@@ -128,15 +128,10 @@ export const getBackendURL = (url_str) => {
 };
 
 /**
- * Check if the backend is disabled.
- *
- * @returns True if the backend is disabled, false otherwise.
- */
-/**
  * Build the query the backend reads on connect.
  *
- * Used for reconnects too: dropping a field here makes the backend reject
- * the connection, so the two call sites must not drift apart.
+ * Used for reconnects too: a field dropped here reaches the backend as empty
+ * on every later connection, so the two call sites must not drift apart.
  *
  * @returns The socket handshake query.
  */
@@ -145,6 +140,11 @@ const handshakeQuery = () => ({
   scheme: app.schemeDigest ?? "",
 });
 
+/**
+ * Check if the backend is disabled.
+ *
+ * @returns True if the backend is disabled, false otherwise.
+ */
 export const isBackendDisabled = () => {
   const cookie = document.cookie
     .split("; ")
@@ -632,6 +632,10 @@ export const connect = async (
   };
   // Set up a reconnect helper function
   socket.current.reconnect = () => {
+    if (backend_state_mismatch) {
+      // Reconnecting cannot resolve a scheme or state mismatch.
+      return;
+    }
     if (
       socket.current &&
       !socket.current.connected &&

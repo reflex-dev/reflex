@@ -2036,6 +2036,9 @@ class EventNamespace(AsyncNamespace):
         # Number of client_error reports logged per SID, for rate limiting.
         self._client_error_counts: dict[str, int] = {}
 
+        # SIDs whose bundle resolves names with a different scheme than ours.
+        self._scheme_mismatch_sids: set[str] = set()
+
         # Start time and count of the current process-wide client_error window.
         self._client_error_window_start = 0.0
         self._client_error_window_count = 0
@@ -2104,6 +2107,11 @@ class EventNamespace(AsyncNamespace):
                 {"frontend": client_scheme, "backend": server_scheme},
                 to=sid,
             )
+            # The client queues its initial events as soon as it sees CONNECT,
+            # and only learns of the mismatch a tick later, so drop whatever it
+            # sends meanwhile: a name from the other scheme could resolve to a
+            # real -- but wrong -- handler here.
+            self._scheme_mismatch_sids.add(sid)
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
@@ -2117,6 +2125,7 @@ class EventNamespace(AsyncNamespace):
         if otel.enabled:
             otel.record_connection(-1)
         self._client_error_counts.pop(sid, None)
+        self._scheme_mismatch_sids.discard(sid)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -2178,6 +2187,11 @@ class EventNamespace(AsyncNamespace):
             RuntimeError: If the Socket.IO is badly initialized.
             EventDeserializationError: If the event data is not a dictionary.
         """
+        if sid in self._scheme_mismatch_sids:
+            # Its names mean something else here; the client stops on its own
+            # once it processes the notice sent at connect.
+            return
+
         # Determine the token for this SID
         if (token := self.sid_to_token.get(sid)) is None:
             logger.warning(
