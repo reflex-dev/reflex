@@ -13,6 +13,16 @@ if sys.version_info >= (3, 14):
         get_annotations,
     )
 
+if sys.version_info >= (3, 15):
+    from dataclasses import MISSING
+
+    # dataclasses._MISSING_TYPE was removed in Python 3.15
+    MISSING_TYPE = type(MISSING)
+else:
+    import dataclasses
+
+    MISSING_TYPE = dataclasses._MISSING_TYPE
+
 
 async def windows_hot_reload_lifespan_hack():
     """[REF-3164] A hack to fix hot reload on Windows.
