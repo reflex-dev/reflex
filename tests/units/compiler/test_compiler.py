@@ -1577,6 +1577,65 @@ def test_context_template_owner_stack_pin(disable_owner_stacks: bool):
     assert "captureOwnerStack" in rendered
 
 
+def test_context_template_renders_internal_event_names():
+    """The generated module carries the resolved framework event names."""
+    from reflex_base.compiler.templates import InternalEventNames, context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        initial_state={"reflex___state____state": {}},
+        state_name="reflex___state____state",
+        internal_events=InternalEventNames(
+            main_state_name="reflex___state____state",
+            hydrate="reflex___state____state.g",
+            on_load_internal="reflex___state____state.a.b",
+            update_vars_internal="reflex___state____state.c.d",
+            handle_frontend_exception="reflex___state____state.e.f",
+        ),
+    )
+    assert "ReflexEvent('reflex___state____state.g')" in rendered
+    assert "ReflexEvent('reflex___state____state.a.b')" in rendered
+    assert "'reflex___state____state.c.d'" in rendered
+    assert 'handle_frontend_exception = "reflex___state____state.e.f"' in rendered
+    # The static runtime reads the names through the registry.
+    registered = rendered[rendered.index("registerApp({") :]
+    for name in (
+        "main_state_name",
+        "update_vars_internal",
+        "handle_frontend_exception",
+    ):
+        assert f"  {name},\n" in registered
+
+
+def test_context_template_carries_the_scheme_digest():
+    """The bundle advertises the wire-name scheme it was built against."""
+    from reflex_base.compiler.templates import context_template
+
+    rendered = context_template(
+        is_dev_mode=True,
+        default_color_mode='"light"',
+        scheme_digest="abc123",
+    )
+
+    assert 'export const schemeDigest = "abc123"' in rendered
+    # The static runtime reads it through the registry to send it on connect.
+    registered = rendered[rendered.index("registerApp({") :]
+    assert "  schemeDigest,\n" in registered
+
+
+def test_context_template_requires_internal_events_with_state():
+    """A stateful context without resolved framework event names is refused."""
+    from reflex_base.compiler.templates import context_template
+
+    with pytest.raises(ValueError, match="internal_events"):
+        context_template(
+            is_dev_mode=True,
+            default_color_mode='"light"',
+            state_name="reflex___state____state",
+        )
+
+
 def test_context_template_client_side_component_is_named():
     """``ClientSide`` returns a named component, not an anonymous arrow."""
     from reflex_base.compiler.templates import context_template

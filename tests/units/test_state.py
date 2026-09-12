@@ -34,6 +34,7 @@ from reflex_base.utils.exceptions import (
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSerializationError,
+    StateValueError,
     UnretrievableVarValueError,
 )
 from reflex_base.utils.format import json_dumps
@@ -5380,3 +5381,127 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
     assert state.key == 1
     error_mock.assert_called_once()
+
+
+class KeyedCounter(rx.ComponentState):
+    """A component state used to check how its instances are named."""
+
+    count: int = 0
+
+    @classmethod
+    def get_component(cls, **props) -> rx.Component:
+        """Render the counter.
+
+        Args:
+            props: The component props.
+
+        Returns:
+            The component.
+        """
+        return rx.text(cls.count, **props)
+
+
+def test_component_state_key_names_the_state():
+    """``_state_key`` names the instance; an unkeyed one is numbered."""
+    keyed = KeyedCounter.create(_state_key="cart").State
+    unkeyed = KeyedCounter.create().State
+
+    assert keyed is not None
+    assert unkeyed is not None
+    assert keyed.__name__ == "KeyedCounter__cart"
+    assert unkeyed.__name__.startswith("KeyedCounter_n")
+
+
+def test_component_state_key_is_independent_of_creation_order():
+    """A keyed name is fixed; unkeyed names follow the order they are made in."""
+    keyed = KeyedCounter.create(_state_key="stable").State
+    unkeyed_before = KeyedCounter.create().State
+    KeyedCounter.create(_state_key="stable2")
+    unkeyed_after = KeyedCounter.create().State
+
+    assert keyed is not None
+    assert unkeyed_before is not None
+    assert unkeyed_after is not None
+    assert keyed.__name__ == "KeyedCounter__stable"
+    assert unkeyed_before.__name__ != unkeyed_after.__name__
+
+
+class KeyedFirstCounter(rx.ComponentState):
+    """Names a keyed instance before an unkeyed one."""
+
+    count: int = 0
+
+    @classmethod
+    def get_component(cls, **props) -> rx.Component:
+        """Render the counter.
+
+        Args:
+            props: The component props.
+
+        Returns:
+            The component.
+        """
+        return rx.text(cls.count, **props)
+
+
+class UnkeyedFirstCounter(rx.ComponentState):
+    """Names an unkeyed instance before a keyed one."""
+
+    count: int = 0
+
+    @classmethod
+    def get_component(cls, **props) -> rx.Component:
+        """Render the counter.
+
+        Args:
+            props: The component props.
+
+        Returns:
+            The component.
+        """
+        return rx.text(cls.count, **props)
+
+
+def test_keyed_name_does_not_collide_when_keyed_is_created_first():
+    """A key shaped like a generated name stays in its own namespace."""
+    keyed = KeyedFirstCounter.create(_state_key="n1").State
+    unkeyed = KeyedFirstCounter.create().State
+
+    assert keyed is not None
+    assert unkeyed is not None
+    assert keyed.__name__ == "KeyedFirstCounter__n1"
+    assert unkeyed.__name__ == "KeyedFirstCounter_n1"
+
+
+def test_keyed_name_does_not_collide_when_unkeyed_is_created_first():
+    """The namespaces stay separate whichever instance is created first."""
+    unkeyed = UnkeyedFirstCounter.create().State
+    keyed = UnkeyedFirstCounter.create(_state_key="n1").State
+
+    assert keyed is not None
+    assert unkeyed is not None
+    assert unkeyed.__name__ == "UnkeyedFirstCounter_n1"
+    assert keyed.__name__ == "UnkeyedFirstCounter__n1"
+
+
+@pytest.mark.parametrize(
+    "bad_key",
+    ["not an identifier", "1leading_digit", "", 1, ("a",)],
+    ids=["spaces", "digit", "empty", "int", "tuple"],
+)
+def test_component_state_rejects_an_unusable_key(bad_key):
+    """A key becomes part of a class name, so it has to be an identifier string.
+
+    Args:
+        bad_key: A key that cannot name a class.
+    """
+    with pytest.raises(ValueError, match="valid Python identifier"):
+        KeyedCounter.create(_state_key=bad_key)
+
+
+def test_component_state_rejects_a_duplicate_key():
+    """A key is unique among the instances of a component."""
+    KeyedCounter.create(_state_key="only_once")
+
+    with pytest.raises(StateValueError, match="defined multiple times"):
+        KeyedCounter.create(_state_key="only_once")

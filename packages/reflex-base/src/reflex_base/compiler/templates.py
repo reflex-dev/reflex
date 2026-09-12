@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import re
 from collections.abc import Iterable, Mapping
@@ -305,6 +306,28 @@ def theme_template(theme: str):
     return f"""export default {theme}"""
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class InternalEventNames:
+    """Wire names the generated context module uses to reach framework handlers.
+
+    Resolved by the compiler under the active name resolver so the frontend
+    keeps working when names are rewritten (e.g. minified).
+
+    Attributes:
+        main_state_name: Name of the framework root ``State``.
+        hydrate: Full event name of ``hydrate``.
+        on_load_internal: Full event name of ``on_load_internal``.
+        update_vars_internal: Full event name of ``update_vars_internal``.
+        handle_frontend_exception: Full event name of ``handle_frontend_exception``.
+    """
+
+    main_state_name: str
+    hydrate: str
+    on_load_internal: str
+    update_vars_internal: str
+    handle_frontend_exception: str
+
+
 def context_template(
     *,
     is_dev_mode: bool,
@@ -312,8 +335,10 @@ def context_template(
     initial_state: dict[str, Any] | None = None,
     initial_state_json: str | None = None,
     state_name: str | None = None,
+    internal_events: InternalEventNames | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
+    scheme_digest: str = "",
 ):
     """Template for the context file.
 
@@ -321,16 +346,26 @@ def context_template(
         initial_state: The initial state for the context.
         initial_state_json: Initial state JSON already serialized by the compiler.
         state_name: The name of the state.
+        internal_events: Resolved framework event names; required with ``state_name``.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
         disable_react_owner_stacks: Whether to emit the snippet that disables
             React's dev-build owner-stack capture (an Error() constructed per
             created element, whose cost grows with render depth).
+        scheme_digest: Digest of the wire-name scheme this bundle was built
+            with, sent on connect so the backend can detect a mismatch.
 
     Returns:
         Rendered context file content as string.
+
+    Raises:
+        ValueError: If ``state_name`` is given without ``internal_events``.
     """
+    if state_name is not None and internal_events is None:
+        msg = "internal_events is required when state_name is given"
+        raise ValueError(msg)
+
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
@@ -345,7 +380,11 @@ def context_template(
         rf"""
 export const state_name = "{state_name}"
 
-export const exception_state_name = "{constants.CompileVars.FRONTEND_EXCEPTION_STATE_FULL}"
+export const main_state_name = "{internal_events.main_state_name}"
+
+export const update_vars_internal = "{internal_events.update_vars_internal}"
+
+export const handle_frontend_exception = "{internal_events.handle_frontend_exception}"
 
 // These events are triggered on initial load and each page navigation.
 export const onLoadInternalEvent = () => {{
@@ -357,7 +396,7 @@ export const onLoadInternalEvent = () => {{
     if (client_storage_vars && Object.keys(client_storage_vars).length !== 0) {{
         internal_events.push(
             ReflexEvent(
-                '{state_name}.{constants.CompileVars.UPDATE_VARS_INTERNAL}',
+                '{internal_events.update_vars_internal}',
                 {{vars: client_storage_vars}},
             ),
         );
@@ -365,22 +404,26 @@ export const onLoadInternalEvent = () => {{
 
     // `on_load_internal` triggers the correct on_load event(s) for the current page.
     // If the page does not define any on_load event, this will just set `is_hydrated = true`.
-    internal_events.push(ReflexEvent('{state_name}.{constants.CompileVars.ON_LOAD_INTERNAL}'));
+    internal_events.push(ReflexEvent('{internal_events.on_load_internal}'));
 
     return internal_events;
 }}
 
 // The following events are sent when the websocket connects or reconnects.
 export const initialEvents = () => [
-    ReflexEvent('{state_name}.{constants.CompileVars.HYDRATE}'),
+    ReflexEvent('{internal_events.hydrate}'),
     ...onLoadInternalEvent()
 ]
     """
-        if state_name
+        if state_name and internal_events
         else """
 export const state_name = undefined
 
-export const exception_state_name = undefined
+export const main_state_name = undefined
+
+export const update_vars_internal = undefined
+
+export const handle_frontend_exception = undefined
 
 export const onLoadInternalEvent = () => []
 
@@ -447,17 +490,24 @@ export const clientStorage = {"{}" if client_storage is None else json.dumps(cli
 
 export const isDevMode = {json.dumps(is_dev_mode)};
 
+// Identifies the wire-name scheme this bundle was built with; the backend
+// rejects a connection whose scheme does not match its own.
+export const schemeDigest = {json.dumps(scheme_digest)};
+
 // The static runtime reads these through the registry, so this module is the
 // only one Vite re-executes when they change.
 registerApp({{
   initialState,
   clientStorage,
   state_name,
-  exception_state_name,
+  main_state_name,
+  update_vars_internal,
+  handle_frontend_exception,
   onLoadInternalEvent,
   initialEvents,
   isDevMode,
   defaultColorMode,
+  schemeDigest,
 }});
 
 export function addEvents(events, args, event_actions) {{
