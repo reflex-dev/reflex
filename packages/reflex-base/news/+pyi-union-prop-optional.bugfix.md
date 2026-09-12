@@ -1,0 +1,1 @@
+Generated `.pyi` stubs now type a prop declared as a union — `content: Var[str] | Component`, say — as optional, matching the `None` default that `create()` gives every prop. Type checkers previously reported the generated signature itself as an error.
