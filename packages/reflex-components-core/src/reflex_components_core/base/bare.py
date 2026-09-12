@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Iterator, Sequence
 from typing import Any
 
@@ -18,6 +19,13 @@ from reflex_base.vars.base import GLOBAL_CACHE, VarData
 from reflex_base.vars.sequence import LiteralStringVar
 
 logger = logging.getLogger(__name__)
+
+
+# A stringified state Var opens with its dotted path, e.g.
+# ``<state>.<field>_rx_state_``. The state segment is resolver-dependent
+# (minify.json rewrites it), the marker is not, so anchor on the marker ending
+# a dotted field rather than on a built-in state name prefix.
+_STATE_VAR_STR = re.compile(rf"[\w$]+(?:\.[\w$]+)+{re.escape(FIELD_MARKER)}(?![\w$])")
 
 
 @once
@@ -40,9 +48,12 @@ def validate_str(value: str):
         ValueError: If the value is a Var and the performance mode is set to raise.
     """
     perf_mode = get_performance_mode()
-    # State Vars render as ``<state>.<field><FIELD_MARKER>``; the state segment
-    # is resolver-dependent (minify.json rewrites it), the marker is not.
-    if perf_mode != PerformanceMode.OFF and FIELD_MARKER in value:
+    # The substring test is a cheap gate; only then pay for the match.
+    if (
+        perf_mode != PerformanceMode.OFF
+        and FIELD_MARKER in value
+        and _STATE_VAR_STR.match(value)
+    ):
         if perf_mode == PerformanceMode.WARN:
             logger.warning(
                 f"Output includes {value!s} which will be displayed as a string. If you are calling `str` on a Var, consider using .to_string() instead."
