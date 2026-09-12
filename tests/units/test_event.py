@@ -115,7 +115,8 @@ def test_call_event_handler():
 
     handler = EventHandler(fn=fn_with_args)
     with pytest.raises(TypeError):
-        handler(test_fn)
+        # Optional packages can register serializers for Python functions.
+        handler(object())
 
 
 def test_call_event_handler_partial():

@@ -245,6 +245,23 @@ def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     return env
 
 
+def frontend_env(environ: Mapping[str, str]) -> dict[str, str]:
+    """Build the environment for the frontend toolchain processes.
+
+    Rolldown, which vite and react-router run for dependency pre-bundling and
+    builds, allocates through mimalloc. Disabling eager arena commit keeps the
+    memory it touches during pre-bundling from staying resident for the life of
+    the dev server or build. A value already present in ``environ`` wins.
+
+    Args:
+        environ: The base environment.
+
+    Returns:
+        A copy of the environment for the vite/react-router processes.
+    """
+    return {"MIMALLOC_ARENA_EAGER_COMMIT": "0", **environ, "NO_COLOR": "1"}
+
+
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
@@ -267,7 +284,7 @@ def run_process_and_launch_url(
     while True:
         if process is None:
             kwargs: dict[str, Any] = {
-                "env": _with_development_condition({**os.environ, "NO_COLOR": "1"})
+                "env": _with_development_condition(frontend_env(os.environ))
             }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
@@ -500,8 +517,18 @@ def run_backend(
 
     # Run the backend in development mode.
     if should_use_granian():
-        # We import reflex app because this lets granian cache the module
-        import reflex.app  # noqa: F401
+        # Forked workers inherit imported modules from the supervisor. Spawned
+        # and forkserver workers do not, so preloading the app there only keeps
+        # the full framework graph resident in the long-lived supervisor.
+        if not environment.REFLEX_STRICT_HOT_RELOAD.get():
+            import multiprocessing
+
+            if multiprocessing.get_start_method() == "fork":
+                from reflex_base.utils import serializers
+
+                import reflex.app  # noqa: F401
+
+                serializers._prepare_serializers_for_fork()
 
         run_granian_backend(host, port, loglevel)
     else:
