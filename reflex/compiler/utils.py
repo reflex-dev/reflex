@@ -273,6 +273,32 @@ def _compile_initial_state(
     )
 
 
+def _compile_bundled_libraries() -> tuple[str, str]:
+    """Return the bundled-library registry as a frontend build artifact.
+
+    Returns:
+        The output path and serialized registry.
+    """
+    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
+    return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
+
+
+def _restore_bundled_libraries() -> None:
+    """Restore the registry emitted by the most recent frontend compile."""
+    path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
+    try:
+        bundled_libraries = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    if not isinstance(bundled_libraries, list) or not all(
+        isinstance(library, str) for library in bundled_libraries
+    ):
+        return
+    RegistrationContext.ensure_context().bundled_libraries[:] = list(
+        dict.fromkeys(bundled_libraries)
+    )
+
+
 def _compile_client_storage_field(
     field: Field,
 ) -> (

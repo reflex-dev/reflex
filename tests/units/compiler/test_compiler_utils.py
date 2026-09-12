@@ -7,9 +7,11 @@ from reflex_components_core.base.fragment import Fragment
 from reflex_components_core.base.script import Script
 from reflex_components_core.el.elements.metadata import Link
 
+from reflex.compiler import utils
 from reflex.compiler.utils import compile_state, create_document_root
 from reflex.compiler.utils import write_file as compiler_write_file
 from reflex.constants.state import FIELD_MARKER
+from reflex_base.registry import RegistrationContext
 from reflex.state import State
 from reflex.utils.path_ops import write_file
 from reflex.vars.base import computed_var
@@ -18,6 +20,28 @@ from reflex.vars.base import computed_var
 def test_write_file_reexport() -> None:
     """Existing compiler callers retain the shared file-writing helper."""
     assert compiler_write_file is write_file
+
+
+def test_bundled_libraries_artifact_round_trip(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Backend-only workers can restore the registry from the frontend build."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    with RegistrationContext() as context:
+        context.bundled_libraries.append("@radix-ui/themes")
+        output_path, output = utils._compile_bundled_libraries()
+        (tmp_path / output_path).write_text(output, encoding="utf-8")
+        context.bundled_libraries[:] = ["react"]
+
+        utils._restore_bundled_libraries()
+
+        assert context.bundled_libraries == [
+            "react",
+            "@emotion/react",
+            "$/utils/context",
+            "$/utils/state",
+            "@radix-ui/themes",
+        ]
 
 
 def test_document_preloads_the_global_stylesheet():

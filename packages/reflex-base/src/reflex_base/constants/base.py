@@ -56,6 +56,8 @@ class Dirs(SimpleNamespace):
     APP_COMPONENTS = "app_components"
     # The name of the env json file.
     ENV_JSON = "env.json"
+    # The name of the compiled bundled-library registry.
+    BUNDLED_LIBRARIES = "bundled_libraries.json"
     # The name of the reflex json file.
     REFLEX_JSON = "reflex.json"
     # The name of the postcss config file.
