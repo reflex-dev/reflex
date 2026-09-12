@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
 import os
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import click
 import click.testing
 import pytest
 
 from reflex import reflex
+from reflex.reflex import _add_plugin_cli_commands, _PluginCommand, cli
 
 _CLI_STARTUP_DENIED_MODULES = frozenset({
     "PIL",
@@ -370,6 +373,63 @@ def test_missing_command_tolerates_flags(caplog: pytest.LogCaptureFixture):
     assert result.exit_code == 1
     assert "pip install reflex-hosting-cli" in caplog.text
     assert "No such option" not in result.output
+
+
+@click.command()
+def _fake_command():
+    """A plugin-contributed command."""
+
+
+def _entry_point(name: str, command: object = _fake_command) -> SimpleNamespace:
+    entry_point = SimpleNamespace(
+        name=name, value="fake_pkg.mod:cmd", dist=None, loads=0
+    )
+
+    def load():
+        entry_point.loads += 1
+        return command
+
+    entry_point.load = load
+    return entry_point
+
+
+def test_plugin_cli_command_cannot_shadow_builtin(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        importlib.metadata, "entry_points", lambda group: [_entry_point("run")]
+    )
+    builtin_run = cli.commands["run"]
+    _add_plugin_cli_commands()
+    assert cli.commands["run"] is builtin_run
+
+
+def test_plugin_cli_command_registers_new_name(monkeypatch: pytest.MonkeyPatch):
+    entry_point = _entry_point("fakeplugincmd")
+    monkeypatch.setattr(importlib.metadata, "entry_points", lambda group: [entry_point])
+    _add_plugin_cli_commands()
+    try:
+        command = cli.commands["fakeplugincmd"]
+        assert isinstance(command, _PluginCommand)
+        # Registration must not import the plugin; only use does.
+        assert entry_point.loads == 0
+        assert command.help == "Provided by fake_pkg.mod:cmd."
+        assert command._resolve() is _fake_command
+        assert command._resolve() is _fake_command
+        assert entry_point.loads == 1
+    finally:
+        cli.commands.pop("fakeplugincmd", None)
+
+
+def test_plugin_cli_command_rejects_non_command(monkeypatch: pytest.MonkeyPatch):
+    entry_point = _entry_point("fakeplugincmd", command=object())
+    monkeypatch.setattr(importlib.metadata, "entry_points", lambda group: [entry_point])
+    _add_plugin_cli_commands()
+    try:
+        command = cli.commands["fakeplugincmd"]
+        assert isinstance(command, _PluginCommand)
+        with pytest.raises(click.ClickException, match=r"not a click\.Command"):
+            command._resolve()
+    finally:
+        cli.commands.pop("fakeplugincmd", None)
 
 
 def test_init_records_version_check_after_frontend_setup(

@@ -19,6 +19,7 @@ from reflex.utils.cli_options import log_options
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from importlib.metadata import EntryPoint
     from typing import Literal
 
     from click.shell_completion import CompletionItem
@@ -252,6 +253,46 @@ class _LazyCommand(click.Command):
             Metadata from the resolved command.
         """
         return self._resolve().to_info_dict(ctx)
+
+
+class _PluginCommand(_LazyCommand):
+    """A plugin-contributed command, loaded from its entry point on first use."""
+
+    def __init__(self, entry_point: EntryPoint) -> None:
+        """Initialize a plugin command.
+
+        Args:
+            entry_point: The ``reflex.cli`` entry point providing the command.
+        """
+        dist = entry_point.dist
+        source = dist.name if dist is not None else entry_point.value
+        super().__init__(
+            name=entry_point.name,
+            import_path=entry_point.value,
+            help=f"Provided by {source}.",
+        )
+        self._entry_point = entry_point
+
+    def _resolve(self) -> click.Command:
+        """Load and validate the plugin's command.
+
+        Returns:
+            The resolved command.
+
+        Raises:
+            ClickException: If the entry point does not resolve to a Click command.
+        """
+        if self._resolved_command is not None:
+            return self._resolved_command
+        command = self._entry_point.load()
+        if not isinstance(command, click.Command):
+            msg = (
+                f"CLI command {self.name!r} from {self._entry_point.value!r} "
+                "is not a click.Command."
+            )
+            raise click.ClickException(msg)
+        self._resolved_command = command
+        return command
 
 
 def _init(
@@ -1077,6 +1118,31 @@ cli.add_command(
         help="CLI for creating custom components.",
     )
 )
+
+
+def _add_plugin_cli_commands() -> None:
+    """Attach command groups contributed by installed packages.
+
+    Any package can add a subcommand by declaring a ``reflex.cli`` entry point
+    resolving to a ``click.Command`` (e.g. ``reflex-i18n`` provides ``i18n``).
+    Commands load on first use, so startup never imports plugin code and a
+    broken plugin only breaks its own command.
+    """
+    from importlib.metadata import entry_points
+
+    for entry_point in entry_points(group="reflex.cli"):
+        # A plugin must not (silently) replace a built-in or another plugin's
+        # command.
+        if entry_point.name in cli.commands:
+            console.warn(
+                f"CLI command {entry_point.name!r} from {entry_point.value!r} "
+                f"is already registered; skipping."
+            )
+            continue
+        cli.add_command(_PluginCommand(entry_point), name=entry_point.name)
+
+
+_add_plugin_cli_commands()
 
 if __name__ == "__main__":
     cli()

@@ -106,6 +106,12 @@ class RegisterRouteContext(CommonContext):
     has_app_page: Callable[[str], bool]
 
 
+class ExpandRoutesContext(RegisterRouteContext):
+    """Context for ``expand_routes``: adds the app's registered ``pages``."""
+
+    pages: Sequence["UnevaluatedPage"]
+
+
 class PostCompileContext(CommonContext):
     """Context for post-compile hooks."""
 
@@ -192,6 +198,16 @@ class Plugin:
 
         Args:
             context: The route registration context.
+        """
+
+    def expand_routes(self, **context: Unpack[ExpandRoutesContext]) -> None:
+        """Contribute pages derived from the app's already-registered pages.
+
+        Runs after ``register_route`` with the same staged ``add_page``; the
+        context adds ``pages`` (the app's registered pages) to fan out from.
+
+        Args:
+            context: The route-expansion context.
         """
 
     def pre_compile(self, **context: Unpack[PreCompileContext]) -> None:

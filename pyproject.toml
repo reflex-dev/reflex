@@ -84,6 +84,7 @@ reflex = "reflex.reflex:cli"
 dev = [
   "alembic",
   "asynctest",
+  "reflex-i18n",
   "codespell",
   "darglint",
   "dill",
@@ -308,6 +309,7 @@ source = [
   "reflex_components_recharts",
   "reflex_components_sonner",
   "reflex_base",
+  "reflex_i18n",
   "reflex_docgen",
   "reflex_otel",
   "reflex_release",
@@ -507,6 +509,7 @@ reflex-components-recharts = false
 reflex-components-sonner = false
 reflex-enterprise = false
 reflex-hosting-cli = false
+reflex-i18n = false
 
 [tool.uv.sources]
 hatch-reflex-pyi.workspace = true
@@ -523,6 +526,7 @@ reflex-components-radix.workspace = true
 reflex-components-react-player.workspace = true
 reflex-components-recharts.workspace = true
 reflex-components-sonner.workspace = true
+reflex-i18n.workspace = true
 reflex-docgen.workspace = true
 reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
