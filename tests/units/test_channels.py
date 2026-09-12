@@ -1,5 +1,6 @@
 """Tests for the channel API in reflex/channels.py."""
 
+from collections.abc import Sequence
 from typing import Any
 
 import pytest
@@ -21,7 +22,7 @@ class CollectingChannel(Channel):
     def __init__(self):
         """Initialize the channel and its recorded sends."""
         super().__init__()
-        self.sent: list[tuple[str, str, str, Any, list[bytes]]] = []
+        self.sent: list[tuple[list[str], str, str, Any, list[bytes]]] = []
 
     async def on_message(
         self, session: ChannelSession, event: str, data: Any, buffers: list[bytes]
@@ -31,14 +32,14 @@ class CollectingChannel(Channel):
 
     async def _record(
         self,
-        sid: str,
+        sids: Sequence[str],
         channel: str,
         event: str,
         data: Any,
         buffers: Any,
     ) -> None:
         """Stand in for the transport's send callable."""
-        self.sent.append((sid, channel, event, data, list(buffers)))
+        self.sent.append((list(sids), channel, event, data, list(buffers)))
 
     def session(self, sid: str, client_token: str = "tok") -> ChannelSession:
         """Open a session wired to the recording sender.
@@ -84,12 +85,16 @@ async def test_session_send_reaches_the_transport():
 
     await session.send("payload", {"fig": "f1"}, [b"\x00"])
 
-    assert channel.sent == [("sid1", "probe", "payload", {"fig": "f1"}, [b"\x00"])]
+    assert channel.sent == [(["sid1"], "probe", "payload", {"fig": "f1"}, [b"\x00"])]
 
 
 @pytest.mark.asyncio
 async def test_room_fan_out_reaches_members_only():
-    """Sending to a room reaches its members and no one else."""
+    """A room's members are handed to the transport together, and nobody else.
+
+    Together, because the frame is then serialized once however many members
+    the room has, rather than once per member.
+    """
     channel = CollectingChannel()
     first = channel.session("sid1")
     second = channel.session("sid2")
@@ -99,7 +104,8 @@ async def test_room_fan_out_reaches_members_only():
 
     await channel.send_to_room("fig:1", "push", {"n": 1})
 
-    assert sorted(sent[0] for sent in channel.sent) == ["sid1", "sid2"]
+    assert len(channel.sent) == 1
+    assert sorted(channel.sent[0][0]) == ["sid1", "sid2"]
 
 
 @pytest.mark.asyncio
@@ -136,7 +142,7 @@ async def test_send_to_token_reports_delivery():
 
     assert await channel.send_to_token("tok1", "push", {"n": 1}) is True
     assert await channel.send_to_token("missing", "push") is False
-    assert [sent[0] for sent in channel.sent] == ["sid1"]
+    assert [sent[0] for sent in channel.sent] == [["sid1"]]
 
 
 @pytest.mark.asyncio

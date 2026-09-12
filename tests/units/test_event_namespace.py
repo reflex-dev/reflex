@@ -1124,6 +1124,40 @@ async def test_handshake_advertises_the_message_limit(
 
 
 @pytest.mark.asyncio
+async def test_a_room_broadcast_serializes_one_frame_for_every_member(
+    namespace: WebsocketEventNamespace, monkeypatch: pytest.MonkeyPatch
+):
+    """Fan-out costs one encode and one buffer, not one per recipient."""
+    channel = RecordingChannel(accepts_binary=True)
+    sent: list[tuple[str | None, Any]] = []
+    encodes = 0
+    real_encode = event_namespace.encode_channel_frame
+
+    def counting_encode(*args: Any) -> bytes:
+        nonlocal encodes
+        encodes += 1
+        return real_encode(*args)
+
+    async def record(to: str | None, payload: Any, label: str) -> None:
+        # Stands in for the write to each client's socket.
+        await asyncio.sleep(0)
+        sent.append((to, payload))
+
+    monkeypatch.setattr(event_namespace, "encode_channel_frame", counting_encode)
+    monkeypatch.setattr(namespace, "_deliver", record)
+    for sid in ("sid1", "sid2", "sid3"):
+        channel.open_session(sid, "tok", namespace._send_channel_message).join("fig:1")
+
+    await channel.send_to_room("fig:1", "frame", {"seq": 1}, [b"\x00" * 32])
+
+    assert encodes == 1
+    assert len(sent) == 3
+    assert {to for to, _ in sent} == {"sid1", "sid2", "sid3"}
+    # The same buffer reached all three, rather than a copy each.
+    assert sent[0][1] is sent[1][1] is sent[2][1]
+
+
+@pytest.mark.asyncio
 async def test_closing_a_connection_the_heartbeat_already_closed_is_not_an_error(
     namespace: WebsocketEventNamespace,
 ):

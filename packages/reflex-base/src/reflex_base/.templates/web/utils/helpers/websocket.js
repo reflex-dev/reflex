@@ -20,6 +20,11 @@ const CHANNEL_PROTOCOL_VERSION = 2;
 // view one as a Float64Array without copying.
 const FRAME_ALIGNMENT = 8;
 
+// Reused across frames: both are stateless, and a channel streaming binary
+// would otherwise allocate one per message.
+const TEXT_ENCODER = new TextEncoder();
+const TEXT_DECODER = new TextDecoder();
+
 // Messages a channel buffers while it is not open, oldest dropped first.
 const MAX_QUEUED_CHANNEL_MESSAGES = 64;
 
@@ -133,7 +138,7 @@ const exceedsMessageLimit = (frame, limit) => {
   if (frame.length * 4 <= limit) {
     return false;
   }
-  return new TextEncoder().encode(frame).byteLength > limit;
+  return TEXT_ENCODER.encode(frame).byteLength > limit;
 };
 
 /**
@@ -143,7 +148,7 @@ const exceedsMessageLimit = (frame, limit) => {
  */
 const frameByteLength = (frame) =>
   typeof frame === "string"
-    ? new TextEncoder().encode(frame).byteLength
+    ? TEXT_ENCODER.encode(frame).byteLength
     : frame.byteLength;
 
 /**
@@ -181,7 +186,7 @@ const padding = (offset) =>
  */
 export const encodeChannelFrame = (event, data, channel, buffers) => {
   const views = buffers.map(asBytes);
-  const header = new TextEncoder().encode(
+  const header = TEXT_ENCODER.encode(
     stringifyFrame([event, data, channel, views.map((v) => v.byteLength)]),
   );
   let size = 4 + header.byteLength;
@@ -215,7 +220,7 @@ export const decodeChannelFrame = (frame) => {
     return undefined;
   }
   const header = parseJsonLenient(
-    new TextDecoder().decode(new Uint8Array(frame, 4, headerSize)),
+    TEXT_DECODER.decode(new Uint8Array(frame, 4, headerSize)),
     undefined,
   );
   if (!Array.isArray(header) || !Array.isArray(header[3])) {

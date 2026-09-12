@@ -40,9 +40,37 @@ MAX_MESSAGE_BUFFERS = 64
 # message from the transport event it is named after.
 RESERVED_EVENTS = frozenset({"connect", "disconnect", "error"})
 
-# Sends one channel message to a connected session: (sid, channel, event,
-# data, buffers). Supplied by the transport when the session opens.
-ChannelSender = Callable[[str, str, str, Any, Sequence[bytes]], Awaitable[None]]
+# Sends one channel message to connected sessions: (sids, channel, event,
+# data, buffers). Supplied by the transport when the session opens. It takes
+# every recipient at once so a fan-out serializes the frame only once.
+ChannelSender = Callable[
+    [Sequence[str], str, str, Any, Sequence[bytes]], Awaitable[None]
+]
+
+
+def _validate_message(event: str, buffers: Sequence[bytes]) -> None:
+    """Check a message against what a frame may carry, before any is sent.
+
+    Args:
+        event: The message name.
+        buffers: The binary attachments.
+
+    Raises:
+        ValueError: If the message name is reserved, or it carries more
+            attachments than a frame may hold.
+    """
+    if event in RESERVED_EVENTS:
+        msg = (
+            f"Channel message name {event!r} is reserved: the client-side "
+            "handle reports its own lifecycle under it."
+        )
+        raise ValueError(msg)
+    if len(buffers) > MAX_MESSAGE_BUFFERS:
+        msg = (
+            f"Channel message {event!r} carries {len(buffers)} attachments, "
+            f"over the {MAX_MESSAGE_BUFFERS} a frame may hold."
+        )
+        raise ValueError(msg)
 
 
 def validate_channel_name(name: Any) -> None:
@@ -99,23 +127,10 @@ class ChannelSession:
 
         Raises:
             ValueError: If the message name is reserved, or it carries more
-                attachments than a frame may hold. Raised before anything is
-                sent, so a fan-out fails whole rather than reaching some
-                clients.
+                attachments than a frame may hold.
         """
-        if event in RESERVED_EVENTS:
-            msg = (
-                f"Channel message name {event!r} is reserved: the client-side "
-                "handle reports its own lifecycle under it."
-            )
-            raise ValueError(msg)
-        if len(buffers) > MAX_MESSAGE_BUFFERS:
-            msg = (
-                f"Channel message {event!r} carries {len(buffers)} attachments, "
-                f"over the {MAX_MESSAGE_BUFFERS} a frame may hold."
-            )
-            raise ValueError(msg)
-        await self._send(self.sid, self.channel.name, event, data, buffers)
+        _validate_message(event, buffers)
+        await self._send((self.sid,), self.channel.name, event, data, buffers)
 
     def join(self, room: str) -> None:
         """Add this session to a room for fan-out.
@@ -214,13 +229,24 @@ class Channel(ABC):
             event: The message name.
             data: The JSON-serializable metadata.
             buffers: Binary attachments delivered alongside the metadata.
+
+        Raises:
+            ValueError: If the message name is reserved, or it carries more
+                attachments than a frame may hold. Raised before anything is
+                sent, so a fan-out fails whole rather than reaching some
+                clients.
         """
         members = self._rooms.get(room)
         if not members:
             return
-        # A send can close a session and mutate the room, so iterate a copy.
-        for session in tuple(members):
-            await session.send(event, data, buffers)
+        _validate_message(event, buffers)
+        # Every session of a channel is opened by the app's one transport, so
+        # any member can carry the frame for all of them -- serialized once
+        # rather than once per recipient. The recipients are collected first:
+        # a send can close a session and mutate the room.
+        await next(iter(members))._send(
+            [session.sid for session in members], self.name, event, data, buffers
+        )
 
     async def send_to_token(
         self,
@@ -239,12 +265,20 @@ class Channel(ABC):
 
         Returns:
             Whether a session received the message.
+
+        Raises:
+            ValueError: If the message name is reserved, or it carries more
+                attachments than a frame may hold. Raised before anything is
+                sent, so a fan-out fails whole rather than reaching some
+                clients.
         """
         sessions = self._sessions.get(client_token)
         if not sessions:
             return False
-        for session in tuple(sessions):
-            await session.send(event, data, buffers)
+        _validate_message(event, buffers)
+        await next(iter(sessions))._send(
+            [session.sid for session in sessions], self.name, event, data, buffers
+        )
         return True
 
     def open_session(

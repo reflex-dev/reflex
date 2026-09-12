@@ -82,9 +82,9 @@ def exceeds_message_limit(data: str | bytes, max_size: int) -> bool:
 
     The limit counts UTF-8 bytes, and UTF-8 encodes 1-4 bytes per character:
     more characters than the limit is certainly over, a quarter or fewer
-    certainly under, so only the range between is encoded to count exactly
-    (bounding that copy to 4x the limit). Mirrors ``exceedsMessageLimit`` in
-    .templates/web/utils/helpers/websocket.js.
+    certainly under, so only the range between is measured exactly -- and an
+    ASCII payload, which is most of them, is measured without a copy. Mirrors
+    ``exceedsMessageLimit`` in .templates/web/utils/helpers/websocket.js.
 
     Args:
         data: The received message, text or binary.
@@ -96,9 +96,7 @@ def exceeds_message_limit(data: str | bytes, max_size: int) -> bool:
     if isinstance(data, bytes):
         return len(data) > max_size
     length = len(data)
-    return length > max_size or (
-        length * 4 > max_size and len(data.encode("utf-8")) > max_size
-    )
+    return length > max_size or (length * 4 > max_size and utf8_size(data) > max_size)
 
 
 def encode_channel_frame(
@@ -686,16 +684,19 @@ class WebsocketEventNamespace(BaseEventNamespace):
 
     async def _send_channel_message(
         self,
-        sid: str,
+        sids: Sequence[str],
         channel: str,
         event: str,
         data: Any,
         buffers: Sequence[bytes],
     ) -> None:
-        """Send one channel message to a connected client session.
+        """Send one channel message to connected client sessions.
+
+        The frame is serialized once for every recipient: a room broadcast
+        costs one encode and one buffer, not one per member.
 
         Args:
-            sid: The session id to send to.
+            sids: The session ids to send to.
             channel: The channel name.
             event: The message name.
             data: The JSON-serializable metadata.
@@ -706,7 +707,8 @@ class WebsocketEventNamespace(BaseEventNamespace):
             if buffers
             else format.json_dumps([event, data, channel])
         )
-        await self._deliver(sid, payload, event)
+        for sid in sids:
+            await self._deliver(sid, payload, event)
 
     async def _send_channel_error(
         self, sid: str, channel: str, code: str, message: str
@@ -720,7 +722,11 @@ class WebsocketEventNamespace(BaseEventNamespace):
             message: The human-readable explanation.
         """
         await self._send_channel_message(
-            sid, channel, CHANNEL_ERROR_MESSAGE, {"code": code, "message": message}, ()
+            (sid,),
+            channel,
+            CHANNEL_ERROR_MESSAGE,
+            {"code": code, "message": message},
+            (),
         )
 
     async def _open_channel_session(self, sid: str, channel_name: str) -> None:
@@ -734,7 +740,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
             # Opening twice would orphan the first session in its rooms; the
             # client only opens once per connection, so answer and move on.
             await self._send_channel_message(
-                sid, channel_name, OPENED_MESSAGE, None, ()
+                (sid,), channel_name, OPENED_MESSAGE, None, ()
             )
             return
         channel = self.app._channels.get(channel_name)
@@ -767,7 +773,7 @@ class WebsocketEventNamespace(BaseEventNamespace):
                 sid, channel_name, "open_failed", "The channel failed to open."
             )
             return
-        await self._send_channel_message(sid, channel_name, OPENED_MESSAGE, None, ())
+        await self._send_channel_message((sid,), channel_name, OPENED_MESSAGE, None, ())
 
     async def _close_channel_session(self, sid: str, channel_name: str) -> None:
         """Close one open channel session.
