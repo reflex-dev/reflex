@@ -84,6 +84,19 @@ export const parseJsonLenient = (text, fallback) => {
 };
 
 /**
+ * Serialize one channel message: binary when it carries attachments.
+ * @param event The message name.
+ * @param data The JSON metadata.
+ * @param channel The channel name.
+ * @param buffers Binary attachments (ArrayBuffers or typed arrays).
+ * @returns The serialized frame, text or binary.
+ */
+const channelFrame = (event, data, channel, buffers) =>
+  buffers?.length
+    ? encodeChannelFrame(event, data, channel, buffers)
+    : stringifyFrame([event, data, channel]);
+
+/**
  * Whether a serialized frame is over the backend's inbound message limit.
  *
  * Mirrors the check the backend applies before closing the connection: the
@@ -301,9 +314,7 @@ class ReflexChannel extends LocalEmitter {
     // Serialize now, connected or not: a queued frame must carry what was
     // emitted, not whatever the caller's payload and typed arrays hold by the
     // time the channel opens.
-    const frame = buffers?.length
-      ? encodeChannelFrame(event, data, this.name, buffers)
-      : stringifyFrame([event, data, this.name]);
+    const frame = channelFrame(event, data, this.name, buffers);
     const limit = this._transport?._maxMessageSize;
     if (limit && exceedsMessageLimit(frame, limit)) {
       throw new Error(
@@ -636,11 +647,7 @@ export class ReflexWebSocket extends LocalEmitter {
    * @param buffers Binary attachments (ArrayBuffers or typed arrays).
    */
   emitChannel(channel, event, data, buffers) {
-    this._send(
-      buffers?.length
-        ? encodeChannelFrame(event, data, channel, buffers)
-        : stringifyFrame([event, data, channel]),
-    );
+    this._send(channelFrame(event, data, channel, buffers));
   }
 
   /**

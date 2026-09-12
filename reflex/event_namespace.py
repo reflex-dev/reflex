@@ -76,6 +76,30 @@ def utf8_size(data: str | bytes) -> int:
     return len(data) if data.isascii() else len(data.encode())
 
 
+def exceeds_message_limit(data: str | bytes, max_size: int) -> bool:
+    """Whether a received message is over the policy limit.
+
+    The limit counts UTF-8 bytes, and UTF-8 encodes 1-4 bytes per character:
+    more characters than the limit is certainly over, a quarter or fewer
+    certainly under, so only the range between is encoded to count exactly
+    (bounding that copy to 4x the limit). Mirrors ``exceedsMessageLimit`` in
+    .templates/web/utils/helpers/websocket.js.
+
+    Args:
+        data: The received message, text or binary.
+        max_size: The limit in bytes.
+
+    Returns:
+        Whether the message exceeds it.
+    """
+    if isinstance(data, bytes):
+        return len(data) > max_size
+    length = len(data)
+    return length > max_size or (
+        length * 4 > max_size and len(data.encode("utf-8")) > max_size
+    )
+
+
 def encode_channel_frame(
     event: str, data: Any, channel: str, buffers: Sequence[bytes]
 ) -> bytes:
@@ -823,11 +847,8 @@ class WebsocketEventNamespace(BaseEventNamespace):
             The websocket close code the session must end with, or None to
             keep serving it.
         """
-        if len(frame) > max_size:
-            logger.debug(f"Closing session {sid}: message over {max_size} bytes.")
-            return 1009
-        if otel.enabled:
-            otel.record_message_size(len(frame), "receive")
+        if (close_code := self._accept_inbound(sid, frame, max_size)) is not None:
+            return close_code
         try:
             event, data, channel_name, buffers = decode_channel_frame(frame)
         except ValueError:
@@ -836,6 +857,29 @@ class WebsocketEventNamespace(BaseEventNamespace):
             logger.debug(f"Closing session {sid}: malformed binary frame.")
             return 1002
         await self._handle_channel_message(sid, channel_name, event, data, buffers)
+        return None
+
+    @staticmethod
+    def _accept_inbound(sid: str, payload: str | bytes, max_size: int) -> int | None:
+        """Apply the message size policy to a received frame, and account for it.
+
+        ASGI delivers complete messages, so the server has already buffered
+        the frame; its protocol-level caps (enforced during frame reassembly)
+        bound that allocation. This applies the Reflex policy limit on top.
+
+        Args:
+            sid: The session id.
+            payload: The received frame, text or binary.
+            max_size: The message size limit in bytes.
+
+        Returns:
+            The close code the session must end with, or None to dispatch it.
+        """
+        if exceeds_message_limit(payload, max_size):
+            logger.debug(f"Closing session {sid}: message over {max_size} bytes.")
+            return 1009
+        if otel.enabled:
+            otel.record_message_size(utf8_size(payload), "receive")
         return None
 
     @staticmethod
@@ -869,22 +913,8 @@ class WebsocketEventNamespace(BaseEventNamespace):
             The websocket close code the session must end with, or None to
             keep serving it.
         """
-        # ASGI delivers complete messages, so the server has already buffered
-        # the frame; its protocol-level caps (enforced during frame
-        # reassembly) bound that allocation. This check applies the Reflex
-        # policy limit on top.
-        # The limit is in bytes; UTF-8 encodes 1-4 bytes per character, so
-        # more characters than the limit is certainly over, and a quarter or
-        # fewer certainly under -- only encode to count the exact bytes in
-        # between (bounding the copy to 4x the limit).
-        text_length = len(text)
-        if text_length > max_size or (
-            text_length * 4 > max_size and len(text.encode("utf-8")) > max_size
-        ):
-            logger.debug(f"Closing session {sid}: message over {max_size} bytes.")
-            return 1009
-        if otel.enabled:
-            otel.record_message_size(utf8_size(text), "receive")
+        if (close_code := self._accept_inbound(sid, text, max_size)) is not None:
+            return close_code
         try:
             message = json.loads(text)
         except (json.JSONDecodeError, RecursionError):
