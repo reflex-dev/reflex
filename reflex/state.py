@@ -29,10 +29,12 @@ from typing import (
 )
 
 from reflex_base import constants
+from reflex_base.config import get_state_auto_setters, get_state_explicit_event_handlers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import PerformanceMode, environment
 from reflex_base.event import (
     EVENT_ACTIONS_MARKER,
+    EVENT_MARKER,
     Event,
     EventHandler,
     EventSpec,
@@ -738,10 +740,11 @@ class BaseState(EvenMoreBasicBaseState):
             cls._init_var(name, prop)
 
         # Set up the event handlers.
+        explicit = cls.is_user_defined() and get_state_explicit_event_handlers()
         events = {
             name: fn
             for name, fn in cls.__dict__.items()
-            if cls._item_is_event_handler(name, fn)
+            if cls._item_is_event_handler(name, fn, explicit)
         }
 
         for mixin_cls in cls._mixins():
@@ -758,7 +761,7 @@ class BaseState(EvenMoreBasicBaseState):
                     continue
                 if events.get(name) is not None:
                     continue
-                if not cls._item_is_event_handler(name, value):
+                if not cls._item_is_event_handler(name, value, explicit):
                     continue
                 if parent_state is not None and parent_state.event_handlers.get(name):
                     continue
@@ -853,12 +856,13 @@ class BaseState(EvenMoreBasicBaseState):
         return newfn
 
     @staticmethod
-    def _item_is_event_handler(name: str, value: Any) -> bool:
+    def _item_is_event_handler(name: str, value: Any, explicit: bool = False) -> bool:
         """Check if the item is an event handler.
 
         Args:
             name: The name of the item.
             value: The value of the item.
+            explicit: Only accept functions decorated with `@rx.event`.
 
         Returns:
             Whether the item is an event handler.
@@ -869,6 +873,7 @@ class BaseState(EvenMoreBasicBaseState):
             and not isinstance(value, EventHandler)
             and not getattr(value, "__override_base_method__", False)
             and hasattr(value, "__code__")
+            and (not explicit or getattr(value, EVENT_MARKER, False))
         )
 
     @classmethod
@@ -1274,7 +1279,6 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex_base.config import get_state_auto_setters
         from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):

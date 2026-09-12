@@ -7,7 +7,9 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
+from reflex_base.config import Config
 from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
@@ -191,3 +193,44 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
 
     assert exec_utils.arbitrate_ssr(True) is False
+
+
+@pytest.mark.parametrize(
+    ("launcher", "runner"),
+    [
+        ("run_backend", "run_uvicorn_backend"),
+        ("run_backend_prod", "run_uvicorn_backend_prod"),
+    ],
+)
+def test_backend_launchers_persist_state_flags(
+    launcher: str,
+    runner: str,
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    forked_registration_context: RegistrationContext,
+):
+    """Backend launchers export the State-class flags before workers import the app."""
+    mock_os_env = os.environ.copy()
+    mock_os_env.pop("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS", None)
+    mock_os_env.pop("REFLEX_STATE_AUTO_SETTERS", None)
+    monkeypatch.setattr(os, "environ", mock_os_env)
+    forked_registration_context._set_config(
+        Config(
+            app_name="app",
+            state_explicit_event_handlers=True,
+            _skip_plugins_checks=True,
+        )
+    )
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=False)
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=Path("/nonexistent"))
+    seen: dict[str, str | None] = {}
+
+    def fake_run(*_args, **_kwargs):
+        seen["explicit"] = os.environ.get("REFLEX_STATE_EXPLICIT_EVENT_HANDLERS")
+        seen["setters"] = os.environ.get("REFLEX_STATE_AUTO_SETTERS")
+
+    mocker.patch.object(exec_utils, runner, side_effect=fake_run)
+
+    getattr(exec_utils, launcher)("0.0.0.0", 8000, exec_utils.LogLevel.INFO, True)
+
+    assert seen == {"explicit": "True", "setters": "False"}
