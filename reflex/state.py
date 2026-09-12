@@ -2754,20 +2754,41 @@ class ComponentState(State, mixin=True):
         raise NotImplementedError(msg)
 
     @classmethod
-    def create(cls, *children, **props) -> Component:
+    def create(cls, *children, _state_key: str | None = None, **props) -> Component:
         """Create a new instance of the Component.
 
         Args:
             children: The children of the component.
+            _state_key: Names this instance's state instead of the creation
+                order. Unkeyed instances are numbered as they are created, so
+                adding or reordering a ``create()`` call renames the ones after
+                it -- which moves their entry in ``minify.json`` and repoints
+                any frontend already served. A key must be unique among the
+                instances of this component.
             props: The props of the component.
 
         Returns:
             A new instance of the Component with an independent copy of the State.
+
+        Raises:
+            ValueError: If ``_state_key`` is not usable as a name segment.
         """
         from reflex.compiler.compiler import into_component
 
-        cls._per_component_state_instance_count += 1
-        state_cls_name = f"{cls.__name__}_n{cls._per_component_state_instance_count}"
+        if _state_key is not None:
+            if not _state_key.isidentifier():
+                msg = (
+                    f"_state_key must be a valid Python identifier, got {_state_key!r}."
+                )
+                raise ValueError(msg)
+            state_cls_name = f"{cls.__name__}_{_state_key}"
+        else:
+            # Keyed instances are skipped, so adding one leaves the numbering
+            # of the unkeyed instances alone.
+            cls._per_component_state_instance_count += 1
+            state_cls_name = (
+                f"{cls.__name__}_n{cls._per_component_state_instance_count}"
+            )
         component_state = type(
             state_cls_name,
             (cls, State),

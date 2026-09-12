@@ -34,6 +34,7 @@ from reflex_base.utils.exceptions import (
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateSerializationError,
+    StateValueError,
     UnretrievableVarValueError,
 )
 from reflex_base.utils.format import json_dumps
@@ -5380,3 +5381,71 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
     assert state.key == 1
     error_mock.assert_called_once()
+
+
+class KeyedCounter(rx.ComponentState):
+    """A component state used to check how its instances are named."""
+
+    count: int = 0
+
+    @classmethod
+    def get_component(cls, **props) -> rx.Component:
+        """Render the counter.
+
+        Args:
+            props: The component props.
+
+        Returns:
+            The component.
+        """
+        return rx.text(cls.count, **props)
+
+
+def test_component_state_key_names_the_state():
+    """``_state_key`` names the instance instead of its creation order."""
+    keyed = KeyedCounter.create(_state_key="cart").State
+    unkeyed = KeyedCounter.create().State
+
+    assert keyed is not None
+    assert unkeyed is not None
+    assert keyed.__name__ == "KeyedCounter_cart"
+    assert unkeyed.__name__.startswith("KeyedCounter_n")
+
+
+def test_component_state_key_survives_a_reorder():
+    """A keyed instance keeps its name when instances are added before it.
+
+    Unkeyed instances are numbered as they are created, so their names -- and
+    with them their ``minify.json`` entry -- move when a ``create()`` call is
+    inserted ahead of them.
+    """
+    first = KeyedCounter.create(_state_key="stable").State
+    unkeyed_before = KeyedCounter.create().State
+
+    # Another render pass with an extra component ahead of the keyed one.
+    KeyedCounter.create()
+    again = KeyedCounter.create(_state_key="stable2").State
+    unkeyed_after = KeyedCounter.create().State
+
+    assert first is not None
+    assert again is not None
+    assert unkeyed_before is not None
+    assert unkeyed_after is not None
+    assert first.__name__ == "KeyedCounter_stable"
+    assert again.__name__ == "KeyedCounter_stable2"
+    # The unkeyed ones moved; keying a new instance did not disturb them.
+    assert unkeyed_before.__name__ != unkeyed_after.__name__
+
+
+def test_component_state_rejects_an_unusable_key():
+    """A key becomes part of a class name, so it has to be an identifier."""
+    with pytest.raises(ValueError, match="valid Python identifier"):
+        KeyedCounter.create(_state_key="not an identifier")
+
+
+def test_component_state_rejects_a_duplicate_key():
+    """Two instances sharing a key would share one state class."""
+    KeyedCounter.create(_state_key="only_once")
+
+    with pytest.raises(StateValueError, match="defined multiple times"):
+        KeyedCounter.create(_state_key="only_once")
