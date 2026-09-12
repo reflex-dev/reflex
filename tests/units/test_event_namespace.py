@@ -1108,3 +1108,61 @@ def test_client_limits_match_the_protocol():
     assert {name.strip().strip('"') for name in reserved.group(1).split(",")} == set(
         RESERVED_EVENTS
     )
+
+
+@pytest.mark.skipif(not NODE, reason="Requires node to run the client")
+def test_client_refuses_frames_the_backend_would_close_over(tmp_path: Path):
+    """The client enforces the size limit itself, whenever it learns of it.
+
+    The backend answers an oversized frame by closing the connection, taking
+    the app's state updates with it, so every path that can produce one has to
+    be stopped on the client: emitting while open, emitting before the channel
+    opens (checked again when the limit arrives), and multibyte text, whose
+    UTF-8 size is what the backend measures.
+    """
+    script = tmp_path / "limits.mjs"
+    script.write_text(f"""
+import {{ getChannel }} from {json.dumps(WEBSOCKET_JS_TEMPLATE.as_uri())};
+
+const result = {{ sent: 0, errors: [] }};
+const transport = {{ _maxMessageSize: 1024, _send: () => {{ result.sent += 1; }} }};
+
+const open = getChannel("open");
+open._transport = transport;
+open.connected = true;
+try {{
+    open.emit("push", {{ blob: "x".repeat(5000) }});
+}} catch (error) {{
+    result.tooBig = error.message;
+}}
+try {{
+    // 400 characters, 1200 UTF-8 bytes: only a byte-accurate check catches it.
+    open.emit("push", "\\u20ac".repeat(400));
+}} catch (error) {{
+    result.multibyte = error.message;
+}}
+open.emit("push", {{ small: true }});
+
+// Emitted with no transport, so with no limit to check against yet.
+const queued = getChannel("queued");
+queued.on("error", (error) => result.errors.push(error.code));
+queued.emit("push", {{ blob: "y".repeat(5000) }});
+queued._transport = transport;
+queued._receive("_opened", null, []);
+
+console.log(JSON.stringify(result));
+""")
+    result = subprocess.run(
+        [NODE, str(script)], capture_output=True, text=True, check=False
+    )
+
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert "1024" in report["tooBig"]
+    # 400 characters: a length check would have passed it, a byte check does not.
+    multibyte = re.search(r"is (\d+) bytes", report["multibyte"])
+    assert multibyte is not None, report["multibyte"]
+    assert 1024 < int(multibyte.group(1)) < 4 * 400
+    assert report["errors"] == ["message_too_large"]
+    # Only the message that fits was ever handed to the transport.
+    assert report["sent"] == 1

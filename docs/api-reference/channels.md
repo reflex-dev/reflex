@@ -106,11 +106,17 @@ class Frames(rx.channels.Channel):
         await session.send("frame", {"rows": len(buffers[0]) // 8}, buffers)
 ```
 
-A message may carry up to 64 attachments, and a frame may not exceed
-`REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` (1 MB by default); raise it if clients
-send larger payloads. Both limits are enforced where the message is built —
-`session.send` raises and `channel.emit` throws — because a frame that broke
-them on the wire would cost the app its whole websocket.
+A message may carry up to 64 attachments, in either direction:
+`session.send` raises and `channel.emit` throws rather than build a frame the
+other end would refuse.
+
+Size is capped in one direction only. A frame a client sends must fit
+`REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE` (1 MB by default) or the backend closes
+the connection, so `channel.emit` throws first and a message queued before the
+channel opened is dropped with an `error` when the limit turns out to exclude
+it. Raise the setting if your clients send larger payloads. Messages the
+server sends are not capped by it — mind the section below on sharing the
+connection.
 
 `connect`, `disconnect` and `error` are reserved message names: the client
 handle reports its own lifecycle under them, so `session.send` refuses them.

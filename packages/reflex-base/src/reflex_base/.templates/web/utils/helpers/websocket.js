@@ -84,6 +84,39 @@ export const parseJsonLenient = (text, fallback) => {
 };
 
 /**
+ * Whether a serialized frame is over the backend's inbound message limit.
+ *
+ * Mirrors the check the backend applies before closing the connection: the
+ * limit counts UTF-8 bytes, and UTF-8 is 1-4 bytes per character, so a text
+ * frame is only measured exactly when the cheap bounds cannot settle it.
+ * @param frame The serialized text or binary frame.
+ * @param limit The limit in bytes.
+ * @returns Whether the frame exceeds it.
+ */
+const exceedsMessageLimit = (frame, limit) => {
+  if (typeof frame !== "string") {
+    return frame.byteLength > limit;
+  }
+  if (frame.length > limit) {
+    return true;
+  }
+  if (frame.length * 4 <= limit) {
+    return false;
+  }
+  return new TextEncoder().encode(frame).byteLength > limit;
+};
+
+/**
+ * The size a serialized frame occupies on the wire, for diagnostics.
+ * @param frame The serialized text or binary frame.
+ * @returns The size in bytes.
+ */
+const frameByteLength = (frame) =>
+  typeof frame === "string"
+    ? new TextEncoder().encode(frame).byteLength
+    : frame.byteLength;
+
+/**
  * Serialize an outgoing frame.
  * @param frame The frame array to serialize.
  * @returns The JSON string.
@@ -272,10 +305,11 @@ class ReflexChannel extends LocalEmitter {
       ? encodeChannelFrame(event, data, this.name, buffers)
       : stringifyFrame([event, data, this.name]);
     const limit = this._transport?._maxMessageSize;
-    if (limit && frame.byteLength > limit) {
+    if (limit && exceedsMessageLimit(frame, limit)) {
       throw new Error(
-        `Channel message "${event}" is ${frame.byteLength} bytes, over the ` +
-          `${limit} the backend accepts (REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE).`,
+        `Channel message "${event}" is ${frameByteLength(frame)} bytes, over ` +
+          `the ${limit} the backend accepts ` +
+          "(REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE).",
       );
     }
     if (this.connected && this._transport) {
@@ -330,7 +364,20 @@ class ReflexChannel extends LocalEmitter {
       this.connected = true;
       const queued = this._queue;
       this._queue = [];
+      const limit = this._transport._maxMessageSize;
       for (const frame of queued) {
+        // A message emitted before the channel opened was queued without a
+        // limit to check it against; now there is one, and sending it anyway
+        // would cost the app its websocket.
+        if (limit && exceedsMessageLimit(frame, limit)) {
+          this._emitLocal("error", {
+            code: "message_too_large",
+            message:
+              `A queued channel message is ${frameByteLength(frame)} bytes, ` +
+              `over the ${limit} the backend accepts; it was dropped.`,
+          });
+          continue;
+        }
         // Back onto the transport's own queue if it went away mid-flush.
         this._transport._send(frame);
       }
