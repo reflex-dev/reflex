@@ -23,7 +23,8 @@ def test_run_backend_manages_nocompile_marker(
 ) -> None:
     """Only full-stack backend runs leave the compile-skip marker."""
     marker = tmp_path / exec_utils.constants.NOCOMPILE_FILE
-    marker.touch()
+    if not frontend_present:
+        marker.touch()
     mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
     mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
     mocker.patch.object(exec_utils, "run_granian_backend")
