@@ -132,7 +132,7 @@ def test_component_returning_memo_with_children_and_rest():
 
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert f"export const {sym} = memo(" in code
+    assert f"const {sym} = memo(" in code
     assert "({children, title:title" in code
     assert "...rest" in code
     assert "jsx(RadixThemesBox,{...rest}" in code
@@ -158,7 +158,7 @@ def test_component_returning_memo_accepts_component_var_result():
     sym = memo_paths.mirrored_symbol("ConditionalSlot", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert f"export const {sym} = memo(" in code
+    assert f"const {sym} = memo(" in code
     assert "({show:showRxMemo" in code
     assert "(showRxMemo ? firstRxMemo : secondRxMemo)" in code
 
@@ -1112,9 +1112,9 @@ def test_compile_memo_components_includes_functions_and_components():
     text_wrapper_sym = memo_paths.mirrored_symbol("TextWrapper", __name__)
     format_price_sym = memo_paths.mirrored_symbol("format_price", __name__)
     my_card_sym = memo_paths.mirrored_symbol("MyCard", __name__)
-    assert f"export const {text_wrapper_sym} = memo(" in code
+    assert f"const {text_wrapper_sym} = memo(" in code
     assert f"export const {format_price_sym} =" in code
-    assert f"export const {my_card_sym} = memo(" in code
+    assert f"const {my_card_sym} = memo(" in code
 
 
 def test_compile_memo_components_groups_by_source_module():
@@ -1141,8 +1141,8 @@ def test_compile_memo_components_groups_by_source_module():
     code = grouped_files[0][1]
     first_sym = memo_paths.mirrored_symbol("GroupedFirst", __name__)
     second_sym = memo_paths.mirrored_symbol("GroupedSecond", __name__)
-    assert f"export const {first_sym} = memo(" in code
-    assert f"export const {second_sym} = memo(" in code
+    assert f"const {first_sym} = memo(" in code
+    assert f"const {second_sym} = memo(" in code
     # The merged module must carry imports its memos use, not just the
     # framework-level ones added by the compiler.
     assert "RadixThemesText" in code
@@ -1189,7 +1189,8 @@ def test_component_memo_default_wrapper():
     files, imports = compiler.compile_memo_components((definition,))
     code = "\n".join(c for _, c in files)
     sym = memo_paths.mirrored_symbol("DefaultWrapped", __name__)
-    assert f"export const {sym} = memo(({{label:labelRxMemo}}) => {{" in code
+    assert f"export const {sym} = /*#__PURE__*/ (() => {{" in code
+    assert f"const {sym} = memo(({{label:labelRxMemo}}) => {{" in code
     assert any(imp.tag == "memo" for imp in imports.get("react", []))
 
 
@@ -2321,3 +2322,19 @@ def test_memo_tag_separates_identically_rendering_classes():
 
     assert alpha.render() == beta.render()
     assert memo_tag(alpha) != memo_tag(beta)
+
+
+def test_custom_wrapper_named_memo_is_not_treated_as_react_memo():
+    """A custom wrapper may share React's name and still have side effects."""
+    wrapper = FunctionStringVar.create(
+        "memo", _var_data=VarData(imports={"tracking-library": [ImportVar(tag="memo")]})
+    )
+
+    @rx.memo(wrapper=wrapper)
+    def tracked_named_memo() -> rx.Component:
+        return rx.text("Tracked")
+
+    definition = MEMOS["TrackedNamedMemo", __name__]
+    files, _ = compiler.compile_memo_components((definition,))
+    code = "\n".join(content for _, content in files)
+    assert "/*#__PURE__*/" not in code
