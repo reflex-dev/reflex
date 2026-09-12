@@ -15,9 +15,15 @@ import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 import {
   ReflexWebSocket,
+  disableChannels,
+  getChannel,
   parseJsonLenient,
   undefinedToNull,
 } from "$/utils/helpers/websocket";
+
+// Re-exported so components can reach a side channel through the module they
+// already import for getBackendURL/getToken.
+export { getChannel };
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
@@ -609,6 +615,10 @@ export const connect = async (
       // The decoder API expects false (not undefined) for unparsable input.
       socket.current.io.decoder.tryParse = (str) =>
         parseJsonLenient(str, false);
+      // Channels are a plain-WebSocket protocol feature.
+      disableChannels(
+        `Channels require transport="websocket", not "${transport}".`,
+      );
     }
   } finally {
     socket.connecting = false;

@@ -7,6 +7,22 @@
 const HANDSHAKE_MESSAGE = "_handshake";
 const PING_MESSAGE = "_ping";
 const PONG_MESSAGE = "_pong";
+const OPEN_MESSAGE = "_open";
+const OPENED_MESSAGE = "_opened";
+const CLOSE_MESSAGE = "_close";
+const CHANNEL_ERROR_MESSAGE = "_error";
+
+// Backend protocol version that speaks channels. A backend older than this
+// closes the connection on a binary frame, so channels stay shut until the
+// handshake proves otherwise.
+const CHANNEL_PROTOCOL_VERSION = 2;
+
+// Binary frames align every attachment to this boundary, so a handler can
+// view one as a Float64Array without copying.
+const FRAME_ALIGNMENT = 8;
+
+// Messages a channel buffers while it is not open, oldest dropped first.
+const MAX_QUEUED_CHANNEL_MESSAGES = 64;
 
 // Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
 // Rewrite them outside string literals so JSON.parse accepts the payload.
@@ -64,20 +80,319 @@ export const parseJsonLenient = (text, fallback) => {
  */
 const stringifyFrame = (frame) => JSON.stringify(frame, undefinedToNull);
 
-export class ReflexWebSocket {
+/**
+ * View any binary value as bytes without copying it.
+ * @param buffer An ArrayBuffer, typed array or DataView.
+ * @returns A Uint8Array over the same memory.
+ */
+const asBytes = (buffer) =>
+  buffer instanceof ArrayBuffer
+    ? new Uint8Array(buffer)
+    : new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+
+/**
+ * Bytes of padding needed to reach the next attachment boundary.
+ * @param offset The current offset.
+ * @returns The padding length.
+ */
+const padding = (offset) =>
+  (FRAME_ALIGNMENT - (offset % FRAME_ALIGNMENT)) % FRAME_ALIGNMENT;
+
+/**
+ * Serialize a channel message carrying binary attachments.
+ * @param event The message name.
+ * @param data The JSON metadata.
+ * @param channel The channel name.
+ * @param buffers The binary attachments.
+ * @returns The frame as an ArrayBuffer.
+ */
+export const encodeChannelFrame = (event, data, channel, buffers) => {
+  const views = buffers.map(asBytes);
+  const header = new TextEncoder().encode(
+    stringifyFrame([event, data, channel, views.map((v) => v.byteLength)]),
+  );
+  let size = 4 + header.byteLength;
+  for (const view of views) {
+    size += padding(size) + view.byteLength;
+  }
+  const frame = new ArrayBuffer(size);
+  const bytes = new Uint8Array(frame);
+  new DataView(frame).setUint32(0, header.byteLength, true);
+  bytes.set(header, 4);
+  let offset = 4 + header.byteLength;
+  for (const view of views) {
+    offset += padding(offset);
+    bytes.set(view, offset);
+    offset += view.byteLength;
+  }
+  return frame;
+};
+
+/**
+ * Deserialize a binary channel frame.
+ * @param frame The received ArrayBuffer.
+ * @returns [event, data, channel, buffers], or undefined if malformed.
+ */
+export const decodeChannelFrame = (frame) => {
+  if (frame.byteLength < 4) {
+    return undefined;
+  }
+  const headerSize = new DataView(frame).getUint32(0, true);
+  if (4 + headerSize > frame.byteLength) {
+    return undefined;
+  }
+  const header = parseJsonLenient(
+    new TextDecoder().decode(new Uint8Array(frame, 4, headerSize)),
+    undefined,
+  );
+  if (!Array.isArray(header) || !Array.isArray(header[3])) {
+    return undefined;
+  }
+  const [event, data, channel, lengths] = header;
+  const buffers = [];
+  let offset = 4 + headerSize;
+  for (const length of lengths) {
+    offset += padding(offset);
+    if (offset + length > frame.byteLength) {
+      return undefined;
+    }
+    buffers.push(new Uint8Array(frame, offset, length));
+    offset += length;
+  }
+  return [event, data, channel, buffers];
+};
+
+/**
+ * Local handler registry shared by the transport and its channels.
+ *
+ * Handlers are keyed with socket.io's "$"-prefixed convention because
+ * upload.js reads `socket._callbacks.$event` directly.
+ */
+class LocalEmitter {
+  /**
+   * Create an emitter with no handlers registered.
+   */
+  constructor() {
+    this._callbacks = {};
+  }
+
+  /**
+   * Register a handler for an event.
+   * @param event The event name.
+   * @param fn The handler function.
+   */
+  on(event, fn) {
+    (this._callbacks["$" + event] ??= []).push(fn);
+  }
+
+  /**
+   * Remove a handler, every handler for an event, or all of them.
+   * @param event The event name; omit to remove all handlers.
+   * @param fn The handler to remove; omit to remove all handlers for event.
+   */
+  off(event, fn) {
+    if (event === undefined) {
+      this._callbacks = {};
+      return;
+    }
+    if (fn === undefined) {
+      delete this._callbacks["$" + event];
+      return;
+    }
+    const handlers = this._callbacks["$" + event];
+    const ix = handlers ? handlers.indexOf(fn) : -1;
+    if (ix !== -1) {
+      handlers.splice(ix, 1);
+    }
+  }
+
+  /**
+   * Invoke the registered handlers for a local event.
+   * @param event The event name.
+   * @param args The handler arguments.
+   */
+  _emitLocal(event, ...args) {
+    for (const fn of this._callbacks["$" + event] ?? []) {
+      fn(...args);
+    }
+  }
+}
+
+// Channel handles by name, and the transport they currently ride. A handle
+// outlives every transport: the event loop recreates the socket on remount and
+// hot reload, and a channel must survive that without its consumer
+// re-registering handlers.
+const channels = new Map();
+let activeTransport = null;
+let channelsUnsupportedReason = null;
+
+class ReflexChannel extends LocalEmitter {
+  /**
+   * Create a channel handle. Use getChannel() instead of constructing one.
+   *
+   * Handlers live on the channel rather than on the transport, whose table
+   * the event loop clears wholesale with socket.off() on unmount.
+   * @param name The channel name, matching the backend registration.
+   */
+  constructor(name) {
+    super();
+    this.name = name;
+    this.connected = false;
+    this._queue = [];
+    this._transport = null;
+  }
+
+  /**
+   * Send a message to the channel's backend, buffering until it is open.
+   * @param event The message name.
+   * @param data The JSON metadata.
+   * @param buffers Binary attachments (ArrayBuffers or typed arrays).
+   */
+  emit(event, data, buffers = []) {
+    if (this.connected && this._transport) {
+      this._transport.emitChannel(this.name, event, data, buffers);
+      return;
+    }
+    if (this._queue.length >= MAX_QUEUED_CHANNEL_MESSAGES) {
+      // The backend is unreachable and the producer is not waiting for
+      // "connect"; drop the oldest rather than grow without bound.
+      this._queue.shift();
+    }
+    this._queue.push([event, data, buffers]);
+  }
+
+  /**
+   * Open the channel on a newly connected transport.
+   * @param transport The connected transport.
+   */
+  _attach(transport) {
+    this._transport = transport;
+    transport.emitChannel(this.name, OPEN_MESSAGE, null, []);
+  }
+
+  /**
+   * Report the transport going away; queued messages survive for the next one.
+   * @param reason The disconnect reason.
+   */
+  _detach(reason) {
+    this._transport = null;
+    if (this.connected) {
+      this.connected = false;
+      this._emitLocal("disconnect", reason);
+    }
+  }
+
+  /**
+   * Report that this deployment cannot carry channels at all.
+   * @param reason Why channels are unavailable.
+   */
+  _unsupported(reason) {
+    this._emitLocal("error", { code: "channels_unsupported", message: reason });
+  }
+
+  /**
+   * Dispatch one message received for this channel.
+   * @param event The message name.
+   * @param data The JSON metadata.
+   * @param buffers Binary attachments, as Uint8Array views.
+   */
+  _receive(event, data, buffers) {
+    if (event === OPENED_MESSAGE) {
+      this.connected = true;
+      const queued = this._queue;
+      this._queue = [];
+      for (const [queuedEvent, queuedData, queuedBuffers] of queued) {
+        // Through emit(), so a transport that went away mid-flush re-queues
+        // rather than throwing.
+        this.emit(queuedEvent, queuedData, queuedBuffers);
+      }
+      this._emitLocal("connect");
+      return;
+    }
+    if (event === CHANNEL_ERROR_MESSAGE) {
+      this._emitLocal("error", data);
+      return;
+    }
+    this._emitLocal(event, data, buffers);
+  }
+}
+
+/**
+ * Get the handle for a named channel, creating it on first use.
+ * @param name The channel name, matching the backend registration.
+ * @returns The channel handle.
+ */
+export const getChannel = (name) => {
+  let channel = channels.get(name);
+  if (channel === undefined) {
+    channel = new ReflexChannel(name);
+    channels.set(name, channel);
+    if (channelsUnsupportedReason !== null) {
+      channel._unsupported(channelsUnsupportedReason);
+    } else if (activeTransport !== null) {
+      channel._attach(activeTransport);
+    }
+  }
+  return channel;
+};
+
+/**
+ * Declare that channels cannot run against this backend, failing every handle.
+ * @param reason Why channels are unavailable.
+ */
+export const disableChannels = (reason) => {
+  if (channelsUnsupportedReason === reason) {
+    // Already reported; a remount must not fire "error" at every consumer again.
+    return;
+  }
+  channelsUnsupportedReason = reason;
+  activeTransport = null;
+  for (const channel of channels.values()) {
+    channel._detach(reason);
+    channel._unsupported(reason);
+  }
+};
+
+/**
+ * Open every channel on a transport that just finished its handshake.
+ * @param transport The connected transport.
+ */
+const attachChannels = (transport) => {
+  channelsUnsupportedReason = null;
+  activeTransport = transport;
+  for (const channel of channels.values()) {
+    channel._attach(transport);
+  }
+};
+
+/**
+ * Detach every channel from a transport that went away.
+ * @param transport The transport reporting the disconnect.
+ * @param reason The disconnect reason.
+ */
+const detachChannels = (transport, reason) => {
+  if (activeTransport !== transport) {
+    return;
+  }
+  activeTransport = null;
+  for (const channel of channels.values()) {
+    channel._detach(reason);
+  }
+};
+
+export class ReflexWebSocket extends LocalEmitter {
   /**
    * Create the transport and start connecting.
    * @param url The http(s) endpoint URL of the backend event route.
    * @param opts Options: `query` (object) and `protocols` (subprotocol list).
    */
   constructor(url, opts) {
+    super();
     this._url = new URL(url);
     // Exposed as io.opts for socket.io API compatibility: state.js refreshes
     // io.opts.query before reconnecting.
     this.io = { opts };
     this.connected = false;
-    // upload.js reads socket._callbacks.$event directly.
-    this._callbacks = {};
     this._ws = null;
     // Frames emitted while disconnected, flushed on (re)connect.
     this._sendQueue = [];
@@ -111,42 +426,10 @@ export class ReflexWebSocket {
    * @param fn The handler to remove; omit to remove all handlers for event.
    */
   off(event, fn) {
-    if (event === undefined) {
-      this._callbacks = {};
-      if (this._offlineListener) {
-        removeEventListener("offline", this._offlineListener, false);
-        this._offlineListener = null;
-      }
-      return;
-    }
-    if (fn === undefined) {
-      delete this._callbacks["$" + event];
-      return;
-    }
-    const handlers = this._callbacks["$" + event];
-    const ix = handlers ? handlers.indexOf(fn) : -1;
-    if (ix !== -1) {
-      handlers.splice(ix, 1);
-    }
-  }
-
-  /**
-   * Register a handler for an event.
-   * @param event The event name.
-   * @param fn The handler function.
-   */
-  on(event, fn) {
-    (this._callbacks["$" + event] ??= []).push(fn);
-  }
-
-  /**
-   * Invoke the registered handlers for a local event.
-   * @param event The event name.
-   * @param args The handler arguments.
-   */
-  _emitLocal(event, ...args) {
-    for (const fn of this._callbacks["$" + event] ?? []) {
-      fn(...args);
+    super.off(event, fn);
+    if (event === undefined && this._offlineListener) {
+      removeEventListener("offline", this._offlineListener, false);
+      this._offlineListener = null;
     }
   }
 
@@ -165,6 +448,9 @@ export class ReflexWebSocket {
     url.search = new URLSearchParams(this.io.opts.query ?? {}).toString();
     this._closeReason = null;
     const ws = new WebSocket(url, this.io.opts.protocols);
+    // Channel attachments arrive as binary frames; take them as ArrayBuffers
+    // so handlers can view them as typed arrays without a copy.
+    ws.binaryType = "arraybuffer";
     this._ws = ws;
     this._connectTimer = setTimeout(() => {
       if (this._ws === ws && !this.connected) {
@@ -186,6 +472,7 @@ export class ReflexWebSocket {
       this._clearWatchdog();
       const wasConnected = this.connected;
       this.connected = false;
+      detachChannels(this, this._closeReason ?? "transport close");
       if (!wasConnected) {
         // Never handshaked: this was a failed connection attempt.
         this._emitLocal(
@@ -234,6 +521,7 @@ export class ReflexWebSocket {
     }
     // Detach so the onclose handler does not double-report.
     this._ws = null;
+    detachChannels(this, reason);
     if (this.connected) {
       this.connected = false;
       this._emitLocal("disconnect", reason, details);
@@ -251,7 +539,29 @@ export class ReflexWebSocket {
    * @param data The event payload.
    */
   emit(event, data) {
-    const frame = stringifyFrame([event, data]);
+    this._send(stringifyFrame([event, data]));
+  }
+
+  /**
+   * Send a channel message to the backend, buffering while disconnected.
+   * @param channel The channel name.
+   * @param event The message name.
+   * @param data The JSON metadata.
+   * @param buffers Binary attachments (ArrayBuffers or typed arrays).
+   */
+  emitChannel(channel, event, data, buffers) {
+    this._send(
+      buffers?.length
+        ? encodeChannelFrame(event, data, channel, buffers)
+        : stringifyFrame([event, data, channel]),
+    );
+  }
+
+  /**
+   * Write one serialized frame, buffering while disconnected.
+   * @param frame The serialized text or binary frame.
+   */
+  _send(frame) {
     if (this.connected && this._ws?.readyState === WebSocket.OPEN) {
       this._ws.send(frame);
     } else {
@@ -261,9 +571,20 @@ export class ReflexWebSocket {
 
   /**
    * Handle one incoming frame.
-   * @param text The raw frame text.
+   * @param data The raw frame: text, or an ArrayBuffer for a channel message.
    */
-  _onMessage(text) {
+  _onMessage(data) {
+    if (data instanceof ArrayBuffer) {
+      const frame = decodeChannelFrame(data);
+      if (frame === undefined) {
+        console.error("Failed to parse binary websocket message");
+        return;
+      }
+      const [event, payload, channel, buffers] = frame;
+      channels.get(channel)?._receive(event, payload, buffers);
+      return;
+    }
+    const text = data;
     const message = parseJsonLenient(text, undefined);
     if (!Array.isArray(message)) {
       console.error("Failed to parse websocket message", text);
@@ -290,7 +611,20 @@ export class ReflexWebSocket {
       for (const frame of queue) {
         this._ws.send(frame);
       }
+      if ((payload.protocol ?? 1) >= CHANNEL_PROTOCOL_VERSION) {
+        attachChannels(this);
+      } else {
+        // A backend older than the channel protocol closes the connection on
+        // the binary frames channels use, so never open one against it.
+        disableChannels(
+          "This backend predates channel support; upgrade Reflex to use channels.",
+        );
+      }
       this._emitLocal("connect");
+      return;
+    }
+    if (message.length > 2) {
+      channels.get(message[2])?._receive(event, payload, []);
       return;
     }
     this._emitLocal(event, payload);

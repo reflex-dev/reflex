@@ -53,9 +53,7 @@ def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
         The decoded payload.
     """
     if otel.enabled:
-        otel.record_message_size(
-            utf8_size(data) if isinstance(data, str) else len(data), "receive"
-        )
+        otel.record_message_size(utf8_size(data), "receive")
     return json.loads(data, **kwargs)
 
 

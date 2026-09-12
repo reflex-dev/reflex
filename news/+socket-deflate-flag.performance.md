@@ -1,0 +1,1 @@
+Add `REFLEX_SOCKET_PER_MESSAGE_DEFLATE` to control websocket permessage-deflate compression (uvicorn only, on by default). Turning it off is worthwhile for apps sending binary data over a channel: compressing it costs milliseconds of event loop time per message and barely shrinks it.

@@ -10,7 +10,7 @@ import time
 import urllib.parse
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping, MutableMapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from reflex_base import constants, otel
@@ -19,6 +19,7 @@ from reflex_base.environment import environment
 from reflex_base.event import _EVENT_FIELDS, Event
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
+from reflex.channels import MAX_MESSAGE_BUFFERS, ChannelSession
 from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.state import StateUpdate
@@ -36,6 +37,22 @@ logger = logging.getLogger(__name__)
 HANDSHAKE_MESSAGE = "_handshake"
 PING_MESSAGE = "_ping"
 PONG_MESSAGE = "_pong"
+OPEN_MESSAGE = "_open"
+OPENED_MESSAGE = "_opened"
+CLOSE_MESSAGE = "_close"
+CHANNEL_ERROR_MESSAGE = "_error"
+
+# Wire protocol version, announced in the handshake. The client gates channel
+# frames on it: a backend that predates channels closes the connection on the
+# binary frames they use.
+PROTOCOL_VERSION = 2
+
+# Binary channel frames align every attachment to this boundary so the client
+# can view them as typed arrays without copying.
+_FRAME_ALIGNMENT = 8
+
+# Bound on the JSON header of a binary channel frame.
+_MAX_FRAME_HEADER_SIZE = 64 * 1024
 
 # Application-level socket event names, resolved once for the hot paths.
 _EVENT = str(constants.SocketEvent.EVENT)
@@ -46,18 +63,100 @@ _CLIENT_ERROR = str(constants.SocketEvent.CLIENT_ERROR)
 _PING_FRAME = json.dumps([PING_MESSAGE])
 
 
-def utf8_size(data: str) -> int:
+def utf8_size(data: str | bytes) -> int:
     """Size of a serialized message in UTF-8 bytes.
 
     ASCII payloads (the common case) are sized without encoding a copy.
 
     Args:
-        data: The serialized message.
+        data: The serialized message, text or binary.
 
     Returns:
         The number of bytes the message occupies on the wire.
     """
+    if isinstance(data, bytes):
+        return len(data)
     return len(data) if data.isascii() else len(data.encode())
+
+
+def encode_channel_frame(
+    event: str, data: Any, channel: str, buffers: Sequence[bytes]
+) -> bytes:
+    """Serialize a channel message carrying binary attachments.
+
+    The frame is a 4-byte little-endian header length, the JSON header
+    ``[event, data, channel, [lengths]]``, then the attachments, each padded
+    so every payload starts on an 8-byte boundary.
+
+    Args:
+        event: The message name.
+        data: The JSON-serializable metadata.
+        channel: The channel name.
+        buffers: The binary attachments.
+
+    Returns:
+        The frame bytes.
+    """
+    header = format.json_dumps([
+        event,
+        data,
+        channel,
+        [len(buffer) for buffer in buffers],
+    ]).encode()
+    parts = [len(header).to_bytes(4, "little"), header]
+    offset = 4 + len(header)
+    for buffer in buffers:
+        padding = -offset % _FRAME_ALIGNMENT
+        if padding:
+            parts.append(bytes(padding))
+        parts.append(buffer)
+        offset += padding + len(buffer)
+    return b"".join(parts)
+
+
+def decode_channel_frame(frame: bytes) -> tuple[str, Any, str, list[bytes]]:
+    """Deserialize a binary channel frame.
+
+    Args:
+        frame: The raw frame bytes.
+
+    Returns:
+        The message name, metadata, channel name and binary attachments.
+
+    Raises:
+        ValueError: If the frame does not follow the binary channel format.
+    """
+    if len(frame) < 4:
+        msg = "Binary frame is too short to hold a header length."
+        raise ValueError(msg)
+    header_size = int.from_bytes(frame[:4], "little")
+    if header_size > _MAX_FRAME_HEADER_SIZE or 4 + header_size > len(frame):
+        msg = f"Binary frame declares an unusable header size {header_size}."
+        raise ValueError(msg)
+    header = json.loads(frame[4 : 4 + header_size])
+    match header:
+        case [str(event), data, str(channel), [*lengths]] if all(
+            isinstance(length, int) and not isinstance(length, bool) and length >= 0
+            for length in lengths
+        ):
+            pass
+        case _:
+            msg = "Binary frame header is malformed."
+            raise ValueError(msg)
+    if len(lengths) > MAX_MESSAGE_BUFFERS:
+        msg = f"Binary frame carries more than {MAX_MESSAGE_BUFFERS} attachments."
+        raise ValueError(msg)
+    buffers: list[bytes] = []
+    offset = 4 + header_size
+    for length in lengths:
+        offset += -offset % _FRAME_ALIGNMENT
+        end = offset + length
+        if end > len(frame):
+            msg = "Binary frame is shorter than its declared attachments."
+            raise ValueError(msg)
+        buffers.append(frame[offset:end])
+        offset = end
+    return event, data, channel, buffers
 
 
 class BaseEventNamespace(ABC):
@@ -438,6 +537,33 @@ class WebsocketEventNamespace(BaseEventNamespace):
         """
         super().__init__(namespace, app)
         self._sockets: dict[str, WebSocket] = {}
+        # Open channel sessions per connection, by session id and channel name.
+        self._channel_sessions: dict[str, dict[str, ChannelSession]] = {}
+
+    async def _deliver(self, to: str | None, payload: str | bytes, label: str) -> None:
+        """Write one serialized frame to a connected client session.
+
+        Args:
+            to: The session id to send to.
+            payload: The serialized text or binary frame.
+            label: The message name, for diagnostics.
+        """
+        websocket = self._sockets.get(to) if to is not None else None
+        if websocket is None:
+            # Routine race: the client disconnected while an event was still
+            # being processed, so its remaining updates have nowhere to go.
+            logger.debug(f"Attempted to emit {label!r} to unknown session {to!r}.")
+            return
+        if otel.enabled:
+            otel.record_message_size(utf8_size(payload), "transmit")
+        try:
+            if isinstance(payload, str):
+                await websocket.send_text(payload)
+            else:
+                await websocket.send_bytes(payload)
+        except Exception:
+            # The connection went away mid-send; the receive loop cleans up.
+            logger.debug(f"Failed to emit {label!r} to session {to!r}.", exc_info=True)
 
     async def emit(self, event: str, data: Any = None, to: str | None = None) -> None:
         """Emit an event to a connected client session.
@@ -447,20 +573,235 @@ class WebsocketEventNamespace(BaseEventNamespace):
             data: The event payload.
             to: The session id to emit to.
         """
-        websocket = self._sockets.get(to) if to is not None else None
-        if websocket is None:
-            # Routine race: the client disconnected while an event was still
-            # being processed, so its remaining updates have nowhere to go.
-            logger.debug(f"Attempted to emit {event!r} to unknown session {to!r}.")
+        await self._deliver(to, format.json_dumps([event, data]), event)
+
+    async def _send_channel_message(
+        self,
+        sid: str,
+        channel: str,
+        event: str,
+        data: Any,
+        buffers: Sequence[bytes],
+    ) -> None:
+        """Send one channel message to a connected client session.
+
+        Args:
+            sid: The session id to send to.
+            channel: The channel name.
+            event: The message name.
+            data: The JSON-serializable metadata.
+            buffers: The binary attachments.
+        """
+        payload = (
+            encode_channel_frame(event, data, channel, buffers)
+            if buffers
+            else format.json_dumps([event, data, channel])
+        )
+        await self._deliver(sid, payload, event)
+
+    async def _send_channel_error(
+        self, sid: str, channel: str, code: str, message: str
+    ) -> None:
+        """Report a channel-level failure to a client session.
+
+        Args:
+            sid: The session id.
+            channel: The channel name.
+            code: The machine-readable error code.
+            message: The human-readable explanation.
+        """
+        await self._send_channel_message(
+            sid, channel, CHANNEL_ERROR_MESSAGE, {"code": code, "message": message}, ()
+        )
+
+    async def _open_channel_session(self, sid: str, channel_name: str) -> None:
+        """Open a channel session for a connection, answering the client.
+
+        Args:
+            sid: The session id.
+            channel_name: The channel the client is opening.
+        """
+        if channel_name in self._channel_sessions.get(sid, ()):
+            # Opening twice would orphan the first session in its rooms; the
+            # client only opens once per connection, so answer and move on.
+            await self._send_channel_message(
+                sid, channel_name, OPENED_MESSAGE, None, ()
+            )
             return
-        text = format.json_dumps([event, data])
-        if otel.enabled:
-            otel.record_message_size(utf8_size(text), "transmit")
+        channel = self.app._channels.get(channel_name)
+        if channel is None:
+            await self._send_channel_error(
+                sid,
+                channel_name,
+                "unknown_channel",
+                f"No channel named {channel_name!r} is registered.",
+            )
+            return
+        token = self.sid_to_token.get(sid)
+        if token is None:
+            # The token was unlinked while the frame was in flight.
+            logger.debug(f"Ignoring channel open from session {sid} with no token.")
+            return
+        session = channel.open_session(sid, token, self._send_channel_message)
+        # Track the session before the hook runs: on_open may join rooms, and
+        # if it is interrupted the disconnect cleanup must still find it.
+        sessions = self._channel_sessions.setdefault(sid, {})
+        sessions[channel_name] = session
         try:
-            await websocket.send_text(text)
+            await channel.on_open(session)
         except Exception:
-            # The connection went away mid-send; the receive loop cleans up.
-            logger.debug(f"Failed to emit {event!r} to session {to!r}.", exc_info=True)
+            self._drop_channel_session(sid, channel_name)
+            logger.exception(
+                f"Error opening channel {channel_name!r} for session {sid}."
+            )
+            await self._send_channel_error(
+                sid, channel_name, "open_failed", "The channel failed to open."
+            )
+            return
+        await self._send_channel_message(sid, channel_name, OPENED_MESSAGE, None, ())
+
+    async def _close_channel_session(self, sid: str, channel_name: str) -> None:
+        """Close one open channel session.
+
+        Args:
+            sid: The session id.
+            channel_name: The channel to close.
+        """
+        session = self._drop_channel_session(sid, channel_name)
+        if session is not None:
+            await self._notify_channel_close(sid, channel_name, session)
+
+    def _drop_channel_session(
+        self, sid: str, channel_name: str
+    ) -> ChannelSession | None:
+        """Remove one session from the connection, along with its rooms.
+
+        Args:
+            sid: The session id.
+            channel_name: The channel to drop.
+
+        Returns:
+            The dropped session, or None if it was not open.
+        """
+        sessions = self._channel_sessions.get(sid)
+        session = sessions.pop(channel_name, None) if sessions is not None else None
+        if session is None:
+            return None
+        if not sessions:
+            del self._channel_sessions[sid]
+        session.channel.forget_session(session)
+        return session
+
+    async def _close_channel_sessions(self, sid: str) -> None:
+        """Close every channel session of a disconnected connection.
+
+        Args:
+            sid: The session id.
+        """
+        sessions = self._channel_sessions.pop(sid, None)
+        if not sessions:
+            return
+        # Drop rooms and tracking for all of them first: this runs during
+        # teardown, where a cancellation at the first await would otherwise
+        # leave the remaining sessions reachable by fan-out forever.
+        for session in sessions.values():
+            session.channel.forget_session(session)
+        for channel_name, session in sessions.items():
+            await self._notify_channel_close(sid, channel_name, session)
+
+    @staticmethod
+    async def _notify_channel_close(
+        sid: str, channel_name: str, session: ChannelSession
+    ) -> None:
+        """Run a channel's close hook, logging a failure instead of raising.
+
+        Args:
+            sid: The session id.
+            channel_name: The channel being closed.
+            session: The session being closed.
+        """
+        try:
+            await session.channel.on_close(session)
+        except Exception:
+            logger.exception(
+                f"Error closing channel {channel_name!r} for session {sid}."
+            )
+
+    async def _handle_channel_message(
+        self, sid: str, channel_name: str, event: str, data: Any, buffers: list[bytes]
+    ) -> None:
+        """Dispatch one inbound channel frame.
+
+        Never raises: a channel failing is a bug in that channel, not a reason
+        to drop the app's connection.
+
+        Args:
+            sid: The session id.
+            channel_name: The channel the frame is addressed to.
+            event: The message name.
+            data: The message metadata.
+            buffers: The binary attachments.
+        """
+        try:
+            if event == OPEN_MESSAGE:
+                await self._open_channel_session(sid, channel_name)
+                return
+            sessions = self._channel_sessions.get(sid)
+            session = sessions.get(channel_name) if sessions is not None else None
+            if session is None:
+                await self._send_channel_error(
+                    sid,
+                    channel_name,
+                    "channel_not_open",
+                    f"Channel {channel_name!r} is not open on this connection.",
+                )
+                return
+            if event == CLOSE_MESSAGE:
+                await self._close_channel_session(sid, channel_name)
+                return
+            if buffers and not session.channel.accepts_binary:
+                await self._send_channel_error(
+                    sid,
+                    channel_name,
+                    "binary_not_accepted",
+                    f"Channel {channel_name!r} does not accept binary attachments.",
+                )
+                return
+            await session.channel.on_message(session, event, data, buffers)
+        except Exception:
+            logger.exception(
+                f"Error handling {event!r} on channel {channel_name!r} "
+                f"for session {sid}."
+            )
+
+    async def _handle_binary_frame(
+        self, sid: str, frame: bytes, max_size: int
+    ) -> int | None:
+        """Validate and dispatch one inbound binary channel frame.
+
+        Args:
+            sid: The session id.
+            frame: The raw frame bytes.
+            max_size: The message size limit in bytes.
+
+        Returns:
+            The websocket close code the session must end with, or None to
+            keep serving it.
+        """
+        if len(frame) > max_size:
+            logger.debug(f"Closing session {sid}: message over {max_size} bytes.")
+            return 1009
+        if otel.enabled:
+            otel.record_message_size(len(frame), "receive")
+        try:
+            event, data, channel_name, buffers = decode_channel_frame(frame)
+        except ValueError:
+            # A Reflex client never sends malformed frames; close instead of
+            # logging per frame.
+            logger.debug(f"Closing session {sid}: malformed binary frame.")
+            return 1002
+        await self._handle_channel_message(sid, channel_name, event, data, buffers)
+        return None
 
     @staticmethod
     def _origin_allowed(origin: str | None) -> bool:
@@ -525,6 +866,12 @@ class WebsocketEventNamespace(BaseEventNamespace):
             return 1002
         event = message[0]
         data = message[1] if len(message) > 1 else None
+        if len(message) > 2:
+            if not isinstance(message[2], str):
+                logger.debug(f"Closing session {sid}: malformed channel frame.")
+                return 1002
+            await self._handle_channel_message(sid, message[2], event, data, [])
+            return None
         try:
             # Ordered by frequency: events are the hot path, heartbeat pongs
             # arrive once per ping interval.
@@ -597,7 +944,11 @@ class WebsocketEventNamespace(BaseEventNamespace):
             await websocket.send_text(
                 format.json_dumps([
                     HANDSHAKE_MESSAGE,
-                    {"ping_interval": ping_interval, "ping_timeout": ping_timeout},
+                    {
+                        "ping_interval": ping_interval,
+                        "ping_timeout": ping_timeout,
+                        "protocol": PROTOCOL_VERSION,
+                    },
                 ])
             )
             await self.handle_connect(
@@ -615,14 +966,20 @@ class WebsocketEventNamespace(BaseEventNamespace):
                     break
                 last_received = time.monotonic()
                 text = received.get("text")
-                if text is None:
-                    # Binary frame; not part of the protocol.
-                    logger.debug(f"Closing session {sid}: received a binary frame.")
-                    close_code = 1003
-                else:
+                if text is not None:
                     close_code = await self._handle_frame(
                         sid, text, websocket.scope, max_message_size
                     )
+                elif (
+                    frame := received.get("bytes")
+                ) is not None and self.app._channels:
+                    close_code = await self._handle_binary_frame(
+                        sid, frame, max_message_size
+                    )
+                else:
+                    # Binary frame with no channel to carry it.
+                    logger.debug(f"Closing session {sid}: received a binary frame.")
+                    close_code = 1003
                 if close_code is not None:
                     await websocket.close(code=close_code)
                     break
@@ -631,7 +988,10 @@ class WebsocketEventNamespace(BaseEventNamespace):
         finally:
             heartbeat_task.cancel()
             self._sockets.pop(sid, None)
+            # Start the token cleanup before any teardown await: a cancelled
+            # shutdown must not leave the token linked to a dead session.
             cleanup_task = self.handle_disconnect(sid)
+            await self._close_channel_sessions(sid)
             if cleanup_task is not None:
                 # Await the token cleanup so an immediate reconnect is not
                 # treated as a duplicate tab; shielded so cancellation (e.g.

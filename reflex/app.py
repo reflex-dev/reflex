@@ -60,6 +60,7 @@ from reflex._upload import UploadedFilesHeadersMiddleware, upload
 from reflex._upload import UploadFile as UploadFile
 from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
+from reflex.channels import Channel
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
 from reflex.event_namespace import BaseEventNamespace, WebsocketEventNamespace
@@ -442,6 +443,9 @@ class App(MiddlewareMixin, LifespanMixin):
     # The async server name space.
     _event_namespace: BaseEventNamespace | None = None
 
+    # Side channels multiplexed onto the event websocket, by channel name.
+    _channels: dict[str, Channel] = dataclasses.field(default_factory=dict)
+
     # The processor queue for handling events.
     _event_processor: EventProcessor | None = None
 
@@ -477,6 +481,33 @@ class App(MiddlewareMixin, LifespanMixin):
             The event namespace.
         """
         return self._event_namespace
+
+    def register_channel(self, channel: Channel) -> None:
+        """Register a side channel multiplexed onto the event websocket.
+
+        Args:
+            channel: The channel to serve.
+
+        Raises:
+            RuntimeError: If the app cannot serve channels, or the name is taken.
+        """
+        name = type(channel).name
+        if self._state is None:
+            msg = (
+                f"Channel {name!r} needs the event websocket, which exists only "
+                "when state is enabled (rx.App(enable_state=True), the default)."
+            )
+            raise RuntimeError(msg)
+        if get_config().transport != "websocket":
+            msg = (
+                f"Channel {name!r} requires the plain WebSocket transport; "
+                'remove the transport setting in rxconfig.py or set transport="websocket".'
+            )
+            raise RuntimeError(msg)
+        if name in self._channels:
+            msg = f"A channel named {name!r} is already registered."
+            raise RuntimeError(msg)
+        self._channels[name] = channel
 
     @property
     def event_processor(self) -> EventProcessor:

@@ -3,6 +3,7 @@
 import builtins
 import multiprocessing
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -191,3 +192,61 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
 
     assert exec_utils.arbitrate_ssr(True) is False
+
+
+@pytest.mark.parametrize("deflate", [True, False])
+def test_run_uvicorn_backend_passes_the_socket_policy(
+    tmp_path: Path,
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    deflate: bool,
+):
+    """The dev server gets the app's websocket size and compression settings."""
+    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", str(deflate).lower())
+    mocker.patch.object(
+        exec_utils,
+        "get_dev_backend_reload_marker",
+        return_value=tmp_path / exec_utils.DEV_BACKEND_RELOAD_MARKER,
+    )
+    mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    uvicorn = pytest.importorskip("uvicorn")
+    run = mocker.patch.object(uvicorn, "run")
+
+    exec_utils.run_uvicorn_backend(
+        host="0.0.0.0", port=8000, loglevel=exec_utils.LogLevel.INFO
+    )
+
+    kwargs = run.call_args.kwargs
+    assert kwargs["ws_per_message_deflate"] is deflate
+    assert kwargs["ws_max_size"] == exec_utils._uvicorn_ws_max_size()
+
+
+def test_uvicorn_websocket_args_match_the_options(monkeypatch: pytest.MonkeyPatch):
+    """The command line form carries the same policy as the keyword form."""
+    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", "false")
+    args = exec_utils._uvicorn_websocket_args()
+
+    assert "--no-ws-per-message-deflate" in args
+    assert args[args.index("--ws-max-size") + 1] == str(
+        exec_utils.uvicorn_websocket_options()["ws_max_size"]
+    )
+
+    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", "true")
+    assert "--no-ws-per-message-deflate" not in exec_utils._uvicorn_websocket_args()
+
+
+def test_uvicorn_worker_carries_the_socket_policy(monkeypatch: pytest.MonkeyPatch):
+    """The gunicorn worker class applies the settings gunicorn cannot pass on."""
+    pytest.importorskip("gunicorn")
+    pytest.importorskip("uvicorn")
+    monkeypatch.setenv("REFLEX_SOCKET_PER_MESSAGE_DEFLATE", "false")
+    # The class body reads the environment at import time.
+    sys.modules.pop("reflex.utils.uvicorn_worker", None)
+    from reflex.utils.uvicorn_worker import ReflexUvicornWorker
+
+    assert (
+        ReflexUvicornWorker.CONFIG_KWARGS.items()
+        >= exec_utils.uvicorn_websocket_options().items()
+    )
+    assert ReflexUvicornWorker.CONFIG_KWARGS["ws_per_message_deflate"] is False

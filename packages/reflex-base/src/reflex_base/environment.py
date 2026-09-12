@@ -705,6 +705,12 @@ class EnvironmentVariables:
     # The timeout to wait for a pong from the websocket server in seconds.
     REFLEX_SOCKET_TIMEOUT: EnvVar[int] = env_var(constants.Ping.TIMEOUT)
 
+    # Whether the websocket server compresses messages with permessage-deflate
+    # (uvicorn only; granian does not negotiate it). Worth turning off for apps
+    # sending binary data over a channel: deflate barely shrinks it and costs
+    # milliseconds of event loop time per message.
+    REFLEX_SOCKET_PER_MESSAGE_DEFLATE: EnvVar[bool] = env_var(True)
+
     # Whether to run Granian in a spawn process. This enables Reflex to pick up on environment variable changes between hot reloads.
     REFLEX_STRICT_HOT_RELOAD: EnvVar[bool] = env_var(False)
 

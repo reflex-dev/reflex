@@ -4752,3 +4752,52 @@ def test_compile_emits_stage_spans(
         parent = spans[name].parent
         assert parent is not None
         assert parent.span_id == root.get_span_context().span_id
+
+
+class _ProbeChannel(rx.channels.Channel):
+    """A channel that ignores everything, for registration tests."""
+
+    name = "probe"
+
+    async def on_message(self, session, event, data, buffers) -> None:
+        """Ignore inbound messages."""
+        return
+
+
+def test_register_channel_serves_the_channel():
+    """A registered channel is reachable by name for the transport."""
+    app = App(enable_state=True)
+    channel = _ProbeChannel()
+
+    app.register_channel(channel)
+
+    assert app._channels == {"probe": channel}
+
+
+def test_register_channel_rejects_a_duplicate_name():
+    """Two channels cannot claim the same name."""
+    app = App(enable_state=True)
+    app.register_channel(_ProbeChannel())
+
+    with pytest.raises(RuntimeError, match="already registered"):
+        app.register_channel(_ProbeChannel())
+
+
+def test_register_channel_requires_state():
+    """A stateless app has no event websocket to carry a channel."""
+    with RegistrationContext.get().fork():
+        app = App(enable_state=False)
+
+    with pytest.raises(RuntimeError, match="needs the event websocket"):
+        app.register_channel(_ProbeChannel())
+
+
+def test_register_channel_requires_the_websocket_transport(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Channels are a plain-WebSocket feature; Socket.IO cannot carry them."""
+    monkeypatch.setenv("REFLEX_TRANSPORT", "socketio")
+    app = App(enable_state=True)
+
+    with pytest.raises(RuntimeError, match="requires the plain WebSocket transport"):
+        app.register_channel(_ProbeChannel())
