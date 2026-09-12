@@ -315,9 +315,12 @@ class MinifyNameResolver:
 def get_state_module(state_cls: type[BaseState]) -> str:
     """The module a state class was defined in.
 
-    Prefers ``__original_module__`` so dynamically-relocated states (e.g.
-    ``ComponentState.create()``) report their import-site module rather than
-    ``reflex.istate.dynamic``.
+    Prefers ``__original_module__``, which ``_handle_local_def`` sets on states
+    declared inside a function, so they report their import-site module rather
+    than ``reflex.istate.dynamic``. Classes built by ``ComponentState.create()``
+    have no such attribute and report ``reflex.istate.dynamic``; their name
+    carries a per-instance counter, so their config key tracks the order the
+    components are created in.
 
     Args:
         state_cls: The state class.
