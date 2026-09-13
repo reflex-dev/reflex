@@ -61,6 +61,9 @@ REFLEX_SOCKET_TIMEOUT` the server closes it as unresponsive. Hand long work to
 `asyncio.to_thread` (or a task) and answer when it finishes:
 
 ```python
+import asyncio
+
+
 async def on_message(self, session, event, data, buffers):
     rows = await asyncio.to_thread(expensive_query, data["filter"])
     if session.open:
