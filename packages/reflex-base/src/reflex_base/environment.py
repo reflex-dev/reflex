@@ -446,6 +446,24 @@ def interpret_env_var_value(
 T = TypeVar("T")
 
 
+def _serialize_env_value(value: Any) -> str:
+    """Render a value in the form :func:`interpret_env_var_value` reads back.
+
+    Only durations need help: ``str(timedelta)`` is ``0:01:30``, and past a day or
+    below zero it is ``1 day, 0:00:30`` / ``-1 day, 23:58:30``, none of which the
+    interpreter accepts.
+
+    Args:
+        value: The value to render.
+
+    Returns:
+        The rendered value.
+    """
+    if isinstance(value, timedelta):
+        return str(value.total_seconds())
+    return str(value)
+
+
 class EnvVar(Generic[T]):
     """Environment variable."""
 
@@ -518,9 +536,9 @@ class EnvVar(Generic[T]):
             if isinstance(value, enum.Enum):
                 value = value.value
             if isinstance(value, list):
-                str_value = ":".join(str(v) for v in value)
+                str_value = ":".join(_serialize_env_value(v) for v in value)
             else:
-                str_value = str(value)
+                str_value = _serialize_env_value(value)
             os.environ[self.name] = str_value
 
 

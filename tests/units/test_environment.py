@@ -744,8 +744,40 @@ def test_timedelta_env_var_reads_a_duration(monkeypatch: pytest.MonkeyPatch) -> 
     assert env_var_instance.getenv() == timedelta(seconds=90)
 
 
-def test_timedelta_env_var_falls_back_to_its_default() -> None:
-    """An unset duration keeps the default the app declared."""
+def test_timedelta_env_var_falls_back_to_its_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unset duration keeps the default the app declared.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("TEST_TIMEOUT_UNSET", raising=False)
     env_var_instance = EnvVar("TEST_TIMEOUT_UNSET", timedelta(minutes=3), timedelta)
 
     assert env_var_instance.get() == timedelta(minutes=3)
+
+
+def test_timedelta_env_var_round_trips_through_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``set`` has to write a form the interpreter reads back.
+
+    ``str(timedelta)`` renders ``0:01:30``, and ``-1 day, 23:58:30`` below zero,
+    neither of which is valid input.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("TEST_TIMEOUT_ROUNDTRIP", raising=False)
+    env_var_instance = EnvVar("TEST_TIMEOUT_ROUNDTRIP", timedelta(0), timedelta)
+
+    for value in (
+        timedelta(minutes=1, seconds=30),
+        timedelta(days=1, seconds=30),
+        timedelta(seconds=-90),
+    ):
+        # `EnvVar` binds its type var to the class object, so a value argument
+        # never matches - the same quirk the other `set` tests here work around.
+        env_var_instance.set(value)  # type: ignore[arg-type]
+        assert env_var_instance.get() == value
