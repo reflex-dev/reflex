@@ -61,6 +61,36 @@ def test_plotly_locale_option_merges_into_config(plotly_fig: go.Figure):
     assert "de" in str(config_var)
 
 
+def test_plotly_id_is_forwarded_as_div_id(plotly_fig: go.Figure):
+    """Test that the id prop reaches the DOM through react-plotly.js's divId.
+
+    Plot only forwards divId to the div it renders, so a plain id prop is
+    silently dropped and document.getElementById never finds the chart.
+
+    Args:
+        plotly_fig: The figure to display.
+    """
+    component = rx.plotly(data=plotly_fig, id="the-plot")
+    rendered = component._render()
+
+    assert "id" not in rendered.props
+    assert str(rendered.props["divId"]) == '"the-plot"'
+    # The ref still points at the same element, so rx.get_ref keeps working.
+    assert "ref" in rendered.props
+
+
+def test_plotly_without_id_sets_no_div_id(plotly_fig: go.Figure):
+    """Test that the divId prop is only emitted when an id was given.
+
+    Args:
+        plotly_fig: The figure to display.
+    """
+    rendered = rx.plotly(data=plotly_fig)._render()
+
+    assert "divId" not in rendered.props
+    assert "id" not in rendered.props
+
+
 def test_plotly_basic_locale_option_merges_into_config(plotly_fig: go.Figure):
     """Test that locale works for dynamic plotly dist variants too.
 

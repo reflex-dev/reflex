@@ -308,6 +308,18 @@ const _rxGetPlotlyLocaleConfig = (config, locale, plotlyLocales) => {
 
     def _render(self):
         tag = super()._render()
+        # react-plotly.js only forwards `divId` (plus style, className and ref)
+        # to the div it renders. The framework-universal `id` prop lands in its
+        # event-props rest and is discarded, so the id never reaches the DOM.
+        if (div_id := tag.props.get("id")) is not None:
+            tag = tag.set(
+                props={
+                    **{
+                        name: value for name, value in tag.props.items() if name != "id"
+                    },
+                    "divId": div_id,
+                }
+            )
         figure = self.data.to(dict) if self.data is not None else Var.create({})
         merge_dicts = []  # Data will be merged and spread from these dict Vars
         if self.layout is not None:
