@@ -1892,6 +1892,108 @@ def test_install_frontend_packages_does_not_fall_back(
         env.install({"some-pkg@1.0.0"})
 
 
+def test_npm_install_drops_stale_bun_lock_instead_of_persisting_both(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Switching to npm must not persist bun.lock beside package-lock.json.
+
+    npm rewrites package.json to caret ranges and writes package-lock.json,
+    so the exact-spec bun.lock next to it is stale. Persisting the trio made
+    the next plain run pick bun (bun.lock exists) and fail
+    ``bun install --frozen-lockfile`` against a package.json it no longer
+    matches (#6976).
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    env.root_lock.write_text("exact-spec bun lock from an earlier bun run")
+    env.web_package_json.write_text('{"dependencies": {"react": "19.0.0"}}')
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+
+    def run_npm(args, **kwargs):
+        # What a real npm install leaves behind in .web.
+        web_npm_lock.write_text('{"lockfileVersion": 3}')
+        env.web_package_json.write_text('{"dependencies": {"react": "^19.0.0"}}')
+
+    env.patch_pm(["npm"], run_npm)
+
+    with chdir(env.tmp_path):
+        env.install()
+        implies_npm = js_runtimes._persisted_lockfile_implies_npm()
+
+    assert root_npm_lock.exists()
+    assert not env.root_lock.exists(), (
+        "stale bun.lock was persisted beside package-lock.json"
+    )
+    assert not env.web_lock.exists()
+    # The persisted state now says what actually produced it.
+    assert implies_npm is True
+
+
+def test_bun_install_drops_stale_npm_lock_instead_of_persisting_both(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """The reverse switch, npm back to bun, drops the stale package-lock.json.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+    root_npm_lock.write_text('{"lockfileVersion": 3}')
+    env.web_package_json.write_text('{"dependencies": {"react": "^19.0.0"}}')
+
+    def run_bun(args, **kwargs):
+        env.web_lock.write_text("bun lock")
+        env.web_package_json.write_text('{"dependencies": {"react": "19.0.0"}}')
+
+    env.patch_pm(["bun"], run_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+        implies_npm = js_runtimes._persisted_lockfile_implies_npm()
+
+    assert env.root_lock.exists()
+    assert not root_npm_lock.exists(), (
+        "stale package-lock.json was persisted beside bun.lock"
+    )
+    assert not web_npm_lock.exists()
+    assert implies_npm is False
+
+
+def test_install_keeps_the_running_managers_lockfile_untouched(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Only the other manager's lockfile is dropped; the running one is kept.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    env.root_lock.write_text("bun lock")
+    env.web_package_json.write_text("{}")
+
+    def run_bun(args, **kwargs):
+        env.web_lock.write_text("bun lock")
+
+    env.patch_pm(["bun"], run_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+
+    assert env.root_lock.read_text() == "bun lock"
+    assert env.web_lock.read_text() == "bun lock"
+
+
 @pytest.mark.usefixtures("install_packages_env")
 def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, caplog):
     """A frozen-lockfile mismatch surfaces a 'delete reflex.lock/package.json' hint."""

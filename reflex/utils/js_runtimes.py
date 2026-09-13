@@ -799,4 +799,39 @@ def install_frontend_packages(packages: set[str], config: Config):
         config.frozen_lockfile,
         install_package_managers,
     )
+    _drop_lockfile_of_other_package_manager(install_package_managers[0])
     frontend_skeleton.sync_web_lockfiles_to_root()
+
+
+def _drop_lockfile_of_other_package_manager(primary_package_manager: str) -> None:
+    """Remove the lockfile that belongs to the package manager that did not run.
+
+    An npm install rewrites ``.web/package.json`` to caret ranges and writes
+    ``package-lock.json``, which leaves the exact-spec ``bun.lock`` beside it
+    stale. Persisting both puts a ``package.json`` in ``reflex.lock/`` that
+    matches one lockfile and not the other; the next run then picks bun
+    because ``bun.lock`` exists, and ``bun install --frozen-lockfile``
+    correctly refuses (#6976). The same holds in reverse for a bun install
+    over a persisted ``package-lock.json``.
+
+    Only the lockfile the other manager owns is touched, in both ``.web``
+    and ``reflex.lock/``, so ``_persisted_lockfile_implies_npm`` reads the
+    manager that actually produced the persisted state.
+
+    Args:
+        primary_package_manager: The package manager that ran the install.
+    """
+    stale_lockfile = (
+        constants.Node.LOCKFILE_PATH
+        if _is_bun_package_manager(primary_package_manager)
+        else constants.Bun.LOCKFILE_PATH
+    )
+    for stale_path in (
+        frontend_skeleton.get_web_lockfile_path(stale_lockfile),
+        frontend_skeleton.get_root_lockfile_path(stale_lockfile),
+    ):
+        if stale_path.exists():
+            logger.debug(
+                f"Removing {stale_path}: it belongs to the package manager that did not run."
+            )
+            path_ops.rm(stale_path)
