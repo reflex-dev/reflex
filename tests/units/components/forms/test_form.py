@@ -290,3 +290,16 @@ def test_textarea_without_features_emits_no_helpers():
     collected = _root_only_custom_code(Textarea.create())
     assert ENTER_KEY_SUBMIT_JS not in collected
     assert AUTO_HEIGHT_JS not in collected
+
+
+def test_form_message_force_match_requires_match():
+    """force_match is only rendered when match is set, since Radix ignores it otherwise."""
+    from reflex_components_radix.primitives.form import FormMessage
+
+    props = FormMessage.create("msg", name="field", force_match=True).render()["props"]
+    assert not any(prop.startswith("forceMatch") for prop in props)
+
+    props = FormMessage.create(
+        "msg", name="field", match="valueMissing", force_match=True
+    ).render()["props"]
+    assert "forceMatch:true" in props
