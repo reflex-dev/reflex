@@ -440,21 +440,26 @@ def stream_logs(
                 raise
             # If the process exited, break out of the loop for post processing.
 
-    # A child torn down by the user's own interrupt is not a failure. Each
-    # signal shows up two ways: negative when Popen saw it directly, 128+N when
-    # a shell wrapper such as react router reported it (130 for SIGINT, 143 for
-    # SIGTERM). Recognising SIGINT in both forms but SIGTERM in neither is what
-    # turned an orderly `kill -TERM` into "Starting frontend failed" (#6981).
-    interrupt_signals = (int(signal.SIGINT), int(signal.SIGTERM))
-    accepted_return_codes = {
-        0,
-        *(-sig for sig in interrupt_signals),
-        *(128 + sig for sig in interrupt_signals),
-    }
+    # A child torn down by the user's own interrupt is not a failure.
     if constants.IS_WINDOWS:
-        # Windows uvicorn bug: SIGTERM surfaces as a bare 15.
+        # Windows has no POSIX signal exit codes. os.kill(pid, SIGTERM) calls
+        # TerminateProcess with the signal number, so SIGTERM surfaces as a
+        # bare 15, and Node reports Ctrl+C as 130 by convention. -15 and 143
+        # are ordinary application exit codes here and must stay failures.
         # https://github.com/reflex-dev/reflex/issues/2335
-        accepted_return_codes.add(int(signal.SIGTERM))
+        accepted_return_codes = {0, -2, 15, 130}
+    else:
+        # On POSIX each signal shows up two ways: negative when Popen saw it
+        # directly, 128+N when a shell wrapper such as react router reported
+        # it (130 for SIGINT, 143 for SIGTERM). Recognising SIGINT in both
+        # forms but SIGTERM in neither is what turned an orderly `kill -TERM`
+        # into "Starting frontend failed" (#6981).
+        interrupt_signals = (int(signal.SIGINT), int(signal.SIGTERM))
+        accepted_return_codes = {
+            0,
+            *(-sig for sig in interrupt_signals),
+            *(128 + sig for sig in interrupt_signals),
+        }
     if process.returncode not in accepted_return_codes and not suppress_errors:
         logger.error(f"{message} failed with exit code {process.returncode}")
         if "".join(logs).count("CERT_HAS_EXPIRED") > 0:
