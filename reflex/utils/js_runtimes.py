@@ -1,18 +1,24 @@
 """This module provides utilities for managing JavaScript runtimes like Node.js and Bun."""
 
+import contextvars
 import functools
 import json
 import logging
 import os
 import tempfile
 from collections.abc import Sequence
+from concurrent import futures
 from pathlib import Path
 
 from packaging import version
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.config import Config, get_config
 from reflex_base.environment import environment
-from reflex_base.utils.decorator import cached_procedure, once
+from reflex_base.utils.decorator import (
+    _read_cached_procedure_file,
+    cached_procedure,
+    once,
+)
 from reflex_base.utils.exceptions import SystemPackageMissingError
 from rich.markup import escape
 
@@ -618,7 +624,7 @@ def _install_frontend_packages(
     development_dependencies: set[str],
     frozen_lockfile: bool,
     install_package_managers: Sequence[str],
-):
+) -> set[str]:
     """Installs the base and custom frontend packages.
 
     Resolution rules:
@@ -645,6 +651,11 @@ def _install_frontend_packages(
         frozen_lockfile: Whether bun should enforce the existing lockfile.
         install_package_managers: The package manager paths in priority
             order (primary plus fallbacks).
+
+    Returns:
+        The custom packages that were requested. The install cache keeps
+        this as its value so the next compile can start installing the same
+        set before it knows the real one.
 
     Example:
         >>> install_frontend_packages({"react", "react-dom"}, get_config())
@@ -780,9 +791,22 @@ def _install_frontend_packages(
             show_status_message="Applying frontend package overrides",
         )
 
+    return packages
 
-def install_frontend_packages(packages: set[str], config: Config):
-    """Install frontend packages while respecting the canonical root bun.lock."""
+
+def _frontend_install_plan(
+    packages: set[str], config: Config
+) -> tuple[set[str], set[str], bool, tuple[str, ...]]:
+    """Resolve the arguments ``_install_frontend_packages`` runs with.
+
+    Args:
+        packages: Custom packages requested by the caller.
+        config: The app config, for plugin dependencies and lockfile mode.
+
+    Returns:
+        The custom packages, development packages, frozen-lockfile flag and
+        package managers, in ``_install_frontend_packages`` argument order.
+    """
     install_package_managers = tuple(
         get_nodejs_compatible_package_managers(raise_on_none=True)
     )
@@ -791,12 +815,169 @@ def install_frontend_packages(packages: set[str], config: Config):
     for plugin in config.plugins:
         development_dependencies.update(plugin.get_frontend_development_dependencies())
         packages.update(plugin.get_frontend_dependencies())
-
-    _sync_root_lockfiles_for_frontend_install()
-    _install_frontend_packages(
+    return (
         packages,
         development_dependencies,
         config.frozen_lockfile,
         install_package_managers,
     )
+
+
+def _run_frontend_install(
+    plan: tuple[set[str], set[str], bool, tuple[str, ...]],
+) -> None:
+    """Install a resolved plan while respecting the canonical root bun.lock.
+
+    Args:
+        plan: The arguments from :func:`_frontend_install_plan`.
+    """
+    _sync_root_lockfiles_for_frontend_install()
+    _install_frontend_packages(*plan)
     frontend_skeleton.sync_web_lockfiles_to_root()
+
+
+def _declared_frontend_packages() -> set[str]:
+    """Reconstruct the custom package specs ``.web/package.json`` declares.
+
+    Package managers persist an explicitly requested spec verbatim and put a
+    caret range on a version they resolved themselves, so a caret entry maps
+    back to a bare request and anything else to ``name@spec``.
+
+    Returns:
+        The specs beyond the framework's own dependencies.
+    """
+    package_json = frontend_skeleton._read_package_json_object(
+        frontend_skeleton.get_web_lockfile_path(constants.PackageJson.PATH)
+    )
+    return {
+        name if spec.startswith("^") else f"{name}@{spec}"
+        for name, spec in (package_json.get("dependencies") or {}).items()
+        if name not in constants.PackageJson.DEPENDENCIES
+    }
+
+
+def _last_installed_frontend_packages(cached_value: object) -> set[str]:
+    """Best guess at the custom packages the coming install will request.
+
+    Args:
+        cached_value: The value stored by the install cache, which records
+            the custom packages of the last successful install.
+
+    Returns:
+        That package set, or the specs ``.web/package.json`` declares when
+        the cache has none (a fresh ``.web``, or a cache written before the
+        set was recorded).
+    """
+    if isinstance(cached_value, set):
+        return cached_value
+    return _declared_frontend_packages()
+
+
+# The frontend install started ahead of the compile, if one is in flight.
+_frontend_packages_preinstall: futures.Future[None] | None = None
+
+
+def _preinstall_frontend_packages(
+    plan: tuple[set[str], set[str], bool, tuple[str, ...]],
+) -> None:
+    """Run a preinstall plan on the worker thread.
+
+    Args:
+        plan: The arguments from :func:`_frontend_install_plan`.
+    """
+    with (
+        processes.suppressed_status_spinner(),
+        otel.span("reflex.compile.preinstall_frontend_packages"),
+    ):
+        _run_frontend_install(plan)
+
+
+def start_frontend_packages_preinstall(config: Config) -> None:
+    """Start installing the last known frontend package set on a worker thread.
+
+    The packages a compile needs are only known once every page has been
+    rendered, but a first run or a Reflex upgrade spends most of its time
+    downloading the framework's own packages, which never depend on the
+    pages. Kicking that install off with the last known set lets it overlap
+    the Python compile; ``install_frontend_packages`` then waits for it and
+    only has the delta to the real set left to do. Nothing starts when the
+    cache already covers the last known set, which is the steady state.
+
+    Args:
+        config: The app config.
+    """
+    global _frontend_packages_preinstall
+    if _frontend_packages_preinstall is not None:
+        return
+    _sync_root_lockfiles_for_frontend_install()
+    cached_payload, cached_value = _read_cached_procedure_file(
+        _frontend_packages_cache_path()
+    )
+    plan = _frontend_install_plan(
+        _last_installed_frontend_packages(cached_value), config
+    )
+    if cached_payload == _frontend_packages_cache_payload(*plan):
+        return
+    # Non-daemon worker: an install must never be cut off mid-write, so a
+    # process that exits early waits for it (see settle_*).
+    executor = futures.ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix="reflex-frontend-packages"
+    )
+    _frontend_packages_preinstall = executor.submit(
+        contextvars.copy_context().run, _preinstall_frontend_packages, plan
+    )
+    executor.shutdown(wait=False)
+
+
+def _take_frontend_packages_preinstall() -> futures.Future[None] | None:
+    """Detach the in-flight preinstall so exactly one caller consumes it.
+
+    Returns:
+        The preinstall future, or None when none is in flight.
+    """
+    global _frontend_packages_preinstall
+    future, _frontend_packages_preinstall = _frontend_packages_preinstall, None
+    return future
+
+
+def _await_frontend_packages_preinstall() -> None:
+    """Block until the preinstall is done, re-raising its failure."""
+    future = _take_frontend_packages_preinstall()
+    if future is None:
+        return
+    if not future.done():
+        with console.status("Installing frontend packages"):
+            futures.wait([future])
+    future.result()
+
+
+def settle_frontend_packages_preinstall() -> None:
+    """Wait out a preinstall the compile never consumed.
+
+    Called when a compile ends without installing packages (it failed part
+    way), so the process does not sit silently on the worker at exit. A
+    failed preinstall is only logged: the compile error is what the user
+    needs, and the next install retries from scratch.
+    """
+    future = _take_frontend_packages_preinstall()
+    if future is None:
+        return
+    if not future.done():
+        logger.info("Waiting for the frontend package install to finish.")
+        futures.wait([future])
+    if (exc := future.exception()) is not None:
+        logger.debug(f"Frontend package preinstall failed: {exc!r}")
+
+
+def install_frontend_packages(packages: set[str], config: Config):
+    """Install frontend packages while respecting the canonical root bun.lock.
+
+    Waits for a preinstall started by ``start_frontend_packages_preinstall``
+    first, so only one install ever touches ``.web`` at a time.
+
+    Args:
+        packages: Custom packages requested by the caller.
+        config: The app config.
+    """
+    _await_frontend_packages_preinstall()
+    _run_frontend_install(_frontend_install_plan(packages, config))

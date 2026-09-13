@@ -1,0 +1,1 @@
+Stop re-running the frontend package manager on every compile and hot reload: the install cache was discarded each time because the persisted `package.json` was compared by text against the pretty-printed copy the package manager writes back.

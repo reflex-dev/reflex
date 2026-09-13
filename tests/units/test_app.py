@@ -83,7 +83,7 @@ from reflex.state import (
     StateUpdate,
     reload_state_module,
 )
-from reflex.utils import build
+from reflex.utils import build, js_runtimes
 from reflex.utils import exec as exec_utils
 from reflex.utils.token_manager import RedisTokenManager, SocketRecord
 
@@ -2135,12 +2135,14 @@ async def test_process_events(
 def compilable_app(
     tmp_path: Path,
     forked_registration_context: RegistrationContext,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> Generator[tuple[App, Path], None, None]:
     """Fixture for an app that can be compiled.
 
     Args:
         tmp_path: Temporary path.
         forked_registration_context: Isolated state/event registration context.
+        monkeypatch: Pytest monkeypatch fixture.
 
     Yields:
         Tuple containing (app instance, Path to ".web" directory)
@@ -2166,6 +2168,11 @@ module.exports = {
     reload_state_module(__name__)
     app = App(theme=None)
     app._get_frontend_packages = unittest.mock.Mock()
+    # The real preinstall would spawn a package manager; a compile only
+    # needs it to have been asked for (see test_compile_starts_preinstall).
+    monkeypatch.setattr(
+        js_runtimes, "start_frontend_packages_preinstall", lambda config: None
+    )
     with chdir(app_path):
         yield app, web_dir
 
@@ -3958,6 +3965,48 @@ def test_compile_reports_exception_and_reraises(
     assert len(compile_calls) == 1
     payload = compile_calls[0].kwargs["properties"]
     assert payload["exception"] == {"type": "_BoomError"}
+
+
+def test_compile_settles_preinstall_when_compile_app_raises(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """A failed compile still waits out the package preinstall it started."""
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    mocker.patch(
+        "reflex.compiler.compiler.compile_app", side_effect=RuntimeError("boom")
+    )
+    settle = mocker.patch.object(js_runtimes, "settle_frontend_packages_preinstall")
+
+    with pytest.raises(RuntimeError):
+        app._compile()
+
+    settle.assert_called_once_with()
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_compile_starts_preinstall_before_pages(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+    dry_run: bool,
+):
+    """A real compile asks for the package preinstall up front; a dry run never installs."""
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    start = mocker.patch.object(js_runtimes, "start_frontend_packages_preinstall")
+    install = unittest.mock.Mock()
+    app._get_frontend_packages = install
+    app.add_page(lambda: rx.text("hi"), route="/")
+
+    app._compile(dry_run=dry_run)
+
+    if dry_run:
+        start.assert_not_called()
+        install.assert_not_called()
+    else:
+        start.assert_called_once_with(rx.config.get_config())
+        install.assert_called_once()
 
 
 def test_compile_skips_telemetry_when_compile_app_short_circuits(

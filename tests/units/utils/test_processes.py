@@ -1,6 +1,7 @@
 """Test process utilities."""
 
 import socket
+import sys
 import threading
 import time
 from contextlib import closing
@@ -9,6 +10,7 @@ from unittest import mock
 import pytest
 
 from reflex.testing import DEFAULT_TIMEOUT, AppHarness
+from reflex.utils import processes
 from reflex.utils.processes import (
     _can_bind_at_any_port,
     is_process_on_port,
@@ -284,3 +286,32 @@ def test_run_concurrently_context_no_interrupt_after_pre_body_failure():
     # The interrupt callback runs within microseconds of the task finishing;
     # a stale interrupt would surface as KeyboardInterrupt in this window.
     time.sleep(0.1)
+
+
+def _echo_process():
+    return processes.new_process([sys.executable, "-c", "print('hello')"])
+
+
+def test_show_status_streams_with_spinner_by_default():
+    with mock.patch.object(processes.console, "status") as status:
+        lines = processes.show_status("Echo", _echo_process())
+
+    assert [line.strip() for line in lines] == ["hello"]
+    status.assert_called_once_with("Echo")
+
+
+def test_show_status_streams_without_spinner_when_suppressed():
+    with (
+        mock.patch.object(processes.console, "status") as status,
+        processes.suppressed_status_spinner(),
+    ):
+        lines = processes.show_status("Echo", _echo_process())
+
+    assert [line.strip() for line in lines] == ["hello"]
+    status.assert_not_called()
+
+
+def test_suppressed_status_spinner_is_scoped_to_the_block():
+    with processes.suppressed_status_spinner():
+        assert processes._status_spinner_suppressed.get() is True
+    assert processes._status_spinner_suppressed.get() is False

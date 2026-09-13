@@ -367,7 +367,12 @@ def sync_root_package_json_to_web() -> bool:
 
     output_path = get_web_lockfile_path(constants.PackageJson.PATH)
     rendered = _compile_package_json()
-    if output_path.exists() and output_path.read_text() == rendered:
+    # Compare content, not text: the package manager pretty-prints the file
+    # it writes back, and rewriting an equivalent file every run would throw
+    # away the install cache on every compile.
+    if output_path.exists() and _read_package_json_object(output_path) == json.loads(
+        rendered
+    ):
         return False
 
     changed = output_path.exists()

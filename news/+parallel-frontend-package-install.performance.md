@@ -1,0 +1,1 @@
+Start installing the frontend packages from the previous run while the Python side of the compile is still running, so a first run or a Reflex upgrade no longer waits for the whole compile before downloading anything. Once the real package set is known, only the difference is installed.

@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import uuid
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ from reflex_base import constants
 from reflex_base.config import Config
 from reflex_base.environment import environment
 from reflex_base.utils import log
-from reflex_base.utils.decorator import cached_procedure
+from reflex_base.utils.decorator import _read_cached_procedure_file, cached_procedure
 
 from reflex.reflex import cli
 from reflex.testing import chdir
@@ -427,6 +428,8 @@ def install_packages_env(
     )
     with chdir(tmp_path):
         yield env
+    # Never leak a preinstall a test started (or failed) into the next one.
+    js_runtimes.settle_frontend_packages_preinstall()
 
 
 _SKELETON_INITIALIZERS = (
@@ -648,6 +651,33 @@ def test_sync_root_lockfiles_to_web_processes_package_json(tmp_path, monkeypatch
     assert web_pkg["dependencies"] == {"react": "19.2.5"}
     assert web_pkg["scripts"]["dev"] == constants.PackageJson.Commands.DEV
     assert web_pkg["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
+
+
+def test_sync_root_package_json_to_web_ignores_formatting(tmp_path, monkeypatch):
+    """A pretty-printed .web/package.json with the same content is left alone.
+
+    The package manager writes the file back indented; treating that as a
+    change would invalidate the install cache on every compile.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
+    root_pkg.parent.mkdir(parents=True, exist_ok=True)
+    root_pkg.write_text(json.dumps({"dependencies": {"react": "19.2.5"}}))
+
+    with chdir(tmp_path):
+        frontend_skeleton.sync_root_lockfiles_to_web()
+        web_pkg = web_dir / constants.PackageJson.PATH
+        pretty = json.dumps(json.loads(web_pkg.read_text()), indent=2) + "\n"
+        web_pkg.write_text(pretty)
+
+        assert frontend_skeleton.sync_root_package_json_to_web() is False
+        assert web_pkg.read_text() == pretty
+
+        root_pkg.write_text(json.dumps({"dependencies": {"react": "19.2.6"}}))
+        assert frontend_skeleton.sync_root_package_json_to_web() is True
+        assert json.loads(web_pkg.read_text())["dependencies"] == {"react": "19.2.6"}
 
 
 def test_install_frontend_packages_syncs_root_bun_lock(
@@ -2301,3 +2331,157 @@ def test_ensure_installation_id_keeps_legacy_install_unmarked(
 
     assert install_id == 12345
     assert prerequisites.has_uuid_distinct_id_semantics() is False
+
+
+def _cached_install_packages() -> object:
+    """Read back what the install cache recorded.
+
+    Returns:
+        The package set of the last install, or None when unwritten.
+    """
+    return _read_cached_procedure_file(js_runtimes._frontend_packages_cache_path())[1]
+
+
+def _record_threaded_calls(env: InstallPackagesEnv) -> list[tuple[list[str], str]]:
+    """Record package-manager invocations with the calling thread's name.
+
+    Args:
+        env: The install_packages_env fixture instance.
+
+    Returns:
+        A list that is appended to (in-place) on each package manager call.
+    """
+    calls: list[tuple[list[str], str]] = []
+
+    def run_package_manager(args, **kwargs):
+        calls.append((list(args), threading.current_thread().name))
+
+    env.patch_pm(["bun"], run_package_manager)
+    return calls
+
+
+def test_install_frontend_packages_records_requested_packages(
+    install_packages_env: InstallPackagesEnv,
+):
+    """The install cache keeps the custom package set for the next preinstall."""
+    env = install_packages_env
+    _record_calls(env)
+
+    env.install({"some-pkg@1.0.0"})
+
+    assert _cached_install_packages() == {"some-pkg@1.0.0"}
+
+
+def test_preinstall_skips_when_cache_covers_last_install(
+    install_packages_env: InstallPackagesEnv,
+):
+    """The steady state (nothing changed since the last install) starts no worker."""
+    env = install_packages_env
+    calls = _record_calls(env)
+    env.install({"some-pkg@1.0.0"})
+    installed_calls = len(calls)
+
+    js_runtimes.start_frontend_packages_preinstall(env.config)
+
+    assert js_runtimes._frontend_packages_preinstall is None
+    assert len(calls) == installed_calls
+
+
+def test_preinstall_installs_last_set_on_worker_and_leaves_no_delta(
+    install_packages_env: InstallPackagesEnv,
+):
+    """A stale cache reinstalls the last set off-thread; the real install is then a hit."""
+    env = install_packages_env
+    calls = _record_threaded_calls(env)
+    env.install({"some-pkg@1.0.0"})
+    # Toggling the lockfile mode changes the cache payload, like a Reflex
+    # upgrade that bumps a framework pin would.
+    env.config.frozen_lockfile = not env.config.frozen_lockfile
+    del calls[:]
+
+    js_runtimes.start_frontend_packages_preinstall(env.config)
+    future = js_runtimes._frontend_packages_preinstall
+    assert future is not None
+    future.result()
+
+    assert [args for args, _ in calls] == [
+        ["bun", "add", "--legacy-peer-deps", "some-pkg@1.0.0"]
+    ]
+    assert all(thread != "MainThread" for _, thread in calls)
+
+    env.install({"some-pkg@1.0.0"})
+
+    assert js_runtimes._frontend_packages_preinstall is None
+    assert len(calls) == 1
+
+
+def test_preinstall_falls_back_to_declared_packages_without_cache(
+    install_packages_env: InstallPackagesEnv, monkeypatch: pytest.MonkeyPatch
+):
+    """With no cache, the specs ``.web/package.json`` declares seed the preinstall.
+
+    A caret range is what the package manager writes for a bare request;
+    anything else was requested verbatim. Framework deps are left out.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {"fw-dep": "9.9.9"})
+    _record_calls(env)
+    env.web_package_json.write_text(
+        json.dumps({
+            "dependencies": {
+                "fw-dep": "9.9.9",
+                "pinned-pkg": "1.2.3",
+                "ranged-pkg": "^1.0.0",
+                "@scope/tagged": "next",
+            }
+        })
+    )
+
+    js_runtimes.start_frontend_packages_preinstall(env.config)
+    js_runtimes.settle_frontend_packages_preinstall()
+
+    assert _cached_install_packages() == {
+        "pinned-pkg@1.2.3",
+        "ranged-pkg",
+        "@scope/tagged@next",
+    }
+
+
+def test_install_frontend_packages_reraises_failed_preinstall(
+    install_packages_env: InstallPackagesEnv,
+):
+    env = install_packages_env
+    # A persisted lockfile makes the preinstall run the initial install.
+    env.root_lock.write_text("root-lock")
+
+    def failing_package_manager(args, **kwargs):
+        raise SystemExit(1)
+
+    env.patch_pm(["bun"], failing_package_manager)
+
+    js_runtimes.start_frontend_packages_preinstall(env.config)
+    assert js_runtimes._frontend_packages_preinstall is not None
+
+    with pytest.raises(SystemExit):
+        env.install({"some-pkg@1.0.0"})
+
+    assert js_runtimes._frontend_packages_preinstall is None
+
+
+def test_settle_frontend_packages_preinstall_swallows_failure(
+    install_packages_env: InstallPackagesEnv,
+):
+    """A compile that already failed must not be masked by the preinstall's error."""
+    env = install_packages_env
+    env.root_lock.write_text("root-lock")
+
+    def failing_package_manager(args, **kwargs):
+        raise SystemExit(1)
+
+    env.patch_pm(["bun"], failing_package_manager)
+
+    js_runtimes.start_frontend_packages_preinstall(env.config)
+    js_runtimes.settle_frontend_packages_preinstall()
+
+    assert js_runtimes._frontend_packages_preinstall is None
+    assert _cached_install_packages() is None

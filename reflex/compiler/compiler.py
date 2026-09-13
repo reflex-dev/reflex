@@ -53,7 +53,13 @@ from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 from reflex.state import BaseState, code_uses_state_contexts
-from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
+from reflex.utils import (
+    console,
+    frontend_skeleton,
+    js_runtimes,
+    path_ops,
+    prerequisites,
+)
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
 
@@ -1264,6 +1270,10 @@ def compile_app(
             utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
+
+    if not dry_run:
+        # Let a first-run or post-upgrade package install overlap the compile.
+        js_runtimes.start_frontend_packages_preinstall(config)
 
     progress = console.progress() if use_rich else console.PoorProgress()
     fixed_steps = 7

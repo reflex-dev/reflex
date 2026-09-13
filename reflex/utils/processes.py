@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import contextvars
 import logging
 import os
 import signal
@@ -494,6 +495,29 @@ def show_logs(message: str, process: subprocess.Popen):
         pass
 
 
+_status_spinner_suppressed: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "status_spinner_suppressed", default=False
+)
+
+
+@contextlib.contextmanager
+def suppressed_status_spinner() -> Generator[None, None, None]:
+    """Run ``show_status`` without a spinner inside this block.
+
+    Only one live display can own the terminal, so a subprocess driven from a
+    worker thread while the compile progress bar is showing streams its
+    output quietly and leaves the terminal to the foreground.
+
+    Yields:
+        None.
+    """
+    token = _status_spinner_suppressed.set(True)
+    try:
+        yield
+    finally:
+        _status_spinner_suppressed.reset(token)
+
+
 def show_status(
     message: str,
     process: subprocess.Popen,
@@ -513,16 +537,19 @@ def show_status(
     Returns:
         The lines of the process output.
     """
-    lines = []
+    logs = stream_logs(
+        message,
+        process,
+        suppress_errors=suppress_errors,
+        analytics_enabled=analytics_enabled,
+        prior_logs=prior_logs,
+    )
+    if _status_spinner_suppressed.get():
+        return list(logs)
 
+    lines = []
     with console.status(message) as status:
-        for line in stream_logs(
-            message,
-            process,
-            suppress_errors=suppress_errors,
-            analytics_enabled=analytics_enabled,
-            prior_logs=prior_logs,
-        ):
+        for line in logs:
             status.update(f"{message} {line}")
             lines.append(line)
         return lines

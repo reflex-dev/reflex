@@ -1705,6 +1705,10 @@ class App(MiddlewareMixin, LifespanMixin):
                         if did_real_compile:
                             telemetry_accounting.record_compile(self, ctx)
             finally:
+                # A compile that failed before installing packages leaves the
+                # package preinstall it started still running; wait it out here
+                # rather than silently at interpreter exit.
+                js_runtimes.settle_frontend_packages_preinstall()
                 # Auto-memoization named every wrapper it will ever name during the
                 # compile, so its encoding caches are dead weight from here. This is
                 # the single funnel every compile goes through -- the CLI and export
