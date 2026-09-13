@@ -7,7 +7,9 @@ import enum
 import importlib
 import logging
 import os
+import re
 from collections.abc import Sequence
+from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -114,6 +116,54 @@ def interpret_float_env(value: str, field_name: str) -> float:
     except ValueError as ve:
         msg = f"Invalid float value: {value!r} for {field_name}"
         raise EnvironmentVarValueError(msg) from ve
+
+
+_TIMEDELTA_UNITS: dict[str, str] = {
+    "ms": "milliseconds",
+    "s": "seconds",
+    "m": "minutes",
+    "h": "hours",
+    "d": "days",
+}
+
+_TIMEDELTA_PATTERN = re.compile(r"([+-]?\d+(?:\.\d+)?)\s*([a-z]*)")
+
+
+def interpret_timedelta_env(value: str, field_name: str) -> timedelta:
+    """Interpret a duration environment variable value.
+
+    A bare number is read as seconds, so an existing integer setting keeps
+    working when its type becomes a duration. A unit suffix overrides that:
+    ``ms``, ``s``, ``m``, ``h`` and ``d`` are understood, making ``30``, ``30s``,
+    ``500ms`` and ``5m`` all valid.
+
+    Args:
+        value: The environment variable value.
+        field_name: The field name.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        EnvironmentVarValueError: If the value is invalid.
+    """
+    match = _TIMEDELTA_PATTERN.fullmatch(value.strip().lower())
+    keyword = _TIMEDELTA_UNITS.get(match.group(2) or "s") if match else None
+    if match is None or keyword is None:
+        units = ", ".join(_TIMEDELTA_UNITS)
+        msg = (
+            f"Invalid duration value: {value!r} for {field_name}. Expected a "
+            f"number of seconds, optionally suffixed with one of {units}."
+        )
+        raise EnvironmentVarValueError(msg)
+    try:
+        return timedelta(**{keyword: float(match.group(1))})
+    except (OverflowError, ValueError) as e:
+        # A value can be well-formed and still be more than a timedelta holds.
+        # OverflowError is not a ValueError, so letting it out would escape the
+        # union fallback in `interpret_env_var_value` as well as this contract.
+        msg = f"Invalid duration value: {value!r} for {field_name} is out of range."
+        raise EnvironmentVarValueError(msg) from e
 
 
 def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
@@ -326,6 +376,8 @@ def interpret_env_var_value(
         return interpret_int_env(value, field_name)
     if field_type is float:
         return interpret_float_env(value, field_name)
+    if field_type is timedelta:
+        return interpret_timedelta_env(value, field_name)
     if field_type is Path:
         if PathExistsFlag in annotated_metadata:
             return interpret_existing_path_env(value, field_name)
