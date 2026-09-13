@@ -818,14 +818,25 @@ def _drop_lockfile_of_other_package_manager(primary_package_manager: str) -> Non
     and ``reflex.lock/``, so ``_persisted_lockfile_implies_npm`` reads the
     manager that actually produced the persisted state.
 
+    The manager is identified by a positive match on its executable name,
+    never by elimination: ``bun_path`` is user-configurable, and a bun
+    binary with a custom name such as ``bun-1.3`` must not be mistaken for
+    npm, since that would delete the lockfile the install just produced.
+    An unrecognised name drops nothing.
+
     Args:
         primary_package_manager: The package manager that ran the install.
     """
-    stale_lockfile = (
-        constants.Node.LOCKFILE_PATH
-        if _is_bun_package_manager(primary_package_manager)
-        else constants.Bun.LOCKFILE_PATH
-    )
+    stem = Path(primary_package_manager).stem.lower()
+    if stem == "bun":
+        stale_lockfile = constants.Node.LOCKFILE_PATH
+    elif stem == "npm":
+        stale_lockfile = constants.Bun.LOCKFILE_PATH
+    else:
+        logger.debug(
+            f"Not pruning lockfiles: cannot tell which package manager {primary_package_manager!r} is."
+        )
+        return
     for stale_path in (
         frontend_skeleton.get_web_lockfile_path(stale_lockfile),
         frontend_skeleton.get_root_lockfile_path(stale_lockfile),

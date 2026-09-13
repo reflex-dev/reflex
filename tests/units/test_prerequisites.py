@@ -1994,6 +1994,40 @@ def test_install_keeps_the_running_managers_lockfile_untouched(
     assert env.web_lock.read_text() == "bun lock"
 
 
+def test_install_drops_nothing_for_a_custom_named_bun_binary(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """A bun binary with a custom name must not be mistaken for npm.
+
+    ``bun_path`` is configurable, so the primary manager can be something
+    like ``bun-1.3``. Classifying that as "not bun, therefore npm" would
+    delete the bun.lock the install just produced and keep a stale npm
+    lock. An unrecognised name has to leave both lockfiles alone.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    root_npm_lock.write_text('{"lockfileVersion": 3}')
+    env.web_package_json.write_text("{}")
+
+    def run_custom_bun(args, **kwargs):
+        env.web_lock.write_text("fresh bun lock")
+
+    env.patch_pm(["/opt/tools/bun-1.3"], run_custom_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+
+    # The freshly produced bun.lock survives; nothing was deleted on a guess.
+    assert env.root_lock.read_text() == "fresh bun lock"
+    assert env.web_lock.read_text() == "fresh bun lock"
+    assert root_npm_lock.exists()
+
+
 @pytest.mark.usefixtures("install_packages_env")
 def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, caplog):
     """A frozen-lockfile mismatch surfaces a 'delete reflex.lock/package.json' hint."""
