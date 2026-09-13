@@ -1,6 +1,9 @@
 """Test process utilities."""
 
+import logging
+import signal
 import socket
+import subprocess
 import threading
 import time
 from contextlib import closing
@@ -14,6 +17,7 @@ from reflex.utils.processes import (
     is_process_on_port,
     run_concurrently,
     run_concurrently_context,
+    stream_logs,
 )
 
 # `socket.has_ipv6` only reflects build-time support; without a runtime IPv6
@@ -284,3 +288,66 @@ def test_run_concurrently_context_no_interrupt_after_pre_body_failure():
     # The interrupt callback runs within microseconds of the task finishing;
     # a stale interrupt would surface as KeyboardInterrupt in this window.
     time.sleep(0.1)
+
+
+def _finished_process(returncode: int, output: str = "ready\n") -> mock.MagicMock:
+    """Build a Popen stand-in that has already exited with the given code.
+
+    Args:
+        returncode: The exit status the process reports.
+        output: The stdout the process produced before exiting.
+
+    Returns:
+        A mock that satisfies what stream_logs reads from a Popen.
+    """
+    process = mock.MagicMock(spec=subprocess.Popen)
+    process.__enter__.return_value = process
+    process.__exit__.return_value = False
+    process.stdout = iter([output])
+    process.poll.return_value = returncode
+    process.returncode = returncode
+    return process
+
+
+@pytest.mark.parametrize(
+    "returncode",
+    [
+        pytest.param(-signal.SIGINT, id="sigint-direct"),
+        pytest.param(128 + signal.SIGINT, id="sigint-via-shell"),
+        pytest.param(-signal.SIGTERM, id="sigterm-direct"),
+        pytest.param(128 + signal.SIGTERM, id="sigterm-via-shell"),
+    ],
+)
+def test_stream_logs_treats_user_interrupt_as_clean_exit(returncode: int, caplog):
+    """A child torn down by SIGINT or SIGTERM is an orderly stop, not a failure.
+
+    Each signal is reported two ways, negative by Popen and 128+N by a shell
+    wrapper. SIGINT was accepted in both forms; SIGTERM in neither, so a plain
+    `kill -TERM` of `reflex run` logged "Starting frontend failed" and raised
+    SystemExit (#6981).
+
+    Args:
+        returncode: The signal-derived exit status to check.
+        caplog: Pytest log capture.
+    """
+    process = _finished_process(returncode)
+
+    with caplog.at_level(logging.ERROR):
+        lines = list(stream_logs("Starting frontend", process))
+
+    assert lines == ["ready\n"]
+    assert caplog.records == []
+
+
+def test_stream_logs_still_fails_on_a_real_error_exit(caplog):
+    """The relaxed set must not swallow an actual non-zero exit.
+
+    Args:
+        caplog: Pytest log capture.
+    """
+    process = _finished_process(1)
+
+    with caplog.at_level(logging.ERROR), pytest.raises(SystemExit):
+        list(stream_logs("Starting frontend", process))
+
+    assert any("failed with exit code 1" in r.getMessage() for r in caplog.records)
