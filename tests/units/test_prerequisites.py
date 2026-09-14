@@ -1895,13 +1895,7 @@ def test_install_frontend_packages_does_not_fall_back(
 def test_npm_install_drops_stale_bun_lock_instead_of_persisting_both(
     install_packages_env: InstallPackagesEnv, monkeypatch
 ):
-    """Switching to npm must not persist bun.lock beside package-lock.json.
-
-    npm rewrites package.json to caret ranges and writes package-lock.json,
-    so the exact-spec bun.lock next to it is stale. Persisting the trio made
-    the next plain run pick bun (bun.lock exists) and fail
-    ``bun install --frozen-lockfile`` against a package.json it no longer
-    matches (#6976).
+    """Switching to npm removes stale bun lockfiles.
 
     Args:
         install_packages_env: The isolated install environment.
@@ -1915,7 +1909,7 @@ def test_npm_install_drops_stale_bun_lock_instead_of_persisting_both(
     web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
 
     def run_npm(args, **kwargs):
-        # What a real npm install leaves behind in .web.
+        # npm rewrites exact versions to caret ranges.
         web_npm_lock.write_text('{"lockfileVersion": 3}')
         env.web_package_json.write_text('{"dependencies": {"react": "^19.0.0"}}')
 
@@ -1930,14 +1924,13 @@ def test_npm_install_drops_stale_bun_lock_instead_of_persisting_both(
         "stale bun.lock was persisted beside package-lock.json"
     )
     assert not env.web_lock.exists()
-    # The persisted state now says what actually produced it.
     assert implies_npm is True
 
 
 def test_bun_install_drops_stale_npm_lock_instead_of_persisting_both(
     install_packages_env: InstallPackagesEnv, monkeypatch
 ):
-    """The reverse switch, npm back to bun, drops the stale package-lock.json.
+    """Switching to bun removes stale npm lockfiles.
 
     Args:
         install_packages_env: The isolated install environment.
@@ -1971,7 +1964,7 @@ def test_bun_install_drops_stale_npm_lock_instead_of_persisting_both(
 def test_install_keeps_the_running_managers_lockfile_untouched(
     install_packages_env: InstallPackagesEnv, monkeypatch
 ):
-    """Only the other manager's lockfile is dropped; the running one is kept.
+    """Preserve the active manager's lockfile unchanged.
 
     Args:
         install_packages_env: The isolated install environment.
@@ -1997,12 +1990,7 @@ def test_install_keeps_the_running_managers_lockfile_untouched(
 def test_install_drops_nothing_for_a_custom_named_bun_binary(
     install_packages_env: InstallPackagesEnv, monkeypatch
 ):
-    """A bun binary with a custom name must not be mistaken for npm.
-
-    ``bun_path`` is configurable, so the primary manager can be something
-    like ``bun-1.3``. Classifying that as "not bun, therefore npm" would
-    delete the bun.lock the install just produced and keep a stale npm
-    lock. An unrecognised name has to leave both lockfiles alone.
+    """Custom bun executable names leave both lockfiles intact.
 
     Args:
         install_packages_env: The isolated install environment.
@@ -2022,7 +2010,6 @@ def test_install_drops_nothing_for_a_custom_named_bun_binary(
     with chdir(env.tmp_path):
         env.install()
 
-    # The freshly produced bun.lock survives; nothing was deleted on a guess.
     assert env.root_lock.read_text() == "fresh bun lock"
     assert env.web_lock.read_text() == "fresh bun lock"
     assert root_npm_lock.exists()

@@ -804,25 +804,10 @@ def install_frontend_packages(packages: set[str], config: Config):
 
 
 def _drop_lockfile_of_other_package_manager(primary_package_manager: str) -> None:
-    """Remove the lockfile that belongs to the package manager that did not run.
+    """Remove the other manager's lockfile from ``.web`` and ``reflex.lock/``.
 
-    An npm install rewrites ``.web/package.json`` to caret ranges and writes
-    ``package-lock.json``, which leaves the exact-spec ``bun.lock`` beside it
-    stale. Persisting both puts a ``package.json`` in ``reflex.lock/`` that
-    matches one lockfile and not the other; the next run then picks bun
-    because ``bun.lock`` exists, and ``bun install --frozen-lockfile``
-    correctly refuses (#6976). The same holds in reverse for a bun install
-    over a persisted ``package-lock.json``.
-
-    Only the lockfile the other manager owns is touched, in both ``.web``
-    and ``reflex.lock/``, so ``_persisted_lockfile_implies_npm`` reads the
-    manager that actually produced the persisted state.
-
-    The manager is identified by a positive match on its executable name,
-    never by elimination: ``bun_path`` is user-configurable, and a bun
-    binary with a custom name such as ``bun-1.3`` must not be mistaken for
-    npm, since that would delete the lockfile the install just produced.
-    An unrecognised name drops nothing.
+    Stale lockfiles can select the wrong manager or break frozen installs.
+    Preserve both for unknown executable names, including custom bun binaries.
 
     Args:
         primary_package_manager: The package manager that ran the install.
