@@ -18,7 +18,9 @@ from urllib.parse import urlparse
 
 from reflex_base import constants
 from reflex_base.components.component import BaseComponent, Component, ComponentStyle
+from reflex_base.components.dynamic import _bundle_imports
 from reflex_base.components.memo import (
+    DEFAULT_MEMO_WRAPPER,
     MemoComponentDefinition,
     MemoFunctionDefinition,
     MemoParamKind,
@@ -26,7 +28,7 @@ from reflex_base.components.memo import (
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
-from reflex_base.utils import format, imports, memo_paths
+from reflex_base.utils import format, imports, memo_paths, serializers
 from reflex_base.utils.imports import ImportVar, ParsedImportDict
 from reflex_base.vars.base import Field, Var, VarData
 from reflex_base.vars.function import DestructuredArg
@@ -44,6 +46,7 @@ from reflex.utils.prerequisites import get_web_dir
 
 # To re-export this function.
 merge_imports = imports.merge_imports
+write_file = path_ops.write_file
 
 
 def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
@@ -232,6 +235,69 @@ def compile_state(state: type[BaseState]) -> dict:
 
     # Normally the compile runs before any event loop starts, we asyncio.run is available for calling.
     return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
+
+
+def _compile_initial_state(
+    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
+) -> tuple[dict, str]:
+    """Serialize initial state while discovering its dynamic component imports.
+
+    Args:
+        state: The app state class.
+        component_imports: Optional accumulator for frontend package installation.
+
+    Returns:
+        The initial state dictionary and its serialized JSON.
+    """
+
+    def serialize_initial_value(value: Any) -> Any:
+        """Register a component's imports before serializing its initial value.
+
+        Args:
+            value: An initial state value requiring a custom serializer.
+
+        Returns:
+            The serialized value.
+        """
+        if isinstance(value, Component):
+            value_imports = value._get_all_imports()
+            _bundle_imports(value_imports)
+            if component_imports is not None:
+                for library, fields in value_imports.items():
+                    component_imports.setdefault(library, []).extend(fields)
+        return serializers.serialize(value)
+
+    initial_state = compile_state(state)
+    return initial_state, format.json_dumps(
+        initial_state, default=serialize_initial_value
+    )
+
+
+def _compile_bundled_libraries() -> tuple[str, str]:
+    """Return the bundled-library registry as a frontend build artifact.
+
+    Returns:
+        The output path and serialized registry.
+    """
+    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
+    return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
+
+
+def _restore_bundled_libraries() -> None:
+    """Restore the registry emitted by the most recent frontend compile."""
+    path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
+    try:
+        bundled_libraries = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return
+    if not isinstance(bundled_libraries, list) or not all(
+        isinstance(library, str) for library in bundled_libraries
+    ):
+        return
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = list(
+        dict.fromkeys([*bundled_libraries, *context.bundled_libraries])
+    )
 
 
 def _compile_client_storage_field(
@@ -463,6 +529,8 @@ def compile_experimental_component_memo(
                 rest=rest_param.placeholder_name if rest_param is not None else None,
             ).to_javascript(),
             "wrapper": str(wrapper) if wrapper is not None else None,
+            "pure_wrapper": wrapper is not None
+            and wrapper.equals(DEFAULT_MEMO_WRAPPER),
             "render": rendered,
             "hooks": hooks,
             "custom_code": custom_code,
@@ -630,22 +698,26 @@ def create_document_root(
             ):
                 existing_meta_types.add("viewport")
 
+    global_styles_href = Var(
+        "reflexGlobalStyles",
+        _var_data=VarData(
+            imports={
+                "$/styles/__reflex_global_styles.css?url": [
+                    ImportVar(tag="reflexGlobalStyles", is_default=True)
+                ]
+            }
+        ),
+    )
     # Always include the framework meta and link tags.
     always_head_components = [
         ReactMeta.create(),
         Link.create(
+            rel="preload", custom_attrs={"as": "style"}, href=global_styles_href
+        ),
+        Link.create(
             rel="stylesheet",
             type="text/css",
-            href=Var(
-                "reflexGlobalStyles",
-                _var_data=VarData(
-                    imports={
-                        "$/styles/__reflex_global_styles.css?url": [
-                            ImportVar(tag="reflexGlobalStyles", is_default=True)
-                        ]
-                    }
-                ),
-            ),
+            href=global_styles_href,
         ),
         Links.create(),
     ]
@@ -872,28 +944,6 @@ def resolve_path_of_web_dir(path: str | Path) -> Path:
     if path.is_relative_to(web_dir):
         return path.absolute()
     return (web_dir / path).absolute()
-
-
-def write_file(path: str | Path, code: str):
-    """Write the given code to the given path.
-
-    Args:
-        path: The path to write the code to.
-        code: The code to write.
-    """
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.read_text(encoding="utf-8") == code:
-        return
-    # Write atomically so readers never observe a half-written file.
-    # Dot-prefixed so route discovery and file watchers over .web ignore it.
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    try:
-        tmp.write_text(code, encoding="utf-8")
-        tmp.replace(path)
-    finally:
-        if tmp.exists():
-            tmp.unlink(missing_ok=True)
 
 
 _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"

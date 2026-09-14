@@ -7,7 +7,9 @@ import enum
 import importlib
 import logging
 import os
+import re
 from collections.abc import Sequence
+from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -114,6 +116,57 @@ def interpret_float_env(value: str, field_name: str) -> float:
     except ValueError as ve:
         msg = f"Invalid float value: {value!r} for {field_name}"
         raise EnvironmentVarValueError(msg) from ve
+
+
+_TIMEDELTA_UNITS: dict[str, str] = {
+    "us": "microseconds",
+    "ms": "milliseconds",
+    "s": "seconds",
+    "m": "minutes",
+    "h": "hours",
+    "d": "days",
+}
+
+_TIMEDELTA_PATTERN = re.compile(r"([+-]?\d+(?:\.\d+)?)\s*([a-z]*)")
+
+
+def interpret_timedelta_env(value: str, field_name: str) -> timedelta:
+    """Interpret a duration environment variable value.
+
+    A bare number is read as seconds. A unit suffix overrides that: ``us``,
+    ``ms``, ``s``, ``m``, ``h`` and ``d`` are understood, making ``30``, ``30s``,
+    ``500ms`` and ``5m`` all valid.
+
+    Args:
+        value: The environment variable value.
+        field_name: The field name.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        EnvironmentVarValueError: If the value is invalid.
+    """
+    match = _TIMEDELTA_PATTERN.fullmatch(value.strip().lower())
+    keyword = _TIMEDELTA_UNITS.get(match.group(2) or "s") if match else None
+    if match is None or keyword is None:
+        units = ", ".join(_TIMEDELTA_UNITS)
+        msg = (
+            f"Invalid duration value: {value!r} for {field_name}. Expected a "
+            f"number of seconds, optionally suffixed with one of {units}."
+        )
+        raise EnvironmentVarValueError(msg)
+    amount = match.group(1)
+    try:
+        # Only a written fraction goes through float: an integer of microseconds
+        # is exact at any size, where float silently rounds the large ones.
+        return timedelta(**{keyword: float(amount) if "." in amount else int(amount)})
+    except (OverflowError, ValueError) as e:
+        # A value can be well-formed and still be more than a timedelta holds.
+        # OverflowError is not a ValueError, so letting it out would escape the
+        # union fallback in `interpret_env_var_value` as well as this contract.
+        msg = f"Invalid duration value: {value!r} for {field_name} is out of range."
+        raise EnvironmentVarValueError(msg) from e
 
 
 def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
@@ -326,6 +379,8 @@ def interpret_env_var_value(
         return interpret_int_env(value, field_name)
     if field_type is float:
         return interpret_float_env(value, field_name)
+    if field_type is timedelta:
+        return interpret_timedelta_env(value, field_name)
     if field_type is Path:
         if PathExistsFlag in annotated_metadata:
             return interpret_existing_path_env(value, field_name)
@@ -392,6 +447,29 @@ def interpret_env_var_value(
 
 
 T = TypeVar("T")
+
+
+def _serialize_env_value(value: Any) -> str:
+    """Render a value in the form :func:`interpret_env_var_value` reads back.
+
+    Only durations need help: ``str(timedelta)`` is ``0:01:30``, and past a day or
+    below zero it is ``1 day, 0:00:30`` / ``-1 day, 23:58:30``, none of which the
+    interpreter accepts.
+
+    Args:
+        value: The value to render.
+
+    Returns:
+        The rendered value.
+    """
+    if isinstance(value, timedelta):
+        # Not `total_seconds()`: it is a float, which drops microseconds on large
+        # durations and renders small ones in scientific notation.
+        seconds, fraction = divmod(value, timedelta(seconds=1))
+        if not fraction:
+            return f"{seconds}s"
+        return f"{value // timedelta(microseconds=1)}us"
+    return str(value)
 
 
 class EnvVar(Generic[T]):
@@ -466,9 +544,9 @@ class EnvVar(Generic[T]):
             if isinstance(value, enum.Enum):
                 value = value.value
             if isinstance(value, list):
-                str_value = ":".join(str(v) for v in value)
+                str_value = ":".join(_serialize_env_value(v) for v in value)
             else:
-                str_value = str(value)
+                str_value = _serialize_env_value(value)
             os.environ[self.name] = str_value
 
 

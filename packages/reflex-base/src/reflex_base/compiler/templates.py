@@ -173,6 +173,7 @@ def app_root_template(
     render: dict[str, Any],
     dynamic_imports: set[str],
     hydrate_fallback_export: str | None = None,
+    lazy_window_libraries: list[tuple[str, str]] | None = None,
 ):
     """Template for the App root.
 
@@ -184,6 +185,7 @@ def app_root_template(
         render: The dictionary of render functions.
         dynamic_imports: The set of dynamic imports.
         hydrate_fallback_export: The exported name of the hydrate-fallback memo module to re-export as ``HydrateFallback``, or None for no fallback.
+        lazy_window_libraries: Optional libraries loaded before evaluating a dynamic component.
 
     Returns:
         Rendered App root component as string.
@@ -209,6 +211,44 @@ def app_root_template(
         f'    "{lib_path}": {lib_alias},' for lib_alias, lib_path in window_libraries
     ])
 
+    window_imports_effect = f"""useEffect(() => {{
+    // Make contexts and state objects available globally for dynamic eval'd components
+    window.__reflex = {{
+      {window_imports_str}
+    }};
+  }}, []);"""
+    lazy_imports_setup = ""
+    if lazy_window_libraries:
+        loaders = "\n".join(
+            f"    {json.dumps(lib_path)}: () => import({json.dumps(lib_path)}),"
+            for _, lib_path in lazy_window_libraries
+        )
+        # Register before child effects run, including an initially mounted
+        # dynamic component. Optional namespaces stay out of the initial graph.
+        window_imports_effect = ""
+        lazy_imports_setup = f"""
+if (typeof window !== "undefined") {{
+  window.__reflex = {{ ...window.__reflex,
+    {window_imports_str}
+  }};
+  const loaders = {{
+{loaders}
+  }};
+  let pending;
+  window.__reflex_load = () => {{
+    if (!pending) {{
+      pending = Promise.all(Object.entries(loaders).map(async ([name, load]) => {{
+        window.__reflex[name] = await load();
+      }})).catch((error) => {{
+        pending = undefined;
+        throw error;
+      }});
+    }}
+    return pending;
+  }};
+}}
+"""
+
     return f"""
 {imports_str}
 {dynamic_imports_str}
@@ -217,17 +257,12 @@ import {{ ThemeProvider }} from '$/utils/react-theme';
 import {{ Layout as AppLayout }} from './_document';
 import {{ Outlet }} from 'react-router';
 {import_window_libraries}
+{lazy_imports_setup}
 
 {custom_code_str}
 
 function ReflexProviders({{children}}) {{
-  useEffect(() => {{
-    // Make contexts and state objects available globally for dynamic eval'd components
-    let windowImports = {{
-      {window_imports_str}
-    }};
-    window["__reflex"] = windowImports;
-  }}, []);
+  {window_imports_effect}
 
   return jsx(ThemeProvider, {{defaultTheme: defaultColorMode, attribute: "class"}},
     jsx(AppWrap, {{}}, children)
@@ -275,6 +310,7 @@ def context_template(
     is_dev_mode: bool,
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
+    initial_state_json: str | None = None,
     state_name: str | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
@@ -283,6 +319,7 @@ def context_template(
 
     Args:
         initial_state: The initial state for the context.
+        initial_state_json: Initial state JSON already serialized by the compiler.
         state_name: The name of the state.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
@@ -295,6 +332,8 @@ def context_template(
         Rendered context file content as string.
     """
     initial_state = initial_state or {}
+    if initial_state_json is None:
+        initial_state_json = json_dumps(initial_state)
     # Context objects come from the static registry so they survive hot
     # updates of this module; only the lookup table is generated here.
     state_contexts_str = "".join([
@@ -398,7 +437,7 @@ import {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContex
 import {{ jsx }} from "@emotion/react";
 {disable_owner_stacks_str}
 export {{ ColorModeContext, UploadFilesContext, DispatchContext, EventLoopContext }};
-export const initialState = {"{}" if not initial_state else json_dumps(initial_state)}
+export const initialState = {initial_state_json}
 
 export const defaultColorMode = {default_color_mode}
 export const StateContexts = {{{state_contexts_str}}};
@@ -941,6 +980,16 @@ def _render_memo_component(component: dict[str, Any]) -> str:
     # which is the layer that knows the memo's clean export name — the JS symbol
     # here carries a module hash and would make a poor label.
     display_name = json.dumps(component["display_name"])
+    if component.get("pure_wrapper"):
+        # Keep the label assignment inside the pure initializer, so bundlers
+        # can remove the entire unused export from a shared component module.
+        return (
+            f"\nexport const {name} = /*#__PURE__*/ (() => {{\n"
+            f"const {name} = {export_expr};\n"
+            f"{name}.displayName = {display_name};\n"
+            f"return {name};\n"
+            "})();\n"
+        )
     return (
         f"\nexport const {name} = {export_expr};\n"
         f"{name}.displayName = {display_name};\n"

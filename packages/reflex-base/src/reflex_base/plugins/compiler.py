@@ -937,7 +937,11 @@ class CompileContext(BaseContext):
         self.pages = pages
         self.compiled_pages = {page.route: compiled[page.route] for page in pages}
         self.all_imports = merge_imports(self.all_imports, other.all_imports)
-        self.app_wrap_components.update(other.app_wrap_components)
+        self.app_wrap_components = {}
+        for page in pages:
+            self.app_wrap_components.update(
+                self.compiled_pages[page.route].app_wrap_components
+            )
         self.stateful_routes.update(other.stateful_routes)
         self.memoize_wrappers.update(other.memoize_wrappers)
         self.auto_memo_components.update(other.auto_memo_components)

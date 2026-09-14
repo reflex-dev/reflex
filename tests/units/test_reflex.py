@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 
+import click
 import click.testing
 import pytest
 
@@ -120,6 +121,30 @@ print(json.dumps({{"exit_code": result.exit_code, "loaded": loaded}}))
 
     assert outcome["exit_code"] == 0
     assert outcome["loaded"] == []
+
+
+def test_backend_launcher_does_not_import_compiler_or_state() -> None:
+    """The backend supervisor must not load the worker's compiler and state."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import sys
+from reflex import reflex
+from reflex.istate.manager import reset_disk_state_manager
+from reflex.utils import build, exec, telemetry
+
+unexpected = {"reflex.state", "reflex.compiler.utils", "sqlalchemy"} & sys.modules.keys()
+assert not unexpected, unexpected
+""",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_cloud_commands_registered():
@@ -351,6 +376,7 @@ def test_dev_daemon_does_not_disable_backend_fallback(monkeypatch, mocker):
     """The daemon owns compilation only while its process remains alive."""
     import contextlib
 
+    from reflex_base import constants
     from reflex_base.environment import environment
 
     from reflex.utils import build, compile_daemon, processes, telemetry
@@ -364,7 +390,7 @@ def test_dev_daemon_does_not_disable_backend_fallback(monkeypatch, mocker):
     concurrent = mocker.patch.object(
         processes, "run_concurrently_context", return_value=contextlib.nullcontext()
     )
-    reflex._run_dev(reflex.constants.RunningMode.FRONTEND_ONLY, None, None, "localhost")
+    reflex._run_dev(constants.RunningMode.FRONTEND_ONLY, None, None, "localhost")
     compiled.assert_called_once()
     assert not environment.REFLEX_SKIP_COMPILE.get()
     commands = concurrent.call_args.args

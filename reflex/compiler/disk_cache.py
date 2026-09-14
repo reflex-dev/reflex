@@ -1138,7 +1138,7 @@ def try_incremental_rebuild(
                 or page_ctx.output_path is None
             ):
                 _log_fallback(f"page {page.route!r} produced no output")
-                return miss_ctx
+                return False
             entry = manifest["pages"][page.route]
             if (
                 _wrap_key_strs(page_ctx.app_wrap_components.keys())
@@ -1166,7 +1166,7 @@ def try_incremental_rebuild(
                 output_code = page_ctx.output_code
                 if output_path is None or output_code is None:
                     _log_fallback(f"page {page.route!r} lost its output before write")
-                    return miss_ctx
+                    return False
                 _save_incremental_output(output_path, output_code, outputs)
                 memo_contributions.update(page_ctx.memo_contributions)
                 miss_imports.append(page_ctx.frontend_imports)

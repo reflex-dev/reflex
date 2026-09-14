@@ -32,11 +32,15 @@ from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
-from reflex_base.registry import RegistrationContext
-from reflex_base.utils import log, memo_paths
+from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.utils import format, log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
-from reflex_base.utils.imports import ABSOLUTE_IMPORT_PREFIXES, ImportVar
+from reflex_base.utils.imports import (
+    ABSOLUTE_IMPORT_PREFIXES,
+    ImportVar,
+    ParsedImportDict,
+)
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
@@ -148,7 +152,36 @@ def _normalize_library_name(lib: str) -> str:
     """
     if lib == "react":
         return "React"
-    return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
+    return (
+        lib
+        .replace("$/", "")
+        .replace("@", "")
+        .replace("/", "_")
+        .replace("-", "_")
+        .replace(".", "_")
+    )
+
+
+def _get_window_libraries() -> list[tuple[str, str]]:
+    """Build distinct JavaScript aliases for bundled libraries and subpaths.
+
+    Returns:
+        Library aliases paired with their original module paths.
+    """
+    used_aliases: set[str] = set()
+    window_libraries: list[tuple[str, str]] = []
+    for library in dict.fromkeys(
+        RegistrationContext.ensure_context().bundled_libraries
+    ):
+        base_alias = _normalize_library_name(library)
+        alias = base_alias
+        suffix = 2
+        while alias in used_aliases:
+            alias = f"{base_alias}_{suffix}"
+            suffix += 1
+        used_aliases.add(alias)
+        window_libraries.append((alias, library))
+    return window_libraries
 
 
 def _compile_app(
@@ -164,12 +197,16 @@ def _compile_app(
     Returns:
         The compiled app.
     """
-    window_libraries = [
-        (_normalize_library_name(name), name)
-        for name in RegistrationContext.ensure_context().bundled_libraries
-    ]
-
-    window_libraries_deduped = list(dict.fromkeys(window_libraries))
+    window_libraries = _get_window_libraries()
+    lazy_window_libraries = []
+    if get_config().frontend_lazy_bundled_libraries:
+        core_libraries = set(_default_bundled_libraries())
+        lazy_window_libraries = [
+            library for library in window_libraries if library[1] not in core_libraries
+        ]
+        window_libraries = [
+            library for library in window_libraries if library[1] in core_libraries
+        ]
 
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
@@ -178,7 +215,8 @@ def _compile_app(
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries_deduped,
+        window_libraries=window_libraries,
+        lazy_window_libraries=lazy_window_libraries,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
         hydrate_fallback_export=hydrate_fallback_export,
@@ -225,6 +263,8 @@ def _compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
     extra_state: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
+    *,
+    component_imports: ParsedImportDict | None = None,
 ) -> str:
     """Compile the initial state and contexts.
 
@@ -234,6 +274,7 @@ def _compile_contexts(
         extra_state: ``(initial_state, client_storage)`` entries for states that
             are not in this process's state tree (states only registered while
             a page evaluates, restored from the compile cache manifest).
+        component_imports: Optional accumulator for initial component dependencies.
 
     Returns:
         The compiled context file.
@@ -242,21 +283,29 @@ def _compile_contexts(
     disable_react_owner_stacks = (
         not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
     )
-    if not state:
+    initial_state, initial_state_json = (
+        utils._compile_initial_state(state, component_imports=component_imports)
+        if state
+        else (None, None)
+    )
+    if state is None:
         return templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
         )
-    initial_state = utils.compile_state(state)
+    assert initial_state is not None
+    assert initial_state_json is not None
     client_storage = utils.compile_client_storage(state)
     if extra_state is not None:
         extra_initial, extra_storage = extra_state
         initial_state = dict(sorted({**initial_state, **extra_initial}.items()))
+        initial_state_json = format.json_dumps(initial_state)
         for kind, entries in extra_storage.items():
             client_storage.setdefault(kind, {}).update(entries)
     return templates.context_template(
         initial_state=initial_state,
+        initial_state_json=initial_state_json,
         state_name=state.get_name(),
         client_storage=client_storage,
         is_dev_mode=not is_prod_mode(),
@@ -742,6 +791,8 @@ def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
     extra_state: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
+    *,
+    component_imports: ParsedImportDict | None = None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
@@ -749,6 +800,7 @@ def compile_contexts(
         state: The app state.
         theme: The top-level app theme.
         extra_state: See :func:`_compile_contexts`.
+        component_imports: Optional accumulator for initial component dependencies.
 
     Returns:
         The path and code of the compiled context.
@@ -756,7 +808,12 @@ def compile_contexts(
     # Get the path for the output file.
     output_path = utils.get_context_path()
 
-    return output_path, _compile_contexts(state, theme, extra_state)
+    return output_path, _compile_contexts(
+        state,
+        theme,
+        extra_state,
+        component_imports=component_imports,
+    )
 
 
 def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
@@ -1308,7 +1365,10 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+    from reflex_base.components.dynamic import (
+        _bundle_library,
+        _reset_bundled_libraries_for_compile,
+    )
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
@@ -1333,6 +1393,9 @@ def compile_app(
             for route in stateful_pages:
                 logger.debug(f"BE Evaluating stateful page: {route}")
                 app._compile_page(route, save_page=False)
+        if app._state is not None:
+            utils._restore_bundled_libraries()
+            utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
 
@@ -1351,6 +1414,9 @@ def compile_app(
                 app._compile_page(route, save_page=False)
 
         app._write_stateful_pages_marker()
+        if app._state is not None:
+            utils._restore_bundled_libraries()
+            utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
 
@@ -1364,7 +1430,6 @@ def compile_app(
         app,
         config.plugins,
     )
-
     # Experimental incremental compile cache: in a fresh process, recompile only
     # the pages whose source changed and reuse the rest from the on-disk
     # manifest. Falls back to a full compile on any unsafe condition; pages the
@@ -1427,14 +1492,14 @@ def compile_app(
     all_pages = list(app._unevaluated_pages.values())
     if evaluated is None:
         pages_to_compile = all_pages
-        reset_bundled_libraries()
+        _reset_bundled_libraries_for_compile()
         # Drop cached memo wrapper classes so each compile recomputes a memo's
         # ``library`` from the current module layout (handles a module flipping
         # to a package across hot reloads).
         reset_memo_component_classes()
         for plugin in compiler_plugins:
             for dependency in plugin.get_frontend_dependencies():
-                bundle_library(dependency)
+                _bundle_library(dependency)
     else:
         # The incremental attempt already did the resets above and bundled what
         # its pages registered; only the pages it never touched remain.
@@ -1594,9 +1659,14 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
-    compile_results.append(
-        compile_contexts(app._state, radix_themes_plugin.get_theme())
-    )
+    compile_results.extend([
+        compile_contexts(
+            app._state,
+            radix_themes_plugin.get_theme(),
+            component_imports=all_imports,
+        ),
+        utils._compile_bundled_libraries(),
+    ])
     progress.advance(task)
 
     compile_results.append(compile_app_root(app_root, hydrate_fallback_export))

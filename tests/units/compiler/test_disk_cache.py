@@ -13,7 +13,7 @@ from typing import Any, cast
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.environment import environment
-from reflex_base.plugins import CompileContext, CompilerHooks
+from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.utils.imports import ImportVar
 
 import reflex as rx
@@ -300,6 +300,7 @@ def test_globals_mismatch_names_a_compile_mode_change(tmp_path, monkeypatch):
     Rendered files differ by mode (e.g. ``isDevMode`` in the contexts file), so
     the mode is part of the cache identity.
     """
+    monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
     m = _manifest({"/a": {}})
     assert (
         disk_cache.globals_mismatch(
@@ -396,8 +397,83 @@ def test_partition_pages_detects_changed_source(tmp_path):
     assert {p.route for p in miss} == {"/b"}
 
 
+def test_incomplete_cache_miss_falls_back_without_adoption(tmp_path, monkeypatch):
+    """A miss without page output must be compiled again by the full path."""
+    _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_a, route="/a")
+    pages = list(app._unevaluated_pages.values())
+    route = next(page.route for page in pages if page.component is _page_a)
+    ctx = _compile(pages, app)
+    disk_cache.write_manifest(ctx, pages, ctx.all_imports, root=tmp_path)
+    _stub_externals(app, monkeypatch)
+
+    manifest_path = disk_cache._manifest_path()
+    manifest = json.loads(manifest_path.read_text())
+    _stale_dep(manifest, route, str(tmp_path / "changed.py"))
+    manifest_path.write_text(json.dumps(manifest))
+
+    original_compile = CompileContext.compile
+
+    def compile_without_output(self, **kwargs):
+        """Simulate a page that evaluates but cannot produce frontend output.
+
+        Returns:
+            The contexts produced before their output is removed.
+        """
+        result = original_compile(self, **kwargs)
+        for page_ctx in self.compiled_pages.values():
+            page_ctx.output_code = None
+        return result
+
+    monkeypatch.setattr(CompileContext, "compile", compile_without_output)
+
+    assert (
+        disk_cache.try_incremental_rebuild(
+            app, compiler_plugins=[], prerender_routes=False, root=tmp_path
+        )
+        is False
+    )
+
+
+def test_absorb_preserves_page_order_for_app_wraps():
+    """A later reused page must override an earlier recompiled page's wrap."""
+    first = _FakePage(route="/first", component=_page_a)
+    second = _FakePage(route="/second", component=_page_b)
+    key = (1, "shared")
+    first_wrap = rx.box("first")
+    second_wrap = rx.box("second")
+    first_ctx = PageContext(
+        name="first",
+        route=first.route,
+        root_component=rx.box(),
+        app_wrap_components={key: first_wrap},
+    )
+    second_ctx = PageContext(
+        name="second",
+        route=second.route,
+        root_component=rx.box(),
+        app_wrap_components={key: second_wrap},
+    )
+    reused = CompileContext(
+        pages=[second],
+        compiled_pages={second.route: second_ctx},
+        app_wrap_components={key: second_wrap},
+    )
+    recompiled = CompileContext(
+        pages=[first],
+        compiled_pages={first.route: first_ctx},
+        app_wrap_components={key: first_wrap},
+    )
+
+    reused.absorb(recompiled, [first, second])
+
+    assert reused.app_wrap_components[key] is second_wrap
+
+
 def test_write_and_load_manifest(tmp_path, monkeypatch):
     _use_tmp_web_dir(tmp_path, monkeypatch)
+    monkeypatch.setenv("REFLEX_ENV_MODE", "dev")
 
     pages = [
         _FakePage(route="/a", component=_page_a),

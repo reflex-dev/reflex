@@ -43,7 +43,12 @@ from reflex_docgen.markdown.transformer import DocumentTransformer
 import reflex as rx
 from reflex_site_shared.components.blocks.code import code_block
 from reflex_site_shared.components.blocks.collapsible import collapsible_box
-from reflex_site_shared.components.blocks.demo import docdemo, docdemobox, docgraphing
+from reflex_site_shared.components.blocks.demo import (
+    DeferredDemo,
+    docdemo,
+    docdemobox,
+    docgraphing,
+)
 from reflex_site_shared.components.blocks.headings import (
     h1_comp_xd,
     h2_comp_xd,
@@ -458,6 +463,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 f"While rendering demo block in {self.virtual_filepath}:\n{content[:200]}",
             )
             raise
+
+        if "defer" in flags:
+            comp = DeferredDemo.create(comp)
 
         demobox_props: dict = {}
         for flag in flags:

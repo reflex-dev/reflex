@@ -91,7 +91,7 @@ def template(page: Callable[[], rx.Component]) -> rx.Component:
     )
 ```
 
-The `@template` decorator should appear below the `@rx.page` decorator and above the page-returning function. See the [Posts Page](#a-post-page-example_big_apppagespostspy) code for an example.
+The `@template` decorator should appear below the `@rx.page` decorator and above the page-returning function. See the [Posts Page](#a-post-page:-example_big_app/pages/posts.py) code for an example.
 
 ## State Management
 
