@@ -119,6 +119,7 @@ def interpret_float_env(value: str, field_name: str) -> float:
 
 
 _TIMEDELTA_UNITS: dict[str, str] = {
+    "us": "microseconds",
     "ms": "milliseconds",
     "s": "seconds",
     "m": "minutes",
@@ -134,8 +135,8 @@ def interpret_timedelta_env(value: str, field_name: str) -> timedelta:
 
     A bare number is read as seconds, so an existing integer setting keeps
     working when its type becomes a duration. A unit suffix overrides that:
-    ``ms``, ``s``, ``m``, ``h`` and ``d`` are understood, making ``30``, ``30s``,
-    ``500ms`` and ``5m`` all valid.
+    ``us``, ``ms``, ``s``, ``m``, ``h`` and ``d`` are understood, making ``30``,
+    ``30s``, ``500ms`` and ``5m`` all valid.
 
     Args:
         value: The environment variable value.
@@ -156,8 +157,11 @@ def interpret_timedelta_env(value: str, field_name: str) -> timedelta:
             f"number of seconds, optionally suffixed with one of {units}."
         )
         raise EnvironmentVarValueError(msg)
+    amount = match.group(1)
     try:
-        return timedelta(**{keyword: float(match.group(1))})
+        # Only a written fraction goes through float: an integer of microseconds
+        # is exact at any size, where float silently rounds the large ones.
+        return timedelta(**{keyword: float(amount) if "." in amount else int(amount)})
     except (OverflowError, ValueError) as e:
         # A value can be well-formed and still be more than a timedelta holds.
         # OverflowError is not a ValueError, so letting it out would escape the
@@ -460,7 +464,11 @@ def _serialize_env_value(value: Any) -> str:
         The rendered value.
     """
     if isinstance(value, timedelta):
-        return str(value.total_seconds())
+        # Not `total_seconds()`: it is a float, which drops microseconds on large
+        # durations and renders small ones in scientific notation.
+        microseconds = value // timedelta(microseconds=1)
+        seconds, fraction = divmod(microseconds, 1_000_000)
+        return f"{seconds}s" if fraction == 0 else f"{microseconds}us"
     return str(value)
 
 

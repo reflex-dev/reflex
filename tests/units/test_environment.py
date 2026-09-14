@@ -677,6 +677,8 @@ def cleanup_env_vars():
         "BOOLEAN",
         "LIST",
         "__INTERNAL_VAR",
+        # `EnvVar.set` writes `os.environ` directly, so monkeypatch never sees it
+        "TEST_TIMEOUT_ROUNDTRIP",
     ]
 
     yield
@@ -776,6 +778,13 @@ def test_timedelta_env_var_round_trips_through_set(
         timedelta(minutes=1, seconds=30),
         timedelta(days=1, seconds=30),
         timedelta(seconds=-90),
+        # sub-second and boundary values are where a float round trip loses the
+        # microseconds or rounds past what a timedelta holds
+        timedelta(microseconds=1),
+        timedelta(seconds=90, microseconds=500000),
+        timedelta(days=999999998, microseconds=1),
+        timedelta.max,
+        timedelta.min,
     ):
         # `EnvVar` binds its type var to the class object, so a value argument
         # never matches - the same quirk the other `set` tests here work around.
