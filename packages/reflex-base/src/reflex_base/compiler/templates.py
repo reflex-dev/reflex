@@ -334,7 +334,6 @@ def context_template(
     default_color_mode: str,
     initial_state: dict[str, Any] | None = None,
     initial_state_json: str | None = None,
-    state_name: str | None = None,
     internal_events: InternalEventNames | None = None,
     client_storage: dict[str, dict[str, dict[str, Any]]] | None = None,
     disable_react_owner_stacks: bool = False,
@@ -345,8 +344,7 @@ def context_template(
     Args:
         initial_state: The initial state for the context.
         initial_state_json: Initial state JSON already serialized by the compiler.
-        state_name: The name of the state.
-        internal_events: Resolved framework event names; required with ``state_name``.
+        internal_events: Resolved framework event names; given for a stateful app.
         client_storage: The client storage for the context.
         is_dev_mode: Whether the app is in development mode.
         default_color_mode: The default color mode for the context.
@@ -358,14 +356,7 @@ def context_template(
 
     Returns:
         Rendered context file content as string.
-
-    Raises:
-        ValueError: If ``state_name`` is given without ``internal_events``.
     """
-    if state_name is not None and internal_events is None:
-        msg = "internal_events is required when state_name is given"
-        raise ValueError(msg)
-
     initial_state = initial_state or {}
     if initial_state_json is None:
         initial_state_json = json_dumps(initial_state)
@@ -378,8 +369,6 @@ def context_template(
 
     state_str = (
         rf"""
-export const state_name = "{state_name}"
-
 export const main_state_name = "{internal_events.main_state_name}"
 
 export const update_vars_internal = "{internal_events.update_vars_internal}"
@@ -415,10 +404,8 @@ export const initialEvents = () => [
     ...onLoadInternalEvent()
 ]
     """
-        if state_name and internal_events
+        if internal_events
         else """
-export const state_name = undefined
-
 export const main_state_name = undefined
 
 export const update_vars_internal = undefined
@@ -499,7 +486,6 @@ export const schemeDigest = {json.dumps(scheme_digest)};
 registerApp({{
   initialState,
   clientStorage,
-  state_name,
   main_state_name,
   update_vars_internal,
   handle_frontend_exception,

@@ -15,6 +15,7 @@ def stub_resolver(
     state_name: str | None = None,
     target: type[BaseState] = State,
     handler_prefix: str | None = None,
+    digest: str = "",
 ) -> NameResolver:
     """Build a tiny one-off :class:`NameResolver`.
 
@@ -22,6 +23,7 @@ def stub_resolver(
         state_name: Override returned for ``target`` (else ``None``).
         target: Which state class the override scopes to.
         handler_prefix: When set, prefixes every handler name.
+        digest: The scheme digest this resolver reports.
 
     Returns:
         A resolver with the requested behavior.
@@ -33,6 +35,9 @@ def stub_resolver(
 
         def resolve_handler_name(self, state_cls, handler_name):
             return f"{handler_prefix}{handler_name}" if handler_prefix else None
+
+        def digest(self):
+            return digest
 
     return _Stub()
 

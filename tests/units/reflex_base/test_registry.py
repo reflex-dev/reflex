@@ -5,9 +5,16 @@ from textwrap import dedent
 
 import pytest
 from reflex_base.config import Config, get_config, reload_config
-from reflex_base.registry import RegisteredEventHandler, RegistrationContext
+from reflex_base.registry import (
+    DefaultNameResolver,
+    NameResolver,
+    RegisteredEventHandler,
+    RegistrationContext,
+)
 from reflex_base.utils.exceptions import ReflexRuntimeError, StateValueError
 
+from reflex.minify import MinifyNameResolver
+from reflex.state import BaseState, State
 from reflex.testing import chdir
 from tests.units.name_resolvers import stub_resolver, temporary_resolver
 
@@ -59,7 +66,6 @@ def test_register_base_state(clean_registration_context: RegistrationContext):
     Args:
         clean_registration_context: A fresh, empty registration context.
     """
-    from reflex.state import BaseState
 
     class AutoRegistered(BaseState):
         x: int = 0
@@ -73,7 +79,6 @@ def test_duplicate_substate_raises(clean_registration_context: RegistrationConte
     Args:
         clean_registration_context: A fresh, empty registration context.
     """
-    from reflex.state import BaseState
 
     class DupParent(BaseState):
         pass
@@ -91,7 +96,6 @@ def test_get_substates(clean_registration_context: RegistrationContext):
     Args:
         clean_registration_context: A fresh, empty registration context.
     """
-    from reflex.state import BaseState
 
     class GetSubRoot(BaseState):
         pass
@@ -113,7 +117,6 @@ def test_get_substates_by_name(clean_registration_context: RegistrationContext):
     Args:
         clean_registration_context: A fresh, empty registration context.
     """
-    from reflex.state import BaseState
 
     class NamedState(BaseState):
         pass
@@ -369,7 +372,6 @@ def test_fork_clears_app_and_preserves_registrations(
     """
     import reflex as rx
     from reflex.event import EventHandler
-    from reflex.state import BaseState
 
     class ForkState(BaseState):
         x: int = 0
@@ -473,3 +475,94 @@ def test_find_unbound_states_skips_states_without_own_vars(
         unbound = clean_registration_context.find_unbound_states()
 
     assert all(cls is not NoVarsState for cls, _ in unbound)
+
+
+def test_default_resolver_returns_none():
+    """The default resolver yields no overrides."""
+    resolver = DefaultNameResolver()
+    assert resolver.resolve_state_name(State) is None
+    assert resolver.resolve_handler_name(State, "any_handler") is None
+
+
+def test_default_resolver_satisfies_protocol():
+    """``DefaultNameResolver`` is a structural :class:`NameResolver`."""
+    assert isinstance(DefaultNameResolver(), NameResolver)
+
+
+def test_minify_resolver_satisfies_protocol():
+    """``MinifyNameResolver`` is a structural :class:`NameResolver`."""
+    resolver = MinifyNameResolver(
+        config=None, states_enabled=False, events_enabled=False
+    )
+    assert isinstance(resolver, NameResolver)
+
+
+def test_get_state_name_falls_back_to_default():
+    """``RegistrationContext.get_state_name`` returns the built-in name when
+    the resolver returns None (the default).
+    """
+    ctx = RegistrationContext.get()
+    assert ctx.get_state_name(State) == RegistrationContext.default_state_name(State)
+
+
+def test_get_handler_name_falls_back_to_default():
+    """``RegistrationContext.get_handler_name`` returns the input name when
+    the resolver returns None (the default).
+    """
+    ctx = RegistrationContext.get()
+    assert ctx.get_handler_name(State, "some_handler") == "some_handler"
+
+
+def test_set_name_resolver_propagates_through_get_name():
+    """A custom resolver swaps ``BaseState.get_name`` for the targeted class."""
+    with temporary_resolver(stub_resolver(state_name="fixed_name")):
+        assert State.get_name() == "fixed_name"
+
+
+def test_set_name_resolver_propagates_through_format_event_handler():
+    """A custom resolver swaps the formatted handler name."""
+    from reflex.state import OnLoadInternalState
+    from reflex.utils.format import format_event_handler
+
+    with temporary_resolver(stub_resolver(handler_prefix="px_")):
+        formatted = format_event_handler(OnLoadInternalState.on_load_internal)  # pyright: ignore[reportArgumentType]
+        assert formatted.endswith(".px_on_load_internal")
+
+
+def test_resolver_swap_clears_lru_caches():
+    """``set_name_resolver`` invalidates per-class name caches immediately."""
+    with temporary_resolver(stub_resolver(state_name="first")) as ctx:
+        assert State.get_full_name() == "first"
+        ctx.set_name_resolver(stub_resolver(state_name="second"))
+        assert State.get_full_name() == "second"
+
+
+def test_chain_of_resolvers():
+    """Resolvers compose with a tiny user-written chain wrapper."""
+
+    class Chain:
+        """Returns the first non-None override from the wrapped resolvers."""
+
+        def __init__(self, *resolvers):
+            self.resolvers = resolvers
+
+        def resolve_state_name(self, state_cls):
+            for r in self.resolvers:
+                v = r.resolve_state_name(state_cls)
+                if v is not None:
+                    return v
+            return None
+
+        def resolve_handler_name(self, state_cls, handler_name):
+            for r in self.resolvers:
+                v = r.resolve_handler_name(state_cls, handler_name)
+                if v is not None:
+                    return v
+            return None
+
+        def digest(self):
+            return "".join(r.digest() for r in self.resolvers)
+
+    chain = Chain(stub_resolver(state_name="from_first"), DefaultNameResolver())
+    with temporary_resolver(chain):
+        assert State.get_name() == "from_first"

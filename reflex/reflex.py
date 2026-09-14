@@ -1054,8 +1054,19 @@ def rename(new_name: str):
 
 # Minify command group
 @cli.group()
-def minify():
-    """Manage state and event name minification."""
+@click.pass_context
+def minify(ctx: click.Context):
+    """Manage state and event name minification.
+
+    Args:
+        ctx: The click context, used to scope the forced default names.
+    """
+    from reflex.minify import force_default_names
+
+    # These commands read minify.json rather than apply it; with the configured
+    # names live, a duplicate id aborts the app import before they can report
+    # it. Must happen here, before a subcommand body imports reflex.state.
+    ctx.with_resource(force_default_names())
 
 
 def _load_app_for_minify() -> None:
@@ -1182,7 +1193,10 @@ def minify_init():
 @click.option(
     "--prune",
     is_flag=True,
-    help="Remove entries for states/events that no longer exist in code.",
+    help=(
+        "Remove entries for states/events that no longer exist in code, "
+        "freeing their IDs (potentially breaking for existing clients)."
+    ),
 )
 def minify_sync(reassign_deleted: bool, prune: bool):
     """Synchronize minify.json with the current codebase.
@@ -1386,8 +1400,8 @@ def minify_lookup(output_json: bool, minified_path: str):
     segment may also be an event handler id of the state resolved so far, so
     an event name copied from the frontend resolves to its handler. States and
     events minify independently, so every segment also matches its unminified
-    name. The root state's own name is optional, so both 'a.bU' and the full
-    name seen in the frontend ('reflex___state____state.a.bU') resolve the
+    name. The root state's own name is optional and may be given either way,
+    so 'a.bU', 'a.a.bU' and 'reflex___state____state.a.bU' all resolve the
     same way.
     """
     from reflex_base.registry import RegistrationContext
@@ -1407,7 +1421,13 @@ def minify_lookup(output_json: bool, minified_path: str):
     parts = minified_path.split(".")
     # Accept a path copied verbatim from the frontend, which leads with the
     # root state's own name; the lookup below walks from the root's children.
-    if parts[0] == State.get_name():
+    # Both spellings are accepted so the result never depends on whether the
+    # shell running the CLI has REFLEX_MINIFY_STATES set.
+    root_names = {
+        RegistrationContext.default_state_name(State),
+        path_to_id[get_state_full_path(State)],
+    }
+    if parts[0] in root_names:
         parts = parts[1:]
 
     result_parts: list[dict[str, str]] = []

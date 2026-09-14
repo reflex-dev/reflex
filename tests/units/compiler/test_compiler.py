@@ -1643,7 +1643,6 @@ def test_context_template_renders_internal_event_names():
         is_dev_mode=True,
         default_color_mode='"light"',
         initial_state={"reflex___state____state": {}},
-        state_name="reflex___state____state",
         internal_events=InternalEventNames(
             main_state_name="reflex___state____state",
             hydrate="reflex___state____state.g",
@@ -1664,6 +1663,9 @@ def test_context_template_renders_internal_event_names():
         "handle_frontend_exception",
     ):
         assert f"  {name},\n" in registered
+    # One name for the framework root; a second export would drift from it.
+    assert "export const state_name" not in rendered
+    assert "  state_name,\n" not in registered
 
 
 def test_context_template_carries_the_scheme_digest():
@@ -1680,18 +1682,6 @@ def test_context_template_carries_the_scheme_digest():
     # The static runtime reads it through the registry to send it on connect.
     registered = rendered[rendered.index("registerApp({") :]
     assert "  schemeDigest,\n" in registered
-
-
-def test_context_template_requires_internal_events_with_state():
-    """A stateful context without resolved framework event names is refused."""
-    from reflex_base.compiler.templates import context_template
-
-    with pytest.raises(ValueError, match="internal_events"):
-        context_template(
-            is_dev_mode=True,
-            default_color_mode='"light"',
-            state_name="reflex___state____state",
-        )
 
 
 def test_context_template_client_side_component_is_named():

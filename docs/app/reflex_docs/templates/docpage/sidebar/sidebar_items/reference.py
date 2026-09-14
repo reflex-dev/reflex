@@ -21,6 +21,7 @@ def get_sidebar_items_api_reference():
                 *apiref.pages,
                 api_reference.var_system,
                 api_reference.cli,
+                api_reference.minification,
                 api_reference.event_triggers,
                 api_reference.special_events,
                 api_reference.browser_storage,

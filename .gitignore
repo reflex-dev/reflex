@@ -27,7 +27,6 @@ node_modules
 package-lock.json
 *.pyi
 .pre-commit-config.yaml
-uploaded_files/*
 .claude/.worktrees
 .claude/settings.local.json
 CLAUDE.local.md

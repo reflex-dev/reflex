@@ -2,19 +2,20 @@
 
 The minification entry point is :class:`MinifyNameResolver`, a
 :class:`reflex_base.registry.NameResolver` implementation. Install it via
-:func:`install_minify_resolver` (called automatically by
-:func:`reflex.utils.prerequisites.get_compiled_app` and
-:func:`clear_config_cache`).
+:func:`install_minify_resolver`; :func:`ensure_minify_resolver_for_active_context`
+runs it from :mod:`reflex.state` at import time and from
+:func:`reflex.utils.prerequisites.get_app`.
 """
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import functools
 import hashlib
 import json
 import logging
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
@@ -28,6 +29,9 @@ MINIFY_JSON = "minify.json"
 
 # Current schema version
 SCHEMA_VERSION = 1
+
+# Names listed in the stale-config warning before it summarizes the rest.
+_STALE_WARNING_LIMIT = 5
 
 
 class StateEntry(TypedDict):
@@ -161,12 +165,12 @@ def is_mode_enabled(env_var_name: str) -> bool:
             :class:`~reflex.environment.EnvironmentVariables`.
 
     Returns:
-        ``True`` if the env var is ``ENABLED`` and ``minify.json`` exists.
+        ``True`` if the env var is set and ``minify.json`` exists.
     """
-    from reflex.environment import MinifyMode, environment
+    from reflex.environment import environment
 
     env_var = getattr(environment, env_var_name)
-    return env_var.get() == MinifyMode.ENABLED and get_minify_config() is not None
+    return bool(env_var.get()) and get_minify_config() is not None
 
 
 def is_minify_enabled() -> bool:
@@ -272,7 +276,7 @@ class MinifyNameResolver:
         Returns:
             A configured resolver.
         """
-        from reflex.environment import MinifyMode, environment
+        from reflex.environment import environment
 
         try:
             config = _load_minify_config_uncached()
@@ -283,8 +287,8 @@ class MinifyNameResolver:
             config = None
         return cls(
             config=config,
-            states_enabled=environment.REFLEX_MINIFY_STATES.get() == MinifyMode.ENABLED,
-            events_enabled=environment.REFLEX_MINIFY_EVENTS.get() == MinifyMode.ENABLED,
+            states_enabled=environment.REFLEX_MINIFY_STATES.get(),
+            events_enabled=environment.REFLEX_MINIFY_EVENTS.get(),
         )
 
     def resolve_state_name(self, state_cls: type[BaseState]) -> str | None:  # noqa: D102
@@ -344,6 +348,38 @@ def install_minify_resolver() -> None:
     ctx.set_name_resolver(MinifyNameResolver.from_disk())
 
 
+# Set by :func:`force_default_names`; keeps the ensure-hook from reinstalling.
+_default_names_forced = False
+
+
+@contextlib.contextmanager
+def force_default_names() -> Iterator[None]:
+    """Pin the block to built-in names, ignoring ``minify.json``.
+
+    The ``reflex minify`` commands read the config rather than apply it: with
+    the configured names live, a duplicate id aborts the app import from
+    ``BaseState.__init_subclass__`` before the command can report it. Must be
+    entered before ``reflex.state`` is imported, since a state's name is
+    captured into its Vars at class-creation time.
+
+    Yields:
+        ``None``, with the default resolver installed.
+    """
+    global _default_names_forced
+    from reflex_base.registry import DefaultNameResolver, RegistrationContext
+
+    ctx = RegistrationContext.ensure_context()
+    previous_resolver = ctx.name_resolver
+    previous_forced = _default_names_forced
+    _default_names_forced = True
+    ctx.set_name_resolver(DefaultNameResolver())
+    try:
+        yield
+    finally:
+        _default_names_forced = previous_forced
+        ctx.set_name_resolver(previous_resolver)
+
+
 def ensure_minify_resolver_for_active_context() -> None:
     """Install a :class:`MinifyNameResolver` if one isn't already in place.
 
@@ -355,7 +391,7 @@ def ensure_minify_resolver_for_active_context() -> None:
     """
     from reflex_base.registry import RegistrationContext
 
-    if not _get_minify_json_path().exists():
+    if _default_names_forced or not _get_minify_json_path().exists():
         return
     resolver = RegistrationContext.ensure_context().name_resolver
     if isinstance(resolver, MinifyNameResolver) and resolver.config is not None:
@@ -363,30 +399,97 @@ def ensure_minify_resolver_for_active_context() -> None:
     install_minify_resolver()
 
 
-def scheme_digest() -> str:
-    """Digest the wire-name scheme the active resolver produces.
+def _collect_missing_entries(
+    states: Iterable[type[BaseState]],
+    config: MinifyConfig,
+    *,
+    include_states: bool = True,
+    include_events: bool = True,
+) -> list[str]:
+    """Label the registered names ``config`` has no entry for.
 
-    A frontend bundle and the backend it talks to must agree on what the names
-    on the wire mean. Memoized on the resolver instance, so installing another
-    resolver produces a fresh digest without coordination.
+    Args:
+        states: The state classes to inventory.
+        config: The configuration to check against.
+        include_states: Whether to report states with no entry.
+        include_events: Whether to report handlers with no entry.
 
     Returns:
-        A short hex digest, or ``""`` when no name is rewritten.
+        Sorted ``state:<path>`` / ``event:<path>.<handler>`` labels.
+    """
+    config_states = config["states"]
+    config_events = config["events"]
+    missing: list[str] = []
+    for state_cls in states:
+        state_path = get_state_full_path(state_cls)
+        if include_states and state_path not in config_states:
+            missing.append(f"state:{state_path}")
+        if include_events:
+            state_events = config_events.get(state_path, {})
+            missing.extend(
+                f"event:{state_path}.{handler_name}"
+                for handler_name in state_cls.event_handlers
+                if handler_name not in state_events
+            )
+    missing.sort()
+    return missing
+
+
+def _find_missing_entries() -> list[str]:
+    """Registered names the installed resolver has no minified id for.
+
+    A kind of name is only reported when its ``REFLEX_MINIFY_*`` mode is on,
+    since a disabled mode emits full names by design.
+
+    Returns:
+        Sorted ``state:<path>`` / ``event:<path>.<handler>`` labels; empty when
+        no :class:`MinifyNameResolver` with a config is installed.
     """
     from reflex_base.registry import RegistrationContext
 
     ctx = RegistrationContext.try_get()
-    resolver = ctx.name_resolver if ctx is not None else None
-    if not isinstance(resolver, MinifyNameResolver):
-        return ""
-    return resolver.digest()
+    if ctx is None:
+        return []
+    resolver = ctx.name_resolver
+    if not isinstance(resolver, MinifyNameResolver) or resolver.config is None:
+        return []
+    # Walks the same set as validate_minify_config, so the warning and
+    # 'reflex minify validate' never disagree about what is missing.
+    return _collect_missing_entries(
+        collect_all_states(),
+        resolver.config,
+        include_states=resolver.states_enabled,
+        include_events=resolver.events_enabled,
+    )
+
+
+def warn_if_config_stale() -> None:
+    """Warn when code has states or handlers ``minify.json`` doesn't cover.
+
+    Those names compile unminified, mixing minified and raw names on the wire.
+    No-op unless a resolver with a config is installed and a mode is enabled.
+    """
+    missing = _find_missing_entries()
+    if not missing:
+        return
+    extra = len(missing) - _STALE_WARNING_LIMIT
+    shown = ", ".join(missing[:_STALE_WARNING_LIMIT])
+    more = f" (+{extra} more)" if extra > 0 else ""
+    logger.warning(
+        f"{MINIFY_JSON} is out of date, so these names compile unminified: "
+        f"{shown}{more}. Run 'reflex minify sync' to assign ids; "
+        "'reflex minify validate' lists every missing entry."
+    )
 
 
 def clear_config_cache() -> None:
-    """Reload ``minify.json`` and propagate the new names through the registry.
+    """Reload ``minify.json`` and reinstall the resolver.
 
-    Call after editing ``minify.json`` programmatically or changing
-    ``REFLEX_MINIFY_*`` env vars at runtime.
+    Handler names re-propagate, but state names do not: ``VarData`` captured
+    ``get_full_name()`` when each state class was created, so renaming a state
+    that already exists leaves its Vars dangling and the next
+    :func:`~reflex.compiler.compiler.compile_contexts` raises. Only safe before
+    the states it renames are imported -- fresh processes and tests.
     """
     get_minify_config.cache_clear()
     is_mode_enabled.cache_clear()
@@ -522,7 +625,8 @@ def generate_minify_config(
     """Generate a complete minify configuration.
 
     Walks the state tree (see :func:`collect_all_states`) and assigns ids
-    starting from ``"a"`` per sibling group. Output is byte-stable.
+    starting from ``"a"`` per sibling group, skipping the parent's own id.
+    Output is byte-stable.
 
     Args:
         root_state: Optional subtree root.
@@ -533,12 +637,19 @@ def generate_minify_config(
     states: dict[str, StateEntry] = {}
     events: dict[str, dict[str, str]] = {}
     sibling_counter: dict[type[BaseState] | None, int] = {}
+    own_ids: dict[type[BaseState], int] = {}
 
     for state_cls in collect_all_states(root_state):
         parent = state_cls.get_parent_state()
-        sibling_counter.setdefault(parent, 0)
-        state_id = sibling_counter[parent]
-        sibling_counter[parent] += 1
+        state_id = sibling_counter.get(parent, 0)
+        # A state never reuses its parent's id, so the leading segment of a
+        # relative path can only ever mean the parent itself. Roots have no
+        # parent to collide with. ``collect_all_states`` is depth-first, so a
+        # parent's own id is always recorded before its children are assigned.
+        if parent is not None and state_id == own_ids.get(parent):
+            state_id += 1
+        sibling_counter[parent] = state_id + 1
+        own_ids[state_cls] = state_id
 
         state_path = get_state_full_path(state_cls)
         states[state_path] = StateEntry(
@@ -649,6 +760,17 @@ def validate_minify_config(
             label = f"{state_path} (orphaned)"
         parent_to_pairs.setdefault(parent_key, []).append((label, entry["id"]))
 
+        # A state sharing its parent's id makes a relative path ambiguous,
+        # which misresolves substate lookups rather than failing. Checked
+        # against the actual parent, which is the tree a lookup walks.
+        parent_entry = config["states"].get(parent_key) if parent_key else None
+        if parent_entry is not None and parent_entry["id"] == entry["id"]:
+            errors.append(
+                f"State '{state_path}' reuses the id '{entry['id']}' of its parent "
+                f"'{parent_key}'. Delete {MINIFY_JSON} and re-run "
+                "'reflex minify init'."
+            )
+
     for parent_key, pairs in parent_to_pairs.items():
         parent_name = parent_key if parent_key is not None else "root"
         errors.extend(
@@ -665,22 +787,7 @@ def validate_minify_config(
     code_event_keys = collect_handler_names(all_states)
     code_state_paths = set(code_event_keys)
 
-    # Check for missing states (in code but not in config)
-    missing: list[str] = [
-        f"state:{state_path}"
-        for state_path in (get_state_full_path(s) for s in all_states)
-        if state_path not in config["states"]
-    ]
-
-    # Check for missing events (in code but not in config)
-    for state_cls in all_states:
-        state_path = get_state_full_path(state_cls)
-        state_events = config["events"].get(state_path, {})
-        missing.extend(
-            f"event:{state_path}.{handler_name}"
-            for handler_name in state_cls.event_handlers
-            if handler_name not in state_events
-        )
+    missing = _collect_missing_entries(all_states, config)
 
     # Check for orphaned entries (in config but not in code)
     warnings.extend(
@@ -784,9 +891,13 @@ def sync_minify_config(
         if state_path not in new_states:
             parent_key_to_new_children.setdefault(parent_key, []).append(state_path)
 
-    # Assign new state IDs (unique among siblings of the same parent).
+    # Assign new state IDs (unique among siblings of the same parent, and
+    # never the parent's own id; see generate_minify_config).
     for parent_key, children in parent_key_to_new_children.items():
         existing_ids = parent_key_to_existing_ids.get(parent_key, set())
+        parent_entry = new_states.get(parent_key) if parent_key is not None else None
+        if parent_entry is not None:
+            existing_ids = existing_ids | {minified_name_to_int(parent_entry["id"])}
         assigned = _assign_next_ids(children, existing_ids, reassign_deleted)
         for state_path, minified_name in assigned.items():
             new_states[state_path] = StateEntry(id=minified_name, parent=parent_key)

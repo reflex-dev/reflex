@@ -43,8 +43,16 @@ has_connection_errors = Var(
     _js_expr="(connectErrors.length > 0)", _var_data=connect_error_var_data
 ).to(BooleanVar)
 
+has_fatal_connection_error = Var(
+    _js_expr="(connectErrors.at(-1)?.fatal === true)",
+    _var_data=connect_error_var_data,
+).to(BooleanVar)
+
 has_too_many_connection_errors = Var(
-    _js_expr="(connectErrors.length >= 2)", _var_data=connect_error_var_data
+    # A fatal mismatch never retries, so it skips the transient-error debounce:
+    # there will never be a second error to cross the threshold.
+    _js_expr=f"(connectErrors.length >= 2 || {has_fatal_connection_error!s})",
+    _var_data=connect_error_var_data,
 ).to(BooleanVar)
 
 
@@ -135,6 +143,15 @@ setTimeout(() => {{
                 f"toast?.error({loading_message!s}, {{...toast_props, onDismiss: () => setUserDismissed(true)}},)"
             )
 
+        # A fatal mismatch is not a connectivity problem: the message carries
+        # itself and the only fix is a reload. The action must be raw JS, since
+        # a Reflex event would be dropped by the dead event loop.
+        fatal_toast_var = Var(
+            f"toast?.error({connection_error!s}, {{...toast_props, description: '', "
+            "duration: Infinity, action: {label: 'Reload', onClick: () => "
+            "window.location.reload()}, onDismiss: () => setUserDismissed(true)},)"
+        )
+
         individual_hooks = [
             Var(f"const toast = {toast_ref};"),
             f"const toast_props = {LiteralVar.create(props)!s};",
@@ -159,7 +176,11 @@ setTimeout(() => {{
 () => {{
     if ({has_too_many_connection_errors!s}) {{
         if (!userDismissed) {{
-            {toast_var!s}
+            if ({has_fatal_connection_error!s}) {{
+                {fatal_toast_var!s}
+            }} else {{
+                {toast_var!s}
+            }}
         }}
     }} else {{
         toast?.dismiss("{toast_id}");

@@ -74,6 +74,10 @@ class NameResolver(Protocol):
         """Return the resolved name for the handler, or ``None`` for default."""
         ...
 
+    def digest(self) -> str:
+        """Digest the names this resolver rewrites, ``""`` when it rewrites none."""
+        ...
+
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class DefaultNameResolver:
@@ -88,6 +92,23 @@ class DefaultNameResolver:
         handler_name: str,
     ) -> str | None:
         return None
+
+    def digest(self) -> str:  # noqa: D102
+        return ""
+
+
+def scheme_digest() -> str:
+    """Digest the wire-name scheme the active resolver produces.
+
+    A frontend bundle and the backend it talks to must agree on what the names
+    on the wire mean. Memoized on the resolver instance, so installing another
+    resolver produces a fresh digest without coordination.
+
+    Returns:
+        A short hex digest, or ``""`` when no name is rewritten.
+    """
+    ctx = RegistrationContext.try_get()
+    return ctx.name_resolver.digest() if ctx is not None else ""
 
 
 def _default_bundled_libraries() -> list[str]:

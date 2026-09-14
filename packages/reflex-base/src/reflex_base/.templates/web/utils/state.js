@@ -26,6 +26,11 @@ const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
 const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
 const SCHEME_MISMATCH_EVENT = "scheme_mismatch";
 
+// Shown in the connection UI for any fatal frontend/backend mismatch. The
+// cause differs; the only action available to the viewer does not.
+const OUTDATED_PAGE_MESSAGE =
+  "This page is out of date and can no longer talk to the server. Reload the page to load the current version.";
+
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
 
@@ -743,14 +748,25 @@ export const connect = async (
     });
   };
 
+  // A mismatch is terminal: no event will ever be answered again. Push it onto
+  // connectErrors as well, or the page sits dead with the reason only in the
+  // console, where no end user will look.
+  const fatalMismatch = (developerMessage) => {
+    backend_state_mismatch = true;
+    event_queue.length = 0;
+    console.error(developerMessage);
+    setConnectErrors((connectErrors) => [
+      ...connectErrors.slice(-9),
+      Object.assign(new Error(OUTDATED_PAGE_MESSAGE), { fatal: true }),
+    ]);
+  };
+
   // The backend resolves wire names with its own copy of the minification
   // scheme. If it disagrees with the one this bundle was built against, every
   // name we send is meaningless to it, so stop before the first event.
   socket.current.on(SCHEME_MISMATCH_EVENT, (detail) => {
-    backend_state_mismatch = true;
-    event_queue.length = 0;
-    console.error(
-      `Cannot talk to the backend: it resolves state and event names with a different minification scheme (frontend "${detail?.frontend ?? ""}", backend "${detail?.backend ?? ""}"). Try refreshing the page or clearing your browser cache. If you are the developer of this app, rebuild the frontend against the same minify.json the backend is running.`,
+    fatalMismatch(
+      `Cannot talk to the backend: it resolves state and event names with a different minification scheme (frontend "${detail?.frontend ?? ""}", backend "${detail?.backend ?? ""}"). If you are the developer of this app, rebuild the frontend against the same minify.json the backend is running.`,
     );
   });
 
@@ -773,14 +789,13 @@ export const connect = async (
       const errorMsg = `Cannot process state update: no dispatch function for substate(s) "${missing_substates.join(
         '", "',
       )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
-      console.error(errorMsg);
       // Surface the error in the backend terminal logs.
       socket.current.emit(CLIENT_ERROR_EVENT, {
         message: errorMsg,
         substate: missing_substates.join(", "),
         error_type: ERROR_TYPE_DISPATCH_MISSING,
       });
-      backend_state_mismatch = true;
+      fatalMismatch(errorMsg);
       return;
     }
     try {
@@ -789,7 +804,7 @@ export const connect = async (
           dispatch[substate](update.delta[substate]);
           // handle events waiting for `is_hydrated`
           if (
-            substate === app.state_name &&
+            substate === app.main_state_name &&
             update.delta[substate]?.is_hydrated_rx_state_
           ) {
             // Deliberately not awaited: the rest of the delta and the client

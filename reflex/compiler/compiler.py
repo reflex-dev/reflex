@@ -33,7 +33,11 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.event import get_hydrate_event_name
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
-from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.registry import (
+    RegistrationContext,
+    _default_bundled_libraries,
+    scheme_digest,
+)
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import format_event_handler, to_title_case
@@ -53,7 +57,7 @@ from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
 from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
-from reflex.minify import scheme_digest
+from reflex.minify import warn_if_config_stale
 from reflex.state import (
     BaseState,
     FrontendEventExceptionState,
@@ -312,7 +316,6 @@ def _compile_contexts(
         templates.context_template(
             initial_state=initial_state,
             initial_state_json=initial_state_json,
-            state_name=state.get_name(),
             internal_events=_internal_event_names(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
@@ -824,7 +827,7 @@ def _assert_state_names_are_bound() -> None:
         "A name resolver (e.g. minify.json) must be installed before the state "
         "classes are imported, which Reflex does when the app directory is the "
         "working directory at import time. In-process test harnesses that import "
-        "Reflex first must run with REFLEX_MINIFY_STATES=disabled."
+        "Reflex first must run with REFLEX_MINIFY_STATES=0."
     )
     raise ReflexError(msg)
 
@@ -846,6 +849,7 @@ def compile_contexts(
         The path and code of the compiled context.
     """
     _assert_state_names_are_bound()
+    warn_if_config_stale()
 
     # Get the path for the output file.
     output_path = utils.get_context_path()

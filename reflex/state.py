@@ -37,7 +37,6 @@ from reflex_base.event import (
     EventHandler,
     EventSpec,
     call_script,
-    typing_event,
 )
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
@@ -78,7 +77,11 @@ from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
-from reflex.minify import ensure_minify_resolver_for_active_context
+from reflex.minify import (
+    MINIFY_JSON,
+    ensure_minify_resolver_for_active_context,
+    get_state_full_path,
+)
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
@@ -91,6 +94,25 @@ if TYPE_CHECKING:
 # while names captured by VarData.from_state keep the old value (e.g. granian
 # prod workers import the app module directly, bypassing get_app).
 ensure_minify_resolver_for_active_context()
+
+
+if TYPE_CHECKING:
+
+    def _typing_event(fn: Callable[..., Any]) -> EventHandler:
+        """Type a state method as the ``EventHandler`` it becomes. No-op at runtime.
+
+        Args:
+            fn: The method to mark.
+
+        Returns:
+            ``fn`` typed as an ``EventHandler``.
+        """
+        ...
+
+else:
+
+    def _typing_event(fn: Callable[..., Any]) -> Callable[..., Any]:
+        return fn
 
 
 Delta = dict[str, dict[str, Any]]
@@ -646,11 +668,23 @@ class BaseState(EvenMoreBasicBaseState):
 
             # Check if another substate class with the same name has already been defined.
             if cls.get_name() in {c.get_name() for c in parent_state.get_substates()}:
-                # This should not happen, since we have added module prefix to state names in #3214
-                msg = (
-                    f"The substate class '{cls.get_name()}' has been defined multiple times. "
-                    "Shadowing substate classes is not allowed."
-                )
+                if (
+                    RegistrationContext.get().name_resolver.resolve_state_name(cls)
+                    is not None
+                ):
+                    msg = (
+                        f"'{get_state_full_path(cls)}' resolves to the name "
+                        f"'{cls.get_name()}', which a sibling under "
+                        f"'{get_state_full_path(parent_state)}' already uses. Fix the "
+                        f"duplicate id in {MINIFY_JSON}; 'reflex minify validate' "
+                        "reports it."
+                    )
+                else:
+                    # Module prefixes make this unreachable for distinct classes.
+                    msg = (
+                        f"The substate class '{cls.get_name()}' has been defined multiple times. "
+                        "Shadowing substate classes is not allowed."
+                    )
                 raise StateValueError(msg)
 
         # A descriptor defined directly on this class overrides any same-named
@@ -2576,7 +2610,7 @@ class FrontendEventExceptionState(State):
         ),
     ]
 
-    @typing_event
+    @_typing_event
     def handle_frontend_exception(
         self, info: str, component_stack: str
     ) -> Iterator[EventSpec]:
@@ -2617,7 +2651,7 @@ class FrontendEventExceptionState(State):
 class UpdateVarsInternalState(State):
     """Substate for handling internal state var updates."""
 
-    @typing_event
+    @_typing_event
     async def update_vars_internal(self, vars: dict[str, Any]) -> None:
         """Apply updates to fully qualified state vars.
 
@@ -2760,8 +2794,9 @@ class ComponentState(State, mixin=True):
         Args:
             children: The children of the component.
             _state_key: Names this instance's state. Must be a valid Python
-                identifier and unique among the instances of this component.
-                Unkeyed instances are named by creation order instead.
+                identifier and unique among the keyed instances of components
+                with this class name. Unkeyed instances are named by creation
+                order instead.
             props: The props of the component.
 
         Returns:
@@ -2769,7 +2804,10 @@ class ComponentState(State, mixin=True):
 
         Raises:
             ValueError: If ``_state_key`` is not a string usable as a name segment.
+            StateValueError: If ``_state_key`` is already used by another instance.
         """
+        from reflex_base.utils.exceptions import StateValueError
+
         from reflex.compiler.compiler import into_component
 
         if _state_key is not None:
@@ -2784,6 +2822,18 @@ class ComponentState(State, mixin=True):
             # Doubled separator: an unkeyed name is always ``_n`` followed by
             # digits, so no key can produce one.
             state_cls_name = f"{cls.__name__}__{_state_key}"
+            # Report the key rather than letting the generated class name reach
+            # the sibling-shadowing guard, whose message names neither.
+            existing = getattr(reflex.istate.dynamic, state_cls_name, None)
+            if existing is not None:
+                owner = existing.__mro__[1]
+                msg = (
+                    f"_state_key={_state_key!r} is already used by a "
+                    f"{owner.__module__}.{owner.__qualname__} instance. A key names "
+                    "one state per component: create the component once and reuse "
+                    "that instance on every page that renders it, or pick another key."
+                )
+                raise StateValueError(msg)
         else:
             # Keyed instances do not advance the counter, so adding one leaves
             # the unkeyed names alone.

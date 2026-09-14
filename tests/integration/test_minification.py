@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 from selenium.webdriver.common.by import By
 
-from reflex.environment import MinifyMode, environment
+from reflex.environment import environment
 from reflex.minify import (
     MINIFY_JSON,
     SCHEMA_VERSION,
@@ -80,7 +80,7 @@ def MinificationApp():
 # Framework state classes (e.g. ``reflex.state.State``) bake their names when
 # ``reflex.state`` is first imported, which under AppHarness is pytest start-up,
 # before this config exists — so they are left out here and covered by the
-# subprocess tests in ``tests/units/test_minification.py``.
+# subprocess tests in ``tests/units/test_minify.py``.
 _MINIFY_CONFIG = {
     "version": SCHEMA_VERSION,
     "states": {
@@ -116,12 +116,8 @@ def minify_app(
     """
     enabled: bool = request.param
     if enabled:
-        monkeypatch.setenv(
-            environment.REFLEX_MINIFY_STATES.name, MinifyMode.ENABLED.value
-        )
-        monkeypatch.setenv(
-            environment.REFLEX_MINIFY_EVENTS.name, MinifyMode.ENABLED.value
-        )
+        monkeypatch.setenv(environment.REFLEX_MINIFY_STATES.name, "1")
+        monkeypatch.setenv(environment.REFLEX_MINIFY_EVENTS.name, "1")
     clear_config_cache()
 
     app_name = "minify_enabled" if enabled else "minify_disabled"
