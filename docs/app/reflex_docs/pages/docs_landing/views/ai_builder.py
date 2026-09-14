@@ -185,7 +185,7 @@ def ai_builder_section() -> rx.Component:
                     description="The Reflex Model Context Protocol (MCP) provides AI assistants and coding tools with structured access to Reflex documentation and component information.",
                     content=artwork(
                         "mcp_illustration",
-                        "w-full mt-auto py-8",
+                        "w-full mt-auto pt-8",
                     ),
                     href=ai_builder_pages.integrations.mcp_overview.path,
                     enteprise_only=True,

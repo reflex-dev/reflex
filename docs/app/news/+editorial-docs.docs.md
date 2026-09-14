@@ -13,3 +13,5 @@ Match both docs footer social menus to the main site's compact icon styling and 
 Align documentation fields, navigation, content surfaces, and icon controls with the shared editorial shape system.
 
 Use a muted gray surface for the Custom Components sidebar card in light and dark modes.
+
+Remove the empty space beneath the MCP illustration on the docs landing page.
