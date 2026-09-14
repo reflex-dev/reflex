@@ -133,6 +133,8 @@ def test_app_reuses_preloaded_config_with_state(
     monkeypatch.chdir(tmp_path)
     config_module_name = base_constants.Config.MODULE
     monkeypatch.delitem(sys.modules, config_module_name, raising=False)
+    previous_state_auto_setters = reflex_base.config._state_auto_setters
+    reflex_base.config._state_auto_setters = True
 
     try:
         with RegistrationContext():
@@ -149,6 +151,9 @@ def test_app_reuses_preloaded_config_with_state(
         sys.modules.pop(config_module_name, None)
         reflex_base.config._config_module_deps.clear()
         reflex_base.config._config_module_deps_root = None
+        reflex_base.config._state_auto_setters = previous_state_auto_setters
+
+    assert reflex_base.config._state_auto_setters is previous_state_auto_setters
 
 
 @pytest.fixture

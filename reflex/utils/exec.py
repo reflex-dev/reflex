@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, NamedTuple, TypedDict
 
 from reflex_base import constants
-from reflex_base.config import get_config, reload_config
+from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
@@ -460,7 +460,7 @@ def load_app():
     """
     from reflex.utils.prerequisites import get_and_validate_app
 
-    reload_config()
+    get_config()
     return get_and_validate_app().app()
 
 

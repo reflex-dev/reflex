@@ -19,14 +19,16 @@ from reflex.utils import exec as exec_utils
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
 
+@pytest.mark.parametrize("preload_app", [False, True])
 def test_load_app_initializes_config_before_importing_app(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, preload_app: bool
 ) -> None:
-    """The backend factory must load config before an app imports rxconfig classes.
+    """The backend factory preserves the config classes used by a preloaded app.
 
     Args:
         tmp_path: The pytest temporary project directory.
         monkeypatch: The pytest monkeypatch fixture.
+        preload_app: Whether the supervisor has already imported the app.
     """
     package = tmp_path / "config_first_app"
     package.mkdir()
@@ -51,12 +53,24 @@ def test_load_app_initializes_config_before_importing_app(
     monkeypatch.delitem(sys.modules, config_module_name, raising=False)
     monkeypatch.delitem(sys.modules, "config_first_app", raising=False)
     monkeypatch.delitem(sys.modules, "config_first_app.config_first_app", raising=False)
+    inherited_state: type[object] | None = None
+    inherited_app: object | None = None
 
     try:
         with RegistrationContext():
+            if preload_app:
+                from reflex.utils.prerequisites import get_and_validate_app
+
+                reflex_base.config.get_config()
+                inherited_state = sys.modules[config_module_name].ConfigState
+                inherited_app = get_and_validate_app().module.app
+
             assert exec_utils.load_app() is not None
             app_module = sys.modules["config_first_app.config_first_app"]
             assert app_module.app._state is sys.modules[config_module_name].ConfigState
+            if preload_app:
+                assert app_module.app is inherited_app
+                assert app_module.app._state is inherited_state
     finally:
         sys.modules.pop(config_module_name, None)
         sys.modules.pop("config_first_app", None)
