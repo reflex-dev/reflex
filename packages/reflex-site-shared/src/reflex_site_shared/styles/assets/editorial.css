@@ -310,21 +310,34 @@
   .docs-navbar header { padding-inline: 1rem; }
 }
 
+.docs-navbar header > div { gap: 2rem; }
+:root .docs-navbar .ReflexSearch-root { width: auto; }
 :root .docs-navbar .ReflexSearch-button {
+  width: 2.25rem;
+  min-width: 0;
   height: 2.25rem;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border);
-  background: var(--background);
+  padding: 0;
+  justify-content: center;
+  border-radius: var(--radius-control);
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
   box-shadow: none;
 }
-@media (max-width: 1023px) {
-  :root .docs-navbar .ReflexSearch-button {
-    width: 2.25rem;
-    padding: 0;
-    justify-content: center;
-    border-radius: var(--radius-control);
-  }
+:root .docs-navbar .ReflexSearch-button:hover {
+  background: var(--muted);
+  color: var(--foreground);
 }
+:root .docs-navbar .ReflexSearch-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+:root .docs-navbar .ReflexSearch-button > svg {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+:root .docs-navbar :is(.ReflexSearch-buttonText, .ReflexSearch-shortcut) { display: none; }
 :root .ReflexSearch-overlay .ReflexSearch-dialog {
   border-radius: var(--radius-panel);
   border-color: var(--border);

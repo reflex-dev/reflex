@@ -15,3 +15,5 @@ Align documentation fields, navigation, content surfaces, and icon controls with
 Use a muted gray surface for the Custom Components sidebar card in light and dark modes.
 
 Remove the empty space beneath the MCP illustration on the docs landing page.
+
+Refine the docs navbar with understated text navigation, compact search, and consistent editorial controls.

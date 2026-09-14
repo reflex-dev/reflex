@@ -3,3 +3,5 @@ Add an opt-in editorial theme to `SharedSiteStylesPlugin` with neutral colors, c
 Match documentation footer social links to the marketing footer's compact icon controls and remove the forum icon.
 
 Align documentation fields, navigation, content surfaces, and icon controls with the shared editorial shape system.
+
+Refine the docs navbar with understated text navigation, compact search, and consistent editorial controls.

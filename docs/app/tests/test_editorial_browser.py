@@ -48,9 +48,9 @@ def test_header_selection_matches_the_docs_route(page: Page):
     page.set_viewport_size({"width": 1440, "height": 1000})
     page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
     header = page.locator("header")
-    assert "inset" in header.get_by_role("link", name="Overview", exact=True).locator(
-        ".."
-    ).evaluate("item => getComputedStyle(item).boxShadow")
+    overview = header.get_by_role("link", name="Overview", exact=True)
+    expect(overview).to_have_css("font-weight", "450")
+    expect(overview.locator("..")).to_have_css("box-shadow", "none")
     expect(header.locator('[aria-current="page"]')).to_have_text("Overview")
     for label, path in [
         ("Framework", "/docs/getting-started/introduction/"),

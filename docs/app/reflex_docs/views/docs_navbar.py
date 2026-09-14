@@ -25,18 +25,13 @@ from reflex_docs.views.search import search_bar
 def github_button() -> rx.Component:
     label = f"View Reflex on GitHub - {GITHUB_STARS // 1000}K stars"
     return rx.el.elements.a(
-        button(
-            get_icon(icon="github_navbar", class_name="shrink-0"),
-            f"{GITHUB_STARS // 1000}K",
-            custom_attrs={"aria-label": label},
-            size="sm",
-            variant="ghost",
-            native_button=False,
-        ),
+        get_icon(icon="github_navbar", class_name="size-4 shrink-0"),
+        f"{GITHUB_STARS // 1000}K",
         href=GITHUB_URL,
         target="_blank",
         rel="noopener noreferrer",
-        custom_attrs={"aria-label": label},
+        aria_label=label,
+        class_name="inline-flex h-9 items-center gap-2 rounded-full text-sm font-book text-foreground transition-colors hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     )
 
 
@@ -67,7 +62,7 @@ def logo() -> rx.Component:
             ),
         ),
         href=REFLEX_URL,
-        class_name="flex flex-row gap-2.5 items-center shrink-0 lg:mr-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+        class_name="flex flex-row gap-2.5 items-center shrink-0 rounded-compact focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
 
 
@@ -82,7 +77,6 @@ def menu_item(
         router_path,
     )
     is_overview = (router_path == "") | (router_path == "/") | (router_path == "/index")
-    active_cn = "shadow-[inset_0_-1px_0_0_var(--primary-10)] [&_button]:text-primary-10 [&_div]:text-primary-10"
 
     if active_str.startswith("/"):
         active = is_overview if active_str == "/" else router_path == active_str
@@ -96,23 +90,14 @@ def menu_item(
 
     anchor = rx.el.elements.a if external else rx.el.a
 
-    return ui.navigation_menu.item(
+    return rx.el.li(
         anchor(
-            button(
-                text,
-                size="sm",
-                class_name="px-2 lg:px-3",
-                variant="ghost",
-                native_button=False,
-            ),
+            text,
             href=href,
             aria_current=rx.cond(active, "page", "false"),
+            class_name="docs-navbar-link inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-book text-muted-foreground transition-colors hover:text-foreground aria-[current=page]:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         ),
-        class_name=ui.cn(
-            "lg:flex hidden h-full items-center justify-center",
-            rx.cond(active, active_cn, ""),
-        ),
-        custom_attrs={"role": "menuitem"},
+        class_name="flex items-center",
     )
 
 
@@ -126,7 +111,7 @@ def mobile_navigation() -> rx.Component:
         rx.drawer.trigger(
             button(
                 rx.icon("menu", size=18),
-                variant="outline",
+                variant="ghost",
                 size="icon-sm",
                 aria_label="Open sidebar",
             ),
@@ -204,69 +189,55 @@ def mobile_navigation() -> rx.Component:
 
 
 def navigation_menu() -> rx.Component:
-    return ui.navigation_menu.root(
-        ui.navigation_menu.list(
-            menu_item("Overview", "/", "/"),
-            menu_item("Build with AI", ai_builder.overview.best_practices.path, "ai"),
-            menu_item("Framework", getting_started.introduction.path, "framework"),
-            menu_item("Cloud", hosting.deploy_quick_start.path, "hosting"),
-            menu_item("XY", "/docs/xy/", "xy", external=True),
-            class_name="flex flex-row items-center gap-2 m-0 h-full list-none",
-            custom_attrs={"role": "menubar"},
+    """Pair quiet documentation links with compact marketing-style actions."""
+    return rx.el.div(
+        rx.el.nav(
+            rx.el.ul(
+                menu_item("Overview", "/", "/"),
+                menu_item(
+                    "Build with AI", ai_builder.overview.best_practices.path, "ai"
+                ),
+                menu_item("Framework", getting_started.introduction.path, "framework"),
+                menu_item("Cloud", hosting.deploy_quick_start.path, "hosting"),
+                menu_item("XY", "/docs/xy/", "xy", external=True),
+                class_name="m-0 flex h-full list-none items-center p-0",
+            ),
+            aria_label="Documentation navigation",
+            class_name="hidden h-full lg:flex",
         ),
-        ui.navigation_menu.list(
-            ui.navigation_menu.item(
-                github_button(),
-                unstyled=True,
-                class_name="xl:flex hidden",
-                custom_attrs={"role": "menuitem"},
-            ),
-            ui.navigation_menu.item(
+        rx.el.div(
+            rx.el.div(github_button(), class_name="hidden xl:flex"),
+            rx.el.div(
+                button(
+                    ui.icon("Search01Icon", size=16, aria_hidden=True),
+                    variant="ghost",
+                    size="icon-sm",
+                    aria_label="Search (loading)",
+                    aria_disabled=True,
+                    aria_busy=True,
+                    tab_index=-1,
+                    class_name="group-has-[.ReflexSearch-root]/docs-search:hidden",
+                ),
                 search_bar(),
-                unstyled=True,
-                custom_attrs={"role": "menuitem"},
+                class_name="group/docs-search docs-navbar-search flex size-9 shrink-0 items-center justify-center",
             ),
-            ui.navigation_menu.item(
+            rx.el.div(
                 demo_form_dialog(
                     id_prefix="docs-booking",
                     trigger=button(
                         "Book a Demo",
                         size="sm",
                         variant="primary",
-                        class_name=" whitespace-nowrap max-xl:hidden",
+                        class_name="whitespace-nowrap text-sm",
                         native_button=False,
                     ),
                 ),
-                unstyled=True,
-                class_name="xl:flex hidden",
-                custom_attrs={"role": "menuitem"},
+                class_name="hidden xl:flex",
             ),
-            ui.navigation_menu.item(
-                mobile_navigation(),
-                class_name="lg:hidden flex",
-                unstyled=True,
-                custom_attrs={"role": "menuitem"},
-            ),
-            class_name="flex flex-row lg:gap-4 gap-2 m-0 h-full list-none items-center",
-            custom_attrs={"role": "menubar"},
+            rx.el.div(mobile_navigation(), class_name="flex lg:hidden"),
+            class_name="ml-auto flex items-center gap-2 sm:gap-6",
         ),
-        ui.navigation_menu.portal(
-            ui.navigation_menu.positioner(
-                ui.navigation_menu.popup(
-                    ui.navigation_menu.viewport(),
-                    unstyled=True,
-                    class_name="relative h-[var(--popup-height)] w-max origin-[var(--transform-origin)] transition-[opacity,transform,width,height,scale,translate] duration-[0.35s] ease-[cubic-bezier(0.22,1,0.36,1)] data-[ending-style]:scale-90 data-[ending-style]:opacity-0 data-[ending-style]:duration-150 data-[starting-style]:scale-90 data-[starting-style]:opacity-0 min-[500px]:w-[var(--popup-width)] xs:w-[var(--popup-width)] rounded-panel bg-background overflow-hidden",
-                    style={
-                        "box-shadow": "0 0 0 1px rgba(0, 0, 0, 0.03), 0 -1px 1px 0 rgba(0, 0, 0, 0.04), 0 16px 32px 0 rgba(0, 0, 0, 0.08), 0 1px 1px 0 rgba(0, 0, 0, 0.08), 0 4px 8px 0 rgba(0, 0, 0, 0.03);",
-                    },
-                ),
-                side_offset=30,
-                align="start",
-                align_offset=-20,
-            ),
-        ),
-        unstyled=True,
-        class_name="relative flex w-full items-center h-full justify-between gap-2 mx-auto flex-row",
+        class_name="flex h-full min-w-0 flex-1 items-center justify-between gap-2",
     )
 
 
