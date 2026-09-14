@@ -1,0 +1,1 @@
+Fix a startup race in backend-only mode with multiple workers where a worker could read a truncated `.web/backend/stateful_pages.json` and crash with `JSONDecodeError`. The marker is now written atomically, and a worker that finds no marker evaluates all pages instead of assuming there are none.

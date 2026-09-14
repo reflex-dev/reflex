@@ -1206,6 +1206,23 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
     app._register_plugin_pages(plugins)
 
 
+def _read_stateful_pages_marker() -> list[str] | None:
+    """Read the routes that create state classes from a previous compile.
+
+    The marker is swapped into place atomically, so it is either complete or
+    absent. It may be absent because no compile has happened yet or because a
+    concurrently starting worker has not finished writing it.
+
+    Returns:
+        The stateful routes, or None if no marker has been written yet.
+    """
+    marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+    try:
+        return json.loads(marker.read_text())
+    except FileNotFoundError:
+        return None
+
+
 def compile_app(
     app: App,
     *,
@@ -1231,15 +1248,14 @@ def compile_app(
     app._pages = {}
 
     should_compile = app._should_compile()
-    backend_dir = prerequisites.get_backend_dir()
-    if not dry_run and not should_compile and backend_dir.exists():
-        stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
-        if stateful_pages_marker.exists():
-            with stateful_pages_marker.open("r") as file:
-                stateful_pages = json.load(file)
-            for route in stateful_pages:
-                logger.debug(f"BE Evaluating stateful page: {route}")
-                app._compile_page(route, save_page=False)
+    if not dry_run and not should_compile:
+        stateful_pages = _read_stateful_pages_marker()
+    else:
+        stateful_pages = None
+    if stateful_pages is not None:
+        for route in stateful_pages:
+            logger.debug(f"BE Evaluating stateful page: {route}")
+            app._compile_page(route, save_page=False)
         if app._state is not None:
             utils._restore_bundled_libraries()
             utils._compile_initial_state(app._state)
