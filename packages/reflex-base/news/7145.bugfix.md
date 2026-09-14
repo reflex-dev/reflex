@@ -1,0 +1,1 @@
+Fix `RecursionError: maximum recursion depth exceeded` in the event processor when a handler re-chains itself many times (for example a polling loop started from `on_load`), which surfaced on the client's next navigation and in the event cleanup callbacks.
