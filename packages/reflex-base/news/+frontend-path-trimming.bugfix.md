@@ -1,1 +1,0 @@
-Reject `frontend_path` segments with trailing dots or spaces that Windows trims, and empty segments from repeated slashes, before they can produce inconsistent build paths. A single leading or trailing slash remains supported.
