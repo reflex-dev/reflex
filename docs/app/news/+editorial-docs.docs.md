@@ -21,3 +21,5 @@ Refine the docs navbar with understated text navigation, compact search, and con
 Explore framework capabilities through accessible tabs and theme-aware product diagrams, with the section heading directly above the tab list.
 
 Use fine solid connectors with rounded corners and clean junctions in framework diagrams.
+
+Explain component composition with a Python example mapped to its rendered interface.

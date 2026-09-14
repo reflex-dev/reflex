@@ -20,8 +20,8 @@ CAPABILITIES = (
     (
         "components",
         "Components",
-        "Compose your interface from buttons, forms, tables, and hundreds of reusable building blocks.",
-        "Small pieces. Complete applications.",
+        "Each component creates a part of your interface. Nest headings, inputs, and buttons inside layout components to build a page.",
+        "Python components. A complete interface.",
         "Browse all components",
         library.path,
         "lavender",
