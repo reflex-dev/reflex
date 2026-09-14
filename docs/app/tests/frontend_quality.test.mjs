@@ -196,3 +196,36 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
     else globalThis.window = previousWindow;
   }
 });
+
+test("Editorial actions preserve native semantics and caller events", async () => {
+  const { createElement } = await import(resolve("react"));
+  const { renderToStaticMarkup } = await import(resolve("react-dom/server"));
+  const { transform } = await import(resolve("rolldown/utils"));
+  const filename = path.join(web, "public/components/GradientButton.tsx");
+  const source = await readFile(filename, "utf8");
+  const compiled = await transform(filename, source, {jsx: {runtime: "automatic"}});
+  const { GradientButton } = await import(moduleUrl(compiled.code
+    .replaceAll('from "react/jsx-runtime"', `from "${resolve("react/jsx-runtime")}"`)
+    .replaceAll('from "clsx-for-tailwind"', `from "${resolve("clsx-for-tailwind")}"`)));
+  const html = renderToStaticMarkup(createElement(GradientButton, {
+    type: "submit", disabled: true, name: "action", value: "send", form: "feedback",
+  }, "Send"));
+  assert.match(html, /^<button/);
+  for (const prop of ['type="submit"', 'disabled=""', 'name="action"', 'value="send"', 'form="feedback"']) {
+    assert.ok(html.includes(prop), prop);
+  }
+  assert.match(html, /rounded-full/);
+  assert.match(html, /focus-visible:outline-2/);
+  assert.equal(GradientButton({children: "Link", nativeButton: false}).type, "div");
+  assert.equal(GradientButton({children: "Demo", nativeButton: false, "aria-haspopup": "dialog"}).type, "button");
+  let moves = 0;
+  const element = GradientButton({children: "Send", onMouseMove: () => moves++});
+  const properties = new Map();
+  element.props.onMouseMove({clientX: 12, clientY: 24, currentTarget: {
+    getBoundingClientRect: () => ({left: 2, top: 4}),
+    style: {setProperty: (key, value) => properties.set(key, value)},
+  }});
+  assert.equal(moves, 1);
+  assert.equal(properties.get("--glow-x"), "10px");
+  assert.equal(properties.get("--glow-y"), "20px");
+});

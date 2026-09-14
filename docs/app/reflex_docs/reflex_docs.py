@@ -52,7 +52,10 @@ app = rxe.App(
         radius="large",
         accent_color="violet",
     ),
-    head_components=favicons_links(),
+    head_components=[
+        *favicons_links(),
+        rx.el.link(rel="icon", type="image/svg+xml", href=rx.asset("favicon.svg")),
+    ],
 )
 
 app.register_lifespan_task(monitor_checkly_status)

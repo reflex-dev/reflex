@@ -1,66 +1,34 @@
+"""Editorial introduction to the documentation."""
+
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.components.marketing_button import button
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
-from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 from reflex_docs.pages.docs import getting_started
 
 
 def hero() -> rx.Component:
+    """Render the docs introduction using the marketing typography and actions."""
     return rx.el.section(
-        rx.el.div(
-            rx.el.p(
-                "About Reflex",
-                class_name="text-sm font-[525] text-primary-10 dark:text-secondary-11",
-            ),
-            rx.el.h1(
-                "Reflex Documentation",
-                class_name="text-secondary-12 lg:text-5xl text-3xl font-[575] lg:text-nowrap",
-            ),
-            rx.el.p(
-                "Get up and running with Reflex in minutes. A complete set ",
-                rx.el.br(class_name="max-lg:hidden"),
-                " of resources to build, deploy, and scale your application. ",
-                class_name="text-base text-secondary-11 font-[475]",
-            ),
-            rx.el.a(
-                button(
-                    "Get Started",
-                    ui.icon("ArrowRight01Icon"),
-                    variant="primary",
-                    size="md",
-                    native_button=False,
-                    class_name="w-fit",
-                ),
-                to=getting_started.introduction.path,
-            ),
-            class_name=ui.cn(
-                "flex flex-col gap-6 max-lg:text-center relative just-start lg:pb-24",
-                rx.cond(
-                    HostingBannerState.is_banner_visible,
-                    "lg:pt-[14.5rem] pt-[12.5rem]",
-                    "lg:pt-[10.5rem] pt-[7.5rem]",
-                ),
-            ),
+        rx.el.h1(
+            "Reflex Documentation",
+            class_name="text-foreground text-4xl sm:text-5xl lg:text-6xl font-book tracking-[-0.03em] leading-[1.06] text-balance",
         ),
-        rx.el.div(
-            rx.image(
-                alt="Squares Docs Logo",
-                custom_attrs={"fetchPriority": "high"},
-                src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_docs_logo_1.svg",
-                class_name="pointer-events-none h-auto w-auto lg:absolute max-lg:hidden",
-            ),
-            class_name=ui.cn(
-                "flex",
-                rx.cond(
-                    HostingBannerState.is_banner_visible,
-                    "lg:pt-[8.5rem] pt-0",
-                    "lg:pt-[4.5rem] pt-0",
-                ),
-            ),
+        rx.el.p(
+            "Get up and running with Reflex in minutes. A complete set of resources "
+            "to build, deploy, and scale your application.",
+            class_name="max-w-2xl text-muted-foreground text-base sm:text-lg leading-7 font-normal text-balance",
         ),
-        class_name=ui.cn(
-            "flex lg:flex-row flex-col max-w-(--landing-layout-max-width) mx-auto w-full max-lg:pb-10 max-xl:px-6",
+        rx.el.a(
+            button(
+                "Get Started",
+                ui.icon("ArrowRight01Icon"),
+                variant="primary",
+                size="lg",
+                native_button=False,
+            ),
+            to=getting_started.introduction.path,
+            class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
         ),
+        class_name="docs-hero flex flex-col items-start gap-6 max-w-(--landing-layout-max-width) mx-auto w-full px-6 xl:px-0 pb-16 lg:pb-24",
     )

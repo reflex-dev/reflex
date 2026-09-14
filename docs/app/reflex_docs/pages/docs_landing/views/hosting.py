@@ -9,11 +9,11 @@ def hosting_section() -> rx.Component:
         rx.el.div(
             rx.el.h2(
                 "Cloud",
-                class_name="text-secondary-12 text-3xl font-[575]",
+                class_name="text-secondary-12 text-3xl font-book tracking-tight",
             ),
             rx.el.p(
                 "Learn how to host your applications with Reflex Hosting.",
-                class_name="text-secondary-11 text-sm font-[475]",
+                class_name="text-secondary-11 text-sm font-normal",
             ),
             class_name="flex flex-col gap-4",
         ),

@@ -79,11 +79,11 @@ def card(
         rx.el.div(
             rx.el.span(
                 title,
-                class_name="text-secondary-12 text-xl font-[575]",
+                class_name="text-secondary-12 text-xl font-book tracking-tight",
             ),
             rx.el.span(
                 description,
-                class_name="text-secondary-11 text-sm font-[475]",
+                class_name="text-secondary-11 text-sm font-normal",
             ),
             class_name="flex flex-col gap-2 p-8",
         ),
@@ -152,11 +152,11 @@ def ai_builder_section() -> rx.Component:
             rx.el.div(
                 rx.el.h2(
                     "AI Builder",
-                    class_name="text-secondary-12 text-3xl font-[575]",
+                    class_name="text-secondary-12 text-3xl font-book tracking-tight",
                 ),
                 rx.el.p(
                     "Learn how to build applications with Reflex AI.",
-                    class_name="text-secondary-11 text-sm font-[475]",
+                    class_name="text-secondary-11 text-sm font-normal",
                 ),
                 class_name="flex flex-col gap-4",
             ),

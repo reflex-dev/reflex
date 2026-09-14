@@ -76,7 +76,7 @@ def docs_navbar_frame(
             ),
             class_name="mx-auto flex h-[4.5rem] w-full max-w-full flex-row items-center bg-gradient-to-b from-secondary-2 to-secondary-1 px-6 shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] backdrop-blur-[16px] dark:border-b dark:border-secondary-4 dark:shadow-none 3xl:px-16",
         ),
-        class_name="fixed top-0 z-[9999] flex w-full flex-col self-center",
+        class_name="docs-navbar fixed top-0 z-[9999] flex w-full flex-col self-center",
     )
 
 
@@ -97,7 +97,7 @@ def docs_left_sidebar(
     return rx.box(
         content,
         class_name=ui.cn(
-            "sticky left-0 z-10 hidden w-[19.5rem] shrink-0 border-r border-secondary-4 before:absolute before:bottom-0 before:right-0 before:top-0 before:-z-10 before:w-[100vw] before:bg-white-1 lg:block",
+            "docs-left-sidebar sticky left-0 z-10 hidden w-[19.5rem] shrink-0 border-r border-secondary-4 before:absolute before:bottom-0 before:right-0 before:top-0 before:-z-10 before:w-[100vw] before:bg-white-1 lg:block",
             (
                 rx.cond(
                     HostingBannerState.is_banner_visible,
@@ -537,7 +537,7 @@ def docs_right_sidebar(
                 ),
             ),
         ),
-        class_name="sticky top-0 hidden h-screen w-[240px] shrink-0 2xl:block",
+        class_name="docs-right-sidebar sticky top-0 hidden h-screen w-[240px] shrink-0 2xl:block",
     )
 
 

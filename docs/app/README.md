@@ -62,3 +62,20 @@ The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Re
 Docs pages intentionally omit the marketing site's pixels and session recording scripts. Search, examples, newsletter signup, and status information remain available.
 
 The docs config enables `frontend_lazy_bundled_libraries`. Optional libraries registered for dynamic components load on the first dynamic-component evaluation, while React and the shared runtime stay available immediately. This prevents the full Radix namespace from being imported on every page. The framework default remains `False`; custom scripts that read optional libraries from `window.__reflex` directly should retain that default or await `window.__reflex_load()` first.
+
+## Editorial theme
+
+The docs app opts into `SharedSiteStylesPlugin(editorial=True)`, ported from
+[marketing PR #102](https://github.com/reflex-dev/marketing/pull/102). Its neutral
+palette and semantic roles live in `reflex_site_shared/styles/assets/editorial.css`;
+its button uses the marketing variant and size contract (36px compact, 44px
+standard, 48px large). The default shared theme remains available to other sites.
+Dark mode adapts the neutral ramp; Radix example accent colors remain available.
+The header, sidebar, breadcrumbs, and heading anchors share `--docs-header-height`,
+which follows the rendered announcement so dismissal leaves no empty strip.
+
+With a production preview running, verify responsive layout and interactions:
+
+```bash
+REFLEX_DOCS_PREVIEW_URL=http://localhost:3035 uv run pytest tests/test_editorial_browser.py
+```

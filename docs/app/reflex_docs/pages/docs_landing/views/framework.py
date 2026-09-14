@@ -20,7 +20,7 @@ def docs_item(
             ),
             rx.el.span(
                 title,
-                class_name="text-secondary-12 text-xl font-[575] group-hover:text-primary-10 group-hover:dark:text-secondary-11",
+                class_name="text-secondary-12 text-xl font-book tracking-tight group-hover:text-primary-10 group-hover:dark:text-secondary-11",
             ),
             rx.el.div(
                 "Enterprise-only",
@@ -36,7 +36,7 @@ def docs_item(
         ),
         rx.el.p(
             description,
-            class_name="text-secondary-11 text-sm font-[475]",
+            class_name="text-secondary-11 text-sm font-normal",
         ),
         rx.el.a(to=href, class_name="absolute inset-0"),
         class_name="flex flex-col gap-2 py-8 pr-8 relative group lg:max-w-[21rem] w-full max-lg:text-start hover:bg-[linear-gradient(243deg,var(--secondary-2)_0%,var(--secondary-1)_100%)]",
@@ -74,8 +74,9 @@ def component_link(name: str, href: str) -> rx.Component:
             name,
             ui.icon("ArrowRight01Icon", class_name="ml-auto"),
             variant="ghost",
+            native_button=False,
             size="xs",
-            class_name="font-[525] w-full text-secondary-12 px-0",
+            class_name="font-medium w-full text-secondary-12 px-0",
         ),
         to=f"/library/{href.strip('/')}",
         class_name="w-full",
@@ -89,20 +90,20 @@ def components_section() -> rx.Component:
                 ui.icon("MenuSquareIcon", class_name="size-6", stroke_width=1.5),
                 rx.el.span(
                     "Component Library",
-                    class_name="text-secondary-12 text-xl font-[575] group-hover:text-primary-10",
+                    class_name="text-secondary-12 text-xl font-book tracking-tight group-hover:text-primary-10",
                 ),
                 class_name="flex row items-center gap-3 h-8",
             ),
             rx.el.p(
                 "Build your app with our comprehensive collection of UI components and features.",
-                class_name="text-secondary-11 text-sm font-[475] max-w-[16.5rem]",
+                class_name="text-secondary-11 text-sm font-normal max-w-[16.5rem]",
             ),
             rx.el.a(
                 button(
                     "Browse All Components",
                     variant="outline",
                     native_button=False,
-                    class_name="font-[525] w-fit text-secondary-12",
+                    class_name="font-medium w-fit text-secondary-12",
                 ),
                 to=library.path,
                 class_name="w-fit mt-4",
@@ -161,11 +162,11 @@ def framework() -> rx.Component:
         rx.el.div(
             rx.el.h2(
                 "Framework",
-                class_name="text-secondary-12 text-3xl font-[575]",
+                class_name="text-secondary-12 text-3xl font-book tracking-tight",
             ),
             rx.el.p(
                 "Learn how to build applications with Reflex Framework.",
-                class_name="text-secondary-11 text-sm font-[475]",
+                class_name="text-secondary-11 text-sm font-normal",
             ),
             class_name="flex flex-col gap-4",
         ),
@@ -183,7 +184,6 @@ def framework() -> rx.Component:
                 class_name="absolute right-0 -top-24 h-24 w-px bg-gradient-to-b from-transparent to-current text-secondary-4"
             ),
             links_section(),
-            squares_divider(),
             components_section(),
             class_name="flex flex-col lg:flex-row relative",
         ),

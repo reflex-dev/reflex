@@ -1,0 +1,203 @@
+/* The public marketing site uses one neutral color and spacing system. */
+:root, .light, .light-theme, .dark, .dark-theme {
+  --c-slate-1: #ffffff;
+  --c-slate-2: #f6f6f6;
+  --c-slate-3: #eeeeee;
+  --c-slate-4: #e8e8e8;
+  --c-slate-5: #e2e2e2;
+  --c-slate-6: #d9d9d9;
+  --c-slate-7: #c7c7c7;
+  --c-slate-8: #b3b3b3;
+  --c-slate-9: #8c8c8c;
+  --c-slate-10: #767676;
+  --c-slate-11: #595959;
+  --c-slate-12: #181818;
+  --slate-1: var(--c-slate-1);
+  --slate-2: var(--c-slate-2);
+  --slate-3: var(--c-slate-3);
+  --slate-4: var(--c-slate-4);
+  --slate-5: var(--c-slate-5);
+  --slate-6: var(--c-slate-6);
+  --slate-7: var(--c-slate-7);
+  --slate-8: var(--c-slate-8);
+  --slate-9: var(--c-slate-9);
+  --slate-10: var(--c-slate-10);
+  --slate-11: var(--c-slate-11);
+  --slate-12: var(--c-slate-12);
+  --secondary-1: var(--c-slate-1);
+  --secondary-2: var(--c-slate-2);
+  --secondary-3: var(--c-slate-3);
+  --secondary-4: var(--c-slate-4);
+  --secondary-5: var(--c-slate-5);
+  --secondary-6: var(--c-slate-6);
+  --secondary-7: var(--c-slate-7);
+  --secondary-8: var(--c-slate-8);
+  --secondary-9: var(--c-slate-9);
+  --secondary-10: var(--c-slate-10);
+  --secondary-11: var(--c-slate-11);
+  --secondary-12: var(--c-slate-12);
+  --primary-1: var(--c-slate-1);
+  --primary-2: var(--c-slate-2);
+  --primary-3: var(--c-slate-3);
+  --primary-4: var(--c-slate-4);
+  --primary-5: var(--c-slate-5);
+  --primary-6: var(--c-slate-6);
+  /* Internal inputs retain their flush focus treatment, using neutral ink. */
+  --primary-a6: var(--secondary-a6);
+  --primary-7: var(--c-slate-7);
+  --primary-8: var(--c-slate-8);
+  --primary-9: var(--c-slate-12);
+  --primary-10: var(--primary-hover);
+  --primary-11: var(--c-slate-12);
+  --primary-12: var(--c-slate-12);
+  --primary-contrast: #ffffff;
+  --color-gray-soft: var(--c-slate-2);
+  --color-gray-light: var(--c-slate-5);
+  --color-gray-accent: var(--c-slate-9);
+  --color-gray-strong: var(--c-slate-11);
+  --color-gray-black: var(--c-slate-12);
+}
+
+
+:root, .light, .light-theme {
+  --editorial-primary-hover: #303030;
+  --editorial-border-subtle: #ebebeb;
+  --c-white-1: #ffffff;
+}
+.dark, .dark-theme {
+  --c-slate-1: #181818;
+  --c-slate-2: #202020;
+  --c-slate-3: #292929;
+  --c-slate-4: #333333;
+  --c-slate-5: #3e3e3e;
+  --c-slate-6: #4a4a4a;
+  --c-slate-7: #5c5c5c;
+  --c-slate-8: #707070;
+  --c-slate-9: #8c8c8c;
+  --c-slate-10: #a3a3a3;
+  --c-slate-11: #bdbdbd;
+  --c-slate-12: #f5f5f5;
+  --c-white-1: #181818;
+  --primary-contrast: #181818;
+  --editorial-primary-hover: #dedede;
+  --editorial-border-subtle: #303030;
+}
+/* Semantic theme. Use surface / foreground pairs in components.
+   Primitive color ramps remain available for artwork and data visualization. */
+:root, .light, .light-theme, .dark, .dark-theme {
+  --background: var(--c-slate-1);
+  --foreground: var(--c-slate-12);
+  --card: var(--c-slate-1);
+  --card-foreground: var(--c-slate-12);
+  --primary: var(--c-slate-12);
+  --primary-foreground: var(--c-slate-1);
+  --primary-hover: var(--editorial-primary-hover);
+  --muted: var(--c-slate-2);
+  --muted-foreground: var(--c-slate-11);
+  --subtle: #fafafa;
+  --subtle-foreground: var(--c-slate-10);
+  --inset: var(--c-slate-3);
+  --accent: var(--c-slate-2);
+  --accent-hover: var(--border-subtle);
+  /* Default boundaries, quiet separators, and hover/emphasis respectively.
+     Focus has its own visible outline; a hover border is not a focus indicator. */
+  --border: var(--c-slate-5);
+  --border-subtle: var(--editorial-border-subtle);
+  --border-strong: var(--c-slate-7);
+  --ring: var(--c-slate-10);
+  --destructive: #ba2623;
+  --success: #f4fbf7;
+  --success-foreground: #208368;
+  --warning: #fffbeb;
+  --warning-foreground: #95611f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-inset: var(--inset);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  /* Shape scale at a 16px root: 4, 6, 8, 10, 12, 14, 16, 24px.
+     Role tokens prevent equivalent controls from drifting between pages.
+     See /design.md before adding a new radius or overriding a role. */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: var(--radius);
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 0.875rem;
+  --radius-3xl: 1rem;
+  --radius-4xl: 1.5rem;
+  --radius-compact: var(--radius-xs);
+  --radius-control: 9999px;
+  --radius-card: var(--radius-2xl);
+  --radius-panel: var(--radius-3xl);
+}
+
+
+@theme {
+  --color-gray-white: #ffffff;
+  --color-red-strong: #de282f;
+  --color-red-deep: #ba2623;
+  --font-weight-normal: 425;
+  --font-weight-book: 450;
+}
+:root {
+  --docs-header-height: 4rem;
+}
+:root:has([data-docs-announcement]) {
+  --docs-header-height: 6.5rem;
+}
+.docs-navbar { left: 0; }
+.docs-navbar header {
+  height: 4rem;
+  background: var(--background);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: none;
+}
+.docs-left-sidebar {
+  top: var(--docs-header-height);
+  height: calc(100vh - var(--docs-header-height));
+}
+.docs-breadcrumb {
+  margin-top: calc(var(--docs-header-height) + 2rem);
+}
+.docs-hero {
+  padding-top: calc(var(--docs-header-height) + clamp(3rem, 6vw, 6rem));
+}
+.docs-prose > :is(h1, h2, h3),
+.docs-prose > div > :is(h1, h2, h3),
+.docs-prose > a > :is(h1, h2, h3) {
+  font-weight: 450;
+  letter-spacing: -0.03em;
+}
+.docs-prose :is(h1, h2, h3, h4)[id] {
+  scroll-margin-top: calc(var(--docs-header-height) + 2rem);
+}
+@media (max-width: 639px) {
+  :root:has([data-docs-announcement]) { --docs-header-height: 7.5rem; }
+  .docs-navbar header { padding-inline: 1rem; }
+}
+
+.docs-navbar .ReflexSearch-button {
+  height: 2.25rem;
+  border-radius: 0.75rem;
+}
+.docs-right-sidebar > nav {
+  margin-top: calc(var(--docs-header-height) + 2rem);
+}

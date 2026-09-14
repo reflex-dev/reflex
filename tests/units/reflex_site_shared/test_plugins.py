@@ -105,3 +105,35 @@ def test_docs_markdown_plugin_stages_assets_for_production_relocation(
     assert (static_dir / "guide.md").read_text(encoding="utf-8") == "# Guide\n"
     assert (static_dir / "guide" / ".md").read_text(encoding="utf-8") == "# Guide\n"
     assert not (static_dir / "guide.html").exists()
+
+
+def test_editorial_theme_emits_matching_styles_and_button_without_changing_default():
+    """Opt-in themes ship their button and CSS together, retaining legacy assets."""
+    plugin = SharedSiteStylesPlugin(editorial=True)
+    assets = dict(plugin.get_static_assets())
+    default_assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    stylesheet = Path("styles/reflex-site-shared/editorial.css")
+    button_path = Path("public/components/GradientButton.tsx")
+
+    assert plugin.get_stylesheet_paths()[-1] == "./reflex-site-shared/editorial.css"
+    assert stylesheet in assets
+    assert stylesheet not in default_assets
+    assert ".dark" in assets[stylesheet]
+    assert "--c-slate-12: #181818" in assets[stylesheet]
+    assert "--c-slate-12: #f5f5f5" in assets[stylesheet]
+    assert "export function GradientButton" in assets[button_path]
+    assert "buttonVariants" in assets[button_path]
+    assert "buttonVariants" not in default_assets[button_path]
+    assert len(assets) == len(default_assets) + 1
+
+
+def test_editorial_theme_can_keep_consumer_font_loading():
+    """Custom font loading does not remove the opt-in editorial stylesheet."""
+    plugin = SharedSiteStylesPlugin(include_fonts=False, editorial=True)
+    paths = plugin.get_stylesheet_paths()
+    assert paths[-1].endswith("/editorial.css")
+    assert not any(path.endswith("/fonts.css") for path in paths)
+    assert all(
+        Path("styles") / path.removeprefix("./") in dict(plugin.get_static_assets())
+        for path in paths
+    )

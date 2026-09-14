@@ -10,6 +10,10 @@ from reflex_site_shared.constants import (
     REFLEX_ASSETS_CDN,
     REFLEX_URL,
 )
+from reflex_site_shared.views.hosting_banner import (
+    AGENT_TOOLKIT_EARLY_ACCESS_URL,
+    HostingBannerState,
+)
 
 from reflex_docs.components.docpage.navbar.buttons.sidebar import navbar_sidebar_button
 from reflex_docs.pages.docs import ai_builder, getting_started, hosting
@@ -36,32 +40,17 @@ def github_button() -> rx.Component:
 
 def logo() -> rx.Component:
     return rx.el.elements.a(
-        rx.el.div(
-            rx.image(
-                src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
-                alt="Reflex Logo",
-                class_name="shrink-0 block dark:hidden",
-            ),
-            rx.image(
-                src=f"{REFLEX_ASSETS_CDN}logos/dark/reflex.svg",
-                alt="Reflex Logo",
-                class_name="shrink-0 hidden dark:block",
-            ),
+        rx.image(
+            src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
+            alt="Reflex",
+            class_name="w-[90px] h-auto shrink-0 dark:invert",
         ),
-        rx.el.div(
-            rx.image(
-                src=f"{REFLEX_ASSETS_CDN}logos/light/docs.svg",
-                alt="Docs Logo",
-                class_name="shrink-0 block dark:hidden",
-            ),
-            rx.image(
-                src=f"{REFLEX_ASSETS_CDN}logos/dark/docs.svg",
-                alt="Docs Logo",
-                class_name="shrink-0 hidden dark:block",
-            ),
+        rx.el.span(
+            "Docs",
+            class_name="border-l border-border pl-3 text-sm font-medium text-muted-foreground",
         ),
         href=REFLEX_URL,
-        class_name="flex flex-row gap-2.5 items-center shrink-0 mr-10",
+        class_name="flex flex-row gap-3 items-center shrink-0 lg:mr-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
 
 
@@ -101,13 +90,14 @@ def menu_item(
             button(
                 text,
                 size="sm",
+                class_name="px-2 lg:px-3",
                 variant="ghost",
                 native_button=False,
             ),
             href=href,
         ),
         class_name=ui.cn(
-            "md:flex hidden h-full items-center justify-center",
+            "lg:flex hidden h-full items-center justify-center",
             rx.cond(active, active_cn, ""),
         ),
         custom_attrs={"role": "menuitem"},
@@ -129,7 +119,7 @@ def navigation_menu() -> rx.Component:
             ui.navigation_menu.item(
                 github_button(),
                 unstyled=True,
-                class_name="md:flex hidden",
+                class_name="xl:flex hidden",
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
@@ -153,7 +143,7 @@ def navigation_menu() -> rx.Component:
             ),
             ui.navigation_menu.item(
                 navbar_sidebar_button(),
-                class_name="md:hidden flex",
+                class_name="lg:hidden flex",
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),
@@ -176,10 +166,35 @@ def navigation_menu() -> rx.Component:
             ),
         ),
         unstyled=True,
-        class_name="relative flex w-full items-center h-full justify-between gap-6 mx-auto flex-row",
+        class_name="relative flex w-full items-center h-full justify-between gap-2 mx-auto flex-row",
     )
 
 
 @rx.memo
 def docs_navbar() -> rx.Component:
-    return docs_navbar_frame(logo(), navigation_menu())
+    """Render the editorial header with a dismissible announcement."""
+    return rx.fragment(
+        rx.cond(
+            HostingBannerState.is_banner_visible,
+            rx.el.aside(
+                rx.el.elements.a(
+                    "Reflex Agent Toolkit is launching. Get early access",
+                    href=AGENT_TOOLKIT_EARLY_ACCESS_URL,
+                    class_name="text-center text-xs sm:text-sm font-medium rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ffffff]",
+                ),
+                rx.el.button(
+                    ui.icon("MultiplicationSignIcon", size=16),
+                    type="button",
+                    aria_label="Close banner",
+                    on_click=HostingBannerState.hide_banner,
+                    class_name="absolute right-2 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-[#ffffff]",
+                ),
+                custom_attrs={"data-docs-announcement": ""},
+                class_name="fixed top-0 z-[10000] flex h-14 sm:h-10 w-full items-center justify-center bg-[#181818] text-[#ffffff] px-12",
+            ),
+        ),
+        rx.el.div(
+            docs_navbar_frame(logo(), navigation_menu(), show_banner=False),
+            class_name="[&_.docs-navbar]:top-[calc(var(--docs-header-height)-4rem)]",
+        ),
+    )

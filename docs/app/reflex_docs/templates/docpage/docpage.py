@@ -318,7 +318,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             class_name="flex flex-row items-center gap-2 lg:p-0 p-[0.563rem]",
         ),
         class_name=ui.cn(
-            "relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-secondary-4 mt-[139px] lg:p-0 border-b lg:border-none w-full max-lg:py-2",
+            "docs-breadcrumb relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-secondary-4 mt-[139px] lg:p-0 border-b lg:border-none w-full max-lg:py-2",
             rx.cond(
                 HostingBannerState.is_banner_visible,
                 "lg:mt-[139px]",
@@ -492,7 +492,7 @@ def docpage(
                             ),
                         ),
                         rx.box(
-                            rx.el.article(comp, class_name="[&>div]:!p-0"),
+                            rx.el.article(comp, class_name="docs-prose [&>div]:!p-0"),
                             rx.el.nav(
                                 *links,
                                 class_name="flex flex-row gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",

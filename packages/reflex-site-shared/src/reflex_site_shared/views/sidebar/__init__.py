@@ -440,7 +440,10 @@ def drawer_top_offset(top_px: int | float) -> str:
     Returns:
         The Tailwind class string for the given top offset.
     """
-    return f"!top-[{top_px}px] !h-[calc(100dvh-{top_px}px)]"
+    return (
+        f"!top-[var(--docs-header-height,{top_px}px)] "
+        f"!h-[calc(100dvh-var(--docs-header-height,{top_px}px))]"
+    )
 
 
 def navbar_sidebar_drawer(
