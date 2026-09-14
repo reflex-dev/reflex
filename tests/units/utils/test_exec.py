@@ -21,7 +21,7 @@ from reflex.utils import exec as exec_utils
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
 
-def _run_granian_reload_test_app(app_dir: str, port_queue: Queue[int]) -> None:
+def _run_granian_reload_test_app(app_dir: str, port_queue: Queue) -> None:
     """Run a reloadable Granian app in a child process.
 
     Args:
@@ -298,7 +298,7 @@ def test_run_granian_backend_holds_requests_across_reload(tmp_path: Path):
     app_file = tmp_path / "reload_app.py"
     app_file.write_text(_reload_test_app_source(0))
     context = multiprocessing.get_context("spawn")
-    port_queue: Queue[int] = context.Queue()
+    port_queue: Queue = context.Queue()
     process = context.Process(
         target=_run_granian_reload_test_app,
         args=(str(tmp_path), port_queue),
