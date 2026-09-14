@@ -5,3 +5,5 @@ Match documentation footer social links to the marketing footer's compact icon c
 Align documentation fields, navigation, content surfaces, and icon controls with the shared editorial shape system.
 
 Refine the docs navbar with understated text navigation, compact search, and consistent editorial controls.
+
+Explore framework capabilities through accessible tabs and theme-aware product diagrams.

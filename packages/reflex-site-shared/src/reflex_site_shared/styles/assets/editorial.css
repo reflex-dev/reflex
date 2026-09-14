@@ -570,3 +570,59 @@
 @media (max-width: 639px) {
   .docs-footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+.docs-framework-tab {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  background: transparent;
+}
+.docs-framework-tab:hover { color: var(--muted-foreground); }
+.docs-framework-tab[data-active] { border-bottom: 2px solid var(--foreground); }
+.docs-framework-tab-description { display: none; }
+.docs-framework-tab[data-active] .docs-framework-tab-description {
+  display: block;
+  margin-top: 1rem;
+  padding-bottom: 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  font-weight: 425;
+  line-height: 1.75;
+}
+.docs-framework-panel {
+  --fw-ink: var(--foreground);
+  --fw-muted: var(--muted-foreground);
+  --fw-surface: var(--background);
+  --fw-line: var(--border);
+  --fw-accent: #547994;
+  --fw-tint: #edf3f7;
+  --fw-cloud: url('/docs/framework-diagrams/blue.avif');
+  animation: docs-framework-enter 240ms ease-out;
+}
+.docs-framework-panel[data-ending-style] { display: none; animation: none; }
+.docs-framework-panel[data-tone="lavender"] { --fw-accent: #7b6e9d; --fw-tint: #f0edf7; --fw-cloud: url('/docs/framework-diagrams/lavender.avif'); }
+.docs-framework-panel[data-tone="peach"] { --fw-accent: #98754f; --fw-tint: #f7f0e7; --fw-cloud: url('/docs/framework-diagrams/peach.avif'); }
+.docs-framework-panel[data-tone="mint"] { --fw-accent: #527e72; --fw-tint: #eaf3f0; --fw-cloud: url('/docs/framework-diagrams/mint.avif'); }
+.docs-framework-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.5rem, 2vw, 2rem);
+  background: linear-gradient(115deg, rgb(255 255 255 / 78%), rgb(255 255 255 / 55%)), var(--fw-cloud) center / cover;
+}
+.docs-framework-diagram { width: 100%; max-width: 44rem; }
+.docs-framework-diagram svg { overflow: visible; }
+.docs-framework-diagram .fw-flow { animation: docs-framework-flow 3s linear infinite; }
+.dark .docs-framework-panel { --fw-accent: #a0bbce; --fw-tint: #263139; }
+.dark .docs-framework-panel[data-tone="lavender"] { --fw-accent: #bdb0df; --fw-tint: #302a3d; }
+.dark .docs-framework-panel[data-tone="peach"] { --fw-accent: #d3b58e; --fw-tint: #383025; }
+.dark .docs-framework-panel[data-tone="mint"] { --fw-accent: #a0c7bc; --fw-tint: #263931; }
+.dark .docs-framework-stage { background: linear-gradient(115deg, rgb(24 24 24 / 90%), rgb(24 24 24 / 78%)), var(--fw-cloud) center / cover; }
+@keyframes docs-framework-flow { to { stroke-dashoffset: -24; } }
+@keyframes docs-framework-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .docs-framework-panel,
+  .docs-framework-diagram .fw-flow { animation: none; }
+}

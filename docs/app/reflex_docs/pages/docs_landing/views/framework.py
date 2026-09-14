@@ -1,121 +1,103 @@
+"""Interactive framework overview with editorial product diagrams."""
+
 import reflex as rx
 import reflex_components_internal as ui
 
 from reflex_docs.pages.docs import database, enterprise, getting_started
 from reflex_docs.pages.docs.library import library
-from reflex_docs.pages.library_previews import core_components_dict
+from reflex_docs.pages.docs_landing.views.artwork import artwork
+
+CAPABILITIES = (
+    (
+        "how",
+        "How It Works",
+        "Define your interface and state in Python. Reflex connects them into a reactive web application.",
+        "From Python to a live interface",
+        "Read the introduction",
+        getting_started.introduction.path,
+        "blue",
+    ),
+    (
+        "components",
+        "Components",
+        "Compose your interface from buttons, forms, tables, and hundreds of reusable building blocks.",
+        "Small pieces. Complete applications.",
+        "Browse all components",
+        library.path,
+        "lavender",
+    ),
+    (
+        "auth",
+        "Auth",
+        "Connect your identity provider and control who can access your application with enterprise authentication.",
+        "Your identity. Your access rules.",
+        "Explore authentication",
+        enterprise.auth.overview.path,
+        "peach",
+    ),
+    (
+        "database",
+        "Database",
+        "Define typed models, query your database, and bring live data into your application with Python.",
+        "One model, from database to interface",
+        "Explore databases",
+        database.overview.path,
+        "mint",
+    ),
+)
 
 
-def docs_item(
-    icon: str, title: str, description: str, href: str, enterprise_only: bool = False
-) -> rx.Component:
-    """Link to a framework guide with a quiet, readable text treatment."""
-    return rx.el.a(
-        rx.el.div(
-            ui.icon(
-                icon, class_name="size-5 shrink-0", stroke_width=1.5, aria_hidden=True
-            ),
-            rx.el.h3(
-                title,
-                class_name="text-xl font-book tracking-tight group-hover:underline decoration-border-strong underline-offset-4",
+def framework_tab(value: str, title: str, description: str) -> rx.Component:
+    """Select a diagram with a keyboard-accessible vertical tab."""
+    return ui.tabs.tab(
+        rx.el.span(
+            rx.el.span(
+                title, class_name="text-xl font-book tracking-tight sm:text-2xl"
             ),
             rx.el.span(
                 "Enterprise-only",
-                class_name="ml-auto shrink-0 rounded-compact bg-muted px-2 py-1 text-xs font-normal text-muted-foreground",
+                class_name="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-normal tracking-normal text-muted-foreground",
             )
-            if enterprise_only
+            if value == "auth"
             else None,
-            class_name="flex flex-wrap items-center gap-3 text-foreground",
+            class_name="flex flex-wrap items-center gap-3",
         ),
-        rx.el.p(
-            description,
-            class_name="text-sm font-normal leading-6 text-muted-foreground",
-        ),
-        href=href,
-        class_name="docs-framework-guide group flex flex-col gap-3 py-6 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+        rx.el.span(description, class_name="docs-framework-tab-description"),
+        value=value,
+        aria_label=title,
+        unstyled=True,
+        class_name="docs-framework-tab w-full text-left text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
 
 
-def links_section() -> rx.Component:
-    """Show the three core framework guides as an open list."""
-    return rx.el.div(
-        docs_item(
-            "SourceCodeSquareIcon",
-            "How It Works",
-            "Learn the basics of how Reflex works behind the scenes and how its architecture enables flexible, advanced usage.",
-            getting_started.introduction.path,
-        ),
-        docs_item(
-            "ShieldUserIcon",
-            "Auth",
-            "Implement secure authentication for your apps using Reflex’s built-in features and extensible architecture.",
-            enterprise.auth.overview.path,
-            enterprise_only=True,
-        ),
-        docs_item(
-            "DatabaseIcon",
-            "Database",
-            "Manage and interact with your data seamlessly using Reflex’s straightforward models and querying approach.",
-            database.overview.path,
-        ),
-        class_name="min-w-0 divide-y divide-border-subtle border-t border-border-subtle",
-    )
-
-
-def component_link(name: str, href: str) -> rx.Component:
-    """Render a category link without button chrome or repeated arrows."""
-    return rx.el.a(
-        name,
-        href=f"/library/{href.strip('/')}",
-        class_name="docs-framework-category flex min-h-11 items-center border-b border-border px-0 py-3 text-sm font-normal leading-6 text-muted-foreground decoration-border-strong underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-    )
-
-
-def components_section() -> rx.Component:
-    """Group component categories on the marketing theme's muted surface."""
-    categories = [
-        ("Data Display", "data-display"),
-        ("Disclosure", "disclosure"),
-        ("Dynamic Rendering", "dynamic_rendering"),
-        ("Forms", "forms"),
-        ("Layout", "layout"),
-        ("Media", "media"),
-        ("Other", "other"),
-        ("Overlays", "overlays"),
-        ("Tables and Data Grids", "tables_and_data_grids"),
-        ("Typography", "typography"),
-    ]
-    return rx.el.div(
+def framework_panel(
+    value: str, caption: str, link: str, href: str, tone: str
+) -> rx.Component:
+    """Pair a responsive decorative diagram with its documentation link."""
+    return ui.tabs.panel(
         rx.el.div(
-            rx.el.h3(
-                "Component Library",
-                class_name="text-2xl font-book tracking-tight text-foreground",
-            ),
-            rx.el.p(
-                "Build your app with our comprehensive collection of UI components and features.",
-                class_name="max-w-md text-base font-normal leading-7 text-muted-foreground",
-            ),
-            class_name="flex flex-col gap-3",
+            artwork(f"framework_{value}", class_name="docs-framework-diagram"),
+            class_name="docs-framework-stage",
         ),
         rx.el.div(
-            *[
-                component_link(name, core_components_dict[key]["path"])
-                for name, key in categories
-            ],
-            class_name="grid grid-cols-1 gap-x-8 sm:grid-cols-2 lg:gap-x-10",
+            rx.el.p(caption, class_name="text-base font-book text-foreground"),
+            rx.el.a(
+                link,
+                rx.icon("arrow-right", class_name="size-4", aria_hidden=True),
+                href=href,
+                class_name="inline-flex min-h-10 w-fit items-center gap-2 rounded-full border border-border bg-background px-4 text-sm font-book text-foreground transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+            ),
+            class_name="docs-framework-caption flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-border bg-muted px-6 py-5 sm:px-8",
         ),
-        rx.el.a(
-            "Browse all components",
-            rx.icon("arrow-right", class_name="size-4", aria_hidden=True),
-            href=library.path,
-            class_name="inline-flex min-h-11 w-fit items-center gap-2 rounded-compact text-sm font-book text-foreground transition-colors hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
-        ),
-        class_name="docs-framework-library flex min-w-0 flex-col gap-6 rounded-panel border border-border-subtle bg-muted p-6 sm:p-8 lg:p-10",
+        value=value,
+        unstyled=True,
+        custom_attrs={"data-tone": tone},
+        class_name="docs-framework-panel min-w-0 overflow-hidden rounded-panel border border-border-subtle",
     )
 
 
 def framework() -> rx.Component:
-    """Introduce framework guides and the component catalog in an editorial layout."""
+    """Explore framework capabilities through tabs and product diagrams."""
     return rx.el.section(
         rx.el.div(
             rx.el.h2(
@@ -129,10 +111,28 @@ def framework() -> rx.Component:
             ),
             class_name="flex flex-col gap-4",
         ),
-        rx.el.div(
-            links_section(),
-            components_section(),
-            class_name="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12",
+        ui.tabs.root(
+            ui.tabs.list(
+                *[
+                    framework_tab(value, title, description)
+                    for value, title, description, *_ in CAPABILITIES
+                ],
+                activate_on_focus=True,
+                aria_label="Framework capabilities",
+                unstyled=True,
+                class_name="docs-framework-tabs flex min-w-0 flex-col self-center w-full",
+            ),
+            rx.el.div(
+                *[
+                    framework_panel(value, caption, link, href, tone)
+                    for value, _, _, caption, link, href, tone in CAPABILITIES
+                ],
+                class_name="min-w-0",
+            ),
+            default_value="how",
+            orientation="vertical",
+            unstyled=True,
+            class_name="grid grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12",
         ),
         aria_labelledby="docs-framework-title",
         class_name="docs-framework-section flex flex-col gap-10 max-w-(--landing-layout-max-width) mx-auto w-full lg:pt-24 pt-10 lg:mb-24 mb-10 max-xl:px-6",

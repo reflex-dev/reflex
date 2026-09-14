@@ -339,3 +339,43 @@ def test_low_level_form_example_has_valid_inline_result_markup(page: Page):
     page.goto(f"{PREVIEW_URL}/docs/library/forms/form/low/", wait_until="networkidle")
     expect(page.get_by_text("Username submitted:", exact=False)).to_be_visible()
     assert not errors
+
+
+@pytest.mark.parametrize("width", [375, 1440])
+def test_framework_tabs_switch_diagrams_and_keep_docs_links(page: Page, width: int):
+    """Every framework tab reveals one illustration and its matching docs link."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
+    section = page.get_by_role("region", name="Framework", exact=True)
+    for title, link, href in [
+        (
+            "How It Works",
+            "Read the introduction",
+            "/docs/getting-started/introduction/",
+        ),
+        ("Components", "Browse all components", "/docs/library/"),
+        ("Auth", "Explore authentication", "/docs/enterprise/auth/overview/"),
+        ("Database", "Explore databases", "/docs/database/overview/"),
+    ]:
+        tab = section.get_by_role("tab", name=title, exact=True)
+        tab.click()
+        expect(tab).to_have_attribute("aria-selected", "true")
+        panel = section.get_by_role("tabpanel")
+        expect(panel).to_have_count(1)
+        expect(panel.locator("svg").first).to_be_visible()
+        expect(panel.get_by_role("link", name=link)).to_have_attribute("href", href)
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    section.get_by_role("tab", name="How It Works", exact=True).focus()
+    page.keyboard.press("ArrowDown")
+    expect(section.get_by_role("tab", name="Components", exact=True)).to_have_attribute(
+        "aria-selected", "true"
+    )
+    page.keyboard.press("Tab")
+    expect(
+        section.get_by_role("tabpanel", name="Components", exact=True)
+    ).to_be_focused()
+    page.keyboard.press("Tab")
+    browse = section.get_by_role("link", name="Browse all components")
+    expect(browse).to_be_focused()
+    page.keyboard.press("Enter")
+    expect(page).to_have_url(f"{PREVIEW_URL}/docs/library/")

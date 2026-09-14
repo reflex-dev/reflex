@@ -18,4 +18,4 @@ Remove the empty space beneath the MCP illustration on the docs landing page.
 
 Refine the docs navbar with understated text navigation, compact search, and consistent editorial controls.
 
-Simplify the Framework landing section with readable guide links and a muted component-library panel.
+Explore framework capabilities through accessible tabs and theme-aware product diagrams.
