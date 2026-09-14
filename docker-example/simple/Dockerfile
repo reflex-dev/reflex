@@ -2,9 +2,10 @@
 # The simplest single-container deployment: one Reflex process serves the
 # static frontend and the backend on the same port. No reverse proxy, no Redis.
 #
-# The frontend is compiled and built each time the container starts, so startup
+# The frontend is compiled at build time and the container start skips that
+# step, but the production bundle is still rebuilt on each start, so startup
 # takes longer than the other examples and bun stays in the image. For an image
-# with a prebuilt frontend see `production-one-port`.
+# that serves a prebuilt frontend see `production`.
 FROM python:3.13-slim
 
 # uv installs python packages; reflex uses a bun found on PATH instead of downloading its own.
@@ -22,12 +23,15 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Copy local context to `/app` inside container (see .dockerignore)
 COPY . .
 
-# Install frontend dependencies at build time so the container does not need
-# network access to start. The build output itself is regenerated on startup.
-RUN reflex export --frontend-only --no-zip && rm -rf .web/build
+# Compile the app and install frontend dependencies at build time so the
+# container does not need network access to start.
+RUN reflex export --frontend-only --no-zip
 
 EXPOSE 3000
 
-# Apply migrations before starting the backend.
+# Apply migrations before starting the backend. The nocompile flag makes
+# reflex reuse the compile from the image instead of redoing it; reflex deletes
+# the flag once read, so it is recreated on every start.
 CMD [ -d alembic ] && reflex db migrate; \
+    touch .web/nocompile && \
     exec reflex run --env prod --frontend-port ${PORT:-3000}

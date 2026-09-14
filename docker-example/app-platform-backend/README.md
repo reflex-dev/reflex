@@ -1,4 +1,4 @@
-# production-app-platform
+# app-platform-backend
 
 This example deployment is intended for use with App hosting platforms, like
 Azure, AWS, or Google Cloud Run.

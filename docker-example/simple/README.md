@@ -1,4 +1,4 @@
-# simple-one-process
+# simple
 
 This docker deployment runs Reflex in prod mode with a single process exposing
 a single HTTP port:
@@ -7,19 +7,21 @@ a single HTTP port:
   (event websocket, `/ping`, `/_upload`).
 
 No reverse proxy or Redis is involved, so the backend runs a single worker
-with in-memory state. The frontend is compiled and built when the container
-starts, which adds some time before the app is reachable.
+with in-memory state. The app is compiled when the image is built and the
+container reuses that compile, but the production frontend bundle is still
+rebuilt when the container starts, which adds some time before the app is
+reachable.
 
 ## Build
 
 ```console
-docker build -t reflex-simple-one-process .
+docker build -t reflex-simple .
 ```
 
 ## Run
 
 ```console
-docker run -p 3000:3000 reflex-simple-one-process
+docker run -p 3000:3000 reflex-simple
 ```
 
 Map the same port on both sides. The frontend connects to the backend using
@@ -31,7 +33,7 @@ dropped and the frontend connects to its own origin.
 To listen on a different port set `PORT`:
 
 ```console
-docker run -e PORT=8080 -p 8080:8080 reflex-simple-one-process
+docker run -e PORT=8080 -p 8080:8080 reflex-simple
 ```
 
 Note that this container has _no persistence_ and will lose all data when

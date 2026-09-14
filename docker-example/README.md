@@ -7,13 +7,14 @@ includes the `reflex` package. Commit the `reflex.lock/` directory that
 `reflex init` creates so the frontend dependencies installed in the image match
 the ones you developed against.
 
-## `simple-one-process`
+## `simple`
 
 The most basic deployment: a single Reflex process serves both the static
-frontend and the backend on one port. No reverse proxy, no Redis. The frontend
-is rebuilt each time the container starts.
+frontend and the backend on one port. No reverse proxy, no Redis. The app is
+compiled when the image is built; only the frontend bundle is rebuilt when the
+container starts.
 
-## `production-one-port`
+## `production`
 
 This deployment exports the frontend statically and serves it via a single HTTP
 port using Caddy, with a local Redis for state. The backend starts instantly
@@ -28,7 +29,7 @@ single Reflex app. It provides the entire stack in a single `compose.yaml`
 including a webserver with automatic TLS, one or more backend instances, redis,
 and a postgres database.
 
-## `production-app-platform`
+## `app-platform-backend`
 
 This example deployment is intended for use with App hosting platforms, like
 Azure, AWS, or Google Cloud Run. It is the backend of the deployment, which
