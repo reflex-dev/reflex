@@ -75,6 +75,35 @@ def test_restore_bundled_libraries_ignores_invalid_utf8(
     utils._restore_bundled_libraries()
 
 
+@pytest.mark.parametrize(
+    "contents",
+    ["{", '"@radix-ui/themes"', '["@radix-ui/themes", 1]'],
+)
+def test_restore_bundled_libraries_ignores_invalid_json(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, contents: str
+) -> None:
+    """Malformed registry data does not change backend registrations."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_text(contents, encoding="utf-8")
+    with RegistrationContext() as context:
+        original = list(context.bundled_libraries)
+
+        utils._restore_bundled_libraries()
+
+        assert context.bundled_libraries == original
+
+
+def test_restore_bundled_libraries_ignores_missing_artifact(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A missing frontend artifact does not interrupt backend-only startup."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+
+    utils._restore_bundled_libraries()
+
+
 def test_document_preloads_the_global_stylesheet():
     """Render-blocking CSS should be discoverable alongside early resource hints."""
     head = create_document_root().children[0]
