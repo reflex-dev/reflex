@@ -89,9 +89,12 @@ def _default_oplock_hold_time_ms() -> int:
     Returns:
         The default opportunistic lock hold time.
     """
-    return (oplock_hold_time() // timedelta(milliseconds=1)) or (
-        _default_lock_expiration() // 2
-    )
+    hold_time = oplock_hold_time()
+    if not hold_time:
+        return _default_lock_expiration() // 2
+    # A configured hold time is worth at least one millisecond, so that a
+    # sub-millisecond duration is not mistaken for the unset default above.
+    return max(hold_time // timedelta(milliseconds=1), 1)
 
 
 # The lock waiter task should subscribe to lock channel updates within this period.
