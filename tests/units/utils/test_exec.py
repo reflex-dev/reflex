@@ -15,6 +15,26 @@ from reflex.utils import exec as exec_utils
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
 
+@pytest.mark.parametrize("frontend_present", [False, True])
+def test_run_backend_manages_nocompile_marker(
+    tmp_path: Path,
+    mocker: MockerFixture,
+    frontend_present: bool,
+) -> None:
+    """Only full-stack backend runs leave the compile-skip marker."""
+    marker = tmp_path / exec_utils.constants.NOCOMPILE_FILE
+    if not frontend_present:
+        marker.touch()
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    mocker.patch.object(exec_utils, "run_granian_backend")
+    mocker.patch.object(exec_utils, "notify_backend")
+
+    exec_utils.run_backend("127.0.0.1", 8000, frontend_present=frontend_present)
+
+    assert marker.exists() is frontend_present
+
+
 def test_run_backend_skips_app_preload_for_spawn(
     tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ) -> None:

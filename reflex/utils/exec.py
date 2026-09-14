@@ -506,9 +506,14 @@ def run_backend(
         frontend_present: Whether the frontend is present.
     """
     web_dir = get_web_dir()
-    # Create a .nocompile file to skip compile for backend.
+    # Only a backend running with a frontend needs to skip its own compile.
+    # Backend-only runs must not leave this marker for the next full run.
     if web_dir.exists():
-        (web_dir / constants.NOCOMPILE_FILE).touch()
+        nocompile = web_dir / constants.NOCOMPILE_FILE
+        if frontend_present:
+            nocompile.touch()
+        else:
+            nocompile.unlink(missing_ok=True)
 
     if not frontend_present:
         notify_backend(host)
