@@ -74,3 +74,47 @@ def test_mobile_menu_meets_the_header(page: Page):
     )
     page.keyboard.press("Escape")
     expect(page.get_by_role("dialog")).to_have_count(0)
+
+
+@pytest.mark.parametrize("width", [375, 1440])
+def test_editorial_footer_preserves_links_and_email_validation(page: Page, width: int):
+    """Footer links keep their destinations and empty signup stays in the browser."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
+    footer = page.locator(".docs-footer")
+    expect(footer.get_by_role("link", name="Blog", exact=True)).to_have_attribute(
+        "href", "/blog/"
+    )
+    expect(
+        footer.get_by_role("link", name="Documentation", exact=True)
+    ).to_have_attribute("href", "/docs/")
+    email = footer.get_by_label("Stay up to date with Reflex")
+    expect(email).to_have_attribute("name", "input_email")
+    footer.get_by_role("button", name="Get Updates", exact=True).click()
+    assert email.evaluate("input => input.validity.valueMissing")
+    expect(email).to_be_focused()
+    expect(footer.get_by_role("status")).to_have_count(0)
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+    footer.get_by_role("button", name="Toggle dark color mode", exact=True).click()
+    expect(
+        footer.get_by_role("button", name="Toggle dark color mode")
+    ).to_have_attribute("aria-pressed", "true")
+    expect(page.locator("header")).to_have_css("background-color", "rgb(24, 24, 24)")
+    expect(page.locator(".docs-cta-art [fill='var(--background)']").first).to_have_css(
+        "fill", "rgb(24, 24, 24)"
+    )
+
+
+def test_editorial_closing_actions_keep_native_navigation_and_dialog(page: Page):
+    """The closing CTA supports its link and booking dialog without nested buttons."""
+    page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
+    cta = page.locator(".docs-cta")
+    trial = cta.get_by_role("link", name="Try for free", exact=True)
+    expect(trial).to_have_attribute("href", "https://build.reflex.dev/")
+    expect(trial.locator("button")).to_have_count(0)
+    cta.get_by_role("button", name="Book a Demo", exact=True).click()
+    expect(page.get_by_role("dialog", include_hidden=True)).to_have_count(1)
+    expect(page.get_by_role("dialog")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.get_by_role("dialog")).to_have_count(0)

@@ -4,10 +4,10 @@ import frontmatter
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.components.marquee import marquee
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_site_shared.integrations import get_integration_logo_url
 
 from reflex_docs.pages.docs import ai_builder as ai_builder_pages
+from reflex_docs.pages.docs_landing.views.artwork import artwork
 
 
 def get_integration_path() -> list:
@@ -67,7 +67,11 @@ def get_integration_path() -> list:
 
 
 def card(
-    title: str, description: str, content: str, href: str, enteprise_only: bool = False
+    title: str,
+    description: str,
+    content: rx.Component,
+    href: str,
+    enteprise_only: bool = False,
 ) -> rx.Component:
     return rx.el.div(
         rx.el.span(
@@ -91,9 +95,9 @@ def card(
         rx.el.a(
             href=href,
             aria_label=title,
-            class_name="absolute inset-0 rounded-xl focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-primary-9",
+            class_name="absolute inset-0 rounded-panel focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-primary-9",
         ),
-        class_name="flex flex-col bg-secondary-1/96 backdrop-blur-[16px] rounded-xl relative cursor-pointer transition-colors overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_12px_24px_0_rgba(0,0,0,0.08),0_1px_1px_0_rgba(0,0,0,0.01),0_4px_8px_0_rgba(0,0,0,0.03)] dark:shadow-none dark:border dark:border-secondary-4",
+        class_name="docs-resource-card flex flex-col bg-background rounded-panel border border-border-subtle relative transition-colors hover:border-border-strong overflow-hidden",
     )
 
 
@@ -127,7 +131,7 @@ def integrations_marquee() -> rx.Component:
         marquee(
             *[integration_icon_marquee(name) for name in reversed(integration_names)],
             direction="left",
-            gradient_color="light-dark(rgba(255, 255, 255, 0.96), var(--secondary-1))",
+            gradient_color="var(--background)",
             class_name="h-auto w-full overflow-hidden",
             gradient_width=65,
             speed=25,
@@ -136,13 +140,13 @@ def integrations_marquee() -> rx.Component:
         marquee(
             *[integration_icon_marquee(name) for name in integration_names],
             direction="right",
-            gradient_color="light-dark(rgba(255, 255, 255, 0.96), var(--secondary-1))",
+            gradient_color="var(--background)",
             class_name="h-auto w-full overflow-hidden",
             gradient_width=65,
             speed=25,
             pause_on_hover=False,
         ),
-        class_name="flex flex-col gap-6.5 px-8 max-lg:pb-6",
+        class_name="flex flex-col gap-6.5 px-8 mt-auto py-8",
     )
 
 
@@ -164,10 +168,9 @@ def ai_builder_section() -> rx.Component:
                 card(
                     title="Getting Started",
                     description="A comprehensive guide to working effectively with AI Builder. The key to success is clarity, structure, and iteration.",
-                    content=rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}docs/{rx.color_mode_cond('light', 'dark')}/getting_started_1.svg",
-                        alt="AI Builder getting started guide",
-                        class_name="w-full h-auto pb-8",
+                    content=artwork(
+                        "getting_started_illustration",
+                        "w-full mt-auto py-8",
                     ),
                     href=ai_builder_pages.overview.best_practices.path,
                 ),
@@ -180,17 +183,16 @@ def ai_builder_section() -> rx.Component:
                 card(
                     title="MCP",
                     description="The Reflex Model Context Protocol (MCP) provides AI assistants and coding tools with structured access to Reflex documentation and component information.",
-                    content=rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}docs/{rx.color_mode_cond('light', 'dark')}/mcp_1.svg",
-                        alt="Reflex MCP integration illustration",
-                        class_name="w-full h-auto -mt-4",
+                    content=artwork(
+                        "mcp_illustration",
+                        "w-full mt-auto py-8",
                     ),
                     href=ai_builder_pages.integrations.mcp_overview.path,
                     enteprise_only=True,
                 ),
-                class_name="grid grid-cols-1 lg:grid-cols-3 gap-12",
+                class_name="grid grid-cols-1 lg:grid-cols-3 gap-6",
             ),
             class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto",
         ),
-        class_name="bg-gradient-to-b from-secondary-2 to-secondary-1 w-full lg:pt-24 lg:pb-24 pb-10 max-xl:px-6 max-lg:pt-10",
+        class_name="bg-background w-full lg:pt-24 lg:pb-24 pb-10 max-xl:px-6 max-lg:pt-10",
     )

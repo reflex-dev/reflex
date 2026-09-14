@@ -1,12 +1,11 @@
 """Editorial introduction to the documentation."""
 
-from pathlib import Path
-
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.components.marketing_button import button
 
 from reflex_docs.pages.docs import getting_started
+from reflex_docs.pages.docs_landing.views.artwork import artwork
 
 
 def hero() -> rx.Component:
@@ -35,12 +34,9 @@ def hero() -> rx.Component:
             ),
             class_name="relative z-10 flex flex-col items-start gap-6 lg:max-w-[55%]",
         ),
-        rx.html(
-            Path(__file__)
-            .with_name("squares_docs_logo.svg")
-            .read_text(encoding="utf-8"),
-            class_name="docs-hero-art pointer-events-none absolute left-1/2 w-1/2 max-lg:hidden [&_svg]:h-auto [&_svg]:w-full",
-            aria_hidden=True,
+        artwork(
+            "squares_docs_logo",
+            class_name="docs-hero-art absolute left-1/2 w-1/2 max-lg:hidden",
         ),
         class_name="docs-hero relative max-w-(--landing-layout-max-width) mx-auto w-full px-6 xl:px-0 pb-16 lg:pb-24",
     )

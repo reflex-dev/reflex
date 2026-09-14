@@ -1,8 +1,6 @@
 import reflex as rx
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_site_shared.meta.meta import create_meta_tags
-from reflex_site_shared.views.cta_card import cta_card
-from reflex_site_shared.views.footer import footer_index
 
 from reflex_docs.pages.docs_landing.views import (
     ai_builder_section,
@@ -14,7 +12,9 @@ from reflex_docs.pages.docs_landing.views import (
     other_section,
     self_hosting_section,
 )
+from reflex_docs.pages.docs_landing.views.cta import docs_cta
 from reflex_docs.views.docs_navbar import docs_navbar
+from reflex_docs.views.editorial_footer import editorial_footer
 
 
 @rx.page(
@@ -47,8 +47,8 @@ def docs_landing() -> rx.Component:
                 hosting_section(),
                 self_hosting_section(),
                 other_section(),
-                cta_card(),
-                footer_index(),
+                docs_cta(),
+                editorial_footer(),
                 class_name="flex flex-col relative justify-center items-center w-full overflow-hidden",
             ),
             class_name="flex flex-col w-full relative h-full justify-center items-center",
