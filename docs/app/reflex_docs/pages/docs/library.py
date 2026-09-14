@@ -64,15 +64,14 @@ def component_grid():
                 rx.el.ul(
                     *[
                         rx.el.li(
-                            rx.link(
+                            rx.el.a(
                                 get_display_name(c[0]),
                                 href=get_component_link(
                                     category=category,
                                     clist=c,
                                     prefix=prefix,
                                 ),
-                                underline="none",
-                                class_name="block rounded-compact px-3 py-2 text-sm font-normal leading-6 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                                class_name="block rounded-compact px-3 py-2 text-sm font-normal leading-6 text-muted-foreground decoration-border-strong underline-offset-4 hover:text-foreground hover:underline transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                             ),
                         )
                         for c in get_components_for_category(

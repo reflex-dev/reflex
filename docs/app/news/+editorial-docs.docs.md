@@ -6,7 +6,7 @@ Correct the header selection on the docs landing page so Overview is highlighted
 
 Restore a subtle contrasting background behind the AI Builder section on the docs landing page in light and dark modes.
 
-Make the component library easier to scan with baseline-aligned, text-only category headings on a uniform background, fine dividers, and component links arranged in columns with subtle hover highlights.
+Make the component library easier to scan with baseline-aligned, text-only category headings on a uniform background, fine dividers, and component links arranged in columns with monochrome underlined hover states.
 
 Match both docs footer social menus to the main site's compact icon styling and remove the forum icon.
 
