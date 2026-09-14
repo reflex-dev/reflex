@@ -3,16 +3,66 @@
 import builtins
 import multiprocessing
 import os
+import sys
 from pathlib import Path
 
 import pytest
+import reflex_base.config
 from pytest_mock import MockerFixture
+from reflex_base import constants
 from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
+
+
+def test_load_app_initializes_config_before_importing_app(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The backend factory must load config before an app imports rxconfig classes.
+
+    Args:
+        tmp_path: The pytest temporary project directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    package = tmp_path / "config_first_app"
+    package.mkdir()
+    (package / "__init__.py").touch()
+    (package / "config_first_app.py").write_text(
+        "import reflex as rx\n"
+        "from rxconfig import ConfigState\n\n"
+        "def index():\n"
+        "    return rx.text(ConfigState.value)\n\n"
+        "app = rx.App(_state=ConfigState)\n"
+        "app.add_page(index)\n"
+    )
+    (tmp_path / constants.Config.FILE).write_text(
+        "import reflex as rx\n\n"
+        "class ConfigState(rx.State):\n"
+        "    value: str = ''\n\n"
+        "config = rx.Config(app_name='config_first_app')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    config_module_name = constants.Config.MODULE
+    monkeypatch.delitem(sys.modules, config_module_name, raising=False)
+    monkeypatch.delitem(sys.modules, "config_first_app", raising=False)
+    monkeypatch.delitem(sys.modules, "config_first_app.config_first_app", raising=False)
+
+    try:
+        with RegistrationContext():
+            assert exec_utils.load_app() is not None
+            app_module = sys.modules["config_first_app.config_first_app"]
+            assert app_module.app._state is sys.modules[config_module_name].ConfigState
+    finally:
+        sys.modules.pop(config_module_name, None)
+        sys.modules.pop("config_first_app", None)
+        sys.modules.pop("config_first_app.config_first_app", None)
+        reflex_base.config._config_module_deps.clear()
+        reflex_base.config._config_module_deps_root = None
 
 
 @pytest.mark.parametrize("frontend_present", [False, True])
@@ -130,9 +180,7 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     mocker.patch.object(
         exec_utils, "get_dev_backend_reload_marker", return_value=marker
     )
-    mocker.patch.object(
-        exec_utils, "get_app_instance_from_file", return_value="app:app"
-    )
+    mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
     mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
 
     seen: dict[str, str | None] = {}

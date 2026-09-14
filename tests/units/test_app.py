@@ -5,7 +5,6 @@ import builtins
 import contextlib
 import contextvars
 import functools
-import importlib
 import io
 import json
 import logging
@@ -30,6 +29,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from pytest_mock import MockerFixture
+from reflex_base import constants as base_constants
 from reflex_base import otel
 from reflex_base.components.component import Component
 from reflex_base.config import get_config
@@ -122,7 +122,7 @@ def test_app_reuses_preloaded_config_with_state(
         tmp_path: The pytest temporary project directory.
         monkeypatch: The pytest monkeypatch fixture.
     """
-    (tmp_path / "rxconfig.py").write_text(
+    (tmp_path / base_constants.Config.FILE).write_text(
         "import reflex as rx\n\n"
         "class ConfigState(rx.State):\n"
         "    value: str = ''\n\n"
@@ -131,22 +131,22 @@ def test_app_reuses_preloaded_config_with_state(
         "config = rx.Config(app_name='config_state_app')\n"
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.syspath_prepend(str(tmp_path))
-    monkeypatch.delitem(sys.modules, "rxconfig", raising=False)
+    config_module_name = base_constants.Config.MODULE
+    monkeypatch.delitem(sys.modules, config_module_name, raising=False)
 
     try:
         with RegistrationContext():
-            config_module = importlib.import_module("rxconfig")
-            state = config_module.ConfigState
-            instance = config_module.ConfigClass()
+            config = get_config()
+            state = sys.modules[config_module_name].ConfigState
+            instance = sys.modules[config_module_name].ConfigClass()
 
             App(enable_state=False)
 
-            assert get_config() is config_module.config
-            assert sys.modules["rxconfig"].ConfigState is state
+            assert get_config() is config
+            assert sys.modules[config_module_name].ConfigState is state
             assert type(pickle.loads(pickle.dumps(instance))) is type(instance)
     finally:
-        sys.modules.pop("rxconfig", None)
+        sys.modules.pop(config_module_name, None)
         reflex_base.config._config_module_deps.clear()
         reflex_base.config._config_module_deps_root = None
 
