@@ -40,17 +40,32 @@ def github_button() -> rx.Component:
 
 def logo() -> rx.Component:
     return rx.el.elements.a(
-        rx.image(
-            src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
-            alt="Reflex",
-            class_name="w-[90px] h-auto shrink-0 dark:invert",
+        rx.el.div(
+            rx.image(
+                src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
+                alt="Reflex Logo",
+                class_name="shrink-0 block dark:hidden",
+            ),
+            rx.image(
+                src=f"{REFLEX_ASSETS_CDN}logos/dark/reflex.svg",
+                alt="Reflex Logo",
+                class_name="shrink-0 hidden dark:block",
+            ),
         ),
-        rx.el.span(
-            "Docs",
-            class_name="border-l border-border pl-3 text-sm font-medium text-muted-foreground",
+        rx.el.div(
+            rx.image(
+                src=f"{REFLEX_ASSETS_CDN}logos/light/docs.svg",
+                alt="Docs Logo",
+                class_name="shrink-0 block dark:hidden",
+            ),
+            rx.image(
+                src=f"{REFLEX_ASSETS_CDN}logos/dark/docs.svg",
+                alt="Docs Logo",
+                class_name="shrink-0 hidden dark:block",
+            ),
         ),
         href=REFLEX_URL,
-        class_name="flex flex-row gap-3 items-center shrink-0 lg:mr-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+        class_name="flex flex-row gap-2.5 items-center shrink-0 lg:mr-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
 
 
