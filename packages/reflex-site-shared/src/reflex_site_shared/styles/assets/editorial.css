@@ -614,15 +614,18 @@
 }
 .docs-framework-diagram { width: 100%; max-width: 44rem; }
 .docs-framework-diagram svg { overflow: visible; }
-.docs-framework-diagram .fw-flow { animation: docs-framework-flow 3s linear infinite; }
+.docs-framework-diagram .fw-flow {
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.6;
+}
 .dark .docs-framework-panel { --fw-accent: #a0bbce; --fw-tint: #263139; }
 .dark .docs-framework-panel[data-tone="lavender"] { --fw-accent: #bdb0df; --fw-tint: #302a3d; }
 .dark .docs-framework-panel[data-tone="peach"] { --fw-accent: #d3b58e; --fw-tint: #383025; }
 .dark .docs-framework-panel[data-tone="mint"] { --fw-accent: #a0c7bc; --fw-tint: #263931; }
 .dark .docs-framework-stage { background: linear-gradient(115deg, rgb(24 24 24 / 90%), rgb(24 24 24 / 78%)), var(--fw-cloud) center / cover; }
-@keyframes docs-framework-flow { to { stroke-dashoffset: -24; } }
 @keyframes docs-framework-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) {
-  .docs-framework-panel,
-  .docs-framework-diagram .fw-flow { animation: none; }
+  .docs-framework-panel { animation: none; }
 }

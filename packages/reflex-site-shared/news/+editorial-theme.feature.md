@@ -7,3 +7,5 @@ Align documentation fields, navigation, content surfaces, and icon controls with
 Refine the docs navbar with understated text navigation, compact search, and consistent editorial controls.
 
 Explore framework capabilities through accessible tabs and theme-aware product diagrams.
+
+Use fine solid connectors with rounded corners and clean junctions in framework diagrams.

@@ -19,3 +19,5 @@ Remove the empty space beneath the MCP illustration on the docs landing page.
 Refine the docs navbar with understated text navigation, compact search, and consistent editorial controls.
 
 Explore framework capabilities through accessible tabs and theme-aware product diagrams, with the section heading directly above the tab list.
+
+Use fine solid connectors with rounded corners and clean junctions in framework diagrams.
