@@ -690,7 +690,7 @@ def cleanup_env_vars():
 
 
 def test_interpret_timedelta_env_defaults_to_seconds() -> None:
-    """A bare number keeps an existing integer setting working unchanged."""
+    """A bare number is read as seconds."""
     assert interpret_timedelta_env("30", "TEST_FIELD") == timedelta(seconds=30)
     assert interpret_timedelta_env("1.5", "TEST_FIELD") == timedelta(seconds=1.5)
     assert interpret_timedelta_env("0", "TEST_FIELD") == timedelta(0)
@@ -698,6 +698,7 @@ def test_interpret_timedelta_env_defaults_to_seconds() -> None:
 
 def test_interpret_timedelta_env_units() -> None:
     """A suffix overrides the default unit."""
+    assert interpret_timedelta_env("1us", "TEST_FIELD") == timedelta(microseconds=1)
     assert interpret_timedelta_env("500ms", "TEST_FIELD") == timedelta(milliseconds=500)
     assert interpret_timedelta_env("30s", "TEST_FIELD") == timedelta(seconds=30)
     assert interpret_timedelta_env("5m", "TEST_FIELD") == timedelta(minutes=5)

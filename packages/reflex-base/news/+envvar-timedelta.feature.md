@@ -1,1 +1,1 @@
-`EnvVar` now supports `timedelta`. A bare number is read as seconds, and `us`, `ms`, `s`, `m`, `h` and `d` suffixes are understood, so `TIMEOUT=30`, `TIMEOUT=30s` and `TIMEOUT=5m` are all valid.
+`EnvVar` reads `timedelta` values as a number of seconds, or with a `us`, `ms`, `s`, `m`, `h` or `d` suffix, so `TIMEOUT=30`, `TIMEOUT=30s` and `TIMEOUT=5m` are all valid.

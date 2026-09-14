@@ -133,10 +133,9 @@ _TIMEDELTA_PATTERN = re.compile(r"([+-]?\d+(?:\.\d+)?)\s*([a-z]*)")
 def interpret_timedelta_env(value: str, field_name: str) -> timedelta:
     """Interpret a duration environment variable value.
 
-    A bare number is read as seconds, so an existing integer setting keeps
-    working when its type becomes a duration. A unit suffix overrides that:
-    ``us``, ``ms``, ``s``, ``m``, ``h`` and ``d`` are understood, making ``30``,
-    ``30s``, ``500ms`` and ``5m`` all valid.
+    A bare number is read as seconds. A unit suffix overrides that: ``us``,
+    ``ms``, ``s``, ``m``, ``h`` and ``d`` are understood, making ``30``, ``30s``,
+    ``500ms`` and ``5m`` all valid.
 
     Args:
         value: The environment variable value.
