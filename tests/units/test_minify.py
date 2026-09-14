@@ -658,14 +658,14 @@ def test_sync_heals_stale_parent():
         "version": SCHEMA_VERSION,
         "states": {
             parent_path: StateEntry(id="a", parent=None),
-            child_path: StateEntry(id="a", parent="wrong.Path"),
+            child_path: StateEntry(id="b", parent="wrong.Path"),
         },
         "events": {},
     }
 
     new_config = sync_minify_config(existing_config, HealParentParent)
 
-    assert new_config["states"][child_path] == StateEntry(id="a", parent=parent_path)
+    assert new_config["states"][child_path] == StateEntry(id="b", parent=parent_path)
 
 
 @pytest.mark.parametrize("var", ["REFLEX_MINIFY_STATES", "REFLEX_MINIFY_EVENTS"])
@@ -1109,6 +1109,71 @@ def test_sync_reserves_the_parent_id_through_a_new_subtree():
     new_config = sync_minify_config(existing, DeepSyncRoot)
 
     assert _parent_id_collisions(new_config) == []
+
+
+def test_sync_moves_a_reparented_id_off_its_new_parent():
+    """A preserved id that survives a move must not land on the new parent's.
+
+    `sync` heals the stored parent but keeps the id, so without a fix-up it
+    writes a config its own `validate` rejects.
+    """
+
+    class MoveParent(BaseState):
+        pass
+
+    class MovedChild(MoveParent):
+        pass
+
+    parent_path = get_state_full_path(MoveParent)
+    existing: MinifyConfig = {
+        "version": SCHEMA_VERSION,
+        "states": {
+            parent_path: StateEntry(id="a", parent=None),
+            get_state_full_path(MovedChild): StateEntry(
+                id="a", parent="some.old.Parent"
+            ),
+        },
+        "events": {},
+    }
+
+    new_config = sync_minify_config(existing, MoveParent)
+
+    assert _parent_id_collisions(new_config) == []
+    errors, _warnings, _missing = validate_minify_config(new_config, MoveParent)
+    assert not errors, errors
+
+
+def test_sync_moves_a_preserved_id_off_a_newly_inserted_parent():
+    """Inserting a state above a preserved one must not collide either.
+
+    The new parent draws its id from a different sibling pool, so it can land
+    on the id the child below it already holds.
+    """
+
+    class MidRoot(BaseState):
+        pass
+
+    class NewMid(MidRoot):
+        pass
+
+    class OldLeaf(NewMid):
+        pass
+
+    root_path = get_state_full_path(MidRoot)
+    existing: MinifyConfig = {
+        "version": SCHEMA_VERSION,
+        "states": {
+            root_path: StateEntry(id="a", parent=None),
+            get_state_full_path(OldLeaf): StateEntry(id="b", parent=root_path),
+        },
+        "events": {},
+    }
+
+    new_config = sync_minify_config(existing, MidRoot)
+
+    assert _parent_id_collisions(new_config) == []
+    errors, _warnings, _missing = validate_minify_config(new_config, MidRoot)
+    assert not errors, errors
 
 
 def test_validate_checks_the_actual_parent_not_the_recorded_one():

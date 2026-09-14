@@ -716,6 +716,42 @@ def _assign_next_ids(
     return out
 
 
+def _rehome_ids_colliding_with_parent(
+    states: dict[str, StateEntry],
+    all_states: Iterable[type[BaseState]],
+    reassign_deleted: bool,
+) -> None:
+    """Move any id that ended up equal to its parent's, in place.
+
+    A preserved id survives a state being re-parented, and a parent assigned in
+    this run can land on a preserved child's id; either way the pair becomes
+    ambiguous in a relative path. The child moves rather than the parent, so
+    the result does not depend on which collided first. Walks ancestors first,
+    so a parent is already final when its children are checked.
+
+    Args:
+        states: The state entries to fix up, modified in place.
+        all_states: State classes in depth-first order.
+        reassign_deleted: Whether a replacement id may fill a gap.
+    """
+    for state_cls in all_states:
+        state_path = get_state_full_path(state_cls)
+        entry = states.get(state_path)
+        if entry is None or entry["parent"] is None:
+            continue
+        parent_entry = states.get(entry["parent"])
+        if parent_entry is None or parent_entry["id"] != entry["id"]:
+            continue
+        taken = {
+            minified_name_to_int(sibling["id"])
+            for path, sibling in states.items()
+            if sibling["parent"] == entry["parent"] and path != state_path
+        }
+        taken.add(minified_name_to_int(parent_entry["id"]))
+        assigned = _assign_next_ids([state_path], taken, reassign_deleted)
+        entry["id"] = assigned[state_path]
+
+
 def validate_minify_config(
     config: MinifyConfig,
     root_state: type[BaseState] | None = None,
@@ -901,6 +937,8 @@ def sync_minify_config(
         assigned = _assign_next_ids(children, existing_ids, reassign_deleted)
         for state_path, minified_name in assigned.items():
             new_states[state_path] = StateEntry(id=minified_name, parent=parent_key)
+
+    _rehome_ids_colliding_with_parent(new_states, all_states, reassign_deleted)
 
     # Assign new event IDs (unique within each state).
     for state_cls in all_states:
