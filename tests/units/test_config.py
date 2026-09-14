@@ -1137,6 +1137,8 @@ def clean_config_modules() -> Generator[None, None, None]:
         "failing_dep_module",
         "kept_helper",
         "failed_only_helper",
+        "initial_dep_module",
+        "later_dep_module",
     )
     try:
         yield
@@ -1480,6 +1482,43 @@ def test_other_root_load_evicts_dependency_modules(
     assert reflex_base.config._get_config(tmp_path / "first").app_name == "app1"
     assert sys.modules["shared_helper"] is not first_helper
     assert sys.modules["shared_helper"].VALUE == 1
+
+
+def test_root_change_evicts_dependencies_added_on_same_root_reload(
+    tmp_path: Path, clean_config_modules: None
+):
+    """Changing roots evicts dependencies added after the initial config load.
+
+    A later same-root reload keeps earlier dependencies while recording newly
+    imported ones. Even a root without rxconfig.py must evict every dependency.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    project = tmp_path / "project"
+    project.mkdir()
+    empty_root = tmp_path / "empty"
+    empty_root.mkdir()
+    (project / "initial_dep_module.py").write_text("VALUE = 1\n")
+    (project / "later_dep_module.py").write_text("VALUE = 2\n")
+    (project / "rxconfig.py").write_text(
+        "import initial_dep_module\nimport reflex as rx\n\nconfig = rx.Config(app_name='first')\n"
+    )
+
+    assert reflex_base.config._get_config(project).app_name == "first"
+    initial = sys.modules["initial_dep_module"]
+
+    (project / "rxconfig.py").write_text(
+        "import initial_dep_module\nimport later_dep_module\nimport reflex as rx\n\nconfig = rx.Config(app_name='second')\n"
+    )
+    assert reflex_base.config._get_config(project).app_name == "second"
+    assert sys.modules["initial_dep_module"] is initial
+    assert "later_dep_module" in reflex_base.config._config_module_deps
+
+    assert reflex_base.config._get_config(empty_root).app_name == ""
+    assert "initial_dep_module" not in sys.modules
+    assert "later_dep_module" not in sys.modules
 
 
 def test_reload_config_keeps_state_module_registered(
