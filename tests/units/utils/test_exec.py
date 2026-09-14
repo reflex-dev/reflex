@@ -1,16 +1,158 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
+import builtins
+import multiprocessing
 import os
 import socket
+import sys
+import time
+from http.client import HTTPConnection
 from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base.environment import environment
+from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
+
+
+def _run_granian_reload_test_app(app_dir: str, port: int) -> None:
+    """Run a reloadable Granian app in a child process.
+
+    Args:
+        app_dir: Directory containing the test app module.
+        port: TCP port for the test server.
+    """
+    app_path = Path(app_dir)
+    sys.path.insert(0, app_dir)
+    exec_utils.get_app_instance_from_file = lambda: "reload_app:app"
+    exec_utils.get_reload_paths = lambda: [app_path]
+    exec_utils.get_dev_backend_reload_marker = lambda: app_path / ".reload"
+    exec_utils.run_granian_backend("127.0.0.1", port, exec_utils.LogLevel.ERROR)
+
+
+def _request_reload_test_app(port: int, timeout: float = 5) -> tuple[int, float]:
+    """Request the reload test app and report its response time.
+
+    Args:
+        port: TCP port for the test server.
+        timeout: Request timeout in seconds.
+
+    Returns:
+        The HTTP response status and elapsed request time in seconds.
+    """
+    started = time.monotonic()
+    connection = HTTPConnection("127.0.0.1", port, timeout=timeout)
+    try:
+        connection.request("GET", "/")
+        response = connection.getresponse()
+        response.read()
+        return response.status, time.monotonic() - started
+    finally:
+        connection.close()
+
+
+def _reload_test_app_source(startup_delay: float) -> str:
+    """Build the ASGI test app source with an optional worker startup delay.
+
+    Args:
+        startup_delay: Seconds to sleep while the worker imports the app.
+
+    Returns:
+        Python source for the test app.
+    """
+    return f"""\
+import time
+
+time.sleep({startup_delay})
+
+
+def app():
+    async def asgi(scope, receive, send):
+        await send({{"type": "http.response.start", "status": 200, "headers": []}})
+        await send({{"type": "http.response.body", "body": b"ok"}})
+
+    return asgi
+"""
+
+
+@pytest.mark.parametrize("frontend_present", [False, True])
+def test_run_backend_manages_nocompile_marker(
+    tmp_path: Path,
+    mocker: MockerFixture,
+    frontend_present: bool,
+) -> None:
+    """Only full-stack backend runs leave the compile-skip marker."""
+    marker = tmp_path / exec_utils.constants.NOCOMPILE_FILE
+    if not frontend_present:
+        marker.touch()
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    mocker.patch.object(exec_utils, "run_granian_backend")
+    mocker.patch.object(exec_utils, "notify_backend")
+
+    exec_utils.run_backend("127.0.0.1", 8000, frontend_present=frontend_present)
+
+    assert marker.exists() is frontend_present
+
+
+def test_run_backend_skips_app_preload_for_spawn(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Spawned Granian workers cannot reuse modules imported by the supervisor."""
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    run_granian = mocker.patch.object(exec_utils, "run_granian_backend")
+    mocker.patch.object(exec_utils, "notify_backend")
+    mocker.patch.object(multiprocessing, "get_start_method", return_value="spawn")
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+
+    real_import = builtins.__import__
+
+    def import_without_app_preload(name, *args, **kwargs):
+        if name == "reflex.app":
+            msg = "reflex.app was preloaded in a spawn-based supervisor"
+            raise AssertionError(msg)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", import_without_app_preload)
+    prepare_fork = mocker.patch.object(serializers, "_prepare_serializers_for_fork")
+
+    exec_utils.run_backend("127.0.0.1", 8000)
+
+    run_granian.assert_called_once()
+    prepare_fork.assert_not_called()
+
+
+def test_run_backend_preloads_app_for_fork(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Forked Granian workers reuse the supervisor's imported app modules."""
+    mocker.patch.object(exec_utils, "get_web_dir", return_value=tmp_path)
+    mocker.patch.object(exec_utils, "should_use_granian", return_value=True)
+    mocker.patch.object(exec_utils, "run_granian_backend")
+    mocker.patch.object(exec_utils, "notify_backend")
+    mocker.patch.object(multiprocessing, "get_start_method", return_value="fork")
+    monkeypatch.setenv(environment.REFLEX_STRICT_HOT_RELOAD.name, "False")
+
+    imported: list[str] = []
+    real_import = builtins.__import__
+
+    def track_app_preload(name, *args, **kwargs):
+        if name == "reflex.app":
+            imported.append(name)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", track_app_preload)
+    prepare_fork = mocker.patch.object(serializers, "_prepare_serializers_for_fork")
+
+    exec_utils.run_backend("127.0.0.1", 8000)
+
+    assert imported == ["reflex.app"]
+    prepare_fork.assert_called_once_with()
 
 
 def test_run_uvicorn_backend_sets_reload_env_var_and_clears_marker(
@@ -128,6 +270,65 @@ def test_run_granian_backend_binds_listen_socket_in_supervisor(
             pass
     finally:
         listener.close()
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Granian uses this path on Linux")
+def test_run_granian_backend_holds_requests_across_reload(tmp_path: Path):
+    """Requests queue until a slow replacement worker finishes loading."""
+    app_file = tmp_path / "reload_app.py"
+    app_file.write_text(_reload_test_app_source(0))
+    with socket.socket() as reservation:
+        reservation.bind(("127.0.0.1", 0))
+        port = reservation.getsockname()[1]
+
+    process = multiprocessing.get_context("spawn").Process(
+        target=_run_granian_reload_test_app,
+        args=(str(tmp_path), port),
+    )
+    process.start()
+    try:
+        deadline = time.monotonic() + 20
+        while True:
+            try:
+                assert _request_reload_test_app(port)[0] == 200
+                break
+            except OSError:
+                assert time.monotonic() < deadline, "Granian did not start"
+                time.sleep(0.05)
+
+        app_file.write_text(_reload_test_app_source(1.0))
+        responses: list[tuple[int, float]] = []
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            responses.append(_request_reload_test_app(port))
+            if responses[-1][1] > 0.5:
+                break
+            time.sleep(0.05)
+
+        assert all(status == 200 for status, _ in responses)
+        assert any(elapsed > 0.5 for _, elapsed in responses)
+    finally:
+        process.terminate()
+        process.join(timeout=10)
+        if process.is_alive():
+            process.kill()
+            process.join()
+
+
+def test_frontend_env_defaults_mimalloc_and_no_color():
+    """The toolchain env disables eager arena commit unless the user set it."""
+    env = exec_utils.frontend_env({"PATH": "/bin"})
+    assert env == {
+        "PATH": "/bin",
+        "MIMALLOC_ARENA_EAGER_COMMIT": "0",
+        "NO_COLOR": "1",
+    }
+    assert (
+        exec_utils.frontend_env({"MIMALLOC_ARENA_EAGER_COMMIT": "1"})[
+            "MIMALLOC_ARENA_EAGER_COMMIT"
+        ]
+        == "1"
+    )
 
 
 def test_with_development_condition_sets_node_and_bun_options():
