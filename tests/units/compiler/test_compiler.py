@@ -925,6 +925,31 @@ def test_backend_compile_restores_registry_before_initial_state_serialization(
     assert calls == ["restore", "initial_state"]
 
 
+@pytest.mark.usefixtures("clean_registration_context")
+def test_frontend_compile_emits_bundled_library_registry(mocker: MockerFixture):
+    """Frontend compilation emits the registry consumed by backend-only workers."""
+    app = rx.App()
+
+    def index():
+        """Render an empty page.
+
+        Returns:
+            The empty page.
+        """
+        return rx.el.div()
+
+    app.add_page(index)
+    emitted_registry = mocker.patch.object(
+        utils,
+        "_compile_bundled_libraries",
+        return_value=(constants.Dirs.BUNDLED_LIBRARIES, "[]"),
+    )
+
+    assert compiler.compile_app(app, dry_run=True, use_rich=False) is True
+
+    emitted_registry.assert_called_once_with()
+
+
 def test_register_plugin_routes_exposes_app_type_not_mutable_app():
     """The hook can validate the app class without bypassing staged writes."""
     observed: dict[str, object] = {}
