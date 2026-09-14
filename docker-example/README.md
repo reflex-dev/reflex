@@ -13,18 +13,13 @@ The most basic deployment: a single Reflex process serves both the static
 frontend and the backend on one port. No reverse proxy, no Redis. The frontend
 is rebuilt each time the container starts.
 
-## `simple-one-port`
+## `production-one-port`
 
 This deployment exports the frontend statically and serves it via a single HTTP
 port using Caddy, with a local Redis for state. The backend starts instantly
-because the frontend is built into the image, but the build tooling stays in
-the image.
-
-## `production-one-port`
-
-Same layout as `simple-one-port`, built in multiple stages so the final image
-contains no bun, `node_modules`, or build tooling, and Python dependencies are
-cached in their own layer.
+because the frontend is built into the image, and a multi-stage build keeps
+bun, `node_modules`, and other build tooling out of the final image. This is
+useful for platforms that only support a single port, such as Render or Heroku.
 
 ## `production-compose`
 

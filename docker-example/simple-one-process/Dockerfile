@@ -4,7 +4,7 @@
 #
 # The frontend is compiled and built each time the container starts, so startup
 # takes longer than the other examples and bun stays in the image. For an image
-# with a prebuilt frontend see `simple-one-port` or `production-one-port`.
+# with a prebuilt frontend see `production-one-port`.
 FROM python:3.13-slim
 
 # uv installs python packages; reflex uses a bun found on PATH instead of downloading its own.

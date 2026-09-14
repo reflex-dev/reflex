@@ -7,7 +7,8 @@ This docker deployment runs Reflex in prod mode, exposing a single HTTP port:
 The deployment also runs a local Redis server to store state for each user,
 which lets the backend run multiple worker processes.
 
-Conceptually it is similar to the `simple-one-port` example except it:
+The frontend is exported at build time and served as static files by Caddy,
+so the backend starts in a couple of seconds. The build:
 
 - installs python dependencies in their own layer, so app edits do not
   reinstall them
@@ -15,9 +16,6 @@ Conceptually it is similar to the `simple-one-port` example except it:
   dependencies are not downloaded again
 - uses a multi-stage build so the final image has no bun, `node_modules`, or
   build tooling
-
-The frontend is exported at build time and served as static files by Caddy,
-so the backend starts in a couple of seconds.
 
 ## Build
 
