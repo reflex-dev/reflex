@@ -1,6 +1,5 @@
 import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
-from reflex_site_shared.components.icons import get_icon
 
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp, text_comp_2
 
@@ -44,41 +43,55 @@ def component_grid():
         components,
         prefix: str = "",
     ):
-        sidebar = [
-            rx.box(
+        categories = [
+            rx.el.section(
                 rx.link(
-                    rx.el.h2(
-                        get_display_name(category),
-                        class_name="text-lg font-book leading-6 tracking-tight text-foreground",
+                    rx.box(
+                        rx.el.h2(
+                            get_display_name(category),
+                            class_name="text-lg font-book leading-6 tracking-tight text-foreground",
+                        ),
+                        rx.text(
+                            f"{len(components[category])} components",
+                            class_name="text-xs font-normal leading-5 text-muted-foreground",
+                        ),
+                        class_name="flex min-w-0 flex-col gap-2",
                     ),
-                    get_icon("new_tab", class_name="text-secondary-11 [&>svg]:size-4"),
+                    rx.icon(
+                        "arrow-right",
+                        size=16,
+                        class_name="mt-1 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground",
+                    ),
                     href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
                     underline="none",
-                    class_name="px-5 py-4 hover:bg-muted transition-colors flex flex-row justify-between gap-3 items-center text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                    class_name="group flex items-start justify-between gap-4 rounded-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
-                rx.box(
+                rx.el.ul(
                     *[
-                        rx.link(
-                            get_display_name(c[0]),
-                            href=get_component_link(
-                                category=category,
-                                clist=c,
-                                prefix=prefix,
+                        rx.el.li(
+                            rx.link(
+                                get_display_name(c[0]),
+                                href=get_component_link(
+                                    category=category,
+                                    clist=c,
+                                    prefix=prefix,
+                                ),
+                                underline="none",
+                                class_name="block rounded-sm px-3 py-2 text-sm font-normal leading-6 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                             ),
-                            class_name="text-sm font-book leading-6 text-muted-foreground hover:text-foreground transition-colors w-fit rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                         )
                         for c in get_components_for_category(
                             category, components[category]
                         )
                     ],
-                    class_name="flex flex-col gap-2 px-5 pb-5",
+                    class_name="grid min-w-0 grid-cols-2 gap-x-2 gap-y-1 xl:grid-cols-3 list-none m-0 p-0",
                 ),
-                class_name="docs-catalog-card flex flex-col border border-border-subtle rounded-card bg-background overflow-hidden",
+                class_name="docs-library-category grid grid-cols-1 items-start gap-5 border-t border-border-subtle py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-8",
             )
             for category in components
         ]
 
-        return sidebar
+        return categories
 
     core = generate_gallery(
         components=component_list,
@@ -91,7 +104,7 @@ def component_grid():
     return rx.box(
         rx.box(
             *core,
-            class_name="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6",
+            class_name="flex flex-col",
         ),
         rx.box(
             h2_comp(
@@ -102,7 +115,7 @@ def component_grid():
             ),
             rx.box(
                 *graphs,
-                class_name="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6",
+                class_name="flex flex-col",
             ),
             class_name="flex flex-col",
         ),
