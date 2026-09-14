@@ -3937,19 +3937,19 @@ def test_context_middleware_is_registered_as_a_class():
 
 async def test_context_middleware_sets_contexts(app_with_processor: App):
     """The context middleware attaches Reflex contexts before calling the app."""
-    seen: dict[str, Any] = {}
+    seen: list[tuple[RegistrationContext, EventContext]] = []
 
     async def inner_app(scope: Scope, receive: Receive, send: Send) -> None:  # noqa: RUF029
-        seen["registration"] = RegistrationContext.get()
-        seen["event"] = EventContext.get()
+        seen.append((RegistrationContext.get(), EventContext.get()))
 
     await _ContextMiddleware(inner_app, app_with_processor)(
         {"type": "http"}, AsyncMock(), AsyncMock()
     )
 
     assert app_with_processor._event_processor is not None
-    assert seen["registration"] is app_with_processor._registration_context
-    assert seen["event"] is app_with_processor._event_processor._root_context
+    ((registration, event),) = seen
+    assert registration is app_with_processor._registration_context
+    assert event is app_with_processor._event_processor._root_context
 
 
 def test_compile_sends_telemetry_when_enabled(
