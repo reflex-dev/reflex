@@ -1129,7 +1129,7 @@ async def test_deep_self_chaining_poll_loop_under_superseding_root(
     token: str,
     caplog: pytest.LogCaptureFixture,
 ):
-    """A polling loop chained deeper than the recursion limit keeps working (#7150).
+    """A polling loop chained deeper than the recursion limit keeps working (#7145).
 
     A handler that re-chains itself on every tick (a polling loop started from
     ``on_load``) builds a linear chain of futures one level deeper per tick.

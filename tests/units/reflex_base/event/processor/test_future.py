@@ -325,7 +325,7 @@ def _deep_chain(depth: int) -> tuple[EventFuture, EventFuture]:
 
 @pytest.mark.asyncio
 async def test_all_done_deep_chain():  # noqa: RUF029
-    """``all_done`` walks a chain deeper than the recursion limit (#7150)."""
+    """``all_done`` walks a chain deeper than the recursion limit (#7145)."""
     root, leaf = _deep_chain(sys.getrecursionlimit() + 100)
     assert not root.all_done()
     leaf.set_result(None)
@@ -334,7 +334,7 @@ async def test_all_done_deep_chain():  # noqa: RUF029
 
 @pytest.mark.asyncio
 async def test_cancel_deep_chain():  # noqa: RUF029
-    """Cancel cascades through a chain deeper than the recursion limit (#7150)."""
+    """Cancel cascades through a chain deeper than the recursion limit (#7145)."""
     root, leaf = _deep_chain(sys.getrecursionlimit() + 100)
     root.cancel()
     assert leaf.cancelled()
@@ -342,7 +342,7 @@ async def test_cancel_deep_chain():  # noqa: RUF029
 
 @pytest.mark.asyncio
 async def test_wait_all_deep_chain():
-    """``wait_all`` awaits a chain deeper than the recursion limit (#7150)."""
+    """``wait_all`` awaits a chain deeper than the recursion limit (#7145)."""
     root, leaf = _deep_chain(sys.getrecursionlimit() + 100)
 
     async def resolve_later():
@@ -357,6 +357,6 @@ async def test_wait_all_deep_chain():
 
 @pytest.mark.asyncio
 async def test_repr_deep_chain():  # noqa: RUF029
-    """``repr`` of a chain deeper than the recursion limit does not recurse (#7150)."""
+    """``repr`` of a chain deeper than the recursion limit does not recurse (#7145)."""
     root, _ = _deep_chain(sys.getrecursionlimit() + 100)
     assert "txid='0'" in repr(root)
