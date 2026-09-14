@@ -524,8 +524,7 @@
   background: var(--background);
   box-shadow: none;
 }
-.docs-page-footer .site-color-mode-toggle button,
-.docs-footer-social-link > div {
+.docs-page-footer .site-color-mode-toggle button {
   width: 2rem;
   height: 2rem;
   border-radius: 9999px;
@@ -533,8 +532,7 @@
   background: transparent;
   box-shadow: none;
 }
-.docs-page-footer .site-color-mode-toggle button:hover,
-.docs-footer-social-link:hover > div {
+.docs-page-footer .site-color-mode-toggle button:hover {
   background: var(--accent);
   color: var(--foreground);
 }
@@ -542,12 +540,12 @@
   background: var(--foreground);
   color: var(--background);
 }
-.docs-page-footer .site-color-mode-toggle svg,
-.docs-footer-social-link svg { width: 1rem; height: 1rem; }
+.docs-page-footer .site-color-mode-toggle svg { width: 1rem; height: 1rem; }
 .docs-page-footer :is(a, button):focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 4px;
 }
+.docs-page-footer .docs-footer-social-link:focus-visible { outline-offset: 2px; }
 @media (max-width: 639px) {
   .docs-footer-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

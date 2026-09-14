@@ -640,18 +640,13 @@ def _docs_social_menu_item(icon: str, url: str, name: str) -> rx.Component:
         Social icon link.
     """
     return rx.el.elements.a(
-        button(
-            get_icon(icon, class_name="shrink-0"),
-            variant="ghost",
-            size="icon-sm",
-            class_name="text-secondary-11",
-            native_button=False,
-        ),
+        get_icon(icon, class_name="size-4 shrink-0"),
         href=url,
         custom_attrs={"aria-label": f"Social link for {name}"},
+        title=f"{name} (opens in a new tab)",
         target="_blank",
         rel="noopener noreferrer",
-        class_name="docs-footer-social-link",
+        class_name="docs-footer-social-link flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-subtle dark:hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
     )
 
 
@@ -663,11 +658,10 @@ def _docs_social_menu() -> rx.Component:
     """
     return rx.box(
         _docs_social_menu_item("twitter_footer", TWITTER_URL, "Twitter"),
-        _docs_social_menu_item("github_navbar", GITHUB_URL, "Github"),
-        _docs_social_menu_item("discord_navbar", DISCORD_URL, "Discord"),
+        _docs_social_menu_item("github_navbar", GITHUB_URL, "GitHub"),
         _docs_social_menu_item("linkedin_footer", LINKEDIN_URL, "LinkedIn"),
-        _docs_social_menu_item("forum_footer", FORUM_URL, "Forum"),
-        class_name="flex flex-row items-center gap-2",
+        _docs_social_menu_item("discord_navbar", DISCORD_URL, "Discord"),
+        class_name="flex flex-wrap items-center gap-3",
     )
 
 

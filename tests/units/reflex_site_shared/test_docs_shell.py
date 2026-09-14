@@ -163,7 +163,8 @@ def test_official_docs_footer_content_is_shared() -> None:
     assert "Links" in rendered
     assert "Documentation" in rendered
     assert "Resources" in rendered
-    assert "Social link for Github" in rendered
+    assert "Social link for GitHub" in rendered
+    assert "Social link for Forum" not in rendered
     assert "Pynecone, Inc." in rendered
     assert "https://reflex.dev/docs/getting-started/introduction/" not in rendered
     assert "/getting-started/introduction/" in rendered

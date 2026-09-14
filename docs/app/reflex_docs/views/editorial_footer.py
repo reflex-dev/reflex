@@ -13,7 +13,6 @@ from reflex_site_shared.components.server_status import server_status
 from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
-    FORUM_URL,
     GITHUB_ORG_URL,
     LINKEDIN_URL,
     REFLEX_ASSETS_CDN,
@@ -204,22 +203,22 @@ def editorial_footer() -> rx.Component:
             rx.el.div(
                 *[
                     rx.el.elements.a(
-                        get_icon(icon, class_name="size-4"),
+                        get_icon(icon, class_name="size-4 shrink-0"),
                         href=url,
                         aria_label=f"Social link for {name}",
+                        title=f"{name} (opens in a new tab)",
                         target="_blank",
                         rel="noopener noreferrer",
-                        class_name=f"flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground {_FOCUS}",
+                        class_name="docs-footer-social-link flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-subtle dark:hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
                     )
                     for icon, url, name in (
                         ("twitter_footer", TWITTER_URL, "Twitter"),
                         ("github_navbar", GITHUB_ORG_URL, "GitHub"),
-                        ("discord_navbar", DISCORD_URL, "Discord"),
                         ("linkedin_footer", LINKEDIN_URL, "LinkedIn"),
-                        ("forum_footer", FORUM_URL, "Forum"),
+                        ("discord_navbar", DISCORD_URL, "Discord"),
                     )
                 ],
-                class_name="flex items-center gap-2",
+                class_name="flex flex-wrap items-center gap-3",
             ),
             rx.el.span(
                 f"Reflex © {datetime.now().year} Pynecone, Inc.",
