@@ -11,3 +11,5 @@ Make the component library easier to scan with baseline-aligned, text-only categ
 Match both docs footer social menus to the main site's compact icon styling and remove the forum icon.
 
 Align documentation fields, navigation, content surfaces, and icon controls with the shared editorial shape system.
+
+Use a muted gray surface for the Custom Components sidebar card in light and dark modes.

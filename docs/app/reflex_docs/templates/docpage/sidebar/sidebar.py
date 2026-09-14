@@ -506,7 +506,7 @@ def sidebar_comp(
                     "See what components people have made with Reflex!",
                     class_name="text-sm font-normal leading-5 text-muted-foreground",
                 ),
-                class_name="flex flex-col gap-2 border-border-subtle bg-background hover:bg-muted px-3.5 py-3 border rounded-card transition-colors",
+                class_name="flex flex-col gap-2 border-border-subtle bg-muted hover:border-border-strong px-3.5 py-3 border rounded-card transition-colors",
             ),
             underline="none",
             href=custom_components.path,
