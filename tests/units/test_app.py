@@ -2363,6 +2363,15 @@ def test_app_wrap_compile_theme(
     ).read_text()
     assert "fallbackRender" in memo_contents
     assert "handle_frontend_exception" in memo_contents
+    # The fallback icon's stroke attributes must reach React in camelCase:
+    # kebab-case DOM properties log "Invalid DOM property" warnings.
+    for camel_case, kebab_case in (
+        ("strokeWidth", "stroke-width"),
+        ("strokeLinecap", "stroke-linecap"),
+        ("strokeLinejoin", "stroke-linejoin"),
+    ):
+        assert camel_case in memo_contents
+        assert kebab_case not in memo_contents
 
 
 def test_compile_without_radix_components_skips_radix_plugin(
