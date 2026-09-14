@@ -134,7 +134,7 @@ def docs_sidebar_leaf(
             rx.cond(
                 active,
                 rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
+                    class_name="docs-sidebar-selection absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
                 ),
                 rx.fragment(),
             ),
@@ -162,10 +162,11 @@ def docs_sidebar_leaf(
             ),
             href=href,
             underline="none",
+            aria_current=rx.cond(active, "page", "false"),
             class_name=rx.cond(
                 active,
-                "relative block w-full",
-                f"block w-full {guide_margin_class}",
+                "docs-sidebar-leaf relative block w-full",
+                f"docs-sidebar-leaf block w-full {guide_margin_class}",
             ),
         ),
         class_name="relative m-0 w-full list-none p-0 !overflow-visible",
@@ -197,7 +198,7 @@ def docs_sidebar_section(
             ),
             underline="none",
             href=href,
-            class_name="mb-2 ml-[2.5rem] flex h-8 items-center justify-start",
+            class_name="docs-sidebar-section-label mb-2 ml-[2.5rem] flex h-8 items-center justify-start",
         ),
         rx.el.ul(
             *(
@@ -241,7 +242,7 @@ def docs_sidebar_category(
             rx.cond(
                 active,
                 rx.el.div(
-                    class_name="absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
+                    class_name="docs-sidebar-selection absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
                 ),
                 rx.fragment(),
             ),
@@ -255,7 +256,8 @@ def docs_sidebar_category(
             ),
             href=href,
             underline="none",
-            class_name="block w-full relative no-underline",
+            class_name="docs-sidebar-category block w-full relative no-underline",
+            aria_current=rx.cond(active, "true", "false"),
             custom_attrs={"aria-label": f"Navigate to {name}"},
         ),
         class_name="m-0 p-0 w-full relative list-none",
@@ -293,7 +295,7 @@ def docs_sidebar_group(
                     "ArrowDown01Icon",
                     class_name="size-4 group-open/details:rotate-180 transition-transform",
                 ),
-                class_name="!px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-secondary-11 hover:!text-secondary-12 transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
+                class_name="docs-sidebar-group-trigger !px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-secondary-11 hover:!text-secondary-12 transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
             ),
             rx.el.ul(
                 rx.el.li(
@@ -500,7 +502,7 @@ def docs_right_sidebar(
                 rx.el.p(
                     rx.icon("align-left", size=14, class_name="text-secondary-12"),
                     "On This Page",
-                    class_name="flex h-8 items-center justify-start gap-1.5 text-sm font-[525] text-secondary-12",
+                    class_name="docs-toc-label flex h-8 items-center justify-start gap-1.5 text-sm font-[525] text-secondary-12",
                 ),
                 rx.el.ul(
                     *(

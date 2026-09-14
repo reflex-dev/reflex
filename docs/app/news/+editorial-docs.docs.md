@@ -1,1 +1,1 @@
-Refresh the documentation with Reflex's neutral editorial design, lighter headings, capsule actions, theme-aware illustrations, matching landing and article footers, and a responsive header in light and dark modes.
+Refresh the documentation with Reflex's neutral editorial design, lighter headings and sidebar labels, capsule actions, theme-aware illustrations, matching landing and article footers, and a responsive header in light and dark modes.

@@ -208,6 +208,72 @@
   margin-top: calc(var(--docs-header-height) + 2rem);
 }
 
+.docs-sidebar-section-label h2,
+.docs-toc-label {
+  font-family: var(--font-instrument-sans);
+  font-size: 0.75rem;
+  font-weight: 450;
+  line-height: 1rem;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--muted-foreground);
+}
+.docs-sidebar-category h3,
+.docs-sidebar-group-trigger > p,
+.docs-sidebar-leaf p,
+.docs-right-sidebar #toc-navigation a {
+  font-family: var(--font-instrument-sans);
+  font-size: 0.875rem;
+  font-weight: 425;
+  line-height: 1.25rem;
+  letter-spacing: normal;
+  color: var(--muted-foreground);
+}
+.docs-sidebar-category h3,
+.docs-sidebar-group-trigger > p { font-weight: 450; }
+.docs-sidebar-leaf[aria-current="false"] { width: auto; }
+.docs-sidebar-leaf > .flex {
+  min-height: 2rem;
+  height: auto;
+  padding-block: 0.375rem;
+}
+.docs-sidebar-group-trigger {
+  min-height: 2rem;
+  padding-block: 0.375rem !important;
+}
+.docs-sidebar-selection {
+  top: 0;
+  bottom: 0;
+  height: auto;
+  translate: none;
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+}
+.docs-sidebar-category[aria-current="true"] h3,
+.docs-sidebar-leaf[aria-current="page"] p,
+.docs-right-sidebar #toc-navigation a.text-primary-9 {
+  color: var(--foreground);
+  font-weight: 450;
+}
+.docs-sidebar-category:hover h3,
+.docs-sidebar-leaf:hover p,
+.docs-sidebar-group-trigger:hover > p,
+.docs-sidebar-section-label:hover h2,
+.docs-right-sidebar #toc-navigation a:hover { color: var(--foreground); }
+.docs-sidebar-category svg,
+.docs-sidebar-group-trigger svg,
+.docs-toc-label svg {
+  color: var(--muted-foreground);
+  stroke-width: 1.5;
+}
+.docs-sidebar-category[aria-current="true"] svg { color: var(--foreground); }
+:is(.docs-sidebar-category, .docs-sidebar-leaf, .docs-sidebar-section-label,
+    .docs-sidebar-group-trigger, .docs-right-sidebar a):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+
 /* Article footers share the landing page's type, surfaces, and controls. */
 .docs-page-footer {
   font-family: var(--font-instrument-sans);

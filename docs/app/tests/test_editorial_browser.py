@@ -153,3 +153,37 @@ def test_article_footer_feedback_and_theme_controls(page: Page, width: int):
     footer.get_by_role("button", name="Toggle light color mode").click()
     expect(dark).to_have_attribute("aria-pressed", "false")
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("width", [375, 1440])
+def test_sidebar_groups_and_current_page_navigation(page: Page, width: int):
+    """Styled sidebar rows preserve disclosure, keyboard access, and selection."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(
+        f"{PREVIEW_URL}/docs/getting-started/installation/", wait_until="networkidle"
+    )
+    if width < 1024:
+        page.get_by_role("button", name="Open documentation navigation").click()
+        sidebar = page.get_by_role("dialog")
+    else:
+        sidebar = page.locator(".docs-left-sidebar")
+
+    current = sidebar.locator('.docs-sidebar-leaf[aria-current="page"]')
+    expect(current).to_have_text("Installation")
+    group = sidebar.locator("summary").filter(has_text="Getting Started")
+    group.click()
+    expect(current).not_to_be_visible()
+    group.press("Enter")
+    expect(current).to_be_visible()
+    group.press("Tab")
+    expect(current).to_be_focused()
+    sidebar.get_by_role("link", name="Basics", exact=True).click()
+    expect(page).to_have_url(f"{PREVIEW_URL}/docs/getting-started/basics/")
+
+    if width < 1024:
+        expect(page.get_by_role("dialog")).to_have_count(0)
+        page.get_by_role("button", name="Open documentation navigation").click()
+    expect(sidebar.locator('.docs-sidebar-leaf[aria-current="page"]')).to_have_text(
+        "Basics"
+    )
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")

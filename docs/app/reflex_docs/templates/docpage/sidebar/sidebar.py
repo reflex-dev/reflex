@@ -498,19 +498,19 @@ def sidebar_comp(
                     rx.icon("atom", size=16),  # pyright: ignore [reportCallIssue]
                     rx.el.h5(
                         "Custom Components",
-                        class_name="font-smbold text-[0.875rem] text-secondary-12 leading-5 tracking-[-0.01313rem] transition-color",
+                        class_name="text-sm font-book leading-5 tracking-tight text-foreground transition-colors",
                     ),
                     class_name="flex flex-row items-center gap-3 text-secondary-12",
                 ),
                 rx.text(  # pyright: ignore [reportCallIssue]
                     "See what components people have made with Reflex!",
-                    class_name="font-small text-secondary-11",
+                    class_name="text-sm font-normal leading-5 text-muted-foreground",
                 ),
-                class_name="flex flex-col gap-2 border-secondary-5 bg-secondary-1 hover:bg-secondary-3 shadow-large px-3.5 py-2 border rounded-xl transition-bg",
+                class_name="flex flex-col gap-2 border-border-subtle bg-background hover:bg-muted px-3.5 py-3 border rounded-xl transition-colors",
             ),
             underline="none",
             href=custom_components.path,
-            class_name="w-fit lg:ml-[2.5rem]",
+            class_name="w-fit rounded-xl lg:ml-[2.5rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
     )
