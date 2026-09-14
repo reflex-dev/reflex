@@ -118,3 +118,38 @@ def test_editorial_closing_actions_keep_native_navigation_and_dialog(page: Page)
     expect(page.get_by_role("dialog")).to_be_visible()
     page.keyboard.press("Escape")
     expect(page.get_by_role("dialog")).to_have_count(0)
+
+
+@pytest.mark.parametrize("width", [375, 1440])
+def test_article_footer_feedback_and_theme_controls(page: Page, width: int):
+    """The article footer keeps its links, feedback, and mode controls usable."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(
+        f"{PREVIEW_URL}/docs/getting-started/introduction/", wait_until="networkidle"
+    )
+    footer = page.locator(".docs-page-footer")
+    expect(footer.get_by_role("link", name="Blog", exact=True)).to_have_attribute(
+        "href", "/blog/"
+    )
+    expect(footer.get_by_role("link", name="Edit this page")).to_have_attribute(
+        "href",
+        "https://github.com/reflex-dev/reflex/edit/main/docs/getting_started/introduction.md",
+    )
+    expect(footer.get_by_role("link", name="Raise an issue")).to_be_visible()
+    footer.get_by_role("button", name="Yes", exact=True).click()
+    expect(page.get_by_placeholder("Write a comment…")).to_be_visible()
+    expect(footer.get_by_role("button", name="Yes", exact=True)).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    page.keyboard.press("Escape")
+    expect(page.get_by_placeholder("Write a comment…")).to_have_count(0)
+    dark = footer.get_by_role("button", name="Toggle dark color mode")
+    dark.click()
+    expect(dark).to_have_attribute("aria-pressed", "true")
+    expect(dark).to_have_css("background-color", "rgb(245, 245, 245)")
+    expect(footer.get_by_role("link", name="Introduction", exact=True)).to_have_css(
+        "color", "rgb(245, 245, 245)"
+    )
+    footer.get_by_role("button", name="Toggle light color mode").click()
+    expect(dark).to_have_attribute("aria-pressed", "false")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")

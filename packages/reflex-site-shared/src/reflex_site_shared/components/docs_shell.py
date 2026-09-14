@@ -343,6 +343,7 @@ def _feedback_choice_button(
             ),
         ),
         aria_label=label,
+        aria_pressed=active,
         on_click=DocsFeedbackState.set_score(score),
     )
 
@@ -425,7 +426,7 @@ def docs_feedback_button() -> rx.Component:
     Returns:
         Feedback popover trigger.
     """
-    shared_class = "flex w-full cursor-pointer flex-row items-center justify-center gap-2 whitespace-nowrap border px-3 py-0.5 font-small transition-colors"
+    shared_class = "docs-feedback-choice flex w-full cursor-pointer flex-row items-center justify-center gap-2 whitespace-nowrap border px-3 py-0.5 font-small transition-colors"
     return ui.popover.root(
         rx.el.div(
             ui.popover.trigger(
@@ -564,15 +565,15 @@ def docs_footer_shell(
         rx.box(
             feedback,
             actions,
-            class_name="flex w-full flex-row items-center justify-center border-y-0 border-secondary-4 pb-6 pt-0 lg:justify-between lg:border-y lg:pb-8 lg:pt-8",
+            class_name="docs-footer-feedback-row flex w-full flex-row items-center justify-center border-y-0 border-secondary-4 pb-6 pt-0 lg:justify-between lg:border-y lg:pb-8 lg:pt-8",
         ),
         rx.box(
             link_columns,
             controls,
             copyright_status,
-            class_name="flex w-full flex-col justify-between gap-10 py-6 lg:py-8",
+            class_name="docs-footer-directory flex w-full flex-col justify-between gap-10 py-6 lg:py-8",
         ),
-        class_name="flex w-full max-w-full flex-col lg:max-w-none",
+        class_name="docs-page-footer flex w-full max-w-full flex-col lg:max-w-none",
     )
 
 
@@ -593,7 +594,7 @@ def _docs_footer_link(
         Styled footer link.
     """
     class_name = (
-        "font-small text-secondary-9 hover:!text-secondary-11 "
+        "docs-footer-link font-small text-secondary-9 hover:!text-secondary-11 "
         "transition-color no-underline"
     )
     if root_site:
@@ -620,7 +621,7 @@ def _docs_footer_link_column(
             class_name="font-semibold text-secondary-12 text-sm tracking-[-0.01313rem]",
         ),
         *links,
-        class_name="flex flex-col gap-4",
+        class_name="docs-footer-link-column flex flex-col gap-4",
     )
 
 
@@ -646,6 +647,8 @@ def _docs_social_menu_item(icon: str, url: str, name: str) -> rx.Component:
         href=url,
         custom_attrs={"aria-label": f"Social link for {name}"},
         target="_blank",
+        rel="noopener noreferrer",
+        class_name="docs-footer-social-link",
     )
 
 
@@ -682,7 +685,7 @@ def _docs_footer_action(
         text,
         href=href,
         underline="none",
-        class_name="lg:flex hidden flex-row justify-center items-center gap-2 lg:border-secondary-5 bg-secondary-3 lg:bg-secondary-1 hover:bg-secondary-3 shadow-none lg:shadow-large px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small font-small text-secondary-9 !hover:text-secondary-11 hover:!text-secondary-9 truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
+        class_name="docs-footer-action lg:flex hidden flex-row justify-center items-center gap-2 lg:border-secondary-5 bg-secondary-3 lg:bg-secondary-1 hover:bg-secondary-3 shadow-none lg:shadow-large px-3 py-0.5 lg:border lg:border-solid border-none rounded-lg lg:rounded-full w-auto font-small text-secondary-9 !hover:text-secondary-11 hover:!text-secondary-9 truncate whitespace-nowrap transition-bg transition-color cursor-pointer",
     )
 
 
@@ -708,12 +711,12 @@ def _docs_page_footer_content(
             class_name="whitespace-nowrap font-small text-secondary-11 lg:text-secondary-9",
         ),
         docs_feedback_button(),
-        class_name="flex w-full flex-col items-center gap-3 rounded-lg bg-secondary-3 p-4 lg:w-auto lg:flex-row lg:gap-4 lg:bg-transparent lg:p-0",
+        class_name="docs-footer-feedback flex w-full flex-col items-center gap-3 rounded-lg bg-secondary-3 p-4 lg:w-auto lg:flex-row lg:gap-4 lg:bg-transparent lg:p-0",
     )
     actions = rx.box(
         _docs_footer_action("Raise an issue", issue_href),
         _docs_footer_action("Edit this page", edit_href),
-        class_name="hidden w-auto flex-row items-center gap-2 lg:flex",
+        class_name="docs-footer-actions hidden w-auto flex-row items-center gap-2 lg:flex",
     )
     docs_prefix = "https://reflex.dev/docs" if external_docs_links else ""
     root_prefix = "https://reflex.dev" if external_docs_links else ""
@@ -761,12 +764,12 @@ def _docs_page_footer_content(
             _docs_footer_link("Roadmap", ROADMAP_URL),
             _docs_footer_link("Forum", FORUM_URL),
         ),
-        class_name="flex w-full flex-wrap justify-between gap-12",
+        class_name="docs-footer-links flex w-full flex-wrap justify-between gap-12",
     )
     controls = rx.box(
         rx.box(dark_mode_toggle(), class_name="[&>div]:!ml-0"),
         _docs_social_menu(),
-        class_name="flex w-full flex-row items-end justify-between gap-6",
+        class_name="docs-footer-controls flex w-full flex-row items-end justify-between gap-6",
     )
     copyright_status = rx.el.div(
         rx.text(
@@ -774,7 +777,7 @@ def _docs_page_footer_content(
             class_name="font-small text-secondary-9",
         ),
         server_status(StatusState.status),
-        class_name="flex w-full flex-row items-center justify-between gap-4",
+        class_name="docs-footer-copyright flex w-full flex-row items-center justify-between gap-4",
     )
     return docs_footer_shell(
         feedback,

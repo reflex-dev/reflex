@@ -418,10 +418,11 @@ def docpage(
                             ),
                             underline="none",
                             href=prev.link,
-                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-secondary-9 hover:!text-secondary-11 transition-color",
+                            class_name="py-0.5 rounded-sm text-sm font-normal text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                         ),
                         rx.text(
-                            next_prev_name, class_name="font-smbold text-secondary-12"
+                            next_prev_name,
+                            class_name="text-base font-book tracking-tight text-foreground",
                         ),
                         class_name="flex flex-col justify-start gap-1",
                     )
@@ -442,10 +443,11 @@ def docpage(
                             ),
                             underline="none",
                             href=next.link,
-                            class_name="py-0.5 lg:py-0 rounded-lg lg:w-auto font-small text-secondary-9 hover:!text-secondary-11 transition-color",
+                            class_name="py-0.5 rounded-sm text-sm font-normal text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                         ),
                         rx.text(
-                            next_prev_name, class_name="font-smbold text-secondary-12"
+                            next_prev_name,
+                            class_name="text-base font-book tracking-tight text-foreground",
                         ),
                         class_name="flex flex-col justify-start gap-1 items-end",
                     )
@@ -495,7 +497,8 @@ def docpage(
                             rx.el.article(comp, class_name="docs-prose [&>div]:!p-0"),
                             rx.el.nav(
                                 *links,
-                                class_name="flex flex-row gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",
+                                aria_label="Previous and next pages",
+                                class_name="docs-page-navigation flex flex-row gap-2 mt-8 lg:mt-10 mb-8",
                             ),
                             docpage_footer(path=path.rstrip("/"), edit_href=edit_href),
                             class_name="lg:mt-0 h-auto",
