@@ -180,6 +180,12 @@
 .docs-hero {
   padding-top: calc(var(--docs-header-height) + clamp(3rem, 6vw, 6rem));
 }
+.docs-hero-art {
+  top: calc(var(--docs-header-height) + 1rem);
+}
+@media (min-width: 1024px) {
+  .docs-hero { min-height: calc(var(--docs-header-height) + 433px); }
+}
 .docs-prose > :is(h1, h2, h3),
 .docs-prose > div > :is(h1, h2, h3),
 .docs-prose > a > :is(h1, h2, h3) {
