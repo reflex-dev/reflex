@@ -77,7 +77,7 @@ def component_grid():
                                     prefix=prefix,
                                 ),
                                 underline="none",
-                                class_name="block rounded-compact px-3 py-2 text-sm font-normal leading-6 text-muted-foreground hover:bg-background hover:text-foreground transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                                class_name="block rounded-compact px-3 py-2 text-sm font-normal leading-6 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                             ),
                         )
                         for c in get_components_for_category(
@@ -86,7 +86,7 @@ def component_grid():
                     ],
                     class_name="grid min-w-0 grid-cols-2 gap-x-2 gap-y-1 xl:grid-cols-3 list-none m-0 p-0",
                 ),
-                class_name="docs-library-category grid grid-cols-1 items-start gap-5 border-t border-border-subtle -mx-4 px-4 py-7 odd:bg-muted md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-8",
+                class_name="docs-library-category grid grid-cols-1 items-start gap-5 border-t border-border-subtle -mx-4 px-4 py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-8",
             )
             for category in components
         ]
