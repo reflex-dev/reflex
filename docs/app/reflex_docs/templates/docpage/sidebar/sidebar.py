@@ -506,11 +506,11 @@ def sidebar_comp(
                     "See what components people have made with Reflex!",
                     class_name="text-sm font-normal leading-5 text-muted-foreground",
                 ),
-                class_name="flex flex-col gap-2 border-border-subtle bg-background hover:bg-muted px-3.5 py-3 border rounded-xl transition-colors",
+                class_name="flex flex-col gap-2 border-border-subtle bg-background hover:bg-muted px-3.5 py-3 border rounded-card transition-colors",
             ),
             underline="none",
             href=custom_components.path,
-            class_name="w-fit rounded-xl lg:ml-[2.5rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+            class_name="w-fit rounded-card lg:ml-[2.5rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
     )

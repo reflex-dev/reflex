@@ -153,7 +153,7 @@ def sorting_filters_dropdown_menu() -> rx.Component:
                         rx.fragment(),
                     ),
                     on_select=CustomComponentGalleryState.set_selected_filter(label),
-                    class_name="flex items-center gap-2 rounded-sm px-3 py-2 text-sm font-book text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
+                    class_name="flex items-center gap-2 rounded-compact px-3 py-2 text-sm font-book text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
                 )
                 for label, icon in (
                     ("Recent", "history"),
@@ -176,7 +176,7 @@ def download(download_url: str) -> rx.Component:
         underline="none",
         href=download_url,
         is_external=True,
-        class_name="text-secondary-9 hover:!text-secondary-9 bg-secondary-1 hover:bg-secondary-3 transition-bg cursor-pointer rounded-[6px]",
+        class_name="text-secondary-9 hover:!text-secondary-9 bg-secondary-1 hover:bg-secondary-3 transition-bg cursor-pointer rounded-compact",
         title="Documentation",
     )
 
@@ -205,7 +205,7 @@ def table_rows(category: dict):
                 on_click=rx.set_clipboard("pip install " + category["package_name"]),
                 type="button",
                 aria_label="Copy install command for " + category["package_name"],
-                class_name="flex flex-row gap-1.5 text-muted-foreground w-full items-center overflow-hidden border border-border bg-background hover:bg-muted transition-colors cursor-pointer rounded-full px-3 min-h-9 max-w-[20rem] focus-visible:outline-2 focus-visible:outline-ring",
+                class_name="flex flex-row gap-1.5 text-muted-foreground w-full items-center overflow-hidden border border-border bg-background hover:bg-muted transition-colors cursor-pointer rounded-compact px-3 min-h-9 max-w-[20rem] focus-visible:outline-2 focus-visible:outline-ring",
             )
         ),
         rx.table.cell(download(category["download_url"])),

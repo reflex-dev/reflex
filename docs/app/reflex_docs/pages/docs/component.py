@@ -727,7 +727,7 @@ def generate_props(
                 class_name="flex-1 p-4 bg-secondary-1 min-w-0 overflow-x-auto",
             ),
             class_name=(
-                "flex flex-col lg:flex-row w-full rounded-xl border "
+                "flex flex-col lg:flex-row w-full rounded-card border "
                 "border-secondary-4 overflow-hidden"
             ),
         )
@@ -753,7 +753,7 @@ def generate_props(
                 for prop, control in interactive_controls
             ],
             class_name=(
-                "mb-4 w-full min-w-0 overflow-hidden rounded-xl border "
+                "mb-4 w-full min-w-0 overflow-hidden rounded-card border "
                 "border-border-subtle bg-background"
             ),
         )

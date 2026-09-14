@@ -646,7 +646,7 @@ def _docs_social_menu_item(icon: str, url: str, name: str) -> rx.Component:
         title=f"{name} (opens in a new tab)",
         target="_blank",
         rel="noopener noreferrer",
-        class_name="docs-footer-social-link flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-subtle dark:hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
+        class_name="docs-footer-social-link flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
     )
 
 

@@ -9,3 +9,5 @@ Restore a subtle contrasting background behind the AI Builder section on the doc
 Make the component library easier to scan with compact category sections, subtle alternating gray backgrounds, fine dividers, and component links arranged in columns.
 
 Match both docs footer social menus to the main site's compact icon styling and remove the forum icon.
+
+Align documentation fields, navigation, content surfaces, and icon controls with the shared editorial shape system.

@@ -64,7 +64,7 @@ def component_grid():
                     ),
                     href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
                     underline="none",
-                    class_name="group flex items-start justify-between gap-4 rounded-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+                    class_name="group flex items-start justify-between gap-4 rounded-compact text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
                 rx.el.ul(
                     *[
@@ -77,7 +77,7 @@ def component_grid():
                                     prefix=prefix,
                                 ),
                                 underline="none",
-                                class_name="block rounded-sm px-3 py-2 text-sm font-normal leading-6 text-muted-foreground hover:bg-secondary-3 hover:text-foreground transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                                class_name="block rounded-compact px-3 py-2 text-sm font-normal leading-6 text-muted-foreground hover:bg-background hover:text-foreground transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
                             ),
                         )
                         for c in get_components_for_category(

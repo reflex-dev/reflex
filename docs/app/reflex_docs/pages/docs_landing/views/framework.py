@@ -24,7 +24,7 @@ def docs_item(
             ),
             rx.el.div(
                 "Enterprise-only",
-                class_name="text-secondary-12 text-xs font-medium bg-secondary-1 px-2.5 h-7 border-b border rounded-lg border-secondary-4 flex justify-center items-center ml-1",
+                class_name="text-secondary-12 text-xs font-medium bg-secondary-1 px-2.5 h-7 border rounded-compact border-border flex justify-center items-center ml-1",
             )
             if enterprise_only
             else None,

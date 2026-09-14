@@ -33,7 +33,7 @@ def link_item(
         rx.el.a(
             to=href,
             aria_label=title,
-            class_name="absolute inset-0 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-9",
+            class_name="absolute inset-0 rounded-compact focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-9",
         ),
         class_name=ui.cn(
             "flex flex-col gap-2 pr-8 py-8 group border-b border-border-subtle relative max-lg:p-6 hover:bg-accent transition-colors motion-reduce:transition-none",

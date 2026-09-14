@@ -560,7 +560,7 @@ def hover_item(component: rx.Component, component_str: str) -> rx.Component:
                     class_name="flex-1 text-sm font-book truncate",
                 ),
                 on_click=rx.set_clipboard(component_str),
-                class_name="flex flex-row items-center gap-1.5 border-border bg-background hover:bg-muted pr-3 border rounded-full min-h-9 w-full max-w-[300px] text-muted-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                class_name="flex flex-row items-center gap-1.5 border-border bg-background hover:bg-muted pr-3 border rounded-compact min-h-9 w-full max-w-[300px] text-muted-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
             ),
         ),
     )
@@ -783,6 +783,6 @@ def style_grid(
                 ),
             ),
         ),
-        class_name="flex flex-col justify-center items-center gap-6 border-secondary-4 bg-secondary-2 mb-4 p-6 border rounded-xl",
+        class_name="flex flex-col justify-center items-center gap-6 border-border-subtle bg-muted mb-4 p-6 border rounded-card",
         data_docs_example=True,
     )

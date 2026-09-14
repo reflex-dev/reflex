@@ -95,9 +95,9 @@ def card(
         rx.el.a(
             href=href,
             aria_label=title,
-            class_name="absolute inset-0 rounded-panel focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-primary-9",
+            class_name="absolute inset-0 rounded-card focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-primary-9",
         ),
-        class_name="docs-resource-card flex flex-col bg-background rounded-panel border border-border-subtle relative transition-colors hover:border-border-strong overflow-hidden",
+        class_name="docs-resource-card flex flex-col bg-background rounded-card border border-border-subtle relative transition-colors hover:border-border-strong overflow-hidden",
     )
 
 

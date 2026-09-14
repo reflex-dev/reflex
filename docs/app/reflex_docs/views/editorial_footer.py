@@ -113,7 +113,7 @@ def _newsletter() -> rx.Component:
                         auto_complete="email",
                         placeholder="Your email address",
                         required=True,
-                        class_name=f"h-11 min-w-0 flex-1 rounded-full border border-border bg-background px-4 text-sm text-foreground placeholder:text-subtle-foreground {_FOCUS}",
+                        class_name=f"h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-subtle-foreground {_FOCUS}",
                     ),
                     button("Get Updates", type="submit", variant="primary", size="md"),
                     on_submit=IndexState.signup,
@@ -209,7 +209,7 @@ def editorial_footer() -> rx.Component:
                         title=f"{name} (opens in a new tab)",
                         target="_blank",
                         rel="noopener noreferrer",
-                        class_name="docs-footer-social-link flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-subtle dark:hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
+                        class_name="docs-footer-social-link flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
                     )
                     for icon, url, name in (
                         ("twitter_footer", TWITTER_URL, "Twitter"),
