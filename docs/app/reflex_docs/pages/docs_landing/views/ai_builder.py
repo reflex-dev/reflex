@@ -194,5 +194,5 @@ def ai_builder_section() -> rx.Component:
             ),
             class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto",
         ),
-        class_name="bg-background w-full lg:pt-24 lg:pb-24 pb-10 max-xl:px-6 max-lg:pt-10",
+        class_name="bg-muted w-full lg:pt-24 lg:pb-24 pb-10 max-xl:px-6 max-lg:pt-10",
     )

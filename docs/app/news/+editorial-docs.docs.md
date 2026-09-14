@@ -3,3 +3,5 @@ Refresh the documentation with Reflex's neutral editorial design across navigati
 Fix browser hydration errors in integration cards and the low-level form example.
 
 Correct the header selection on the docs landing page so Overview is highlighted instead of Framework.
+
+Restore a subtle contrasting background behind the AI Builder section on the docs landing page in light and dark modes.
