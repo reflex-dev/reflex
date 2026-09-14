@@ -451,9 +451,7 @@ def stream_logs(
     else:
         # On POSIX each signal shows up two ways: negative when Popen saw it
         # directly, 128+N when a shell wrapper such as react router reported
-        # it (130 for SIGINT, 143 for SIGTERM). Recognising SIGINT in both
-        # forms but SIGTERM in neither is what turned an orderly `kill -TERM`
-        # into "Starting frontend failed" (#6981).
+        # it (130 for SIGINT, 143 for SIGTERM).
         interrupt_signals = (int(signal.SIGINT), int(signal.SIGTERM))
         accepted_return_codes = {
             0,
