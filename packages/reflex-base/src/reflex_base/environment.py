@@ -465,9 +465,10 @@ def _serialize_env_value(value: Any) -> str:
     if isinstance(value, timedelta):
         # Not `total_seconds()`: it is a float, which drops microseconds on large
         # durations and renders small ones in scientific notation.
-        microseconds = value // timedelta(microseconds=1)
-        seconds, fraction = divmod(microseconds, 1_000_000)
-        return f"{seconds}s" if fraction == 0 else f"{microseconds}us"
+        seconds, fraction = divmod(value, timedelta(seconds=1))
+        if not fraction:
+            return f"{seconds}s"
+        return f"{value // timedelta(microseconds=1)}us"
     return str(value)
 
 
