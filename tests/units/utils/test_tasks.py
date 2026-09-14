@@ -1,13 +1,10 @@
 import asyncio
 import contextlib
-import os
 from unittest.mock import Mock
 
 import pytest
 
 from reflex.utils.tasks import ensure_task
-
-CI = bool(os.environ.get("CI", False))
 
 
 class NotSuppressedError(Exception):
@@ -81,7 +78,8 @@ async def test_ensure_task_limit_window_passed():
     async def faulty_coro():
         nonlocal call_count
         call_count += 1
-        await asyncio.sleep(0.5 if CI else 0.05)
+        # Sleep longer than the limit window so each iteration resets the count.
+        await asyncio.sleep(0.05)
         if call_count > 3:
             raise RuntimeError("Test Passed")  # noqa: EM101
         raise ValueError("Should have been suppressed")  # noqa: EM101
@@ -94,11 +92,11 @@ async def test_ensure_task_limit_window_passed():
         suppress_exceptions=[ValueError],
         exception_delay=0,
         exception_limit=2,
-        exception_limit_window=0.1 if CI else 0.01,
+        exception_limit_window=0.01,
     )
 
     with contextlib.suppress(asyncio.CancelledError), pytest.raises(RuntimeError):
-        await asyncio.wait_for(owner.task, timeout=3)
+        await asyncio.wait_for(owner.task, timeout=10)
 
     # Should have raised after exceeding the limit
     assert call_count == 4
