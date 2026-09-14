@@ -38,6 +38,7 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.types import Receive, Scope, Send
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
@@ -59,6 +60,7 @@ from reflex.app import (
     App,
     ComponentCallable,
     EventNamespace,
+    _ContextMiddleware,
     _sio_dumps,
     _sio_loads,
     default_overlay_component,
@@ -3945,6 +3947,49 @@ def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
                 EventContext.get()
 
     isolated_context.run(_test)
+
+
+def test_context_middleware_is_registered_as_a_class(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """The context middleware must reach Starlette as a class, not a bound method.
+
+    ASGI instrumentation libraries (sentry-sdk's Starlette integration among them)
+    wrap every registered middleware by assigning to ``cls.__call__``. A bound
+    method has a read-only ``__call__``, so registering one makes that assignment
+    raise ``AttributeError`` and takes the app down at startup.
+    """
+    app, _ = compilable_app
+    mocker.patch.object(app, "_compile")
+
+    asgi_app = app()
+
+    assert isinstance(asgi_app, Starlette)
+    registered = [m.cls for m in asgi_app.user_middleware]
+    assert _ContextMiddleware in registered, (
+        f"context middleware not registered as a class, got {registered}"
+    )
+    # Mimic the instrumentation's patch on every middleware in the stack.
+    for cls in registered:
+        cls.__call__ = cls.__call__
+
+
+async def test_context_middleware_sets_contexts(app_with_processor: App):
+    """The context middleware attaches Reflex contexts before calling the app."""
+    seen: list[tuple[RegistrationContext, EventContext]] = []
+
+    async def inner_app(scope: Scope, receive: Receive, send: Send) -> None:  # noqa: RUF029
+        seen.append((RegistrationContext.get(), EventContext.get()))
+
+    await _ContextMiddleware(inner_app, app_with_processor)(
+        {"type": "http"}, AsyncMock(), AsyncMock()
+    )
+
+    assert app_with_processor._event_processor is not None
+    ((registration, event),) = seen
+    assert registration is app_with_processor._registration_context
+    assert event is app_with_processor._event_processor._root_context
 
 
 def test_compile_sends_telemetry_when_enabled(
