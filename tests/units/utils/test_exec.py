@@ -7,7 +7,9 @@ import socket
 import sys
 import time
 from http.client import HTTPConnection
+from multiprocessing.queues import Queue
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from pytest_mock import MockerFixture
@@ -19,19 +21,37 @@ from reflex.utils import exec as exec_utils
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
 
 
-def _run_granian_reload_test_app(app_dir: str, port: int) -> None:
+def _run_granian_reload_test_app(app_dir: str, port_queue: Queue[int]) -> None:
     """Run a reloadable Granian app in a child process.
 
     Args:
         app_dir: Directory containing the test app module.
-        port: TCP port for the test server.
+        port_queue: Queue receiving the supervisor's selected TCP port.
     """
     app_path = Path(app_dir)
     sys.path.insert(0, app_dir)
     exec_utils.get_app_instance_from_file = lambda: "reload_app:app"
     exec_utils.get_reload_paths = lambda: [app_path]
     exec_utils.get_dev_backend_reload_marker = lambda: app_path / ".reload"
-    exec_utils.run_granian_backend("127.0.0.1", port, exec_utils.LogLevel.ERROR)
+    original_socket = socket.socket
+
+    def report_listener(*args, **kwargs):
+        """Report the port of the supervisor-owned socket.
+
+        Args:
+            *args: Positional arguments forwarded to ``socket.socket``.
+            **kwargs: Keyword arguments forwarded to ``socket.socket``.
+
+        Returns:
+            The created socket.
+        """
+        listener = original_socket(*args, **kwargs)
+        if kwargs.get("fileno") is not None:
+            port_queue.put(listener.getsockname()[1])
+        return listener
+
+    with patch.object(exec_utils.socket, "socket", side_effect=report_listener):
+        exec_utils.run_granian_backend("127.0.0.1", 0, exec_utils.LogLevel.ERROR)
 
 
 def _request_reload_test_app(port: int, timeout: float = 5) -> tuple[int, float]:
@@ -277,16 +297,15 @@ def test_run_granian_backend_holds_requests_across_reload(tmp_path: Path):
     """Requests queue until a slow replacement worker finishes loading."""
     app_file = tmp_path / "reload_app.py"
     app_file.write_text(_reload_test_app_source(0))
-    with socket.socket() as reservation:
-        reservation.bind(("127.0.0.1", 0))
-        port = reservation.getsockname()[1]
-
-    process = multiprocessing.get_context("spawn").Process(
+    context = multiprocessing.get_context("spawn")
+    port_queue: Queue[int] = context.Queue()
+    process = context.Process(
         target=_run_granian_reload_test_app,
-        args=(str(tmp_path), port),
+        args=(str(tmp_path), port_queue),
     )
     process.start()
     try:
+        port = port_queue.get(timeout=20)
         deadline = time.monotonic() + 20
         while True:
             try:
@@ -313,6 +332,7 @@ def test_run_granian_backend_holds_requests_across_reload(tmp_path: Path):
         if process.is_alive():
             process.kill()
             process.join()
+        port_queue.close()
 
 
 def test_frontend_env_defaults_mimalloc_and_no_color():
