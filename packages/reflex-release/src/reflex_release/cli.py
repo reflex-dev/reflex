@@ -12,7 +12,7 @@ import os
 import sys
 from pathlib import Path
 
-from . import commands
+from . import app, commands
 from .actions import ReleaseError
 from .config import Config, load_config
 from .devpins import check_dev_pins
@@ -76,6 +76,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Repository root (default: the nearest directory with a pyproject.toml).",
     )
     sub = parser.add_subparsers(dest="command", required=True)
+
+    app_materialize = sub.add_parser(
+        "app-materialize", help="Pin app source and write a deployment changelog entry."
+    )
+    app_materialize.add_argument("--revision", default=_env("TARGET_REVISION"))
+    app_materialize.add_argument("--reason", default=_env("DEPLOY_REASON"))
+    for name in ("app-open-pr", "app-finalize"):
+        command = sub.add_parser(name)
+        command.add_argument("--version", default=_env("VERSION"))
+    app_detect = sub.add_parser(
+        "app-detect", help="Detect an unpublished app changelog version."
+    )
+    app_detect.add_argument(
+        "--ref-name", default=_env("REF_NAME") or _env("GITHUB_REF_NAME")
+    )
+    sub.add_parser("app-dev", help="Resolve the speculative development source.")
 
     detect = sub.add_parser(
         "detect", help="List packages whose newest changelog version has no git tag."
@@ -319,6 +335,16 @@ def dispatch(args: argparse.Namespace, config: Config) -> None:
         config: The repository configuration.
     """
     match args.command:
+        case "app-materialize":
+            app.materialize(config, args.revision, args.reason)
+        case "app-open-pr":
+            app.open_pr(config, args.version)
+        case "app-detect":
+            app.detect(config, args.ref_name)
+        case "app-dev":
+            app.dev(config)
+        case "app-finalize":
+            app.finalize(config, args.version)
         case "detect":
             commands.cmd_detect(config, args.ref_name)
         case "plan":
