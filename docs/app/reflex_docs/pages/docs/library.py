@@ -49,7 +49,7 @@ def component_grid():
                     rx.box(
                         rx.el.h2(
                             get_display_name(category),
-                            class_name="text-lg font-book leading-6 tracking-tight text-foreground",
+                            class_name="text-lg font-book leading-6 tracking-tight text-foreground transition-colors group-hover:text-muted-foreground",
                         ),
                         rx.text(
                             f"{len(components[category])} components",
@@ -57,14 +57,9 @@ def component_grid():
                         ),
                         class_name="flex min-w-0 flex-col gap-2",
                     ),
-                    rx.icon(
-                        "arrow-right",
-                        size=16,
-                        class_name="mt-1 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground",
-                    ),
                     href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
                     underline="none",
-                    class_name="group flex items-start justify-between gap-4 rounded-compact text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+                    class_name="group block rounded-compact text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
                 rx.el.ul(
                     *[
