@@ -3915,7 +3915,10 @@ def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
     isolated_context.run(_test)
 
 
-def test_context_middleware_is_registered_as_a_class():
+def test_context_middleware_is_registered_as_a_class(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
     """The context middleware must reach Starlette as a class, not a bound method.
 
     ASGI instrumentation libraries (sentry-sdk's Starlette integration among them)
@@ -3923,7 +3926,10 @@ def test_context_middleware_is_registered_as_a_class():
     method has a read-only ``__call__``, so registering one makes that assignment
     raise ``AttributeError`` and takes the app down at startup.
     """
-    asgi_app = App(_state=EmptyState)()
+    app, _ = compilable_app
+    mocker.patch.object(app, "_compile")
+
+    asgi_app = app()
 
     assert isinstance(asgi_app, Starlette)
     registered = [m.cls for m in asgi_app.user_middleware]
