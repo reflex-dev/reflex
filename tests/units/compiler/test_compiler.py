@@ -28,6 +28,7 @@ from reflex_components_core.el.elements.other import Html
 import reflex as rx
 from reflex.compiler import compiler, utils
 from reflex.state import BaseState
+from reflex.utils import prerequisites
 
 
 @pytest.mark.parametrize(
@@ -874,9 +875,7 @@ def test_compile_registers_plugin_routes_on_backend_early_return(
     mocker.patch.object(app, "_should_compile", return_value=False)
     compile_page = mocker.patch.object(app, "_compile_page")
     mocker.patch.object(app, "_add_optional_endpoints")
-    mocker.patch.object(
-        compiler.prerequisites, "get_backend_dir", return_value=tmp_path
-    )
+    mocker.patch.object(prerequisites, "get_backend_dir", return_value=tmp_path)
     mocker.patch.object(compiler, "get_config", return_value=config)
 
     if with_stateful_marker:
@@ -890,6 +889,40 @@ def test_compile_registers_plugin_routes_on_backend_early_return(
         compile_page.assert_called_once_with("plugin-page", save_page=False)
     else:
         compile_page.assert_not_called()
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_restores_registry_before_initial_state_serialization(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Backend-only compilation restores frontend metadata before serializing state."""
+
+    class BackendState(rx.State):
+        """State used to exercise backend-only compilation."""
+
+    app = rx.App(_state=BackendState)
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    mocker.patch.object(app, "_add_optional_endpoints")
+    mocker.patch.object(prerequisites, "get_backend_dir", return_value=tmp_path)
+    mocker.patch.object(
+        compiler, "get_config", return_value=rx.Config(app_name="testing", plugins=[])
+    )
+    calls = []
+    restore = mocker.patch.object(
+        utils, "_restore_bundled_libraries", side_effect=lambda: calls.append("restore")
+    )
+    compile_initial_state = mocker.patch.object(
+        utils,
+        "_compile_initial_state",
+        side_effect=lambda _state: calls.append("initial_state"),
+    )
+
+    assert compiler.compile_app(app, use_rich=False) is False
+
+    assert restore.call_args_list == [mocker.call()]
+    assert compile_initial_state.call_args_list == [mocker.call(BackendState)]
+    assert calls == ["restore", "initial_state"]
 
 
 def test_register_plugin_routes_exposes_app_type_not_mutable_app():

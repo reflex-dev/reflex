@@ -44,6 +44,33 @@ def test_bundled_libraries_artifact_round_trip(
         ]
 
 
+def test_restore_bundled_libraries_preserves_page_registrations(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Restoring frontend metadata retains libraries discovered by page evaluation."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    (tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES).write_text(
+        '["@radix-ui/themes"]', encoding="utf-8"
+    )
+    with RegistrationContext() as context:
+        context.bundled_libraries.append("page-library")
+
+        utils._restore_bundled_libraries()
+
+        assert "@radix-ui/themes" in context.bundled_libraries
+        assert "page-library" in context.bundled_libraries
+
+
+def test_restore_bundled_libraries_ignores_invalid_utf8(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Malformed registry artifacts do not interrupt backend-only startup."""
+    monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
+    (tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES).write_bytes(b"\xff")
+
+    utils._restore_bundled_libraries()
+
+
 def test_document_preloads_the_global_stylesheet():
     """Render-blocking CSS should be discoverable alongside early resource hints."""
     head = create_document_root().children[0]
