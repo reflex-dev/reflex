@@ -78,7 +78,7 @@ async def test_ensure_task_limit_window_passed():
     async def faulty_coro():
         nonlocal call_count
         call_count += 1
-        # Sleep longer than the limit window so each iteration resets the count.
+        # Sleep 50 ms, longer than the 10 ms limit window, to reset the count.
         await asyncio.sleep(0.05)
         if call_count > 3:
             raise RuntimeError("Test Passed")  # noqa: EM101
