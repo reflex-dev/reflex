@@ -54,7 +54,7 @@ def docs_api_table(
             class_name="w-full table-fixed border-collapse text-left",
         ),
         class_name=(
-            "mb-4 w-full min-w-0 overflow-hidden rounded-xl border "
+            "docs-table mb-4 w-full min-w-0 overflow-hidden rounded-xl border "
             "border-secondary-4 bg-secondary-1 shadow-small"
         ),
     )

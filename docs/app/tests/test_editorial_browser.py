@@ -187,3 +187,135 @@ def test_sidebar_groups_and_current_page_navigation(page: Page, width: int):
         "Basics"
     )
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize(
+    "route",
+    [
+        "/docs/library/",
+        "/docs/api-reference/app/",
+        "/docs/getting-started/installation/",
+    ],
+)
+def test_nested_article_headings_share_the_editorial_type(page: Page, route: str):
+    """Cards, API content, and nested tab panels use the article heading scale."""
+    page.goto(f"{PREVIEW_URL}{route}", wait_until="networkidle")
+    headings = page.locator(
+        ".docs-prose :is(h1,h2,h3,h4):not([data-docs-example] *):visible"
+    )
+    assert headings.count() > 1
+    for heading in headings.all():
+        expect(heading).to_have_css("font-weight", "450")
+
+
+def test_article_theme_preserves_live_example_styles_and_events(page: Page):
+    """Editorial type must not overwrite the rendered counter's own heading style."""
+    page.goto(
+        f"{PREVIEW_URL}/docs/getting-started/introduction/", wait_until="networkidle"
+    )
+    demo = (
+        page
+        .locator("[data-docs-example]")
+        .filter(has=page.get_by_role("button", name="Increment", exact=True))
+        .first
+    )
+    value = demo.get_by_role("heading")
+    expect(value).to_have_css("font-weight", "700")
+    for label, accent in [("Increment", "grass"), ("Decrement", "ruby")]:
+        expect(demo.get_by_role("button", name=label, exact=True)).to_have_attribute(
+            "data-accent-color", accent
+        )
+    before = int(value.inner_text())
+    demo.get_by_role("button", name="Increment", exact=True).click()
+    expect(value).to_have_text(str(before + 1))
+
+
+def test_mobile_header_links_and_booking_form(page: Page):
+    """Mobile docs destinations match desktop; opening booking closes the drawer."""
+    page.set_viewport_size({"width": 375, "height": 667})
+    page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
+    page.get_by_role("button", name="Open sidebar").click()
+    menu = page.get_by_role("navigation", name="Documentation navigation")
+    expect(menu).to_be_visible()
+    for label, href in {
+        "Overview": "/docs/",
+        "Build with AI": "/docs/ai/overview/best-practices/",
+        "Framework": "/docs/getting-started/introduction/",
+        "Cloud": "/docs/hosting/deploy-quick-start/",
+        "XY": "/docs/xy/",
+    }.items():
+        expect(menu.get_by_role("link", name=label, exact=True)).to_have_attribute(
+            "href", href
+        )
+    page.get_by_role("dialog").get_by_role("button", name="Book a Demo").click()
+    booking = page.locator('[data-slot="dialog-popup"]:has(#docs-booking_user_email)')
+    expect(booking).to_be_visible()
+    expect(page.get_by_role("dialog", include_hidden=True)).to_have_count(1)
+    expect(booking.get_by_role("heading", name="Book a Demo")).to_have_css(
+        "font-weight", "450"
+    )
+    email = booking.locator("#docs-booking_user_email")
+    email.fill("preview@example.com")
+    expect(email).to_have_value("preview@example.com")
+    page.wait_for_function(
+        """() => {
+            const box = document.querySelector('[data-slot="dialog-popup"]').getBoundingClientRect();
+            return box.top >= 0 && box.bottom <= innerHeight && box.right <= innerWidth;
+        }"""
+    )
+    page.keyboard.press("Escape")
+    expect(page.get_by_role("dialog")).to_have_count(0)
+
+
+def test_gallery_sort_menu_supports_keyboard_selection(page: Page):
+    """The gallery sort trigger remains usable after adopting shared controls."""
+    page.goto(f"{PREVIEW_URL}/docs/custom-components/", wait_until="networkidle")
+    trigger = page.get_by_role("button", name="Sort", exact=True)
+    trigger.focus()
+    trigger.press("Enter")
+    recent = page.get_by_role("menuitem", name="Recent")
+    expect(recent).to_be_visible()
+    recent.focus()
+    recent.press("Enter")
+    expect(page.get_by_role("button", name="Sort: Recent", exact=True)).to_be_visible()
+    expect(page.get_by_role("menuitem", name="Recent")).to_have_count(0)
+
+
+def test_missing_page_uses_docs_shell_and_recovery_link(page: Page):
+    """A missing route keeps docs navigation and a working route back to overview."""
+    page.goto(f"{PREVIEW_URL}/docs/404/", wait_until="networkidle")
+    expect(page.get_by_role("heading", name="Page not found")).to_be_visible()
+    expect(page.locator(".docs-navbar")).to_be_visible()
+    expect(page.locator(".docs-footer")).to_be_visible()
+    page.get_by_role("link", name="Back to docs", exact=True).click()
+    expect(page).to_have_url(f"{PREVIEW_URL}/docs/")
+
+
+def test_integration_catalog_hydrates_and_filters(page: Page):
+    """Integration cards keep valid link markup and accessible category filters."""
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(f"{PREVIEW_URL}/docs/ai/integrations/overview/", wait_until="networkidle")
+    expect(page.get_by_role("heading", name="Integrations", level=1)).to_be_visible()
+    assert not errors
+    cards = page.locator(".docs-integration-card:visible")
+    all_count = cards.count()
+    page.get_by_role("button", name="Authentication", exact=True).click()
+    expect(page.get_by_role("button", name="Authentication")).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    assert 0 < cards.count() < all_count
+    expect(cards.locator("a, button")).to_have_count(0)
+    page.get_by_role("button", name="Request integration", exact=True).click()
+    expect(page.get_by_placeholder("Requested integration...")).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(page.get_by_role("dialog")).to_have_count(0)
+
+
+def test_low_level_form_example_has_valid_inline_result_markup(page: Page):
+    """Inline submitted values must not cause the browser to repair nested paragraphs."""
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(f"{PREVIEW_URL}/docs/library/forms/form/low/", wait_until="networkidle")
+    expect(page.get_by_text("Username submitted:", exact=False)).to_be_visible()
+    assert not errors

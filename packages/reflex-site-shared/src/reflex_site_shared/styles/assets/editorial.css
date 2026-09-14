@@ -36,6 +36,18 @@
   --secondary-10: var(--c-slate-10);
   --secondary-11: var(--c-slate-11);
   --secondary-12: var(--c-slate-12);
+  --secondary-a1: color-mix(in srgb, var(--foreground) 2%, transparent);
+  --secondary-a2: color-mix(in srgb, var(--foreground) 4%, transparent);
+  --secondary-a3: color-mix(in srgb, var(--foreground) 6%, transparent);
+  --secondary-a4: color-mix(in srgb, var(--foreground) 9%, transparent);
+  --secondary-a5: color-mix(in srgb, var(--foreground) 12%, transparent);
+  --secondary-a6: color-mix(in srgb, var(--foreground) 16%, transparent);
+  --secondary-a7: color-mix(in srgb, var(--foreground) 22%, transparent);
+  --secondary-a8: color-mix(in srgb, var(--foreground) 32%, transparent);
+  --secondary-a9: color-mix(in srgb, var(--foreground) 48%, transparent);
+  --secondary-a10: color-mix(in srgb, var(--foreground) 56%, transparent);
+  --secondary-a11: color-mix(in srgb, var(--foreground) 72%, transparent);
+  --secondary-a12: color-mix(in srgb, var(--foreground) 92%, transparent);
   --primary-1: var(--c-slate-1);
   --primary-2: var(--c-slate-2);
   --primary-3: var(--c-slate-3);
@@ -186,11 +198,109 @@
 @media (min-width: 1024px) {
   .docs-hero { min-height: calc(var(--docs-header-height) + 433px); }
 }
-.docs-prose > :is(h1, h2, h3),
-.docs-prose > div > :is(h1, h2, h3),
-.docs-prose > a > :is(h1, h2, h3) {
+.docs-prose :is(h1, h2, h3, h4, h5, h6):not([data-docs-example] *) {
+  font-family: var(--font-instrument-sans);
   font-weight: 450;
   letter-spacing: -0.03em;
+}
+.docs-prose :is(strong, b):not([data-docs-example] *) { font-weight: 600; }
+.docs-prose .docs-body-text:not([data-docs-example] *),
+.docs-prose .docs-text-link:not([data-docs-example] *) { font-weight: 425; }
+.docs-prose .docs-introduction {
+  max-width: 44rem;
+  line-height: 1.75rem;
+}
+/* These are decorative SVG thumbnails, separate from live component examples. */
+.docs-prose .docs-preview-card img { filter: grayscale(1); }
+.docs-prose .font-small:not([data-docs-example] *) {
+  font-size: 0.875rem;
+  font-weight: 425;
+  line-height: 1.5;
+  letter-spacing: normal;
+}
+.docs-prose .docs-text-link:not([data-docs-example] *) {
+  color: var(--foreground);
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+.docs-prose .docs-text-link:hover { text-decoration-color: var(--foreground); }
+.docs-prose .code-style:not([data-docs-example] *) {
+  color: var(--foreground);
+  background: var(--muted);
+  border-color: var(--border-subtle);
+}
+.docs-prose .docs-definition:not([data-docs-example] *) {
+  color: var(--muted-foreground);
+  background: var(--muted);
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-card);
+}
+.docs-prose .docs-definition h3:not([data-docs-example] *) { color: var(--foreground); }
+.docs-prose .docs-callout:not([data-docs-example] *) { border-radius: var(--radius-card); }
+.docs-prose .docs-callout-title:not([data-docs-example] *) { font-weight: 450; }
+.docs-prose .docs-table:not([data-docs-example] *) {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--background);
+  box-shadow: none;
+  overflow-x: auto;
+}
+.docs-prose table:not([data-docs-example] *) {
+  --table-row-background-color: transparent;
+  --table-row-box-shadow: inset 0 -1px var(--border-subtle);
+  border-color: var(--border-subtle);
+  font-size: 0.875rem;
+  font-weight: 425;
+}
+.docs-prose table :is(th, td):not([data-docs-example] *) {
+  border-color: var(--border-subtle);
+  font-size: 0.875rem;
+  font-weight: 425;
+  line-height: 1.5;
+  letter-spacing: normal;
+}
+.docs-prose table th:not([data-docs-example] *) { font-weight: 500; }
+.docs-prose table :is(thead, tbody):not([data-docs-example] *) {
+  background: var(--background);
+}
+.docs-prose table thead:not([data-docs-example] *) { background: var(--muted); }
+.docs-prose table tr:not([data-docs-example] *) { color: var(--foreground); }
+.docs-prose .docs-demo-build-action {
+  color: var(--foreground);
+  font-weight: 450;
+  border-radius: var(--radius-control);
+}
+.docs-prose .docs-demo-build-action > svg:first-child path { fill: var(--background); }
+.docs-prose :is(.docs-text-link, .docs-demo-build-action):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+@layer components {
+  .docs-prose .pill-tab-list {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-control) !important;
+    background: var(--background) !important;
+    padding: 3px !important;
+  }
+  .docs-prose .pill-tab {
+    font-size: 0.875rem !important;
+    font-weight: 450 !important;
+    border-radius: var(--radius-control) !important;
+    color: var(--muted-foreground) !important;
+  }
+  .docs-prose .pill-tab[data-state='active'] {
+    background: var(--foreground) !important;
+    color: var(--background) !important;
+    box-shadow: none !important;
+  }
+  .docs-prose .pill-tab[data-state='inactive']:hover {
+    background: var(--muted) !important;
+    color: var(--foreground) !important;
+  }
+  .docs-prose :is(.pill-tab, .doc-demo-tab):focus-visible {
+    outline: 2px solid var(--ring) !important;
+    outline-offset: -2px !important;
+  }
 }
 .docs-prose :is(h1, h2, h3, h4)[id] {
   scroll-margin-top: calc(var(--docs-header-height) + 2rem);
@@ -200,9 +310,45 @@
   .docs-navbar header { padding-inline: 1rem; }
 }
 
-.docs-navbar .ReflexSearch-button {
+:root .docs-navbar .ReflexSearch-button {
   height: 2.25rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--border);
+  background: var(--background);
+  box-shadow: none;
+}
+:root .ReflexSearch-overlay .ReflexSearch-dialog {
+  border-radius: var(--radius-panel);
+  border-color: var(--border);
+  background: var(--background);
+}
+/* Portaled forms need the same theme while component examples stay independent. */
+[data-slot="dialog-popup"]:has(#docs-booking_user_email),
+[data-slot="popover-popup"]:has(.docs-feedback-form) {
+  border-color: var(--border);
+  border-radius: var(--radius-panel);
+  color: var(--foreground);
+  font-family: var(--font-instrument-sans);
+}
+[data-slot="dialog-popup"]:has(#docs-booking_user_email) {
+  max-width: min(28rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 3rem);
+  overflow-y: auto;
+  margin-top: 0;
+}
+[data-slot="dialog-popup"]:has(#docs-booking_user_email) h1 {
+  font-weight: 450;
+  letter-spacing: -0.03em;
+}
+[data-slot="dialog-popup"]:has(#docs-booking_user_email) button,
+.docs-feedback-form button {
+  border-radius: var(--radius-control);
+  font-weight: 450;
+}
+.docs-feedback-form button[aria-pressed="true"] {
+  background: var(--foreground);
+  color: var(--background);
+  border-color: var(--foreground);
 }
 .docs-right-sidebar > nav {
   margin-top: calc(var(--docs-header-height) + 2rem);

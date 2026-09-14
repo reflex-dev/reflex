@@ -366,6 +366,7 @@ def _feedback_thumb_card(score: int, icon: str, label: str) -> rx.Component:
         label,
         type="button",
         on_click=DocsFeedbackState.set_score(score),
+        aria_pressed=DocsFeedbackState.score == score,
         class_name=rx.cond(
             DocsFeedbackState.score == score,
             "flex h-9 items-center justify-center gap-2 rounded-md border border-primary-6 bg-primary-3 px-3 text-sm font-medium text-primary-11 transition-colors",
@@ -418,7 +419,7 @@ def _feedback_content() -> rx.Component:
             ),
             class_name="flex flex-col gap-4 w-full",
         ),
-        class_name="p-2",
+        class_name="docs-feedback-form p-2",
     )
 
 

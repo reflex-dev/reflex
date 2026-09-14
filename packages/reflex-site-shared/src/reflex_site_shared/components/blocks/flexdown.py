@@ -53,7 +53,7 @@ def _markdown_table(*children, **props) -> rx.Component:
             class_name="w-full border-collapse text-sm border border-secondary-4 rounded-lg overflow-hidden bg-white-1 ",
             **props,
         ),
-        class_name="w-full rounded-xl border border-secondary-a4 my-6 max-w-full overflow-hidden",
+        class_name="docs-table w-full rounded-xl border border-secondary-a4 my-6 max-w-full overflow-hidden",
     )
 
 

@@ -238,7 +238,7 @@ for source, target in redirects:
             ],
         )
 
-app.add_page(page404.component, route=page404.path)
+app.add_page(page404.component, route=page404.path, title=page404.title)
 
 
 # HTTP 301 applies when page requests reach this backend. Separate frontend

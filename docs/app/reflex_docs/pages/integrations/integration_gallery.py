@@ -1,6 +1,7 @@
 import reflex as rx
 import reflex_components_internal as ui
 from reflex.experimental import ClientStateVar
+from reflex_site_shared.components.marketing_button import button
 from reflex_site_shared.integrations import get_integration_logo_url
 
 from .integration_list import get_integration_path
@@ -19,16 +20,13 @@ FilterOptions = [
 
 
 def integration_filter_button(data: dict):
-    active_pill = (
-        "border border-primary-8 bg-primary-3 hover:bg-primary-3 !text-primary-10"
-    )
-
-    return ui.button(
+    active = selected_filter.value == data["name"]
+    return button(
         ui.icon(icon=data["icon"]),
-        rx.el.p(data["name"], class_name="text-sm"),
-        variant="outline",
-        class_name="flex flex-row items-center "
-        + rx.cond(selected_filter.value == data["name"], active_pill, "").to(str),
+        data["name"],
+        variant=rx.cond(active, "primary", "outline"),
+        size="sm",
+        aria_pressed=active,
         on_click=selected_filter.set_value(data["name"]),
     )
 
@@ -37,9 +35,9 @@ def integration_filters():
     return rx.el.div(
         rx.el.div(
             *[integration_filter_button(data) for data in FilterOptions],
-            class_name="flex flex-row gap-3 items-center justify-center flex-wrap",
+            class_name="flex flex-row gap-2 items-center flex-wrap",
         ),
-        class_name="w-full max-w-[64.19rem] pb-12",
+        class_name="w-full pb-8",
     )
 
 
@@ -66,30 +64,25 @@ def integration_gallery_cards(data):
                     unstyled=True,
                     class_name="size-8 flex items-center justify-center",
                 ),
-                ui.link(
-                    render_=ui.button(
-                        "Learn More",
-                        variant="outline",
-                        class_name="group-hover:bg-secondary-2 hover:bg-transparent",
-                    ),
-                    to=data["path"],
+                rx.el.span(
+                    "Learn more",
+                    rx.icon("arrow-up-right", size=14, aria_hidden=True),
+                    class_name="flex items-center gap-1 text-sm font-book text-muted-foreground group-hover:text-foreground",
                 ),
                 class_name="w-full flex flex-row items-center justify-between",
             ),
             rx.el.div(
-                rx.el.p(
-                    data["title"], class_name="text-lg font-semibold text-secondary-12"
-                ),
+                rx.el.p(data["title"], class_name="text-lg font-book text-foreground"),
                 rx.el.p(
                     data["description"],
-                    class_name="font-medium text-secondary-11 leading-[1.35]",
+                    class_name="text-sm font-normal text-muted-foreground leading-6",
                 ),
                 class_name="flex flex-col gap-y-1",
             ),
-            class_name="flex flex-col gap-y-6 rounded-ui-xl border border-secondary-a4 bg-secondary-1 shadow-small p-6 h-[13rem] justify-between hover:bg-secondary-2",
+            class_name="flex flex-col gap-6 rounded-card border border-border-subtle bg-background p-5 min-h-48 h-full justify-between group-hover:bg-muted",
         ),
         href=data["path"],
-        class_name="group text-inherit hover:!text-inherit decoration-none no-underline "
+        class_name="docs-integration-card group rounded-card text-inherit hover:!text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring "
         + rx.cond(
             (selected_filter.value == data["tags"]) | (selected_filter.value == "All"),
             "flex",
@@ -113,10 +106,6 @@ def integration_gallery():
 def integration_request_form():
     return rx.el.div(
         rx.el.p("Missing an integration?"),
-        rx.el.p(
-            rx.fragment(
-                "Click ", request_integration_dialog(), " to tell us what you need."
-            )
-        ),
-        class_name="w-full max-w-[64.19rem] flex flex-col gap-y-1 text-md font-semibold py-10 items-center justify-center",
+        request_integration_dialog(),
+        class_name="w-full flex flex-wrap items-center justify-between gap-4 border-t border-border-subtle py-8 mt-10 text-sm font-normal text-muted-foreground",
     )

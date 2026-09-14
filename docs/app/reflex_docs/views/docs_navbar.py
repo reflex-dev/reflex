@@ -1,6 +1,9 @@
 import reflex as rx
 import reflex_components_internal as ui
-from reflex_components_internal.blocks.demo_form import demo_form_dialog
+from reflex_components_internal.blocks.demo_form import (
+    demo_form_dialog,
+    demo_form_open_cs,
+)
 from reflex_site_shared.components.docs_shell import docs_navbar_frame
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
@@ -15,7 +18,6 @@ from reflex_site_shared.views.hosting_banner import (
     HostingBannerState,
 )
 
-from reflex_docs.components.docpage.navbar.buttons.sidebar import navbar_sidebar_button
 from reflex_docs.pages.docs import ai_builder, getting_started, hosting
 from reflex_docs.views.search import search_bar
 
@@ -119,6 +121,93 @@ def menu_item(
     )
 
 
+def mobile_navigation() -> rx.Component:
+    """Show the same docs destinations as the desktop header.
+
+    Returns:
+        Mobile navigation drawer with native links and the shared booking action.
+    """
+    return rx.drawer.root(
+        rx.drawer.trigger(
+            button(
+                rx.icon("menu", size=18),
+                variant="outline",
+                size="icon-sm",
+                aria_label="Open sidebar",
+            ),
+            as_child=True,
+        ),
+        rx.drawer.portal(
+            rx.drawer.content(
+                rx.el.div(
+                    rx.drawer.title(
+                        "Documentation",
+                        class_name="text-xs font-book text-muted-foreground",
+                        font_size="0.75rem",
+                        font_weight="450",
+                        line_height="1.5",
+                        letter_spacing="normal",
+                    ),
+                    rx.drawer.close(
+                        button(
+                            rx.icon("x", size=18),
+                            variant="ghost",
+                            size="icon-sm",
+                            aria_label="Close navigation",
+                        ),
+                        as_child=True,
+                    ),
+                    class_name="flex items-center justify-between gap-4",
+                ),
+                rx.el.nav(
+                    *[
+                        rx.drawer.close(
+                            (rx.el.elements.a if external else rx.el.a)(
+                                label,
+                                rx.icon(
+                                    "arrow-up-right" if external else "arrow-right",
+                                    size=16,
+                                    aria_hidden=True,
+                                ),
+                                href=href,
+                                class_name="flex min-h-14 items-center justify-between gap-4 border-b border-border-subtle text-base font-book text-foreground focus-visible:outline-2 focus-visible:outline-ring",
+                            ),
+                            as_child=True,
+                        )
+                        for label, href, external in (
+                            ("Overview", "/", False),
+                            (
+                                "Build with AI",
+                                ai_builder.overview.best_practices.path,
+                                False,
+                            ),
+                            ("Framework", getting_started.introduction.path, False),
+                            ("Cloud", hosting.deploy_quick_start.path, False),
+                            ("XY", "/docs/xy/", True),
+                        )
+                    ],
+                    aria_label="Documentation navigation",
+                    class_name="flex flex-col",
+                ),
+                rx.drawer.close(
+                    button(
+                        "Book a Demo",
+                        variant="primary",
+                        size="md",
+                        on_click=rx.call_function(demo_form_open_cs.set_value(True)),
+                        class_name="w-full mt-6",
+                    ),
+                    as_child=True,
+                ),
+                class_name="docs-mobile-menu fixed inset-x-0 bottom-0 top-(--docs-header-height) flex flex-col gap-4 overflow-y-auto border-t border-border-subtle bg-background p-6 outline-none",
+                top="var(--docs-header-height)",
+                z_index=10000,
+            ),
+        ),
+        direction="bottom",
+    )
+
+
 def navigation_menu() -> rx.Component:
     return ui.navigation_menu.root(
         ui.navigation_menu.list(
@@ -144,6 +233,7 @@ def navigation_menu() -> rx.Component:
             ),
             ui.navigation_menu.item(
                 demo_form_dialog(
+                    id_prefix="docs-booking",
                     trigger=button(
                         "Book a Demo",
                         size="sm",
@@ -157,7 +247,7 @@ def navigation_menu() -> rx.Component:
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
-                navbar_sidebar_button(),
+                mobile_navigation(),
                 class_name="lg:hidden flex",
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},

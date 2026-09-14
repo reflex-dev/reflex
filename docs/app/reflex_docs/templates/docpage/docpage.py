@@ -250,7 +250,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         label = to_title_case(to_snake_case(segment), sep=" ")
         label = _BREADCRUMB_LABEL_OVERRIDES.get(label, label)
         base_class = ui.cn(
-            "min-h-8 flex items-center text-sm font-[525] text-secondary-12 last:text-secondary-11",
+            "min-h-8 flex items-center text-sm font-book text-foreground last:text-muted-foreground",
             "truncate" if i == len(segments) - 1 else "",
         )
 
@@ -265,7 +265,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
                     label,
                     class_name=ui.cn(
                         base_class,
-                        "hover:text-primary-10 dark:hover:text-primary-9",
+                        "hover:text-muted-foreground rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                     ),
                     underline="none",
                     href=href,
@@ -557,10 +557,10 @@ def hover_item(component: rx.Component, component_str: str) -> rx.Component:
                 get_icon(icon="copy", class_name="p-[5px]"),
                 rx.text(
                     component_str,
-                    class_name="flex-1 font-small truncate",
+                    class_name="flex-1 text-sm font-book truncate",
                 ),
                 on_click=rx.set_clipboard(component_str),
-                class_name="flex flex-row items-center gap-1.5 border-secondary-5 bg-secondary-1 hover:bg-secondary-3 shadow-small pr-1.5 border rounded-md w-full max-w-[300px] text-secondary-11 transition-bg cursor-pointer",
+                class_name="flex flex-row items-center gap-1.5 border-border bg-background hover:bg-muted pr-3 border rounded-full min-h-9 w-full max-w-[300px] text-muted-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
             ),
         ),
     )
@@ -784,4 +784,5 @@ def style_grid(
             ),
         ),
         class_name="flex flex-col justify-center items-center gap-6 border-secondary-4 bg-secondary-2 mb-4 p-6 border rounded-xl",
+        data_docs_example=True,
     )

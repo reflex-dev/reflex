@@ -272,7 +272,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             return text_comp(text=children[0])
         return rx.text(
             *children,
-            class_name="font-[475] text-secondary-11 mb-4 leading-7",
+            class_name="docs-body-text font-[475] text-secondary-11 mb-4 leading-7",
         )
 
     def code_block(self, block: CodeBlock) -> rx.Component:
@@ -331,7 +331,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             return list_comp(text=_spans_to_plaintext(spans))
         return rx.list_item(
             *_render_spans(spans),
-            class_name="font-[475] text-secondary-11 mb-4",
+            class_name="docs-body-text font-[475] text-secondary-11 mb-4",
         )
 
     def transform_list_item(self, item: ListItem) -> rx.Component:
@@ -377,7 +377,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             rx.table.body(*rows),
             variant="surface",
             size="1",
-            class_name="w-full border border-secondary-4 mb-4",
+            class_name="docs-table w-full border border-secondary-4 mb-4",
         )
 
     def transform_table_row(self, row: TableRow) -> rx.Component:
@@ -500,7 +500,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             )
             raise
 
-        return rx.box(comp, margin_bottom="1em", id=comp_id)
+        return rx.box(comp, margin_bottom="1em", id=comp_id, data_docs_example=True)
 
     def _render_children(self, blocks: tuple[Block, ...]) -> rx.Component:
         """Render a sequence of parsed blocks into a single component."""
@@ -567,7 +567,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         def title_comp() -> rx.Component:
             return rx.box(
                 *_render_spans(title_spans),
-                class_name="font-[475]",
+                class_name="docs-callout-title font-[475]",
                 color=foreground_color(),
             )
 
@@ -610,7 +610,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             trigger.append(
                 rx.box(
                     *spans,
-                    class_name="font-[475]",
+                    class_name="docs-callout-title font-[475]",
                     color=foreground_color(),
                 ),
             )
@@ -628,6 +628,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             margin_bottom="16px",
             margin_top="16px",
             width="100%",
+            class_name="docs-callout",
         )
 
     def _render_video(self, block: DirectiveBlock) -> rx.Component:

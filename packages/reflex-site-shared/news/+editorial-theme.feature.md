@@ -1,1 +1,1 @@
-Add an opt-in editorial theme to `SharedSiteStylesPlugin` with neutral colors, accessible capsule buttons, and dark-mode support.
+Add an opt-in editorial theme to `SharedSiteStylesPlugin` with neutral colors, consistent documentation typography and surfaces, accessible capsule buttons, and dark-mode support. Live documentation examples retain their own heading and table styles.

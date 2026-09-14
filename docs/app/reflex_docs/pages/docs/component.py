@@ -90,16 +90,16 @@ EXCLUDED_COMPONENTS = [
 
 
 _PILL_BTN_CLASS = (
-    "inline-flex h-7 cursor-pointer items-center justify-center rounded-md "
-    "border border-secondary-5 bg-secondary-1 px-2.5 text-sm font-medium text-secondary-11 "
-    "transition-colors hover:border-secondary-6 hover:bg-secondary-2 hover:text-secondary-12 "
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-7"
+    "inline-flex h-7 cursor-pointer items-center justify-center rounded-full "
+    "border border-border bg-background px-3 text-sm font-book text-muted-foreground "
+    "transition-colors hover:border-border-strong hover:bg-muted hover:text-foreground "
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 )
 _PILL_BTN_ACTIVE_CLASS = (
-    "inline-flex h-7 cursor-pointer items-center justify-center rounded-md "
-    "border border-secondary-8 bg-secondary-3 px-2.5 text-sm font-medium text-secondary-12 "
-    "shadow-[inset_0_0_0_1px_var(--secondary-6)] transition-colors "
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-7"
+    "inline-flex h-7 cursor-pointer items-center justify-center rounded-full "
+    "border border-foreground bg-foreground px-3 text-sm font-book text-background "
+    "transition-colors hover:bg-primary-hover "
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 )
 _PROPS_TABLE_COMPACT_CELL_CLASS = (
     "cell-content max-h-[4.25rem] overflow-hidden "
@@ -715,6 +715,7 @@ def generate_props(
         interactive_component = rx.el.div(
             rx.el.div(
                 comp,
+                data_docs_example=True,
                 class_name=(
                     "flex flex-col items-center justify-center p-6 flex-1 "
                     "bg-secondary-2 border-b lg:border-b-0 lg:border-r "
@@ -753,7 +754,7 @@ def generate_props(
             ],
             class_name=(
                 "mb-4 w-full min-w-0 overflow-hidden rounded-xl border "
-                "border-secondary-4 bg-secondary-1 shadow-small"
+                "border-border-subtle bg-background"
             ),
         )
 
@@ -916,9 +917,9 @@ def multi_docs(
         component_docs(component_tuple, previews) for component_tuple in ll_list[1:]
     ]
 
-    active_class_name = "font-small bg-secondary-2 p-2 text-secondary-11 rounded-xl shadow-large w-28 cursor-default border border-secondary-4 text-center"
+    active_class_name = "text-sm font-book bg-foreground px-4 py-2 text-background rounded-full w-28 cursor-default text-center"
 
-    non_active_class_name = "font-small w-28 transition-color hover:text-secondary-12 text-secondary-11 p-2 text-center"
+    non_active_class_name = "text-sm font-book w-28 rounded-full transition-colors hover:bg-muted hover:text-foreground text-muted-foreground px-4 py-2 text-center"
 
     def links(current_page, ll_doc_exists, path):
         path = str(path).rstrip("/")
@@ -938,7 +939,7 @@ def multi_docs(
                             href=path + "/low",
                             underline="none",
                         ),
-                        class_name="bg-secondary-3 rounded-[1.125rem] p-2 gap-2 flex items-center justify-center",
+                        class_name="docs-api-level-switch bg-background border border-border rounded-full p-1 gap-1 flex items-center justify-center [&_a]:rounded-full [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-ring",
                     ),
                     class_name="flex mb-2",
                 )
@@ -958,7 +959,7 @@ def multi_docs(
                             href=path + "/low",
                             underline="none",
                         ),
-                        class_name="bg-secondary-3 rounded-[1.125rem] p-2 gap-2 flex items-center justify-center",
+                        class_name="docs-api-level-switch bg-background border border-border rounded-full p-1 gap-1 flex items-center justify-center [&_a]:rounded-full [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-ring",
                     ),
                     class_name="flex mb-2",
                 )

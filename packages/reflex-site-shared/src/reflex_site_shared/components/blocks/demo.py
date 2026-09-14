@@ -71,7 +71,7 @@ def _reflex_build_action() -> rx.Component:
         rel="noopener noreferrer",
         class_name=(
             f"{ui.button.class_names.for_button('ghost-highlight', 'sm')} "
-            "mb-1.5 no-underline pl-0"
+            "docs-demo-build-action mb-1.5 no-underline pl-0"
         ),
     )
 
@@ -107,6 +107,7 @@ def docdemobox(*children, **props) -> rx.Component:
     """
     return rx.box(
         *children,
+        data_docs_example=True,
         **props,
         class_name="flex flex-col p-6 rounded-xl overflow-x-auto border border-secondary-4 bg-secondary-2 items-center justify-center w-full",
     )
