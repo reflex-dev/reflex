@@ -536,11 +536,13 @@ def temp_minify_json(
     from reflex.minify import clear_config_cache
 
     monkeypatch.chdir(tmp_path)
-    with RegistrationContext.get().fork():
+    try:
+        with RegistrationContext.get().fork():
+            clear_config_cache()
+            yield tmp_path
+    finally:
+        monkeypatch.undo()
         clear_config_cache()
-        yield tmp_path
-    monkeypatch.undo()
-    clear_config_cache()
 
 
 @pytest.fixture
