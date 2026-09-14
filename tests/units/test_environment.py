@@ -35,6 +35,7 @@ from reflex_base.environment import (
     interpret_plugin_env,
     interpret_timedelta_env,
     oplock_hold_time,
+    state_manager_disk_debounce,
 )
 from reflex_base.plugins import Plugin
 from reflex_base.utils.exceptions import EnvironmentVarValueError
@@ -794,6 +795,34 @@ def test_timedelta_env_var_round_trips_through_set(
         assert env_var_instance.get() == value
 
 
+@pytest.fixture(autouse=True)
+def _forget_superseded_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Each test sees the deprecation warning as if the process had just started.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setattr("reflex_base.environment._WARNED_SUPERSEDED", set())
+
+
+def test_a_superseded_duration_setting_warns_once_per_process(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every code path that reads the setting must not repeat the warning.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "250")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        oplock_hold_time()
+        oplock_hold_time()
+
+    deprecate.assert_called_once()
+
+
 def test_duration_env_vars_accept_a_suffix(monkeypatch: pytest.MonkeyPatch) -> None:
     """The duration settings read a unit, not just a count of seconds.
 
@@ -834,6 +863,60 @@ def test_a_superseded_duration_setting_is_still_honoured(
 
     deprecate.assert_called_once()
     assert deprecate.call_args.kwargs["feature_name"] == "REFLEX_OPLOCK_HOLD_TIME_MS"
+    # The exact replacement, so nobody renames the variable and loses the unit.
+    assert "REFLEX_OPLOCK_HOLD_TIME=250ms" in deprecate.call_args.kwargs["reason"]
+
+
+def test_a_superseded_seconds_setting_names_its_replacement_in_seconds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A fractional count of seconds converts to the matching suffixed value.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_STATE_MANAGER_DISK_DEBOUNCE", raising=False)
+    monkeypatch.setenv("REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS", "0.5")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert state_manager_disk_debounce() == timedelta(milliseconds=500)
+
+    assert (
+        "REFLEX_STATE_MANAGER_DISK_DEBOUNCE=0.5s"
+        in deprecate.call_args.kwargs["reason"]
+    )
+
+
+def test_a_blank_superseded_setting_counts_as_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A blank value is unset everywhere else in the environment, so no warning.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "   ")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert oplock_hold_time() == timedelta(0)
+
+    deprecate.assert_not_called()
+
+
+def test_a_blank_duration_setting_does_not_shadow_the_one_it_supersedes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Templated deployments leave the new name present but empty.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "")
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "250")
+
+    with patch("reflex_base.utils.console.deprecate"):
+        assert oplock_hold_time() == timedelta(milliseconds=250)
 
 
 def test_the_duration_setting_wins_over_the_one_it_supersedes(

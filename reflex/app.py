@@ -32,7 +32,7 @@ from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
 from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
-from reflex_base.environment import environment
+from reflex_base.environment import auto_reload_cooldown, environment
 from reflex_base.event import (
     _EVENT_FIELDS,
     Event,
@@ -584,6 +584,10 @@ class App(MiddlewareMixin, LifespanMixin):
 
         # Set up the state manager.
         self._state_manager = StateManager.create()
+
+        # Read the auto-reload cooldown now so a deprecated name warns at startup
+        # rather than on the first frontend error that consults it.
+        auto_reload_cooldown()
 
         # Set up the Socket.IO AsyncServer.
         if not self.sio:

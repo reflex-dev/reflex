@@ -18,6 +18,7 @@ from redis.asyncio import Redis
 from reflex_base.config import get_config
 from reflex_base.environment import environment, oplock_hold_time
 from reflex_base.utils.exceptions import (
+    EnvironmentVarValueError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     StateSchemaMismatchError,
@@ -88,8 +89,17 @@ def _default_oplock_hold_time_ms() -> int:
 
     Returns:
         The default opportunistic lock hold time.
+
+    Raises:
+        EnvironmentVarValueError: If the configured hold time is negative.
     """
     hold_time = oplock_hold_time()
+    if hold_time < timedelta(0):
+        msg = (
+            "The opportunistic lock hold time must not be negative, got "
+            f"{hold_time.total_seconds()} seconds."
+        )
+        raise EnvironmentVarValueError(msg)
     if not hold_time:
         return _default_lock_expiration() // 2
     # A configured hold time is worth at least one millisecond, so that a

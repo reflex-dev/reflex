@@ -353,6 +353,14 @@ def _is_framework_filename(filename: str) -> bool:
     Returns:
         Whether the file lives under one of the excluded framework roots.
     """
+    # Code with no source file carries a bracketed pseudo-name rather than a
+    # path: `<string>` for `exec` and a generated dataclass `__init__`,
+    # `<stdin>`, `<frozen importlib._bootstrap>` while an import runs. None of
+    # them is a user call site, and treating one as a path would resolve it
+    # against the cwd, so whether it counts as framework code would depend on
+    # where the app was started from.
+    if filename.startswith("<") and filename.endswith(">"):
+        return True
     frame_path = Path(filename).resolve()
     return any(
         frame_path.is_relative_to(root) for root in _exclude_paths_from_frame_info()

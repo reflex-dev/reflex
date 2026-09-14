@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 from reflex.istate.manager.redis import (
     StateManagerRedis,
@@ -784,3 +785,12 @@ def test_oplock_hold_time_unset_halves_the_lock_expiration(
     monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
     monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME_MS", raising=False)
     assert _default_oplock_hold_time_ms() == _default_lock_expiration() // 2
+
+
+def test_oplock_hold_time_rejects_a_negative_duration(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A negative hold time is a configuration error, not one millisecond."""
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "-5s")
+    with pytest.raises(EnvironmentVarValueError, match="must not be negative"):
+        _default_oplock_hold_time_ms()

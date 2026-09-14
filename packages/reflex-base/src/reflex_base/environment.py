@@ -867,11 +867,16 @@ class EnvironmentVariables:
 
 environment = EnvironmentVariables()
 
+# Superseded settings already warned about. A setting has no call site, so the
+# per-location dedupe in `console.deprecate` would repeat the warning from every
+# code path that reads it.
+_WARNED_SUPERSEDED: set[str] = set()
+
 
 def _duration_setting(
     setting: EnvVar[timedelta],
     superseded: EnvVar[int] | EnvVar[float],
-    unit: timedelta,
+    unit: str,
 ) -> timedelta:
     """Read a duration setting, honouring the unit-suffixed name it replaced.
 
@@ -883,27 +888,31 @@ def _duration_setting(
     Args:
         setting: The duration setting to read.
         superseded: The setting it replaced, whose value is a count of *unit*.
-        unit: The unit *superseded* counts in.
+        unit: The suffix of the unit *superseded* counts in, as
+            :func:`interpret_timedelta_env` accepts it.
 
     Returns:
         The configured duration.
     """
-    if superseded.name not in os.environ:
+    if not superseded.is_set():
         return setting.get()
 
-    from reflex_base.utils import console
+    if superseded.name not in _WARNED_SUPERSEDED:
+        _WARNED_SUPERSEDED.add(superseded.name)
+        from reflex_base.utils import console
 
-    console.deprecate(
-        feature_name=superseded.name,
-        reason=(
-            f"Set {setting.name} instead, which takes a duration such as '30s' or '5m'."
-        ),
-        deprecation_version="0.9.12",
-        removal_version="1.0",
-    )
-    if setting.name in os.environ:
+        # Spell out the exact replacement: renaming the variable without adding
+        # the unit would silently read its value as seconds.
+        replacement = os.environ[superseded.name].strip() + unit
+        console.deprecate(
+            feature_name=superseded.name,
+            reason=f"Set {setting.name}={replacement} instead.",
+            deprecation_version="0.9.12",
+            removal_version="1.0",
+        )
+    if setting.is_set():
         return setting.get()
-    return superseded.get() * unit
+    return superseded.get() * timedelta(**{_TIMEDELTA_UNITS[unit]: 1})
 
 
 def auto_reload_cooldown() -> timedelta:
@@ -915,7 +924,7 @@ def auto_reload_cooldown() -> timedelta:
     return _duration_setting(
         environment.REFLEX_AUTO_RELOAD_COOLDOWN,
         environment.REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS,
-        timedelta(milliseconds=1),
+        "ms",
     )
 
 
@@ -928,7 +937,7 @@ def oplock_hold_time() -> timedelta:
     return _duration_setting(
         environment.REFLEX_OPLOCK_HOLD_TIME,
         environment.REFLEX_OPLOCK_HOLD_TIME_MS,
-        timedelta(milliseconds=1),
+        "ms",
     )
 
 
@@ -941,7 +950,7 @@ def state_manager_disk_debounce() -> timedelta:
     return _duration_setting(
         environment.REFLEX_STATE_MANAGER_DISK_DEBOUNCE,
         environment.REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS,
-        timedelta(seconds=1),
+        "s",
     )
 
 
