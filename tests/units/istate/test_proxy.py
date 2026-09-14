@@ -1003,7 +1003,7 @@ def test_interval_computed_vars_resolve_through_state_proxy(
     assert IntervalState._interval_computed_var_names == frozenset({"timed"})
 
 
-def test_fast_path_skips_names_a_subclass_defines():
+def test_fast_path_skips_names_a_subclass_defines(monkeypatch: pytest.MonkeyPatch):
     """A subclass defining a fast-pathed framework name keeps the full lookup for it.
 
     The fast path bypasses var resolution, so it must not apply to a name the
@@ -1011,8 +1011,13 @@ def test_fast_path_skips_names_a_subclass_defines():
     backend var named like a framework method). The class is a detached root
     (not a substate of ``State``) so the shadowed method never reaches the
     framework paths that other tests exercise on the shared state tree.
+
+    Args:
+        monkeypatch: Enable legacy reserved names for this lookup regression.
     """
     from reflex.state import BaseState
+
+    monkeypatch.setenv("REFLEX_STATE_ALLOW_RESERVED_NAMES", "1")
 
     def get_value(self, key: str):
         return f"shadow:{key}"
@@ -1039,11 +1044,19 @@ def test_fast_path_skips_names_a_subclass_defines():
     assert state._get_was_touched == 7
 
 
-def test_fast_path_prunes_names_registered_after_class_creation():
-    """Vars and handlers added after class creation also leave the fast path."""
+def test_fast_path_prunes_names_registered_after_class_creation(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Vars and handlers added after class creation also leave the fast path.
+
+    Args:
+        monkeypatch: Enable legacy reserved names for this lookup regression.
+    """
     from reflex_base.constants import RouteArgType
 
     from reflex.state import BaseState
+
+    monkeypatch.setenv("REFLEX_STATE_ALLOW_RESERVED_NAMES", "1")
 
     DynamicState = type(
         "DynamicState",

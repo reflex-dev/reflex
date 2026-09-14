@@ -52,6 +52,19 @@ A state class is made up of two parts: vars and event handlers.
 
 **Event handlers** are functions that modify these vars in response to events.
 
+State declarations cannot reuse framework method or bookkeeping names, such as
+`get_state`, `_get_was_touched`, or `dirty_vars`. Reflex checks these names when
+creating a state class and when adding vars, event handlers, or route arguments
+dynamically. Rename a conflicting declaration and update its references. Ordinary
+backend names such as `_count` remain supported.
+
+For existing apps, setting `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` before starting
+Reflex temporarily restores legacy handling of conflicting vars and emits a
+deprecation warning. This compatibility option will be removed in Reflex 1.0.
+It preserves the old behavior, including any crashes caused by a collision; rename
+the conflicting members to resolve those crashes. Existing restrictions on
+overriding framework methods still apply.
+
 These are the main concepts to understand how state works in Reflex:
 
 ```python eval
