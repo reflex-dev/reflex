@@ -99,28 +99,31 @@ def framework_panel(
 def framework() -> rx.Component:
     """Explore framework capabilities through tabs and product diagrams."""
     return rx.el.section(
-        rx.el.div(
-            rx.el.h2(
-                "Framework",
-                id="docs-framework-title",
-                class_name="text-foreground text-3xl font-book tracking-tight",
-            ),
-            rx.el.p(
-                "Learn how to build applications with Reflex Framework.",
-                class_name="text-muted-foreground text-sm font-normal",
-            ),
-            class_name="flex flex-col gap-4",
-        ),
         ui.tabs.root(
-            ui.tabs.list(
-                *[
-                    framework_tab(value, title, description)
-                    for value, title, description, *_ in CAPABILITIES
-                ],
-                activate_on_focus=True,
-                aria_label="Framework capabilities",
-                unstyled=True,
-                class_name="docs-framework-tabs flex min-w-0 flex-col self-center w-full",
+            rx.el.div(
+                rx.el.div(
+                    rx.el.h2(
+                        "Framework",
+                        id="docs-framework-title",
+                        class_name="text-foreground text-3xl font-book tracking-tight",
+                    ),
+                    rx.el.p(
+                        "Learn how to build applications with Reflex Framework.",
+                        class_name="text-muted-foreground text-sm font-normal",
+                    ),
+                    class_name="flex flex-col gap-4",
+                ),
+                ui.tabs.list(
+                    *[
+                        framework_tab(value, title, description)
+                        for value, title, description, *_ in CAPABILITIES
+                    ],
+                    activate_on_focus=True,
+                    aria_label="Framework capabilities",
+                    unstyled=True,
+                    class_name="docs-framework-tabs flex min-w-0 flex-col w-full",
+                ),
+                class_name="docs-framework-navigation flex min-w-0 flex-col gap-6",
             ),
             rx.el.div(
                 *[
