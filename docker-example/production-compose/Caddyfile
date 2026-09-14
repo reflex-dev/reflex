@@ -2,7 +2,7 @@
 
 encode gzip
 
-@backend_routes path /_event/* /ping /_upload /_upload/*
+@backend_routes path /_event/* /ping /_health /_upload /_upload/*
 handle @backend_routes {
 	reverse_proxy app:8000
 }
@@ -10,5 +10,8 @@ handle @backend_routes {
 root * /srv
 route {
 	try_files {path} {path}/ /404.html
-	file_server
+	# Reflex writes a pre-compressed copy of every asset at export time.
+	file_server {
+		precompressed br zstd gzip
+	}
 }

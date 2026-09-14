@@ -1,3 +1,9 @@
 .web
-!.web/bun.lockb
-!.web/package.json
+.git
+.venv
+__pycache__
+*.py[cod]
+.states
+*.db
+uploaded_files
+Dockerfile

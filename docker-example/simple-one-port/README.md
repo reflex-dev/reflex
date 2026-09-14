@@ -4,14 +4,13 @@ This docker deployment runs Reflex in prod mode, exposing a single HTTP port:
 
 - `8080` (`$PORT`) - Caddy server hosting the frontend statically and proxying requests to the backend.
 
-The deployment also runs a local Redis server to store state for each user.
+The deployment also runs a local Redis server to store state for each user,
+which lets the backend run multiple worker processes.
 
-Using this method may be preferable for deploying in memory constrained
-environments, because it serves a static frontend export, rather than running
-the Vite server via node.
-
-For platforms which only terminate TLS to a single port, this container can be
-deployed instead of the `simple-two-port` example.
+The frontend is exported at build time and served as static files by Caddy,
+so the backend starts in a couple of seconds and bun is not needed at runtime.
+The build tooling stays in the image, though; see `production-one-port` for a
+multi-stage build that leaves it behind.
 
 ## Build
 
@@ -19,10 +18,19 @@ deployed instead of the `simple-two-port` example.
 docker build -t reflex-simple-one-port .
 ```
 
+To listen on a different port, pass `--build-arg PORT=10000`.
+
 ## Run
 
 ```console
 docker run -p 8080:8080 reflex-simple-one-port
+```
+
+By default the backend runs `2 * cpu_count + 1` workers. Set `GRANIAN_WORKERS`
+to a smaller number in memory constrained environments:
+
+```console
+docker run -e GRANIAN_WORKERS=2 -p 8080:8080 reflex-simple-one-port
 ```
 
 Note that this container has _no persistence_ and will lose all data when
@@ -35,3 +43,6 @@ This container should be used with an existing load balancer or reverse proxy to
 terminate TLS.
 
 It is also useful for deploying to simple app platforms, such as Render or Heroku.
+
+If the app defines additional backend API routes, add them to the
+`@backend_routes` matcher in the `Caddyfile` so they are forwarded to the backend.

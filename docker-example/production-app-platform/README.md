@@ -8,7 +8,9 @@ Azure, AWS, or Google Cloud Run.
 The production deployment consists of a few pieces:
 
 - Backend container - built by `Dockerfile` Runs the Reflex backend
-  service on port 8000 and is scalable to multiple instances.
+  service on port 8000 (or `$PORT`) and is scalable to multiple instances.
+  The image contains only the python environment and app source: no bun,
+  `node_modules`, or frontend build.
 - Redis container - A single instance the standard `redis` docker image should
   share private networking with the backend
 - Static frontend - HTML/CSS/JS files that are hosted via a CDN or static file
@@ -36,6 +38,12 @@ The backend is built by the `Dockerfile` in this directory. When deploying the
 backend, be sure to set REFLEX_REDIS_URL=redis://internal-redis-hostname to connect to
 the redis service.
 
+With redis available, each replica runs `2 * cpu_count + 1` worker processes.
+Set `GRANIAN_WORKERS` to cap this on small instance sizes.
+
+If the app uses postgres, add `psycopg[binary]` to `requirements.txt`; the
+binary wheel bundles libpq, so no extra system packages are needed in the image.
+
 ### Ingress
 
 Configure the load balancer for the app to forward traffic to port 8000 on the
@@ -43,12 +51,22 @@ backend service replicas. Most platforms will generate an ingress hostname
 automatically. Make sure when you access the ingress endpoint on `/ping` that it
 returns "pong", indicating that the backend is up an available.
 
+The load balancer must support websockets (pass the `Upgrade` header) for the
+event connection to work.
+
 ### Frontend
 
 The frontend should be hosted on a static file server or CDN.
 
-**Important**: when exporting the frontend, set the API_URL environment variable
-to the ingress hostname of the backend service.
+**Important**: when exporting the frontend, set the `REFLEX_API_URL` environment
+variable to the ingress hostname of the backend service.
+
+```bash
+REFLEX_API_URL=https://backend.example.com reflex export --frontend-only --no-zip
+```
+
+The exported files are in `.web/build/client`. Omit `--no-zip` to get a
+`frontend.zip` instead.
 
 If you will host the frontend from a path other than the root, set the
 `REFLEX_FRONTEND_PATH` environment variable appropriately when exporting the frontend.
@@ -66,28 +84,6 @@ to avoid special processing of underscore-prefix directories, like `_next`.
 The following sections are currently a work in progress and may be incomplete.
 
 ### Azure
-
-In the Azure load balancer, per-message deflate is not supported. Add the following
-to your `rxconfig.py` to workaround this issue.
-
-```python
-import uvicorn.workers
-
-import reflex as rx
-
-
-class NoWSPerMessageDeflate(uvicorn.workers.UvicornH11Worker):
-    CONFIG_KWARGS = {
-        **uvicorn.workers.UvicornH11Worker.CONFIG_KWARGS,
-        "ws_per_message_deflate": False,
-    }
-
-
-config = rx.Config(
-    app_name="my_app",
-    gunicorn_worker_class="rxconfig.NoWSPerMessageDeflate",
-)
-```
 
 #### Persistent Storage
 

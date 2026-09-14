@@ -1,5 +1,9 @@
 .web
 .git
-__pycache__/*
-Dockerfile
+.venv
+__pycache__
+*.py[cod]
+.states
+*.db
 uploaded_files
+Dockerfile

@@ -1,3 +1,4 @@
+# check=skip=JSONArgsRecommended
 # This Dockerfile is used to deploy a single-container Reflex app instance
 # to services like Render, Railway, Heroku, GCP, and others.
 
@@ -9,39 +10,41 @@ ARG API_URL
 # It uses a reverse proxy to serve the frontend statically and proxy to backend
 # from a single exposed port, expecting TLS termination to be handled at the
 # edge by the given platform.
-FROM python:3.13 as builder
+FROM python:3.13-slim AS builder
 
-RUN mkdir -p /app/.web
-RUN python -m venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH"
+# uv installs python packages; reflex uses a bun found on PATH instead of downloading its own.
+COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /bin/uv
+COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy VIRTUAL_ENV=/app/.venv PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
-# Install python app requirements and reflex in the container
+# Install python app requirements and reflex in the container. This layer is
+# only rebuilt when requirements.txt changes.
 COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-# Install reflex helper utilities like bun/node
-COPY rxconfig.py ./
-RUN reflex init
-
-# Install pre-cached frontend dependencies (if exist)
-COPY *.web/bun.lockb *.web/package.json .web/
-RUN if [ -f .web/bun.lockb ]; then cd .web && ~/.local/share/reflex/bun/bin/bun install --frozen-lockfile; fi
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv venv && uv pip install -r requirements.txt
 
 # Copy local context to `/app` inside container (see .dockerignore)
 COPY . .
 
 ARG PORT API_URL
-# Download other npm dependencies and compile frontend
-RUN REFLEX_API_URL=${API_URL:-http://localhost:$PORT} reflex export --loglevel debug --frontend-only --no-zip && mv .web/build/client/* /srv/ && rm -rf .web
+# Download npm dependencies and compile frontend into /srv. The cache mount
+# keeps bun's package cache between builds so unchanged dependencies are not
+# downloaded again. Keep .web/backend so the backend only
+# evaluates stateful pages at startup instead of every page.
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    REFLEX_API_URL=${API_URL:-http://localhost:$PORT} reflex export --frontend-only --no-zip \
+    && cp -r .web/build/client/. /srv/ \
+    && mv .web/backend /tmp/backend && rm -rf .web && mkdir .web && mv /tmp/backend .web/backend
 
 
 # Final image with only necessary files
 FROM python:3.13-slim
 
-# Install Caddy and redis server inside image
-RUN apt-get update -y && apt-get install -y caddy redis-server && rm -rf /var/lib/apt/lists/*
+# Install redis server inside image; take caddy from its official image.
+RUN apt-get update -y && apt-get install -y --no-install-recommends redis-server && rm -rf /var/lib/apt/lists/*
+COPY --from=caddy:2 /usr/bin/caddy /usr/bin/caddy
 
 ARG PORT API_URL
 ENV PATH="/app/.venv/bin:$PATH" PORT=$PORT REFLEX_API_URL=${API_URL:-http://localhost:$PORT} REFLEX_REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
@@ -49,9 +52,6 @@ ENV PATH="/app/.venv/bin:$PATH" PORT=$PORT REFLEX_API_URL=${API_URL:-http://loca
 WORKDIR /app
 COPY --from=builder /app /app
 COPY --from=builder /srv /srv
-
-# Needed until Reflex properly passes SIGTERM on backend.
-STOPSIGNAL SIGKILL
 
 EXPOSE $PORT
 
