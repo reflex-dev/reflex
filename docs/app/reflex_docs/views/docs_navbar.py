@@ -75,30 +75,24 @@ def menu_item(
     text: str, href: str, active_str: str = "", external: bool = False
 ) -> rx.Component:
     router_path = rx.State.router.page.path
+    # Router paths include the deployment prefix; navigation describes docs routes.
+    router_path = rx.cond(
+        (router_path == "/docs") | router_path.startswith("/docs/"),
+        router_path[5:],
+        router_path,
+    )
+    is_overview = (router_path == "") | (router_path == "/") | (router_path == "/index")
     active_cn = "shadow-[inset_0_-1px_0_0_var(--primary-10)] [&_button]:text-primary-10 [&_div]:text-primary-10"
 
-    # For paths starting with "/" (like Start), use exact match
-    # For "framework", it's the default - active when in /docs but not matching other sections
-    # For other segments (like "ai"), use contains
     if active_str.startswith("/"):
-        if active_str == "/":
-            active = (router_path == "/") | (router_path == "/index")
-        else:
-            active = router_path == active_str
+        active = is_overview if active_str == "/" else router_path == active_str
     elif active_str == "framework":
-        is_overview = (router_path == "/") | (router_path == "/index")
-        is_ai_builder = router_path.startswith("/ai/") | router_path.startswith(
-            "/docs/ai/"
-        )
-        is_hosting = router_path.contains("hosting")
-        is_xy = router_path.startswith("/xy/") | router_path.startswith("/docs/xy/")
+        is_ai_builder = router_path.startswith("/ai/")
+        is_hosting = router_path.startswith("/hosting/")
+        is_xy = router_path.startswith("/xy/")
         active = ~is_overview & ~is_ai_builder & ~is_hosting & ~is_xy
-    elif active_str == "ai":
-        active = router_path.startswith("/ai/") | router_path.startswith("/docs/ai/")
-    elif active_str == "xy":
-        active = router_path.startswith("/xy/") | router_path.startswith("/docs/xy/")
     else:
-        active = router_path.contains(active_str)
+        active = router_path.startswith(f"/{active_str}/")
 
     anchor = rx.el.elements.a if external else rx.el.a
 
@@ -112,6 +106,7 @@ def menu_item(
                 native_button=False,
             ),
             href=href,
+            aria_current=rx.cond(active, "page", "false"),
         ),
         class_name=ui.cn(
             "lg:flex hidden h-full items-center justify-center",

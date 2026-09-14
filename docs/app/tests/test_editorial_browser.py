@@ -43,6 +43,26 @@ def test_editorial_banner_dismissal_search_and_navigation(page: Page):
     assert page.locator("header").bounding_box()["y"] == 0
 
 
+def test_header_selection_matches_the_docs_route(page: Page):
+    """The docs base path selects Overview and client navigation updates selection."""
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
+    header = page.locator("header")
+    assert "inset" in header.get_by_role("link", name="Overview", exact=True).locator(
+        ".."
+    ).evaluate("item => getComputedStyle(item).boxShadow")
+    expect(header.locator('[aria-current="page"]')).to_have_text("Overview")
+    for label, path in [
+        ("Framework", "/docs/getting-started/introduction/"),
+        ("Build with AI", "/docs/ai/overview/best-practices/"),
+        ("Cloud", "/docs/hosting/deploy-quick-start/"),
+        ("Overview", "/docs/"),
+    ]:
+        header.get_by_role("link", name=label, exact=True).click()
+        expect(page).to_have_url(f"{PREVIEW_URL}{path}")
+        expect(header.locator('[aria-current="page"]')).to_have_text(label)
+
+
 def test_editorial_dark_mode_keeps_readable_surfaces(browser):
     """System dark mode switches both neutral text and surface colors."""
     context = browser.new_context(color_scheme="dark")
