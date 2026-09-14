@@ -721,6 +721,21 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return self._var_data
 
+    def _dependency_field_names(self) -> tuple[str, ...]:
+        """The state field names a ComputedVar depending on this Var must track.
+
+        A Var normally stands for a single state field, the one named by its
+        VarData. A Var composed of several state fields must name all of them,
+        or a ``deps=[that_var]`` dependency would only track the one field
+        VarData.merge happened to surface, leaving the computed var stale when
+        any of the others change.
+
+        Returns:
+            The field names to register the dependency against.
+        """
+        all_var_data = self._get_all_var_data()
+        return (all_var_data.field_name if all_var_data is not None else "",)
+
     def __deepcopy__(self, memo: dict[int, Any]) -> Self:
         """Deepcopy the var.
 
@@ -2421,10 +2436,11 @@ class ComputedVar(Var[RETURN_TYPE]):
                 else None
             )
             if all_var_data is not None:
-                var_name = all_var_data.field_name
+                # A composite Var names every state field it is built from.
+                var_names = dep._dependency_field_names()
             else:
-                var_name = dep._js_expr
-            deps.setdefault(state_name, set()).add(var_name)
+                var_names = (dep._js_expr,)
+            deps.setdefault(state_name, set()).update(var_names)
         elif isinstance(dep, str) and dep != "":
             deps.setdefault(None, set()).add(dep)
         else:
@@ -2702,18 +2718,20 @@ class ComputedVar(Var[RETURN_TYPE]):
         if all_var_data := dep._get_all_var_data():
             state_name = all_var_data.state
             if state_name:
-                var_name = all_var_data.field_name
-                if var_name:
-                    self._static_deps.setdefault(state_name, set()).add(var_name)
+                # A composite Var names every state field it is built from.
+                var_names = tuple(filter(None, dep._dependency_field_names()))
+                if var_names:
+                    self._static_deps.setdefault(state_name, set()).update(var_names)
                     target_state_class = objclass.get_root_state().get_class_substate(
                         state_name
                     )
-                    target_state_class._var_dependencies.setdefault(
-                        var_name, set()
-                    ).add((
-                        objclass.get_full_name(),
-                        self._name,
-                    ))
+                    for var_name in var_names:
+                        target_state_class._var_dependencies.setdefault(
+                            var_name, set()
+                        ).add((
+                            objclass.get_full_name(),
+                            self._name,
+                        ))
                     target_state_class._potentially_dirty_states.add(
                         objclass.get_full_name()
                     )

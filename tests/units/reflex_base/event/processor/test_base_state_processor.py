@@ -1338,3 +1338,163 @@ async def test_execute_event_records_state_acquire_duration(
         for p in metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
     }
     assert Event.from_event_type(AcquireState.noop())[0].name in names
+
+
+async def test_no_op_partial_router_data_leaves_the_state_untouched(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A payload that merges to what is already there must not touch the state.
+
+    A partial router_data (only the navigation keys, as `fix_events` produces)
+    is never equal to the full dict the state holds, so it reaches the merge.
+    If it merges to the same thing, nothing moved: assigning it anyway would
+    dirty router_data, mark the state touched, and persist it for an event
+    that changed nothing.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List of deltas captured from the processor.
+        token: The client token.
+    """
+
+    class NoOpRouterState(State):
+        n: int = 0
+
+        @event
+        def bump(self):
+            self.n += 1
+
+    full_view = {
+        "pathname": "/a",
+        "asPath": "/a",
+        "query": {},
+        "token": token,
+        "sid": "sid1",
+        "ip": "127.0.0.1",
+        "headers": {"origin": "http://localhost:3000"},
+    }
+    # Same navigation, but carrying only the keys a chained event keeps.
+    navigation_only = {"pathname": "/a", "asPath": "/a", "query": {}}
+
+    def client_event(router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(NoOpRouterState.bump())[0], router_data=router_data
+        )
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, client_event(full_view))
+        await processor.join(10)
+
+    root_ctx = real_base_state_processor._root_context
+    assert root_ctx is not None
+    state = await root_ctx.state_manager.get_state(
+        BaseStateToken(ident=token, cls=State)
+    )
+    state._was_touched = False
+    emitted_deltas.clear()
+
+    async with real_base_state_processor as processor:
+        await processor.enqueue(token, client_event(navigation_only))
+        await processor.join(10)
+
+    # The connection-scoped data survived the partial payload...
+    assert state.router_data["headers"] == full_view["headers"]
+    assert state.router_session.client_token == token
+    # ...and nothing about the router was re-sent or marked dirty.
+    assert not any(
+        key.startswith("router")
+        for _token, delta in emitted_deltas
+        for key in delta.get(State.get_full_name(), {})
+    )
+    assert not state._get_was_touched()
+
+
+async def test_navigation_delta_elides_connection_scoped_router_vars(
+    wired_app: App,
+    real_base_state_processor: BaseStateEventProcessor,
+    emitted_deltas: list,
+    token: str,
+):
+    """A navigation only re-sends the navigation-scoped router vars.
+
+    Session and headers cannot change without going through a reconnect, so
+    re-shipping them in the delta of every client event is pure overhead.
+    The router is stored in per-field base vars precisely so that a
+    navigation marks only page/url/route_id dirty; a reconnect (new sid)
+    marks only the session dirty.
+
+    Args:
+        wired_app: The App wired to the processor's state manager.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        emitted_deltas: List of deltas captured from the processor.
+        token: The client token.
+    """
+
+    class NavState(State):
+        n: int = 0
+
+        @event
+        def bump(self):
+            self.n += 1
+
+    headers = {"origin": "http://localhost:3000", "user-agent": "test-agent"}
+
+    def view(path: str, sid: str = "sid1") -> dict[str, Any]:
+        return {
+            "pathname": path,
+            "asPath": path,
+            "query": {},
+            "token": token,
+            "sid": sid,
+            "ip": "127.0.0.1",
+            "headers": headers,
+        }
+
+    def client_event(router_data: dict[str, Any]) -> Event:
+        return dataclasses.replace(
+            Event.from_event_type(NavState.bump())[0], router_data=router_data
+        )
+
+    def router_vars_in_deltas() -> set[str]:
+        return {
+            key.removesuffix(FIELD_MARKER)
+            for _token, delta in emitted_deltas
+            for key in delta.get(State.get_full_name(), {})
+            if key.startswith("router")
+        }
+
+    async def run_event(router_data: dict[str, Any]) -> None:
+        emitted_deltas.clear()
+        async with real_base_state_processor as processor:
+            await processor.enqueue(token, client_event(router_data))
+            await processor.join(10)
+
+    # First event on the connection populates every router var.
+    await run_event(view("/a"))
+    assert router_vars_in_deltas() == {
+        "router_session",
+        "router_headers",
+        "router_page",
+        "router_url",
+        "router_route_id",
+    }
+
+    # A navigation only re-sends the navigation-scoped vars.
+    await run_event(view("/b"))
+    assert router_vars_in_deltas() == {
+        "router_page",
+        "router_url",
+        "router_route_id",
+    }
+
+    # An event without a route change re-sends no router vars at all.
+    await run_event(view("/b"))
+    assert router_vars_in_deltas() == set()
+
+    # A reconnect (new sid, same headers) re-sends only the session.
+    await run_event(view("/b", sid="sid2"))
+    assert router_vars_in_deltas() == {"router_session"}
