@@ -1069,12 +1069,17 @@ def test_validate_detects_a_child_reusing_its_parent_id():
     class ValidateReuseParent(BaseState):
         pass
 
+    class ValidateReuseChild(ValidateReuseParent):
+        pass
+
     parent_path = get_state_full_path(ValidateReuseParent)
     config: MinifyConfig = {
         "version": SCHEMA_VERSION,
         "states": {
             parent_path: StateEntry(id="a", parent=None),
-            f"{parent_path}.Child": StateEntry(id="a", parent=parent_path),
+            get_state_full_path(ValidateReuseChild): StateEntry(
+                id="a", parent=parent_path
+            ),
         },
         "events": {},
     }
@@ -1173,6 +1178,35 @@ def test_sync_moves_a_preserved_id_off_a_newly_inserted_parent():
 
     assert _parent_id_collisions(new_config) == []
     errors, _warnings, _missing = validate_minify_config(new_config, MidRoot)
+    assert not errors, errors
+
+
+def test_validate_exempts_an_orphan_holding_its_parent_id():
+    """An orphan may keep an id its live parent also holds.
+
+    Its id stays reserved at the value a served frontend may still use, and it
+    resolves no name at runtime, so moving it would cost more than it buys.
+    ``sync`` must not produce a config ``validate`` then rejects.
+    """
+
+    class OrphanHolder(BaseState):
+        pass
+
+    parent_path = get_state_full_path(OrphanHolder)
+    orphan_path = f"{parent_path}.DeletedChild"
+    existing: MinifyConfig = {
+        "version": SCHEMA_VERSION,
+        "states": {
+            parent_path: StateEntry(id="a", parent=None),
+            orphan_path: StateEntry(id="a", parent=parent_path),
+        },
+        "events": {},
+    }
+
+    new_config = sync_minify_config(existing, OrphanHolder)
+
+    assert new_config["states"][orphan_path]["id"] == "a"
+    errors, _warnings, _missing = validate_minify_config(new_config, OrphanHolder)
     assert not errors, errors
 
 

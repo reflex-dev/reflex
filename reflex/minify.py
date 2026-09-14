@@ -798,8 +798,14 @@ def validate_minify_config(
 
         # A state sharing its parent's id makes a relative path ambiguous,
         # which misresolves substate lookups rather than failing. Checked
-        # against the actual parent, which is the tree a lookup walks.
-        parent_entry = config["states"].get(parent_key) if parent_key else None
+        # against the actual parent, which is the tree a lookup walks. An
+        # orphan resolves no name at runtime, and its id stays reserved at the
+        # value a served frontend may still hold, so it is exempt.
+        parent_entry = (
+            config["states"].get(parent_key)
+            if parent_key and state_cls is not None
+            else None
+        )
         if parent_entry is not None and parent_entry["id"] == entry["id"]:
             errors.append(
                 f"State '{state_path}' reuses the id '{entry['id']}' of its parent "
