@@ -84,12 +84,17 @@ def default_connection_error() -> list[str | Var | Component]:
     Returns:
         The default connection error message.
     """
-    return [
-        "Cannot connect to server: ",
-        connection_error,
-        ". Check if server is reachable at ",
-        WebsocketTargetURL.create(),
-    ]
+    target_url = WebsocketTargetURL.create()
+    unreachable = Var(
+        _js_expr=(
+            f'("Cannot connect to server: " + {connection_error!s} + '
+            f'". Check if server is reachable at " + {target_url!s})'
+        ),
+        _var_data=VarData.merge(connect_error_var_data, target_url._get_all_var_data()),
+    )
+    # A fatal mismatch is not a connectivity problem: the server is reachable,
+    # and the message already says what the viewer should do about it.
+    return [cond(has_fatal_connection_error, connection_error, unreachable)]
 
 
 class ConnectionToaster(Fragment):

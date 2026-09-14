@@ -1371,7 +1371,12 @@ def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
 
 
 def test_typing_event_helper_is_not_public():
-    """The pyright-only handler marker is not part of the ``rx.event`` namespace."""
+    """The pyright-only handler marker is not part of the ``rx.event`` namespace.
+
+    It lives in ``reflex.state`` as ``_typing_event``; both the name it used to
+    be attached under and the current one are checked.
+    """
     import reflex as rx
 
     assert not hasattr(rx.event, "typing_event")
+    assert not hasattr(rx.event, "_typing_event")

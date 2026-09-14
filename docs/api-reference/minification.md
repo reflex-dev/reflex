@@ -299,10 +299,12 @@ This happens whenever the two sides diverge:
 - a browser is still running a bundle from before a deploy that changed
   `minify.json`.
 
-The digest covers the whole file, so **any** edit to `minify.json` invalidates
-every previously served bundle — including one that only adds entries. Plan
-deploys accordingly: ship the frontend and the backend together, and expect open
-tabs to need a reload.
+The digest covers the state ids and the event map, so any edit that changes an
+id invalidates every previously served bundle — including one that only adds
+entries. Edits that change nothing a client can observe do not: a `parent` field
+is not hashed, and a map whose `REFLEX_MINIFY_*` mode is off contributes nothing.
+Plan deploys accordingly: ship the frontend and the backend together, and expect
+open tabs to need a reload after an id changes.
 
 ## Deploy workflow
 
