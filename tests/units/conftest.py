@@ -37,19 +37,21 @@ from .states.upload import SubUploadState, UploadState
 
 @pytest.fixture(autouse=True)
 def _isolate_app_in_context() -> Generator[None, None, None]:
-    """Reset the App slot on the active RegistrationContext between tests.
+    """Reset the App and Config slots on the active context between tests.
 
-    A RegistrationContext can only host one App instance, but unit tests
-    repeatedly instantiate `rx.App`, so we clear `_app` around each test
-    while keeping other registrations shared (matching prior behavior).
+    Unit tests repeatedly instantiate `rx.App` with different mocked configs.
+    Keep class registrations shared, but do not let an earlier test's App or
+    Config leak into the next one.
 
     Yields:
         None.
     """
     ctx = RegistrationContext.ensure_context()
     object.__setattr__(ctx, "_app", None)
+    object.__setattr__(ctx, "_config", None)
     yield
     object.__setattr__(ctx, "_app", None)
+    object.__setattr__(ctx, "_config", None)
 
 
 @pytest.fixture

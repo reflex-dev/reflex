@@ -1022,6 +1022,25 @@ def _get_config(project_root: Path | None = None) -> Config:
                     break
 
 
+def _get_preloaded_config(project_root: Path | None = None) -> Config | None:
+    """Return config from an already-imported project-local rxconfig module.
+
+    Args:
+        project_root: Directory the loaded module must belong to. Defaults to
+            the current working directory.
+
+    Returns:
+        The preloaded config, if rxconfig.py was already imported from this
+        project.
+    """
+    rxconfig = sys.modules.get(constants.Config.MODULE)
+    origin = getattr(rxconfig, "__file__", None)
+    project_root = (project_root or Path.cwd()).resolve()
+    if origin and Path(origin).resolve().is_relative_to(project_root):
+        return getattr(rxconfig, "config", None)
+    return None
+
+
 if TYPE_CHECKING:
     from typing_extensions import deprecated
 
@@ -1049,8 +1068,9 @@ def get_config(reload: bool = False) -> Config:
     """Get the app config from the current RegistrationContext.
 
     The config is loaded from rxconfig.py once per RegistrationContext and
-    cached on the context thereafter. If no context is currently attached,
-    one is created and attached automatically.
+    cached on the context thereafter. If the current project's rxconfig.py was
+    already imported, its config is cached without re-executing the module. If
+    no context is currently attached, one is created and attached automatically.
 
     Args:
         reload: Deprecated; force a fresh load of the config. Use
@@ -1073,7 +1093,8 @@ def get_config(reload: bool = False) -> Config:
         # Serialize check/load/set so threads sharing a context load once.
         with _load_config_lock:
             if ctx._config is None:
-                ctx._set_config(_get_config())
+                config = _get_preloaded_config()
+                ctx._set_config(config if config is not None else _get_config())
     return ctx.config
 
 

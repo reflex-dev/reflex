@@ -1120,6 +1120,37 @@ def test_get_config_accepts_explicit_project_root(
     assert reflex_base.config._get_config(project).app_name == "explicit"
 
 
+def test_get_config_ignores_preloaded_rxconfig_from_another_project(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """A preloaded config is reused only by the project that imported it.
+
+    Args:
+        tmp_path: The pytest temporary project directory.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    from reflex_base.registry import RegistrationContext
+
+    first = tmp_path / "first"
+    first.mkdir()
+    (first / "rxconfig.py").write_text(
+        "import reflex as rx\nconfig = rx.Config(app_name='first')\n"
+    )
+    second = tmp_path / "second"
+    second.mkdir()
+    (second / "rxconfig.py").write_text(
+        "import reflex as rx\nconfig = rx.Config(app_name='second')\n"
+    )
+
+    monkeypatch.chdir(first)
+    assert reflex_base.config._get_config().app_name == "first"
+
+    monkeypatch.chdir(second)
+    with RegistrationContext():
+        assert reflex_base.config.get_config().app_name == "second"
+
+
 @pytest.fixture
 def clean_config_modules() -> Generator[None, None, None]:
     """Drop the modules and dep records a real rxconfig load leaves behind.

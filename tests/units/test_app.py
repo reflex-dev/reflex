@@ -5,12 +5,14 @@ import builtins
 import contextlib
 import contextvars
 import functools
+import importlib
 import io
 import json
 import logging
 import multiprocessing
 import pickle
 import re
+import sys
 import unittest.mock
 import uuid
 from collections.abc import Generator
@@ -22,6 +24,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import reflex_base
+import reflex_base.config
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
@@ -29,6 +32,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 from pytest_mock import MockerFixture
 from reflex_base import otel
 from reflex_base.components.component import Component
+from reflex_base.config import get_config
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EventContext
@@ -107,6 +111,44 @@ if TYPE_CHECKING:
 
 class EmptyState(BaseState):
     """An empty state."""
+
+
+def test_app_reuses_preloaded_config_with_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Creating an app does not re-execute a config that registered state.
+
+    Args:
+        tmp_path: The pytest temporary project directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    (tmp_path / "rxconfig.py").write_text(
+        "import reflex as rx\n\n"
+        "class ConfigState(rx.State):\n"
+        "    value: str = ''\n\n"
+        "class ConfigClass:\n"
+        "    pass\n\n"
+        "config = rx.Config(app_name='config_state_app')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.delitem(sys.modules, "rxconfig", raising=False)
+
+    try:
+        with RegistrationContext():
+            config_module = importlib.import_module("rxconfig")
+            state = config_module.ConfigState
+            instance = config_module.ConfigClass()
+
+            App(enable_state=False)
+
+            assert get_config() is config_module.config
+            assert sys.modules["rxconfig"].ConfigState is state
+            assert type(pickle.loads(pickle.dumps(instance))) is type(instance)
+    finally:
+        sys.modules.pop("rxconfig", None)
+        reflex_base.config._config_module_deps.clear()
+        reflex_base.config._config_module_deps_root = None
 
 
 @pytest.fixture
