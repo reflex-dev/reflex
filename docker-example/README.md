@@ -7,20 +7,14 @@ includes the `reflex` package. Commit the `reflex.lock/` directory that
 `reflex init` creates so the frontend dependencies installed in the image match
 the ones you developed against.
 
-## `simple`
-
-The most basic deployment: a single Reflex process serves both the static
-frontend and the backend on one port. No reverse proxy, no Redis. The app is
-compiled when the image is built; only the frontend bundle is rebuilt when the
-container starts.
-
 ## `production`
 
-This deployment exports the frontend statically and serves it via a single HTTP
-port using Caddy, with a local Redis for state. The backend starts instantly
-because the frontend is built into the image, and a multi-stage build keeps
-bun, `node_modules`, and other build tooling out of the final image. This is
-useful for platforms that only support a single port, such as Render or Heroku.
+Start here. This single-container deployment exports the frontend statically
+and serves it via a single HTTP port using Caddy, with a local Redis for state.
+The backend starts instantly because the frontend is built into the image, and
+a multi-stage build keeps bun, `node_modules`, and other build tooling out of
+the final image. It works anywhere a container with one exposed port can run,
+including platforms such as Render or Heroku.
 
 ## `production-compose`
 

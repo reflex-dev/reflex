@@ -113,8 +113,9 @@ Another option is to run your Reflex service in a container. Several
 `Dockerfile`s with additional documentation are available in the Reflex
 project in the directory
 [`docker-example`](https://github.com/reflex-dev/reflex/tree/main/docker-example),
-ranging from a single process serving everything on one port to a full
-compose stack with a TLS-terminating webserver, redis, and postgres.
+ranging from a single container serving everything on one port to a full
+compose stack with a TLS-terminating webserver, redis, and postgres. The
+`production` example is the place to start.
 
 Before building the image, add a `requirements.txt` to the project folder
 that includes `reflex` and commit the `reflex.lock/` directory so the frontend
@@ -130,6 +131,7 @@ hello
 │   └── hello.py
 ├── reflex.lock
 ├── rxconfig.py
+├── Caddyfile
 ├── Dockerfile
 └── requirements.txt
 ```
@@ -143,5 +145,5 @@ docker build -t reflex-project:latest .
 Finally, you can start your Reflex container service as follows.
 
 ```bash
-docker run -d -p 3000:3000 --name app reflex-project:latest
+docker run -d -p 8080:8080 --name app reflex-project:latest
 ```
