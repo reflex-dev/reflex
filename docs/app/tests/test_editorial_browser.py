@@ -412,3 +412,37 @@ def test_framework_counter_is_live_and_windows_do_not_overlap(
     section.get_by_role("tab", name="Components", exact=True).click()
     section.get_by_role("tab", name="How It Works", exact=True).click()
     expect(count).to_have_text("3")
+
+
+@pytest.mark.parametrize("width", [375, 1440])
+@pytest.mark.parametrize("color_scheme", ["light", "dark"])
+def test_cloud_diagram_preserves_guides_without_overlapping(
+    page: Page, width: int, color_scheme: Literal["light", "dark"]
+):
+    """The hosting diagram keeps every guide accessible at both layout sizes."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.emulate_media(color_scheme=color_scheme)
+    page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
+    section = page.get_by_role("region", name="Cloud", exact=True)
+    expect(section.get_by_role("heading", name="Your application")).to_be_visible()
+    for title, href in [
+        ("Deployment", "/docs/hosting/deploy-quick-start/"),
+        ("Secret Management", "/docs/hosting/secrets-environment-vars/"),
+        ("Observability", "/docs/hosting/logs/"),
+        ("Custom Headers and Advanced Options", "/docs/hosting/deploy-quick-start/"),
+    ]:
+        link = section.get_by_role("link", name=title, exact=True)
+        expect(link).to_have_attribute("href", href)
+        link.focus()
+        expect(link).to_be_focused()
+        bounds = link.bounding_box()
+        hub = section.locator(".docs-cloud-hub").bounding_box()
+        assert (
+            bounds["x"] + bounds["width"] <= hub["x"]
+            or bounds["x"] >= hub["x"] + hub["width"]
+            or bounds["y"] + bounds["height"] <= hub["y"]
+            or bounds["y"] >= hub["y"] + hub["height"]
+        )
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    section.get_by_role("link", name="Deployment", exact=True).click()
+    expect(page).to_have_url(f"{PREVIEW_URL}/docs/hosting/deploy-quick-start/")

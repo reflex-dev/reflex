@@ -666,3 +666,54 @@
   background: var(--fw-tint);
   color: var(--fw-accent);
 }
+
+.docs-cloud-diagram {
+  --cloud-ink: #527e72;
+  --cloud-tint: #eaf3f0;
+  --cloud-line: #99b1a9;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 3rem;
+  padding: 3rem;
+  background: linear-gradient(115deg, rgb(255 255 255 / 78%), rgb(255 255 255 / 55%)), url('/docs/framework-diagrams/mint.avif') center / cover;
+}
+.docs-cloud-guides { position: relative; display: grid; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.docs-cloud-hub { width: 100%; }
+.docs-cloud-icon { color: var(--cloud-ink); }
+.docs-cloud-service { color: var(--cloud-ink); background: var(--cloud-tint); }
+.docs-cloud-service-line { width: 1rem; height: 1px; flex-shrink: 0; background: var(--cloud-line); }
+.docs-cloud-guide:hover h3 { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.docs-cloud-guides::before,
+.docs-cloud-guide::after,
+.docs-cloud-hub::before,
+.docs-cloud-hub::after { content: ''; position: absolute; pointer-events: none; background: var(--cloud-line); }
+.docs-cloud-guides::before { width: 1px; top: calc(25% - 0.375rem); bottom: calc(25% - 0.375rem); }
+.docs-cloud-inputs::before { right: -1.5rem; }
+.docs-cloud-outputs::before { left: -1.5rem; }
+.docs-cloud-guide::after,
+.docs-cloud-hub::before,
+.docs-cloud-hub::after { height: 1px; width: 1.5rem; top: 50%; }
+.docs-cloud-inputs .docs-cloud-guide::after,
+.docs-cloud-hub::after { right: -1.5rem; }
+.docs-cloud-outputs .docs-cloud-guide::after,
+.docs-cloud-hub::before { left: -1.5rem; }
+.dark .docs-cloud-diagram {
+  --cloud-ink: #a0c7bc;
+  --cloud-tint: #263931;
+  --cloud-line: #58766b;
+  background: linear-gradient(115deg, rgb(24 24 24 / 90%), rgb(24 24 24 / 78%)), url('/docs/framework-diagrams/mint.avif') center / cover;
+}
+@media (max-width: 1023px) {
+  .docs-cloud-diagram { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding: 1.5rem; }
+  .docs-cloud-guides { gap: 2rem; }
+  .docs-cloud-guides::before,
+  .docs-cloud-hub::before { display: none; }
+  .docs-cloud-inputs .docs-cloud-guide::after,
+  .docs-cloud-outputs .docs-cloud-guide::after,
+  .docs-cloud-hub::after { width: 1px; height: 2rem; top: auto; bottom: -2rem; left: 50%; right: auto; }
+  .docs-cloud-outputs .docs-cloud-guide:last-child::after { display: none; }
+}
+@media (max-width: 479px) {
+  .docs-cloud-diagram { padding: 1rem; }
+  .docs-cloud-guide { padding: 1.25rem; }
+}
