@@ -54,18 +54,18 @@ class Dirs(SimpleNamespace):
     # module, kept separate from other ``.web`` output so a mirrored module
     # path can't collide with framework files (e.g. ``app/``, ``utils/``).
     APP_COMPONENTS = "app_components"
+    # Where compilation artifacts for the backend are stored.
+    BACKEND = "backend"
     # The name of the env json file.
     ENV_JSON = "env.json"
-    # The name of the compiled bundled-library registry.
-    BUNDLED_LIBRARIES = "bundled_libraries.json"
+    # The compiled bundled-library registry consumed by backend-only workers.
+    BUNDLED_LIBRARIES = BACKEND + "/bundled_libraries.json"
     # The name of the reflex json file.
     REFLEX_JSON = "reflex.json"
     # The name of the postcss config file.
     POSTCSS_JS = "postcss.config.js"
     # The name of the states directory.
     STATES = ".states"
-    # Where compilation artifacts for the backend are stored.
-    BACKEND = "backend"
     # JSON-encoded list of page routes that need to be evaluated on the backend.
     STATEFUL_PAGES = "stateful_pages.json"
     # Marker file indicating that upload component was used in the frontend.

@@ -30,7 +30,9 @@ def test_bundled_libraries_artifact_round_trip(
     with RegistrationContext() as context:
         context.bundled_libraries.append("@radix-ui/themes")
         output_path, output = utils._compile_bundled_libraries()
-        (tmp_path / output_path).write_text(output, encoding="utf-8")
+        artifact_path = tmp_path / output_path
+        artifact_path.parent.mkdir()
+        artifact_path.write_text(output, encoding="utf-8")
         context.bundled_libraries[:] = ["react"]
 
         utils._restore_bundled_libraries()
@@ -49,9 +51,9 @@ def test_restore_bundled_libraries_preserves_page_registrations(
 ) -> None:
     """Restoring frontend metadata retains libraries discovered by page evaluation."""
     monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
-    (tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES).write_text(
-        '["@radix-ui/themes"]', encoding="utf-8"
-    )
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_text('["@radix-ui/themes"]', encoding="utf-8")
     with RegistrationContext() as context:
         context.bundled_libraries.append("page-library")
 
@@ -66,7 +68,9 @@ def test_restore_bundled_libraries_ignores_invalid_utf8(
 ) -> None:
     """Malformed registry artifacts do not interrupt backend-only startup."""
     monkeypatch.setattr(utils, "get_web_dir", lambda: tmp_path)
-    (tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES).write_bytes(b"\xff")
+    artifact_path = tmp_path / utils.constants.Dirs.BUNDLED_LIBRARIES
+    artifact_path.parent.mkdir()
+    artifact_path.write_bytes(b"\xff")
 
     utils._restore_bundled_libraries()
 
