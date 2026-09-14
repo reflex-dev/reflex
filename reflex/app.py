@@ -577,8 +577,8 @@ class App(MiddlewareMixin, LifespanMixin):
                 ),
                 cors_credentials=config.transport == "websocket",
                 max_http_buffer_size=environment.REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE.get(),
-                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
-                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
+                ping_interval=environment.REFLEX_SOCKET_INTERVAL.get().total_seconds(),
+                ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get().total_seconds(),
                 json=SimpleNamespace(
                     dumps=staticmethod(_sio_dumps),
                     loads=staticmethod(_sio_loads),

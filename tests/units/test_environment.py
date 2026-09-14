@@ -34,6 +34,7 @@ from reflex_base.environment import (
     interpret_plugin_class_env,
     interpret_plugin_env,
     interpret_timedelta_env,
+    oplock_hold_time,
 )
 from reflex_base.plugins import Plugin
 from reflex_base.utils.exceptions import EnvironmentVarValueError
@@ -791,3 +792,79 @@ def test_timedelta_env_var_round_trips_through_set(
         # never matches - the same quirk the other `set` tests here work around.
         env_var_instance.set(value)  # type: ignore[arg-type]
         assert env_var_instance.get() == value
+
+
+def test_duration_env_vars_accept_a_suffix(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The duration settings read a unit, not just a count of seconds.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_SOCKET_TIMEOUT", "2m")
+
+    assert environment.REFLEX_SOCKET_TIMEOUT.get() == timedelta(minutes=2)
+
+
+def test_duration_env_vars_still_read_a_bare_number_as_seconds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Values set before these became durations keep their meaning.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("SQLALCHEMY_POOL_TIMEOUT", "45")
+
+    assert environment.SQLALCHEMY_POOL_TIMEOUT.get() == timedelta(seconds=45)
+
+
+def test_a_superseded_duration_setting_is_still_honoured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Its value counts the unit in its name, not seconds.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "250")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert oplock_hold_time() == timedelta(milliseconds=250)
+
+    deprecate.assert_called_once()
+    assert deprecate.call_args.kwargs["feature_name"] == "REFLEX_OPLOCK_HOLD_TIME_MS"
+
+
+def test_the_duration_setting_wins_over_the_one_it_supersedes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Setting both is how a project migrates, so the new name has to lead.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME_MS", "250")
+    monkeypatch.setenv("REFLEX_OPLOCK_HOLD_TIME", "2s")
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert oplock_hold_time() == timedelta(seconds=2)
+
+    deprecate.assert_called_once()
+
+
+def test_a_duration_setting_left_alone_does_not_warn(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The deprecation only fires for projects that actually set the old name.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME_MS", raising=False)
+    monkeypatch.delenv("REFLEX_OPLOCK_HOLD_TIME", raising=False)
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        assert oplock_hold_time() == timedelta(0)
+
+    deprecate.assert_not_called()

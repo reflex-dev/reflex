@@ -10,12 +10,13 @@ import sys
 import time
 import uuid
 from collections.abc import AsyncIterator
+from datetime import timedelta
 from typing import Any, TypedDict, cast
 
 from redis import ResponseError
 from redis.asyncio import Redis
 from reflex_base.config import get_config
-from reflex_base.environment import environment
+from reflex_base.environment import environment, oplock_hold_time
 from reflex_base.utils.exceptions import (
     InvalidLockWarningThresholdError,
     LockExpiredError,
@@ -88,7 +89,7 @@ def _default_oplock_hold_time_ms() -> int:
     Returns:
         The default opportunistic lock hold time.
     """
-    return environment.REFLEX_OPLOCK_HOLD_TIME_MS.get() or (
+    return (oplock_hold_time() // timedelta(milliseconds=1)) or (
         _default_lock_expiration() // 2
     )
 
