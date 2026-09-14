@@ -898,8 +898,8 @@ def _duration_setting(
         reason=(
             f"Set {setting.name} instead, which takes a duration such as '30s' or '5m'."
         ),
-        deprecation_version="1.0.5",
-        removal_version="2.0",
+        deprecation_version="0.9.12",
+        removal_version="1.0",
     )
     if setting.name in os.environ:
         return setting.get()
