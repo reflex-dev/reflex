@@ -655,3 +655,14 @@
 @media (prefers-reduced-motion: reduce) {
   .docs-ai-integrations .rfm-marquee { animation-play-state: paused; }
 }
+
+.docs-framework-live-connector {
+  width: 1px;
+  height: 2rem;
+  background: var(--fw-accent);
+  opacity: 0.6;
+}
+.docs-framework-counter-value {
+  background: var(--fw-tint);
+  color: var(--fw-accent);
+}

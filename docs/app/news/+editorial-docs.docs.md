@@ -23,3 +23,5 @@ Explore framework capabilities through accessible tabs and theme-aware product d
 Use fine solid connectors with rounded corners and clean junctions in framework diagrams.
 
 Explain component composition with a Python example mapped to its rendered interface.
+
+Make the How It Works diagram readable without overlapping windows and let visitors try its Python-backed counter.

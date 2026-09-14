@@ -47,6 +47,77 @@ CAPABILITIES = (
 )
 
 
+class FrameworkCounterState(rx.State):
+    """Keep the landing-page counter in real server-side Python state."""
+
+    count: int = 0
+
+    @rx.event
+    def increment(self):
+        """Increase the displayed count by one."""
+        self.count += 1
+
+
+def example_window_header(title: str) -> rx.Component:
+    """Render the shared chrome of the code and preview windows."""
+    return rx.el.div(
+        rx.el.span("•••", aria_hidden=True, class_name="tracking-[3px]"),
+        rx.el.span(title),
+        class_name="flex items-center gap-5 border-b border-border px-5 py-3 text-xs text-muted-foreground",
+    )
+
+
+def live_counter_diagram() -> rx.Component:
+    """Connect a readable Python example to a working counter interface."""
+    return rx.el.div(
+        rx.el.div(
+            example_window_header("app.py"),
+            rx.el.pre(
+                rx.el.code(
+                    "import reflex as rx\n\n"
+                    "class State(rx.State):\n"
+                    "    count: int = 0\n\n"
+                    "    @rx.event\n"
+                    "    def increment(self):\n"
+                    "        self.count += 1",
+                ),
+                class_name="m-0 px-5 py-5 font-mono text-[11px] leading-6 text-foreground sm:text-[13px]",
+            ),
+            class_name="docs-framework-live-code w-full overflow-hidden rounded-xl border border-border bg-background",
+        ),
+        rx.el.div(class_name="docs-framework-live-connector", aria_hidden=True),
+        rx.el.div(
+            example_window_header("Live preview"),
+            rx.el.div(
+                rx.el.h3(
+                    "Your first Reflex app",
+                    class_name="text-xl font-book tracking-tight text-foreground",
+                ),
+                rx.el.div(
+                    rx.el.output(
+                        FrameworkCounterState.count,
+                        aria_label="Counter value",
+                        aria_live="polite",
+                        aria_atomic=True,
+                        class_name="docs-framework-counter-value flex min-h-16 min-w-20 items-center justify-center rounded-lg px-4 text-3xl tabular-nums",
+                    ),
+                    rx.el.button(
+                        "Increment",
+                        rx.icon("plus", size=16, aria_hidden=True),
+                        type="button",
+                        on_click=FrameworkCounterState.increment,
+                        class_name="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-sm text-background transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+                    ),
+                    class_name="flex flex-wrap items-center justify-between gap-4",
+                ),
+                class_name="flex flex-col gap-5 p-5 sm:p-6",
+            ),
+            class_name="docs-framework-live-app w-full overflow-hidden rounded-xl border border-border bg-background",
+        ),
+        class_name="docs-framework-live mx-auto flex w-full max-w-[30rem] flex-col items-center py-4",
+    )
+
+
 def framework_tab(value: str, title: str, description: str) -> rx.Component:
     """Select a diagram with a keyboard-accessible vertical tab."""
     return ui.tabs.tab(
@@ -73,10 +144,12 @@ def framework_tab(value: str, title: str, description: str) -> rx.Component:
 def framework_panel(
     value: str, caption: str, link: str, href: str, tone: str
 ) -> rx.Component:
-    """Pair a responsive decorative diagram with its documentation link."""
+    """Pair an interactive example or illustration with its documentation link."""
     return ui.tabs.panel(
         rx.el.div(
-            artwork(f"framework_{value}", class_name="docs-framework-diagram"),
+            live_counter_diagram()
+            if value == "how"
+            else artwork(f"framework_{value}", class_name="docs-framework-diagram"),
             class_name="docs-framework-stage",
         ),
         rx.el.div(

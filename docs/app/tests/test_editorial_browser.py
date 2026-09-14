@@ -1,6 +1,7 @@
 """Production-browser checks: set REFLEX_DOCS_PREVIEW_URL to the app origin."""
 
 import os
+from typing import Literal
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -379,3 +380,35 @@ def test_framework_tabs_switch_diagrams_and_keep_docs_links(page: Page, width: i
     expect(browse).to_be_focused()
     page.keyboard.press("Enter")
     expect(page).to_have_url(f"{PREVIEW_URL}/docs/library/")
+
+
+@pytest.mark.parametrize("width", [375, 1440])
+@pytest.mark.parametrize("color_scheme", ["light", "dark"])
+def test_framework_counter_is_live_and_windows_do_not_overlap(
+    page: Page, width: int, color_scheme: Literal["light", "dark"]
+):
+    """The diagram exposes a real counter without covering its Python example."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.emulate_media(color_scheme=color_scheme)
+    page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
+    section = page.get_by_role("region", name="Framework", exact=True)
+    panel = section.get_by_role("tabpanel", name="How It Works", exact=True)
+    button = panel.get_by_role("button", name="Increment", exact=False)
+    expect(button).to_be_visible()
+    count = panel.get_by_role("status", name="Counter value")
+    expect(count).to_have_text("0")
+    button.click()
+    expect(count).to_have_text("1")
+    button.click()
+    expect(count).to_have_text("2")
+    button.focus()
+    page.keyboard.press("Space")
+    expect(count).to_have_text("3")
+    source = panel.locator(".docs-framework-live-code").bounding_box()
+    app = panel.locator(".docs-framework-live-app").bounding_box()
+    assert source["y"] + source["height"] < app["y"]
+    assert panel.locator("pre").evaluate("el => el.scrollWidth <= el.clientWidth")
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    section.get_by_role("tab", name="Components", exact=True).click()
+    section.get_by_role("tab", name="How It Works", exact=True).click()
+    expect(count).to_have_text("3")
