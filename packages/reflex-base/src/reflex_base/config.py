@@ -8,7 +8,7 @@ import sys
 import threading
 import urllib.parse
 from collections.abc import Iterable, Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from importlib.machinery import PathFinder
 from pathlib import Path, PureWindowsPath
 from types import ModuleType
@@ -841,13 +841,13 @@ class Config(BaseConfig):
         self._replace_defaults(**kwargs)
 
 
-# Project-local modules first imported while loading rxconfig.py, and the
-# project root they were recorded under. Evicted before a load from a different
-# root so projects don't reuse each other's dependencies. A load from the same
-# root keeps them: re-executing them would create a second copy of every class
-# they define, distinct from the one the app already imported. Only mutated
-# under _load_config_lock.
+# Project-local modules first imported while loading rxconfig.py, their source
+# fingerprints, and the project root they were recorded under. Dependencies
+# from another root or whose source changes are evicted before a load. Other
+# same-root dependencies stay cached so classes the app imported are not
+# redefined. Only mutated under _load_config_lock.
 _config_module_deps: set[str] = set()
+_config_module_dep_fingerprints: dict[str, tuple[str, int, int] | None] = {}
 _config_module_deps_root: Path | None = None
 
 
@@ -908,6 +908,45 @@ def _project_local_modules(names: Iterable[str], project_root: Path) -> set[str]
         ):
             project_local.add(name)
     return project_local
+
+
+def _config_module_fingerprint(name: str) -> tuple[str, int, int] | None:
+    """Return the source fingerprint for a loaded config dependency.
+
+    Args:
+        name: The loaded module name.
+
+    Returns:
+        The module origin, modification time, and size, or None if unavailable.
+    """
+    origin = getattr(sys.modules.get(name), "__file__", None)
+    if not origin:
+        return None
+    try:
+        stat = Path(origin).stat()
+    except OSError:
+        return None
+    return str(origin), stat.st_mtime_ns, stat.st_size
+
+
+def _evict_changed_config_dependencies() -> None:
+    """Evict same-root config dependencies whose source has changed."""
+    invalidated = False
+    for name in _config_module_deps.copy():
+        if _config_module_dep_fingerprints.get(name) != _config_module_fingerprint(
+            name
+        ):
+            module = sys.modules.get(name)
+            cached = getattr(module, "__cached__", None)
+            sys.modules.pop(name, None)
+            _config_module_deps.discard(name)
+            _config_module_dep_fingerprints.pop(name, None)
+            if cached:
+                with suppress(OSError):
+                    Path(cached).unlink()
+            invalidated = True
+    if invalidated:
+        importlib.invalidate_caches()
 
 
 @contextmanager
@@ -991,12 +1030,14 @@ def _get_config(project_root: Path | None = None) -> Config:
             if _config_module_deps_root != project_root:
                 # Evict the previous project's dependencies so this project's
                 # rxconfig.py imports its own, not same-named modules another
-                # project directory left behind. Same-root loads skip this so
-                # the modules the app imported stay the ones rxconfig.py sees.
+                # project directory left behind.
                 for dep in _config_module_deps:
                     sys.modules.pop(dep, None)
                 _config_module_deps.clear()
+                _config_module_dep_fingerprints.clear()
                 _config_module_deps_root = project_root
+            else:
+                _evict_changed_config_dependencies()
             # Only the requested project may supply rxconfig; searching all of
             # sys.path can pick up an unrelated editable app during reflex init.
             # PathFinder also supports a project-local rxconfig package.
@@ -1011,9 +1052,11 @@ def _get_config(project_root: Path | None = None) -> Config:
                     # Python already drops a module whose execution failed, and
                     # one that imported completely may be held by another
                     # thread, so it is kept like on any same-root reload.
-                    _config_module_deps.update(
-                        _project_local_modules(recorder.names, project_root)
-                    )
+                    for dep in _project_local_modules(recorder.names, project_root):
+                        _config_module_deps.add(dep)
+                        _config_module_dep_fingerprints[dep] = (
+                            _config_module_fingerprint(dep)
+                        )
             return rxconfig.config
         finally:
             for i, entry in enumerate(sys.path):

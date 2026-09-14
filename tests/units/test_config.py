@@ -1139,6 +1139,7 @@ def clean_config_modules() -> Generator[None, None, None]:
         "failed_only_helper",
         "initial_dep_module",
         "later_dep_module",
+        "config_values_module",
     )
     try:
         yield
@@ -1146,6 +1147,7 @@ def clean_config_modules() -> Generator[None, None, None]:
         for name in names:
             sys.modules.pop(name, None)
         reflex_base.config._config_module_deps.clear()
+        reflex_base.config._config_module_dep_fingerprints.clear()
         reflex_base.config._config_module_deps_root = None
 
 
@@ -1519,6 +1521,29 @@ def test_root_change_evicts_dependencies_added_on_same_root_reload(
     assert reflex_base.config._get_config(empty_root).app_name == ""
     assert "initial_dep_module" not in sys.modules
     assert "later_dep_module" not in sys.modules
+
+
+def test_same_root_reload_refreshes_changed_dependency(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, clean_config_modules: None
+):
+    """Reloading config picks up changes to a project-local helper module.
+
+    Args:
+        tmp_path: The pytest tmp_path fixture.
+        monkeypatch: The pytest monkeypatch fixture.
+        clean_config_modules: Cleanup for modules left behind by the load.
+    """
+    (tmp_path / "config_values_module.py").write_text("APP_NAME = 'one'\n")
+    (tmp_path / "rxconfig.py").write_text(
+        "import config_values_module\nimport reflex as rx\n\nconfig = rx.Config(app_name=config_values_module.APP_NAME)\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delitem(sys.modules, "config_values_module", raising=False)
+
+    assert reflex_base.config._get_config().app_name == "one"
+
+    (tmp_path / "config_values_module.py").write_text("APP_NAME = 'two'\n")
+    assert reflex_base.config._get_config().app_name == "two"
 
 
 def test_reload_config_keeps_state_module_registered(
