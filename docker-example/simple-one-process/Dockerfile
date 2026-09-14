@@ -7,15 +7,17 @@
 # with a prebuilt frontend see `simple-one-port` or `production-one-port`.
 FROM python:3.13-slim
 
-# Reflex uses a bun found on PATH instead of downloading its own.
+# uv installs python packages; reflex uses a bun found on PATH instead of downloading its own.
+COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /bin/uv
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
-ENV PYTHONUNBUFFERED=1
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install python requirements first so app edits do not reinstall them.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system -r requirements.txt
 
 # Copy local context to `/app` inside container (see .dockerignore)
 COPY . .

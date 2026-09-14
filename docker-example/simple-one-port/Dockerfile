@@ -11,10 +11,11 @@ FROM python:3.13-slim
 ARG PORT=8080
 # Only set for local/direct access. When TLS is used, the API_URL is assumed to be the same as the frontend.
 ARG API_URL
-ENV PORT=$PORT REFLEX_API_URL=${API_URL:-http://localhost:$PORT} REFLEX_REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
+ENV PORT=$PORT REFLEX_API_URL=${API_URL:-http://localhost:$PORT} REFLEX_REDIS_URL=redis://localhost UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONUNBUFFERED=1
 
-# Install redis server inside image; take caddy and bun from their official images.
+# Install redis server inside image; take uv, caddy, and bun from their official images.
 RUN apt-get update -y && apt-get install -y --no-install-recommends redis-server && rm -rf /var/lib/apt/lists/*
+COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /bin/uv
 COPY --from=caddy:2 /usr/bin/caddy /usr/bin/caddy
 COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
@@ -22,7 +23,8 @@ WORKDIR /app
 
 # Install python requirements first so app edits do not reinstall them.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system -r requirements.txt
 
 # Copy local context to `/app` inside container (see .dockerignore)
 COPY . .
