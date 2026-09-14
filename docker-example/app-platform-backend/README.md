@@ -85,6 +85,27 @@ The following sections are currently a work in progress and may be incomplete.
 
 ### Azure
 
+#### Static Web App
+
+Deploy the exported frontend with the Static Web Apps CLI:
+
+```bash
+npx @azure/static-web-apps-cli deploy --env production --app-location .web/build/client
+```
+
+For dynamic routes to work, add `staticwebapp.config.json` to `.web/build/client`
+so 404s are served from `/404.html`:
+
+```json
+{
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/404.html"
+    }
+  }
+}
+```
+
 #### Persistent Storage
 
 If you need to use a database or upload files, you cannot save them to the
