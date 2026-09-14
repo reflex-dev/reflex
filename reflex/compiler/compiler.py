@@ -33,7 +33,7 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
-from reflex_base.utils import format, log, memo_paths
+from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
 from reflex_base.utils.imports import (
@@ -265,6 +265,7 @@ def _compile_contexts(
     extra_state: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
     *,
     component_imports: ParsedImportDict | None = None,
+    contexts_snapshot: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
 ) -> str:
     """Compile the initial state and contexts.
 
@@ -275,6 +276,8 @@ def _compile_contexts(
             are not in this process's state tree (states only registered while
             a page evaluates, restored from the compile cache manifest).
         component_imports: Optional accumulator for initial component dependencies.
+        contexts_snapshot: Initial state and client storage compiled for this
+            contexts output, when already available.
 
     Returns:
         The compiled context file.
@@ -283,24 +286,28 @@ def _compile_contexts(
     disable_react_owner_stacks = (
         not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
     )
-    initial_state, initial_state_json = (
-        utils._compile_initial_state(state, component_imports=component_imports)
-        if state
-        else (None, None)
-    )
     if state is None:
         return templates.context_template(
             is_dev_mode=not is_prod_mode(),
             default_color_mode=default_color_mode,
             disable_react_owner_stacks=disable_react_owner_stacks,
         )
-    assert initial_state is not None
-    assert initial_state_json is not None
-    client_storage = utils.compile_client_storage(state)
+    if contexts_snapshot is None:
+        initial_state, initial_state_json = utils._compile_initial_state(
+            state, component_imports=component_imports
+        )
+        client_storage = utils.compile_client_storage(state)
+    else:
+        initial_state, client_storage = contexts_snapshot
+        initial_state_json = utils._serialize_initial_state(
+            initial_state, component_imports=component_imports
+        )
     if extra_state is not None:
         extra_initial, extra_storage = extra_state
         initial_state = dict(sorted({**initial_state, **extra_initial}.items()))
-        initial_state_json = format.json_dumps(initial_state)
+        initial_state_json = utils._serialize_initial_state(
+            initial_state, component_imports=component_imports
+        )
         for kind, entries in extra_storage.items():
             client_storage.setdefault(kind, {}).update(entries)
     return templates.context_template(
@@ -793,6 +800,7 @@ def compile_contexts(
     extra_state: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
     *,
     component_imports: ParsedImportDict | None = None,
+    contexts_snapshot: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
@@ -801,6 +809,7 @@ def compile_contexts(
         theme: The top-level app theme.
         extra_state: See :func:`_compile_contexts`.
         component_imports: Optional accumulator for initial component dependencies.
+        contexts_snapshot: See :func:`_compile_contexts`.
 
     Returns:
         The path and code of the compiled context.
@@ -813,6 +822,7 @@ def compile_contexts(
         theme,
         extra_state,
         component_imports=component_imports,
+        contexts_snapshot=contexts_snapshot,
     )
 
 
@@ -1659,11 +1669,17 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
+    contexts_snapshot = (
+        (utils.compile_state(app._state), utils.compile_client_storage(app._state))
+        if app._state is not None
+        else None
+    )
     compile_results.extend([
         compile_contexts(
             app._state,
             radix_themes_plugin.get_theme(),
             component_imports=all_imports,
+            contexts_snapshot=contexts_snapshot,
         ),
         utils._compile_bundled_libraries(),
     ])
@@ -1727,7 +1743,11 @@ def compile_app(
         from reflex.compiler import disk_cache
 
         disk_cache.write_manifest(
-            compile_ctx, all_pages, all_imports, plugin_sources=plugin_sources
+            compile_ctx,
+            all_pages,
+            all_imports,
+            plugin_sources=plugin_sources,
+            contexts_snapshot=contexts_snapshot,
         )
 
     return True

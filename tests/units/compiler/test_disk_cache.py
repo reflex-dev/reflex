@@ -608,7 +608,7 @@ def _stub_externals(app, monkeypatch):
     # classes from other collected test modules.
     monkeypatch.setattr(
         "reflex.compiler.compiler.compile_contexts",
-        lambda state, theme, extra_state=None: (
+        lambda state, theme, extra_state=None, **kwargs: (
             compiler_utils.get_context_path(),
             _CONTEXTS_STUB,
         ),
@@ -624,6 +624,51 @@ def _page_local_state() -> Component:
         value: int = 0
 
     return rx.el.div(CacheLocalState.value)
+
+
+def _page_local_component_default() -> Component:
+    class CacheComponentDefaultState(rx.State):
+        scroller: rx.Field[rx.Component] = rx.field(default_factory=rx.auto_scroll)
+
+    return rx.el.div(CacheComponentDefaultState.scroller)
+
+
+def test_manifest_state_slice_matches_the_compiled_contexts_snapshot(
+    tmp_path, monkeypatch
+):
+    """State defaults in the manifest must use the contexts compilation values."""
+    _use_tmp_web_dir(tmp_path, monkeypatch)
+    app = rx.App()
+    app.add_page(_page_local_component_default, route="/stateful")
+    pages = list(app._unevaluated_pages.values())
+    ctx = _compile(pages, app)
+    route = next(
+        page.route for page in pages if page.component is _page_local_component_default
+    )
+    defined_states = ctx.stateful_routes[route]
+    snapshot = disk_cache._contexts_snapshot(app)
+    assert snapshot is not None
+    expected = json.loads(
+        disk_cache.json_dumps(disk_cache._state_slice(defined_states, *snapshot))
+    )
+
+    try:
+        disk_cache.write_manifest(
+            ctx,
+            pages,
+            ctx.all_imports,
+            root=tmp_path,
+            contexts_snapshot=snapshot,
+        )
+        manifest = disk_cache.load_manifest()
+        assert manifest is not None
+        assert manifest["pages"][route]["state_slice"] == expected
+    finally:
+        from reflex_base.registry import RegistrationContext
+
+        registry = RegistrationContext.ensure_context()
+        for state_name in defined_states:
+            _unregister_state(registry.base_states[state_name])
 
 
 def test_post_evaluation_fallback_hands_over_the_evaluated_pages(tmp_path, monkeypatch):
@@ -896,7 +941,7 @@ def test_stateful_miss_rewrites_contexts_from_manifest_slices(tmp_path, monkeypa
     )
     captured: list[Any] = []
 
-    def fake_compile_contexts(state, theme, extra_state=None):
+    def fake_compile_contexts(state, theme, extra_state=None, **kwargs):
         captured.append(extra_state)
         return compiler_utils.get_context_path(), _CONTEXTS_STUB
 

@@ -12,14 +12,6 @@ file is recognised from ``(mtime_ns, size)`` without being read, and when the
 watcher reports which paths changed, pages depending on none of them are hits
 without even a stat.
 
-TODO(state-default names): a page's ``state_slice`` is taken from a second
-``compile_state`` call, so its generated component-default names (``ref_*``)
-never match the contexts file on disk. ``_changed_state_config_route`` then
-compares unequal names on content-only edits and rebuilds contexts at random,
-and a rebuild can give a live state the same name a hit page's stored state
-holds (reproduced: two ``rx.auto_scroll`` defaults sharing one ref/id). Fix by
-scoping default-name generation per state, then slicing the same
-``compile_state`` result that is written to disk.
 """
 
 from __future__ import annotations
@@ -405,6 +397,7 @@ def write_manifest(
     root: Path | None = None,
     *,
     plugin_sources: dict[str, str] | None = None,
+    contexts_snapshot: tuple[dict[str, Any], dict[str, dict[str, Any]]] | None = None,
 ) -> None:
     """Persist a manifest of the just-completed full compile.
 
@@ -421,14 +414,15 @@ def write_manifest(
             install from this complete set, not just the per-page union.
         root: Project root for fingerprinting. Defaults to cwd.
         plugin_sources: Unmodified source content for plugin file modifiers.
+        contexts_snapshot: Initial state and client storage used for the contexts
+            output. When absent, a snapshot is captured for direct callers.
     """
     try:
         state_index, _ = page_cache.state_dependency_index(root)
         hasher = page_cache.make_hasher()
         files: dict[str, page_cache.FileEntry] = {}
-        contexts_snapshot = (
-            _contexts_snapshot(compile_ctx.app) if compile_ctx.stateful_routes else None
-        )
+        if contexts_snapshot is None and compile_ctx.stateful_routes:
+            contexts_snapshot = _contexts_snapshot(compile_ctx.app)
 
         pages_data: dict[str, Any] = {}
         for page in pages:
@@ -1254,7 +1248,10 @@ def try_incremental_rebuild(
                 None,
             )
             context_path, context_code = compiler.compile_contexts(
-                app._state, theme, _hit_state_extras(manifest, miss_routes)
+                app._state,
+                theme,
+                _hit_state_extras(manifest, miss_routes),
+                contexts_snapshot=contexts_snapshot,
             )
             _save_incremental_output(context_path, context_code, outputs)
 
