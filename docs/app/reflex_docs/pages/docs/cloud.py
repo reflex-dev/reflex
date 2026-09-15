@@ -42,7 +42,7 @@ workflows and the setup each requires.
 """
 
 cloud_overview = docpage(
-    "overview/",
+    "/overview/",
     "Cloud Overview",
     description="Deploy a Reflex app, configure secrets and domains, monitor logs, and compare Reflex Cloud with bring-your-own-cloud and self-hosting options.",
 )(lambda: render_markdown(CLOUD_OVERVIEW_MARKDOWN))

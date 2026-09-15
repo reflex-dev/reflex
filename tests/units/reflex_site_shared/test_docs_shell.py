@@ -146,7 +146,9 @@ def test_shared_sidebar_rows_keep_official_structure() -> None:
     assert "LucideGraduationCap" in category
     assert "group/details" in group
     assert "ArrowDown01Icon" in group
-    assert "left-[3rem]" in group
+    assert "docs-sidebar-group-trigger" in group
+    assert "docs-sidebar-group-items" in group
+    assert "open:true" in group
 
 
 def test_official_docs_footer_content_is_shared() -> None:

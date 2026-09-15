@@ -1,6 +1,7 @@
 import reflex as rx
 from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_site_shared.meta.meta import create_meta_tags
+from reflex_site_shared.utils.url import public_url
 
 from reflex_docs.pages.docs_landing.views import (
     ai_builder_section,
@@ -24,12 +25,15 @@ from reflex_docs.views.editorial_footer import editorial_footer
     # create_meta_tags list to avoid a favicon-default + preview duplicate.
     image=f"{REFLEX_ASSETS_CDN}previews/index_preview.webp",
     meta=[
+        rx.el.link(rel="alternate", type="text/markdown", href=public_url("/index.md"))
+    ]
+    + [
         m
         for m in create_meta_tags(
             title="Reflex Documentation - Build Web Apps in Pure Python",
             description="Reflex documentation: tutorials, API reference, and guides for building full-stack Python web apps. Get started in minutes.",
             image=f"{REFLEX_ASSETS_CDN}previews/index_preview.webp",
-            url="https://reflex.dev/docs/",
+            url=public_url("/"),
         )
         if not (isinstance(m, dict) and m.get("property") == "og:image")
     ],

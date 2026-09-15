@@ -36,7 +36,7 @@ data: list[list[Any]] = [
 ]
 ```
 
-This component is introduced as an alternative to the [datatable](/docs/library/tables-and-data-grids/data-table) to support editing the displayed data.
+This component is introduced as an alternative to the [datatable](/docs/library/tables-and-data-grids/data-table/) to support editing the displayed data.
 
 ## Columns
 
@@ -459,6 +459,6 @@ rx.data_editor(
 
 Explore the other ways to work with tabular data in Reflex, all in pure Python:
 
-- [Data Table](/docs/library/tables-and-data-grids/data-table)
-- [Table](/docs/library/tables-and-data-grids/table)
+- [Data Table](/docs/library/tables-and-data-grids/data-table/)
+- [Table](/docs/library/tables-and-data-grids/table/)
 - [Tables and Data Grids](/docs/library/tables-and-data-grids/)

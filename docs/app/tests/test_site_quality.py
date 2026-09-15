@@ -93,3 +93,37 @@ def test_preview_cards_reserve_space_before_images_load():
         component_card("avatar", "/library/data-display/avatar/", "data-display")
     )
     assert "aspect-[320/232]" in rendered
+
+
+def test_multi_component_reference_shares_only_identical_html_props():
+    """Common HTML props appear once, while element-specific props stay local."""
+    from reflex_docs.pages.docs.component import component_docs, shared_html_props
+
+    components = [type(rx.el.div()), type(rx.el.input()), type(rx.el.portal())]
+    shared = shared_html_props(components)
+    assert "title" in {prop.name for prop in shared}
+    assert "value" not in {prop.name for prop in shared}
+    assert shared_html_props(components[:1]) == ()
+    rendered = str(component_docs((components[1], "rx.el.input"), {}, shared))
+    assert "#shared-html-props" in rendered
+    assert '"value"' in rendered
+    assert '"access_key"' not in rendered
+
+    class OverrideTitle(type(rx.el.div())):
+        title: rx.Var[int]
+
+    override = str(component_docs((OverrideTitle, "OverrideTitle"), {}, shared))
+    assert '"title"' in override
+    assert '"access_key"' not in override
+
+
+def test_state_catalog_offers_real_guides_instead_of_an_empty_grid():
+    """The state catalog provides useful routes and can be found in the library."""
+    from reflex_docs.pages.docs.library import library
+    from reflex_docs.pages.library_previews import library_previews
+
+    route = next(route for route in library_previews if route.path == "/library/state/")
+    rendered = str(route.component())
+    assert 'href:"/docs/state/overview/"' in rendered
+    assert 'href:"/docs/events/events-overview/"' in rendered
+    assert 'to:"/library/state/"' in str(library.component())

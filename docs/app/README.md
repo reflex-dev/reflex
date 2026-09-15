@@ -81,3 +81,22 @@ With a production preview running, verify responsive layout and interactions:
 ```bash
 REFLEX_DOCS_PREVIEW_URL=http://localhost:3035 uv run pytest tests/test_editorial_browser.py
 ```
+
+## Agent-readable exports
+
+The deployed app is mounted at `/docs/`. Its indexes are `/docs/llms.txt` and
+`/docs/llms-full.txt`; the docs home is `/docs/index.md`. Other canonical pages
+use the page URL with the trailing slash removed and `.md` appended. Each page
+advertises its exact Markdown destination with a `rel="alternate"` link.
+
+`AgentFilesPlugin` preserves authored guides and generated API source. After the
+production frontend is prerendered, it exports missing programmatic pages and
+eval-only catalogs from their main HTML content, then rebuilds both indexes from
+the canonical sitemap. This runs before compression. Navigation, decorative
+artwork, and footer controls are excluded; headings, destinations, examples,
+and tables remain readable. The complete exports require a production build.
+
+`tests/test_published_seo.py` checks every canonical page's Markdown asset and
+flags links that would redirect only to add a trailing slash. Component catalogs
+share identical inherited HTML props once per page; overrides and specific props
+stay beside their component, and the full API remains in Markdown.
