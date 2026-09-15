@@ -5,6 +5,9 @@ title: Enterprise Components
 ```python exec
 import reflex as rx
 
+from reflex_docs.components.component_catalog import component_category
+from reflex_docs.templates.docpage import h1_comp, text_comp_2
+
 
 def enterprise_component_grid():
     sections = [
@@ -66,42 +69,17 @@ def enterprise_component_grid():
         },
     ]
 
-    cards = []
-    for section in sections:
-        cards.append(
-            rx.box(
-                rx.link(
-                    rx.el.h2(
-                        section["title"],
-                        class_name="text-lg font-book text-foreground",
-                    ),
-                    rx.icon("arrow_up_right", size=16, class_name="text-secondary-11"),
-                    href=section["link"],
-                    underline="none",
-                    class_name="px-5 py-4 hover:bg-muted transition-colors flex flex-row justify-between gap-3 items-center !text-foreground focus-visible:outline-2 focus-visible:outline-ring",
-                ),
-                rx.text(
-                    section["description"],
-                    class_name="px-5 pb-4 text-sm font-normal leading-6 text-muted-foreground",
-                ),
-                rx.box(
-                    *[
-                        rx.link(
-                            comp[0],
-                            href=comp[1],
-                            class_name="text-sm font-book text-muted-foreground hover:!text-foreground transition-colors w-fit rounded-sm focus-visible:outline-2 focus-visible:outline-ring",
-                        )
-                        for comp in section["components"]
-                    ],
-                    class_name="flex flex-col gap-2 px-5 pb-5",
-                ),
-                class_name="flex flex-col border border-border-subtle rounded-card bg-background overflow-hidden",
-            )
-        )
-
     return rx.box(
-        *cards,
-        class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8",
+        *[
+            component_category(
+                title=section["title"],
+                href=section["link"],
+                description=section["description"],
+                links=section["components"],
+            )
+            for section in sections
+        ],
+        class_name="docs-enterprise-catalog flex flex-col mt-8 mb-12",
     )
 
 
@@ -109,16 +87,12 @@ component_grid = enterprise_component_grid()
 ```
 
 ```python eval
-rx.el.h1(
-    "Enterprise Components",
-    class_name="lg:text-5xl text-3xl font-[525] scroll-mt-[113px] my-4 text-secondary-12",
-)
+h1_comp(text="Enterprise Components")
 ```
 
 ```python eval
-rx.el.span(
-    "Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
-    class_name="font-normal text-muted-foreground max-w-2xl text-base leading-7",
+text_comp_2(
+    text="Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
 )
 ```
 

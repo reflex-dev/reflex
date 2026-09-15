@@ -1,6 +1,7 @@
 import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
 
+from reflex_docs.components.component_catalog import component_category
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp, text_comp_2
 
 
@@ -44,43 +45,17 @@ def component_grid():
         prefix: str = "",
     ):
         categories = [
-            rx.el.section(
-                rx.link(
-                    rx.box(
-                        rx.el.h2(
-                            get_display_name(category),
-                            class_name="text-lg font-book leading-6 tracking-tight text-foreground transition-colors group-hover:text-muted-foreground",
-                        ),
-                        rx.text(
-                            f"{len(components[category])} components",
-                            class_name="text-xs font-normal leading-5 text-muted-foreground",
-                        ),
-                        class_name="flex min-w-0 flex-col gap-2",
-                    ),
-                    href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
-                    underline="none",
-                    class_name="group block rounded-compact text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
-                ),
-                rx.el.ul(
-                    *[
-                        rx.el.li(
-                            rx.el.a(
-                                get_display_name(c[0]),
-                                href=get_component_link(
-                                    category=category,
-                                    clist=c,
-                                    prefix=prefix,
-                                ),
-                                class_name="block rounded-compact px-3 py-2 text-sm font-normal leading-6 text-muted-foreground decoration-border-strong underline-offset-4 hover:text-foreground hover:underline transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
-                            ),
-                        )
-                        for c in get_components_for_category(
-                            category, components[category]
-                        )
-                    ],
-                    class_name="grid min-w-0 grid-cols-2 gap-x-2 gap-y-1 xl:grid-cols-3 list-none m-0 p-0",
-                ),
-                class_name="docs-library-category grid grid-cols-1 items-start gap-5 border-t border-border-subtle -mx-4 px-4 py-7 md:items-baseline md:grid-cols-[minmax(0,1fr)_minmax(0,3fr)] md:gap-8",
+            component_category(
+                title=get_display_name(category),
+                href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
+                description=f"{len(components[category])} components",
+                links=[
+                    (
+                        get_display_name(c[0]),
+                        get_component_link(category=category, clist=c, prefix=prefix),
+                    )
+                    for c in get_components_for_category(category, components[category])
+                ],
             )
             for category in components
         ]
