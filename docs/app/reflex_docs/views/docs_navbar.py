@@ -7,7 +7,12 @@ from reflex_components_internal.blocks.demo_form import (
 from reflex_site_shared.components.docs_shell import docs_navbar_frame
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
-from reflex_site_shared.constants import GITHUB_STARS, GITHUB_URL, REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import (
+    GITHUB_STARS,
+    GITHUB_URL,
+    REFLEX_ASSETS_CDN,
+    XY_GITHUB_STARS,
+)
 from reflex_site_shared.views.hosting_banner import (
     AGENT_TOOLKIT_EARLY_ACCESS_URL,
     HostingBannerState,
@@ -18,14 +23,16 @@ from reflex_docs.views.search import search_bar
 
 
 def github_button() -> rx.Component:
-    label = f"View Reflex on GitHub - {GITHUB_STARS // 1000}K stars"
+    stars = f"{(GITHUB_STARS + XY_GITHUB_STARS) / 1000:.0f}K"
+    label = f"View Reflex on GitHub - {stars} combined stars for Reflex and Reflex XY"
     return rx.el.elements.a(
         get_icon(icon="github_navbar", class_name="size-4 shrink-0"),
-        f"{GITHUB_STARS // 1000}K",
+        stars,
         href=GITHUB_URL,
         target="_blank",
         rel="noopener noreferrer",
         aria_label=label,
+        title=f"Reflex + Reflex XY: {stars} combined GitHub stars",
         class_name="inline-flex h-9 items-center gap-2 rounded-full text-sm font-book text-foreground transition-colors hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     )
 
