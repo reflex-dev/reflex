@@ -1,6 +1,7 @@
 """A connected overview of the Reflex Cloud hosting guides."""
 
 import reflex as rx
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 from reflex_docs.pages.docs import hosting as hosting_page
 from reflex_docs.pages.docs_landing.views.artwork import artwork
@@ -76,9 +77,34 @@ def hosting_application() -> rx.Component:
     """Place one unified hosted application at the center of the diagram."""
     return rx.el.div(
         rx.el.div(
-            artwork("reflex_mark", class_name="w-5 shrink-0 text-foreground"),
-            rx.el.span("Reflex Cloud", class_name="text-sm text-foreground"),
-            class_name="flex items-center gap-3 border-b border-border px-6 py-4",
+            rx.el.div(
+                artwork("reflex_mark", class_name="w-5 shrink-0 text-foreground"),
+                rx.el.span(
+                    "Reflex Cloud",
+                    class_name="whitespace-nowrap text-sm text-foreground",
+                ),
+                class_name="flex items-center gap-2",
+            ),
+            rx.el.div(
+                *[
+                    rx.el.img(
+                        src=rx.color_mode_cond(
+                            f"{REFLEX_ASSETS_CDN}landing/integrations/light/{provider}.svg",
+                            f"{REFLEX_ASSETS_CDN}landing/integrations/dark/{provider}.svg",
+                        ),
+                        alt=label,
+                        title=label,
+                        class_name="size-5 object-contain",
+                    )
+                    for provider, label in (
+                        ("aws", "AWS"),
+                        ("azure", "Microsoft Azure"),
+                        ("gcp", "Google Cloud"),
+                    )
+                ],
+                class_name="flex shrink-0 items-center gap-1.5",
+            ),
+            class_name="flex items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-6",
         ),
         rx.el.div(
             rx.el.h3(
