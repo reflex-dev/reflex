@@ -1,9 +1,10 @@
 """Compatibility hacks and helpers."""
 
+import dataclasses
 import sys
 from collections.abc import Mapping
 from functools import lru_cache
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 if sys.version_info >= (3, 14):
     from annotationlib import (
@@ -13,15 +14,11 @@ if sys.version_info >= (3, 14):
         get_annotations,
     )
 
-if sys.version_info >= (3, 15):
-    from dataclasses import MISSING
-
-    # dataclasses._MISSING_TYPE was removed in Python 3.15
-    MISSING_TYPE = type(MISSING)
-else:
-    import dataclasses
-
+if TYPE_CHECKING or sys.version_info < (3, 15):
+    # Typeshed still models MISSING with the pre-3.15 class.
     MISSING_TYPE = dataclasses._MISSING_TYPE
+else:
+    MISSING_TYPE = dataclasses.MISSING
 
 
 async def windows_hot_reload_lifespan_hack():
