@@ -55,6 +55,7 @@ def test_load_app_initializes_config_before_importing_app(
     monkeypatch.delitem(sys.modules, "config_first_app.config_first_app", raising=False)
     inherited_state: type[object] | None = None
     inherited_app: object | None = None
+    previous_state_auto_setters = reflex_base.config._state_auto_setters
 
     try:
         with RegistrationContext():
@@ -77,6 +78,9 @@ def test_load_app_initializes_config_before_importing_app(
         sys.modules.pop("config_first_app.config_first_app", None)
         reflex_base.config._config_module_deps.clear()
         reflex_base.config._config_module_deps_root = None
+        reflex_base.config._state_auto_setters = previous_state_auto_setters
+
+    assert reflex_base.config._state_auto_setters is previous_state_auto_setters
 
 
 @pytest.mark.parametrize("frontend_present", [False, True])
