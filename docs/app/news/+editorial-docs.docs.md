@@ -26,4 +26,4 @@ Explain component composition with a Python example mapped to its rendered inter
 
 Make the How It Works diagram readable without overlapping windows and let visitors try its Python-backed counter.
 
-Explore Cloud hosting through a connected application diagram with direct links to deployment, secrets, observability, and configuration guides.
+Explore Cloud hosting through a connected diagram centered on one unified hosted application with direct links to deployment, secrets, observability, and configuration guides.

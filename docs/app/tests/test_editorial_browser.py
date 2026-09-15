@@ -414,7 +414,7 @@ def test_framework_counter_is_live_and_windows_do_not_overlap(
     expect(count).to_have_text("3")
 
 
-@pytest.mark.parametrize("width", [375, 1440])
+@pytest.mark.parametrize("width", [320, 375, 1440])
 @pytest.mark.parametrize("color_scheme", ["light", "dark"])
 def test_cloud_diagram_preserves_guides_without_overlapping(
     page: Page, width: int, color_scheme: Literal["light", "dark"]
@@ -425,6 +425,9 @@ def test_cloud_diagram_preserves_guides_without_overlapping(
     page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
     section = page.get_by_role("region", name="Cloud", exact=True)
     expect(section.get_by_role("heading", name="Your application")).to_be_visible()
+    assert section.locator(".docs-cloud-hub").evaluate(
+        "el => [...el.querySelectorAll('*')].every(node => node.scrollWidth <= node.clientWidth + 1)"
+    )
     for title, href in [
         ("Deployment", "/docs/hosting/deploy-quick-start/"),
         ("Secret Management", "/docs/hosting/secrets-environment-vars/"),

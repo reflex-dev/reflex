@@ -680,8 +680,7 @@
 .docs-cloud-guides { position: relative; display: grid; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
 .docs-cloud-hub { width: 100%; }
 .docs-cloud-icon { color: var(--cloud-ink); }
-.docs-cloud-service { color: var(--cloud-ink); background: var(--cloud-tint); }
-.docs-cloud-service-line { width: 1rem; height: 1px; flex-shrink: 0; background: var(--cloud-line); }
+.docs-cloud-chart-bar { background: var(--cloud-ink); opacity: 0.55; }
 .docs-cloud-guide:hover h3 { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 .docs-cloud-guides::before,
 .docs-cloud-guide::after,
@@ -716,4 +715,5 @@
 @media (max-width: 479px) {
   .docs-cloud-diagram { padding: 1rem; }
   .docs-cloud-guide { padding: 1.25rem; }
+  .docs-cloud-hub > div:last-child { padding: 1rem 0.75rem; }
 }

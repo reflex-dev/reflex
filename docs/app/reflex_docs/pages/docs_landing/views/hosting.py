@@ -3,6 +3,7 @@
 import reflex as rx
 
 from reflex_docs.pages.docs import hosting as hosting_page
+from reflex_docs.pages.docs_landing.views.artwork import artwork
 
 
 def hosting_guide(icon: str, title: str, description: str, href: str) -> rx.Component:
@@ -23,20 +24,59 @@ def hosting_guide(icon: str, title: str, description: str, href: str) -> rx.Comp
     )
 
 
-def hosting_service(icon: str, title: str) -> rx.Component:
-    """Show one part of the deployed full-stack application."""
+def application_preview() -> rx.Component:
+    """Illustrate one complete hosted application in a single window."""
     return rx.el.div(
-        rx.icon(icon, size=24, aria_hidden=True),
-        rx.el.span(title, class_name="text-sm font-book text-foreground"),
-        class_name="docs-cloud-service flex min-w-0 flex-1 flex-col items-center gap-3 rounded-lg px-3 py-5",
+        rx.el.div(
+            rx.el.span("Overview", class_name="text-xs text-foreground"),
+            rx.el.span("•••", class_name="text-muted-foreground tracking-[2px]"),
+            class_name="flex items-center justify-between border-b border-border px-4 py-2",
+        ),
+        rx.el.div(
+            rx.el.div(
+                *[rx.icon(icon, size=14) for icon in ("layout-grid", "files", "users")],
+                class_name="flex w-10 shrink-0 flex-col items-center gap-5 border-r border-border bg-muted py-4 text-muted-foreground",
+            ),
+            rx.el.div(
+                rx.el.div(
+                    *[
+                        rx.el.div(
+                            rx.el.span(
+                                value, class_name="text-lg font-book text-foreground"
+                            ),
+                            rx.el.span(
+                                label, class_name="text-[10px] text-muted-foreground"
+                            ),
+                            class_name="flex flex-1 flex-col rounded-md border border-border px-3 py-2",
+                        )
+                        for value, label in (("12", "Projects"), ("24", "Members"))
+                    ],
+                    class_name="flex gap-2",
+                ),
+                rx.el.div(
+                    *[
+                        rx.el.div(
+                            style={"height": f"{height}%"},
+                            class_name="docs-cloud-chart-bar min-w-0 flex-1 rounded-t-[2px]",
+                        )
+                        for height in (28, 44, 36, 61, 52, 73, 65, 92)
+                    ],
+                    class_name="flex h-16 items-end gap-2 border-b border-border pt-2",
+                ),
+                class_name="flex min-w-0 flex-1 flex-col gap-4 p-3",
+            ),
+            class_name="flex",
+        ),
+        aria_hidden=True,
+        class_name="overflow-hidden rounded-lg border border-border bg-background text-left",
     )
 
 
 def hosting_application() -> rx.Component:
-    """Place the hosted frontend and backend at the center of the diagram."""
+    """Place one unified hosted application at the center of the diagram."""
     return rx.el.div(
         rx.el.div(
-            rx.icon("cloud", size=18, aria_hidden=True, class_name="docs-cloud-icon"),
+            artwork("reflex_mark", class_name="w-5 shrink-0 text-foreground"),
             rx.el.span("Reflex Cloud", class_name="text-sm text-foreground"),
             class_name="flex items-center gap-3 border-b border-border px-6 py-4",
         ),
@@ -45,12 +85,7 @@ def hosting_application() -> rx.Component:
                 "Your application",
                 class_name="text-xl font-book tracking-tight text-foreground",
             ),
-            rx.el.div(
-                hosting_service("panels-top-left", "Frontend"),
-                rx.el.div(class_name="docs-cloud-service-line", aria_hidden=True),
-                hosting_service("code-xml", "Backend"),
-                class_name="flex items-center",
-            ),
+            application_preview(),
             class_name="flex flex-col gap-6 p-6 text-center",
         ),
         class_name="docs-cloud-hub relative min-w-0 self-center rounded-panel border border-border bg-background",
