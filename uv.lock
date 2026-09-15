@@ -19,24 +19,25 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
-reflex-components-plotly = false
-reflex-components-radix = false
-reflex-components-moment = false
-reflex-components-sonner = false
 hatch-reflex-pyi = false
-reflex-components-gridjs = false
 reflex = false
-reflex-enterprise = false
+reflex-base = false
 reflex-components-code = false
-reflex-components-recharts = false
 reflex-components-core = false
 reflex-components-dataeditor = false
-reflex-base = false
-reflex-components-markdown = false
+reflex-components-gridjs = false
 reflex-components-internal = false
 reflex-components-lucide = false
+reflex-components-markdown = false
+reflex-components-moment = false
+reflex-components-plotly = false
+reflex-components-radix = false
 reflex-components-react-player = false
+reflex-components-recharts = false
+reflex-components-sonner = false
+reflex-enterprise = false
 reflex-hosting-cli = false
+ty = false
 
 [manifest]
 members = [
@@ -3890,6 +3891,9 @@ db = [
     { name = "pydantic" },
     { name = "sqlmodel" },
 ]
+orjson = [
+    { name = "reflex-base", extra = ["orjson"] },
+]
 pydantic = [
     { name = "reflex-base", extra = ["pydantic"] },
 ]
@@ -3913,6 +3917,7 @@ dev = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "opentelemetry-sdk" },
+    { name = "orjson" },
     { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "pandas", version = "3.0.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pillow" },
@@ -3965,6 +3970,7 @@ requires-dist = [
     { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=6.4,<8.0" },
     { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-base", extras = ["orjson"], marker = "extra == 'orjson'", editable = "packages/reflex-base" },
     { name = "reflex-base", extras = ["pydantic"], marker = "extra == 'pydantic'", editable = "packages/reflex-base" },
     { name = "reflex-components-code", editable = "packages/reflex-components-code" },
     { name = "reflex-components-core", editable = "packages/reflex-components-core" },
@@ -3987,7 +3993,7 @@ requires-dist = [
     { name = "uvicorn", marker = "extra == 'testing'", specifier = ">=0.34.0,<1.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.4" },
 ]
-provides-extras = ["db", "pydantic", "testing"]
+provides-extras = ["db", "orjson", "pydantic", "testing"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4001,6 +4007,7 @@ dev = [
     { name = "libsass" },
     { name = "numpy" },
     { name = "opentelemetry-sdk" },
+    { name = "orjson" },
     { name = "pandas" },
     { name = "pillow" },
     { name = "playwright" },
@@ -4048,19 +4055,23 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+orjson = [
+    { name = "orjson" },
+]
 pydantic = [
     { name = "pydantic" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "orjson", marker = "extra == 'orjson'", specifier = ">=3.11.1,<4.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "platformdirs", specifier = ">=4.3.7,<5.0" },
     { name = "pydantic", marker = "extra == 'pydantic'", specifier = ">=2.12.0,<3.0" },
     { name = "rich", specifier = ">=13,<16" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
 ]
-provides-extras = ["pydantic"]
+provides-extras = ["orjson", "pydantic"]
 
 [[package]]
 name = "reflex-components-code"

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import collections
 import dataclasses
-import json
 import logging
 import sys
 from collections.abc import Callable, Iterable, Sequence
@@ -35,7 +34,7 @@ from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plug
 from reflex_base.registry import RegistrationContext, _default_bundled_libraries
 from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
-from reflex_base.utils.format import to_title_case
+from reflex_base.utils.format import orjson_loads, to_title_case
 from reflex_base.utils.imports import (
     ABSOLUTE_IMPORT_PREFIXES,
     ImportVar,
@@ -1235,8 +1234,7 @@ def compile_app(
     if not dry_run and not should_compile and backend_dir.exists():
         stateful_pages_marker = backend_dir / constants.Dirs.STATEFUL_PAGES
         if stateful_pages_marker.exists():
-            with stateful_pages_marker.open("r") as file:
-                stateful_pages = json.load(file)
+            stateful_pages = orjson_loads(stateful_pages_marker.read_bytes())
             for route in stateful_pages:
                 logger.debug(f"BE Evaluating stateful page: {route}")
                 app._compile_page(route, save_page=False)

@@ -1151,6 +1151,21 @@ def test_inf_and_nan(var, expected_js):
         var.json()
 
 
+@pytest.mark.parametrize(
+    "value",
+    [
+        decimal.Decimal("Infinity"),
+        decimal.Decimal("-Infinity"),
+        decimal.Decimal("NaN"),
+        decimal.Decimal("1e400"),
+    ],
+)
+def test_non_finite_decimal_json_raises(value: decimal.Decimal):
+    """A Decimal converting to a non-finite float is rejected, not emitted as null."""
+    with pytest.raises(PrimitiveUnserializableToJSONError):
+        LiteralNumberVar.create(value).json()
+
+
 def test_array_operations():
     array_var = LiteralArrayVar.create([1, 2, 3, 4, 5])
 

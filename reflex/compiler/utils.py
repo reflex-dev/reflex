@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import copy
-import json
 import operator
 import os
 import tempfile
@@ -287,8 +286,8 @@ def _restore_bundled_libraries() -> None:
     """Restore the registry emitted by the most recent frontend compile."""
     path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
     try:
-        bundled_libraries = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        bundled_libraries = format.orjson_loads(path.read_bytes())
+    except (OSError, ValueError):
         return
     if not isinstance(bundled_libraries, list) or not all(
         isinstance(library, str) for library in bundled_libraries
@@ -961,7 +960,7 @@ def _read_memo_manifest(web_dir: Path) -> set[str]:
     if not manifest_path.exists():
         return set()
     try:
-        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        data = format.orjson_loads(manifest_path.read_bytes())
     except (OSError, ValueError):
         return set()
     if not isinstance(data, list):
@@ -986,8 +985,9 @@ def _write_memo_manifest(web_dir: Path, relative_paths: set[str]) -> None:
     os.close(fd)
     tmp_path = Path(tmp_name)
     try:
-        with tmp_path.open("w", encoding="utf-8") as fh:
-            json.dump(sorted(relative_paths), fh)
+        tmp_path.write_text(
+            format.orjson_dumps(sorted(relative_paths)), encoding="utf-8"
+        )
         tmp_path.replace(manifest_path)
     except Exception:
         # Best-effort cleanup; manifest write is recoverable on the next run.

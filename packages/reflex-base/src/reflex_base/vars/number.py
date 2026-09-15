@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import dataclasses
 import decimal
-import json
 import math
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, NoReturn, TypeVar, overload
@@ -17,6 +16,7 @@ from reflex_base.utils.exceptions import (
     VarTypeError,
     VarValueError,
 )
+from reflex_base.utils.format import orjson_dumps
 from reflex_base.utils.imports import ImportDict, ImportVar
 from reflex_base.utils.types import safe_issubclass, unionize
 
@@ -957,12 +957,17 @@ class LiteralNumberVar(LiteralVar[NUMBER_T], NumberVar[NUMBER_T]):
         Raises:
             PrimitiveUnserializableToJSONError: If the var is unserializable to JSON.
         """
-        if isinstance(self._var_value, decimal.Decimal):
-            return json.dumps(float(self._var_value))
-        if math.isinf(self._var_value) or math.isnan(self._var_value):
+        value = (
+            float(self._var_value)
+            if isinstance(self._var_value, decimal.Decimal)
+            else self._var_value
+        )
+        # A Decimal can convert to a non-finite float, which orjson would emit
+        # as null; reject it like the float path does.
+        if math.isinf(value) or math.isnan(value):
             msg = f"No valid JSON representation for {self}"
             raise PrimitiveUnserializableToJSONError(msg)
-        return json.dumps(self._var_value)
+        return orjson_dumps(value)
 
     def __hash__(self) -> int:
         """Calculate the hash value of the object.
