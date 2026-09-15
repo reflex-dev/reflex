@@ -206,6 +206,19 @@ def test_configure_removes_file_handler_when_full_logging_is_disabled(monkeypatc
         logging.getLogger("reflex").removeHandler(handler)
 
 
+def test_ensure_configured_tracks_full_logging_mode(monkeypatch):
+    """Changing full logging mode through the worker path updates sinks."""
+    handler = logging.NullHandler()
+    monkeypatch.setattr(log, "_file_handler", lambda: handler)
+    monkeypatch.setenv("REFLEX_ENABLE_FULL_LOGGING", "true")
+    log.ensure_configured()
+    assert handler in logging.getLogger("reflex").handlers
+
+    monkeypatch.setenv("REFLEX_ENABLE_FULL_LOGGING", "false")
+    log.ensure_configured()
+    assert handler not in logging.getLogger("reflex").handlers
+
+
 def test_set_log_level_env_propagation(monkeypatch):
     """Changing the level exports REFLEX_LOGLEVEL for subprocesses."""
     import os
@@ -285,13 +298,14 @@ def test_deprecate_json_extras(monkeypatch, capsys):
     log.configure()
     log.deprecate(
         feature_name="JsonFeature",
-        reason="Use something else.",
+        reason="Use [bold]something else[/bold].",
         deprecation_version="0.1.0",
         removal_version="1.0",
     )
     out, _ = capsys.readouterr()
     record = json.loads(out)
     assert record["feature_name"] == "JsonFeature"
+    assert "[bold]" not in record["message"]
     assert record["deprecation_version"] == "0.1.0"
     assert record["removal_version"] == "1.0"
     assert record["kind"] == "deprecation"
@@ -364,14 +378,10 @@ def test_console_debug_progress_preserves_file_log(monkeypatch):
     )
 
 
-def test_console_deprecate_preserves_rich_print_kwargs(monkeypatch):
-    """The legacy deprecation helper retains its Rich print contract."""
-    rich_print = mock.Mock()
-    monkeypatch.setattr(console, "print", rich_print)
-    monkeypatch.setattr(console, "should_use_log_file_console", lambda: False)
-    monkeypatch.setattr(
-        console, "_get_first_non_framework_frame", lambda: None, raising=False
-    )
+def test_console_deprecate_delegates_to_log(monkeypatch):
+    """The public console deprecation helper uses the shared log pipeline."""
+    log_deprecate = mock.Mock()
+    monkeypatch.setattr(log, "deprecate", log_deprecate)
 
     console.deprecate(
         feature_name="OldFeature",
@@ -382,12 +392,35 @@ def test_console_deprecate_preserves_rich_print_kwargs(monkeypatch):
         markup=False,
     )
 
-    rich_print.assert_called_once_with(
-        "[yellow]DeprecationWarning: OldFeature has been deprecated in version "
-        "0.9.9. Use NewFeature. It will be completely removed in 1.0.[/yellow]",
-        level="warning",
+    log_deprecate.assert_called_once_with(
+        feature_name="OldFeature",
+        reason="Use NewFeature.",
+        deprecation_version="0.9.9",
+        removal_version="1.0",
+        dedupe=False,
         markup=False,
     )
+
+
+def test_deprecate_preserves_rich_print_kwargs(monkeypatch):
+    """Legacy Rich options are passed through the shared logging pipeline."""
+    rich_console = mock.Mock()
+    monkeypatch.setattr(log, "_console", rich_console)
+
+    console.deprecate(
+        feature_name="RichFeature",
+        reason="[bold]Use something else[/bold].",
+        deprecation_version="0.9.9",
+        removal_version="1.0",
+        dedupe=False,
+        markup=False,
+        soft_wrap=True,
+    )
+
+    print_kwargs = rich_console.print.call_args.kwargs
+    assert print_kwargs["markup"] is False
+    assert print_kwargs["soft_wrap"] is True
+    assert "[bold]Use something else[/bold]" in rich_console.print.call_args.args[0]
 
 
 def test_console_print_json_mode(monkeypatch, capsys):

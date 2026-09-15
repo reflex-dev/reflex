@@ -3446,7 +3446,7 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
 
     for _ in range(2):
         receiver, sender = workers.Pipe(duplex=False)
-        process = workers.Process(
+        process = workers.Process(  # pyright: ignore[reportAttributeAccessIssue]
             target=_probe_worker_token_identity, args=(app, redis, sender)
         )
         process.start()
