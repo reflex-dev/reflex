@@ -19,6 +19,7 @@ from reflex_base.event import (
     on_submit_event,
     on_submit_string_event,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
@@ -1368,6 +1369,42 @@ def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
         log._reset()
     assert "expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> ()" in out
     assert "\\" not in out
+
+
+def test_event_chain_cache_lives_on_the_registration_context():
+    """Bound chains are shared per context and leave the handler stateless."""
+
+    class ChainState(BaseState):
+        @event
+        def handler(self):
+            pass
+
+    def args_spec():
+        return ()
+
+    chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+    with RegistrationContext.ensure_context().fork():
+        forked = EventChain.create(
+            ChainState.handler, args_spec=args_spec, key="on_click"
+        )
+        assert forked is not chain
+        assert (
+            EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+            is forked
+        )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+
+    def retains(value: Any) -> bool:
+        if isinstance(value, dict):
+            value = tuple(value.values())
+        if isinstance(value, (tuple, list)):
+            return any(retains(item) for item in value)
+        return value is chain
+
+    assert not any(retains(value) for value in vars(ChainState.handler).values())
 
 
 def test_event_chain_create_shares_chains_bound_from_one_handler():

@@ -914,14 +914,15 @@ class EventChain(EventActionsMixin):
             return value
 
         # A handler bound to one trigger always produces the same chain, so
-        # every call site sharing the handler shares one instance. The cache
-        # lives on the handler, which is never pickled or copied.
-        bound_chains = None
+        # every call site sharing the handler shares one instance per
+        # registration context.
+        bound_handler = None
         if not event_chain_kwargs and isinstance(value, EventHandler):
-            bound_chains = value.__dict__.setdefault("_bound_chains", {})
-            bound = bound_chains.get((id(args_spec), key))
-            if bound is not None and bound[0] is args_spec:
-                return bound[1]
+            bound_handler = value
+            bound_chains = RegistrationContext.ensure_context()._bound_event_chains
+            bound = bound_chains.get((id(value), id(args_spec), key))
+            if bound is not None and bound[0] is value and bound[1] is args_spec:
+                return bound[2]
 
         # If the input is a single event handler, wrap it in a list.
         if isinstance(value, (EventHandler, EventSpec)):
@@ -967,8 +968,10 @@ class EventChain(EventActionsMixin):
             args_spec=args_spec,
             **event_chain_kwargs,
         )
-        if bound_chains is not None:
-            bound_chains[id(args_spec), key] = args_spec, chain
+        if bound_handler is not None:
+            RegistrationContext.ensure_context()._bound_event_chains[
+                id(bound_handler), id(args_spec), key
+            ] = (bound_handler, args_spec, chain)
         return chain
 
 
