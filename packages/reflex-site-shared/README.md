@@ -63,6 +63,12 @@ config = rx.Config(
 Existing sites that provide their own font CSS can use
 `SharedSiteStylesPlugin(include_fonts=False)`.
 
+Use `SharedSiteStylesPlugin(editorial=True)` for the neutral editorial palette
+and capsule button treatment from the marketing site. It includes semantic
+surface, text, border, and focus tokens, and adapts to `.light` / `.dark` themes.
+The default remains the original violet theme; either option supports custom
+font loading through `include_fonts=False`.
+
 `DocsMarkdownPlugin` serves each discovered page as Markdown using the same
 URL convention as the official Reflex docs. For example,
 `/guide/installation/` is also available at `/guide/installation.md` and

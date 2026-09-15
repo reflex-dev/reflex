@@ -146,7 +146,9 @@ def test_shared_sidebar_rows_keep_official_structure() -> None:
     assert "LucideGraduationCap" in category
     assert "group/details" in group
     assert "ArrowDown01Icon" in group
-    assert "left-[3rem]" in group
+    assert "docs-sidebar-group-trigger" in group
+    assert "docs-sidebar-group-items" in group
+    assert "open:true" in group
 
 
 def test_official_docs_footer_content_is_shared() -> None:
@@ -163,7 +165,8 @@ def test_official_docs_footer_content_is_shared() -> None:
     assert "Links" in rendered
     assert "Documentation" in rendered
     assert "Resources" in rendered
-    assert "Social link for Github" in rendered
+    assert "Social link for GitHub" in rendered
+    assert "Social link for Forum" not in rendered
     assert "Pynecone, Inc." in rendered
     assert "https://reflex.dev/docs/getting-started/introduction/" not in rendered
     assert "/getting-started/introduction/" in rendered

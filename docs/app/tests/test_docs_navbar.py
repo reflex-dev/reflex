@@ -74,7 +74,7 @@ def test_external_menu_items_use_plain_anchors(navbar):
 
 def test_navigation_menu_routes_in_app_destinations(navbar):
     """Every in-app navbar destination compiles to a router link."""
-    from reflex_docs.pages.docs import ai_builder, getting_started, hosting
+    from reflex_docs.pages.docs import getting_started, hosting
 
     router_targets = {
         dest
@@ -84,7 +84,7 @@ def test_navigation_menu_routes_in_app_destinations(navbar):
 
     for path in (
         "/",
-        ai_builder.overview.best_practices.path,
+        "/ai/",
         getting_started.introduction.path,
         hosting.deploy_quick_start.path,
     ):
@@ -109,10 +109,25 @@ def test_navigation_menu_keeps_cross_app_destinations_raw(navbar):
 
 def test_external_links_bypass_the_router(navbar):
     """Absolute off-site URLs render as raw anchors, not router links."""
-    from reflex_site_shared.constants import GITHUB_URL, REFLEX_URL
+    from reflex_site_shared.constants import GITHUB_URL
 
     assert _collect_links(navbar.github_button()) == [("anchor", GITHUB_URL)]
-    assert _collect_links(navbar.logo()) == [("anchor", REFLEX_URL)]
+
+
+def test_docs_logo_returns_to_internal_overview(navbar):
+    """The Docs logo resolves its overview destination through the docs basename."""
+    assert _collect_links(navbar.logo()) == [("router", "/")]
+
+
+def test_github_badge_combines_both_projects(navbar, monkeypatch):
+    """The displayed star count sums both projects and identifies the total."""
+    monkeypatch.setattr(navbar, "GITHUB_STARS", 12500)
+    monkeypatch.setattr(navbar, "XY_GITHUB_STARS", 2500)
+    button = navbar.github_button()
+    assert "15K combined stars for Reflex and Reflex XY" in str(
+        button.custom_attrs["aria-label"]
+    )
+    assert "15K" in str(button.children[-1])
 
 
 def test_reflex_el_a_and_elements_a_are_not_interchangeable():

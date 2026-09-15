@@ -4,9 +4,7 @@ import os
 import httpx
 import reflex as rx
 from reflex_site_shared.components.icons import get_icon
-from reflex_site_shared.styles.colors import c_color
-from reflex_site_shared.styles.fonts import base
-from reflex_site_shared.styles.shadows import shadows
+from reflex_site_shared.components.marketing_button import button
 
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
@@ -123,152 +121,48 @@ class CustomComponentGalleryState(rx.State):
         self.paginate()  # Update paginated data
 
 
-def filter_item(
-    icon: str, text: str, border: bool = False, on_click=None
-) -> rx.Component:
-    is_selected = CustomComponentGalleryState.selected_filter == text
-    return rx.box(
-        get_icon(icon, class_name="py-[2px]", opacity=rx.cond(is_selected, 0.64, 1)),
-        rx.text(text, opacity=rx.cond(is_selected, 0.64, 1), class_name="font-small"),
-        rx.spacer(),
-        rx.cond(
-            is_selected,
-            rx.box(
-                class_name="size-2 justify-end bg-violet-9 rounded-full",
-            ),
-        ),
-        class_name="flex flex-row gap-[14px] items-center justify-start w-full cursor-pointer hover:bg-secondary-3 transition-bg text-nowrap overflow-hidden p-[8px_14px]",
-        border_top="1px solid var(--secondary-4)" if border else "none",
-        border_bottom="1px solid var(--secondary-4)" if border else "none",
-        on_click=on_click,
-    )
-
-
-chips_box_style = {
-    "width": ["100%", "100%", "auto"],
-    "box-sizing": "border-box",
-    "display": "flex",
-    "flex-direction": "row",
-    "align_items": "center",
-    "padding": "6px 12px",
-    "cursor": "pointer",
-    "box-shadow": shadows["large"],
-    "border-radius": "1000px",
-    "transition": "background 0.075s ease-out, color 0.075s ease-out, border 0.075s ease-out",
-}
-
-# Sorting
-sorting_box_style = {
-    "gap": "12px",
-    "outline": "none",
-    "_focus": {
-        "outline": "none",
-    },
-    **chips_box_style,
-}
-
-menu_item_style = {
-    "box-sizing": "border-box",
-    "width": "191px",
-    "height": "auto",
-    "overflow": "hidden",
-    "padding": "0px",
-    "cursor": "default",
-    "background_color": "var(--secondary-2)",
-    "border": "1px solid var(--secondary-4)",
-    "box-shadow": "0px 2px 4px rgba(0, 0, 0, 0.05)",
-    "border-radius": "12px",
-    "color": "var(--secondary-9)",
-    **base,
-}
-
-
-def sorting_filters() -> rx.Component:
-    return rx.vstack(
-        filter_item(
-            "history",
-            "Recent",
-            on_click=lambda: CustomComponentGalleryState.set_selected_filter("Recent"),
-        ),
-        filter_item(
-            "arrow_down_big",
-            "Downloads",
-            border=True,
-            on_click=lambda: CustomComponentGalleryState.set_selected_filter(
-                "Downloads"
-            ),
-        ),
-        gap="0px",
-        width="100%",
-    )
-
-
 def sorting_filters_dropdown_menu() -> rx.Component:
+    """Render the gallery sort menu using the shared neutral controls.
+
+    Returns:
+        Keyboard-accessible sort menu.
+    """
     condition = CustomComponentGalleryState.selected_filter != ""
-    conditional_style = {
-        "background": rx.cond(
-            condition,
-            c_color("violet", 9),
-            c_color("slate", 1),
-        ),
-        "color": rx.cond(
-            condition,
-            "white",
-            c_color("slate", 9),
-        ),
-        "border": rx.cond(
-            condition,
-            f"1px solid {c_color('violet', 9)}",
-            f"1px solid {c_color('slate', 5)}",
-        ),
-        "&[data-state='open']": {
-            "background": rx.cond(
-                condition,
-                c_color("violet", 9),
-                c_color("slate", 3),
-            ),
-        },
-        "_hover": {
-            "background": rx.cond(
-                condition,
-                c_color("violet", 9),
-                c_color("slate", 3),
-            ),
-        },
-    }
     return rx.menu.root(
         rx.menu.trigger(
-            rx.el.button(
-                rx.text(
+            button(
+                rx.cond(
+                    condition,
+                    "Sort: " + CustomComponentGalleryState.selected_filter,
                     "Sort",
-                    rx.cond(
-                        condition,
-                        rx.text(
-                            f": {CustomComponentGalleryState.selected_filter}",
-                            as_="span",
-                            class_name="text-nowrap",
-                        ),
-                    ),
-                    as_="span",
-                    class_name="font-small",
                 ),
-                get_icon(
-                    icon="select",
-                ),
-                justify_content="space-between",
+                get_icon("select"),
+                variant="outline",
+                size="sm",
             ),
-            style=sorting_box_style | conditional_style,
+            as_child=True,
         ),
         rx.menu.content(
-            rx.menu.item(sorting_filters(), style=menu_item_style),
-            bg="transparent",
-            box_shadow="None",
-            padding="0px",
-            overflow="visible",
-            border="none",
-            align="center",
+            *[
+                rx.menu.item(
+                    get_icon(icon),
+                    label,
+                    rx.cond(
+                        CustomComponentGalleryState.selected_filter == label,
+                        rx.icon("check", size=14),
+                        rx.fragment(),
+                    ),
+                    on_select=CustomComponentGalleryState.set_selected_filter(label),
+                    class_name="flex items-center gap-2 rounded-compact px-3 py-2 text-sm font-book text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
+                )
+                for label, icon in (
+                    ("Recent", "history"),
+                    ("Downloads", "arrow_down_big"),
+                )
+            ],
+            align="end",
+            class_name="min-w-44 rounded-panel border border-border bg-background p-1 shadow-medium",
         ),
-        width="100%",
     )
 
 
@@ -282,7 +176,7 @@ def download(download_url: str) -> rx.Component:
         underline="none",
         href=download_url,
         is_external=True,
-        class_name="text-secondary-9 hover:!text-secondary-9 bg-secondary-1 hover:bg-secondary-3 transition-bg cursor-pointer rounded-[6px]",
+        class_name="text-secondary-9 hover:!text-secondary-9 bg-secondary-1 hover:bg-secondary-3 transition-bg cursor-pointer rounded-compact",
         title="Documentation",
     )
 
@@ -301,15 +195,17 @@ def table_rows(category: dict):
         rx.table.cell(name),
         rx.table.cell(updated_at),
         rx.table.cell(
-            rx.box(
+            rx.el.button(
                 rx.text(
                     "pip install " + category["package_name"],
                     as_="p",
-                    class_name="font-small truncate flex-1 min-w-0",
+                    class_name="font-mono text-xs truncate flex-1 min-w-0",
                 ),
                 get_icon(icon="copy", class_name="p-[5px]"),
                 on_click=rx.set_clipboard("pip install " + category["package_name"]),
-                class_name="flex flex-row gap-1.5 text-secondary-9 w-full items-center overflow-hidden border border-secondary-5 bg-secondary-1 hover:bg-secondary-3 transition-bg cursor-pointer shadow-small rounded-[6px] px-1.5 max-w-[20rem]",
+                type="button",
+                aria_label="Copy install command for " + category["package_name"],
+                class_name="flex flex-row gap-1.5 text-muted-foreground w-full items-center overflow-hidden border border-border bg-background hover:bg-muted transition-colors cursor-pointer rounded-compact px-3 min-h-9 max-w-[20rem] focus-visible:outline-2 focus-visible:outline-ring",
             )
         ),
         rx.table.cell(download(category["download_url"])),
@@ -352,7 +248,9 @@ def component_grid():
 def create_pagination():
     return rx.hstack(
         rx.hstack(
-            rx.text("Rows per page", weight="bold", font_size="12px"),
+            rx.text(
+                "Rows per page", class_name="text-xs font-normal text-muted-foreground"
+            ),
             rx.select(
                 CustomComponentGalleryState.limits,
                 default_value="50",
@@ -365,34 +263,27 @@ def create_pagination():
             rx.text(
                 f"Page {CustomComponentGalleryState.current_page} of {CustomComponentGalleryState.total_pages}",
                 width="100px",
-                weight="bold",
-                font_size="12px",
+                class_name="text-xs font-normal text-muted-foreground",
             ),
-            rx.button(
-                rx.icon(
-                    tag="chevron-left",
-                    on_click=CustomComponentGalleryState.previous,
-                    size=25,
-                    cursor="pointer",
-                ),
-                color_scheme="gray",
-                variant="surface",
-                size="1",
-                width="32px",
-                height="32px",
+            button(
+                rx.icon("chevron-left", size=16),
+                on_click=CustomComponentGalleryState.previous,
+                disabled=CustomComponentGalleryState.offset == 0,
+                aria_label="Previous page",
+                variant="outline",
+                size="icon-sm",
             ),
-            rx.button(
-                rx.icon(
-                    tag="chevron-right",
-                    on_click=CustomComponentGalleryState.next,
-                    size=25,
-                    cursor="pointer",
+            button(
+                rx.icon("chevron-right", size=16),
+                on_click=CustomComponentGalleryState.next,
+                disabled=(
+                    CustomComponentGalleryState.offset
+                    + CustomComponentGalleryState.current_limit
+                    >= CustomComponentGalleryState.number_of_rows
                 ),
-                color_scheme="gray",
-                variant="surface",
-                size="1",
-                width="32px",
-                height="32px",
+                aria_label="Next page",
+                variant="outline",
+                size="icon-sm",
             ),
             align_items="center",
             spacing="1",
@@ -413,9 +304,9 @@ def custom_components() -> rx.Component:
                     text="Reflex has a growing ecosystem of custom components that you can use to build your apps. Below is a list of some of the custom components available for Reflex.",
                 ),
                 sorting_filters_dropdown_menu(),
-                class_name="flex flex-row w-full gap-12 justify-between items-center",
+                class_name="flex flex-col w-full gap-4 justify-between items-start sm:flex-row sm:items-start [&>p]:mb-0",
             ),
-            class_name="flex flex-col w-full",
+            class_name="flex flex-col w-full gap-6",
         ),
         component_grid(),
         create_pagination(),

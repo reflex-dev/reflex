@@ -540,6 +540,8 @@ export function AlgoliaSearch() {
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-label="Search Reflex"
+        aria-keyshortcuts="Meta+K Control+K"
+        title={`Search (${modifierKey}K)`}
         className="ReflexSearch-button"
         onClick={openSearch}
         ref={buttonRef}

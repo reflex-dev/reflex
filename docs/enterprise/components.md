@@ -5,6 +5,9 @@ title: Enterprise Components
 ```python exec
 import reflex as rx
 
+from reflex_docs.components.component_catalog import component_category
+from reflex_docs.templates.docpage import h1_comp, text_comp_2
+
 
 def enterprise_component_grid():
     sections = [
@@ -66,42 +69,17 @@ def enterprise_component_grid():
         },
     ]
 
-    cards = []
-    for section in sections:
-        cards.append(
-            rx.box(
-                rx.link(
-                    rx.el.h2(
-                        section["title"],
-                        class_name="font-large text-secondary-12",
-                    ),
-                    rx.icon("arrow_up_right", size=16, class_name="text-secondary-11"),
-                    href=section["link"],
-                    underline="none",
-                    class_name="px-4 py-2 bg-secondary-1 hover:bg-secondary-3 transition-bg flex flex-row justify-between items-center !text-secondary-12",
-                ),
-                rx.text(
-                    section["description"],
-                    class_name="px-4 py-2 font-small text-secondary-9 border-t border-secondary-5",
-                ),
-                rx.box(
-                    *[
-                        rx.link(
-                            comp[0],
-                            href=comp[1],
-                            class_name="font-small text-secondary-11 hover:!text-primary-9 transition-color w-fit",
-                        )
-                        for comp in section["components"]
-                    ],
-                    class_name="flex flex-col gap-2.5 px-4 py-2 border-t border-secondary-5",
-                ),
-                class_name="flex flex-col border border-secondary-5 rounded-xl bg-secondary-2 shadow-large overflow-hidden",
-            )
-        )
-
     return rx.box(
-        *cards,
-        class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8",
+        *[
+            component_category(
+                title=section["title"],
+                href=section["link"],
+                description=section["description"],
+                links=section["components"],
+            )
+            for section in sections
+        ],
+        class_name="docs-enterprise-catalog flex flex-col mt-8 mb-12",
     )
 
 
@@ -109,16 +87,12 @@ component_grid = enterprise_component_grid()
 ```
 
 ```python eval
-rx.el.h1(
-    "Enterprise Components",
-    class_name="lg:text-5xl text-3xl font-[525] scroll-mt-[113px] my-4 text-secondary-12",
-)
+h1_comp(text="Enterprise Components")
 ```
 
 ```python eval
-rx.el.span(
-    "Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
-    class_name="font-[475] text-secondary-11 max-w-[80%] text-sm",
+text_comp_2(
+    text="Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
 )
 ```
 

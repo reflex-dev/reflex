@@ -1,191 +1,215 @@
+"""Interactive framework overview with editorial product diagrams."""
+
 import reflex as rx
 import reflex_components_internal as ui
-from reflex_site_shared.components.marketing_button import button
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 from reflex_docs.pages.docs import database, enterprise, getting_started
 from reflex_docs.pages.docs.library import library
-from reflex_docs.pages.library_previews import core_components_dict
+from reflex_docs.pages.docs_landing.views.artwork import artwork
+
+CAPABILITIES = (
+    (
+        "how",
+        "How It Works",
+        "Define your interface and state in Python. Reflex connects them into a reactive web application.",
+        "From Python to a live interface",
+        "Read the introduction",
+        getting_started.introduction.path,
+        "blue",
+    ),
+    (
+        "components",
+        "Components",
+        "Each component creates a part of your interface. Nest headings, inputs, and buttons inside layout components to build a page.",
+        "Python components. A complete interface.",
+        "Browse all components",
+        library.path,
+        "lavender",
+    ),
+    (
+        "auth",
+        "Auth",
+        "Connect your identity provider and control who can access your application with enterprise authentication.",
+        "Your identity. Your access rules.",
+        "Explore authentication",
+        enterprise.auth.overview.path,
+        "peach",
+    ),
+    (
+        "database",
+        "Database",
+        "Define typed models, query your database, and bring live data into your application with Python.",
+        "One model, from database to interface",
+        "Explore databases",
+        database.overview.path,
+        "mint",
+    ),
+)
 
 
-def docs_item(
-    icon: str, title: str, description: str, href: str, enterprise_only: bool = False
-) -> rx.Component:
+class FrameworkCounterState(rx.State):
+    """Keep the landing-page counter in real server-side Python state."""
+
+    count: int = 0
+
+    @rx.event
+    def increment(self):
+        """Increase the displayed count by one."""
+        self.count += 1
+
+
+def example_window_header(title: str) -> rx.Component:
+    """Render the shared chrome of the code and preview windows."""
+    return rx.el.div(
+        rx.el.span("•••", aria_hidden=True, class_name="tracking-[3px]"),
+        rx.el.span(title),
+        class_name="flex items-center gap-5 border-b border-border px-5 py-3 text-xs text-muted-foreground",
+    )
+
+
+def live_counter_diagram() -> rx.Component:
+    """Connect a readable Python example to a working counter interface."""
     return rx.el.div(
         rx.el.div(
-            ui.icon(
-                icon,
-                class_name="size-6 group-hover:text-primary-10 group-hover:dark:text-secondary-11",
-                stroke_width=1.5,
+            example_window_header("app.py"),
+            rx.el.pre(
+                rx.el.code(
+                    "import reflex as rx\n\n"
+                    "class State(rx.State):\n"
+                    "    count: int = 0\n\n"
+                    "    @rx.event\n"
+                    "    def increment(self):\n"
+                    "        self.count += 1",
+                ),
+                class_name="m-0 px-5 py-5 font-mono text-[11px] leading-6 text-foreground sm:text-[13px]",
+            ),
+            class_name="docs-framework-live-code w-full overflow-hidden rounded-xl border border-border bg-background",
+        ),
+        rx.el.div(class_name="docs-framework-live-connector", aria_hidden=True),
+        rx.el.div(
+            example_window_header("Live preview"),
+            rx.el.div(
+                rx.el.h3(
+                    "Your first Reflex app",
+                    class_name="text-xl font-book tracking-tight text-foreground",
+                ),
+                rx.el.div(
+                    rx.el.output(
+                        FrameworkCounterState.count,
+                        aria_label="Counter value",
+                        aria_live="polite",
+                        aria_atomic=True,
+                        class_name="docs-framework-counter-value flex min-h-16 min-w-20 items-center justify-center rounded-lg px-4 text-3xl tabular-nums",
+                    ),
+                    rx.el.button(
+                        "Increment",
+                        rx.icon("plus", size=16, aria_hidden=True),
+                        type="button",
+                        on_click=FrameworkCounterState.increment,
+                        class_name="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-foreground px-5 text-sm text-background transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+                    ),
+                    class_name="flex flex-wrap items-center justify-between gap-4",
+                ),
+                class_name="flex flex-col gap-5 p-5 sm:p-6",
+            ),
+            class_name="docs-framework-live-app w-full overflow-hidden rounded-xl border border-border bg-background",
+        ),
+        class_name="docs-framework-live mx-auto flex w-full max-w-[30rem] flex-col items-center py-4",
+    )
+
+
+def framework_tab(value: str, title: str, description: str) -> rx.Component:
+    """Select a diagram with a keyboard-accessible vertical tab."""
+    return ui.tabs.tab(
+        rx.el.span(
+            rx.el.span(
+                title, class_name="text-xl font-book tracking-tight sm:text-2xl"
             ),
             rx.el.span(
-                title,
-                class_name="text-secondary-12 text-xl font-[575] group-hover:text-primary-10 group-hover:dark:text-secondary-11",
-            ),
-            rx.el.div(
                 "Enterprise-only",
-                class_name="text-secondary-12 text-xs font-medium bg-secondary-1 px-2.5 h-7 border-b border rounded-lg border-secondary-4 flex justify-center items-center ml-1",
+                class_name="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-normal tracking-normal text-muted-foreground",
             )
-            if enterprise_only
+            if value == "auth"
             else None,
-            ui.icon(
-                "ArrowRight01Icon",
-                class_name="size-4 ml-auto group-hover:text-primary-10 group-hover:dark:text-secondary-11",
-            ),
-            class_name="flex row items-center gap-3 h-8",
+            class_name="flex flex-wrap items-center gap-3",
         ),
-        rx.el.p(
-            description,
-            class_name="text-secondary-11 text-sm font-[475]",
-        ),
-        rx.el.a(to=href, class_name="absolute inset-0"),
-        class_name="flex flex-col gap-2 py-8 pr-8 relative group lg:max-w-[21rem] w-full max-lg:text-start hover:bg-[linear-gradient(243deg,var(--secondary-2)_0%,var(--secondary-1)_100%)]",
+        rx.el.span(description, class_name="docs-framework-tab-description"),
+        value=value,
+        aria_label=title,
+        unstyled=True,
+        class_name="docs-framework-tab w-full text-left text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
 
 
-def links_section() -> rx.Component:
-    return rx.el.div(
-        docs_item(
-            "SourceCodeSquareIcon",
-            "How It Works",
-            "Learn the basics of how Reflex works behind the scenes and how its architecture enables flexible, advanced usage.",
-            getting_started.introduction.path,
-        ),
-        docs_item(
-            "ShieldUserIcon",
-            "Auth",
-            "Implement secure authentication for your apps using Reflex’s built-in features and extensible architecture.",
-            enterprise.auth.overview.path,
-            enterprise_only=True,
-        ),
-        docs_item(
-            "DatabaseIcon",
-            "Database",
-            "Manage and interact with your data seamlessly using Reflex’s straightforward models and querying approach.",
-            database.overview.path,
-        ),
-        class_name="flex flex-col border-r border-y border-secondary-4 divide-y divide-secondary-4",
-    )
-
-
-def component_link(name: str, href: str) -> rx.Component:
-    return rx.el.a(
-        button(
-            name,
-            ui.icon("ArrowRight01Icon", class_name="ml-auto"),
-            variant="ghost",
-            size="xs",
-            class_name="font-[525] w-full text-secondary-12 px-0",
-        ),
-        to=f"/library/{href.strip('/')}",
-        class_name="w-full",
-    )
-
-
-def components_section() -> rx.Component:
-    return rx.el.div(
+def framework_panel(
+    value: str, caption: str, link: str, href: str, tone: str
+) -> rx.Component:
+    """Pair an interactive example or illustration with its documentation link."""
+    return ui.tabs.panel(
         rx.el.div(
-            rx.el.div(
-                ui.icon("MenuSquareIcon", class_name="size-6", stroke_width=1.5),
-                rx.el.span(
-                    "Component Library",
-                    class_name="text-secondary-12 text-xl font-[575] group-hover:text-primary-10",
-                ),
-                class_name="flex row items-center gap-3 h-8",
-            ),
-            rx.el.p(
-                "Build your app with our comprehensive collection of UI components and features.",
-                class_name="text-secondary-11 text-sm font-[475] max-w-[16.5rem]",
-            ),
+            live_counter_diagram()
+            if value == "how"
+            else artwork(f"framework_{value}", class_name="docs-framework-diagram"),
+            class_name="docs-framework-stage",
+        ),
+        rx.el.div(
+            rx.el.p(caption, class_name="text-base font-book text-foreground"),
             rx.el.a(
-                button(
-                    "Browse All Components",
-                    variant="outline",
-                    native_button=False,
-                    class_name="font-[525] w-fit text-secondary-12",
-                ),
-                to=library.path,
-                class_name="w-fit mt-4",
+                link,
+                rx.icon("arrow-right", class_name="size-4", aria_hidden=True),
+                href=href,
+                class_name="inline-flex min-h-10 w-fit items-center gap-2 rounded-full border border-border bg-background px-4 text-sm font-book text-foreground transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
             ),
-            class_name="flex flex-col gap-2 max-lg:text-start",
+            class_name="docs-framework-caption flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-border bg-muted px-6 py-5 sm:px-8",
         ),
-        rx.el.div(
-            rx.el.div(
-                component_link(
-                    "Data Display", core_components_dict["data-display"]["path"]
-                ),
-                component_link(
-                    "Disclosure", core_components_dict["disclosure"]["path"]
-                ),
-                component_link(
-                    "Dynamic Rendering",
-                    core_components_dict["dynamic_rendering"]["path"],
-                ),
-                component_link("Forms", core_components_dict["forms"]["path"]),
-                component_link("Layout", core_components_dict["layout"]["path"]),
-                component_link("Media", core_components_dict["media"]["path"]),
-                class_name="flex flex-col gap-2",
-            ),
-            rx.el.div(
-                component_link("Other", core_components_dict["other"]["path"]),
-                component_link("Overlays", core_components_dict["overlays"]["path"]),
-                component_link(
-                    "Tables And Data Grids Rendering",
-                    core_components_dict["tables_and_data_grids"]["path"],
-                ),
-                component_link(
-                    "Typography", core_components_dict["typography"]["path"]
-                ),
-                class_name="flex flex-col gap-2",
-            ),
-            class_name="grid grid-cols-1 lg:grid-cols-2 lg:gap-28 gap-10 mt-auto",
-        ),
-        class_name="flex flex-col gap-4 lg:px-8 pt-8 max-lg:pr-8 pb-6 h-auto w-full flex-1 border-r border-secondary-4 border-y",
-    )
-
-
-def squares_divider() -> rx.Component:
-    return rx.el.div(
-        rx.image(
-            src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_vertical_docs.svg",
-            alt="Squares Vertical Docs",
-            loading="lazy",
-            class_name="pointer-events-none w-auto h-full",
-        ),
-        class_name="flex p-4.5 h-auto border-r border-y border-secondary-4 max-lg:hidden",
+        value=value,
+        unstyled=True,
+        custom_attrs={"data-tone": tone},
+        class_name="docs-framework-panel min-w-0 overflow-hidden rounded-panel border border-border-subtle",
     )
 
 
 def framework() -> rx.Component:
+    """Explore framework capabilities through tabs and product diagrams."""
     return rx.el.section(
-        rx.el.div(
-            rx.el.h2(
-                "Framework",
-                class_name="text-secondary-12 text-3xl font-[575]",
+        ui.tabs.root(
+            rx.el.div(
+                rx.el.div(
+                    rx.el.h2(
+                        "Framework",
+                        id="docs-framework-title",
+                        class_name="text-foreground text-3xl font-book tracking-tight",
+                    ),
+                    rx.el.p(
+                        "Learn how to build applications with Reflex Framework.",
+                        class_name="text-muted-foreground text-sm font-normal",
+                    ),
+                    class_name="flex flex-col gap-4",
+                ),
+                ui.tabs.list(
+                    *[
+                        framework_tab(value, title, description)
+                        for value, title, description, *_ in CAPABILITIES
+                    ],
+                    activate_on_focus=True,
+                    aria_label="Framework capabilities",
+                    unstyled=True,
+                    class_name="docs-framework-tabs flex min-w-0 flex-col w-full",
+                ),
+                class_name="docs-framework-navigation flex min-w-0 flex-col gap-6",
             ),
-            rx.el.p(
-                "Learn how to build applications with Reflex Framework.",
-                class_name="text-secondary-11 text-sm font-[475]",
+            rx.el.div(
+                *[
+                    framework_panel(value, caption, link, href, tone)
+                    for value, _, _, caption, link, href, tone in CAPABILITIES
+                ],
+                class_name="min-w-0",
             ),
-            class_name="flex flex-col gap-4",
+            default_value="how",
+            orientation="vertical",
+            unstyled=True,
+            class_name="grid grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-12",
         ),
-        rx.el.div(
-            rx.el.div(
-                class_name="absolute bottom-0 -left-24 w-24 h-px bg-gradient-to-r from-transparent to-current text-secondary-4"
-            ),
-            rx.el.div(
-                class_name="absolute top-0 -left-24 w-24 h-px bg-gradient-to-r from-transparent to-current text-secondary-4"
-            ),
-            rx.el.div(
-                class_name="absolute bottom-0 -right-24 w-24 h-px bg-gradient-to-l from-transparent to-current text-secondary-4"
-            ),
-            rx.el.div(
-                class_name="absolute right-0 -top-24 h-24 w-px bg-gradient-to-b from-transparent to-current text-secondary-4"
-            ),
-            links_section(),
-            squares_divider(),
-            components_section(),
-            class_name="flex flex-col lg:flex-row relative",
-        ),
-        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto w-full justify-start lg:mb-24 mb-10 max-xl:px-6 overflow-hidden",
+        aria_labelledby="docs-framework-title",
+        class_name="docs-framework-section flex flex-col gap-10 max-w-(--landing-layout-max-width) mx-auto w-full lg:pt-24 pt-10 lg:mb-24 mb-10 max-xl:px-6",
     )

@@ -1,0 +1,17 @@
+<svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="Instrument Sans, sans-serif">
+<path d="M180 85V114" stroke="var(--ai-accent)" stroke-width="1.25"/>
+<rect x="32" y="27" width="296" height="58" rx="12" fill="var(--background)" stroke="var(--border)"/>
+<text x="49" y="61" fill="var(--foreground)" font-size="12">Build a customer dashboard</text>
+<circle cx="301" cy="56" r="12" fill="var(--foreground)"/>
+<path d="M297 56H305M302 52L306 56L302 60" stroke="var(--background)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="56" y="106" width="248" height="145" rx="12" fill="var(--background)" stroke="var(--border)"/>
+<path d="M56 134H304" stroke="var(--border)"/>
+<circle cx="71" cy="120" r="1.5" fill="var(--muted-foreground)"/><circle cx="77" cy="120" r="1.5" fill="var(--muted-foreground)"/><circle cx="83" cy="120" r="1.5" fill="var(--muted-foreground)"/>
+<text x="98" y="123" fill="var(--muted-foreground)" font-size="9">Customers</text>
+<rect x="71" y="148" width="90" height="48" rx="6" fill="var(--ai-tint)"/>
+<text x="81" y="164" fill="var(--ai-accent)" font-size="9">Active customers</text>
+<text x="81" y="184" fill="var(--foreground)" font-size="17">1,284</text>
+<path d="M176 188H287" stroke="var(--border)"/>
+<path d="M181 178L199 172L218 178L237 157L255 162L281 147" stroke="var(--ai-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M72 209H288" stroke="var(--border)"/>
+</svg>

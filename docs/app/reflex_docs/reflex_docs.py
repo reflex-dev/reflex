@@ -35,9 +35,11 @@ def _llms_txt_directive() -> rx.Component:
         rx.el.span("For AI agents: the complete documentation index is at "),
         rx.el.a("llms.txt", href=LLMS_TXT_PATH),
         rx.el.span(
-            ". Markdown versions are available by appending .md or sending "
-            "Accept: text/markdown."
+            ". Remove the trailing slash from a page URL and append .md "
+            "to read its Markdown version. For the docs home, use "
         ),
+        rx.el.a("index.md", href="/index.md"),
+        ".",
         class_name="sr-only",
     )
 
@@ -52,7 +54,10 @@ app = rxe.App(
         radius="large",
         accent_color="violet",
     ),
-    head_components=favicons_links(),
+    head_components=[
+        *favicons_links(),
+        rx.el.link(rel="icon", type="image/svg+xml", href=rx.asset("favicon.svg")),
+    ],
 )
 
 app.register_lifespan_task(monitor_checkly_status)
@@ -140,6 +145,15 @@ for route in routes:
             canonical = None
             meta = list(route.meta) if route.meta is not None else []
         if canonical is not None:
+            meta.append(
+                rx.el.link(
+                    rel="alternate",
+                    type="text/markdown",
+                    href=canonical + "index.md"
+                    if route.path.strip("/") == ""
+                    else canonical.rstrip("/") + ".md",
+                )
+            )
             meta.append(
                 rx.el.script(
                     json.dumps(
@@ -235,7 +249,7 @@ for source, target in redirects:
             ],
         )
 
-app.add_page(page404.component, route=page404.path)
+app.add_page(page404.component, route=page404.path, title=page404.title)
 
 
 # HTTP 301 applies when page requests reach this backend. Separate frontend

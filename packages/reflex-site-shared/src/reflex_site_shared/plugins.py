@@ -120,9 +120,12 @@ class SharedSiteStylesPlugin(Plugin):
             Consumers install the referenced Fontsource packages through
             ``rx.Config.frontend_packages``. Existing sites with their own
             font CSS can disable this while retaining the shared theme CSS.
+        editorial: Use the neutral marketing palette and capsule buttons,
+            with an adaptive dark palette for documentation sites.
     """
 
     include_fonts: bool = True
+    editorial: bool = False
 
     def get_static_assets(self, **context: Any) -> tuple[tuple[Path, str], ...]:
         """Emit package-owned CSS into the generated web styles directory.
@@ -136,6 +139,7 @@ class SharedSiteStylesPlugin(Plugin):
         stylesheets = (
             *_BASE_STYLESHEETS,
             *((_FONT_STYLESHEET,) if self.include_fonts else ()),
+            *(("editorial.css",) if self.editorial else ()),
         )
         stylesheet_assets = tuple(
             (
@@ -147,7 +151,11 @@ class SharedSiteStylesPlugin(Plugin):
         public_assets = tuple(
             (
                 Path("public") / asset,
-                (_SOURCE_DIR / asset).read_text(encoding="utf-8"),
+                (
+                    _SOURCE_DIR / "editorial" / "GradientButton.tsx"
+                    if self.editorial and asset == "components/GradientButton.tsx"
+                    else _SOURCE_DIR / asset
+                ).read_text(encoding="utf-8"),
             )
             for asset in _PUBLIC_ASSETS
         )
@@ -165,6 +173,7 @@ class SharedSiteStylesPlugin(Plugin):
         shared_stylesheets = (
             *_BASE_STYLESHEETS,
             *((_FONT_STYLESHEET,) if self.include_fonts else ()),
+            *(("editorial.css",) if self.editorial else ()),
         )
         return tuple(f"./reflex-site-shared/{name}" for name in shared_stylesheets)
 

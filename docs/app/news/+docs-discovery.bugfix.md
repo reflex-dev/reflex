@@ -1,0 +1,1 @@
+Fix the agent-guide index link, export Cloud CLI command references as Markdown, replace the Cloud overview placeholder, and reserve preview-image space to prevent catalog layout shifts. Component links now use their canonical trailing-slash paths.

@@ -2,6 +2,14 @@
 
 Reliable results come from clear context, focused prompts, and short review cycles. Start with the smallest useful version of your app, then add one workflow at a time.
 
+```python exec
+from reflex_docs.components.ai_guide_graphic import ai_guide_graphic
+```
+
+```python eval
+ai_guide_graphic()
+```
+
 ## Plan the First Version
 
 Before generating, write down:

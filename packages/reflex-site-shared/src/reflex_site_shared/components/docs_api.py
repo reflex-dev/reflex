@@ -51,10 +51,13 @@ def docs_api_table(
                 class_name="border-b border-secondary-4 bg-secondary-2",
             ),
             rx.el.tbody(*rows, class_name="bg-secondary-1"),
-            class_name="w-full table-fixed border-collapse text-left",
+            class_name=(
+                "w-full min-w-[40rem] table-fixed border-collapse text-left "
+                "[&_td_code]:min-w-0 [&_td_code]:whitespace-normal [&_td_code]:break-words"
+            ),
         ),
         class_name=(
-            "mb-4 w-full min-w-0 overflow-hidden rounded-xl border "
+            "docs-table mb-4 w-full min-w-0 overflow-x-auto rounded-xl border "
             "border-secondary-4 bg-secondary-1 shadow-small"
         ),
     )

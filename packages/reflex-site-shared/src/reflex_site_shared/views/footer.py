@@ -56,6 +56,8 @@ def tab_item(mode: str, icon: str) -> rx.Component:
     return rx.el.button(
         get_icon(icon, class_name="shrink-0"),
         on_click=set_color_mode(mode),  # type: ignore[reportArgumentType]
+        type="button",
+        aria_pressed=mode == color_mode,
         class_name=ui.cn(
             "flex items-center cursor-pointer justify-center rounded-lg transition-colors size-7 outline-none focus:outline-none ",
             rx.cond(mode == color_mode, active_cn, unactive_cn),
@@ -74,7 +76,7 @@ def dark_mode_toggle() -> rx.Component:
         tab_item("system", "computer_footer"),
         tab_item("light", "sun_footer"),
         tab_item("dark", "moon_footer"),
-        class_name="flex flex-row gap-0.5 items-center p-0.5 [box-shadow:0_1px_0_0_rgba(0,_0,_0,_0.08),_0_0_0_1px_rgba(0,_0,_0,_0.08),_0_1px_2px_0_rgba(0,_0,_0,_0.02),_0_1px_4px_0_rgba(0,_0,_0,_0.02)] w-fit mt-auto bg-secondary-1 rounded-[0.625rem] dark:border dark:border-secondary-4 border border-transparent",
+        class_name="site-color-mode-toggle flex flex-row gap-0.5 items-center p-0.5 [box-shadow:0_1px_0_0_rgba(0,_0,_0,_0.08),_0_0_0_1px_rgba(0,_0,_0,_0.08),_0_1px_2px_0_rgba(0,_0,_0,_0.02),_0_1px_4px_0_rgba(0,_0,_0,_0.02)] w-fit mt-auto bg-secondary-1 rounded-[0.625rem] dark:border dark:border-secondary-4 border border-transparent",
     )
 
 

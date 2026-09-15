@@ -125,14 +125,12 @@ rx.hstack(
     rx.button(
         "Decrement",
         color_scheme="ruby",
-        high_contrast=True,
         on_click=CounterExampleState.decrement,
     ),
     rx.heading(CounterExampleState.count, as_="h2", font_size="2em"),
     rx.button(
         "Increment",
         color_scheme="grass",
-        high_contrast=True,
         on_click=CounterExampleState.increment,
     ),
     spacing="4",
@@ -169,14 +167,12 @@ rx.box(
         rx.button(
             "Decrement",
             color_scheme="ruby",
-            high_contrast=True,
             on_click=State.decrement,
         ),
         rx.heading(State.count, font_size="2em"),
         rx.button(
             "Increment",
             color_scheme="grass",
-            high_contrast=True,
             on_click=State.increment,
         ),
         spacing="4",
@@ -215,7 +211,7 @@ class State(rx.State):
     count: int = 0
 ```
 
-State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base-vars)**. Our counter has one: `count`, starting at `0`.
+State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base-vars/)**. Our counter has one: `count`, starting at `0`.
 
 ### Event Handlers
 
@@ -240,21 +236,19 @@ def index():
         rx.button(
             "Decrement",
             color_scheme="ruby",
-            high_contrast=True,
             on_click=State.decrement,
         ),
         rx.heading(State.count, as_="h2", font_size="2em"),
         rx.button(
             "Increment",
             color_scheme="grass",
-            high_contrast=True,
             on_click=State.increment,
         ),
         spacing="4",
     )
 ```
 
-The UI is built from components (`rx.hstack`, `rx.button`, `rx.heading`) that can be nested and styled with CSS or [Tailwind](/docs/styling/tailwind). Reflex ships with [50+ built-in components](/docs/library), and you can [wrap any React component](/docs/wrapping-react/overview).
+The UI is built from components (`rx.hstack`, `rx.button`, `rx.heading`) that can be nested and styled with CSS or [Tailwind](/docs/styling/tailwind/). Reflex ships with [50+ built-in components](/docs/library/), and you can [wrap any React component](/docs/wrapping-react/overview/).
 
 Components reference state vars (`rx.heading(State.count, …)`) and reactively re-render when state changes. Event triggers (`on_click=State.decrement`) wire UI to handlers.
 

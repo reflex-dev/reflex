@@ -5,10 +5,10 @@ import os
 CHANGELOG_URL = "https://reflex.dev/docs/changelog/"
 CONTRIBUTING_URL = "https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md"
 DISCUSSIONS_URL = "https://github.com/orgs/reflex-dev/discussions"
-GITHUB_STARS = 28000
+GITHUB_STARS = 28885
 GITHUB_URL = "https://github.com/reflex-dev/reflex"
 GITHUB_ORG_URL = "https://github.com/reflex-dev"
-XY_GITHUB_STARS = 1400
+XY_GITHUB_STARS = 1841
 XY_GITHUB_URL = "https://github.com/reflex-dev/xy"
 JOBS_BOARD_URL = "https://www.ycombinator.com/companies/reflex/jobs"
 REFLEX_ASSETS_CDN = "https://web.reflex-assets.dev/"
