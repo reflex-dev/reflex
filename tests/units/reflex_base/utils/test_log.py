@@ -364,14 +364,10 @@ def test_console_debug_progress_preserves_file_log(monkeypatch):
     )
 
 
-def test_console_deprecate_preserves_rich_print_kwargs(monkeypatch):
-    """The legacy deprecation helper retains its Rich print contract."""
-    rich_print = mock.Mock()
-    monkeypatch.setattr(console, "print", rich_print)
-    monkeypatch.setattr(console, "should_use_log_file_console", lambda: False)
-    monkeypatch.setattr(
-        console, "_get_first_non_framework_frame", lambda: None, raising=False
-    )
+def test_console_deprecate_delegates_to_log(monkeypatch):
+    """The public console deprecation helper uses the shared log pipeline."""
+    log_deprecate = mock.Mock()
+    monkeypatch.setattr(log, "deprecate", log_deprecate)
 
     console.deprecate(
         feature_name="OldFeature",
@@ -382,10 +378,12 @@ def test_console_deprecate_preserves_rich_print_kwargs(monkeypatch):
         markup=False,
     )
 
-    rich_print.assert_called_once_with(
-        "[yellow]DeprecationWarning: OldFeature has been deprecated in version "
-        "0.9.9. Use NewFeature. It will be completely removed in 1.0.[/yellow]",
-        level="warning",
+    log_deprecate.assert_called_once_with(
+        feature_name="OldFeature",
+        reason="Use NewFeature.",
+        deprecation_version="0.9.9",
+        removal_version="1.0",
+        dedupe=False,
         markup=False,
     )
 
