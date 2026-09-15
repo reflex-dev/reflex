@@ -799,4 +799,35 @@ def install_frontend_packages(packages: set[str], config: Config):
         config.frozen_lockfile,
         install_package_managers,
     )
+    _drop_lockfile_of_other_package_manager(install_package_managers[0])
     frontend_skeleton.sync_web_lockfiles_to_root()
+
+
+def _drop_lockfile_of_other_package_manager(primary_package_manager: str) -> None:
+    """Remove the other manager's lockfile from ``.web`` and ``reflex.lock/``.
+
+    Stale lockfiles can select the wrong manager or break frozen installs.
+    Preserve both for unknown executable names, including custom bun binaries.
+
+    Args:
+        primary_package_manager: The package manager that ran the install.
+    """
+    stem = Path(primary_package_manager).stem.lower()
+    if stem == "bun":
+        stale_lockfile = constants.Node.LOCKFILE_PATH
+    elif stem == "npm":
+        stale_lockfile = constants.Bun.LOCKFILE_PATH
+    else:
+        logger.debug(
+            f"Not pruning lockfiles: cannot tell which package manager {primary_package_manager!r} is."
+        )
+        return
+    for stale_path in (
+        frontend_skeleton.get_web_lockfile_path(stale_lockfile),
+        frontend_skeleton.get_root_lockfile_path(stale_lockfile),
+    ):
+        if stale_path.exists():
+            logger.debug(
+                f"Removing {stale_path}: it belongs to the package manager that did not run."
+            )
+            path_ops.rm(stale_path)

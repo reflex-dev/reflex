@@ -202,7 +202,11 @@ class BaseStateToken(StateToken["BaseState"]):
         Returns:
             The touched state of the BaseState.
         """
-        was_touched = state._get_was_touched()
+        from reflex.state import BaseState
+
+        # Call through the class: a state var named `_get_was_touched` shadows
+        # the method on the instance.
+        was_touched = BaseState._get_was_touched(state)
         state._was_touched = False  # Reset the touched flag after serializing.
         return was_touched
 

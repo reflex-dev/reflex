@@ -409,6 +409,29 @@ def _route_arg_label(arg_type: str) -> str:
     return "list" if arg_type == constants.RouteArgType.LIST else "single"
 
 
+class _ContextMiddleware:
+    """Ensure Reflex contexts are attached for each ASGI request.
+
+    Many ASGI servers start each request with a fresh contextvars scope, so this
+    middleware re-applies the RegistrationContext and EventContext that are
+    needed for Reflex state and event processing.
+    """
+
+    def __init__(self, app: ASGIApp, reflex_app: App):
+        """Wrap an ASGI app so that it runs with the Reflex contexts set.
+
+        Args:
+            app: The next ASGI app in the middleware stack.
+            reflex_app: The Reflex app owning the contexts to attach.
+        """
+        self.app = app
+        self.reflex_app = reflex_app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        self.reflex_app._set_contexts_internal()
+        await self.app(scope, receive, send)
+
+
 @dataclasses.dataclass()
 class App(MiddlewareMixin, LifespanMixin):
     """The main Reflex app that encapsulates the backend and frontend.
@@ -779,26 +802,6 @@ class App(MiddlewareMixin, LifespanMixin):
             stack.callback(ctx_cls.reset, tok)
         return stack
 
-    def _context_middleware(self, app: ASGIApp) -> ASGIApp:
-        """Ensure Reflex contexts are attached for each ASGI request.
-
-        Many ASGI servers start each request with a fresh contextvars scope,
-        so this middleware re-applies the RegistrationContext and EventContext
-        that are needed for Reflex state and event processing.
-
-        Args:
-            app: The ASGI app to attach the middleware to.
-
-        Returns:
-            The ASGI app with the middleware attached.
-        """
-
-        async def context_middleware(scope: Scope, receive: Receive, send: Send):
-            self._set_contexts_internal()
-            await app(scope, receive, send)
-
-        return context_middleware
-
     @contextlib.asynccontextmanager
     async def _setup_event_processor(self) -> AsyncIterator[None]:
         """Configure event processing with a fresh worker socket identity.
@@ -903,7 +906,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
         # Make sure Reflex contexts are attached for each request.
-        top_asgi_app.add_middleware(self._context_middleware)
+        top_asgi_app.add_middleware(_ContextMiddleware, reflex_app=self)
         top_asgi_app.mount("", asgi_app)
         App._add_cors(top_asgi_app)
         if otel.asgi_middleware is not None:

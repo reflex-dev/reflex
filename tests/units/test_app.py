@@ -38,6 +38,7 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.types import Receive, Scope, Send
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
@@ -46,6 +47,7 @@ from reflex_components_radix.themes.typography.text import Text
 from reflex_otel import ReflexInstrumentor
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
+from starlette.exceptions import HTTPException
 from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
 from starlette.testclient import TestClient
@@ -58,6 +60,7 @@ from reflex.app import (
     App,
     ComponentCallable,
     EventNamespace,
+    _ContextMiddleware,
     _sio_dumps,
     _sio_loads,
     default_overlay_component,
@@ -1655,6 +1658,37 @@ async def test_upload_file_without_annotation(
 
 
 @pytest.mark.asyncio
+async def test_upload_file_unknown_handler_returns_400(
+    token: str,
+):
+    """Test that an unregistered upload event handler raises a controlled 400.
+
+    A stale, misspelled, or since-removed handler name in the
+    ``reflex-event-handler`` header must not fall through to an unhandled
+    ``KeyError`` (which Starlette would surface as a 500); it should raise a
+    ``HTTPException`` before any form parsing or event dispatch happens.
+
+    Args:
+        token: a Token.
+    """
+    app = App(_state=State)
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": "no.such.State.handler",
+    }
+
+    fn = upload(app)
+    with pytest.raises(HTTPException) as err:
+        await fn(request_mock)
+    assert err.value.status_code == 400
+    # The form should never have been read: the handler lookup fails first.
+    request_mock.form.assert_not_called()
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -2443,6 +2477,15 @@ def test_app_wrap_compile_theme(
     ).read_text()
     assert "fallbackRender" in memo_contents
     assert "handle_frontend_exception" in memo_contents
+    # The fallback icon's stroke attributes must reach React in camelCase:
+    # kebab-case DOM properties log "Invalid DOM property" warnings.
+    for camel_case, kebab_case in (
+        ("strokeWidth", "stroke-width"),
+        ("strokeLinecap", "stroke-linecap"),
+        ("strokeLinejoin", "stroke-linejoin"),
+    ):
+        assert camel_case in memo_contents
+        assert kebab_case not in memo_contents
 
 
 def test_compile_without_radix_components_skips_radix_plugin(
@@ -3982,6 +4025,49 @@ def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
                 EventContext.get()
 
     isolated_context.run(_test)
+
+
+def test_context_middleware_is_registered_as_a_class(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """The context middleware must reach Starlette as a class, not a bound method.
+
+    ASGI instrumentation libraries (sentry-sdk's Starlette integration among them)
+    wrap every registered middleware by assigning to ``cls.__call__``. A bound
+    method has a read-only ``__call__``, so registering one makes that assignment
+    raise ``AttributeError`` and takes the app down at startup.
+    """
+    app, _ = compilable_app
+    mocker.patch.object(app, "_compile")
+
+    asgi_app = app()
+
+    assert isinstance(asgi_app, Starlette)
+    registered = [m.cls for m in asgi_app.user_middleware]
+    assert _ContextMiddleware in registered, (
+        f"context middleware not registered as a class, got {registered}"
+    )
+    # Mimic the instrumentation's patch on every middleware in the stack.
+    for cls in registered:
+        cls.__call__ = cls.__call__
+
+
+async def test_context_middleware_sets_contexts(app_with_processor: App):
+    """The context middleware attaches Reflex contexts before calling the app."""
+    seen: list[tuple[RegistrationContext, EventContext]] = []
+
+    async def inner_app(scope: Scope, receive: Receive, send: Send) -> None:  # noqa: RUF029
+        seen.append((RegistrationContext.get(), EventContext.get()))
+
+    await _ContextMiddleware(inner_app, app_with_processor)(
+        {"type": "http"}, AsyncMock(), AsyncMock()
+    )
+
+    assert app_with_processor._event_processor is not None
+    ((registration, event),) = seen
+    assert registration is app_with_processor._registration_context
+    assert event is app_with_processor._event_processor._root_context
 
 
 def test_compile_sends_telemetry_when_enabled(
