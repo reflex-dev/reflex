@@ -71,6 +71,7 @@ _REFLEX_LOGGER = logging.getLogger("reflex")
 # Marker inherited by worker subprocesses: handlers attach only when running
 # under the reflex CLI. Read with os.environ so bootstrap stays import-light.
 _MANAGED_ENV_VAR = "REFLEX_MANAGED_LOGGING"
+_RICH_KWARGS_FIELD = "rich_kwargs"
 
 # Consoles for pretty printing (shared with reflex_base.utils.console).
 _console = Console(highlight=False)
@@ -218,7 +219,7 @@ class RichConsoleHandler(logging.Handler):
                 "style": style,
                 "end": end,
                 "markup": markup,
-                **getattr(record, "rich_kwargs", {}),
+                **getattr(record, _RICH_KWARGS_FIELD, {}),
             }
             console.print(f"{prefix}{record.getMessage()}", **print_kwargs)
             if record.exc_info and record.exc_info[0] is not None:
@@ -581,6 +582,7 @@ def emit_json_print(
 
 _configured = False
 _configured_json_mode: bool | None = None
+_configured_full_logging: bool | None = None
 _active_file_handler: logging.FileHandler | None = None
 
 
@@ -634,7 +636,11 @@ def configure():
     application-side ``basicConfig`` cannot double-emit reflex records or
     break the ``--json`` only-JSON output contract.
     """
-    global _active_file_handler, _configured, _configured_json_mode
+    global \
+        _active_file_handler, \
+        _configured, \
+        _configured_full_logging, \
+        _configured_json_mode
     from reflex_base.environment import environment
 
     json_mode = environment.REFLEX_LOG_JSON.get()
@@ -662,6 +668,7 @@ def configure():
         else:
             _REFLEX_LOGGER.removeHandler(file_handler)
     _configured = True
+    _configured_full_logging = full_logging
     _configured_json_mode = json_mode
 
 
@@ -671,11 +678,17 @@ def ensure_configured():
     Outside the CLI this is a no-op: no handler is attached and records
     propagate to the root logger for the application to handle.
     """
-    json_mode = is_json_mode()
+    if not is_managed_mode():
+        return
+    from reflex_base.environment import environment
+
+    json_mode = environment.REFLEX_LOG_JSON.get()
+    full_logging = environment.REFLEX_ENABLE_FULL_LOGGING.get()
     expected_sink = _json_handler() if json_mode else _console_handler()
-    if is_managed_mode() and (
+    if (
         not _configured
         or _configured_json_mode != json_mode
+        or _configured_full_logging != full_logging
         or expected_sink not in _REFLEX_LOGGER.handlers
     ):
         configure()
@@ -683,7 +696,11 @@ def ensure_configured():
 
 def _reset():
     """Detach the sinks and restore propagation (test teardown helper)."""
-    global _configured, _configured_json_mode, _stdout_reserved
+    global \
+        _configured, \
+        _configured_full_logging, \
+        _configured_json_mode, \
+        _stdout_reserved
     _stdout_reserved = False
     for handler in (_console_handler(), _json_handler(), _active_file_handler):
         if handler is not None:
@@ -691,6 +708,7 @@ def _reset():
     _REFLEX_LOGGER.propagate = True
     _REFLEX_LOGGER.setLevel(logging.NOTSET)
     _configured = False
+    _configured_full_logging = None
     _configured_json_mode = None
 
 
@@ -882,7 +900,8 @@ def deprecate(
             "removal_version": removal_version,
             # Machine consumers need the user call site, not this frame.
             "location": user_location,
-            "rich_kwargs": kwargs,
+            "rich": kwargs.get("markup", True),
+            _RICH_KWARGS_FIELD: kwargs,
         },
     )
 

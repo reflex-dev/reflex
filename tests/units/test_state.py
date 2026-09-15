@@ -1930,35 +1930,55 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
             console, "deprecate", wraps=console.deprecate
         ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
+            # The legacy modify_state token path emits the deprecation.
             async with state_manager.modify_state(legacy_token) as state:
                 assert isinstance(state, State)
                 assert OnLoadState.get_name() in state.substates
             mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
 
         with patch.object(
             console, "deprecate", wraps=console.deprecate
         ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
+            # The legacy get_state token path emits the same deprecation.
             retrieved = await state_manager.get_state(legacy_token)
             assert isinstance(retrieved, State)
             assert OnLoadState.get_name() in retrieved.substates
             mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
 
         with patch.object(
             console, "deprecate", wraps=console.deprecate
         ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
+            # The legacy set_state token path emits the same deprecation.
             await state_manager.set_state(legacy_token, retrieved)
             mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
 
         with patch.object(
             console, "deprecate", wraps=console.deprecate
         ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
+            # A final legacy get_state lookup remains supported.
             final = await state_manager.get_state(legacy_token)
             assert isinstance(final, State)
             assert OnLoadState.get_name() in final.substates
             mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
     finally:
         _base_log._dedupe_filter().seen.clear()
         _base_log._dedupe_filter().seen.update(dedupe_state)

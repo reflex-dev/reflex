@@ -206,6 +206,19 @@ def test_configure_removes_file_handler_when_full_logging_is_disabled(monkeypatc
         logging.getLogger("reflex").removeHandler(handler)
 
 
+def test_ensure_configured_tracks_full_logging_mode(monkeypatch):
+    """Changing full logging mode through the worker path updates sinks."""
+    handler = logging.NullHandler()
+    monkeypatch.setattr(log, "_file_handler", lambda: handler)
+    monkeypatch.setenv("REFLEX_ENABLE_FULL_LOGGING", "true")
+    log.ensure_configured()
+    assert handler in logging.getLogger("reflex").handlers
+
+    monkeypatch.setenv("REFLEX_ENABLE_FULL_LOGGING", "false")
+    log.ensure_configured()
+    assert handler not in logging.getLogger("reflex").handlers
+
+
 def test_set_log_level_env_propagation(monkeypatch):
     """Changing the level exports REFLEX_LOGLEVEL for subprocesses."""
     import os
@@ -285,13 +298,14 @@ def test_deprecate_json_extras(monkeypatch, capsys):
     log.configure()
     log.deprecate(
         feature_name="JsonFeature",
-        reason="Use something else.",
+        reason="Use [bold]something else[/bold].",
         deprecation_version="0.1.0",
         removal_version="1.0",
     )
     out, _ = capsys.readouterr()
     record = json.loads(out)
     assert record["feature_name"] == "JsonFeature"
+    assert "[bold]" not in record["message"]
     assert record["deprecation_version"] == "0.1.0"
     assert record["removal_version"] == "1.0"
     assert record["kind"] == "deprecation"
