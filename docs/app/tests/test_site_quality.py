@@ -22,7 +22,9 @@ def test_landing_card_link_has_an_accessible_name():
 
 def test_ai_card_focus_outline_is_inside_the_clipped_card():
     """The overlay's focus indicator must fit within the rounded clipping box."""
-    rendered = str(card("AI Builder", "Build an app", "Preview", "/ai/"))
+    rendered = str(
+        card("AI Builder", "Build an app", rx.text("Preview"), "/ai/", "blue")
+    )
     assert "focus-visible:-outline-offset-4" in rendered
     assert "focus-visible:outline-offset-4" not in rendered
 

@@ -5,6 +5,7 @@ from agent_files import AgentFilesPlugin
 
 config = rx.Config(
     app_name="reflex_docs",
+    deploy_url="https://reflex.dev",
     frontend_path="/docs",
     show_built_with_reflex=False,
     frontend_lazy_bundled_libraries=True,

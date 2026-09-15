@@ -9,14 +9,14 @@ import pytest
 @pytest.mark.parametrize(
     "deploy_url,expected",
     [
-        (None, "http://localhost:3000"),
+        (None, "https://reflex.dev"),
         ("https://staging.example.com", "https://staging.example.com"),
     ],
 )
 def test_docs_deployment_origin_comes_from_environment(
     monkeypatch, deploy_url, expected
 ):
-    """Local runs keep the framework default; deployment jobs supply their origin."""
+    """Builds default to the public origin; staging may explicitly override it."""
     monkeypatch.delenv("REFLEX_DEPLOY_URL", raising=False)
     monkeypatch.delenv("REFLEX_FRONTEND_PORT", raising=False)
     if deploy_url is not None:

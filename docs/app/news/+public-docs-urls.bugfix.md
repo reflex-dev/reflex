@@ -1,0 +1,1 @@
+Default documentation canonicals, sharing metadata, and sitemap URLs to the public Reflex domain instead of localhost. Validate published URLs against the generated pages to prevent duplicate docs prefixes and mismatched canonicals.

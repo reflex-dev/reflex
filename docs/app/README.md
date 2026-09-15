@@ -55,7 +55,9 @@ If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable 
 
 The `reflex-docs` integration CI jobs run the frontend tests after building the production site, using the installed React and bundler dependencies.
 
-Breadcrumbs and canonical URLs use `deploy_url` and `frontend_path` from the app config. Local runs use the framework's localhost default. Deployment jobs must set `REFLEX_DEPLOY_URL` to the origin serving that build (for example, `https://reflex.dev` in production or the staging origin).
+Breadcrumbs, canonicals, sharing URLs, and sitemap locations default to `https://reflex.dev/docs/`, including in a local preview. Staging builds may override `REFLEX_DEPLOY_URL` with their public origin. Supply only the origin (for example, `https://staging.example.com`), without `/docs`; `frontend_path` supplies that prefix. Local serving ports remain independent of the public metadata URL.
+
+After a production build, run `uv run pytest --runxfail tests/test_published_seo.py` to check every sitemap entry against the generated HTML canonical and sharing URLs. Publish the generated sitemap unchanged; do not prepend `/docs` to its absolute URLs. Recheck the deployed sitemap and HTML after deployment, since local checks cannot validate CDN rewriting or stale cached files.
 
 The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Reflex backend serves the frontend. In development or when HTML is hosted separately, requests reach the frontend instead: the redirect pages retain client navigation and prerendered HTML includes an immediate refresh, canonical link, noindex directive, and a usable destination link. That fallback navigates readers but returns HTTP 200. For HTTP 301 semantics on a separate frontend/CDN, configure redirects at that host's edge using the `redirects` list in `reflex_docs/reflex_docs.py`; backend middleware alone cannot redirect requests it never receives.
 
