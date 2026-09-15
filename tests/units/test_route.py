@@ -104,6 +104,11 @@ def test_check_routes_conflict_invalid(
         ("/posts/[slug]/info/[[...splat]]", "/posts/[slug]/info1/[[...splat]]"),
         ("/posts/[slug]/info/[...slug1]", "/posts/[slug]/info1/[...slug1]"),
         ("/posts/[slug]/info/[...slug1]", "/posts/[slug]/info1/[...slug2]"),
+        # static siblings of dynamic segments are legal (static wins in React Router)
+        ("/posts/[slug]", "/posts/all/[x]"),
+        ("/posts/all/[x]", "/posts/[slug]"),
+        ("/[org]/dashboard", "/admin/devices/[pk]"),
+        ("/admin/devices/[pk]", "/[org]/dashboard"),
     ],
 )
 def test_check_routes_conflict_valid(mocker: MockerFixture, app, route1, route2):

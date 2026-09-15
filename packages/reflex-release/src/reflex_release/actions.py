@@ -47,6 +47,15 @@ def notice(message: str) -> None:
     sys.stdout.write(f"::notice::{message}\n")
 
 
+def warning(message: str) -> None:
+    """Emit a GitHub Actions warning annotation (plain line outside Actions).
+
+    Args:
+        message: The warning text.
+    """
+    sys.stdout.write(f"::warning::{message}\n")
+
+
 def error(message: str) -> None:
     """Emit a GitHub Actions error annotation (plain line outside Actions).
 

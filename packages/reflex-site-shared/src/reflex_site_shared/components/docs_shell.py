@@ -403,7 +403,9 @@ def _feedback_content() -> rx.Component:
                         max_length=100,
                     ),
                     ui.popover.close(
-                        ui.button("Send feedback", type="submit", class_name="w-full")
+                        render_=ui.button(
+                            "Send feedback", type="submit", class_name="w-full"
+                        )
                     ),
                     class_name="w-full gap-4 flex flex-col",
                 ),
@@ -425,22 +427,24 @@ def docs_feedback_button() -> rx.Component:
     """
     shared_class = "flex w-full cursor-pointer flex-row items-center justify-center gap-2 whitespace-nowrap border px-3 py-0.5 font-small transition-colors"
     return ui.popover.root(
-        ui.popover.trigger(
-            render_=rx.el.div(
-                _feedback_choice_button(
+        rx.el.div(
+            ui.popover.trigger(
+                render_=_feedback_choice_button(
                     "Yes",
                     "ThumbsUpIcon",
                     1,
                     ui.cn("rounded-[20px_0_0_20px] border-r-0", shared_class),
                 ),
-                _feedback_choice_button(
+            ),
+            ui.popover.trigger(
+                render_=_feedback_choice_button(
                     "No",
                     "ThumbsDownIcon",
                     0,
                     ui.cn("rounded-[0_20px_20px_0]", shared_class),
                 ),
-                class_name="flex w-full flex-row items-center lg:w-auto",
             ),
+            class_name="flex w-full flex-row items-center lg:w-auto",
         ),
         ui.popover.portal(ui.popover.positioner(ui.popover.popup(_feedback_content()))),
     )

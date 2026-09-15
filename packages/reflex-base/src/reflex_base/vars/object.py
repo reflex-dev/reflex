@@ -17,8 +17,6 @@ from typing import (
     overload,
 )
 
-from rich.markup import escape
-
 from reflex_base.utils import types
 from reflex_base.utils.exceptions import VarAttributeError
 from reflex_base.utils.types import (
@@ -339,7 +337,14 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
             # lookup is not repeated.
             descriptor = types.get_attribute_descriptor(fixed_type, name)
             if isinstance(descriptor, HybridProperty):
-                return descriptor._get_var(self)
+                hybrid_var = descriptor._get_var(self)
+                if hybrid_var is None:
+                    msg = (
+                        f"The hybrid property '{name}' of {fixed_type.__name__} has no "
+                        f"frontend value, so it cannot be accessed on `{self!s}`."
+                    )
+                    raise VarAttributeError(msg)
+                return hybrid_var
             attribute_type = get_attribute_access_type(var_type, name, descriptor)
         elif is_typeddict(fixed_type) or fixed_type in types.UnionTypes:
             attribute_type = get_attribute_access_type(var_type, name)
@@ -348,7 +353,7 @@ class ObjectVar(Var[OBJECT_TYPE], python_types=PYTHON_TYPES):
 
         if attribute_type is None:
             msg = (
-                f"The State var `{self!s}` of type {escape(str(self._var_type))} has no attribute '{name}' or may have been annotated "
+                f"The State var `{self!s}` of type {self._var_type} has no attribute '{name}' or may have been annotated "
                 f"wrongly."
             )
             raise VarAttributeError(msg)

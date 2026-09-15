@@ -17,10 +17,15 @@ class Bun(SimpleNamespace):
     """Bun constants."""
 
     # The Bun version.
-    VERSION = "1.3.14"
+    VERSION = "1.4.0"
 
-    # Min Bun Version
-    MIN_VERSION = "1.3.0"
+    # Min Bun Version. Bun 1.4 creates new lockfiles at `lockfileVersion: 2`,
+    # which 1.3.x cannot parse at all, so a `reflex.lock/bun.lock` generated
+    # under 1.4 is unusable on 1.3.x. (An existing v1 lockfile is kept at v1
+    # even across dependency changes, so already-initialized projects survive.)
+    # Keep this in step with VERSION across the 1.4 boundary so a system bun
+    # old enough to choke on a v2 lockfile is never preferred over the pinned one.
+    MIN_VERSION = "1.4.0"
 
     # URL to bun install script.
     INSTALL_URL = "https://raw.githubusercontent.com/reflex-dev/reflex/main/scripts/bun_install.sh"
@@ -91,7 +96,7 @@ fetch-retries=0
 def _determine_react_router_version() -> str:
     # Requires Node >= 22.22.0 and React >= 19.2.7; keep Node.MIN_VERSION and
     # _determine_react_version in step when bumping.
-    default_version = "8.3.0"
+    default_version = "8.3.1"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         logger.warning(
             f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
@@ -139,7 +144,7 @@ class PackageJson(SimpleNamespace):
             "react": cls._react_version,
             "react-helmet": "6.1.0",
             "react-dom": cls._react_version,
-            "isbot": "5.2.1",
+            "isbot": "5.2.2",
             "socket.io-client": "4.8.3",
             "universal-cookie": "8.1.2",
         }
@@ -147,11 +152,11 @@ class PackageJson(SimpleNamespace):
     DEV_DEPENDENCIES = {
         "@emotion/react": "11.14.0",
         "autoprefixer": "10.5.4",
-        "postcss": "8.5.23",
-        "postcss-import": "16.1.1",
+        "postcss": "8.5.26",
+        "postcss-import": "17.0.0",
         "@react-router/dev": _react_router_version,
         "@react-router/fs-routes": _react_router_version,
-        "vite": "8.2.0",
+        "vite": "8.2.2",
     }
     # Force specific transitive npm deps to a single resolved version when
     # needed. Prefer a `DEV_DEPENDENCIES`/`DEPENDENCIES` pin when the package is

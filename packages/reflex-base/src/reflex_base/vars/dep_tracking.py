@@ -454,7 +454,9 @@ class DependencyTracker:
                         tracked_locals=self.tracked_locals,
                     )
                 )
-            elif instruction.opname == "IMPORT_NAME" and instruction.argval is not None:
+            elif instruction.opname == "IMPORT_NAME":
+                if instruction.argval is None:
+                    continue
                 self.scan_status = ScanStatus.GETTING_IMPORT
                 self._last_import_name = instruction.argval
                 importlib.import_module(instruction.argval)

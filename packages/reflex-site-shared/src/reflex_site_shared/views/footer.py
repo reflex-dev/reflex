@@ -293,6 +293,7 @@ def footer_index(
                                     "Integrations",
                                     "/docs/ai/integrations/overview/",
                                 ),
+                                footer_link("FAQ", "/faq/"),
                             ],
                         ),
                         footer_link_flex(

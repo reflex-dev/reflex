@@ -424,7 +424,7 @@ class RouterData:
 
     @property
     def page(self) -> PageData:
-        """Get the page data.
+        """The page data.
 
         Returns:
             The PageData object.
