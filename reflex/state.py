@@ -396,12 +396,12 @@ def _router_fget(self: BaseState) -> RouterData:
         The RouterData for the current connection and page.
     """
     return RouterData(
-        session=self.router_session,
-        headers=self.router_headers,
-        _page=self.router_page,
+        session=self.rx_router_session,
+        headers=self.rx_router_headers,
+        _page=self.rx_router_page,
         # URLData.href always holds a ReflexURL at runtime (see URLData).
-        url=cast("ReflexURL", self.router_url.href),
-        route_id=self.router_route_id,
+        url=cast("ReflexURL", self.rx_router_url.href),
+        route_id=self.rx_router_route_id,
     )
 
 
@@ -412,11 +412,11 @@ def _router_fset(self: BaseState, value: RouterData) -> None:
         self: The state instance.
         value: The RouterData to store.
     """
-    self.router_session = value.session
-    self.router_headers = value.headers
-    self.router_page = value._page
-    self.router_url = URLData.from_url(value.url)
-    self.router_route_id = value.route_id
+    self.rx_router_session = value.session
+    self.rx_router_headers = value.headers
+    self.rx_router_page = value._page
+    self.rx_router_url = URLData.from_url(value.url)
+    self.rx_router_route_id = value.route_id
 
 
 def _get_router_var(cls: type[BaseState]) -> RouterDataVar:
@@ -623,19 +623,19 @@ class BaseState(EvenMoreBasicBaseState):
     )
 
     # The per-connection session data (constant for the socket lifetime).
-    router_session: Field[SessionData] = field(default_factory=SessionData)
+    rx_router_session: Field[SessionData] = field(default_factory=SessionData)
 
     # The headers of the connection request (constant for the socket lifetime).
-    router_headers: Field[HeaderData] = field(default_factory=HeaderData)
+    rx_router_headers: Field[HeaderData] = field(default_factory=HeaderData)
 
     # The page data for the current page (deprecated; params feeds dynamic route vars).
-    router_page: Field[PageData] = field(default_factory=PageData)
+    rx_router_page: Field[PageData] = field(default_factory=PageData)
 
     # The parsed URL of the current page.
-    router_url: Field[URLData] = field(default_factory=URLData)
+    rx_router_url: Field[URLData] = field(default_factory=URLData)
 
     # The route pattern that matched the current page.
-    router_route_id: Field[str] = field(default="")
+    rx_router_route_id: Field[str] = field(default="")
 
     # Switchboard for the router vars above: instance reads compose a
     # RouterData view, writes decompose into the per-field vars, and class
@@ -1153,7 +1153,7 @@ class BaseState(EvenMoreBasicBaseState):
                     console.deprecate(
                         feature_name='ComputedVar deps=["router"]',
                         reason="the router var was split; depend on the specific"
-                        ' router var instead (e.g. deps=["router_url"]).',
+                        ' router var instead (e.g. deps=["rx_router_url"]).',
                         deprecation_version="0.9.9",
                         removal_version="1.0",
                     )
@@ -1683,7 +1683,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         def argsingle_factory(param: str):
             def inner_func(self: BaseState) -> str:
-                return self.router_page.params.get(param, "")
+                return self.rx_router_page.params.get(param, "")
 
             inner_func.__name__ = param
 
@@ -1691,7 +1691,7 @@ class BaseState(EvenMoreBasicBaseState):
 
         def arglist_factory(param: str):
             def inner_func(self: BaseState) -> list[str]:
-                return self.router_page.params.get(param, [])
+                return self.rx_router_page.params.get(param, [])
 
             inner_func.__name__ = param
 
@@ -1962,26 +1962,30 @@ class BaseState(EvenMoreBasicBaseState):
                     constants.RouteVar.CLIENT_IP,
                 )
             )
-            and (session := SessionData.from_router_data(merged)) != self.router_session
+            and (session := SessionData.from_router_data(merged))
+            != self.rx_router_session
         ):
-            self.router_session = session
+            self.rx_router_session = session
         if (
             headers_changed
-            and (headers := HeaderData.from_router_data(merged)) != self.router_headers
+            and (headers := HeaderData.from_router_data(merged))
+            != self.rx_router_headers
         ):
-            self.router_headers = headers
+            self.rx_router_headers = headers
         if (
             origin_changed
             or prev_get(constants.RouteVar.PATH) != get(constants.RouteVar.PATH)
             or prev_get(constants.RouteVar.ORIGIN) != get(constants.RouteVar.ORIGIN)
             or prev_get(constants.RouteVar.QUERY) != get(constants.RouteVar.QUERY)
         ):
-            if (page := PageData.from_router_data(merged)) != self.router_page:
-                self.router_page = page
-            if (url := URLData.from_router_data(merged)) != self.router_url:
-                self.router_url = url
-            if (route_id := get(constants.RouteVar.PATH, "")) != self.router_route_id:
-                self.router_route_id = route_id
+            if (page := PageData.from_router_data(merged)) != self.rx_router_page:
+                self.rx_router_page = page
+            if (url := URLData.from_router_data(merged)) != self.rx_router_url:
+                self.rx_router_url = url
+            if (
+                route_id := get(constants.RouteVar.PATH, "")
+            ) != self.rx_router_route_id:
+                self.rx_router_route_id = route_id
         return merged
 
     @classmethod
@@ -2096,7 +2100,9 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise RuntimeError(msg)
         state_in_redis = await state_manager.get_state(
-            token=BaseStateToken(ident=self.router_session.client_token, cls=state_cls),
+            token=BaseStateToken(
+                ident=self.rx_router_session.client_token, cls=state_cls
+            ),
             top_level=False,
             for_state_instance=self,
         )
@@ -2876,7 +2882,7 @@ class OnLoadInternalState(State):
             The list of events to queue for on load handling.
         """
         load_events = RegistrationContext.get().app.get_load_events(
-            self.router_url.path
+            self.rx_router_url.path
         )
         if not load_events:
             self.is_hydrated = True

@@ -240,7 +240,7 @@ class SharedStateBaseInternal(State):
             return self  # already linked to this token
         if self._linked_to and self._linked_to != token:
             # Disassociate from previous linked token since unlink will not be called.
-            self._linked_from.discard(self.router_session.client_token)
+            self._linked_from.discard(self.rx_router_session.client_token)
         # TODO: Change StateManager to accept token + class instead of combining them in a string.
         if "_" in token:
             msg = f"Invalid token {token} for linking state {self.get_full_name()}, cannot use underscore (_) in the token name."
@@ -275,12 +275,12 @@ class SharedStateBaseInternal(State):
 
         # Break the linkage for future events.
         self._reflex_internal_links.pop(state_name)
-        self._linked_from.discard(self.router_session.client_token)
+        self._linked_from.discard(self.rx_router_session.client_token)
 
         # Patch in the original state, apply updates, then rehydrate.
         private_root_state = await get_state_manager().get_state(
             BaseStateToken(
-                ident=self.router_session.client_token,
+                ident=self.rx_router_session.client_token,
                 cls=type(self),
             )
         )
@@ -330,11 +330,11 @@ class SharedStateBaseInternal(State):
                     # calls when directly modifying a linked token will load the
                     # associated instance.
                     if (
-                        session := linked_root_state.router_session
+                        session := linked_root_state.rx_router_session
                     ).client_token != token:
                         import dataclasses as dc
 
-                        linked_root_state.router_session = dc.replace(
+                        linked_root_state.rx_router_session = dc.replace(
                             session, client_token=token
                         )
         if linked_root_state is None:
@@ -348,8 +348,8 @@ class SharedStateBaseInternal(State):
         # Avoid unnecessary dirtiness of shared state when there are no changes.
         if type(self) not in self._held_locks[token]:
             self._held_locks[token][type(self)] = linked_state
-        if self.router_session.client_token not in linked_state._linked_from:
-            linked_state._linked_from.add(self.router_session.client_token)
+        if self.rx_router_session.client_token not in linked_state._linked_from:
+            linked_state._linked_from.add(self.rx_router_session.client_token)
         if linked_state._linked_to != token:
             linked_state._linked_to = token
         await self._exit_stack.enter_async_context(
@@ -440,7 +440,7 @@ class SharedStateBaseInternal(State):
                         affected_tokens.update(
                             token
                             for token in linked_state._linked_from
-                            if token != self.router_session.client_token
+                            if token != self.rx_router_session.client_token
                         )
                 # When modifying a shared token directly (empty _reflex_internal_links),
                 # the held locks will be empty. Check SharedState substates for linked

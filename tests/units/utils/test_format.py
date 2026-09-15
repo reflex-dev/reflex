@@ -658,8 +658,8 @@ def test_format_query_params(input, output):
 
 
 formatted_router_vars = {
-    "router_route_id" + FIELD_MARKER: "",
-    "router_url" + FIELD_MARKER: {
+    "rx_router_route_id" + FIELD_MARKER: "",
+    "rx_router_url" + FIELD_MARKER: {
         "scheme": "",
         "netloc": "",
         "origin": "",
@@ -669,12 +669,12 @@ formatted_router_vars = {
         "fragment": "",
         "href": "",
     },
-    "router_session" + FIELD_MARKER: {
+    "rx_router_session" + FIELD_MARKER: {
         "client_token": "",
         "client_ip": "",
         "session_id": "",
     },
-    "router_headers" + FIELD_MARKER: {
+    "rx_router_headers" + FIELD_MARKER: {
         "host": "",
         "origin": "",
         "upgrade": "",
@@ -690,7 +690,7 @@ formatted_router_vars = {
         "accept_language": "",
         "raw_headers": {},
     },
-    "router_page" + FIELD_MARKER: {
+    "rx_router_page" + FIELD_MARKER: {
         "host": "",
         "path": "",
         "raw_path": "",

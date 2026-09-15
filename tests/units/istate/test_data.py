@@ -174,19 +174,21 @@ def test_router_var_resolves_to_per_field_base_vars():
     prefix = "reflex___state____state"
     assert (
         str(rx.State.router.session.client_token)
-        == f'{prefix}.router_session_rx_state_?.["client_token"]'
+        == f'{prefix}.rx_router_session_rx_state_?.["client_token"]'
     )
     assert (
         str(rx.State.router.headers.user_agent)
-        == f'{prefix}.router_headers_rx_state_?.["user_agent"]'
+        == f'{prefix}.rx_router_headers_rx_state_?.["user_agent"]'
     )
     assert (
         str(rx.State.router.page.raw_path)
-        == f'{prefix}.router_page_rx_state_?.["raw_path"]'
+        == f'{prefix}.rx_router_page_rx_state_?.["raw_path"]'
     )
-    assert str(rx.State.router.url) == f'{prefix}.router_url_rx_state_?.["href"]'
-    assert str(rx.State.router.url.path) == f'{prefix}.router_url_rx_state_?.["path"]'
-    assert str(rx.State.router.route_id) == f"{prefix}.router_route_id_rx_state_"
+    assert str(rx.State.router.url) == f'{prefix}.rx_router_url_rx_state_?.["href"]'
+    assert (
+        str(rx.State.router.url.path) == f'{prefix}.rx_router_url_rx_state_?.["path"]'
+    )
+    assert str(rx.State.router.route_id) == f"{prefix}.rx_router_route_id_rx_state_"
 
 
 def test_router_var_renders_composed_object():
@@ -196,11 +198,11 @@ def test_router_var_renders_composed_object():
     prefix = "reflex___state____state"
     assert str(rx.State.router) == (
         "({ "
-        f'"session": {prefix}.router_session_rx_state_, '
-        f'"headers": {prefix}.router_headers_rx_state_, '
-        f'"page": {prefix}.router_page_rx_state_, '
-        f'"url": {prefix}.router_url_rx_state_, '
-        f'"route_id": {prefix}.router_route_id_rx_state_'
+        f'"session": {prefix}.rx_router_session_rx_state_, '
+        f'"headers": {prefix}.rx_router_headers_rx_state_, '
+        f'"page": {prefix}.rx_router_page_rx_state_, '
+        f'"url": {prefix}.rx_router_url_rx_state_, '
+        f'"route_id": {prefix}.rx_router_route_id_rx_state_'
         " })"
     )
 

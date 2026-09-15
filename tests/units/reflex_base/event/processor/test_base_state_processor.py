@@ -12,7 +12,7 @@ from typing import Any, cast
 import pytest
 import pytest_asyncio
 from opentelemetry.trace import SpanKind, StatusCode
-from reflex_base import otel
+from reflex_base import constants, otel
 from reflex_base.constants import CompileVars, RouteVar
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
@@ -1403,10 +1403,10 @@ async def test_no_op_partial_router_data_leaves_the_state_untouched(
 
     # The connection-scoped data survived the partial payload...
     assert state.router_data["headers"] == full_view["headers"]
-    assert state.router_session.client_token == token
+    assert state.rx_router_session.client_token == token
     # ...and nothing about the router was re-sent or marked dirty.
     assert not any(
-        key.startswith("router")
+        key.removesuffix(FIELD_MARKER) in constants.ROUTER_VARS
         for _token, delta in emitted_deltas
         for key in delta.get(State.get_full_name(), {})
     )
@@ -1464,7 +1464,7 @@ async def test_navigation_delta_elides_connection_scoped_router_vars(
             key.removesuffix(FIELD_MARKER)
             for _token, delta in emitted_deltas
             for key in delta.get(State.get_full_name(), {})
-            if key.startswith("router")
+            if key.removesuffix(FIELD_MARKER) in constants.ROUTER_VARS
         }
 
     async def run_event(router_data: dict[str, Any]) -> None:
@@ -1476,19 +1476,19 @@ async def test_navigation_delta_elides_connection_scoped_router_vars(
     # First event on the connection populates every router var.
     await run_event(view("/a"))
     assert router_vars_in_deltas() == {
-        "router_session",
-        "router_headers",
-        "router_page",
-        "router_url",
-        "router_route_id",
+        "rx_router_session",
+        "rx_router_headers",
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
     }
 
     # A navigation only re-sends the navigation-scoped vars.
     await run_event(view("/b"))
     assert router_vars_in_deltas() == {
-        "router_page",
-        "router_url",
-        "router_route_id",
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
     }
 
     # An event without a route change re-sends no router vars at all.
@@ -1497,4 +1497,4 @@ async def test_navigation_delta_elides_connection_scoped_router_vars(
 
     # A reconnect (new sid, same headers) re-sends only the session.
     await run_event(view("/b", sid="sid2"))
-    assert router_vars_in_deltas() == {"router_session"}
+    assert router_vars_in_deltas() == {"rx_router_session"}

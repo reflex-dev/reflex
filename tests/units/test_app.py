@@ -317,9 +317,9 @@ def test_add_page_set_route_dynamic(index_page: ComponentCallable):
     assert app._pages.keys() == {"test/[dynamic]"}
     assert "dynamic" in app._state.computed_vars
     assert app._state.computed_vars["dynamic"]._deps(objclass=EmptyState) == {
-        EmptyState.get_full_name(): {"router_page"},
+        EmptyState.get_full_name(): {"rx_router_page"},
     }
-    assert "router_page" in app._state()._var_dependencies
+    assert "rx_router_page" in app._state()._var_dependencies
 
 
 def test_add_page_set_route_nested(app: App, index_page: ComponentCallable):
@@ -1948,9 +1948,9 @@ async def test_dynamic_route_var_route_change_completed_on_load(
     assert arg_name in app._state.vars
     assert arg_name in app._state.computed_vars
     assert app._state.computed_vars[arg_name]._deps(objclass=DynamicState) == {
-        DynamicState.get_full_name(): {"router_page"},
+        DynamicState.get_full_name(): {"rx_router_page"},
     }
-    assert "router_page" in app._state()._var_dependencies
+    assert "rx_router_page" in app._state()._var_dependencies
 
     substate_token = BaseStateToken(ident=token, cls=DynamicState)
     exp_vals = ["foo", "foobar", "baz"]
@@ -1987,13 +1987,13 @@ async def test_dynamic_route_var_route_change_completed_on_load(
         # Only the navigation-scoped router vars change (no session/headers in
         # the router_data), so only those land in the delta.
         exp_router_delta = {
-            "router_page" + FIELD_MARKER: exp_router._page,
-            "router_url" + FIELD_MARKER: URLData.from_url(exp_router.url),
+            "rx_router_page" + FIELD_MARKER: exp_router._page,
+            "rx_router_url" + FIELD_MARKER: URLData.from_url(exp_router.url),
         }
         if exp_index == 0:
             # Every navigation here matches the same route, so the route_id
             # only changes on the first one.
-            exp_router_delta["router_route_id" + FIELD_MARKER] = exp_router.route_id
+            exp_router_delta["rx_router_route_id" + FIELD_MARKER] = exp_router.route_id
         async with mock_base_state_event_processor as processor:
             await processor.enqueue(
                 token,
@@ -4564,7 +4564,7 @@ async def test_link_token_to_sid_records_the_connecting_identity(
     """The session var carries the token the state was loaded under.
 
     Duplicate-token handling hands back a fresh token, and the state is loaded
-    under it. Leaving `router_session.client_token` empty until the first event
+    under it. Leaving `rx_router_session.client_token` empty until the first event
     would let anything reading it in between -- a background task, a
     shared-state link -- address the wrong state tree.
 
@@ -4585,8 +4585,8 @@ async def test_link_token_to_sid_records_the_connecting_identity(
     # No duplicate: the connecting token is recorded.
     await event_namespace.link_token_to_sid("sid1", token)
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == token
-    assert state.router_session.client_token == token
-    assert state.router_session.session_id == "sid1"
+    assert state.rx_router_session.client_token == token
+    assert state.rx_router_session.session_id == "sid1"
 
     # Duplicate: the *new* token is recorded, not the one the client sent.
     # The duplicate branch emits the replacement token to the client, which
@@ -4600,8 +4600,8 @@ async def test_link_token_to_sid_records_the_connecting_identity(
     )
     await event_namespace.link_token_to_sid("sid2", token)
     assert state.router_data[constants.RouteVar.CLIENT_TOKEN] == new_token
-    assert state.router_session.client_token == new_token
-    assert state.router_session.session_id == "sid2"
+    assert state.rx_router_session.client_token == new_token
+    assert state.rx_router_session.session_id == "sid2"
 
 
 @pytest.mark.asyncio

@@ -2390,7 +2390,7 @@ class EventNamespace(AsyncNamespace):
                 # The state is loaded under this identity, so record it rather
                 # than waiting for the first event to fill it in: duplicate-token
                 # handling hands back a fresh token here, and until router_data
-                # carries it, anything reading router_session.client_token (a
+                # carries it, anything reading rx_router_session.client_token (a
                 # background task, a shared-state link) addresses the wrong tree.
                 state.router_data[constants.RouteVar.CLIENT_TOKEN] = new_token or token
                 # Rebuild from router_data (rather than replacing the field on
@@ -2398,5 +2398,5 @@ class EventNamespace(AsyncNamespace):
                 # in step, the same way the event processor refreshes it.
                 if (
                     session := SessionData.from_router_data(state.router_data)
-                ) != state.router_session:
-                    state.router_session = session
+                ) != state.rx_router_session:
+                    state.rx_router_session = session
