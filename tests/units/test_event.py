@@ -1440,12 +1440,15 @@ def test_event_chain_create_shares_chains_bound_from_one_handler():
         EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
         is chain
     )
+    bound_chains = RegistrationContext.ensure_context()._bound_event_chains
+    cached = len(bound_chains)
     assert (
         EventChain.create(
             ChainState.handler.prevent_default, args_spec=args_spec, key="on_click"
         )
         is not chain
     )
+    assert len(bound_chains) == cached
     assert (
         EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
         is not chain

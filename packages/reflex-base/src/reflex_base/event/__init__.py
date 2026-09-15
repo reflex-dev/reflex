@@ -915,9 +915,14 @@ class EventChain(EventActionsMixin):
 
         # A handler bound to one trigger always produces the same chain, so
         # every call site sharing the handler shares one instance per
-        # registration context.
+        # registration context. Handlers carrying event actions are fresh
+        # copies at every call site, so caching them would only retain them.
         bound_handler = None
-        if not event_chain_kwargs and isinstance(value, EventHandler):
+        if (
+            not event_chain_kwargs
+            and isinstance(value, EventHandler)
+            and not value.event_actions
+        ):
             bound_handler = value
             bound_chains = RegistrationContext.ensure_context()._bound_event_chains
             bound = bound_chains.get((id(value), id(args_spec), key))
