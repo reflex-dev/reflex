@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import sys
 from typing import Any
 from unittest.mock import Mock
 
@@ -201,6 +202,37 @@ async def _superseding_root_handler(value: str = "default", child: str = "load")
 _superseding_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
 
 
+async def _polling_handler(tick: int = 0, ticks: int = 0):
+    """Re-chain itself ``ticks`` times, then signal the ``poll`` gate and block.
+
+    Each tick is a child of the previous one, so the chain grows one level
+    deeper per tick like a self-chaining polling handler.
+
+    Args:
+        tick: The current tick number.
+        ticks: How many ticks to run before blocking.
+    """
+    if tick < ticks:
+        ctx = EventContext.get()
+        await ctx.enqueue(Event.from_event_type(polling_event(tick + 1, ticks))[0])
+        return
+    _GATES["poll"].set()
+    await asyncio.sleep(10)
+
+
+async def _superseding_poll_root_handler(ticks: int = 0):
+    """A superseding root that chains a polling loop, like on_load -> poll.
+
+    Args:
+        ticks: How many ticks the polling loop runs before blocking.
+    """
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(polling_event(0, ticks))[0])
+
+
+_superseding_poll_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
 error_event = EventHandler(fn=_error_handler)
@@ -218,6 +250,8 @@ gated_logging_event = EventHandler(fn=_gated_logging_handler)
 cancellable_load_event = EventHandler(fn=_cancellable_load_handler)
 resurrecting_load_event = EventHandler(fn=_resurrecting_load_handler)
 superseding_root_event = EventHandler(fn=_superseding_root_handler)
+polling_event = EventHandler(fn=_polling_handler)
+superseding_poll_root_event = EventHandler(fn=_superseding_poll_root_handler)
 
 
 @pytest.fixture(autouse=True)
@@ -247,6 +281,8 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         cancellable_load_event,
         resurrecting_load_event,
         superseding_root_event,
+        polling_event,
+        superseding_poll_root_event,
     ):
         RegistrationContext.register_event_handler(handler)
 
@@ -1049,7 +1085,8 @@ async def test_superseding_event_skips_queued_stale_chain(
         current = await ep.enqueue(
             token, Event.from_event_type(superseding_root_event("fresh"))[0]
         )
-        assert stale.cancelled()
+        # The root already completed, so superseding it cancels the pending leaf.
+        assert stale.all_done()
         _GATES["blocker"].set()
         await asyncio.wait_for(current.wait_all(), timeout=1)
 
@@ -1085,6 +1122,53 @@ async def test_superseded_chain_cannot_chain_new_events(
 
     assert {"value": "resurrected"} not in _CALL_LOG
     assert {"value": "fresh"} in _CALL_LOG
+
+
+async def test_deep_self_chaining_poll_loop_under_superseding_root(
+    processor: EventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A polling loop chained deeper than the recursion limit keeps working (#7145).
+
+    A handler that re-chains itself on every tick (a polling loop started from
+    ``on_load``) builds a linear chain of futures one level deeper per tick.
+    Walking that chain recursively blows the stack in the cleanup callbacks and
+    in ``_supersede_previous`` on the client's next navigation.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+        caplog: Log capture fixture.
+    """
+    _GATES["poll"] = asyncio.Event()
+    ticks = sys.getrecursionlimit() + 100
+    processor.configure()
+    async with processor as ep:
+        stale = await ep.enqueue(
+            token, Event.from_event_type(superseding_poll_root_event(ticks))[0]
+        )
+        await asyncio.wait_for(_GATES["poll"].wait(), timeout=10)
+        assert stale.done()
+        assert not stale.all_done()
+        assert list(ep._superseded.values()) == [stale]
+
+        # The next navigation supersedes the running poll loop.
+        _GATES["poll"] = asyncio.Event()
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_poll_root_event(0))[0]
+        )
+        # The root already completed, so superseding it cancels the pending leaf.
+        assert stale.all_done()
+        await asyncio.wait_for(_GATES["poll"].wait(), timeout=1)
+        current.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(current.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert not [r for r in caplog.records if r.levelno >= logging.ERROR], [
+        r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR
+    ]
 
 
 async def test_no_spans_when_otel_disabled(
