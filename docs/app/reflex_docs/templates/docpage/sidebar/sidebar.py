@@ -429,7 +429,7 @@ def sidebar_comp(
     )
     ai_builder_overview_content = rx.el.ul(
         create_sidebar_section(
-            "Overview",
+            "Getting Started",
             ai_builder_pages.overview.best_practices.path,
             ai_builder_overview_items,
             ai_builder_overview_index,
