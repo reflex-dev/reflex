@@ -7,6 +7,27 @@ from reflex_docs.pages.docs_landing.views.artwork import artwork
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
 
+def _agent_logos() -> rx.Component:
+    """Group the coding-agent marks at a consistent size."""
+    return rx.el.div(
+        *[
+            rx.image(
+                src=rx.asset(f"agent-logos/{filename}.svg"),
+                alt=label,
+                title=label,
+                class_name="size-5 shrink-0 object-contain"
+                + (" dark:invert" if filename != "claude-code" else ""),
+            )
+            for filename, label in (
+                ("claude-code", "Claude Code"),
+                ("codex", "Codex"),
+                ("cursor", "Cursor"),
+            )
+        ],
+        class_name="docs-agent-logos flex items-center gap-4",
+    )
+
+
 def _workflow_preview(icon: rx.Component, labels: tuple[str, ...]) -> rx.Component:
     """Illustrate the tools available in each workflow."""
     return rx.el.div(
@@ -114,7 +135,7 @@ def ai_landing() -> rx.Component:
                 ai_builder.integrations.agent_toolkit.path,
                 "mint",
                 _workflow_preview(
-                    rx.icon("terminal", size=20, class_name="text-foreground"),
+                    _agent_logos(),
                     ("Documentation for agents", "Reflex skills", "MCP tools"),
                 ),
             ),
