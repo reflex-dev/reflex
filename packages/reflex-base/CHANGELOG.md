@@ -1,3 +1,10 @@
+## v0.9.11.post1 (2026-09-15)
+
+### Bug Fixes
+
+- Fix `RecursionError: maximum recursion depth exceeded` in the event processor when a handler re-chains itself many times (for example a polling loop started from `on_load`), which surfaced on the client's next navigation and in the event cleanup callbacks. ([#7145](https://github.com/reflex-dev/reflex/issues/7145))
+
+
 ## v0.9.11 (2026-09-11)
 
 ### Breaking Changes
