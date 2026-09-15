@@ -58,6 +58,22 @@ class Tag:
         """
         return format.format_props(*self.special_props, **self.props)
 
+    def render(self, children: Sequence[Any]) -> dict[str, Any]:
+        """Render the tag into the dictionary consumed by the templates.
+
+        Args:
+            children: The already rendered children.
+
+        Returns:
+            The rendered tag dictionary.
+        """
+        rendered: dict[str, Any] = {}
+        if (name := render_prop(self.name)) is not None:
+            rendered["name"] = name
+        rendered["props"] = self.format_props()
+        rendered["children"] = children
+        return rendered
+
     def set(self, **kwargs: Any):
         """Return a new tag with the given fields set.
 

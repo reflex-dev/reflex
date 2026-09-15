@@ -1,5 +1,5 @@
 import pytest
-from reflex_base.components.tags import CondTag, Tag, tagless
+from reflex_base.components.tags import CondTag, IterTag, MatchTag, Tag, tagless
 from reflex_base.components.tags.tag import render_prop
 from reflex_base.vars.base import LiteralVar, Var
 
@@ -153,3 +153,16 @@ def test_render_prop_preserves_plain_values_and_subclass_dispatch():
     assert render_prop(CallableString("text")) is None
     assert render_prop(CallableDict(rendered)) is None
     assert render_prop(("text", rendered)) == ["text", rendered]
+
+
+def test_subclass_render_matches_iteration_protocol():
+    """Tag subclasses keep rendering the fields their iteration protocol yields."""
+    children = [{"name": "span", "props": [], "children": []}]
+    cond = CondTag(cond_state="state.flag", true_value={"a": 1})
+    match = MatchTag(cond="state.value", match_cases=[], default={"b": 2})
+    bare = tagless.Tagless(contents="hello")
+    for tag in (cond, match, bare):
+        assert tag.render(children) == dict(tag)
+    iter_tag = IterTag(name="Foreach", iterable=LiteralVar.create([1, 2]))
+    assert iter_tag.render(children) == dict(iter_tag.set(children=children))
+    assert iter_tag.render(children)["children"] == children

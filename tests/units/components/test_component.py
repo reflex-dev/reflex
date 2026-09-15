@@ -59,14 +59,14 @@ def test_plain_tag_render_matches_tag_protocol(name, monkeypatch):
 
 
 def test_custom_tag_render_uses_subclass_protocol(monkeypatch):
-    """Custom tag iteration can depend on its supplied children."""
+    """A custom tag renders through its own render method."""
 
     class ChildrenTag(Tag):
         """A tag with custom child-dependent rendering."""
 
-        def __iter__(self):
-            """Yield a value derived from the child list."""
-            yield "child_count", len(self.children)
+        def render(self, children):
+            """Return a value derived from the child list."""
+            return {"child_count": len(children)}
 
     component = Component._create(children=[Bare.create("child")])
     monkeypatch.setattr(component, "_render", lambda: ChildrenTag())

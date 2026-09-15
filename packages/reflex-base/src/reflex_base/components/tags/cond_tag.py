@@ -1,7 +1,7 @@
 """Tag to conditionally render components."""
 
 import dataclasses
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
 from reflex_base.components.tags.tag import Tag
@@ -29,3 +29,14 @@ class CondTag(Tag):
         yield ("cond_state", self.cond_state)
         yield ("true_value", self.true_value)
         yield ("false_value", self.false_value)
+
+    def render(self, children: Sequence[Any]) -> dict[str, Any]:
+        """Render the tag into the dictionary consumed by the templates.
+
+        Args:
+            children: The already rendered children.
+
+        Returns:
+            The rendered tag dictionary.
+        """
+        return dict(self)

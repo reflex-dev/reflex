@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Iterable, Sequence
+from typing import TYPE_CHECKING, Any
 
 from reflex_base.components.tags.tag import Tag
 from reflex_base.utils.types import GenericType
@@ -33,6 +33,17 @@ class IterTag(Tag):
 
     # The name of the index var.
     index_var_name: str = dataclasses.field(default_factory=get_unique_variable_name)
+
+    def render(self, children: Sequence[Any]) -> dict[str, Any]:
+        """Render the tag into the dictionary consumed by the templates.
+
+        Args:
+            children: The already rendered children.
+
+        Returns:
+            The rendered tag dictionary.
+        """
+        return dict(self.set(children=children))
 
     def get_iterable_var_type(self) -> GenericType:
         """Get the type of the iterable var.

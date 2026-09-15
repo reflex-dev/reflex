@@ -24,7 +24,6 @@ from reflex_base.breakpoints import Breakpoints
 from reflex_base.components.dynamic import load_dynamic_serializer
 from reflex_base.components.field import BaseField, FieldBasedMeta
 from reflex_base.components.tags import Tag
-from reflex_base.components.tags.tag import render_prop
 from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
@@ -1472,14 +1471,7 @@ class Component(BaseComponent, ABC):
             pass
         tag = self._render()
         children = [child.render() for child in self.children]
-        if type(tag) is Tag:
-            rendered_dict = {}
-            if (name := render_prop(tag.name)) is not None:
-                rendered_dict["name"] = name
-            rendered_dict["props"] = tag.format_props()
-            rendered_dict["children"] = children
-        else:
-            rendered_dict = dict(tag.set(children=children))
+        rendered_dict = tag.render(children)
         self._replace_prop_names(rendered_dict)
         self._cached_render_result = rendered_dict
         return rendered_dict
