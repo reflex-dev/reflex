@@ -44,12 +44,35 @@ def render():
 
 If you want to interact with a toast, a few props are available to customize the behavior.
 
-By passing a `ToastAction` to the `action` or `cancel` prop, you can trigger an action when the toast is clicked or when it is closed.
-
 ```python demo
 rx.button(
     "Show Toast", on_click=rx.toast("Hello, World!", duration=5000, close_button=True)
 )
+```
+
+The `action` and `cancel` props render a button in the toast. Pass a dict with a `label` for the button text and an `on_click` event to trigger when it is clicked. Clicking either button also closes the toast.
+
+```python demo exec
+class ToastActionState(rx.State):
+    undone: int = 0
+
+    @rx.event
+    def undo(self):
+        self.undone += 1
+
+
+def toast_action_example():
+    return rx.hstack(
+        rx.button(
+            "Delete",
+            on_click=rx.toast(
+                "Item deleted",
+                action={"label": "Undo", "on_click": ToastActionState.undo},
+                cancel={"label": "Dismiss", "on_click": rx.console_log("dismissed")},
+            ),
+        ),
+        rx.text(f"Undone: {ToastActionState.undone}"),
+    )
 ```
 
 ### Presets
@@ -94,8 +117,8 @@ The following props are available for customization:
 - `duration`: `int`: Time in milliseconds that should elapse before automatically closing the toast.
 - `position`: `LiteralPosition`: Position of the toast.
 - `dismissible`: `bool`: If false, it'll prevent the user from dismissing the toast.
-- `action`: `ToastAction`: Renders a primary button, clicking it will close the toast.
-- `cancel`: `ToastAction`: Renders a secondary button, clicking it will close the toast.
+- `action`: `dict`: Renders a primary button with the given `label` that triggers `on_click` and closes the toast.
+- `cancel`: `dict`: Renders a secondary button with the given `label` that triggers `on_click` and closes the toast.
 - `id`: `str | Var`: Custom id for the toast.
 - `unstyled`: `bool`: Removes the default styling, which allows for easier customization.
 - `style`: `Style`: Custom style for the toast.
