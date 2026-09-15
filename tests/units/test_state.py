@@ -1926,26 +1926,34 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     dedupe_state = _base_log._dedupe_filter().seen.copy()
 
     try:
-        with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
             async with state_manager.modify_state(legacy_token) as state:
                 assert isinstance(state, State)
                 assert OnLoadState.get_name() in state.substates
             mock_deprecate.assert_called()
 
-        with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
             retrieved = await state_manager.get_state(legacy_token)
             assert isinstance(retrieved, State)
             assert OnLoadState.get_name() in retrieved.substates
             mock_deprecate.assert_called()
 
-        with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
             await state_manager.set_state(legacy_token, retrieved)
             mock_deprecate.assert_called()
 
-        with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
             _base_log._dedupe_filter().seen.clear()
             final = await state_manager.get_state(legacy_token)
             assert isinstance(final, State)

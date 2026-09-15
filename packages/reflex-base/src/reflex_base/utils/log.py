@@ -673,13 +673,10 @@ def ensure_configured():
     """
     json_mode = is_json_mode()
     expected_sink = _json_handler() if json_mode else _console_handler()
-    if (
-        is_managed_mode()
-        and (
-            not _configured
-            or _configured_json_mode != json_mode
-            or expected_sink not in _REFLEX_LOGGER.handlers
-        )
+    if is_managed_mode() and (
+        not _configured
+        or _configured_json_mode != json_mode
+        or expected_sink not in _REFLEX_LOGGER.handlers
     ):
         configure()
 
