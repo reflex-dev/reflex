@@ -769,3 +769,36 @@ def test_stdout_is_reserved_before_the_app_loads(
     assert reserved_when_loading == [True]
     assert "noise from the app import" not in result.stdout
     json.loads(result.stdout)
+
+
+@pytest.mark.parametrize("command", ["list", "lookup"])
+def test_json_output_does_not_leak_the_stdout_reservation(
+    command, temp_minify_json, cli_runner
+):
+    """The reservation is scoped to the command, not the process.
+
+    A real CLI process exits, but in-process callers would otherwise leave
+    every later log write pointed at stderr.
+
+    Args:
+        command: The ``reflex minify`` subcommand under test.
+        temp_minify_json: Temporary ``minify.json`` location.
+        cli_runner: Click runner with the app loader stubbed.
+    """
+    from reflex_base.utils import log
+
+    from reflex.reflex import cli
+
+    class ReservationState(State):
+        pass
+
+    install_config(
+        states={get_state_full_path(ReservationState): "b"},
+        include_state_root=True,
+    )
+    args = ["minify", command, "--json"]
+    if command == "lookup":
+        args.append("b")
+
+    assert cli_runner.invoke(cli, args).exit_code == 0
+    assert log.is_stdout_reserved() is False

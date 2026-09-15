@@ -1125,6 +1125,10 @@ def _open_minify_session(
 
     if for_json:
         log.reserve_stdout()
+        # A real CLI process exits, but an in-process invocation (tests, an
+        # embedder) would leave every later log write pointed at stderr.
+        if (ctx := click.get_current_context(silent=True)) is not None:
+            ctx.call_on_close(lambda: log.reserve_stdout(False))
 
     exists = _get_minify_json_path().exists()
     if require_exists and not exists:

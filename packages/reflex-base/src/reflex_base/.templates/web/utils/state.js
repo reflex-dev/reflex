@@ -696,7 +696,13 @@ export const connect = async (
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
-    setConnectErrors([]);
+    // A fatal mismatch is emitted from the server's connect handler, so it is
+    // buffered and replayed before this runs; clearing it here would discard
+    // the only notice the viewer gets. It also outlives a reconnect, since
+    // reconnecting cannot change what the names mean.
+    setConnectErrors((connectErrors) =>
+      connectErrors.at(-1)?.fatal ? connectErrors : [],
+    );
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
