@@ -781,8 +781,9 @@ def test_add_meta_accepts_dynamic_description():
         description=PageState.description,
     )
 
-    assert isinstance(page.children[1], Description)
-    assert page.children[1].content is PageState.description
+    description = page.children[1]
+    assert isinstance(description, Description)
+    assert description.content is PageState.description
 
 
 def test_create_document_root_with_scripts():
