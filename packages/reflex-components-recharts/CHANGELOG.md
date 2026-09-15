@@ -1,3 +1,10 @@
+## v0.9.3 (2026-09-11)
+
+### Miscellaneous
+
+- Bump `recharts` to 3.10.1. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
 ## v0.9.2 (2026-08-04)
 
 ### Features

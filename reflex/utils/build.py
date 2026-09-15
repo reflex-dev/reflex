@@ -11,7 +11,7 @@ from reflex_base import constants
 from reflex_base.config import get_config
 
 from reflex.utils import console, js_runtimes, path_ops, prerequisites, processes
-from reflex.utils.exec import is_in_app_harness
+from reflex.utils.exec import frontend_env, is_in_app_harness
 
 logger = logging.getLogger(__name__)
 
@@ -273,10 +273,7 @@ def build():
         ],
         cwd=wdir,
         shell=constants.IS_WINDOWS,
-        env={
-            **os.environ,
-            "NO_COLOR": "1",
-        },
+        env=frontend_env(os.environ),
     )
     processes.show_progress("Creating Production Build", process, checkpoints)
     process.wait()

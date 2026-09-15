@@ -456,7 +456,7 @@ class SharedStateBaseInternal(State):
                             linked_state._previous_dirty_vars
                         )
                     if (
-                        linked_state._get_was_touched()
+                        BaseState._get_was_touched(linked_state)
                         or linked_state._previous_dirty_vars is not None
                     ):
                         affected_tokens.update(
@@ -515,7 +515,10 @@ class SharedStateBaseInternal(State):
                     current_dirty_vars[substate.get_full_name()] = set(
                         substate._previous_dirty_vars
                     )
-                if substate._get_was_touched() or substate._previous_dirty_vars:
+                if (
+                    BaseState._get_was_touched(substate)
+                    or substate._previous_dirty_vars
+                ):
                     affected_tokens.update(substate._linked_from)
             substate._collect_shared_token_updates(affected_tokens, current_dirty_vars)
 

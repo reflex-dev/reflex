@@ -7,7 +7,7 @@ import os
 import sys
 import threading
 import urllib.parse
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from importlib.machinery import PathFinder
 from pathlib import Path, PureWindowsPath
@@ -297,10 +297,10 @@ def _is_plain_path_segment(segment: str) -> bool:
         segment: One slash-delimited, non-empty segment of a configured path prefix.
 
     Returns:
-        False for ``.`` and ``..``, and for anything Windows would treat as a
-        separator, drive, or root: backslashes, ``C:``-style prefixes, UNC paths.
+        False for empty segments, trailing dots or spaces, and anything Windows
+        would treat as a separator, drive, or root.
     """
-    if segment == "..":
+    if segment.endswith((".", " ")):
         return False
     windows = PureWindowsPath(segment)
     return not windows.anchor and windows.parts == (segment,)
@@ -612,14 +612,18 @@ class Config(BaseConfig):
         # frontend_path also names the directory below the build output that the
         # built frontend is relocated into and served from, so every segment must
         # be a plain directory name on POSIX and Windows alike.
-        for segment in self.frontend_path.split("/"):
-            if segment and not _is_plain_path_segment(segment):
-                msg = (
-                    f"frontend_path {self.frontend_path!r} contains {segment!r}, "
-                    "which is not a plain directory name "
-                    "(no '.', '..', backslashes, or drive letters)."
-                )
-                raise ConfigError(msg)
+        if self.frontend_path not in ("", "/"):
+            for segment in (
+                self.frontend_path.removeprefix("/").removesuffix("/").split("/")
+            ):
+                if not _is_plain_path_segment(segment):
+                    msg = (
+                        f"frontend_path {self.frontend_path!r} contains {segment!r}, "
+                        "which is not a plain directory name "
+                        "(no empty segments, trailing dots or spaces, backslashes, "
+                        "or drive letters)."
+                    )
+                    raise ConfigError(msg)
 
         if self.backend_path and not self.backend_path.startswith("/"):
             self.backend_path = f"/{self.backend_path}"
@@ -837,10 +841,14 @@ class Config(BaseConfig):
         self._replace_defaults(**kwargs)
 
 
-# Project-local modules first imported while loading rxconfig.py; evicted
-# before the next load so projects don't reuse each other's dependencies.
-# Only mutated under _load_config_lock.
+# Project-local modules first imported while loading rxconfig.py, and the
+# project root they were recorded under. Evicted before a load from a different
+# root so projects don't reuse each other's dependencies. A load from the same
+# root keeps them: re-executing them would create a second copy of every class
+# they define, distinct from the one the app already imported. Only mutated
+# under _load_config_lock.
 _config_module_deps: set[str] = set()
+_config_module_deps_root: Path | None = None
 
 
 class _ImportRecorder:
@@ -878,6 +886,28 @@ class _ImportRecorder:
 
 
 _import_recorder = _ImportRecorder()
+
+
+def _project_local_modules(names: Iterable[str], project_root: Path) -> set[str]:
+    """Filter recorded import names down to modules that live in the project.
+
+    Args:
+        names: Module names observed by the import recorder.
+        project_root: The root that classifies a module as project-local.
+
+    Returns:
+        The names whose module file is under project_root and not installed.
+    """
+    project_local: set[str] = set()
+    for name in names:
+        origin = getattr(sys.modules.get(name), "__file__", None)
+        if (
+            origin
+            and (path := Path(origin)).is_relative_to(project_root)
+            and "site-packages" not in path.parts
+        ):
+            project_local.add(name)
+    return project_local
 
 
 @contextmanager
@@ -945,6 +975,8 @@ def _get_config(project_root: Path | None = None) -> Config:
     Returns:
         The app config.
     """
+    global _config_module_deps_root
+
     project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
         # A fresh str object, so the exact inserted entry can be removed by
@@ -953,14 +985,18 @@ def _get_config(project_root: Path | None = None) -> Config:
         cwd = str(project_root)
         sys.path.insert(0, cwd)
         try:
-            # Never cache rxconfig or its project-local dependencies — each load
-            # goes to disk so different RegistrationContexts hold independent
-            # Config instances resolved against the current project. Evict
-            # before importing so an earlier project cannot supply the module.
+            # Never cache rxconfig itself — each load goes to disk so different
+            # RegistrationContexts hold independent Config instances.
             sys.modules.pop(constants.Config.MODULE, None)
-            for dep in _config_module_deps:
-                sys.modules.pop(dep, None)
-            _config_module_deps.clear()
+            if _config_module_deps_root != project_root:
+                # Evict the previous project's dependencies so this project's
+                # rxconfig.py imports its own, not same-named modules another
+                # project directory left behind. Same-root loads skip this so
+                # the modules the app imported stay the ones rxconfig.py sees.
+                for dep in _config_module_deps:
+                    sys.modules.pop(dep, None)
+                _config_module_deps.clear()
+                _config_module_deps_root = project_root
             # Only the requested project may supply rxconfig; searching all of
             # sys.path can pick up an unrelated editable app during reflex init.
             # PathFinder also supports a project-local rxconfig package.
@@ -970,15 +1006,14 @@ def _get_config(project_root: Path | None = None) -> Config:
                 try:
                     rxconfig = importlib.import_module(constants.Config.MODULE)
                 finally:
-                    # Record even on failure so a retry evicts partially-imported deps.
-                    for name in recorder.names:
-                        origin = getattr(sys.modules.get(name), "__file__", None)
-                        if (
-                            origin
-                            and (path := Path(origin)).is_relative_to(project_root)
-                            and "site-packages" not in path.parts
-                        ):
-                            _config_module_deps.add(name)
+                    # Record even on failure so a later load from another root
+                    # evicts what this one imported. Nothing is evicted here:
+                    # Python already drops a module whose execution failed, and
+                    # one that imported completely may be held by another
+                    # thread, so it is kept like on any same-root reload.
+                    _config_module_deps.update(
+                        _project_local_modules(recorder.names, project_root)
+                    )
             return rxconfig.config
         finally:
             for i, entry in enumerate(sys.path):
