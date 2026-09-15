@@ -587,15 +587,15 @@ details[open] > .docs-sidebar-group-trigger > p {
 .docs-footer-copyright > p { color: var(--muted-foreground); }
 .docs-footer-copyright > a > div { padding-inline: 0; }
 :is(.docs-theme-toggle, .docs-page-footer .site-color-mode-toggle) {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 2px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--background);
   box-shadow: none;
 }
 :is(.docs-theme-toggle, .docs-page-footer .site-color-mode-toggle) button {
   width: 1.75rem;
-  height: 1.75rem;
+  height: 1.5rem;
   border-radius: var(--radius-compact);
   color: var(--muted-foreground);
   background: transparent;
