@@ -1,0 +1,1 @@
+Add channels: an application-defined message stream, including binary payloads, multiplexed onto the websocket your app already uses for state updates. A component or package can stream data that does not belong in state without opening a second connection. See the [channels reference](https://reflex.dev/docs/api-reference/channels/).

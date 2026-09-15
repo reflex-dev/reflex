@@ -19,23 +19,23 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
-reflex-components-plotly = false
-reflex-components-radix = false
-reflex-components-moment = false
-reflex-components-sonner = false
 hatch-reflex-pyi = false
-reflex-components-gridjs = false
 reflex = false
-reflex-enterprise = false
+reflex-base = false
 reflex-components-code = false
-reflex-components-recharts = false
 reflex-components-core = false
 reflex-components-dataeditor = false
-reflex-base = false
-reflex-components-markdown = false
+reflex-components-gridjs = false
 reflex-components-internal = false
 reflex-components-lucide = false
+reflex-components-markdown = false
+reflex-components-moment = false
+reflex-components-plotly = false
+reflex-components-radix = false
 reflex-components-react-player = false
+reflex-components-recharts = false
+reflex-components-sonner = false
+reflex-enterprise = false
 reflex-hosting-cli = false
 
 [manifest]
@@ -1488,6 +1488,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f0/b4/a767e91c606deefc447a96eaf59edd77397960b1d677dffd833ee8449831/griffelib-2.2.0.tar.gz", hash = "sha256:e1bc36fe9cd21d4b6b659b456346755e4cfdc5676c0a5214083126ee12612b3c", size = 227048, upload-time = "2026-08-16T14:04:58.383Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f6/b6/f65ac785d4ac90dcf7c831ac6256f5dd4a19780f4e1575b2c0d6eeebe319/griffelib-2.2.0-py3-none-any.whl", hash = "sha256:d71c3bc2bbed9f958488634fe788b843a9f705d6d2838ca32cd6c25eeb64dfc4", size = 166779, upload-time = "2026-08-16T14:04:54.365Z" },
+]
+
+[[package]]
+name = "gunicorn"
+version = "26.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/8a/e4ef6ee11701b6cd64702848415ffb69eeff85cb388a3c6c7fe86f22f3f8/gunicorn-26.2.0.tar.gz", hash = "sha256:62b864895d9ebff0b2f9867ba04fe811c93121596540830c9c916d0769668447", size = 787921, upload-time = "2026-08-24T15:05:59.3Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fe/85/7522a52e5e2f42faf1a129113ab63e548c42e103e9af395b7bfe65e403e2/gunicorn-26.2.0-py3-none-any.whl", hash = "sha256:bd249d0b3f7972f7432f0a6b6ff3b3ee2d129f70cd1ff6c09a9dd9e29a2b88e3", size = 228389, upload-time = "2026-08-24T15:05:57.67Z" },
 ]
 
 [[package]]
@@ -3862,7 +3871,6 @@ dependencies = [
     { name = "packaging" },
     { name = "psutil", marker = "sys_platform == 'win32'" },
     { name = "python-multipart" },
-    { name = "python-socketio" },
     { name = "redis" },
     { name = "reflex-base" },
     { name = "reflex-components-code" },
@@ -3893,10 +3901,18 @@ db = [
 pydantic = [
     { name = "reflex-base", extra = ["pydantic"] },
 ]
+socketio = [
+    { name = "python-socketio" },
+]
 testing = [
     { name = "psutil" },
     { name = "selenium" },
+]
+uvicorn = [
+    { name = "gunicorn" },
     { name = "uvicorn" },
+    { name = "websockets", version = "16.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "websockets", version = "17.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
 
 [package.dev-dependencies]
@@ -3933,6 +3949,7 @@ dev = [
     { name = "pytest-rerunfailures" },
     { name = "pytest-split" },
     { name = "python-dotenv" },
+    { name = "python-socketio" },
     { name = "pyyaml" },
     { name = "reflex-docgen" },
     { name = "reflex-otel" },
@@ -3955,14 +3972,15 @@ dev = [
 requires-dist = [
     { name = "alembic", marker = "extra == 'db'", specifier = ">=1.15.2,<2.0" },
     { name = "click", specifier = ">=8.2" },
-    { name = "granian", extras = ["reload"], specifier = ">=2.7.4" },
+    { name = "granian", extras = ["reload"], specifier = ">=2.8.1" },
+    { name = "gunicorn", marker = "extra == 'uvicorn'", specifier = ">=23.0" },
     { name = "httpx", specifier = ">=0.26,<1.0" },
     { name = "packaging", specifier = ">=24.2,<27" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=7.0.0,<8.0" },
     { name = "psutil", marker = "extra == 'testing'", specifier = ">=7.0.0,<8.0" },
     { name = "pydantic", marker = "extra == 'db'", specifier = ">=2.12.0,<3.0" },
     { name = "python-multipart", specifier = ">=0.0.32,<1.0" },
-    { name = "python-socketio", specifier = ">=5.12.0,<6.0" },
+    { name = "python-socketio", marker = "extra == 'socketio'", specifier = ">=5.12.0,<6.0" },
     { name = "redis", specifier = ">=6.4,<8.0" },
     { name = "reflex-base", editable = "packages/reflex-base" },
     { name = "reflex-base", extras = ["pydantic"], marker = "extra == 'pydantic'", editable = "packages/reflex-base" },
@@ -3984,10 +4002,11 @@ requires-dist = [
     { name = "sqlmodel", marker = "extra == 'db'", specifier = ">=0.0.24,<0.1" },
     { name = "starlette", specifier = ">=1.3.1" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
-    { name = "uvicorn", marker = "extra == 'testing'", specifier = ">=0.34.0,<1.0" },
+    { name = "uvicorn", marker = "extra == 'uvicorn'", specifier = ">=0.20.0" },
+    { name = "websockets", marker = "extra == 'uvicorn'", specifier = ">=13.0" },
     { name = "wrapt", specifier = ">=1.17.0,<2.4" },
 ]
-provides-extras = ["db", "pydantic", "testing"]
+provides-extras = ["db", "pydantic", "socketio", "testing", "uvicorn"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4020,6 +4039,7 @@ dev = [
     { name = "pytest-rerunfailures" },
     { name = "pytest-split" },
     { name = "python-dotenv" },
+    { name = "python-socketio" },
     { name = "pyyaml" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-otel", editable = "packages/reflex-otel" },
