@@ -117,6 +117,37 @@ def test_call_event_handler():
         handler(test_fn)
 
 
+def test_format_event_client_handler_name():
+    """client_handler_name must land in the fourth ReflexEvent slot, after event_actions."""
+
+    def handle_upload(files):
+        pass
+
+    handle_upload.__qualname__ = "handle_upload"
+
+    handler = EventHandler(fn=handle_upload)
+    event_spec = EventSpec(
+        handler=handler,
+        client_handler_name="uploadFiles",
+        args=((Var(_js_expr="files"), Var(_js_expr="filesById")),),
+    )
+    assert (
+        format.format_event(event_spec)
+        == 'ReflexEvent("handle_upload", {files:filesById}, {}, "uploadFiles")'
+    )
+
+    event_spec = EventSpec(
+        handler=handler,
+        event_actions={"debounce": 300},
+        client_handler_name="uploadFiles",
+        args=((Var(_js_expr="files"), Var(_js_expr="filesById")),),
+    )
+    assert (
+        format.format_event(event_spec)
+        == 'ReflexEvent("handle_upload", {files:filesById}, {"debounce": 300}, "uploadFiles")'
+    )
+
+
 def test_call_event_handler_partial():
     """Calling an EventHandler with incomplete args returns an EventSpec that can be extended."""
 
