@@ -112,7 +112,8 @@ async def _patch_state(
         root_state.dirty_vars.add("router")
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
-        await root_state._get_resolved_delta()
+        # The delta is discarded: it is only resolved to refresh computed vars.
+        await root_state._get_resolved_delta(record_values=False)
         yield
     finally:
         original_parent_state.substates[state_name] = original_state

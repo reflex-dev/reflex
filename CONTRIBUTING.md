@@ -60,7 +60,27 @@ Within the 'test' directory of Reflex you can add to a test file already there o
 
 Each PR that changes the source of a published package must add a news fragment describing the change. Fragments are assembled into `CHANGELOG.md` at release time by [towncrier](https://towncrier.readthedocs.io/).
 
-**Where:** add the fragment under the affected package's `news/` directory. For the main `reflex` package, that's the repo-root `news/`. For sub-packages it's `packages/<name>/news/`.
+**Where: one fragment per affected package, not one per PR.** A PR that touches
+two packages needs two fragments, one in each package's own `news/` directory.
+CI decides which packages are affected purely from the changed paths:
+
+| Changed path | Fragment belongs in |
+| --- | --- |
+| `reflex/**` | repo-root `news/` |
+| `packages/<name>/src/**` | `packages/<name>/news/` |
+
+So a PR editing both `reflex/state.py` and `packages/reflex-base/src/reflex_base/vars/base.py`
+needs a fragment in `news/` **and** one in `packages/reflex-base/news/`. Changes
+that touch neither path (tests, `docs/`, CI, `scripts/`) need no fragment on
+their own. The `integrations-docs`, `reflex-components-internal` and
+`reflex-site-shared` packages are never published, so they are always exempt.
+
+Run the same check CI runs, once per affected package:
+
+```bash
+uv run towncrier check --config pyproject.toml --dir . --compare-with origin/main
+uv run towncrier check --config pyproject.toml --dir packages/reflex-base --compare-with origin/main
+```
 
 **Filename:** `<pr-or-issue-number>.<type>.md`, where `<type>` is one of:
 
