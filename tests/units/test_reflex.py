@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
 import os
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import click
 import click.testing
 import pytest
 
 from reflex import reflex
+from reflex.reflex import _PluginCommand, cli
 
 _CLI_STARTUP_DENIED_MODULES = frozenset({
     "PIL",
@@ -370,6 +373,99 @@ def test_missing_command_tolerates_flags(caplog: pytest.LogCaptureFixture):
     assert result.exit_code == 1
     assert "pip install reflex-hosting-cli" in caplog.text
     assert "No such option" not in result.output
+
+
+@click.command()
+def _fake_command():
+    """A plugin-contributed command."""
+
+
+def _entry_point(name: str, command: object = _fake_command) -> SimpleNamespace:
+    entry_point = SimpleNamespace(
+        name=name, value="fake_pkg.mod:cmd", dist=None, loads=0
+    )
+
+    def load():
+        entry_point.loads += 1
+        return command
+
+    entry_point.load = load
+    return entry_point
+
+
+@pytest.fixture
+def unscanned_cli():
+    """Yield the root group with the plugin scan pending, restoring it after."""
+    builtins = dict(cli.commands)
+    cli.__dict__.pop("_plugins_loaded", None)
+    yield cli
+    cli.__dict__.pop("_plugins_loaded", None)
+    cli.commands.clear()
+    cli.commands.update(builtins)
+
+
+def test_plugin_cli_scan_is_deferred(
+    unscanned_cli: click.Group, monkeypatch: pytest.MonkeyPatch
+):
+    """Entry points are scanned only for a name the built-in commands miss."""
+    scans = 0
+
+    def entry_points(group: str):
+        nonlocal scans
+        scans += 1
+        return [_entry_point("fakeplugincmd")]
+
+    monkeypatch.setattr(importlib.metadata, "entry_points", entry_points)
+    ctx = click.Context(unscanned_cli)
+
+    assert unscanned_cli.get_command(ctx, "run") is not None
+    assert scans == 0
+
+    assert isinstance(unscanned_cli.get_command(ctx, "fakeplugincmd"), _PluginCommand)
+    assert scans == 1
+
+    # The scan result is reused, including for a name nothing provides.
+    assert unscanned_cli.get_command(ctx, "nosuchcmd") is None
+    assert "fakeplugincmd" in unscanned_cli.list_commands(ctx)
+    assert scans == 1
+
+
+def test_plugin_cli_command_cannot_shadow_builtin(
+    unscanned_cli: click.Group, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(
+        importlib.metadata, "entry_points", lambda group: [_entry_point("run")]
+    )
+    ctx = click.Context(unscanned_cli)
+    builtin_run = unscanned_cli.get_command(ctx, "run")
+    unscanned_cli.list_commands(ctx)
+    assert unscanned_cli.get_command(ctx, "run") is builtin_run
+
+
+def test_plugin_cli_command_registers_new_name(
+    unscanned_cli: click.Group, monkeypatch: pytest.MonkeyPatch
+):
+    entry_point = _entry_point("fakeplugincmd")
+    monkeypatch.setattr(importlib.metadata, "entry_points", lambda group: [entry_point])
+    command = unscanned_cli.get_command(click.Context(unscanned_cli), "fakeplugincmd")
+    assert isinstance(command, _PluginCommand)
+    # Registration must not import the plugin; only use does.
+    assert entry_point.loads == 0
+    assert command.help == "Provided by fake_pkg.mod:cmd."
+    assert command._resolve() is _fake_command
+    assert command._resolve() is _fake_command
+    assert entry_point.loads == 1
+
+
+def test_plugin_cli_command_rejects_non_command(
+    unscanned_cli: click.Group, monkeypatch: pytest.MonkeyPatch
+):
+    entry_point = _entry_point("fakeplugincmd", command=object())
+    monkeypatch.setattr(importlib.metadata, "entry_points", lambda group: [entry_point])
+    command = unscanned_cli.get_command(click.Context(unscanned_cli), "fakeplugincmd")
+    assert isinstance(command, _PluginCommand)
+    with pytest.raises(click.ClickException, match=r"not a click\.Command"):
+        command._resolve()
 
 
 def test_init_records_version_check_after_frontend_setup(
