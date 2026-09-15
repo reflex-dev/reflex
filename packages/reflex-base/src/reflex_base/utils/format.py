@@ -513,7 +513,10 @@ def format_event(event_spec: EventSpec) -> str:
     event_args.append(wrap(args, "{"))
 
     if event_spec.client_handler_name:
-        event_args.append(wrap(event_spec.client_handler_name, '"'))
+        event_args.extend((
+            json.dumps(event_spec.event_actions),
+            wrap(event_spec.client_handler_name, '"'),
+        ))
     return f"ReflexEvent({', '.join(event_args)})"
 
 
