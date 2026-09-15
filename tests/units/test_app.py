@@ -11,6 +11,7 @@ import logging
 import multiprocessing
 import pickle
 import re
+import threading
 import unittest.mock
 import uuid
 from collections.abc import Generator
@@ -4844,3 +4845,82 @@ def test_compile_emits_stage_spans(
         parent = spans[name].parent
         assert parent is not None
         assert parent.span_id == root.get_span_context().span_id
+
+
+def test_write_stateful_pages_marker_never_truncates_final_path(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """The marker is swapped into place atomically, never opened for writing."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    marker = tmp_path / constants.Dirs.STATEFUL_PAGES
+    original_open = Path.open
+    write_opens: list[str] = []
+
+    def spy_open(self: Path, mode: str = "r", *args, **kwargs):
+        if self == marker and mode != "r":
+            write_opens.append(mode)
+        return original_open(self, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", spy_open)
+    app = App(_state=rx.State)
+    app._stateful_pages = dict.fromkeys(["index", "about"])
+
+    app._write_stateful_pages_marker()
+
+    assert write_opens == []
+    assert json.loads(marker.read_text()) == ["index", "about"]
+    assert [p.name for p in tmp_path.iterdir()] == [constants.Dirs.STATEFUL_PAGES]
+
+
+def test_write_stateful_pages_marker_is_always_written(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Stateless apps write an empty marker so backend workers skip page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    app = App(enable_state=False)
+
+    app._write_stateful_pages_marker()
+
+    assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
+
+
+def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Concurrent writers and readers of the marker never observe a partial file."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    marker = tmp_path / constants.Dirs.STATEFUL_PAGES
+    routes = [f"route-{i}" for i in range(4000)]
+    app = App(_state=rx.State)
+    app._stateful_pages = dict.fromkeys(routes)
+    stop = threading.Event()
+    errors: list[BaseException] = []
+
+    def writer():
+        for _ in range(50):
+            app._write_stateful_pages_marker()
+
+    def reader():
+        while not stop.is_set():
+            try:
+                content = marker.read_text()
+            except FileNotFoundError:
+                continue
+            try:
+                assert json.loads(content) == routes
+            except (AssertionError, json.JSONDecodeError) as exc:
+                errors.append(exc)
+                return
+
+    writers = [threading.Thread(target=writer) for _ in range(4)]
+    readers = [threading.Thread(target=reader) for _ in range(4)]
+    for thread in readers + writers:
+        thread.start()
+    for thread in writers:
+        thread.join()
+    stop.set()
+    for thread in readers:
+        thread.join()
+
+    assert errors == []
+    assert json.loads(marker.read_text()) == routes

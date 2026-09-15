@@ -888,7 +888,37 @@ def test_compile_registers_plugin_routes_on_backend_early_return(
     if with_stateful_marker:
         compile_page.assert_called_once_with("plugin-page", save_page=False)
     else:
-        compile_page.assert_not_called()
+        compile_page.assert_any_call("plugin-page", save_page=False)
+
+
+@pytest.mark.usefixtures("clean_registration_context")
+def test_backend_compile_evaluates_all_pages_when_marker_missing(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """A backend dir without a complete marker falls through to evaluating every page.
+
+    Another worker may have created the backend dir but not yet swapped its
+    marker into place, so a missing marker must not be mistaken for "no
+    stateful pages".
+    """
+    app = rx.App(enable_state=False)
+    app.add_page(lambda: rx.fragment(), route="index")
+    mocker.patch.object(app, "_apply_decorated_pages")
+    mocker.patch.object(app, "_should_compile", return_value=False)
+    compile_page = mocker.patch.object(app, "_compile_page")
+    mocker.patch.object(app, "_add_optional_endpoints")
+    mocker.patch.object(prerequisites, "get_backend_dir", return_value=tmp_path)
+    mocker.patch.object(
+        compiler, "get_config", return_value=rx.Config(app_name="testing", plugins=[])
+    )
+
+    assert compiler.compile_app(app, use_rich=False) is False
+
+    assert {call.args[0] for call in compile_page.call_args_list} == {
+        "index",
+        constants.Page404.SLUG,
+    }
+    assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
 
 
 @pytest.mark.usefixtures("clean_registration_context")
