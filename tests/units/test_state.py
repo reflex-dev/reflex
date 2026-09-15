@@ -53,7 +53,13 @@ from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
 from reflex.minify import get_state_full_path
-from reflex.state import BaseState, ImmutableStateError, OnLoadInternalState, State
+from reflex.state import (
+    BaseState,
+    ImmutableStateError,
+    OnLoadInternalState,
+    State,
+    all_base_state_classes,
+)
 from reflex.testing import chdir
 from reflex.utils import prerequisites
 from tests.units.minify_helpers import (
@@ -5895,15 +5901,28 @@ def test_resolved_name_survives_cache_pressure(temp_minify_json, monkeypatch):
 
     assert PressureState.get_name() == "b"
 
-    # More distinct classes than a default lru_cache would hold.
-    for index in range(150):
-        type(f"Filler{index}", (BaseState,), {"__module__": __name__}).get_name()
+    # More distinct classes than a default lru_cache would hold. They register
+    # into process-global structures, so drop them again before returning.
+    fillers = [
+        type(f"Filler{index}", (BaseState,), {"__module__": __name__})
+        for index in range(150)
+    ]
+    try:
+        for filler in fillers:
+            filler.get_name()
 
-    resolved: list[str] = []
-    thread = threading.Thread(target=lambda: resolved.append(PressureState.get_name()))
-    thread.start()
-    thread.join()
+        resolved: list[str] = []
+        thread = threading.Thread(
+            target=lambda: resolved.append(PressureState.get_name())
+        )
+        thread.start()
+        thread.join()
 
-    assert RegistrationContext.try_get() is not None
-    assert resolved == ["b"], "name was re-resolved without a registration context"
-    assert PressureState.get_name() == "b"
+        assert RegistrationContext.try_get() is not None
+        assert resolved == ["b"], "name was re-resolved without a registration context"
+        assert PressureState.get_name() == "b"
+    finally:
+        for filler in fillers:
+            all_base_state_classes.pop(filler.get_full_name(), None)
+        State.get_name.cache_clear()
+        State.get_full_name.cache_clear()
