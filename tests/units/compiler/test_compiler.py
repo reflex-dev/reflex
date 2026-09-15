@@ -783,7 +783,7 @@ def test_add_meta_accepts_dynamic_description():
 
     description = page.children[1]
     assert isinstance(description, Description)
-    assert description.content is PageState.description
+    assert description.content is PageState.description  # pyright: ignore [reportAttributeAccessIssue]
 
 
 def test_create_document_root_with_scripts():
