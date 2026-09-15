@@ -539,3 +539,15 @@ def test_cloud_diagram_preserves_guides_without_overlapping(
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
     section.get_by_role("link", name="Deployment", exact=True).click()
     expect(page).to_have_url(f"{PREVIEW_URL}/docs/hosting/deploy-quick-start/")
+
+
+def test_agent_file_links_respect_docs_mount(page: Page):
+    """The router adds the docs prefix exactly once to agent-file links."""
+    page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    expect(page.locator('a[href="/docs/llms.txt"]').first).to_have_count(1)
+    page.get_by_role("button", name="Copy page options").click()
+    link = page.get_by_role("link", name="llms-full.txt", exact=False)
+    expect(link).to_have_attribute("href", "/docs/llms-full.txt")
+    response = page.request.get(f"{PREVIEW_URL}/docs/llms-full.txt")
+    assert response.status == 200
+    assert "# Reflex Documentation" in response.text()

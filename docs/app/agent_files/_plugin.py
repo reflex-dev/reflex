@@ -49,8 +49,8 @@ For a navigable index with links to individual docs pages, see [llms.txt]({llms_
 
 MARKDOWN_DIRECTIVE = (
     "> For AI agents: the complete documentation index is at "
-    "[llms.txt]({llms_txt_url}). Markdown versions are available by appending "
-    "`.md` or sending `Accept: text/markdown`."
+    "[llms.txt]({llms_txt_url}). For a Markdown version, remove the trailing slash "
+    "from the page URL and append `.md`."
 )
 PUBLIC_LLMS_TXT_URL = "https://reflex.dev/docs/llms.txt"
 PUBLIC_EVENT_TRIGGERS_URL = "https://reflex.dev/docs/api-reference/event-triggers/"
@@ -707,6 +707,19 @@ def generate_dynamic_api_reference_files() -> tuple[tuple[Path, str], ...]:
     return tuple(files)
 
 
+def generate_cloud_cli_markdown_files() -> tuple[tuple[Path, str], ...]:
+    """Export the same command Markdown used to render the Cloud CLI pages."""
+    from reflex_docs.pages.docs.cloud_cliref import modules
+
+    return tuple(
+        (
+            Path(f"hosting/cli/{name}.md"),
+            f"{_markdown_directive()}\n\n# {name.title()} · Reflex Cloud CLI\n\n{source.strip()}\n",
+        )
+        for name, source in modules.items()
+    )
+
+
 def dynamic_api_reference_index_entries(
     files: Sequence[tuple[Path, str]],
 ) -> tuple[MarkdownIndexEntry, ...]:
@@ -722,7 +735,7 @@ def dynamic_api_reference_index_entries(
         MarkdownIndexEntry(
             url_path=path,
             title=_format_title(path.stem),
-            section="API Reference",
+            section=_section_for_path(path),
         )
         for path, _content in files
     )
@@ -831,7 +844,13 @@ def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
         )
         for entry in markdown_file_entries
     )
-    dynamic_api_reference_files = generate_dynamic_api_reference_files()
+    from reflex_docs.pages.docs.cloud import CLOUD_OVERVIEW_MARKDOWN
+
+    dynamic_api_reference_files = (
+        *generate_dynamic_api_reference_files(),
+        *generate_cloud_cli_markdown_files(),
+        (Path("overview.md"), f"{_markdown_directive()}\n\n{CLOUD_OVERVIEW_MARKDOWN}"),
+    )
     dynamic_api_reference_entries = dynamic_api_reference_index_entries(
         dynamic_api_reference_files
     )

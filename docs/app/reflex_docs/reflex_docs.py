@@ -35,8 +35,8 @@ def _llms_txt_directive() -> rx.Component:
         rx.el.span("For AI agents: the complete documentation index is at "),
         rx.el.a("llms.txt", href=LLMS_TXT_PATH),
         rx.el.span(
-            ". Markdown versions are available by appending .md or sending "
-            "Accept: text/markdown."
+            ". Where available, remove the trailing slash from a page URL "
+            "and append .md to read its Markdown version."
         ),
         class_name="sr-only",
     )

@@ -85,7 +85,7 @@ def component_card(name: str, link: str, section: str) -> rx.Component:
                 rx.icon("chevron-right", size=14, class_name="!text-secondary-9"),
                 class_name="bottom-0 absolute flex flex-row justify-between w-full px-4 py-2 items-center",
             ),
-            class_name="rounded-card border overflow-hidden relative box-border bg-background group-hover:bg-muted transition-colors border-border-subtle",
+            class_name="aspect-[320/232] rounded-card border overflow-hidden relative box-border bg-background group-hover:bg-muted transition-colors border-border-subtle",
         ),
         href=link,
         class_name="docs-preview-card group rounded-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",

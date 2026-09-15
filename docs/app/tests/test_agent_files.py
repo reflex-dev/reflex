@@ -151,8 +151,8 @@ def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_pa
 
     assert content.startswith(
         "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+        "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+        "remove the trailing slash from the page URL and append `.md`.\n\n"
         "# Overview"
     )
 
@@ -219,8 +219,8 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert Path("api-reference/var.md") in files
     assert files[Path("api-reference/var.md")].startswith(
         "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+        "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+        "remove the trailing slash from the page URL and append `.md`.\n\n"
         "# Var\n\n"
     )
     assert "## Methods" in files[Path("api-reference/var.md")]
@@ -231,8 +231,8 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert Path("api-reference/eventhandler.md") in files
     assert files[Path("api-reference/eventhandler.md")].startswith(
         "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+        "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+        "remove the trailing slash from the page URL and append `.md`.\n\n"
         "# Eventhandler\n\n"
     )
     assert Path("api-reference/event-handler.md") not in files
@@ -243,8 +243,8 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     env_vars = files[Path("api-reference/environment-variables.md")]
     assert env_vars.startswith(
         "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+        "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+        "remove the trailing slash from the page URL and append `.md`.\n\n"
         "# Environment Variables\n\n"
     )
     assert "`reflex.config.EnvironmentVariables`" in env_vars
@@ -304,8 +304,8 @@ def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
                     section="API Reference",
                 ),
                 "> For AI agents: the complete documentation index is at "
-                "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-                "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+                "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+                "remove the trailing slash from the page URL and append `.md`.\n\n"
                 "# Eventhandler\n\n"
                 "`reflex_base.event.EventHandler`\n",
             )
@@ -364,3 +364,24 @@ def test_generate_agent_files_emits_trailing_slash_variants():
         twin = markdown_path_for_trailing_slash_url(path)
         assert twin in files, f"missing trailing-slash twin for {path}"
         assert files[twin] == files[path], f"content mismatch for {twin}"
+
+
+def test_agent_directive_only_advertises_static_markdown():
+    """Static builds must not promise unsupported content negotiation."""
+    from agent_files._plugin import MARKDOWN_DIRECTIVE
+
+    assert "Accept:" not in MARKDOWN_DIRECTIVE
+    assert "trailing slash" in MARKDOWN_DIRECTIVE
+
+
+def test_cloud_cli_markdown_matches_published_commands():
+    """CLI Markdown and the agent index must include the rendered command source."""
+    from agent_files._plugin import generate_agent_files
+    from reflex_docs.pages.docs.cloud_cliref import modules
+
+    files = dict(generate_agent_files())
+    for name, source in modules.items():
+        path = Path(f"hosting/cli/{name}.md")
+        assert path in files
+        assert source.strip() in files[path]
+        assert f"/docs/{path}" in files[Path("llms.txt")]

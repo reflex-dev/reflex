@@ -71,3 +71,25 @@ def test_treemap_previews_are_bundled():
         assert (Path(__file__).parents[1] / "assets" / path).is_file()
         assert path in rendered
     assert "web.reflex-assets.dev/components_previews/charts" not in rendered
+
+
+def test_component_destinations_use_canonical_trailing_slash():
+    """Component links avoid a redirect before loading the documentation."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.component_lib import (
+        get_component_link,
+    )
+
+    assert (
+        get_component_link("data-display", ["avatar"])
+        == "/library/data-display/avatar/"
+    )
+
+
+def test_preview_cards_reserve_space_before_images_load():
+    """Lazy preview images must not shift the catalog when they arrive."""
+    from reflex_docs.pages.library_previews import component_card
+
+    rendered = str(
+        component_card("avatar", "/library/data-display/avatar/", "data-display")
+    )
+    assert "aspect-[320/232]" in rendered
