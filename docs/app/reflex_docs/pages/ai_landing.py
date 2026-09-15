@@ -74,13 +74,24 @@ def _workflow_card(
     href: str,
     tone: str,
     preview: rx.Component,
+    recommended: bool = False,
 ) -> rx.Component:
     """Present one native link with a visual summary and clear destination."""
     return rx.el.a(
         preview,
         rx.el.div(
-            rx.el.h2(
-                title, class_name="text-2xl font-book tracking-tight text-foreground"
+            rx.el.div(
+                rx.el.h2(
+                    title,
+                    class_name="text-2xl font-book tracking-tight text-foreground",
+                ),
+                rx.el.span(
+                    "Recommended",
+                    class_name="rounded-sm bg-foreground px-2.5 py-1 text-xs font-book leading-4 text-background",
+                )
+                if recommended
+                else rx.fragment(),
+                class_name="flex flex-wrap items-center gap-x-3 gap-y-2",
             ),
             rx.el.p(
                 description, class_name="mt-3 text-base leading-7 text-muted-foreground"
@@ -94,6 +105,9 @@ def _workflow_card(
         ),
         href=href,
         aria_label=title,
+        aria_description="Recommended way to build Reflex apps"
+        if recommended
+        else None,
         custom_attrs={"data-tone": tone},
         class_name="docs-ai-workflow-card docs-framework-panel flex min-w-0 flex-col overflow-hidden rounded-panel border border-border transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
@@ -127,6 +141,7 @@ def ai_landing() -> rx.Component:
                         "Connect data and deploy",
                     ),
                 ),
+                recommended=True,
             ),
             _workflow_card(
                 "Bring your own agent",
