@@ -77,15 +77,18 @@ def hosting_application() -> rx.Component:
     """Place one unified hosted application at the center of the diagram."""
     return rx.el.div(
         rx.el.div(
-            rx.el.div(
-                artwork("reflex_mark", class_name="w-5 shrink-0 text-foreground"),
-                rx.el.span(
-                    "Reflex Cloud",
-                    class_name="whitespace-nowrap text-sm text-foreground",
-                ),
-                class_name="flex items-center gap-2",
+            rx.el.span(
+                "Deploy anywhere",
+                class_name="whitespace-nowrap text-sm text-foreground",
             ),
             rx.el.div(
+                rx.el.div(
+                    artwork("reflex_mark", class_name="w-4 text-foreground sm:w-5"),
+                    role="img",
+                    aria_label="Reflex",
+                    title="Reflex",
+                    class_name="shrink-0",
+                ),
                 *[
                     rx.el.img(
                         src=rx.color_mode_cond(
@@ -94,7 +97,7 @@ def hosting_application() -> rx.Component:
                         ),
                         alt=label,
                         title=label,
-                        class_name="size-5 object-contain",
+                        class_name="size-4 object-contain sm:size-5",
                     )
                     for provider, label in (
                         ("aws", "AWS"),
@@ -104,7 +107,7 @@ def hosting_application() -> rx.Component:
                 ],
                 class_name="flex shrink-0 items-center gap-1.5",
             ),
-            class_name="flex items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-6",
+            class_name="flex items-center justify-between gap-2 border-b border-border px-4 py-4 sm:px-6",
         ),
         rx.el.div(
             rx.el.h3(
