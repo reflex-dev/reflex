@@ -23,7 +23,7 @@ from reflex_base import constants
 from reflex_base.breakpoints import Breakpoints
 from reflex_base.components.dynamic import load_dynamic_serializer
 from reflex_base.components.field import BaseField, FieldBasedMeta
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
@@ -1143,7 +1143,7 @@ class Component(BaseComponent, ABC):
             name = '"' + name + '"'
         return name
 
-    def _render(self, props: dict[str, Any] | None = None) -> Tag:
+    def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
         """Define how to render the component in React.
 
         Args:
