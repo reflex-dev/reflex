@@ -7,12 +7,7 @@ from reflex_components_internal.blocks.demo_form import (
 from reflex_site_shared.components.docs_shell import docs_navbar_frame
 from reflex_site_shared.components.icons import get_icon
 from reflex_site_shared.components.marketing_button import button
-from reflex_site_shared.constants import (
-    GITHUB_STARS,
-    GITHUB_URL,
-    REFLEX_ASSETS_CDN,
-    REFLEX_URL,
-)
+from reflex_site_shared.constants import GITHUB_STARS, GITHUB_URL, REFLEX_ASSETS_CDN
 from reflex_site_shared.views.hosting_banner import (
     AGENT_TOOLKIT_EARLY_ACCESS_URL,
     HostingBannerState,
@@ -36,7 +31,7 @@ def github_button() -> rx.Component:
 
 
 def logo() -> rx.Component:
-    return rx.el.elements.a(
+    return rx.el.a(
         rx.el.div(
             rx.image(
                 src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
@@ -61,7 +56,8 @@ def logo() -> rx.Component:
                 class_name="shrink-0 hidden dark:block",
             ),
         ),
-        href=REFLEX_URL,
+        href="/",
+        aria_label="Docs overview",
         class_name="flex flex-row gap-2.5 items-center shrink-0 rounded-compact focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
 

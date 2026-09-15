@@ -49,6 +49,22 @@ def test_editorial_banner_dismissal_search_and_navigation(page: Page):
     assert page.locator("header").bounding_box()["y"] == 0
 
 
+@pytest.mark.parametrize("width", [375, 1440])
+def test_docs_logo_returns_to_overview(page: Page, width: int):
+    """The shared logo returns readers to the docs overview from an article."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(
+        f"{PREVIEW_URL}/docs/ai/overview/what-is-reflex-build/",
+        wait_until="networkidle",
+    )
+    logo = page.locator("header a").filter(has=page.locator('img[alt="Docs Logo"]'))
+    expect(logo).to_have_attribute("href", "/docs/")
+    logo.focus()
+    page.keyboard.press("Enter")
+    expect(page).to_have_url(f"{PREVIEW_URL}/docs/")
+    expect(page.locator(".docs-hero")).to_be_visible()
+
+
 def test_header_selection_matches_the_docs_route(page: Page):
     """The docs base path selects Overview and client navigation updates selection."""
     page.set_viewport_size({"width": 1440, "height": 1000})
