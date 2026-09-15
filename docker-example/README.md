@@ -19,9 +19,10 @@ including platforms such as Render or Heroku.
 ## `production-compose`
 
 This deployment is intended for use with a standalone VPS that is only hosting a
-single Reflex app. It provides the entire stack in a single `compose.yaml`
-including a webserver with automatic TLS, one or more backend instances, redis,
-and a postgres database.
+single Reflex app. `compose.yaml` provides a webserver with automatic TLS in
+front of the app, which stores its data in SQLite. Adding the
+`compose.prod.yaml` override swaps in postgres and redis, which also lets the
+backend run multiple workers.
 
 ## `app-platform-backend`
 

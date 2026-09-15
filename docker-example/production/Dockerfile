@@ -49,8 +49,8 @@ COPY . .
 
 EXPOSE $PORT
 
-# Apply migrations before starting the backend.
-CMD [ -d alembic ] && reflex db migrate; \
+# Apply migrations before starting the backend; a failed migration stops the container.
+CMD if [ -d alembic ]; then reflex db migrate; fi && \
     caddy start && \
     redis-server --daemonize yes && \
     exec reflex run --env prod --backend-only

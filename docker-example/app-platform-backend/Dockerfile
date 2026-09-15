@@ -23,6 +23,6 @@ COPY --chown=reflex . .
 USER reflex
 RUN mkdir -p data uploaded_files
 
-# Apply migrations before starting the backend.
-CMD [ -d alembic ] && reflex db migrate; \
+# Apply migrations before starting the backend; a failed migration stops the container.
+CMD if [ -d alembic ]; then reflex db migrate; fi && \
     exec reflex run --env prod --backend-only --backend-port ${PORT:-8000}
