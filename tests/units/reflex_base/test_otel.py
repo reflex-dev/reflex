@@ -376,3 +376,14 @@ def test_compile_span_attributes(otel_exporter: InMemorySpanExporter):
         otel.ATTR_COMPILE_DRY_RUN: False,
         otel.ATTR_COMPILE_TRIGGER: "backend_startup",
     }
+
+
+def test_flushes_finished_spans(mocker, otel_exporter: InMemorySpanExporter):
+    """Flush the provider used by the framework's trace points."""
+    force_flush = mocker.patch.object(otel._tracer_provider, "force_flush")
+    with active_tracer().start_as_current_span("compile"):
+        pass
+
+    assert otel.flush() is True
+    force_flush.assert_called_once_with(timeout_millis=5000)
+    assert len(otel_exporter.get_finished_spans()) == 1
