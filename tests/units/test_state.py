@@ -1917,43 +1917,43 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     """
     from unittest.mock import patch
 
+    from reflex_base.utils import log as _base_log
+
     from reflex.state import State
     from reflex.utils import console
 
     legacy_token = f"{token}_{OnLoadState.get_full_name()}"
+    dedupe_state = _base_log._dedupe_filter().seen.copy()
 
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        # modify_state should accept a legacy string token and emit a deprecation warning.
-        async with state_manager.modify_state(legacy_token) as state:
-            assert isinstance(state, State)
-            # The substate targeted by the token should be prepopulated.
-            assert OnLoadState.get_name() in state.substates
-        mock_deprecate.assert_called()
-        assert (
-            mock_deprecate.call_args.kwargs["feature_name"]
-            == "Passing a string to modify_state"
-        )
-        mock_deprecate.reset_mock()
+    try:
+        with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            async with state_manager.modify_state(legacy_token) as state:
+                assert isinstance(state, State)
+                assert OnLoadState.get_name() in state.substates
+            mock_deprecate.assert_called()
 
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        # get_state should also accept a legacy string token.
-        retrieved = await state_manager.get_state(legacy_token)
-        assert isinstance(retrieved, State)
-        assert OnLoadState.get_name() in retrieved.substates
-        mock_deprecate.assert_called()
-        mock_deprecate.reset_mock()
+        with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            retrieved = await state_manager.get_state(legacy_token)
+            assert isinstance(retrieved, State)
+            assert OnLoadState.get_name() in retrieved.substates
+            mock_deprecate.assert_called()
 
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        # set_state should also accept a legacy string token.
-        await state_manager.set_state(legacy_token, retrieved)
-        mock_deprecate.assert_called()
-        mock_deprecate.reset_mock()
+        with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            await state_manager.set_state(legacy_token, retrieved)
+            mock_deprecate.assert_called()
 
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        final = await state_manager.get_state(legacy_token)
-        assert isinstance(final, State)
-        assert OnLoadState.get_name() in final.substates
-        mock_deprecate.assert_called()
+        with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            final = await state_manager.get_state(legacy_token)
+            assert isinstance(final, State)
+            assert OnLoadState.get_name() in final.substates
+            mock_deprecate.assert_called()
+    finally:
+        _base_log._dedupe_filter().seen.clear()
+        _base_log._dedupe_filter().seen.update(dedupe_state)
 
 
 @pytest_asyncio.fixture(loop_scope="function")

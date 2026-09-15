@@ -388,8 +388,11 @@ def test_console_deprecate_delegates_to_log(monkeypatch):
     )
 
 
-def test_deprecate_preserves_rich_print_kwargs(capsys):
+def test_deprecate_preserves_rich_print_kwargs(monkeypatch):
     """Legacy Rich options are passed through the shared logging pipeline."""
+    rich_console = mock.Mock()
+    monkeypatch.setattr(log, "_console", rich_console)
+
     console.deprecate(
         feature_name="RichFeature",
         reason="[bold]Use something else[/bold].",
@@ -400,8 +403,10 @@ def test_deprecate_preserves_rich_print_kwargs(capsys):
         soft_wrap=True,
     )
 
-    out, _ = capsys.readouterr()
-    assert "[bold]Use something else[/bold]" in out
+    print_kwargs = rich_console.print.call_args.kwargs
+    assert print_kwargs["markup"] is False
+    assert print_kwargs["soft_wrap"] is True
+    assert "[bold]Use something else[/bold]" in rich_console.print.call_args.args[0]
 
 
 def test_console_print_json_mode(monkeypatch, capsys):
