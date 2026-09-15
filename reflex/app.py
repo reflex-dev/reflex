@@ -1352,11 +1352,11 @@ class App(MiddlewareMixin, LifespanMixin):
         """
         four_oh_four_load_events = self._load_events.get("404", [])
         # The path is the browser URL path, which includes frontend_path, while the
-        # router matches paths relative to it. Only strip it as a whole segment.
+        # router matches paths relative to it. A URL outside frontend_path is not a page.
         frontend_path = get_config().frontend_path.rstrip("/")
-        if frontend_path and (
-            path == frontend_path or path.startswith(frontend_path + "/")
-        ):
+        if frontend_path:
+            if path != frontend_path and not path.startswith(frontend_path + "/"):
+                return four_oh_four_load_events
             path = path.removeprefix(frontend_path)
         route = self.router(path)
         if not route:

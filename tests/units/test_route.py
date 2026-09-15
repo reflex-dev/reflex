@@ -161,6 +161,7 @@ def test_get_router_ignores_frontend_path(
         ("/app/", ["index"]),
         ("/app/apple", ["apple"]),
         ("/app/app", ["app"]),
+        ("/apple", ["404"]),
     ],
 )
 def test_get_load_events_strips_frontend_path(
