@@ -1371,7 +1371,9 @@ def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
     assert "\\" not in out
 
 
-def test_event_chain_cache_lives_on_the_registration_context():
+def test_event_chain_cache_lives_on_the_registration_context(
+    forked_registration_context: RegistrationContext,
+):
     """Bound chains are shared per context and leave the handler stateless."""
 
     class ChainState(BaseState):
@@ -1383,7 +1385,7 @@ def test_event_chain_cache_lives_on_the_registration_context():
         return ()
 
     chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
-    with RegistrationContext.ensure_context().fork():
+    with forked_registration_context.fork():
         forked = EventChain.create(
             ChainState.handler, args_spec=args_spec, key="on_click"
         )
