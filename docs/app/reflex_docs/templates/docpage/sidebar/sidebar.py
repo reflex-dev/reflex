@@ -31,7 +31,6 @@ from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
 
 SIDEBAR_ICON_MAP = {
-    "Getting Started": "rocket",
     "Tutorials": "graduation-cap",
     "Advanced Onboarding": "newspaper",
     "Components": "layers",
