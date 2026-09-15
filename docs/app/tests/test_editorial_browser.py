@@ -39,8 +39,13 @@ def test_editorial_banner_dismissal_search_and_navigation(page: Page):
     expect(page.get_by_role("dialog").first).to_be_visible()
     page.keyboard.press("Escape")
     expect(page.get_by_role("dialog")).to_have_count(0)
-    page.get_by_role("link", name="Get Started", exact=True).first.click()
+    hero = page.locator(".docs-hero")
+    hero.get_by_role("link", name="Build with AI", exact=True).click()
+    expect(page).to_have_url(f"{PREVIEW_URL}/docs/ai/overview/best-practices/")
+    page.go_back(wait_until="networkidle")
+    hero.get_by_role("link", name="Explore Framework", exact=True).click()
     expect(page).to_have_url(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    expect(page.locator("header")).to_be_visible()
     assert page.locator("header").bounding_box()["y"] == 0
 
 

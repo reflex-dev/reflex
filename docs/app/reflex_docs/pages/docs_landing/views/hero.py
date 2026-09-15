@@ -4,7 +4,7 @@ import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.components.marketing_button import button
 
-from reflex_docs.pages.docs import getting_started
+from reflex_docs.pages.docs import ai_builder, getting_started
 from reflex_docs.pages.docs_landing.views.artwork import artwork
 
 
@@ -21,16 +21,30 @@ def hero() -> rx.Component:
                 "to build, deploy, and scale your application.",
                 class_name="max-w-2xl text-muted-foreground text-base sm:text-lg leading-7 font-normal text-balance",
             ),
-            rx.el.a(
-                button(
-                    "Get Started",
-                    ui.icon("ArrowRight01Icon"),
-                    variant="primary",
-                    size="lg",
-                    native_button=False,
+            rx.el.div(
+                rx.el.a(
+                    button(
+                        "Build with AI",
+                        ui.icon("ArrowRight01Icon"),
+                        variant="primary",
+                        size="lg",
+                        native_button=False,
+                    ),
+                    href=ai_builder.overview.best_practices.path,
+                    class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
-                to=getting_started.introduction.path,
-                class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+                rx.el.a(
+                    button(
+                        "Explore Framework",
+                        ui.icon("ArrowRight01Icon"),
+                        variant="outline",
+                        size="lg",
+                        native_button=False,
+                    ),
+                    href=getting_started.introduction.path,
+                    class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+                ),
+                class_name="flex flex-wrap items-center gap-3",
             ),
             class_name="relative z-10 flex flex-col items-start gap-6 lg:max-w-[55%]",
         ),
