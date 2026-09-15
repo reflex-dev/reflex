@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import threading
 from pathlib import Path
 
 import pytest
@@ -169,3 +171,32 @@ async def test_precompressed_static_files_fall_back_to_identity(tmp_path: Path):
     assert "content-encoding" not in response.headers
     assert response.headers["vary"] == "Accept-Encoding"
     assert await _collect_body(response, scope) == b"console.log('hello');"
+
+
+@pytest.mark.asyncio
+async def test_precompressed_static_files_stat_sidecars_off_the_event_loop(
+    tmp_path: Path, monkeypatch
+):
+    """The sidecar lookup must not stat files on the event loop thread."""
+    (tmp_path / "app.js").write_text("console.log('hello');")
+    (tmp_path / "app.js.gz").write_bytes(b"compressed-gzip")
+    static_files = PrecompressedStaticFiles(directory=tmp_path, encodings=["gzip"])
+
+    loop_thread = threading.get_ident()
+    on_loop: list[str] = []
+    original_stat = os.stat
+
+    def stat(path, *args, **kwargs):
+        if threading.get_ident() == loop_thread and str(path).startswith(str(tmp_path)):
+            on_loop.append(str(path))
+        return original_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "stat", stat)
+
+    scope = _scope("/app.js", "gzip")
+    response = await static_files.get_response("app.js", scope)
+
+    assert isinstance(response, FileResponse)
+    assert response.headers["content-encoding"] == "gzip"
+    assert await _collect_body(response, scope) == b"compressed-gzip"
+    assert on_loop == []
