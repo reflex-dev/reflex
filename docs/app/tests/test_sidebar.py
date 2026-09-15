@@ -1,5 +1,18 @@
 """Tests for the docs sidebar structure and prev/next chain."""
 
+import pytest
+
+
+@pytest.mark.parametrize("label", ["APIs", "URLs"])
+def test_ai_integration_group_and_page_use_matching_acronyms(label):
+    """Keep plural acronyms consistent between sidebar groups and their pages."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.ai import (
+        get_ai_builder_integrations,
+    )
+
+    group = next(item for item in get_ai_builder_integrations() if item.names == label)
+    assert [child.names for child in group.children] == [label]
+
 
 def test_backend_authentication_links_to_enterprise_auth():
     """The backend Authentication entry is a cross-reference to the enterprise auth docs."""

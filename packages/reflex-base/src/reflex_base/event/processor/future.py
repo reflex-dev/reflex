@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import dataclasses
 from typing import Any
 
@@ -19,8 +18,9 @@ class EventFuture(asyncio.Future):
     # The transaction id associated with this future.
     txid: str
 
-    # Child futures spawned by this future, if any.
-    children: list[EventFuture] = dataclasses.field(default_factory=list)
+    # Child futures spawned by this future, if any. Excluded from the repr so
+    # logging a future never recurses through an arbitrarily deep chain.
+    children: list[EventFuture] = dataclasses.field(default_factory=list, repr=False)
 
     # The parent future that spawned this one, or None if this future was
     # enqueued directly from the queue rather than chained from another event.
@@ -56,32 +56,51 @@ class EventFuture(asyncio.Future):
     def all_done(self) -> bool:
         """Check if this future and all descendant futures are done.
 
+        Walks the tree iteratively: a self-chaining handler (e.g. a polling
+        loop) nests one level deeper per tick, so recursion would exceed the
+        interpreter's recursion limit.
+
         Returns:
             True if this future and all descendants have completed.
         """
         if not self.done():
             return False
-        return all(child.all_done() for child in self.children)
+        stack = list(self.children)
+        while stack:
+            future = stack.pop()
+            if not future.done():
+                return False
+            stack.extend(future.children)
+        return True
 
     async def wait_all(self) -> Any:
         """Wait for this future and all descendant futures to complete.
 
-        Walks the children list by index so that children added after
-        iteration begins are still awaited.
+        Walks each children list by index so that children added after
+        iteration begins are still awaited, using an explicit stack so an
+        arbitrarily deep chain never exceeds the recursion limit.
 
         Child exceptions are suppressed since they are handled independently
-        by the event processor's _finish_task callback.
+        by the event processor's _finish_task callback. Descendants of a
+        child that failed or was cancelled are not awaited.
 
         Returns:
             The result of this future.
         """
         result = await self
-        i = 0
-        while i < len(self.children):
-            child = self.children[i]
-            with contextlib.suppress(Exception, asyncio.CancelledError):
-                await child.wait_all()
-            i += 1
+        stack: list[tuple[EventFuture, int]] = [(self, 0)]
+        while stack:
+            future, i = stack[-1]
+            if i >= len(future.children):
+                stack.pop()
+                continue
+            stack[-1] = (future, i + 1)
+            child = future.children[i]
+            try:
+                await child
+            except (Exception, asyncio.CancelledError):
+                continue
+            stack.append((child, 0))
         return result
 
     def cancel(self, msg: object = None) -> bool:
@@ -94,8 +113,13 @@ class EventFuture(asyncio.Future):
             True if the future was successfully cancelled.
         """
         result = super(EventFuture, self).cancel(msg)
-        for child in self.children:
-            child.cancel(msg)
+        # Iterative pre-order walk so an arbitrarily deep chain never exceeds
+        # the recursion limit while siblings are still cancelled in order.
+        stack = self.children[::-1]
+        while stack:
+            child = stack.pop()
+            super(EventFuture, child).cancel(msg)
+            stack.extend(reversed(child.children))
         return result
 
 

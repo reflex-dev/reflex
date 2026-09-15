@@ -326,6 +326,24 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
+def _has_data_descriptor(cls: type, name: str) -> bool:
+    """Whether the class provides a descriptor that handles assignment for `name`.
+
+    Reads the class dicts directly; `getattr` would run the descriptor.
+
+    Args:
+        cls: The class to look the name up on.
+        name: The attribute name.
+
+    Returns:
+        True if the first class defining the name binds it to a data descriptor.
+    """
+    for klass in cls.__mro__:
+        if name in klass.__dict__:
+            return hasattr(type(klass.__dict__[name]), "__set__")
+    return False
+
+
 def _is_user_descriptor(value: Any) -> bool:
     """Whether a class attribute is a user-defined descriptor.
 
@@ -1018,6 +1036,30 @@ class BaseState(EvenMoreBasicBaseState):
         cls._to_schema.cache_clear()
 
     @classmethod
+    def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
+        """Iterate over the functions defined on the class and its bases.
+
+        Equivalent to `inspect.getmembers(cls, inspect.isfunction)`, except that
+        the class dicts are read directly instead of going through `getattr`, so
+        descriptors are not evaluated. Evaluating them here would run user code
+        (e.g. a hybrid property building its frontend var) while the class is
+        still being constructed.
+
+        Yields:
+            The name and function of each function defined on the class or its bases.
+        """
+        seen: set[str] = set()
+        for klass in cls.__mro__:
+            for name, value in klass.__dict__.items():
+                if name in seen:
+                    continue
+                seen.add(name)
+                if isinstance(value, staticmethod):
+                    value = value.__func__
+                if isinstance(value, FunctionType):
+                    yield name, value
+
+    @classmethod
     def _check_overridden_methods(cls):
         """Check for shadow methods and raise error if any.
 
@@ -1026,7 +1068,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         overridden_methods = set()
         state_base_functions = cls._get_base_functions()
-        for name, method in inspect.getmembers(cls, inspect.isfunction):
+        for name, method in cls._iter_functions():
             # Check if the method is overridden and not a dunder method
             if (
                 not name.startswith("__")
@@ -1369,6 +1411,9 @@ class BaseState(EvenMoreBasicBaseState):
     def _get_var_default(cls, name: str, annotation_value: Any) -> Any:
         """Get the default value of a (backend) var.
 
+        Reads class dicts directly; `getattr` would run descriptors (e.g. a
+        hybrid property getter) against the half-built class.
+
         Args:
             name: The name of the var.
             annotation_value: The annotation value of the var.
@@ -1376,15 +1421,26 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The default value of the var or None.
         """
+        for klass in cls.__mro__:
+            if name not in klass.__dict__:
+                continue
+            value = klass.__dict__[name]
+            if isinstance(value, Field):
+                if (
+                    value.default is not dataclasses.MISSING
+                    or value.default_factory is not None
+                ):
+                    return value.default_value()
+                # the field declares no default; use the annotation's
+                break
+            if hasattr(type(value), "__get__"):
+                # A descriptor provides behavior, not a stored default.
+                break
+            return value
         try:
-            value = getattr(cls, name)
-            return value if not isinstance(value, Field) else value.default_value()
-        except AttributeError:
-            try:
-                return types.get_default_value_for_type(annotation_value)
-            except TypeError:
-                pass
-        return None
+            return types.get_default_value_for_type(annotation_value)
+        except TypeError:
+            return None
 
     @staticmethod
     def _get_base_functions() -> builtins.dict[str, FunctionType]:
@@ -1620,6 +1676,9 @@ class BaseState(EvenMoreBasicBaseState):
             and not name.startswith(
                 f"_{getattr(type(self), '__original_name__', type(self).__name__)}__"
             )
+            # A property (or other data descriptor) defines what assigning means,
+            # so let it run; only names backed by nothing at all are a mistake.
+            and not _has_data_descriptor(type(self), name)
         ):
             msg = (
                 f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
