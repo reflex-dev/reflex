@@ -902,8 +902,11 @@ def _duration_setting(
         from reflex_base.utils import console
 
         # Spell out the exact replacement: renaming the variable without adding
-        # the unit would silently read its value as seconds.
-        replacement = os.environ[superseded.name].strip() + unit
+        # the unit would silently read its value as seconds. The number comes
+        # from the parsed value rather than the raw text, because the forms a
+        # bare int or float accepts are wider than the duration parser's: `.5`,
+        # `1_000` and `1e3` would all suggest a value that fails to parse.
+        replacement = f"{superseded.get()}{unit}"
         console.deprecate(
             feature_name=superseded.name,
             reason=f"Set {setting.name}={replacement} instead.",

@@ -283,22 +283,34 @@ def test_deprecate_dedupes_and_renders(capsys):
     "filename",
     [
         "<string>",
-        "<stdin>",
         "<frozen importlib._bootstrap>",
-        "<attrs generated init reflex.Thing>",
+        "<frozen importlib._bootstrap_external>",
     ],
 )
-def test_pseudo_filenames_are_never_a_user_call_site(filename: str):
-    """Code with no source file carries a bracketed name, not a path.
+def test_generated_code_is_never_a_user_call_site(filename: str):
+    """Code the interpreter generated has a pseudo-name, not a path.
 
     Args:
-        filename: The pseudo-filename a generated code object carries.
+        filename: The pseudo-filename the generated code object carries.
     """
     assert log._is_framework_filename(filename)
 
 
+@pytest.mark.parametrize("filename", ["<stdin>", "<ipython-input-3-a1b2c3d4>"])
+def test_an_interactive_call_site_is_still_reported(filename: str):
+    """A REPL line and a notebook cell are the user's own code.
+
+    They are bracketed like generated code but are exactly the location a
+    deprecation should name, so the rule must not swallow them.
+
+    Args:
+        filename: The pseudo-filename an interactive session carries.
+    """
+    assert not log._is_framework_filename(filename)
+
+
 def test_an_ordinary_path_is_still_classified_by_location(tmp_path):
-    """The bracket rule must not swallow a real file outside the framework.
+    """The rule must not swallow a real file outside the framework.
 
     Args:
         tmp_path: pytest temporary directory fixture.
