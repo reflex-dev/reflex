@@ -31,3 +31,5 @@ Explore Cloud hosting through a connected diagram centered on one unified hosted
 Integrate the footer newsletter signup with aligned columns, clearer copy, and a quieter inline email form.
 
 Choose between AI Builder and Python framework guides directly from the documentation introduction.
+
+Illustrate the AI Builder best practices with a focused prompt, an app preview, and a follow-up refinement.
