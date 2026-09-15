@@ -1917,17 +1917,10 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     """
     from unittest.mock import patch
 
-    from reflex_base.utils import log as _base_log
-
     from reflex.state import State
     from reflex.utils import console
 
     legacy_token = f"{token}_{OnLoadState.get_full_name()}"
-
-    def _clear_dedupe():
-        _base_log._dedupe_filter().seen.clear()
-
-    _clear_dedupe()
 
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
         # modify_state should accept a legacy string token and emit a deprecation warning.
@@ -1942,8 +1935,6 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
         )
         mock_deprecate.reset_mock()
 
-    _clear_dedupe()
-
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
         # get_state should also accept a legacy string token.
         retrieved = await state_manager.get_state(legacy_token)
@@ -1952,15 +1943,11 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
         mock_deprecate.assert_called()
         mock_deprecate.reset_mock()
 
-    _clear_dedupe()
-
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
         # set_state should also accept a legacy string token.
         await state_manager.set_state(legacy_token, retrieved)
         mock_deprecate.assert_called()
         mock_deprecate.reset_mock()
-
-    _clear_dedupe()
 
     with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
         final = await state_manager.get_state(legacy_token)

@@ -388,6 +388,22 @@ def test_console_deprecate_delegates_to_log(monkeypatch):
     )
 
 
+def test_deprecate_preserves_rich_print_kwargs(capsys):
+    """Legacy Rich options are passed through the shared logging pipeline."""
+    console.deprecate(
+        feature_name="RichFeature",
+        reason="[bold]Use something else[/bold].",
+        deprecation_version="0.9.9",
+        removal_version="1.0",
+        dedupe=False,
+        markup=False,
+        soft_wrap=True,
+    )
+
+    out, _ = capsys.readouterr()
+    assert "[bold]Use something else[/bold]" in out
+
+
 def test_console_print_json_mode(monkeypatch, capsys):
     """console.print stays machine-readable in JSON mode."""
     monkeypatch.setenv("REFLEX_LOG_JSON", "true")

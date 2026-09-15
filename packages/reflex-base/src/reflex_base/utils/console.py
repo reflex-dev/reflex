@@ -307,8 +307,7 @@ def deprecate(
         dedupe: Passed to :func:`reflex_base.utils.log.deprecate`.
         kwargs: Legacy Rich print arguments, ignored by the logging pipeline.
     """
-    if _log.is_managed_mode():
-        _log.configure()
+    _log.ensure_configured()
     _log.deprecate(
         feature_name=feature_name,
         reason=reason,

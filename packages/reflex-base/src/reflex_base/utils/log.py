@@ -214,9 +214,13 @@ class RichConsoleHandler(logging.Handler):
             # Markup is opt-in per record (``extra={"rich": True}``); plain
             # messages keep their literal brackets.
             markup = bool(getattr(record, "rich", False))
-            console.print(
-                f"{prefix}{record.getMessage()}", style=style, end=end, markup=markup
-            )
+            print_kwargs = {
+                "style": style,
+                "end": end,
+                "markup": markup,
+                **getattr(record, "rich_kwargs", {}),
+            }
+            console.print(f"{prefix}{record.getMessage()}", **print_kwargs)
             if record.exc_info and record.exc_info[0] is not None:
                 # Tracebacks may contain user data; never parse them as markup.
                 # Never word-wrap them either: wrapping breaks file paths.
@@ -576,6 +580,7 @@ def emit_json_print(
 
 
 _configured = False
+_configured_json_mode: bool | None = None
 _active_file_handler: logging.FileHandler | None = None
 
 
@@ -629,7 +634,7 @@ def configure():
     application-side ``basicConfig`` cannot double-emit reflex records or
     break the ``--json`` only-JSON output contract.
     """
-    global _active_file_handler, _configured
+    global _active_file_handler, _configured, _configured_json_mode
     from reflex_base.environment import environment
 
     json_mode = environment.REFLEX_LOG_JSON.get()
@@ -657,6 +662,7 @@ def configure():
         else:
             _REFLEX_LOGGER.removeHandler(file_handler)
     _configured = True
+    _configured_json_mode = json_mode
 
 
 def ensure_configured():
@@ -665,13 +671,16 @@ def ensure_configured():
     Outside the CLI this is a no-op: no handler is attached and records
     propagate to the root logger for the application to handle.
     """
-    if not _configured and is_managed_mode():
+    if (
+        is_managed_mode()
+        and (not _configured or _configured_json_mode != is_json_mode())
+    ):
         configure()
 
 
 def _reset():
     """Detach the sinks and restore propagation (test teardown helper)."""
-    global _configured, _stdout_reserved
+    global _configured, _configured_json_mode, _stdout_reserved
     _stdout_reserved = False
     for handler in (_console_handler(), _json_handler(), _active_file_handler):
         if handler is not None:
@@ -679,6 +688,7 @@ def _reset():
     _REFLEX_LOGGER.propagate = True
     _REFLEX_LOGGER.setLevel(logging.NOTSET)
     _configured = False
+    _configured_json_mode = None
 
 
 def set_log_level(log_level: LogLevel | None):
@@ -834,9 +844,8 @@ def deprecate(
         deprecation_version: The version the feature was deprecated
         removal_version: The version the deprecated feature will be removed
         dedupe: If True, suppress multiple warnings of the same deprecation.
-        kwargs: Ignored legacy print kwargs.
+        kwargs: Legacy Rich print kwargs for the console sink.
     """
-    del kwargs
     dedupe_key = feature_name
     loc = ""
     user_location = None
@@ -870,6 +879,7 @@ def deprecate(
             "removal_version": removal_version,
             # Machine consumers need the user call site, not this frame.
             "location": user_location,
+            "rich_kwargs": kwargs,
         },
     )
 
