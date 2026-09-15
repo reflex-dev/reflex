@@ -41,7 +41,7 @@ def test_editorial_banner_dismissal_search_and_navigation(page: Page):
     expect(page.get_by_role("dialog")).to_have_count(0)
     hero = page.locator(".docs-hero")
     hero.get_by_role("link", name="Build with AI", exact=True).click()
-    expect(page).to_have_url(f"{PREVIEW_URL}/docs/ai/overview/best-practices/")
+    expect(page).to_have_url(f"{PREVIEW_URL}/docs/ai/")
     page.go_back(wait_until="networkidle")
     hero.get_by_role("link", name="Explore Framework", exact=True).click()
     expect(page).to_have_url(f"{PREVIEW_URL}/docs/getting-started/introduction/")
@@ -60,13 +60,35 @@ def test_header_selection_matches_the_docs_route(page: Page):
     expect(header.locator('[aria-current="page"]')).to_have_text("Overview")
     for label, path in [
         ("Framework", "/docs/getting-started/introduction/"),
-        ("Build with AI", "/docs/ai/overview/best-practices/"),
+        ("Build with AI", "/docs/ai/"),
         ("Cloud", "/docs/hosting/deploy-quick-start/"),
         ("Overview", "/docs/"),
     ]:
         header.get_by_role("link", name=label, exact=True).click()
         expect(page).to_have_url(f"{PREVIEW_URL}{path}")
         expect(header.locator('[aria-current="page"]')).to_have_text(label)
+
+
+@pytest.mark.parametrize("width", [375, 1440])
+def test_ai_overview_offers_build_and_agent_paths(page: Page, width: int):
+    """The AI choice page keeps both workflows readable and links to their guides."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    for label, destination in (
+        ("Use Reflex Build", "/docs/ai/overview/what-is-reflex-build/"),
+        ("Bring your own agent", "/docs/ai/integrations/agent-toolkit/"),
+    ):
+        response = page.goto(f"{PREVIEW_URL}/docs/ai/", wait_until="networkidle")
+        assert response.status == 200
+        expect(
+            page.get_by_role("heading", name="Build with AI", exact=True)
+        ).to_be_visible()
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        choice = page.get_by_role("link", name=label, exact=True)
+        expect(choice).to_have_attribute("href", destination)
+        choice.focus()
+        page.keyboard.press("Enter")
+        expect(page).to_have_url(f"{PREVIEW_URL}{destination}")
+        expect(page.get_by_role("heading", level=1)).to_be_visible()
 
 
 def test_editorial_dark_mode_keeps_readable_surfaces(browser):
@@ -265,7 +287,7 @@ def test_mobile_header_links_and_booking_form(page: Page):
     expect(menu).to_be_visible()
     for label, href in {
         "Overview": "/docs/",
-        "Build with AI": "/docs/ai/overview/best-practices/",
+        "Build with AI": "/docs/ai/",
         "Framework": "/docs/getting-started/introduction/",
         "Cloud": "/docs/hosting/deploy-quick-start/",
         "XY": "/docs/xy/",

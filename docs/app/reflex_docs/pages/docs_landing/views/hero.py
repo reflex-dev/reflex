@@ -4,7 +4,7 @@ import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.components.marketing_button import button
 
-from reflex_docs.pages.docs import ai_builder, getting_started
+from reflex_docs.pages.docs import getting_started
 from reflex_docs.pages.docs_landing.views.artwork import artwork
 
 
@@ -30,7 +30,7 @@ def hero() -> rx.Component:
                         size="lg",
                         native_button=False,
                     ),
-                    href=ai_builder.overview.best_practices.path,
+                    href="/ai/",
                     class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                 ),
                 rx.el.a(

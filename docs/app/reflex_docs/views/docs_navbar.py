@@ -18,7 +18,7 @@ from reflex_site_shared.views.hosting_banner import (
     HostingBannerState,
 )
 
-from reflex_docs.pages.docs import ai_builder, getting_started, hosting
+from reflex_docs.pages.docs import getting_started, hosting
 from reflex_docs.views.search import search_bar
 
 
@@ -81,12 +81,14 @@ def menu_item(
     if active_str.startswith("/"):
         active = is_overview if active_str == "/" else router_path == active_str
     elif active_str == "framework":
-        is_ai_builder = router_path.startswith("/ai/")
+        is_ai_builder = (router_path == "/ai") | router_path.startswith("/ai/")
         is_hosting = router_path.startswith("/hosting/")
         is_xy = router_path.startswith("/xy/")
         active = ~is_overview & ~is_ai_builder & ~is_hosting & ~is_xy
     else:
-        active = router_path.startswith(f"/{active_str}/")
+        active = (router_path == f"/{active_str}") | router_path.startswith(
+            f"/{active_str}/"
+        )
 
     anchor = rx.el.elements.a if external else rx.el.a
 
@@ -156,11 +158,7 @@ def mobile_navigation() -> rx.Component:
                         )
                         for label, href, external in (
                             ("Overview", "/", False),
-                            (
-                                "Build with AI",
-                                ai_builder.overview.best_practices.path,
-                                False,
-                            ),
+                            ("Build with AI", "/ai/", False),
                             ("Framework", getting_started.introduction.path, False),
                             ("Cloud", hosting.deploy_quick_start.path, False),
                             ("XY", "/docs/xy/", True),
@@ -194,9 +192,7 @@ def navigation_menu() -> rx.Component:
         rx.el.nav(
             rx.el.ul(
                 menu_item("Overview", "/", "/"),
-                menu_item(
-                    "Build with AI", ai_builder.overview.best_practices.path, "ai"
-                ),
+                menu_item("Build with AI", "/ai/", "ai"),
                 menu_item("Framework", getting_started.introduction.path, "framework"),
                 menu_item("Cloud", hosting.deploy_quick_start.path, "hosting"),
                 menu_item("XY", "/docs/xy/", "xy", external=True),

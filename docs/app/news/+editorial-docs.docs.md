@@ -33,3 +33,5 @@ Integrate the footer newsletter signup with aligned columns, clearer copy, and a
 Choose between AI Builder and Python framework guides directly from the documentation introduction.
 
 Illustrate the AI Builder best practices with a focused prompt, an app preview, and a follow-up refinement.
+
+Choose Reflex Build or Agent Toolkit from the new Build with AI overview.
