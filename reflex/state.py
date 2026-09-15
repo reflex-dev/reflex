@@ -2261,15 +2261,20 @@ class BaseState(EvenMoreBasicBaseState):
         # Update touched status before cleaning dirty_vars.
         self._update_was_touched()
 
-        # Recursively clean the substates.
-        for substate in self.dirty_substates:
-            if substate not in self.substates:
+        # Recursively clean the substates. A dirty name without an attached
+        # substate is a partially fetched tree: the dirt lives in the
+        # unfetched substate's own record, and a flush that cannot see it
+        # must not clear the marker that lets a later, fuller fetch find it.
+        surviving_markers: set[str] = set()
+        for substate_name in self.dirty_substates:
+            if (substate := self.substates.get(substate_name)) is None:
+                surviving_markers.add(substate_name)
                 continue
-            self.substates[substate]._clean()
+            substate._clean()
 
         # Clean this state.
         self.dirty_vars = set()
-        self.dirty_substates = set()
+        self.dirty_substates = surviving_markers
 
     def get_value(self, key: str) -> Any:
         """Get the value of a field (without proxying).

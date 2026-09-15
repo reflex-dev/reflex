@@ -5477,3 +5477,20 @@ def test_get_delta_skips_dirty_names_without_attached_substates() -> None:
     root._clean()
     root.dirty_substates.add("not___an___attached____substate")
     assert root.get_delta() == {}
+
+
+def test_clean_keeps_dirty_markers_for_unattached_substates() -> None:
+    """A full clean keeps the dirty marker of a substate it cannot see.
+
+    The counterpart of the get_delta skip: on a partially fetched tree the
+    unfetched substate's dirt lives in its own record, so the flush that
+    could not emit it must not clear the parent's marker either, or a later
+    fuller fetch has no way to find the surviving update.
+    """
+    root = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    root._clean()
+    attached_name = next(iter(root.substates))
+    root.dirty_substates.add(attached_name)
+    root.dirty_substates.add("not___an___attached____substate")
+    root._clean()
+    assert root.dirty_substates == {"not___an___attached____substate"}
