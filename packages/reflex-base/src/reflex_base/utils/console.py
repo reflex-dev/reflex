@@ -353,6 +353,15 @@ def _is_framework_filename(filename: str) -> bool:
     Returns:
         Whether the file lives under one of the excluded framework roots.
     """
+    # Generated code carries a pseudo-name rather than a path: `<string>` for
+    # `exec` and a dataclass's generated `__init__`, `<frozen ...>` for the
+    # import machinery. Neither is a user call site, and treating one as a path
+    # would resolve it against the cwd, so whether it counted as framework code
+    # would depend on where the app was started from. Other bracketed names are
+    # left alone on purpose: `<stdin>` and an `<ipython-input-N-...>` cell are
+    # exactly where an interactive user would look for their own call.
+    if filename == "<string>" or filename.startswith("<frozen "):
+        return True
     frame_path = Path(filename).resolve()
     return any(
         frame_path.is_relative_to(root) for root in _exclude_paths_from_frame_info()
