@@ -255,8 +255,11 @@ class VarData:
     # The name of the enclosing state.
     state: str = dataclasses.field(default="")
 
-    # The name of the field in the state.
-    field_name: str = dataclasses.field(default="")
+    # The names of the state fields this var is built from. A var normally
+    # stands for a single field, but one composed of several (see
+    # `Var._dependency_field_names`) names all of them so a dependency on it
+    # tracks every field it reads.
+    field_names: tuple[str, ...] = dataclasses.field(default_factory=tuple)
 
     # Imports needed to render this var
     imports: ParsedImportTuple = dataclasses.field(default_factory=tuple)
@@ -283,6 +286,7 @@ class VarData:
         self,
         state: str = "",
         field_name: str = "",
+        field_names: Sequence[str] | None = None,
         imports: ImmutableImportDict | ImmutableParsedImportDict | None = None,
         hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
@@ -294,7 +298,9 @@ class VarData:
 
         Args:
             state: The name of the enclosing state.
-            field_name: The name of the field in the state.
+            field_name: The name of the field in the state. Shorthand for a
+                single-entry ``field_names``; ignored when that is given.
+            field_names: The names of every state field this var is built from.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
             deps: Dependencies of the var for useCallback.
@@ -310,7 +316,13 @@ class VarData:
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
         object.__setattr__(self, "state", state)
-        object.__setattr__(self, "field_name", field_name)
+        object.__setattr__(
+            self,
+            "field_names",
+            tuple(dict.fromkeys(field_names))
+            if field_names is not None
+            else ((field_name,) if field_name else ()),
+        )
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
         object.__setattr__(self, "deps", tuple(deps or []))
@@ -323,13 +335,25 @@ class VarData:
             merged_var_data = VarData.merge(*hooks.values(), self)
             if merged_var_data is not None:
                 object.__setattr__(self, "state", merged_var_data.state)
-                object.__setattr__(self, "field_name", merged_var_data.field_name)
+                object.__setattr__(self, "field_names", merged_var_data.field_names)
                 object.__setattr__(self, "imports", merged_var_data.imports)
                 object.__setattr__(self, "hooks", merged_var_data.hooks)
                 object.__setattr__(self, "deps", merged_var_data.deps)
                 object.__setattr__(self, "position", merged_var_data.position)
                 object.__setattr__(self, "components", merged_var_data.components)
                 object.__setattr__(self, "app_wraps", merged_var_data.app_wraps)
+
+    @property
+    def field_name(self) -> str:
+        """The name of the field in the state.
+
+        A var built from several fields reports the first; use ``field_names``
+        to see all of them.
+
+        Returns:
+            The first field name, or an empty string if there is none.
+        """
+        return self.field_names[0] if self.field_names else ""
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -361,15 +385,24 @@ class VarData:
         if len(all_var_datas) == 1:
             return all_var_datas[0]
 
-        # Get the first non-empty field name or default to empty string.
-        field_name = next(
-            (var_data.field_name for var_data in all_var_datas if var_data.field_name),
-            "",
-        )
-
         # Get the first non-empty state or default to empty string.
         state = next(
             (var_data.state for var_data in all_var_datas if var_data.state), ""
+        )
+
+        # Collect every field name belonging to that state, in order, deduped,
+        # so a var composed of several fields (and therefore a dependency on
+        # it) knows about all of them. Field names carrying a different state
+        # are dropped: callers pair these names with the single `state` above,
+        # so keeping them would register a dependency on a field that state
+        # does not have.
+        field_names = tuple(
+            dict.fromkeys(
+                field_name
+                for var_data in all_var_datas
+                if not var_data.state or var_data.state == state
+                for field_name in var_data.field_names
+            )
         )
 
         hooks: dict[str, VarData | None] = {
@@ -407,7 +440,7 @@ class VarData:
 
         return VarData(
             state=state,
-            field_name=field_name,
+            field_names=field_names,
             imports=imports_,
             hooks=hooks,
             deps=deps,
@@ -428,7 +461,7 @@ class VarData:
             self.state
             or self.imports
             or self.hooks
-            or self.field_name
+            or self.field_names
             or self.deps
             or self.position
             or self.components
@@ -451,7 +484,7 @@ class VarData:
         """
         return (
             self.state,
-            self.field_name,
+            self.field_names,
             self.imports,
             self.hooks,
             self.deps,
@@ -723,17 +756,21 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
     def _dependency_field_names(self) -> tuple[str, ...]:
         """The state field names a ComputedVar depending on this Var must track.
 
-        A Var normally stands for a single state field, the one named by its
-        VarData. A Var composed of several state fields must name all of them,
-        or a ``deps=[that_var]`` dependency would only track the one field
-        VarData.merge happened to surface, leaving the computed var stale when
-        any of the others change.
+        A Var normally stands for a single state field, but one composed of
+        several must name all of them, or a ``deps=[that_var]`` dependency
+        would track only some of the fields it reads and leave the computed var
+        stale when any of the others change. ``VarData.merge`` collects the
+        names as vars combine, so the merged VarData already knows all of them.
+
+        Only fields of the VarData's own state are named; callers pair these
+        names with that single state, so a var spanning two states still
+        reports just the first one's fields.
 
         Returns:
             The field names to register the dependency against.
         """
         all_var_data = self._get_all_var_data()
-        return (all_var_data.field_name if all_var_data is not None else "",)
+        return all_var_data.field_names if all_var_data is not None else ()
 
     def __deepcopy__(self, memo: dict[int, Any]) -> Self:
         """Deepcopy the var.

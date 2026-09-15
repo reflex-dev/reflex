@@ -628,36 +628,12 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
             ROUTE_ID_KEY: self._route_id_var,
         }
 
-    def _dependency_field_names(self) -> tuple[str, ...]:
-        """Name every per-field router var backing this switchboard.
-
-        VarData.merge surfaces only the first non-empty field name, so without
-        this a ``deps=[State.router]`` dependency would track one router var
-        and leave the computed var stale when any of the others changed (a
-        reconnect updates the session without touching the URL, for example).
-
-        Returns:
-            The field names of all five per-field router vars.
-        """
-        return tuple(
-            field_name
-            for var in (
-                self._session_var,
-                self._headers_var,
-                self._page_var,
-                self._url_var,
-                self._route_id_var,
-            )
-            if (all_var_data := var._get_all_var_data()) is not None
-            and (field_name := all_var_data.field_name)
-        )
-
     @property
     def session(self) -> ObjectVar[SessionData]:
         """The per-connection session data.
 
         Returns:
-            ObjectVar for the ``router_session`` base var.
+            ObjectVar for the ``rx_router_session`` base var.
         """
         return self._session_var.to(ObjectVar, SessionData)
 
@@ -666,7 +642,7 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
         """The headers of the websocket connection request.
 
         Returns:
-            ObjectVar for the ``router_headers`` base var.
+            ObjectVar for the ``rx_router_headers`` base var.
         """
         return self._headers_var.to(ObjectVar, HeaderData)
 
@@ -675,7 +651,7 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
         """The page data for the current page (deprecated, use ``url``).
 
         Returns:
-            ObjectVar for the ``router_page`` base var.
+            ObjectVar for the ``rx_router_page`` base var.
         """
         return self._page_var.to(ObjectVar, PageData)
 
@@ -687,7 +663,7 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
         """The parsed URL of the current page.
 
         Returns:
-            ReflexURLCastedVar over the ``router_url`` base var.
+            ReflexURLCastedVar over the ``rx_router_url`` base var.
         """
         return ReflexURLCastedVar.create(self._url_var)
 
@@ -696,7 +672,7 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
         """The route pattern that matched the current page.
 
         Returns:
-            StringVar for the ``router_route_id`` base var.
+            StringVar for the ``rx_router_route_id`` base var.
         """
         return self._route_id_var.to(str)
 
@@ -714,11 +690,11 @@ class RouterDataVar(CachedVarOperation, ObjectVar[RouterData]):
         """Create a RouterDataVar over the per-field router base vars.
 
         Args:
-            session: The ``router_session`` base var.
-            headers: The ``router_headers`` base var.
-            page: The ``router_page`` base var.
-            url: The ``router_url`` base var.
-            route_id: The ``router_route_id`` base var.
+            session: The ``rx_router_session`` base var.
+            headers: The ``rx_router_headers`` base var.
+            page: The ``rx_router_page`` base var.
+            url: The ``rx_router_url`` base var.
+            route_id: The ``rx_router_route_id`` base var.
             _var_data: Additional VarData to merge in.
 
         Returns:

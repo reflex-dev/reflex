@@ -79,8 +79,8 @@ LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
 
 
 formatted_router_vars = {
-    "router_route_id" + FIELD_MARKER: "",
-    "router_url" + FIELD_MARKER: {
+    "rx_router_route_id" + FIELD_MARKER: "",
+    "rx_router_url" + FIELD_MARKER: {
         "scheme": "",
         "netloc": "",
         "origin": "",
@@ -90,12 +90,12 @@ formatted_router_vars = {
         "fragment": "",
         "href": "",
     },
-    "router_session" + FIELD_MARKER: {
+    "rx_router_session" + FIELD_MARKER: {
         "client_token": "",
         "client_ip": "",
         "session_id": "",
     },
-    "router_headers" + FIELD_MARKER: {
+    "rx_router_headers" + FIELD_MARKER: {
         "host": "",
         "origin": "",
         "upgrade": "",
@@ -111,7 +111,7 @@ formatted_router_vars = {
         "accept_language": "",
         "raw_headers": {},
     },
-    "router_page" + FIELD_MARKER: {
+    "rx_router_page" + FIELD_MARKER: {
         "host": "",
         "path": "",
         "raw_path": "",
@@ -2413,11 +2413,11 @@ async def test_state_proxy(
             token,
             {
                 TestState.get_full_name(): {
-                    "router_session" + FIELD_MARKER: router_data.session,
-                    "router_headers" + FIELD_MARKER: router_data.headers,
-                    "router_page" + FIELD_MARKER: router_data._page,
-                    "router_url" + FIELD_MARKER: URLData.from_url(router_data.url),
-                    "router_route_id" + FIELD_MARKER: router_data.route_id,
+                    "rx_router_session" + FIELD_MARKER: router_data.session,
+                    "rx_router_headers" + FIELD_MARKER: router_data.headers,
+                    "rx_router_page" + FIELD_MARKER: router_data._page,
+                    "rx_router_url" + FIELD_MARKER: URLData.from_url(router_data.url),
+                    "rx_router_route_id" + FIELD_MARKER: router_data.route_id,
                 },
                 grandchild_state.get_full_name(): {
                     "value2" + FIELD_MARKER: "42",
@@ -3415,7 +3415,7 @@ async def test_preprocess(
     first_token, first_delta = emitted_deltas[0]
     assert first_token == token
     first_state_delta = first_delta[State.get_full_name()]
-    assert first_state_delta.pop("router_url" + FIELD_MARKER) is not None
+    assert first_state_delta.pop("rx_router_url" + FIELD_MARKER) is not None
     for router_var in constants.ROUTER_VARS:
         first_state_delta.pop(router_var + FIELD_MARKER, None)
     assert first_delta == exp_is_hydrated(State, False)
@@ -3478,7 +3478,7 @@ async def test_preprocess_multiple_load_events(
     assert len(emitted_deltas) >= 2
     first_delta = emitted_deltas[0][1]
     first_state_delta = first_delta[State.get_full_name()]
-    assert first_state_delta.pop("router_url" + FIELD_MARKER) is not None
+    assert first_state_delta.pop("rx_router_url" + FIELD_MARKER) is not None
     for router_var in constants.ROUTER_VARS:
         first_state_delta.pop(router_var + FIELD_MARKER, None)
     assert first_delta == exp_is_hydrated(State, False)
@@ -3817,13 +3817,38 @@ def test_router_var_dep_legacy_string() -> None:
     State._potentially_dirty_states.discard(LegacyRouterDepState.get_full_name())
 
 
+def test_router_var_dep_legacy_string_still_compiles() -> None:
+    """An app declaring deps=["router"] must still pass dependency validation.
+
+    `_validate_var_dependencies` checks the raw `_deps()` names against
+    `state_cls.vars` rather than the expanded registrations, so the deprecated
+    string only keeps working while `router` is itself listed as a var.
+    """
+
+    class LegacyRouterCompileState(State):
+        """A state with a legacy string dependency on the router var."""
+
+        @rx.var(deps=["router"], auto_deps=False)
+        def foo(self) -> str:
+            return self.router.url.path
+
+    assert constants.ROUTER in State.vars
+    # Raises VarDependencyError if the dependency does not resolve to a var.
+    App()._validate_var_dependencies()
+
+    for dep_set in State._var_dependencies.values():
+        dep_set.discard((LegacyRouterCompileState.get_full_name(), "foo"))
+    State._potentially_dirty_states.discard(LegacyRouterCompileState.get_full_name())
+
+
 def test_router_var_dep_whole_router() -> None:
     """deps=[State.router] must track every per-field router var.
 
-    The switchboard's VarData surfaces only one field name, so without the
-    composite dependency hook a cached var declaring the whole router would go
-    stale when any other router field changed -- a reconnect updates the
-    session without touching the URL, for instance.
+    The switchboard is composed of the five per-field vars, so its VarData
+    must carry all five field names; if it reported only one, a cached var
+    declaring the whole router would go stale when any other router field
+    changed -- a reconnect updates the session without touching the URL, for
+    instance.
     """
 
     class WholeRouterDepState(State):
@@ -3869,7 +3894,7 @@ def test_router_is_listed_as_a_var_and_inherited_by_substates() -> None:
     router_var = RouterVarListingState.vars[constants.ROUTER]
     assert isinstance(router_var, RouterDataVar)
     assert router_var.equals(State.router)
-    assert str(router_var.route_id) == str(State.router_route_id)
+    assert str(router_var.route_id) == str(State.rx_router_route_id)
 
 
 def test_update_router_vars_ignores_omitted_static_keys(
@@ -3903,9 +3928,9 @@ def test_update_router_vars_ignores_omitted_static_keys(
     }
     merged = test_state._update_router_vars(navigation_only, full_router_data)
     assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {
-        "router_page",
-        "router_url",
-        "router_route_id",
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
     }
     assert test_state.router.session.client_token == "tok"
     assert test_state.router.session.session_id == "sid1"
@@ -3952,7 +3977,7 @@ def test_update_router_vars_non_origin_header_leaves_navigation_clean(
         RouteVar.HEADERS: {"origin": "http://localhost:3000", "cookie": "c=d"},
     }
     test_state._update_router_vars(new_cookie, router_data)
-    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {"router_headers"}
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {"rx_router_headers"}
 
 
 def test_update_router_vars_granular_delta(test_state: TestState) -> None:
@@ -3978,9 +4003,9 @@ def test_update_router_vars_granular_delta(test_state: TestState) -> None:
     nav_router_data = {**full_router_data, RouteVar.PATH: "/b", RouteVar.ORIGIN: "/b"}
     test_state._update_router_vars(nav_router_data, full_router_data)
     assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {
-        "router_page",
-        "router_url",
-        "router_route_id",
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
     }
     assert test_state.router.url.path == "/b"
     assert test_state.router.session.session_id == "sid1"
@@ -3989,7 +4014,7 @@ def test_update_router_vars_granular_delta(test_state: TestState) -> None:
     # Reconnect: only the session var is rebuilt.
     reconnect_router_data = {**nav_router_data, RouteVar.SESSION_ID: "sid2"}
     test_state._update_router_vars(reconnect_router_data, nav_router_data)
-    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {"router_session"}
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {"rx_router_session"}
     assert test_state.router.session.session_id == "sid2"
     test_state._clean()
 
@@ -4001,9 +4026,9 @@ def test_update_router_vars_granular_delta(test_state: TestState) -> None:
     }
     test_state._update_router_vars(new_headers_router_data, reconnect_router_data)
     assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {
-        "router_headers",
-        "router_page",
-        "router_url",
+        "rx_router_headers",
+        "rx_router_page",
+        "rx_router_url",
     }
     assert test_state.router.url.origin == "http://example.com"
     test_state._clean()

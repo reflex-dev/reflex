@@ -6,7 +6,13 @@ from typing import Any, Literal, TypeVar
 
 import pytest
 from reflex_base.utils.types import get_field_type
-from reflex_base.vars.base import EvenMoreBasicBaseState, Var, _linearize_bases, field
+from reflex_base.vars.base import (
+    EvenMoreBasicBaseState,
+    Var,
+    VarData,
+    _linearize_bases,
+    field,
+)
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
@@ -246,3 +252,42 @@ def test_linearize_bases_compares_by_identity() -> None:
             _linearize_bases((b, c)), created.__mro__[1:], strict=True
         )
     )
+
+
+def test_var_data_merge_collects_field_names():
+    """Merging vars of one state keeps every field name, deduped and in order."""
+    merged = VarData.merge(
+        VarData(state="s", field_name="a"),
+        VarData(state="s", field_name="b"),
+        VarData(state="s", field_name="a"),
+    )
+
+    assert merged is not None
+    assert merged.field_names == ("a", "b")
+    # `field_name` stays the first, so existing single-field readers are intact.
+    assert merged.field_name == "a"
+
+
+def test_var_data_merge_drops_field_names_of_other_states():
+    """Field names are paired with a single state, so foreign ones are dropped.
+
+    Callers register these names against `VarData.state`; keeping a name from
+    a different state would declare a dependency on a field that state has no
+    knowledge of.
+    """
+    merged = VarData.merge(
+        VarData(state="s", field_name="a"),
+        VarData(state="other", field_name="b"),
+    )
+
+    assert merged is not None
+    assert merged.state == "s"
+    assert merged.field_names == ("a",)
+
+
+def test_var_data_field_name_shorthand_round_trips():
+    """`field_name` is shorthand for a single-entry `field_names`."""
+    assert VarData(field_name="a").field_names == ("a",)
+    assert VarData(field_names=["a", "b"]).field_name == "a"
+    assert VarData().field_names == ()
+    assert VarData().field_name == ""
