@@ -913,12 +913,14 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
+    from reflex.utils.misc import is_page_meta_set
+
     meta_tags = [
         item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
 
     children: list[Any] = [Title.create(title)]
-    if description is not None:
+    if is_page_meta_set(description):
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 

@@ -10,6 +10,8 @@ from reflex_base.config import get_config
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console
 
+from reflex.utils.misc import is_page_meta_set
+
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
@@ -55,11 +57,11 @@ def page(
         kwargs: dict[str, Any] = {}
         if route:
             kwargs["route"] = route
-        if title is not None:
+        if is_page_meta_set(title):
             kwargs["title"] = title
         if image:
             kwargs["image"] = image
-        if description is not None:
+        if is_page_meta_set(description):
             kwargs["description"] = description
         if meta:
             kwargs["meta"] = meta

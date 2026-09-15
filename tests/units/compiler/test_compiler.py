@@ -786,6 +786,20 @@ def test_add_meta_accepts_dynamic_description():
     assert description.content is PageState.description  # pyright: ignore [reportAttributeAccessIssue]
 
 
+def test_add_meta_drops_empty_description():
+    """An empty-string description keeps producing no description tag."""
+    page = rx.box()
+    utils.add_meta(
+        page,
+        title="title",
+        image="",
+        meta=(),
+        description="",
+    )
+
+    assert not any(isinstance(child, Description) for child in page.children)
+
+
 def test_create_document_root_with_scripts():
     # Test with components.
     comps = [

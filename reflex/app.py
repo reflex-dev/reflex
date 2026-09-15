@@ -97,7 +97,7 @@ from reflex.utils.exec import (
     is_testing_env,
     should_prerender_routes,
 )
-from reflex.utils.misc import run_in_thread
+from reflex.utils.misc import is_page_meta_set, run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 logger = logging.getLogger(__name__)
@@ -1036,12 +1036,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
-            title = title if title is not None else constants.Page404.TITLE
-            description = (
-                description
-                if description is not None
-                else constants.Page404.DESCRIPTION
-            )
+            if not is_page_meta_set(title):
+                title = constants.Page404.TITLE
+            if not is_page_meta_set(description):
+                description = constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
         else:
             if component is None:

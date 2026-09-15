@@ -48,6 +48,21 @@ def test_page_decorator_accepts_state_metadata(
     assert page_data["description"] is PageState.description
 
 
+def test_page_decorator_empty_string_metadata_is_unset(
+    clean_registration_context: RegistrationContext,
+):
+    """Empty-string title/description keep falling back to the defaults."""
+
+    def foo_():
+        return text("foo")
+
+    page(title="", description="")(foo_)
+
+    _, page_data = clean_registration_context.decorated_pages[0]
+    assert "title" not in page_data
+    assert "description" not in page_data
+
+
 def test_page_decorator_with_kwargs(
     clean_registration_context: RegistrationContext,
 ):

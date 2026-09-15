@@ -326,6 +326,19 @@ def test_prepare_404_page_preserves_dynamic_metadata():
     assert prepared.page.description is PageState.description
 
 
+def test_prepare_404_page_empty_string_metadata_uses_defaults():
+    """Empty-string 404 metadata keeps falling back to the defaults."""
+    app = App()
+    prepared = app._prepare_page(
+        route=constants.Page404.SLUG,
+        title="",
+        description="",
+    )
+
+    assert prepared.page.title == constants.Page404.TITLE
+    assert prepared.page.description == constants.Page404.DESCRIPTION
+
+
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
