@@ -344,7 +344,7 @@ def _has_data_descriptor(cls: type, name: str) -> bool:
     return False
 
 
-def _is_user_descriptor(value: Any, *, include_properties: bool = False) -> bool:
+def _is_user_descriptor(value: Any) -> bool:
     """Whether a class attribute is a user-defined descriptor.
 
     Excludes framework-recognized callables and var types so user-defined
@@ -353,7 +353,6 @@ def _is_user_descriptor(value: Any, *, include_properties: bool = False) -> bool
 
     Args:
         value: The class attribute value to check.
-        include_properties: Whether property-like descriptors also count.
 
     Returns:
         True if the value is a custom descriptor.
@@ -366,14 +365,12 @@ def _is_user_descriptor(value: Any, *, include_properties: bool = False) -> bool
             FunctionType,
             classmethod,
             staticmethod,
+            property,
+            functools.cached_property,
             EventHandler,
             Var,
             Field,
         ),
-    ):
-        return False
-    if not include_properties and isinstance(
-        value, (property, functools.cached_property)
     ):
         return False
     return not is_computed_var(value)
@@ -1117,41 +1114,15 @@ class BaseState(EvenMoreBasicBaseState):
                 raise ComputedVarShadowsStateVarError(msg)
 
     @classmethod
-    def _state_field_precedes_descriptor(cls, name: str) -> bool:
-        """Whether a state base declaring name outranks a same-named descriptor.
-
-        Re-annotating is how a state field that already wins over a descriptor on a
-        non-state base is kept, so that redeclaration is inert rather than a mistake.
-        A descriptor that instead outranks the state field does not make the
-        redeclaration take effect, so it is not exempt.
-
-        Args:
-            name: The var name to look up.
-
-        Returns:
-            True if a state base declaring name precedes a non-state descriptor.
-        """
-        state_first = False
-        for base in cls.__mro__[1:]:
-            if name not in base.__dict__:
-                continue
-            if issubclass(base, BaseState):
-                state_first = True
-            elif _is_user_descriptor(base.__dict__[name], include_properties=True):
-                return state_first
-        return False
-
-    @classmethod
     def _check_overridden_inherited_vars(cls) -> None:
         """Warn about base vars that shadow a var inherited from a parent state.
 
         Such a redeclaration is dropped silently: the field never becomes a base var,
-        so reads and writes resolve to the parent's var and class-level access returns
-        the raw default instead of a Var.
+        so reads and writes resolve to the parent's var, and the raw default left in
+        the class dict makes class-level access return it instead of a Var.
 
-        A redeclaration that exists to win over a descriptor reached through a
-        non-state base is left alone, since re-annotating is how that MRO conflict
-        is resolved.
+        A bare re-annotation leaves no class attribute, so the name keeps resolving
+        to the inherited Var and stays reactive — that form is inert, not a shadow.
         """
         parent_state = cls.get_parent_state()
         if parent_state is None:
@@ -1162,23 +1133,20 @@ class BaseState(EvenMoreBasicBaseState):
                 name.startswith("_")
                 or not own_field.is_var
                 or name not in cls.inherited_vars
+                or name not in cls.__dict__
             ):
                 continue
             # A field redeclared on this class is a distinct object from the parent's;
             # a merely inherited one is the same object.
             parent_field = parent_fields.get(name)
-            if (
-                parent_field is None
-                or parent_field is own_field
-                or cls._state_field_precedes_descriptor(name)
-            ):
+            if parent_field is None or parent_field is own_field:
                 continue
-            console.warn(
+            logger.warning(
                 f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
                 f"inherited from {parent_state.__module__}.{parent_state.__name__} and "
                 "is ignored: reads and writes resolve to the parent's var. Use a "
                 "different name instead.",
-                dedupe=True,
+                extra={"dedupe": True},
             )
 
     @classmethod
