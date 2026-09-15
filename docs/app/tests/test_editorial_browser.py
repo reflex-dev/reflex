@@ -109,9 +109,9 @@ def test_editorial_footer_preserves_links_and_email_validation(page: Page, width
     expect(
         footer.get_by_role("link", name="Documentation", exact=True)
     ).to_have_attribute("href", "/docs/")
-    email = footer.get_by_label("Stay up to date with Reflex")
+    email = footer.get_by_label("Email address", exact=True)
     expect(email).to_have_attribute("name", "input_email")
-    footer.get_by_role("button", name="Get Updates", exact=True).click()
+    footer.get_by_role("button", name="Subscribe", exact=True).click()
     assert email.evaluate("input => input.validity.valueMissing")
     expect(email).to_be_focused()
     expect(footer.get_by_role("status")).to_have_count(0)

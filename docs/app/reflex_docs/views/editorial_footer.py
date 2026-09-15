@@ -8,7 +8,6 @@ from reflex.style import color_mode, set_color_mode
 from reflex_site_shared.backend.signup import IndexState
 from reflex_site_shared.backend.status import StatusState
 from reflex_site_shared.components.icons import get_icon
-from reflex_site_shared.components.marketing_button import button
 from reflex_site_shared.components.server_status import server_status
 from reflex_site_shared.constants import (
     CHANGELOG_URL,
@@ -85,43 +84,58 @@ _FOCUS = (
 
 
 def _newsletter() -> rx.Component:
-    """Keep the existing signup handler behind a labeled, compact email form."""
+    """Integrate a quiet, labeled signup into the footer's column grid."""
     return rx.el.div(
+        rx.el.h2(
+            "Updates from Reflex",
+            class_name="text-base font-book tracking-tight text-foreground",
+        ),
         rx.cond(
             IndexState.signed_up,
             rx.el.div(
                 rx.el.p("Thanks for subscribing!", role="status"),
-                button(
-                    "Sign up for another email",
-                    variant="outline",
-                    size="sm",
+                rx.el.button(
+                    "Use another email",
+                    type="button",
                     on_click=IndexState.signup_for_another_user,
+                    class_name=f"w-fit text-sm underline underline-offset-4 {_FOCUS}",
                 ),
-                class_name="flex flex-col items-start gap-3 text-sm text-foreground",
+                class_name="mt-2 flex flex-col items-start gap-3 text-sm text-muted-foreground",
             ),
             rx.el.div(
-                rx.el.label(
-                    "Stay up to date with Reflex",
-                    html_for="docs-newsletter-email",
-                    class_name="text-sm font-book text-foreground",
+                rx.el.p(
+                    "Product updates and new guides, in your inbox.",
+                    id="docs-newsletter-description",
+                    class_name="mt-2 text-sm leading-6 text-muted-foreground",
                 ),
                 rx.el.form(
+                    rx.el.label(
+                        "Email address",
+                        html_for="docs-newsletter-email",
+                        class_name="sr-only",
+                    ),
                     rx.el.input(
                         id="docs-newsletter-email",
                         name="input_email",
                         type="email",
                         auto_complete="email",
+                        aria_describedby="docs-newsletter-description",
                         placeholder="Your email address",
                         required=True,
-                        class_name=f"h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-subtle-foreground {_FOCUS}",
+                        class_name="h-11 w-0 min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-foreground outline-none placeholder:text-subtle-foreground focus-visible:outline-none",
                     ),
-                    button("Get Updates", type="submit", variant="primary", size="md"),
+                    rx.el.button(
+                        "Subscribe",
+                        rx.icon("arrow-right", size=14, aria_hidden=True),
+                        type="submit",
+                        class_name=f"inline-flex shrink-0 items-center gap-2 rounded-sm py-3 text-sm font-book text-foreground transition-colors hover:text-muted-foreground {_FOCUS}",
+                    ),
                     on_submit=IndexState.signup,
-                    class_name="mt-3 flex flex-wrap items-center gap-2",
+                    class_name="mt-3 flex items-center gap-4 border-b border-border transition-colors focus-within:border-foreground",
                 ),
             ),
         ),
-        class_name="w-full max-w-md",
+        class_name="docs-footer-newsletter w-full min-w-0 lg:col-span-2",
     )
 
 
@@ -190,10 +204,10 @@ def editorial_footer() -> rx.Component:
                     class_name="hidden h-5 w-auto dark:block",
                 ),
                 href=REFLEX_URL,
-                class_name=f"w-fit rounded-sm {_FOCUS}",
+                class_name=f"w-fit rounded-sm lg:col-span-4 {_FOCUS}",
             ),
             _newsletter(),
-            class_name="flex flex-col items-start justify-between gap-10 pb-14 sm:flex-row sm:gap-16",
+            class_name="grid grid-cols-1 items-start gap-8 pb-12 sm:grid-cols-2 lg:grid-cols-6",
         ),
         rx.el.div(
             *[_link_column(heading, links) for heading, links in _FOOTER_LINKS],
