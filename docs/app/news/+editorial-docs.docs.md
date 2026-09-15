@@ -34,4 +34,4 @@ Choose between AI Builder and Python framework guides directly from the document
 
 Illustrate the AI Builder best practices with a focused prompt, an app preview, and a follow-up refinement.
 
-Choose Reflex Build or Agent Toolkit from the new Build with AI overview.
+Choose Reflex Build or Agent Toolkit from the new Build with AI overview, within the shared documentation sidebar and article layout.

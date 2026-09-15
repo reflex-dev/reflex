@@ -347,6 +347,7 @@ def sidebar_comp(
 
     is_docs_hosting = url.startswith("/hosting/")
     is_docs_ai_builder = url.startswith("/ai/")
+    is_ai_overview = url == "/ai/"
     is_ai_mcp_or_skills = (
         url.startswith("/ai/integrations/agent-toolkit/")
         | url.startswith("/ai/integrations/skills/")
@@ -381,10 +382,16 @@ def sidebar_comp(
 
     ai_builder_categories = rx.el.ul(
         sidebar_category(
-            "AI Builder",
-            ai_builder_pages.overview.best_practices.path,
+            "Build with AI",
+            "/ai/",
+            "sparkles",
+            is_ai_overview,
+        ),
+        sidebar_category(
+            "Reflex Build",
+            ai_builder_pages.overview.what_is_reflex_build.path,
             "bot",
-            ~is_ai_mcp_or_skills,
+            ~is_ai_mcp_or_skills & ~is_ai_overview,
         ),
         sidebar_category(
             "Agent Toolkit",

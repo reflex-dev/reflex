@@ -4,8 +4,7 @@ import reflex as rx
 
 from reflex_docs.pages.docs import ai_builder
 from reflex_docs.pages.docs_landing.views.artwork import artwork
-from reflex_docs.views.docs_navbar import docs_navbar
-from reflex_docs.views.editorial_footer import editorial_footer
+from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
 
 def _workflow_preview(icon: rx.Component, labels: tuple[str, ...]) -> rx.Component:
@@ -79,64 +78,48 @@ def _workflow_card(
     )
 
 
-@rx.page(
-    route="/ai/",
-    title="Build with AI · Reflex Docs",
+@docpage(
+    set_path="/ai/",
+    t="Build with AI",
+    right_sidebar=False,
     description="Build in your browser with Reflex Build, or use Agent Toolkit with your own coding agent.",
 )
 def ai_landing() -> rx.Component:
-    """Offer Reflex Build and Agent Toolkit as distinct documentation paths."""
-    return rx.el.div(
-        docs_navbar(),
-        rx.el.main(
-            rx.el.section(
-                rx.el.a(
-                    rx.icon("arrow-left", size=14, aria_hidden=True),
-                    "Documentation",
-                    href="/",
-                    class_name="mb-7 inline-flex items-center gap-2 rounded-sm text-sm text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
-                ),
-                rx.el.h1(
-                    "Build with AI",
-                    class_name="text-4xl font-book leading-tight tracking-tight text-foreground sm:text-5xl",
-                ),
-                rx.el.p(
-                    "Use Reflex's integrated builder or work with your own coding agent.",
-                    class_name="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg",
-                ),
-                rx.el.div(
-                    _workflow_card(
-                        "Use Reflex Build",
-                        "Create, preview, and deploy your app in the browser with an integrated AI agent.",
-                        "Explore Reflex Build",
-                        ai_builder.overview.what_is_reflex_build.path,
-                        "lavender",
-                        _workflow_preview(
-                            artwork("reflex_mark", class_name="w-5"),
-                            (
-                                "Describe your app",
-                                "Review the live preview",
-                                "Deploy when you're ready",
-                            ),
-                        ),
-                    ),
-                    _workflow_card(
-                        "Bring your own agent",
-                        "Give your preferred coding agent Reflex documentation, skills, and tools with Agent Toolkit.",
-                        "Explore Agent Toolkit",
-                        ai_builder.integrations.agent_toolkit.path,
-                        "mint",
-                        _workflow_preview(
-                            rx.icon("terminal", size=20, class_name="text-foreground"),
-                            ("Documentation for agents", "Reflex skills", "MCP tools"),
-                        ),
-                    ),
-                    class_name="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2",
-                ),
-                aria_label="Choose your AI workflow",
-                class_name="mx-auto w-full max-w-5xl px-6 pb-20 pt-[calc(var(--docs-header-height)+3rem)] sm:pb-24 sm:pt-[calc(var(--docs-header-height)+4rem)]",
-            ),
+    """Offer both AI workflows within the shared documentation layout."""
+    return rx.el.section(
+        h1_comp(text="Build with AI"),
+        text_comp_2(
+            text="Use Reflex's integrated builder or work with your own coding agent.",
         ),
-        editorial_footer(),
-        class_name="min-h-screen bg-background",
+        rx.el.div(
+            _workflow_card(
+                "Use Reflex Build",
+                "Create, preview, and deploy your app in the browser with an integrated AI agent.",
+                "Explore Reflex Build",
+                ai_builder.overview.what_is_reflex_build.path,
+                "lavender",
+                _workflow_preview(
+                    artwork("reflex_mark", class_name="w-5"),
+                    (
+                        "Describe your app",
+                        "Review the live preview",
+                        "Deploy when you're ready",
+                    ),
+                ),
+            ),
+            _workflow_card(
+                "Bring your own agent",
+                "Give your preferred coding agent Reflex documentation, skills, and tools with Agent Toolkit.",
+                "Explore Agent Toolkit",
+                ai_builder.integrations.agent_toolkit.path,
+                "mint",
+                _workflow_preview(
+                    rx.icon("terminal", size=20, class_name="text-foreground"),
+                    ("Documentation for agents", "Reflex skills", "MCP tools"),
+                ),
+            ),
+            class_name="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2",
+        ),
+        aria_label="Choose your AI workflow",
+        class_name="docs-ai-overview min-w-0 pb-8",
     )

@@ -80,9 +80,27 @@ def test_ai_overview_offers_build_and_agent_paths(page: Page, width: int):
         response = page.goto(f"{PREVIEW_URL}/docs/ai/", wait_until="networkidle")
         assert response.status == 200
         expect(
-            page.get_by_role("heading", name="Build with AI", exact=True)
+            page.get_by_role("heading", level=1, name="Build with AI", exact=True)
         ).to_be_visible()
         assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        if width < 1024:
+            page.get_by_role("button", name="Open documentation navigation").click()
+            navigation = page.get_by_role("dialog")
+        else:
+            navigation = page.locator(".docs-left-sidebar")
+        expect(navigation).to_be_visible()
+        expect(
+            navigation.get_by_role("link", name="Navigate to Build with AI", exact=True)
+        ).to_have_attribute("aria-current", "true")
+        expect(
+            navigation.get_by_role("link", name="Navigate to Reflex Build", exact=True)
+        ).to_have_attribute("href", "/docs/ai/overview/what-is-reflex-build/")
+        expect(
+            navigation.get_by_role("link", name="Navigate to Agent Toolkit", exact=True)
+        ).to_have_attribute("href", "/docs/ai/integrations/agent-toolkit/")
+        if width < 1024:
+            page.keyboard.press("Escape")
+            expect(navigation).not_to_be_visible()
         choice = page.get_by_role("link", name=label, exact=True)
         expect(choice).to_have_attribute("href", destination)
         choice.focus()
