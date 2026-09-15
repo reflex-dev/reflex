@@ -1228,8 +1228,12 @@ class BaseState(EvenMoreBasicBaseState):
         """
         return RegistrationContext.get().get_substates(cls)
 
+    # Unbounded on purpose: the resolved name depends on the active resolver,
+    # which lives in a ContextVar, so an evicted entry can be recomputed from a
+    # scope that has no context and pin the default name process-wide. One
+    # entry per state class is already bounded by the registry.
     @classmethod
-    @functools.lru_cache
+    @functools.cache
     def get_name(cls) -> str:
         """Get the user-visible name of the state.
 
@@ -1248,7 +1252,7 @@ class BaseState(EvenMoreBasicBaseState):
         return ctx.get_state_name(cls)
 
     @classmethod
-    @functools.lru_cache
+    @functools.cache
     def get_full_name(cls) -> str:
         """Get the full name of the state.
 

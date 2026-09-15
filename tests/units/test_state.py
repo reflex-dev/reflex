@@ -5873,3 +5873,37 @@ def test_first_substate_is_not_mistaken_for_its_parent(temp_minify_json, monkeyp
     assert DirtyChild.get_name() == "c"
     assert DirtyParent.get_class_substate(DirtyChild.get_name()) is DirtyChild
     assert DirtyChild in DirtyParent._get_potentially_dirty_states()
+
+
+def test_resolved_name_survives_cache_pressure(temp_minify_json, monkeypatch):
+    """A resolved name is never recomputed from a scope with no context.
+
+    The name caches are keyed only by the class but the resolver lives in a
+    ContextVar, so a bounded cache would evict a name and let any later caller
+    -- a bare thread has no context -- pin the default name process-wide.
+
+    Args:
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    set_minify_modes(monkeypatch, states=True)
+    parent_path = f"{__name__}.State.PressureState"
+    install_config(states={parent_path: "b"})
+
+    class PressureState(State):
+        pass
+
+    assert PressureState.get_name() == "b"
+
+    # More distinct classes than a default lru_cache would hold.
+    for index in range(150):
+        type(f"Filler{index}", (BaseState,), {"__module__": __name__}).get_name()
+
+    resolved: list[str] = []
+    thread = threading.Thread(target=lambda: resolved.append(PressureState.get_name()))
+    thread.start()
+    thread.join()
+
+    assert RegistrationContext.try_get() is not None
+    assert resolved == ["b"], "name was re-resolved without a registration context"
+    assert PressureState.get_name() == "b"
