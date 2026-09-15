@@ -1,0 +1,1 @@
+Apps no longer crash at startup with `AttributeError: 'method' object attribute '__call__' is read-only` when ASGI instrumentation that wraps middleware is active, such as sentry-sdk's Starlette integration.

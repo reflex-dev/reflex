@@ -518,6 +518,8 @@ class EventProcessor:
 
         After popping, cascade the check upward: if the parent future is also
         done and all its immediate children are done, pop the parent as well.
+        The cascade is a loop rather than recursion because a self-chaining
+        handler nests its futures one level deeper per event.
 
         This keeps parent futures alive in ``_futures`` while any child still
         needs them for ``wait_all`` and cleanup.
@@ -525,27 +527,29 @@ class EventProcessor:
         Args:
             future: The EventFuture to check.
         """
-        if not future.done():
-            return
-        if future.cancelled() and future.txid in self._tasks:
-            # The cancelled handler task is still unwinding; keep the future so
-            # late-chained events can find their cancelled parent. Failed
-            # futures are not retained, so a backend exception handler task
-            # reusing the txid can chain recovery events normally.
-            return
-        # Not checking future.all_done() to avoid waiting for grandchildren here.
-        if not all(c.done() for c in future.children):
-            return
-        parent = future.parent
-        self._futures.pop(future.txid, None)
-        if (
-            (key := future.supersede_key) is not None
-            and self._superseded.get(key) is future
-            and future.all_done()
-        ):
-            del self._superseded[key]
-        if parent is not None and parent.txid:
-            self._try_clean_future(parent)
+        while True:
+            if not future.done():
+                return
+            if future.cancelled() and future.txid in self._tasks:
+                # The cancelled handler task is still unwinding; keep the future
+                # so late-chained events can find their cancelled parent. Failed
+                # futures are not retained, so a backend exception handler task
+                # reusing the txid can chain recovery events normally.
+                return
+            # Not checking future.all_done() to avoid waiting for grandchildren here.
+            if not all(c.done() for c in future.children):
+                return
+            parent = future.parent
+            self._futures.pop(future.txid, None)
+            if (
+                (key := future.supersede_key) is not None
+                and self._superseded.get(key) is future
+                and future.all_done()
+            ):
+                del self._superseded[key]
+            if parent is None or not parent.txid:
+                return
+            future = parent
 
     def _supersede_previous(
         self, *, token: str, event: Event, tracked: EventFuture
