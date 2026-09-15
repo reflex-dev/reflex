@@ -4,7 +4,10 @@ import reflex as rx
 
 # Memo
 
-The `@rx.memo` decorator turns a function into a memoized React component. The compiler emits the function as its own module, and React's `memo` only re-renders it when its declared props change. Reach for it when a subtree is expensive to render and depends on a narrow slice of state.
+The `@rx.memo` decorator emits a component or `rx.Var`-returning function in
+its own module and memoizes it at runtime. React component memos re-render only
+when their declared props change, while function memos reuse cached results for
+unchanged arguments.
 
 ## Requirements
 
@@ -46,6 +49,79 @@ def index():
 ```
 
 `expensive_component` re-renders only when `label` changes — bumping `DemoState.count` does not invalidate it.
+
+Use `name=` to override the generated memo name, which is useful for lambdas:
+
+```python
+named_memo = rx.memo(name="named_memo")(lambda label: rx.text(label))
+```
+
+The name must have valid JavaScript identifier characters. Reflex appends its
+memo marker to explicit names so JavaScript keywords remain safe.
+
+For props whose values are recreated but equal on each render, use
+`by_value=True` to compare their serialized values:
+
+```python
+@rx.memo(by_value=True)
+def settings_panel(settings: rx.Var[dict[str, str]]) -> rx.Component:
+    return rx.text(settings["title"])
+```
+
+If `wrapper=` is also supplied, the value-based memo wrapper is applied around
+the custom wrapper rather than replacing it.
+
+By default, an explicit memo is the auto-memoization boundary for its children.
+Pass `recursive=True` when hook-bearing child components should also be
+auto-memoized independently. This is useful when the explicit memo provides a
+reusable module boundary but state reads should still re-render as close to
+their use as possible:
+
+```python
+class MetricsState(rx.State):
+    request_count: int = 0
+
+
+def live_request_count() -> rx.Component:
+    return rx.text("Requests: ", MetricsState.request_count)
+
+
+@rx.memo(recursive=True)
+def dashboard_shell() -> rx.Component:
+    return rx.card(
+        rx.heading("Dashboard"),
+        live_request_count(),
+    )
+
+
+def analytics_page() -> rx.Component:
+    return dashboard_shell()
+
+
+def admin_page() -> rx.Component:
+    return dashboard_shell()
+```
+
+`dashboard_shell` is emitted once as a reusable component module. Because it is
+recursive, the state-bearing `live_request_count` subtree gets its own nearby
+auto-memo boundary instead of making the whole dashboard shell depend directly
+on `MetricsState.request_count`.
+
+## Memoized Functions
+
+A function returning `rx.Var[...]` is emitted as a JavaScript function and
+memoizes its return value by argument identity. Repeated calls with the same
+arguments reuse the cached result, including calls made while rendering:
+
+```python
+@rx.memo
+def format_total(total: rx.Var[int]) -> rx.Var[str]:
+    return "$" + total.to(str)
+```
+
+Use `by_value=True` to key that cache by serialized argument values, or
+`wrapper=None` to emit a plain uncached function. Custom wrappers work for
+function memos as well. `recursive=True` only applies to component memos.
 
 ## With State Variables
 

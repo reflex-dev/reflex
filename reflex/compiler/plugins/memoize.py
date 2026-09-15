@@ -24,7 +24,7 @@ import dataclasses
 from typing import Any
 
 from reflex_base.components.component import BaseComponent, Component
-from reflex_base.components.memo import create_passthrough_component_memo
+from reflex_base.components.memo import MemoComponent, create_passthrough_component_memo
 from reflex_base.components.memoize_helpers import (
     MemoizationStrategy,
     _is_structural_memoization_child,
@@ -152,7 +152,9 @@ def _should_memoize(component: Component) -> bool:
 
     strategy = get_memoization_strategy(component)
 
-    if component._memoization_mode.disposition == MemoizationDisposition.NEVER:
+    if component._memoization_mode.disposition == MemoizationDisposition.NEVER and not (
+        isinstance(component, MemoComponent) and not type(component)._memo_recursive
+    ):
         return False
     if isinstance(component, Bare):
         # A stateful value will be wrapped in a separate component. Match the
@@ -198,7 +200,14 @@ def _should_memoize(component: Component) -> bool:
     if strategy is MemoizationStrategy.SNAPSHOT and not is_snapshot_boundary(component):
         return True
 
-    if is_snapshot_boundary(component) and _subtree_has_reactive_data(component):
+    # A non-recursive explicit memo is already the boundary for its children.
+    # Its own reactive props were handled above, but descendants must not make
+    # the memo itself eligible for another wrapper.
+    if (
+        is_snapshot_boundary(component)
+        and _subtree_has_reactive_data(component)
+        and not isinstance(component, MemoComponent)
+    ):
         return True
 
     # Components with event triggers are always memoized (to wrap callbacks).
@@ -267,6 +276,11 @@ class MemoizeStatefulPlugin(Plugin):
         if not isinstance(comp, Component):
             return None
         if page_context.memoize_suppressor_stack:
+            return None
+        if isinstance(comp, MemoComponent) and not type(comp)._memo_recursive:
+            # A non-recursive explicit memo remains a passthrough component,
+            # but its children must not be auto-memoized independently.
+            page_context.memoize_suppressor_stack.append(id(comp))
             return None
         strategy = get_memoization_strategy(comp)
         if strategy is not MemoizationStrategy.SNAPSHOT:

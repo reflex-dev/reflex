@@ -11,6 +11,7 @@ import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.component import field as component_field
 from reflex_base.components.memo import (
+    MEMOS,
     MemoComponent,
     MemoComponentDefinition,
     create_passthrough_component_memo,
@@ -643,6 +644,68 @@ def test_user_memo_with_static_props_is_not_auto_memoized() -> None:
     page_output = page_ctx.output_code
     assert page_output is not None
     assert f"jsx({static_card(label='static').tag}," in page_output
+
+
+def test_user_memo_recursive_controls_descendant_auto_memoization() -> None:
+    """Only recursive explicit memos auto-memoize reactive children."""
+
+    @rx.memo(recursive=False)
+    def non_recursive_card(children: rx.Var[Component]) -> Component:
+        return rx.box(children)
+
+    non_recursive_instance = non_recursive_card(WithProp.create(label=STATE_VAR))
+    assert (
+        non_recursive_instance._memoization_mode.disposition
+        is MemoizationDisposition.NEVER
+    )
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: non_recursive_card(WithProp.create(label=STATE_VAR))
+    )
+    assert not ctx.auto_memo_components
+
+    @rx.memo(recursive=True)
+    def recursive_card_with_child(children: rx.Var[Component]) -> Component:
+        return rx.box(children)
+
+    recursive_instance = recursive_card_with_child(WithProp.create(label=STATE_VAR))
+    assert (
+        recursive_instance._memoization_mode.disposition
+        is not MemoizationDisposition.NEVER
+    )
+
+    ctx, _page_ctx = _compile_single_page(
+        lambda: recursive_card_with_child(WithProp.create(label=STATE_VAR))
+    )
+    assert ctx.auto_memo_components
+
+
+def test_recursive_user_memo_auto_memoizes_stateful_body_descendant() -> None:
+    """A state read authored inside a recursive memo gets a nested boundary."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo
+    def non_recursive_dashboard() -> Component:
+        return Plain.create(WithProp.create(label=STATE_VAR))
+
+    non_recursive_definition = MEMOS["NonRecursiveDashboard", __name__]
+    assert isinstance(non_recursive_definition, MemoComponentDefinition)
+    files, _imports = compile_memo_components((non_recursive_definition,))
+    assert sum(content.count("export const ") for _, content in files) == 1
+
+    @rx.memo(recursive=True)
+    def recursive_dashboard() -> Component:
+        return Plain.create(WithProp.create(label=STATE_VAR))
+
+    definition = MEMOS["RecursiveDashboard", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    files, _imports = compile_memo_components((definition,))
+    code = "\n".join(content for _, content in files)
+    outer_symbol = memo_paths.mirrored_symbol("RecursiveDashboard", __name__)
+    assert f"export const {outer_symbol} = memo(" in code
+    assert code.count("export const ") == 2
+    assert '.displayName = "WithProp";' in code
 
 
 def test_user_memo_event_trigger_usecallback_leaves_page_scope() -> None:
