@@ -88,9 +88,9 @@ def _workflow_card(
             rx.el.div(
                 action,
                 rx.icon("arrow-right", size=16, aria_hidden=True),
-                class_name="mt-7 flex items-center gap-2 text-sm font-book text-foreground",
+                class_name="mt-auto flex items-center gap-2 pt-7 text-sm font-book text-foreground",
             ),
-            class_name="flex-1 border-t border-border bg-background p-6 sm:p-8",
+            class_name="flex flex-1 flex-col border-t border-border bg-background p-6 sm:p-8",
         ),
         href=href,
         aria_label=title,
@@ -115,16 +115,16 @@ def ai_landing() -> rx.Component:
         rx.el.div(
             _workflow_card(
                 "Use Reflex Build",
-                "Create, preview, and deploy your app in the browser with an integrated AI agent.",
+                "The most powerful way to build Reflex apps. Bring AI generation, live previews, testing, integrations, and deployment together in one workspace.",
                 "Explore Reflex Build",
                 ai_builder.overview.what_is_reflex_build.path,
                 "lavender",
                 _workflow_preview(
                     artwork("reflex_mark", class_name="w-5"),
                     (
-                        "Describe your app",
-                        "Review the live preview",
-                        "Deploy when you're ready",
+                        "Plan and build with AI",
+                        "Preview and test your app",
+                        "Connect data and deploy",
                     ),
                 ),
             ),
