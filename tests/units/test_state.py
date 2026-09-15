@@ -29,6 +29,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
+    BaseVarShadowsInheritedVarError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
@@ -5382,34 +5383,20 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     error_mock.assert_called_once()
 
 
-def test_base_var_shadowing_inherited_var_warns(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """A base var shadowing an inherited var warns instead of being dropped silently.
-
-    Args:
-        caplog: Pytest log capture fixture.
-    """
+def test_base_var_shadowing_inherited_var_raises() -> None:
+    """A base var shadowing an inherited var raises instead of being dropped silently."""
 
     class ShadowParent(BaseState):
         shadowed_value: int = 1
 
-    class ShadowChild(ShadowParent):
-        shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="shadowed_value"):
 
-    assert any("shadowed_value" in r.getMessage() for r in caplog.records), (
-        "expected a warning naming the shadowed var"
-    )
+        class ShadowChild(ShadowParent):
+            shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
 
-def test_base_var_shadowing_non_state_descriptor_does_not_warn(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """Re-annotating to win over a descriptor from a non-state base is not a shadow.
-
-    Args:
-        caplog: Pytest log capture fixture.
-    """
+def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
+    """Re-annotating to win over a descriptor from a non-state base is not a shadow."""
     from reflex_base.vars.hybrid_property import hybrid_property
 
     class SharedMixin:
@@ -5426,19 +5413,11 @@ def test_base_var_shadowing_non_state_descriptor_does_not_warn(
     class DescriptorChild(PlainBase, OverridingState):
         descriptor_value: int  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
 
-    assert not [r for r in caplog.records if "descriptor_value" in r.getMessage()], (
-        "re-annotation resolving a descriptor MRO conflict must not warn"
-    )
+    assert isinstance(DescriptorChild.descriptor_value, Var)
 
 
-def test_base_var_shadowing_warns_when_descriptor_outranks_state_field(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """A descriptor closer than the state field does not exempt a dropped declaration.
-
-    Args:
-        caplog: Pytest log capture fixture.
-    """
+def test_base_var_shadowing_raises_when_descriptor_outranks_state_field() -> None:
+    """A descriptor closer than the state field does not exempt a dropped declaration."""
     from reflex_base.vars.hybrid_property import hybrid_property
 
     class CloserMixin:
@@ -5449,25 +5428,14 @@ def test_base_var_shadowing_warns_when_descriptor_outranks_state_field(
     class OutrankedParent(BaseState):
         outranked_value: int = 1  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
-    class OutrankedChild(CloserMixin, OutrankedParent):
-        outranked_value: str = "x"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="outranked_value"):
 
-    assert "outranked_value" not in OutrankedChild.base_vars, (
-        "declaration is still dropped, so it must not be treated as effective"
-    )
-    assert any("outranked_value" in r.getMessage() for r in caplog.records), (
-        "expected a warning when the descriptor outranks the state field"
-    )
+        class OutrankedChild(CloserMixin, OutrankedParent):
+            outranked_value: str = "x"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
 
-def test_base_var_shadowing_warns_despite_state_field_outranking_descriptor(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """A dropped redeclaration warns even where a state field outranks a descriptor.
-
-    Args:
-        caplog: Pytest log capture fixture.
-    """
+def test_base_var_shadowing_raises_despite_state_field_outranking_descriptor() -> None:
+    """A dropped redeclaration raises even where a state field outranks a descriptor."""
     from reflex_base.vars.hybrid_property import hybrid_property
 
     class OutrankedMixin:
@@ -5478,23 +5446,14 @@ def test_base_var_shadowing_warns_despite_state_field_outranking_descriptor(
     class DescriptorOwningParent(OutrankedMixin, BaseState):
         redeclared_value: int = 5  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
-    class RedeclaringChild(DescriptorOwningParent):
-        redeclared_value: str = "shadowed"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="redeclared_value"):
 
-    assert not isinstance(RedeclaringChild.redeclared_value, Var)
-    assert any("redeclared_value" in r.getMessage() for r in caplog.records), (
-        "the raw default breaks class-level Var access, so it must warn"
-    )
+        class RedeclaringChild(DescriptorOwningParent):
+            redeclared_value: str = "shadowed"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
 
-def test_base_var_bare_reannotation_does_not_warn(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """A bare re-annotation of an inherited var is inert and stays silent.
-
-    Args:
-        caplog: Pytest log capture fixture.
-    """
+def test_base_var_bare_reannotation_does_not_raise() -> None:
+    """A bare re-annotation of an inherited var is inert and stays allowed."""
 
     class ReannotatedParent(BaseState):
         reannotated_value: int = 1
@@ -5503,6 +5462,3 @@ def test_base_var_bare_reannotation_does_not_warn(
         reannotated_value: int  # pyright: ignore[reportGeneralTypeIssues]
 
     assert isinstance(ReannotatingChild.reannotated_value, Var)
-    assert not [r for r in caplog.records if "reannotated_value" in r.getMessage()], (
-        "a bare re-annotation keeps resolving to the inherited Var and must not warn"
-    )

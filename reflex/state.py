@@ -40,6 +40,7 @@ from reflex_base.event import (
 )
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
+    BaseVarShadowsInheritedVarError,
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
@@ -1115,14 +1116,17 @@ class BaseState(EvenMoreBasicBaseState):
 
     @classmethod
     def _check_overridden_inherited_vars(cls) -> None:
-        """Warn about base vars that shadow a var inherited from a parent state.
+        """Reject base vars that shadow a var inherited from a parent state.
 
-        Such a redeclaration is dropped silently: the field never becomes a base var,
+        Such a redeclaration is dropped: the field never becomes a base var,
         so reads and writes resolve to the parent's var, and the raw default left in
         the class dict makes class-level access return it instead of a Var.
 
         A bare re-annotation leaves no class attribute, so the name keeps resolving
         to the inherited Var and stays reactive — that form is inert, not a shadow.
+
+        Raises:
+            BaseVarShadowsInheritedVarError: When a base var shadows an inherited var.
         """
         parent_state = cls.get_parent_state()
         if parent_state is None:
@@ -1141,13 +1145,12 @@ class BaseState(EvenMoreBasicBaseState):
             parent_field = parent_fields.get(name)
             if parent_field is None or parent_field is own_field:
                 continue
-            logger.warning(
+            msg = (
                 f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
-                f"inherited from {parent_state.__module__}.{parent_state.__name__} and "
-                "is ignored: reads and writes resolve to the parent's var. Use a "
-                "different name instead.",
-                extra={"dedupe": True},
+                f"inherited from {parent_state.__module__}.{parent_state.__name__}; "
+                "use a different name instead"
             )
+            raise BaseVarShadowsInheritedVarError(msg)
 
     @classmethod
     def get_skip_vars(cls) -> set[str]:
