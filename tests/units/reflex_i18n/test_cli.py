@@ -119,9 +119,13 @@ def test_cli_group_registered():
 
 
 def test_cli_group_discovered_by_reflex():
+    import click
+
     from reflex.reflex import cli
 
-    assert "i18n" in cli.commands
+    ctx = click.Context(cli)
+    assert cli.get_command(ctx, "i18n") is not None
+    assert "i18n" in cli.list_commands(ctx)
 
 
 @pytest.mark.parametrize("command", [extract_command, init_command, check_command])
