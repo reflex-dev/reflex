@@ -29,14 +29,3 @@ class MatchTag(Tag):
         yield ("cond", self.cond)
         yield ("match_cases", self.match_cases)
         yield ("default", self.default)
-
-    def render(self, children: Sequence[Any]) -> dict[str, Any]:
-        """Render the tag into the dictionary consumed by the templates.
-
-        Args:
-            children: The already rendered children.
-
-        Returns:
-            The rendered tag dictionary.
-        """
-        return dict(self)

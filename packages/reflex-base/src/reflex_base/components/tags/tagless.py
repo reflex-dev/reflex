@@ -1,8 +1,6 @@
 """A tag with no tag."""
 
 import dataclasses
-from collections.abc import Sequence
-from typing import Any
 
 from reflex_base.components.tags import Tag
 from reflex_base.utils import format
@@ -36,14 +34,3 @@ class Tagless(Tag):
             tuple[str, Any]: The field name and value.
         """
         yield "contents", self.contents
-
-    def render(self, children: Sequence[Any]) -> dict[str, Any]:
-        """Render the tag into the dictionary consumed by the templates.
-
-        Args:
-            children: The already rendered children.
-
-        Returns:
-            The rendered tag dictionary.
-        """
-        return dict(self)
