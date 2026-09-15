@@ -131,43 +131,17 @@ def docs_sidebar_leaf(
     """
     return rx.el.li(
         rx.link(
-            rx.cond(
-                active,
-                rx.el.div(
-                    class_name="docs-sidebar-selection absolute left-0 top-1/2 -translate-y-1/2 w-full h-8 rounded-lg bg-secondary-3 z-[-1]",
-                ),
-                rx.fragment(),
-            ),
             rx.flex(
-                rx.cond(
-                    active,
-                    rx.el.div(
-                        class_name="pointer-events-none absolute -bottom-1 -top-1 left-0 w-px bg-primary-10",
-                    ),
-                    rx.fragment(),
-                ),
                 rx.text(
                     title,
-                    class_name=rx.cond(
-                        active,
-                        "m-0 pl-4 text-sm font-[525] text-primary-10 transition-color",
-                        "m-0 w-full text-sm font-[525] text-secondary-11 transition-color hover:text-secondary-12",
-                    ),
+                    class_name="m-0 w-full text-sm",
                 ),
-                class_name=rx.cond(
-                    active,
-                    f"relative {guide_margin_class} flex h-8 max-w-[14rem] items-center",
-                    "relative flex h-8 items-center pl-4",
-                ),
+                class_name="relative flex items-center px-3",
             ),
             href=href,
             underline="none",
             aria_current=rx.cond(active, "page", "false"),
-            class_name=rx.cond(
-                active,
-                "docs-sidebar-leaf relative block w-full",
-                f"docs-sidebar-leaf block w-full {guide_margin_class}",
-            ),
+            class_name=f"docs-sidebar-leaf relative block {guide_margin_class}",
         ),
         class_name="relative m-0 w-full list-none p-0 !overflow-visible",
     )
@@ -281,28 +255,23 @@ def docs_sidebar_group(
     Returns:
         Collapsible documentation group row.
     """
-    has_icon = icon is not None
-    guide_left = "left-[3rem]" if has_icon else "left-[2.5rem]"
     return rx.el.li(
         rx.el.details(
             rx.el.summary(
-                rx.icon(tag=icon, size=16, class_name="mr-4")
+                rx.icon(tag=icon, size=14, class_name="mr-2.5 shrink-0")
                 if icon is not None
                 else rx.fragment(),
                 rx.text(title, class_name="m-0 text-sm font-[525]"),
                 rx.box(class_name="flex-grow"),
                 ui.icon(
                     "ArrowDown01Icon",
-                    class_name="size-4 group-open/details:rotate-180 transition-transform",
+                    class_name="docs-sidebar-chevron size-3 shrink-0 group-open/details:rotate-180 transition-transform",
                 ),
-                class_name="docs-sidebar-group-trigger !px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-secondary-11 hover:!text-secondary-12 transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
+                class_name="docs-sidebar-group-trigger m-0 flex items-center justify-start cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
             ),
             rx.el.ul(
-                rx.el.li(
-                    class_name=f"m-0 p-0 absolute {guide_left} top-0 bottom-0 w-px bg-secondary-4 z-[-1] pointer-events-none !rounded-none list-none",
-                ),
                 *children,
-                class_name="!my-1 p-0 flex flex-col items-start gap-1 list-none !bg-transparent !rounded-none !shadow-none relative",
+                class_name="docs-sidebar-group-items my-1 p-0 flex flex-col items-start gap-0 list-none !bg-transparent !rounded-none !shadow-none relative",
             ),
             open=open_,
             class_name="group/details m-0 p-0 w-full !bg-transparent border-none",
