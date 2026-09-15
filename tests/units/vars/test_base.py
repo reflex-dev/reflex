@@ -77,3 +77,57 @@ def test_computed_var_replace() -> None:
 
     replaced = cv._replace(_var_type=float)
     assert replaced._var_type is float
+
+
+def test_reset_unique_variable_names_is_deterministic():
+    """Resetting the unique-name generator reproduces the same name sequence.
+
+    Auto-memo content hashes embed these names, so a second in-process compile
+    must regenerate identical ones (the RNG state and used-name set otherwise
+    persist process-wide and drift).
+    """
+    from reflex_base.vars.base import (
+        get_unique_variable_name,
+        reset_unique_variable_names,
+    )
+
+    reset_unique_variable_names()
+    first = [get_unique_variable_name() for _ in range(8)]
+    # Without a reset, the sequence keeps advancing (and dedups against the
+    # already-used set), so it differs.
+    assert [get_unique_variable_name() for _ in range(8)] != first
+    # After a reset it reproduces the original sequence exactly.
+    reset_unique_variable_names()
+    assert [get_unique_variable_name() for _ in range(8)] == first
+
+
+def test_seeded_unique_variable_names_are_per_page():
+    """Each page seed yields its own reproducible sequence, resumable later.
+
+    Incremental compiles regenerate a subset of pages; a page's names must not
+    depend on which other pages compiled before it (or the reused pages would
+    share "unique" names with the recompiled one).
+    """
+    from reflex_base.vars.base import (
+        get_unique_variable_name,
+        restore_unique_variable_name_state,
+        seed_unique_variable_names,
+        unique_variable_name_state,
+    )
+
+    seed_unique_variable_names("/a")
+    a_names = [get_unique_variable_name() for _ in range(4)]
+    a_state = unique_variable_name_state()
+    seed_unique_variable_names("/b")
+    b_names = [get_unique_variable_name() for _ in range(4)]
+    assert a_names != b_names
+    # Re-seeding a page reproduces its sequence regardless of what ran between.
+    seed_unique_variable_names("/a")
+    assert [get_unique_variable_name() for _ in range(4)] == a_names
+    a_continued = [get_unique_variable_name() for _ in range(2)]
+    # Restoring a captured state resumes the sequence from that point without
+    # repeating names already handed out.
+    restore_unique_variable_name_state(a_state)
+    resumed = [get_unique_variable_name() for _ in range(2)]
+    assert resumed == a_continued
+    assert not set(resumed) & set(a_names)

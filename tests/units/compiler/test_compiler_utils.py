@@ -158,6 +158,34 @@ async def test_compile_state_resolves_async_computed_vars_with_running_event_loo
     assert values[f"async_value{FIELD_MARKER}"] == "resolved"
 
 
+def test_write_file_creates_and_updates(tmp_path):
+    path = tmp_path / "sub" / "page.jsx"
+    write_file(path, "v1")
+    assert path.read_text() == "v1"
+    write_file(path, "v2")
+    assert path.read_text() == "v2"
+
+
+def test_write_file_atomic_leaves_no_temp_files(tmp_path):
+    path = tmp_path / "page.jsx"
+    write_file(path, "content")
+    # The temp file used for the atomic replace must not linger.
+    assert [p.name for p in tmp_path.iterdir()] == ["page.jsx"]
+
+
+def test_write_file_skips_byte_identical_write(tmp_path):
+    """An identical write must not touch the file (so vite isn't told to HMR)."""
+    path = tmp_path / "page.jsx"
+    write_file(path, "same")
+    before = path.stat().st_mtime_ns
+    import os
+
+    os.utime(path, ns=(before + 1_000_000_000, before + 1_000_000_000))
+    bumped = path.stat().st_mtime_ns
+    write_file(path, "same")  # identical -> no rewrite
+    assert path.stat().st_mtime_ns == bumped
+
+
 def test_document_root_allows_static_id_on_head_script():
     """A head script's ID should remain an HTML attribute without a hook."""
     head_script = Script.create(src="/probe.js", id="head-probe")

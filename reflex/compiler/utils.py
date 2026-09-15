@@ -237,17 +237,17 @@ def compile_state(state: type[BaseState]) -> dict:
     return _sorted_keys(asyncio.run(_resolve_delta(initial_state)))
 
 
-def _compile_initial_state(
-    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
-) -> tuple[dict, str]:
+def _serialize_initial_state(
+    initial_state: dict, *, component_imports: ParsedImportDict | None = None
+) -> str:
     """Serialize initial state while discovering its dynamic component imports.
 
     Args:
-        state: The app state class.
+        initial_state: The compiled initial-state mapping.
         component_imports: Optional accumulator for frontend package installation.
 
     Returns:
-        The initial state dictionary and its serialized JSON.
+        The serialized initial-state JSON.
     """
 
     def serialize_initial_value(value: Any) -> Any:
@@ -267,9 +267,24 @@ def _compile_initial_state(
                     component_imports.setdefault(library, []).extend(fields)
         return serializers.serialize(value)
 
+    return format.json_dumps(initial_state, default=serialize_initial_value)
+
+
+def _compile_initial_state(
+    state: type[BaseState], *, component_imports: ParsedImportDict | None = None
+) -> tuple[dict, str]:
+    """Compile and serialize initial state while discovering component imports.
+
+    Args:
+        state: The app state class.
+        component_imports: Optional accumulator for frontend package installation.
+
+    Returns:
+        The initial state dictionary and its serialized JSON.
+    """
     initial_state = compile_state(state)
-    return initial_state, format.json_dumps(
-        initial_state, default=serialize_initial_value
+    return initial_state, _serialize_initial_state(
+        initial_state, component_imports=component_imports
     )
 
 
@@ -922,10 +937,12 @@ def add_meta(
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
-    page.children.extend(children)
-    page.children.extend(meta_tags)
-
-    return page
+    # Page roots may be shared by the construction cache; copy before appending
+    # metadata so repeated reuse does not accumulate duplicate tags.
+    new_page = copy.copy(page)
+    new_page.children = [*page.children, *children, *meta_tags]
+    new_page._clear_compile_caches()
+    return new_page
 
 
 def resolve_path_of_web_dir(path: str | Path) -> Path:
