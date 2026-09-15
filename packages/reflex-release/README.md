@@ -1029,3 +1029,105 @@ The same shape recovers a final version: seed `## 1.2.3 (<date>)` and dispatch
 ## License
 
 Apache-2.0.
+
+## Application deployments
+
+An application repository can use the same dispatch, changelog and post-publish
+release model without Python packages or PyPI. Configure an app table instead of
+package/towncrier settings; the repository needs only a `pyproject.toml` containing
+these tool settings (no `[project]` table is required):
+
+```toml
+[tool.reflex-release]
+cli-command = "uvx reflex-release@<published-version-with-app-support>"
+main-branch = "main"
+release-timezone = "America/Los_Angeles"
+
+[tool.reflex-release.app]
+build-workflow = "build_app.yml"
+deploy-workflow = "deploy_app.yml"
+# Optional: source from a tracked Git submodule instead of only this repository.
+source-submodule = "reflex"
+source-ref = "origin/main"
+production-environment = "production"
+staging-environment = "staging"
+dev-environment = "development"
+# Optional: omit to disable the generated speculative dev workflow.
+dev-schedule = "*/30 * * * *"
+```
+
+Create the two repository-owned workflows, then run `reflex-release sync`.
+`sync --check` checks their input contracts and generated workflow drift.
+The app mode generates `dispatch_release.yml`, `release_from_changelog.yml`,
+`publish.yml`, `changelog.yml`, and optionally `deploy_dev.yml`. Package releases
+continue using their existing templates. Switching modes requires reviewing the
+changed workflows. No build, registry, hosting provider, or deployment CLI is
+hardcoded into the app templates.
+
+Dispatch release accepts optional `revision` and `reason` inputs. It always
+starts from the configured main branch, resolves the submodule branch, tag or SHA
+(default `source-ref`), commits the submodule pointer and a new `CHANGELOG.md`
+section, and opens a PR against main. Omitting `source-submodule` supports apps
+whose source lives entirely in the deployment repository; in that case leave
+`revision` empty. The source repository URL comes from `.gitmodules`. The default
+checkout/token must be able to read it; private cross-repository submodules need
+an appropriately scoped checkout credential configured by the consumer.
+
+Versions use `ISO-year.week.sequence`, for example `2026.37.0`, `2026.37.1`.
+Weeks and week years follow ISO 8601 in `release-timezone`, including December/
+January boundaries. Counters start at zero and reserve versions across tags,
+existing changelog entries and release PR branches, including PRs that have not
+merged yet. Deploy reasons are preserved as changelog text, and submodule commits
+are recorded alongside them. Level-two headings are reserved for release
+versions; put any subsections under level-three headings.
+
+On a push to main, detection reads the top changelog version at that push's exact
+commit. An absent heading or an existing matching tag is a no-op. Otherwise:
+
+1. Build the captured repository commit and its committed source submodule.
+2. Deploy that build to staging.
+3. Wait for production environment approval.
+4. Deploy the same build to production.
+5. Push the version tag on the deployed repository commit and create a GitHub
+   release from its changelog notes, using the existing release helpers.
+
+The whole sequence owns one concurrency group, including the approval wait.
+`queue: max` lets up to 100 pending runs queue instead of replacing one another;
+GitHub orders runs by when they enter the queue. Detection happens after acquiring
+the queue, with fresh tags, and rejects an untagged version older than a published
+one. A failed build/deploy creates no release tag: fix and push, or rerun. If tag
+creation succeeds but GitHub release creation fails, rerun just the failed release
+job; a fresh detection deliberately treats the existing tag as already published.
+For a rollback, dispatch a new version targeting the older known-good source SHA.
+
+The optional dev workflow resolves `source-ref` afresh, uses a separate concurrency
+group and environment, and never edits changelogs, commits source pins, or creates
+tags/releases. Its version is `dev-<repository-sha>-<source-sha>` (12-character SHA
+prefixes; no source suffix without a submodule). Each scheduled run invokes the
+hooks; a consumer may reuse existing immutable images or skip redundant deployments
+inside its own hooks.
+
+### Repository-owned hook contract
+
+Both hooks are local reusable workflows under `.github/workflows`, with the
+following `workflow_call` string inputs:
+
+| Hook | Required inputs | Contract |
+| --- | --- | --- |
+| Build | `ref`, `version`, `source-revision` | Check out exact `ref`. Build and retain artifacts/images under `version`. Empty `source-revision` means use committed source; a nonempty value is a resolved speculative dev SHA. |
+| Deploy | `ref`, `version`, `environment` | Deploy the existing build; succeed only when the requested deployment has completed. |
+
+The names of the files and environments are configurable. Hooks receive inherited
+repository secrets and `contents: read` / `id-token: write` permissions for provider
+authentication. They must not rebuild during promotion; use immutable image tags,
+digests or workflow artifacts keyed by `version`. The deploy hook owns routing,
+health checks and any GitOps reconciliation wait. Opening or merging a GitOps PR
+alone is not deployment completion. Environment-scoped provider secrets must be
+bound in the repository-owned hook; inherited secrets do not select an environment.
+
+The generated approval job binds `production-environment` and verifies it has
+required reviewers via the GitHub API. `allow-self-review = false` additionally
+requires GitHub's “Prevent self-review” setting. Protect main and release branches,
+enable Actions to create PRs, and configure the hook credentials before dispatching.
+The PR workflow can also be dispatched explicitly: dispatch uses this path because
+PRs created using `GITHUB_TOKEN` do not start `pull_request` runs automatically.
