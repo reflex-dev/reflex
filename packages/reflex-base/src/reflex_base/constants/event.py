@@ -3,6 +3,9 @@
 from enum import Enum
 from types import SimpleNamespace
 
+# The name of the setvar event handler.
+SETVAR = "setvar"
+
 
 class Endpoint(Enum):
     """Endpoints for the reflex backend API."""
@@ -50,6 +53,7 @@ class SocketEvent(SimpleNamespace):
     PING = "ping"
     EVENT = "event"
     CLIENT_ERROR = "client_error"
+    SCHEME_MISMATCH = "scheme_mismatch"
 
     def __str__(self) -> str:
         """Get the string representation of the event name.

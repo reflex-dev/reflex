@@ -162,3 +162,28 @@ def test_unprocessable_delta_is_fatal_without_reload(
     page.wait_for_timeout(500)
     expect(page.locator("#counter")).to_have_text("0")
     assert len(reports) == 1
+
+
+def test_scheme_mismatch_is_visible_to_the_viewer(
+    client_error_app: AppHarness, page: Page, monkeypatch: pytest.MonkeyPatch
+):
+    """A scheme mismatch reaches the connection UI, not just the console.
+
+    The backend emits the notice from its connect handler, so socket.io
+    buffers it and replays it before the client's own ``connect`` handler
+    runs. A ``connect`` handler that cleared every pending error would discard
+    the only signal the viewer gets, leaving a silently dead page.
+
+    Args:
+        client_error_app: Running AppHarness instance.
+        page: Playwright page fixture.
+        monkeypatch: pytest fixture for patching the backend's digest.
+    """
+    assert client_error_app.frontend_url is not None
+    # The bundle was compiled with the real digest; disagree only on the
+    # backend so the handshake fails the way a stale bundle would.
+    monkeypatch.setattr("reflex.app.scheme_digest", lambda: "other-scheme")
+
+    page.goto(client_error_app.frontend_url)
+
+    expect(page.get_by_text("This page is out of date")).to_be_visible(timeout=30000)

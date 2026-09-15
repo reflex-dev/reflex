@@ -840,6 +840,12 @@ class EnvironmentVariables:
     # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
     REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
 
+    # Whether to enable state ID minification (requires minify.json).
+    REFLEX_MINIFY_STATES: EnvVar[bool] = env_var(False)
+
+    # Whether to enable event ID minification (requires minify.json).
+    REFLEX_MINIFY_EVENTS: EnvVar[bool] = env_var(False)
+
     # Extra plugins to append to the config's plugins list.
     REFLEX_EXTRA_PLUGINS: EnvVar[list[type[Plugin]]] = env_var([])
 

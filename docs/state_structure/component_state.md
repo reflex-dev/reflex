@@ -241,3 +241,39 @@ def extended_counter():
         ),
     )
 ```
+
+## Naming the State
+
+Every `create()` call builds its own state class. By default those classes are
+numbered in the order they are created — `ReusableCounter_n1`,
+`ReusableCounter_n2`, and so on — so inserting or reordering a `create()` call
+renames every instance after it.
+
+Pass `_state_key` to name an instance instead:
+
+```python
+cart_counter = ReusableCounter.create(_state_key="cart")
+wishlist_counter = ReusableCounter.create(_state_key="wishlist")
+```
+
+The key must be a valid Python identifier, and unique among the keyed instances
+of components with that class name. Keyed instances do not advance the counter,
+so adding one leaves the names of the unkeyed instances alone.
+
+Reusing a key raises: one key names one state. To render a keyed component on
+several pages, create it once and embed that same instance in each page, rather
+than calling `create()` again with the same key.
+
+A stable name matters when something outside the app refers to it — most
+directly [state and event name minification](/docs/api-reference/minification/),
+where each instance gets its own `minify.json` entry keyed by that name:
+
+```json
+"reflex.istate.dynamic.State.ReusableCounter__cart": {
+  "id": "b",
+  "parent": "reflex.state.State"
+}
+```
+
+Without a key, that entry is keyed by creation order, and reordering the page
+moves every instance to a different entry.
