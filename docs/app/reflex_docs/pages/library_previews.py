@@ -55,16 +55,24 @@ def get_preview_asset(name: str, section: str) -> tuple[str, str]:
 
 def component_card(name: str, link: str, section: str) -> rx.Component:
     preview_section, preview_name = get_preview_asset(name, section)
+
+    def preview_src(mode: str) -> str:
+        """Resolve the bundled Treemap preview or an existing CDN preview."""
+        path = f"components_previews/{preview_section}/{mode}/{preview_name}.svg"
+        if (preview_section, preview_name) == ("charts", "treemap"):
+            return rx.asset(path)
+        return f"{REFLEX_ASSETS_CDN}{path}"
+
     return rx.link(
         rx.box(
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/light/{preview_name}.svg",
+                src=preview_src("light"),
                 loading="lazy",
                 alt=f"Image preview of {name}",
                 class_name="object-contain object-center h-full w-full dark:hidden",
             ),
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/dark/{preview_name}.svg",
+                src=preview_src("dark"),
                 loading="lazy",
                 alt=f"Image preview of {name}",
                 class_name="object-contain object-center h-full w-full dark:block hidden",
