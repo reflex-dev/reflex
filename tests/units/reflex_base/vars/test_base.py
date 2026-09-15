@@ -383,38 +383,52 @@ def test_literal_var_dispatch_follows_later_registrations():
             self.x = x
 
     from reflex_base.utils import serializers
+    from reflex_base.vars import base
 
-    @serializers.serializer
-    def serialize_coordinate(value: Coordinate) -> str:
-        """Serialize a coordinate.
+    var_subclasses = len(base._var_subclasses)
+    literal_subclasses = len(base._var_literal_subclasses)
+    try:
 
-        Args:
-            value: The coordinate.
-
-        Returns:
-            Its string form.
-        """
-        return f"coordinate-{value.x}"
-
-    assert str(LiteralVar.create(Coordinate(1))) == '"coordinate-1"'
-
-    class CoordinateVar(Var[Coordinate], python_types=Coordinate):
-        """A Var holding a coordinate."""
-
-    class LiteralCoordinateVar(LiteralVar, CoordinateVar):
-        """A literal coordinate Var."""
-
-        @classmethod
-        def create(cls, value: Coordinate, _var_data=None):
-            """Create the literal.
+        @serializers.serializer
+        def serialize_coordinate(value: Coordinate) -> str:
+            """Serialize a coordinate.
 
             Args:
                 value: The coordinate.
-                _var_data: Unused metadata.
 
             Returns:
-                A Var with the coordinate's expression.
+                Its string form.
             """
-            return Var(_js_expr=f"[{value.x}]", _var_type=Coordinate)
+            return f"coordinate-{value.x}"
 
-    assert str(LiteralVar.create(Coordinate(2))) == "[2]"
+        assert str(LiteralVar.create(Coordinate(1))) == '"coordinate-1"'
+
+        class CoordinateVar(Var[Coordinate], python_types=Coordinate):
+            """A Var holding a coordinate."""
+
+        class LiteralCoordinateVar(LiteralVar, CoordinateVar):
+            """A literal coordinate Var."""
+
+            @classmethod
+            def create(cls, value: Coordinate, _var_data=None):
+                """Create the literal.
+
+                Args:
+                    value: The coordinate.
+                    _var_data: Unused metadata.
+
+                Returns:
+                    A Var with the coordinate's expression.
+                """
+                return Var(_js_expr=f"[{value.x}]", _var_type=Coordinate)
+
+        assert str(LiteralVar.create(Coordinate(2))) == "[2]"
+    finally:
+        serializers.SERIALIZERS.pop(Coordinate)
+        serializers.SERIALIZER_TYPES.pop(Coordinate)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+        del base._var_subclasses[var_subclasses:]
+        del base._var_literal_subclasses[literal_subclasses:]
+        base._clear_var_subclass_lookup_caches()
+        base._literal_var_by_type.clear()
