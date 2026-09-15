@@ -887,6 +887,35 @@ def test_a_superseded_seconds_setting_names_its_replacement_in_seconds(
     )
 
 
+@pytest.mark.parametrize(
+    ("superseded_value", "suggested"),
+    [(".5", "0.5s"), ("1e3", "1000.0s"), ("2.0", "2.0s")],
+)
+def test_the_suggested_replacement_always_parses(
+    monkeypatch: pytest.MonkeyPatch, superseded_value: str, suggested: str
+) -> None:
+    """A bare float accepts forms the duration parser rejects.
+
+    Suggesting the raw text would tell a project to set a value that fails to
+    start the app, so the number comes from the parsed value instead.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+        superseded_value: The value set on the superseded setting.
+        suggested: The replacement the warning should name.
+    """
+    monkeypatch.delenv("REFLEX_STATE_MANAGER_DISK_DEBOUNCE", raising=False)
+    monkeypatch.setenv("REFLEX_STATE_MANAGER_DISK_DEBOUNCE_SECONDS", superseded_value)
+
+    with patch("reflex_base.utils.console.deprecate") as deprecate:
+        state_manager_disk_debounce()
+
+    reason = deprecate.call_args.kwargs["reason"]
+    assert f"REFLEX_STATE_MANAGER_DISK_DEBOUNCE={suggested}" in reason
+    # The suggestion has to survive being pasted back into the environment.
+    assert interpret_timedelta_env(suggested, "REFLEX_STATE_MANAGER_DISK_DEBOUNCE")
+
+
 def test_a_blank_superseded_setting_counts_as_unset(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
