@@ -28,6 +28,7 @@ from reflex_base.utils.decorator import once
 _console = Console(highlight=False)
 _console_stderr = Console(stderr=True, highlight=False)
 
+
 def _human_console() -> Console:
     """Get the console human-readable output renders to.
 
