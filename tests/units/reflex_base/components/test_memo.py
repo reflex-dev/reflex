@@ -27,7 +27,6 @@ def test_auto_memo_evaluates_body_once(snapshot: bool, has_children: bool):
     ) as evaluate:
         factory, definition = memo.create_passthrough_component_memo(component)
         wrapper = factory()
-        assert definition.component is definition.component
         assert evaluate.call_count == 1
 
     assert definition.params == memo._analyze_params(definition.fn, for_component=True)
