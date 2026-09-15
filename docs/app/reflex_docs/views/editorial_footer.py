@@ -149,23 +149,18 @@ def _theme_toggle() -> rx.Component:
     return rx.el.div(
         *[
             rx.el.button(
-                get_icon(icon, class_name="size-4"),
+                get_icon(icon, class_name="size-3.5"),
                 on_click=set_color_mode(mode),
                 type="button",
                 aria_label=f"Toggle {mode} color mode",
                 aria_pressed=color_mode == mode,
-                class_name=rx.cond(
-                    color_mode == mode,
-                    "bg-foreground text-background",
-                    "text-muted-foreground hover:bg-accent hover:text-foreground",
-                )
-                + f" flex size-8 items-center justify-center rounded-full transition-colors {_FOCUS}",
+                class_name=f"flex size-7 items-center justify-center rounded-compact transition-colors {_FOCUS}",
             )
             for mode, icon in modes
         ],
         role="group",
         aria_label="Color mode",
-        class_name="flex w-fit items-center gap-0.5 rounded-full border border-border p-0.5",
+        class_name="docs-theme-toggle flex w-fit items-center gap-0.5",
     )
 
 

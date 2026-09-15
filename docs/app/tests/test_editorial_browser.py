@@ -257,7 +257,7 @@ def test_article_footer_feedback_and_theme_controls(page: Page, width: int):
     dark = footer.get_by_role("button", name="Toggle dark color mode")
     dark.click()
     expect(dark).to_have_attribute("aria-pressed", "true")
-    expect(dark).to_have_css("background-color", "rgb(245, 245, 245)")
+    expect(dark).to_have_css("background-color", "rgb(32, 32, 32)")
     expect(footer.get_by_role("link", name="Introduction", exact=True)).to_have_css(
         "color", "rgb(245, 245, 245)"
     )

@@ -586,29 +586,33 @@ details[open] > .docs-sidebar-group-trigger > p {
 }
 .docs-footer-copyright > p { color: var(--muted-foreground); }
 .docs-footer-copyright > a > div { padding-inline: 0; }
-.docs-page-footer .site-color-mode-toggle {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  background: var(--background);
+:is(.docs-theme-toggle, .docs-page-footer .site-color-mode-toggle) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
-.docs-page-footer .site-color-mode-toggle button {
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius-control);
+:is(.docs-theme-toggle, .docs-page-footer .site-color-mode-toggle) button {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-compact);
   color: var(--muted-foreground);
   background: transparent;
   box-shadow: none;
 }
-.docs-page-footer .site-color-mode-toggle button:hover {
+:is(.docs-theme-toggle, .docs-page-footer .site-color-mode-toggle) button:hover {
   background: var(--accent);
   color: var(--foreground);
 }
-.docs-page-footer .site-color-mode-toggle button[aria-pressed="true"] {
-  background: var(--foreground);
-  color: var(--background);
+:is(.docs-theme-toggle, .docs-page-footer .site-color-mode-toggle) button[aria-pressed="true"] {
+  background: var(--muted);
+  color: var(--foreground);
 }
-.docs-page-footer .site-color-mode-toggle svg { width: 1rem; height: 1rem; }
+:is(.docs-theme-toggle, .docs-page-footer .site-color-mode-toggle) svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
 .docs-page-footer :is(a, button):focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 4px;
