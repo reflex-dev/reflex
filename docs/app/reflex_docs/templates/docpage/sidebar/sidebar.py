@@ -382,7 +382,7 @@ def sidebar_comp(
 
     ai_builder_categories = rx.el.ul(
         sidebar_category(
-            "Build with AI",
+            "Overview",
             "/ai/",
             "sparkles",
             is_ai_overview,

@@ -90,7 +90,7 @@ def test_ai_overview_offers_build_and_agent_paths(page: Page, width: int):
             navigation = page.locator(".docs-left-sidebar")
         expect(navigation).to_be_visible()
         expect(
-            navigation.get_by_role("link", name="Navigate to Build with AI", exact=True)
+            navigation.get_by_role("link", name="Navigate to Overview", exact=True)
         ).to_have_attribute("aria-current", "true")
         expect(
             navigation.get_by_role("link", name="Navigate to Reflex Build", exact=True)
