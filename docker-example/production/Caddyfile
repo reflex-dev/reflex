@@ -1,10 +1,10 @@
-{$DOMAIN}
+:{$PORT}
 
 encode gzip
 
 @backend_routes path /_event/* /ping /_health /_upload /_upload/*
 handle @backend_routes {
-	reverse_proxy app:8000
+	reverse_proxy localhost:8000
 }
 
 root * /srv
