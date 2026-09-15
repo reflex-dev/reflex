@@ -338,6 +338,29 @@
   margin: 0;
 }
 :root .docs-navbar :is(.ReflexSearch-buttonText, .ReflexSearch-shortcut) { display: none; }
+@media (min-width: 1024px) {
+  :root .docs-navbar .ReflexSearch-root { width: 100%; }
+  :root .docs-navbar .ReflexSearch-button {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding-inline: 0.625rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-compact);
+  }
+  :root .docs-navbar .ReflexSearch-buttonText {
+    display: inline;
+    font-size: 0.875rem;
+    font-weight: 425;
+  }
+  :root .docs-navbar .ReflexSearch-shortcut {
+    display: inline-flex;
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-weight: 450;
+  }
+}
 :root .ReflexSearch-overlay .ReflexSearch-dialog {
   border-radius: var(--radius-panel);
   border-color: var(--border);

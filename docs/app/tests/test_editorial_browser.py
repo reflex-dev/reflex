@@ -85,6 +85,35 @@ def test_header_selection_matches_the_docs_route(page: Page):
         expect(header.locator('[aria-current="page"]')).to_have_text(label)
 
 
+@pytest.mark.parametrize("width", [375, 1024, 1440])
+def test_navbar_search_position_and_shortcuts(page: Page, width: int):
+    """Search precedes GitHub and advertises the keyboard shortcut on desktop."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/enterprise/components/", wait_until="networkidle")
+    search = page.get_by_role("button", name="Search Reflex", exact=True)
+    expect(search).to_be_visible()
+    shortcut = search.locator("kbd")
+    if width >= 1024:
+        expect(shortcut).to_be_visible()
+        expect(shortcut).to_contain_text("K")
+    else:
+        expect(shortcut).not_to_be_visible()
+    if width >= 1280:
+        github = page.get_by_role("link", name="View Reflex on GitHub", exact=False)
+        assert (
+            search.bounding_box()["x"] + search.bounding_box()["width"]
+            < github.bounding_box()["x"]
+        )
+    for key in ("Meta+k", "Control+k"):
+        page.keyboard.press(key)
+        expect(page.get_by_role("dialog")).to_be_visible()
+        page.keyboard.press("Escape")
+        expect(page.get_by_role("dialog")).to_have_count(0)
+    search.click()
+    expect(page.get_by_role("dialog")).to_be_visible()
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
 @pytest.mark.parametrize("width", [375, 1440])
 def test_ai_overview_offers_build_and_agent_paths(page: Page, width: int):
     """The AI choice page keeps both workflows readable and links to their guides."""

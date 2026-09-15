@@ -198,7 +198,6 @@ def navigation_menu() -> rx.Component:
             class_name="hidden h-full lg:flex",
         ),
         rx.el.div(
-            rx.el.div(github_button(), class_name="hidden xl:flex"),
             rx.el.div(
                 button(
                     ui.icon("Search01Icon", size=16, aria_hidden=True),
@@ -211,8 +210,9 @@ def navigation_menu() -> rx.Component:
                     class_name="group-has-[.ReflexSearch-root]/docs-search:hidden",
                 ),
                 search_bar(),
-                class_name="group/docs-search docs-navbar-search flex size-9 shrink-0 items-center justify-center",
+                class_name="group/docs-search docs-navbar-search flex h-9 w-9 lg:w-40 shrink-0 items-center justify-center",
             ),
+            rx.el.div(github_button(), class_name="hidden xl:flex"),
             rx.el.div(
                 demo_form_dialog(
                     id_prefix="docs-booking",
