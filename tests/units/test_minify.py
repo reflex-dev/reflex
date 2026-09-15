@@ -1181,6 +1181,50 @@ def test_sync_moves_a_preserved_id_off_a_newly_inserted_parent():
     assert not errors, errors
 
 
+def test_sync_moves_a_reparented_id_off_an_occupied_sibling_id():
+    """Healing a parent must not drop an entry onto a sibling's id.
+
+    The entry keeps its id across the move, so it can collide with a sibling
+    already holding it. The entry that moved gives way; the one whose scope
+    did not change keeps the id a served frontend may still be using.
+    """
+
+    class SiblingRoot(BaseState):
+        pass
+
+    class SiblingParent(SiblingRoot):
+        pass
+
+    class SiblingMoved(SiblingParent):
+        pass
+
+    class SiblingIncumbent(SiblingParent):
+        pass
+
+    root_path = get_state_full_path(SiblingRoot)
+    parent_path = get_state_full_path(SiblingParent)
+    moved_path = get_state_full_path(SiblingMoved)
+    incumbent_path = get_state_full_path(SiblingIncumbent)
+    existing: MinifyConfig = {
+        "version": SCHEMA_VERSION,
+        "states": {
+            root_path: StateEntry(id="a", parent=None),
+            parent_path: StateEntry(id="b", parent=root_path),
+            # Recorded under the root, but the code says SiblingParent.
+            moved_path: StateEntry(id="c", parent=root_path),
+            incumbent_path: StateEntry(id="c", parent=parent_path),
+        },
+        "events": {},
+    }
+
+    new_config = sync_minify_config(existing, SiblingRoot)
+
+    assert new_config["states"][incumbent_path]["id"] == "c"
+    assert new_config["states"][moved_path]["id"] != "c"
+    errors, _warnings, _missing = validate_minify_config(new_config, SiblingRoot)
+    assert not errors, errors
+
+
 def test_validate_exempts_an_orphan_holding_its_parent_id():
     """An orphan may keep an id its live parent also holds.
 
