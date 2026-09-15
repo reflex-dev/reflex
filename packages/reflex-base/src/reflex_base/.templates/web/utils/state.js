@@ -503,15 +503,10 @@ export const queueEvents = async (
   params,
 ) => {
   if (prepend) {
-    // Drain the existing queue and place it after the given events.
-    events = [
-      ...events,
-      ...Array.from({ length: event_queue.length }).map(() =>
-        event_queue.shift(),
-      ),
-    ];
+    event_queue.unshift(...events.filter((e) => e !== undefined && e !== null));
+  } else {
+    event_queue.push(...events.filter((e) => e !== undefined && e !== null));
   }
-  event_queue.push(...events.filter((e) => e !== undefined && e !== null));
   await processEvent(resolveSocket(socket), navigate, params);
 };
 
