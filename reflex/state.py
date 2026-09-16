@@ -740,6 +740,20 @@ class BaseState(EvenMoreBasicBaseState):
             raise NameError(msg)
 
     @classmethod
+    def _check_reserved_router_names(cls) -> None:
+        """Check that the class does not declare one of the router base vars.
+
+        Raises:
+            StateValueError: If the class declares a reserved router field.
+        """
+        from reflex_base.utils.exceptions import StateValueError
+
+        for name in constants.ROUTER_VARS:
+            if name in cls.__own_fields__ or name in cls.__dict__:
+                msg = f"The state name `{name}` is reserved for router data; use a different name instead"
+                raise StateValueError(msg)
+
+    @classmethod
     def __init_subclass__(cls, mixin: bool = False, **kwargs):
         """Do some magic for the subclass initialization.
 
@@ -748,14 +762,11 @@ class BaseState(EvenMoreBasicBaseState):
             **kwargs: The kwargs to pass to the init_subclass method.
 
         Raises:
-            StateValueError: If a substate shadows another or declares a reserved router field.
+            StateValueError: If a substate shadows another.
         """
         from reflex_base.utils.exceptions import StateValueError
 
-        for name in constants.ROUTER_VARS:
-            if name in cls.__own_fields__ or name in cls.__dict__:
-                msg = f"The state name `{name}` is reserved for router data; use a different name instead"
-                raise StateValueError(msg)
+        cls._check_reserved_router_names()
 
         super().__init_subclass__(**kwargs)
 
