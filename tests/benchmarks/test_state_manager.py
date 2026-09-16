@@ -174,6 +174,11 @@ MANAGER_FACTORIES: dict[str, Callable[[], StateManager]] = {
 
 ALL_MANAGERS = list(MANAGER_FACTORIES)
 
+# Opportunistic locking only branches inside ``modify_state``; ``get_state``
+# and ``set_state`` run the same code with it on or off, so the oplock
+# variant is only measured where it diverges.
+GET_SET_MANAGERS = ["memory", "disk", "redis"]
+
 # Managers that keep the state tree in process memory, so the load-from-store
 # path is only reachable after evicting it. The redis manager is left out: it
 # reloads on every ``get_state`` anyway, and evicting an opportunistic lease's
@@ -205,7 +210,12 @@ async def state_manager(
     await manager.set_state(TOKEN, state)
 
     # Guard against benchmarking reads against a store that never got written:
-    # the substate has to come back carrying what seeding put in it.
+    # the substate has to come back carrying what seeding put in it. The disk
+    # manager's process-local copy is evicted first so the read deserializes
+    # from the store instead of returning the cached tree; the memory manager
+    # has no store besides that cache, so it is read as-is.
+    if isinstance(manager, StateManagerDisk):
+        manager.states.clear()
     seeded = cast(ManagerBenchmarkState, await manager.get_state(TOKEN))
     assert seeded.counter == SEEDED_VALUE
     assert (
@@ -320,7 +330,7 @@ async def _modify_state(manager: StateManager) -> None:
         _touch(state)
 
 
-@pytest.mark.parametrize("state_manager", ALL_MANAGERS, indirect=True)
+@pytest.mark.parametrize("state_manager", GET_SET_MANAGERS, indirect=True)
 def test_get_state(state_manager: StateManager, benchmark_op: AsyncOperationBenchmark):
     """Benchmark ``StateManager.get_state`` in steady state.
 
@@ -349,7 +359,7 @@ def test_get_state_uncached(
     benchmark_op(lambda: _get_state_uncached(state_manager))
 
 
-@pytest.mark.parametrize("state_manager", ALL_MANAGERS, indirect=True)
+@pytest.mark.parametrize("state_manager", GET_SET_MANAGERS, indirect=True)
 def test_set_state(
     state_manager: StateManager,
     benchmark_state: BaseState,
