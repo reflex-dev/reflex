@@ -14,13 +14,14 @@ JSON_HELPER_PATH = WEB_TEMPLATE / "utils" / "helpers" / "json.js"
 # Parses each payload with the helper and reports the result, using a JSON-safe
 # encoding since NaN/Infinity cannot round-trip through JSON.stringify.
 DRIVER = """
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 const { parseJson } = await import(pathToFileURL(process.argv[2]).href);
 const encode = (value) =>
   typeof value === "number" && !Number.isFinite(value)
     ? { nonFinite: String(value) }
     : value;
-const results = JSON.parse(process.argv[3]).map((payload) => {
+const results = JSON.parse(readFileSync(process.argv[3], "utf8")).map((payload) => {
   try {
     return { ok: JSON.parse(JSON.stringify(parseJson(payload), (_k, v) => encode(v))) };
   } catch (e) {
@@ -45,9 +46,12 @@ def _parse_json(payloads: list[str], tmp_path: Path) -> list[dict]:
     """
     driver = tmp_path / "driver.mjs"
     driver.write_text(DRIVER)
+    # Payloads go through a file: some are far larger than the argv limit.
+    payloads_file = tmp_path / "payloads.json"
+    payloads_file.write_text(json.dumps(payloads), encoding="utf-8")
     return json.loads(
         subprocess.run(
-            ["node", str(driver), str(JSON_HELPER_PATH), json.dumps(payloads)],
+            ["node", str(driver), str(JSON_HELPER_PATH), str(payloads_file)],
             check=True,
             capture_output=True,
             encoding="utf-8",
@@ -192,3 +196,22 @@ def test_non_finite_floats_in_every_value_position(tmp_path: Path) -> None:
         {"ok": [{"nonFinite": "NaN"}, 1]},
         {"ok": {"a": {"nonFinite": "-Infinity"}}},
     ]
+
+
+@requires_node
+def test_sentinel_derivation_handles_long_underscore_runs(tmp_path: Path) -> None:
+    """The sentinel is derived in one pass rather than by probing candidates.
+
+    A run of N underscores contains a run of every shorter length, so lengthening
+    a candidate until it no longer matches costs a full scan per underscore. The
+    run here is long enough that such an approach stalls for seconds.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    text = "__reflex_nan__" + "_" * 200_000
+    payload = json.dumps({"text": text, "value": float("nan")})
+
+    (result,) = _parse_json([payload], tmp_path)
+
+    assert result == {"ok": {"text": text, "value": {"nonFinite": "NaN"}}}

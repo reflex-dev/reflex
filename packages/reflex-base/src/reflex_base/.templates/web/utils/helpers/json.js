@@ -7,19 +7,32 @@
 // (document start, or after ':', ',' or '['). A token anywhere else leaves the
 // payload malformed for JSON.parse to reject, which the streaming upload parser
 // relies on to tell a partial chunk from a complete one.
-const NAN_SENTINEL = "__reflex_nan__";
+const NAN_SENTINEL_PREFIX = "__reflex_nan";
+const NAN_SENTINEL = `${NAN_SENTINEL_PREFIX}__`;
 const NON_FINITE_FLOAT_RE =
   /"(?:[^"\\]|\\.)*"|(^\s*|[:,[]\s*)(-?Infinity|NaN)\b/g;
 
 // Reviving by string value would also convert a genuine string equal to the
-// sentinel, so lengthen it until the payload no longer contains it. Only the
-// placeholder can then survive parsing as that exact value.
+// sentinel, so the placeholder has to be absent from the payload. Probing
+// longer candidates one at a time rescans the payload per attempt, and a run
+// of N underscores contains a run of every shorter length, so a single such
+// string costs a full scan per underscore. Instead derive a trailing run one
+// longer than the longest in the payload: it cannot appear, and one pass finds
+// it. Reached only when the default collides.
+const UNDERSCORE = "_".charCodeAt(0);
 const uniqueNanSentinel = (str) => {
-  let sentinel = NAN_SENTINEL;
-  while (str.includes(sentinel)) {
-    sentinel += "_";
+  if (!str.includes(NAN_SENTINEL)) {
+    return NAN_SENTINEL;
   }
-  return sentinel;
+  let longestRun = 0;
+  let run = 0;
+  for (let i = 0; i < str.length; i++) {
+    run = str.charCodeAt(i) === UNDERSCORE ? run + 1 : 0;
+    if (run > longestRun) {
+      longestRun = run;
+    }
+  }
+  return NAN_SENTINEL_PREFIX + "_".repeat(longestRun + 1);
 };
 
 const parseNonFiniteFloats = (str) => {
