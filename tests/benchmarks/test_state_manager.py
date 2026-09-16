@@ -202,35 +202,41 @@ async def state_manager(
     """
     states_directory = _states_directory()
     monkeypatch.setenv(environment.REFLEX_STATES_WORKDIR.name, str(states_directory))
-    manager = MANAGER_FACTORIES[request.param]()
+    try:
+        manager = MANAGER_FACTORIES[request.param]()
+        try:
+            state = cast(ManagerBenchmarkState, await manager.get_state(TOKEN))
+            state.counter = SEEDED_VALUE
+            cast(
+                DataSubState, state.substates[DATA_SUBSTATE_NAME]
+            ).revision = SEEDED_VALUE
+            await manager.set_state(TOKEN, state)
 
-    state = cast(ManagerBenchmarkState, await manager.get_state(TOKEN))
-    state.counter = SEEDED_VALUE
-    cast(DataSubState, state.substates[DATA_SUBSTATE_NAME]).revision = SEEDED_VALUE
-    await manager.set_state(TOKEN, state)
+            # Guard against benchmarking reads against a store that never got
+            # written: the substate has to come back carrying what seeding put
+            # in it. The disk manager's process-local copy is evicted first so
+            # the read deserializes from the store instead of returning the
+            # cached tree; the memory manager has no store besides that cache,
+            # so it is read as-is.
+            if isinstance(manager, StateManagerDisk):
+                manager.states.clear()
+            seeded = cast(ManagerBenchmarkState, await manager.get_state(TOKEN))
+            assert seeded.counter == SEEDED_VALUE
+            assert (
+                cast(DataSubState, seeded.substates[DATA_SUBSTATE_NAME]).revision
+                == SEEDED_VALUE
+            )
 
-    # Guard against benchmarking reads against a store that never got written:
-    # the substate has to come back carrying what seeding put in it. The disk
-    # manager's process-local copy is evicted first so the read deserializes
-    # from the store instead of returning the cached tree; the memory manager
-    # has no store besides that cache, so it is read as-is.
-    if isinstance(manager, StateManagerDisk):
-        manager.states.clear()
-    seeded = cast(ManagerBenchmarkState, await manager.get_state(TOKEN))
-    assert seeded.counter == SEEDED_VALUE
-    assert (
-        cast(DataSubState, seeded.substates[DATA_SUBSTATE_NAME]).revision
-        == SEEDED_VALUE
-    )
+            # One modify cycle leaves the opportunistic locking manager in the
+            # steady state it is meant to be measured in: lease held and state
+            # cached.
+            await _modify_state(manager)
 
-    # One modify cycle leaves the opportunistic locking manager in the steady
-    # state it is meant to be measured in: lease held and state cached.
-    await _modify_state(manager)
-
-    yield manager
-
-    await manager.close()
-    shutil.rmtree(states_directory, ignore_errors=True)
+            yield manager
+        finally:
+            await manager.close()
+    finally:
+        shutil.rmtree(states_directory, ignore_errors=True)
 
 
 @pytest_asyncio.fixture
