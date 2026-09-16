@@ -7,7 +7,11 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from reflex.istate.shared import _do_update_other_tokens
+from reflex.istate.shared import (
+    SharedState,
+    SharedStateBaseInternal,
+    _do_update_other_tokens,
+)
 from reflex.state import State
 from reflex.utils.token_manager import (
     LocalTokenManager,
@@ -109,3 +113,43 @@ async def test_update_other_tokens_redis_cross_instance(redis_manager, mock_redi
     # Locally owned sockets are authoritative and never require a redis lookup.
     local_key = redis_manager._get_redis_key("local")
     assert local_key not in [call.args[0] for call in mock_redis.get.call_args_list]
+
+
+@pytest.mark.parametrize("held_lock", [False, True], ids=["direct", "linked"])
+async def test_shared_updates_with_shadowed_touched_method(
+    clean_registration_context, monkeypatch: pytest.MonkeyPatch, held_lock: bool
+):
+    """Notify linked clients when a backend var shadows the touched-state method.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+        monkeypatch: Restore shared-state defaults after the test.
+        held_lock: Whether to collect the shared state from held locks.
+    """
+    monkeypatch.setitem(State.backend_vars, "_reflex_internal_links", {})
+    monkeypatch.setattr(
+        State, "_always_dirty_substates", State._always_dirty_substates.copy()
+    )
+
+    class ShadowState(SharedState):
+        """State with an intentional framework-method collision."""
+
+        _get_was_touched: int = 7
+
+    root = State()
+    parent = await root.get_state(SharedStateBaseInternal)
+    state = await root.get_state(ShadowState)
+    state._linked_from = {"other-client"}
+    root._clean()
+    state._was_touched = False
+    state._previous_dirty_vars.clear()
+
+    with patch("reflex.istate.shared._do_update_other_tokens") as update:
+        async with parent._modify_linked_states():
+            if held_lock:
+                parent._held_locks = {"shared": {ShadowState: state}}
+            state._get_was_touched = 8
+
+    update.assert_called_once()
+    assert update.call_args.kwargs["affected_tokens"] == {"other-client"}
+    assert state._get_was_touched == 8

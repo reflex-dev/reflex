@@ -4,6 +4,7 @@ import enum
 import logging
 import os
 import tempfile
+from datetime import timedelta
 from pathlib import Path
 from typing import Annotated
 from unittest.mock import patch
@@ -32,6 +33,7 @@ from reflex_base.environment import (
     interpret_path_env,
     interpret_plugin_class_env,
     interpret_plugin_env,
+    interpret_timedelta_env,
 )
 from reflex_base.plugins import Plugin
 from reflex_base.utils.exceptions import EnvironmentVarValueError
@@ -675,6 +677,8 @@ def cleanup_env_vars():
         "BOOLEAN",
         "LIST",
         "__INTERNAL_VAR",
+        # `EnvVar.set` writes `os.environ` directly, so monkeypatch never sees it
+        "TEST_TIMEOUT_ROUNDTRIP",
     ]
 
     yield
@@ -683,3 +687,107 @@ def cleanup_env_vars():
         if var in os.environ:
             print(var)
             del os.environ[var]
+
+
+def test_interpret_timedelta_env_defaults_to_seconds() -> None:
+    """A bare number is read as seconds."""
+    assert interpret_timedelta_env("30", "TEST_FIELD") == timedelta(seconds=30)
+    assert interpret_timedelta_env("1.5", "TEST_FIELD") == timedelta(seconds=1.5)
+    assert interpret_timedelta_env("0", "TEST_FIELD") == timedelta(0)
+
+
+def test_interpret_timedelta_env_units() -> None:
+    """A suffix overrides the default unit."""
+    assert interpret_timedelta_env("1us", "TEST_FIELD") == timedelta(microseconds=1)
+    assert interpret_timedelta_env("500ms", "TEST_FIELD") == timedelta(milliseconds=500)
+    assert interpret_timedelta_env("30s", "TEST_FIELD") == timedelta(seconds=30)
+    assert interpret_timedelta_env("5m", "TEST_FIELD") == timedelta(minutes=5)
+    assert interpret_timedelta_env("2h", "TEST_FIELD") == timedelta(hours=2)
+    assert interpret_timedelta_env("1d", "TEST_FIELD") == timedelta(days=1)
+
+
+def test_interpret_timedelta_env_tolerates_spacing_and_case() -> None:
+    """Values come from a shell, where spacing and case are easily off."""
+    assert interpret_timedelta_env(" 5 M ", "TEST_FIELD") == timedelta(minutes=5)
+
+
+def test_interpret_timedelta_env_negative() -> None:
+    """``timedelta`` is signed, so a negative offset is a legitimate value."""
+    assert interpret_timedelta_env("-5m", "TEST_FIELD") == timedelta(minutes=-5)
+
+
+def test_interpret_timedelta_env_invalid() -> None:
+    """Test duration interpretation with invalid values."""
+    for value in ("not_a_number", "30 weeks", "30y", "", "s"):
+        with pytest.raises(EnvironmentVarValueError, match="Invalid duration value"):
+            interpret_timedelta_env(value, "TEST_FIELD")
+
+
+def test_interpret_timedelta_env_out_of_range() -> None:
+    """A well-formed value can still be more than a timedelta holds.
+
+    ``timedelta`` raises ``OverflowError``, which is not a ``ValueError``, so
+    letting it out would escape both this function's contract and the union
+    fallback in ``interpret_env_var_value``.
+    """
+    for value in ("999999999999d", "9" * 400):
+        with pytest.raises(EnvironmentVarValueError, match="out of range"):
+            interpret_timedelta_env(value, "TEST_FIELD")
+
+
+def test_timedelta_env_var_reads_a_duration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A duration setting reads like any other typed environment variable.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("TEST_TIMEOUT", "90s")
+    env_var_instance = EnvVar("TEST_TIMEOUT", timedelta(seconds=30), timedelta)
+
+    assert env_var_instance.getenv() == timedelta(seconds=90)
+
+
+def test_timedelta_env_var_falls_back_to_its_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unset duration keeps the default the app declared.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("TEST_TIMEOUT_UNSET", raising=False)
+    env_var_instance = EnvVar("TEST_TIMEOUT_UNSET", timedelta(minutes=3), timedelta)
+
+    assert env_var_instance.get() == timedelta(minutes=3)
+
+
+def test_timedelta_env_var_round_trips_through_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``set`` has to write a form the interpreter reads back.
+
+    ``str(timedelta)`` renders ``0:01:30``, and ``-1 day, 23:58:30`` below zero,
+    neither of which is valid input.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("TEST_TIMEOUT_ROUNDTRIP", raising=False)
+    env_var_instance = EnvVar("TEST_TIMEOUT_ROUNDTRIP", timedelta(0), timedelta)
+
+    for value in (
+        timedelta(minutes=1, seconds=30),
+        timedelta(days=1, seconds=30),
+        timedelta(seconds=-90),
+        # sub-second and boundary values are where a float round trip loses the
+        # microseconds or rounds past what a timedelta holds
+        timedelta(microseconds=1),
+        timedelta(seconds=90, microseconds=500000),
+        timedelta(days=999999998, microseconds=1),
+        timedelta.max,
+        timedelta.min,
+    ):
+        # `EnvVar` binds its type var to the class object, so a value argument
+        # never matches - the same quirk the other `set` tests here work around.
+        env_var_instance.set(value)  # type: ignore[arg-type]
+        assert env_var_instance.get() == value
