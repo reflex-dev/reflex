@@ -45,7 +45,6 @@ from reflex_base.utils.exceptions import (
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
     DynamicRouteArgShadowsStateVarError,
-    EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateMismatchError,
@@ -78,6 +77,7 @@ from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
+from reflex.istate.validation import _StateMeta, _validate_state_name
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
@@ -427,7 +427,7 @@ CLASS_VAR_NAMES = frozenset({
 })
 
 
-class BaseState(EvenMoreBasicBaseState):
+class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -616,9 +616,6 @@ class BaseState(EvenMoreBasicBaseState):
 
         # Validate the module name.
         cls._validate_module_name()
-
-        # Event handlers should not shadow builtin state methods.
-        cls._check_overridden_methods()
 
         # Computed vars should not shadow builtin state props.
         cls._check_overridden_basevars()
@@ -829,6 +826,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
         """
+        _validate_state_name(name)
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
@@ -1062,29 +1060,6 @@ class BaseState(EvenMoreBasicBaseState):
                     value = value.__func__
                 if isinstance(value, FunctionType):
                     yield name, value
-
-    @classmethod
-    def _check_overridden_methods(cls):
-        """Check for shadow methods and raise error if any.
-
-        Raises:
-            EventHandlerShadowsBuiltInStateMethodError: When an event handler shadows an inbuilt state method.
-        """
-        overridden_methods = set()
-        state_base_functions = cls._get_base_functions()
-        for name, method in cls._iter_functions():
-            # Check if the method is overridden and not a dunder method
-            if (
-                not name.startswith("__")
-                and method.__name__ in state_base_functions
-                and state_base_functions[method.__name__] != method
-                and not getattr(method, "__override_base_method__", False)
-            ):
-                overridden_methods.add(method.__name__)
-
-        for method_name in overridden_methods:
-            msg = f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
-            raise EventHandlerShadowsBuiltInStateMethodError(msg)
 
     @classmethod
     def _check_overridden_basevars(cls):
@@ -1333,6 +1308,19 @@ class BaseState(EvenMoreBasicBaseState):
         cls._set_default_value(name, prop)
 
     @classmethod
+    @_override_base_method
+    def add_field(cls, name: str, var: Var, default_value: Any):
+        """Validate a dynamically added field before updating the field map.
+
+        Args:
+            name: The name of the field to add.
+            var: The variable to add a field for.
+            default_value: The default value of the field.
+        """
+        _validate_state_name(name)
+        super().add_field(name, var, default_value)
+
+    @classmethod
     def add_var(cls, name: str, type_: Any, default_value: Any = None):
         """Add dynamically a variable to the State.
 
@@ -1484,19 +1472,6 @@ class BaseState(EvenMoreBasicBaseState):
         except TypeError:
             return None
 
-    @staticmethod
-    def _get_base_functions() -> builtins.dict[str, FunctionType]:
-        """Get all functions of the state class excluding dunder methods.
-
-        Returns:
-            The functions of rx.State class as a dict.
-        """
-        return {
-            func[0]: func[1]
-            for func in inspect.getmembers(BaseState, predicate=inspect.isfunction)
-            if not func[0].startswith("__")
-        }
-
     @classmethod
     def _update_substate_inherited_vars(cls, vars_to_add: builtins.dict[str, Var]):
         """Update the inherited vars of substates recursively when new vars are added.
@@ -1549,6 +1524,8 @@ class BaseState(EvenMoreBasicBaseState):
         if not args:
             return
 
+        for name in args:
+            _validate_state_name(name)
         cls._check_overwritten_dynamic_args(list(args.keys()))
 
         def argsingle_factory(param: str):

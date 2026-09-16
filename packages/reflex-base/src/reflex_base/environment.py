@@ -751,6 +751,9 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
+    # Temporary compatibility for state declarations that shadow framework members.
+    REFLEX_STATE_ALLOW_RESERVED_NAMES: EnvVar[bool] = env_var(False)
+
     # Additional paths to include in the hot reload. Separated by a colon.
     REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
