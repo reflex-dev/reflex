@@ -7,6 +7,3 @@ __pycache__
 *.db
 uploaded_files
 Dockerfile
-Caddy.Dockerfile
-compose.yaml
-compose.*.yaml

@@ -1,6 +1,12 @@
 # check=skip=JSONArgsRecommended
-# Backend image for the docker compose deployment. The frontend is exported
-# here too, so the Caddy image can copy it out (see Caddy.Dockerfile).
+# Single-container Reflex deployment for services like Render, Railway, Heroku,
+# GCP, and others. Caddy serves the exported frontend and proxies backend routes
+# from a single exposed port; TLS termination is expected at the platform edge.
+
+# If the service expects a different port, provide it here (f.e Render expects port 10000)
+ARG PORT=8080
+# Only set for local/direct access. When TLS is used, the API_URL is assumed to be the same as the frontend.
+ARG API_URL
 
 FROM python:3.13-slim AS builder
 
@@ -18,28 +24,38 @@ RUN uv venv && uv pip install -r requirements.txt
 # Copy local context to `/app` inside container (see .dockerignore)
 COPY . .
 
+ARG PORT API_URL
 # Compile the app and build the static frontend. The cache mount keeps bun's
 # package cache between builds so unchanged dependencies are not downloaded again.
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    reflex export --frontend-only --no-zip
+    REFLEX_API_URL=${API_URL:-http://localhost:$PORT} reflex export --frontend-only --no-zip
 
 
-# Final image: the python environment, the app source, the static frontend, and
-# .web/backend so the backend only evaluates stateful pages at startup.
+# Final image: the python environment, the app source, the static frontend for
+# caddy, and .web/backend so the backend only evaluates stateful pages at startup.
 FROM python:3.13-slim
 
-ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
+RUN apt-get update -y && apt-get install -y --no-install-recommends redis-server && rm -rf /var/lib/apt/lists/*
+COPY --from=caddy:2 /usr/bin/caddy /usr/bin/caddy
+
+ARG PORT
+ENV PATH="/app/.venv/bin:$PATH" PORT=$PORT REFLEX_REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
 
 WORKDIR /app
 # The app user needs to own /app itself so reflex can create .states there.
+# Caddy keeps its state under $HOME and redis its dump in the workdir, both
+# of which resolve to /app. PORT must stay above 1024 for the unprivileged bind.
 RUN adduser --disabled-password --gecos "" --home /app reflex && chown reflex /app
 COPY --chown=reflex --from=builder /app/.venv .venv
 COPY --chown=reflex --from=builder /app/.web/backend .web/backend
-COPY --chown=reflex --from=builder /app/.web/build/client .web/build/client
+COPY --from=builder /app/.web/build/client /srv
 COPY --chown=reflex . .
 USER reflex
-RUN mkdir -p data uploaded_files
+
+EXPOSE $PORT
 
 # Apply migrations before starting the backend; a failed migration stops the container.
 CMD if [ -d alembic ]; then reflex db migrate; fi && \
+    caddy start && \
+    redis-server --daemonize yes && \
     exec reflex run --env prod --backend-only
