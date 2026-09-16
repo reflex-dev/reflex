@@ -10,6 +10,7 @@ import logging
 import os
 import platform
 import re
+import socket
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
@@ -245,6 +246,23 @@ def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     return env
 
 
+def frontend_env(environ: Mapping[str, str]) -> dict[str, str]:
+    """Build the environment for the frontend toolchain processes.
+
+    Rolldown, which vite and react-router run for dependency pre-bundling and
+    builds, allocates through mimalloc. Disabling eager arena commit keeps the
+    memory it touches during pre-bundling from staying resident for the life of
+    the dev server or build. A value already present in ``environ`` wins.
+
+    Args:
+        environ: The base environment.
+
+    Returns:
+        A copy of the environment for the vite/react-router processes.
+    """
+    return {"MIMALLOC_ARENA_EAGER_COMMIT": "0", **environ, "NO_COLOR": "1"}
+
+
 # run_process_and_launch_url is assumed to be used
 # only to launch the frontend
 # If this is not the case, might have to change the logic
@@ -267,7 +285,7 @@ def run_process_and_launch_url(
     while True:
         if process is None:
             kwargs: dict[str, Any] = {
-                "env": _with_development_condition({**os.environ, "NO_COLOR": "1"})
+                "env": _with_development_condition(frontend_env(os.environ))
             }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
@@ -489,17 +507,32 @@ def run_backend(
         frontend_present: Whether the frontend is present.
     """
     web_dir = get_web_dir()
-    # Create a .nocompile file to skip compile for backend.
+    # Only a backend running with a frontend needs to skip its own compile.
+    # Backend-only runs must not leave this marker for the next full run.
     if web_dir.exists():
-        (web_dir / constants.NOCOMPILE_FILE).touch()
+        nocompile = web_dir / constants.NOCOMPILE_FILE
+        if frontend_present:
+            nocompile.touch()
+        else:
+            nocompile.unlink(missing_ok=True)
 
     if not frontend_present:
         notify_backend(host)
 
     # Run the backend in development mode.
     if should_use_granian():
-        # We import reflex app because this lets granian cache the module
-        import reflex.app  # noqa: F401
+        # Forked workers inherit imported modules from the supervisor. Spawned
+        # and forkserver workers do not, so preloading the app there only keeps
+        # the full framework graph resident in the long-lived supervisor.
+        if not environment.REFLEX_STRICT_HOT_RELOAD.get():
+            import multiprocessing
+
+            if multiprocessing.get_start_method() == "fork":
+                from reflex_base.utils import serializers
+
+                import reflex.app  # noqa: F401
+
+                serializers._prepare_serializers_for_fork()
 
         run_granian_backend(host, port, loglevel)
     else:
@@ -669,13 +702,31 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
     from granian.constants import Interfaces
     from granian.log import LogLevels
+    from granian.net import SocketSpec  # pyright: ignore[reportPrivateImportUsage]
     from granian.server import Server as Granian
     from reflex_base.environment import _load_dotenv_from_env
+
+    class ParentBoundGranian(Granian):  # pyright: ignore[reportGeneralTypeIssues]
+        """Granian server that binds the listen socket in the supervisor.
+
+        On Linux each worker otherwise binds only after loading the app, so
+        requests during a reload are refused. With the supervisor holding the
+        socket they wait in the accept backlog for the new worker.
+        """
+
+        def _init_shared_socket(self):
+            self._ssp = SocketSpec(self.bind_addr, self.bind_port, self.backlog)
+            self._shd = self._ssp.build()
+            self._sfd = self._shd.get_fd()
+            self._ssp = None
+            sock = socket.socket(fileno=self._sfd)
+            sock.set_inheritable(True)
+            self._sso = sock
 
     reset_dev_backend_reload_marker()
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
-    granian_app = Granian(
+    granian_app = ParentBoundGranian(
         target=get_app_instance_from_file(),
         factory=True,
         address=host,

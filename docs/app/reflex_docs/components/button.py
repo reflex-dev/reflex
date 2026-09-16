@@ -7,33 +7,24 @@ LiteralButtonVariant = Literal[
     "primary", "success", "destructive", "secondary", "muted"
 ]
 
-default_class_name = "text-sm font-semibold rounded-xl cursor-pointer inline-flex items-center justify-center px-[0.875rem] py-2 relative transition-bg border-t"
-
-after_class_name = "after:absolute after:inset-[1px] after:border-t after:rounded-[11px] after:border-white after:opacity-[0.22]"
-
-
-def get_variant_class(variant: str) -> str:
-    return (
-        f"bg-gradient-to-b from-(--{variant}-9) to-(--{variant}-9) hover:to-(--{variant}-10) text-white"
-        + " "
-    )
+default_class_name = "text-sm font-medium rounded-control cursor-pointer inline-flex items-center justify-center px-4 py-2 relative transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50"
 
 
 variant_styles = {
     "primary": {
-        "class_name": get_variant_class("violet"),
+        "class_name": "bg-primary text-primary-foreground hover:bg-primary-hover",
     },
     "success": {
-        "class_name": get_variant_class("green"),
+        "class_name": "bg-success-9 hover:bg-success-10 text-white",
     },
     "destructive": {
-        "class_name": get_variant_class("red"),
+        "class_name": "bg-destructive hover:bg-destructive/90 text-white",
     },
     "muted": {
-        "class_name": "bg-secondary-3 hover:bg-secondary-5 text-secondary-9 border-t !border-secondary-5",
+        "class_name": "bg-muted hover:bg-accent-hover text-muted-foreground",
     },
     "secondary": {
-        "class_name": "bg-secondary-4 hover:bg-secondary-5 text-secondary-10 !border-none",
+        "class_name": "bg-muted hover:bg-accent-hover text-foreground",
     },
 }
 
