@@ -592,8 +592,9 @@ class EventHandler(EventActionsMixin):
         unfinished invocation from an older chain, whether either was a chain
         root or yielded by another handler. Invocations belonging to the same
         chain coexist, so a handler may re-chain itself or be yielded several
-        times by one parent. An older chain enqueuing the handler after a
-        newer chain already has is dropped instead of cancelling newer work.
+        times by one parent. While the newer chain's invocations are still
+        tracked, an older chain enqueuing the handler is dropped instead of
+        cancelling the newer work.
         Cancellation is cooperative: a handler that never yields to the event
         loop runs to completion, and only its not-yet-started chained events
         are skipped.

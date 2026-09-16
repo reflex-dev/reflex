@@ -428,9 +428,12 @@ class EventProcessor:
                 if parent_future is not None
                 else next(self._root_gen_counter)
             ),
+            # A late-chained event (done parent) is not attached to the
+            # parent's cancellation tree, so it must not count as covered by
+            # a registered ancestor or a newer generation could not cancel it.
             covered_supersede_keys=(
                 parent_future.covered_supersede_keys
-                if parent_future is not None
+                if parent_future is not None and not parent_future.done()
                 else frozenset()
             ),
         )

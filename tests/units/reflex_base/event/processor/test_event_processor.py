@@ -282,6 +282,33 @@ async def _refresh_fanout_handler():
     await ctx.enqueue(Event.from_event_type(shared_refresh_event("fan_y"))[0])
 
 
+async def _lingering_refresh_handler(value: str = "default", chain: bool = False):
+    """A superseding handler that either chains a slow child or gate-blocks.
+
+    Args:
+        value: The value to log; also names the gate to signal.
+        chain: If True, chain a slow child so this invocation's future
+            outlives its handler in the tracked futures.
+    """
+    if chain:
+        ctx = EventContext.get()
+        await ctx.enqueue(Event.from_event_type(slow_event(0.5))[0])
+        return
+    gate = _GATES.get(value)
+    if gate is not None:
+        gate.set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            _CALL_LOG.append({"value": f"{value}_cancelled"})
+            raise
+    _CALL_LOG.append({"value": value})
+
+
+_lingering_refresh_handler._reflex_background_task = True  # type: ignore[attr-defined]
+_lingering_refresh_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
 async def _counting_superseding_handler(tick: int = 0, limit: int = 3):
     """Re-chain itself until ``limit`` ticks, then log the final tick.
 
@@ -321,6 +348,7 @@ superseding_root_event = EventHandler(fn=_superseding_root_handler)
 shared_refresh_event = EventHandler(fn=_shared_refresh_handler)
 refresh_spawner_event = EventHandler(fn=_refresh_spawner_handler)
 refresh_fanout_event = EventHandler(fn=_refresh_fanout_handler)
+lingering_refresh_event = EventHandler(fn=_lingering_refresh_handler)
 counting_superseding_event = EventHandler(fn=_counting_superseding_handler)
 polling_event = EventHandler(fn=_polling_handler)
 superseding_poll_root_event = EventHandler(fn=_superseding_poll_root_handler)
@@ -356,6 +384,7 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         shared_refresh_event,
         refresh_spawner_event,
         refresh_fanout_event,
+        lingering_refresh_event,
         counting_superseding_event,
         polling_event,
         superseding_poll_root_event,
@@ -1275,6 +1304,57 @@ async def test_superseding_siblings_from_one_parent_all_run(
 
     assert {"value": "fan_x"} in _CALL_LOG
     assert {"value": "fan_y"} in _CALL_LOG
+
+
+async def test_late_chained_invocation_stays_cancellable(
+    processor: EventProcessor,
+    token: str,
+):
+    """An invocation late-chained to a done parent registers for cancellation.
+
+    A late-chained event is not attached to its completed parent's cancellation
+    tree, so it must register in the supersession slot itself or a newer
+    generation could never cancel it.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["late"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(
+            token,
+            Event.from_event_type(lingering_refresh_event("first", chain=True))[0],
+        )
+        # The handler is done but its future is retained for the slow child.
+        await asyncio.wait_for(asyncio.shield(first), timeout=1)
+        assert first.done()
+        assert first.txid in ep._futures
+
+        late_ctx = dataclasses.replace(
+            ep._root_context.fork(token=token),  # pyright: ignore[reportOptionalMemberAccess]
+            parent_txid=first.txid,
+        )
+        late = await ep.enqueue(
+            token,
+            Event.from_event_type(lingering_refresh_event("late"))[0],
+            ev_ctx=late_ctx,
+        )
+        await asyncio.wait_for(_GATES["late"].wait(), timeout=1)
+
+        newer = await ep.enqueue(
+            token, Event.from_event_type(lingering_refresh_event("winner"))[0]
+        )
+        await asyncio.wait_for(newer.wait_all(), timeout=1)
+
+        assert late.cancelled()
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(late.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert {"value": "late_cancelled"} in _CALL_LOG
+    assert {"value": "winner"} in _CALL_LOG
 
 
 async def test_stale_chain_late_enqueue_is_dropped(
