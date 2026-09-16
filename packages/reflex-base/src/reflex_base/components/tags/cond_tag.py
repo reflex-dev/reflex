@@ -4,11 +4,11 @@ import dataclasses
 from collections.abc import Iterator, Mapping
 from typing import Any
 
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class CondTag(Tag):
+class CondTag(CommonTag):
     """A conditional tag."""
 
     # The condition to determine which component to render.

@@ -41,6 +41,7 @@ from reflex_base.event import (
 )
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
+    BaseVarShadowsInheritedVarError,
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
@@ -664,6 +665,9 @@ class BaseState(EvenMoreBasicBaseState):
                 if k not in own_descriptor_names
             }
 
+        # Base vars silently lose to an inherited var of the same name; warn about it.
+        cls._check_overridden_inherited_vars()
+
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
         cls._check_overridden_computed_vars()
@@ -1110,6 +1114,44 @@ class BaseState(EvenMoreBasicBaseState):
             if name in cls.inherited_vars or name in cls.inherited_backend_vars:
                 msg = f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsStateVarError(msg)
+
+    @classmethod
+    def _check_overridden_inherited_vars(cls) -> None:
+        """Reject base vars that shadow a var inherited from a parent state.
+
+        Such a redeclaration is dropped: the field never becomes a base var,
+        so reads and writes resolve to the parent's var, and the raw default left in
+        the class dict makes class-level access return it instead of a Var.
+
+        A bare re-annotation leaves no class attribute, so the name keeps resolving
+        to the inherited Var and stays reactive — that form is inert, not a shadow.
+
+        Raises:
+            BaseVarShadowsInheritedVarError: When a base var shadows an inherited var.
+        """
+        parent_state = cls.get_parent_state()
+        if parent_state is None:
+            return
+        parent_fields = parent_state.get_fields()
+        for name, own_field in cls.get_fields().items():
+            if (
+                name.startswith("_")
+                or not own_field.is_var
+                or name not in cls.inherited_vars
+                or name not in cls.__dict__
+            ):
+                continue
+            # A field redeclared on this class is a distinct object from the parent's;
+            # a merely inherited one is the same object.
+            parent_field = parent_fields.get(name)
+            if parent_field is None or parent_field is own_field:
+                continue
+            msg = (
+                f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
+                f"inherited from {parent_state.__module__}.{parent_state.__name__}; "
+                "use a different name instead"
+            )
+            raise BaseVarShadowsInheritedVarError(msg)
 
     @classmethod
     def get_skip_vars(cls) -> set[str]:
