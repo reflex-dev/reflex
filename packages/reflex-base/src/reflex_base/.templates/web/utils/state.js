@@ -217,8 +217,10 @@ function urlFrom(string) {
  * Invoke an event's result callback, if it declared one.
  *
  * The callback arrives as a string built by ``format_queue_events``, which
- * references ``addEvents`` and ``ReflexEvent``. Keep the dispatcher late-bound
- * so callbacks pick up a remounted EventLoopProvider.
+ * references ``queueEvents``/``processEvent`` (module-level here) plus ``socket``,
+ * ``navigate`` and ``params``. Those three MUST stay the parameter names below:
+ * the ``eval`` resolves them from this function's scope, so renaming them breaks
+ * every callback.
  * @param event The event whose callback to run.
  * @param eval_result The value to pass to the callback, awaited if thenable.
  * @param socket The socket object to send events on.
@@ -235,6 +237,9 @@ const applyResultCallback = async (
   if (!event.payload.callback) {
     return;
   }
+  // Eval'd callback strings (format_queue_events) dispatch through addEvents
+  // like compiled event triggers do; late-bound so a remounted
+  // EventLoopProvider is picked up.
   const addEvents = (...args) => eventLoop.addEvents(...args);
   const final_result =
     !!eval_result && typeof eval_result.then === "function"
@@ -255,10 +260,6 @@ const applyResultCallback = async (
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
-  // Eval'd callback strings (format_queue_events) dispatch through addEvents
-  // like compiled event triggers do; late-bound so a remounted
-  // EventLoopProvider is picked up.
-  const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
