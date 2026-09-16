@@ -3919,6 +3919,7 @@ testing = [
 dev = [
     { name = "alembic" },
     { name = "asynctest" },
+    { name = "attrs" },
     { name = "codespell" },
     { name = "darglint" },
     { name = "dill" },
@@ -3957,7 +3958,6 @@ dev = [
     { name = "reflex-sdk" },
     { name = "reflex-site-shared" },
     { name = "ruff" },
-    { name = "selenium" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
     { name = "starlette-admin", version = "0.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -4011,6 +4011,7 @@ provides-extras = ["db", "pydantic", "testing"]
 dev = [
     { name = "alembic" },
     { name = "asynctest" },
+    { name = "attrs" },
     { name = "codespell" },
     { name = "darglint" },
     { name = "dill" },
@@ -4046,7 +4047,6 @@ dev = [
     { name = "reflex-sdk", editable = "packages/reflex-sdk" },
     { name = "reflex-site-shared", editable = "packages/reflex-site-shared" },
     { name = "ruff" },
-    { name = "selenium" },
     { name = "sqlalchemy" },
     { name = "sqlmodel" },
     { name = "starlette-admin" },
