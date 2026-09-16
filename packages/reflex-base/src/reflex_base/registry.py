@@ -68,6 +68,9 @@ class RegistrationContext(BaseContext):
         default_factory=_default_bundled_libraries,
         repr=False,
     )
+    _explicit_bundled_libraries: dict[str, None] = dataclasses.field(
+        default_factory=dict, repr=False
+    )
     _app: App | None = dataclasses.field(default=None, repr=False)
 
     @property
@@ -140,6 +143,7 @@ class RegistrationContext(BaseContext):
             },
             decorated_pages=list(self.decorated_pages),
             bundled_libraries=list(self.bundled_libraries),
+            _explicit_bundled_libraries=dict(self._explicit_bundled_libraries),
         )
 
     def _set_config(self, config: Config) -> None:

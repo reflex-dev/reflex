@@ -4,10 +4,14 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import sys
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
+from opentelemetry.trace import SpanKind
 from pytest_mock import MockerFixture
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
@@ -18,6 +22,7 @@ from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
+from tests.units.conftest import active_tracer
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -197,6 +202,37 @@ async def _superseding_root_handler(value: str = "default", child: str = "load")
 _superseding_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
 
 
+async def _polling_handler(tick: int = 0, ticks: int = 0):
+    """Re-chain itself ``ticks`` times, then signal the ``poll`` gate and block.
+
+    Each tick is a child of the previous one, so the chain grows one level
+    deeper per tick like a self-chaining polling handler.
+
+    Args:
+        tick: The current tick number.
+        ticks: How many ticks to run before blocking.
+    """
+    if tick < ticks:
+        ctx = EventContext.get()
+        await ctx.enqueue(Event.from_event_type(polling_event(tick + 1, ticks))[0])
+        return
+    _GATES["poll"].set()
+    await asyncio.sleep(10)
+
+
+async def _superseding_poll_root_handler(ticks: int = 0):
+    """A superseding root that chains a polling loop, like on_load -> poll.
+
+    Args:
+        ticks: How many ticks the polling loop runs before blocking.
+    """
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(polling_event(0, ticks))[0])
+
+
+_superseding_poll_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
 error_event = EventHandler(fn=_error_handler)
@@ -214,6 +250,8 @@ gated_logging_event = EventHandler(fn=_gated_logging_handler)
 cancellable_load_event = EventHandler(fn=_cancellable_load_handler)
 resurrecting_load_event = EventHandler(fn=_resurrecting_load_handler)
 superseding_root_event = EventHandler(fn=_superseding_root_handler)
+polling_event = EventHandler(fn=_polling_handler)
+superseding_poll_root_event = EventHandler(fn=_superseding_poll_root_handler)
 
 
 @pytest.fixture(autouse=True)
@@ -243,6 +281,8 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         cancellable_load_event,
         resurrecting_load_event,
         superseding_root_event,
+        polling_event,
+        superseding_poll_root_event,
     ):
         RegistrationContext.register_event_handler(handler)
 
@@ -1045,7 +1085,8 @@ async def test_superseding_event_skips_queued_stale_chain(
         current = await ep.enqueue(
             token, Event.from_event_type(superseding_root_event("fresh"))[0]
         )
-        assert stale.cancelled()
+        # The root already completed, so superseding it cancels the pending leaf.
+        assert stale.all_done()
         _GATES["blocker"].set()
         await asyncio.wait_for(current.wait_all(), timeout=1)
 
@@ -1081,3 +1122,117 @@ async def test_superseded_chain_cannot_chain_new_events(
 
     assert {"value": "resurrected"} not in _CALL_LOG
     assert {"value": "fresh"} in _CALL_LOG
+
+
+async def test_deep_self_chaining_poll_loop_under_superseding_root(
+    processor: EventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A polling loop chained deeper than the recursion limit keeps working (#7145).
+
+    A handler that re-chains itself on every tick (a polling loop started from
+    ``on_load``) builds a linear chain of futures one level deeper per tick.
+    Walking that chain recursively blows the stack in the cleanup callbacks and
+    in ``_supersede_previous`` on the client's next navigation.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+        caplog: Log capture fixture.
+    """
+    _GATES["poll"] = asyncio.Event()
+    ticks = sys.getrecursionlimit() + 100
+    processor.configure()
+    async with processor as ep:
+        stale = await ep.enqueue(
+            token, Event.from_event_type(superseding_poll_root_event(ticks))[0]
+        )
+        await asyncio.wait_for(_GATES["poll"].wait(), timeout=10)
+        assert stale.done()
+        assert not stale.all_done()
+        assert list(ep._superseded.values()) == [stale]
+
+        # The next navigation supersedes the running poll loop.
+        _GATES["poll"] = asyncio.Event()
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_poll_root_event(0))[0]
+        )
+        # The root already completed, so superseding it cancels the pending leaf.
+        assert stale.all_done()
+        await asyncio.wait_for(_GATES["poll"].wait(), timeout=1)
+        current.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(current.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert not [r for r in caplog.records if r.levelno >= logging.ERROR], [
+        r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR
+    ]
+
+
+async def test_no_spans_when_otel_disabled(
+    mock_event_processor: EventProcessor, token: str, monkeypatch
+):
+    """With tracing off the processor never touches the tracer.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    assert otel.enabled is False
+    tracer = Mock()
+    # Nothing has bound the tracer yet in a process that never enabled tracing.
+    monkeypatch.setattr(otel, "_tracer", tracer, raising=False)
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+    tracer.start_as_current_span.assert_not_called()
+
+
+async def test_stream_delta_span_nests_under_caller(token: str, otel_exporter):
+    """enqueue_stream_delta captures the caller's trace context like enqueue().
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(delta_event())[0]
+        with active_tracer().start_as_current_span("POST /_upload") as http_span:
+            async for _ in ep.enqueue_stream_delta(token, event):
+                pass
+    spans = {s.name: s for s in otel_exporter.get_finished_spans()}
+    handler = spans[event.name]
+    assert handler.parent is not None
+    assert handler.parent.span_id == http_span.get_span_context().span_id
+    assert handler.kind == SpanKind.INTERNAL
+
+
+async def test_event_spans_chain_parent_child(token: str, otel_exporter):
+    """Each event gets a span; chained events are children of the enqueuing span.
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
+    assert _CALL_LOG == [{"value": "chained"}]
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    parent = spans["_chaining_handler"]
+    child = spans["_logging_handler"]
+    assert parent.parent is None
+    assert parent.kind == SpanKind.CONSUMER
+    assert child.parent is not None
+    assert child.parent.span_id == parent.context.span_id
+    assert child.kind == SpanKind.INTERNAL
+    assert (
+        child.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == parent.attributes[otel.ATTR_EVENT_TXID]
+    )
+    assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)

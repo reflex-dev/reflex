@@ -52,6 +52,28 @@ Property of a column dict:
 
 The `data` props of `rx.data_editor` accept a `list` of `list`, where each `list` represent a row of data to display in the table.
 
+### Image cells
+
+Use `type="image"` to render an image URL as a thumbnail. Image columns can be used alongside text and other built-in cell types. The value can be a single URL or a list of URLs for a cell containing multiple images.
+
+```python
+columns = [
+    {"title": "Preview", "type": "image", "width": 120},
+    {"title": "Name", "type": "str"},
+]
+data = [
+    ["https://picsum.photos/id/1025/160/100", "Puppy"],
+]
+
+rx.data_editor(
+    columns=columns,
+    data=data,
+    row_height=90,
+)
+```
+
+Clicking an image cell opens Glide Data Grid's built-in image preview.
+
 ## Simple Example
 
 Here is a basic example of using the data_editor representing data with no interaction and no styling. Below we define the `columns` and the `data` which are taken in by the `rx.data_editor` component. When we define the `columns` we must define a `title` and a `type` for each column we create. The columns in the `data` must then match the defined `type` or errors will be thrown.

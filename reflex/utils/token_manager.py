@@ -55,11 +55,15 @@ class TokenManager(ABC):
     def __init__(self):
         """Initialize the token manager with local dictionaries."""
         # Each process has an instance_id to identify its own sockets.
-        self.instance_id: str = _get_new_token()
+        self._reset_instance_id()
         # Keep a mapping between client token and socket ID.
         self.token_to_socket: dict[str, SocketRecord] = {}
         # Keep a mapping between socket ID and client token.
         self.sid_to_token: dict[str, str] = {}
+
+    def _reset_instance_id(self) -> None:
+        """Assign a fresh socket-owner identity when a server worker starts."""
+        self.instance_id: str = _get_new_token()
 
     @property
     def token_to_sid(self) -> MappingProxyType[str, str]:

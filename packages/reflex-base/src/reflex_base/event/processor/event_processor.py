@@ -18,6 +18,7 @@ from typing_extensions import Self
 
 from reflex.app_mixins.middleware import MiddlewareMixin
 from reflex.istate.manager import StateManager
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.future import EventFuture
 from reflex_base.event.processor.timeout import DrainTimeoutManager
@@ -494,6 +495,9 @@ class EventProcessor:
                 self._root_context,
                 token=token,
                 emit_delta_impl=_emit_delta_impl,
+                # Like fork(): the handler span nests under the caller's span
+                # (the upload request, a custom route).
+                otel_context=otel.capture_context(),
             ),
         )
 
@@ -514,6 +518,8 @@ class EventProcessor:
 
         After popping, cascade the check upward: if the parent future is also
         done and all its immediate children are done, pop the parent as well.
+        The cascade is a loop rather than recursion because a self-chaining
+        handler nests its futures one level deeper per event.
 
         This keeps parent futures alive in ``_futures`` while any child still
         needs them for ``wait_all`` and cleanup.
@@ -521,27 +527,29 @@ class EventProcessor:
         Args:
             future: The EventFuture to check.
         """
-        if not future.done():
-            return
-        if future.cancelled() and future.txid in self._tasks:
-            # The cancelled handler task is still unwinding; keep the future so
-            # late-chained events can find their cancelled parent. Failed
-            # futures are not retained, so a backend exception handler task
-            # reusing the txid can chain recovery events normally.
-            return
-        # Not checking future.all_done() to avoid waiting for grandchildren here.
-        if not all(c.done() for c in future.children):
-            return
-        parent = future.parent
-        self._futures.pop(future.txid, None)
-        if (
-            (key := future.supersede_key) is not None
-            and self._superseded.get(key) is future
-            and future.all_done()
-        ):
-            del self._superseded[key]
-        if parent is not None and parent.txid:
-            self._try_clean_future(parent)
+        while True:
+            if not future.done():
+                return
+            if future.cancelled() and future.txid in self._tasks:
+                # The cancelled handler task is still unwinding; keep the future
+                # so late-chained events can find their cancelled parent. Failed
+                # futures are not retained, so a backend exception handler task
+                # reusing the txid can chain recovery events normally.
+                return
+            # Not checking future.all_done() to avoid waiting for grandchildren here.
+            if not all(c.done() for c in future.children):
+                return
+            parent = future.parent
+            self._futures.pop(future.txid, None)
+            if (
+                (key := future.supersede_key) is not None
+                and self._superseded.get(key) is future
+                and future.all_done()
+            ):
+                del self._superseded[key]
+            if parent is None or not parent.txid:
+                return
+            future = parent
 
     def _supersede_previous(
         self, *, token: str, event: Event, tracked: EventFuture
@@ -637,7 +645,15 @@ class EventProcessor:
         """
         # Set up the event context for this task.
         EventContext.set(entry.ctx)
-        await self._execute_event(entry=entry, registered_handler=registered_handler)
+        if not otel.enabled:
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
+            return
+        with otel.event_span(entry.event, entry.ctx, registered_handler):
+            await self._execute_event(
+                entry=entry, registered_handler=registered_handler
+            )
 
     def _create_event_task(
         self,

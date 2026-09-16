@@ -8,6 +8,9 @@ from reflex_site_shared import styles
 
 EXPAND_THRESHOLD_LINES = 20
 COLLAPSED_MAX_HEIGHT = "400px"
+DOCS_CODE_THEME = rx.color_mode_cond(
+    light="github-light-high-contrast", dark="github-dark-high-contrast"
+)
 
 
 @rx.memo
@@ -21,6 +24,7 @@ def _plain_code_block(code: rx.Var[str], language: rx.Var[str]) -> rx.Component:
         shiki_code_block(
             code,
             language=language,
+            theme=DOCS_CODE_THEME,
             class_name="code-block",
             can_copy=True,
         ),
@@ -93,6 +97,7 @@ def code_block_dark(code: rx.Var[str], language: rx.Var[str]) -> rx.Component:
         shiki_code_block(
             code,
             language=language,
+            theme=DOCS_CODE_THEME,
             class_name="code-block",
             can_copy=True,
         ),
@@ -139,7 +144,7 @@ def doccmdoutput(
             can_copy=True,
             border_radius=styles.DOC_BORDER_RADIUS,
             background="transparent",
-            theme="ayu-dark",
+            theme=DOCS_CODE_THEME,
             language="bash",
             code_tag_props={
                 "style": {
@@ -155,7 +160,7 @@ def doccmdoutput(
             can_copy=False,
             border_radius="12px",
             background="transparent",
-            theme="ayu-dark",
+            theme=DOCS_CODE_THEME,
             language="log",
             code_tag_props={
                 "style": {

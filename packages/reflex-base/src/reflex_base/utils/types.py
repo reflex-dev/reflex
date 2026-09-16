@@ -36,11 +36,13 @@ from typing import (  # noqa: UP035
 from typing import get_origin as get_origin_og
 from typing import get_type_hints as get_type_hints_og
 
+import typing_extensions
 from typing_extensions import Self as Self
 from typing_extensions import TypeAliasType, TypeVarTuple
 from typing_extensions import override as override
 
 from reflex_base import constants
+from reflex_base.utils.compat import declares_annotation
 
 logger = logging.getLogger(__name__)
 
@@ -687,7 +689,7 @@ def get_attribute_access_type(
     if hasattr(cls, "__fields__") and name in cls.__fields__:
         # pydantic models
         return get_field_type(cls, name)
-    if find_spec("sqlalchemy") and find_spec("sqlalchemy.orm"):
+    if isinstance(cls, type) and "sqlalchemy.orm" in sys.modules:
         import sqlalchemy
         from sqlalchemy.ext.associationproxy import AssociationProxyInstance
         from sqlalchemy.orm import (
@@ -697,16 +699,9 @@ def get_attribute_access_type(
             Relationship,
         )
 
-        from reflex.model import Model
+        sqlmodel_type = getattr(sys.modules.get("sqlmodel"), "SQLModel", None)
 
-        if find_spec("sqlmodel"):
-            from sqlmodel import SQLModel
-
-            sqlmodel_types = (Model, SQLModel)
-        else:
-            sqlmodel_types = (Model,)
-
-        if isinstance(cls, type) and issubclass(cls, DeclarativeBase):
+        if issubclass(cls, DeclarativeBase):
             insp = sqlalchemy.inspect(cls)
             if name in insp.columns:
                 # check for list types
@@ -747,9 +742,12 @@ def get_attribute_access_type(
                         )
                     ]
         elif (
-            isinstance(cls, type)
+            sqlmodel_type is not None
             and not is_generic_alias(cls)
-            and issubclass(cls, sqlmodel_types)
+            and issubclass(cls, sqlmodel_type)
+            # Probes for unannotated names must not trigger hint resolution,
+            # which may fail on unresolvable ForwardRefs.
+            and declares_annotation(cls, name)
         ):
             # Check in the annotations directly (for sqlmodel.Relationship)
             hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
@@ -765,13 +763,16 @@ def get_attribute_access_type(
             *(get_attribute_access_type(arg, name) for arg in get_args(cls))
         )
     if isinstance(cls, type):
-        # Bare class
-        exceptions = NameError
+        # Bare class. Skip hint resolution entirely when the name is not
+        # annotated anywhere in the MRO: attribute probes (e.g. inspect's
+        # `_is_coroutine_marker` check) must not trigger, and warn about,
+        # ForwardRef resolution of unrelated annotations.
         try:
-            hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
-            if name in hints:
-                return hints[name]
-        except exceptions as e:
+            if declares_annotation(cls, name):
+                hints = get_type_hints(cls)  # pyright: ignore [reportArgumentType]
+                if name in hints:
+                    return hints[name]
+        except NameError as e:
             logger.warning(f"Failed to resolve ForwardRefs for {cls}.{name} due to {e}")
     return None  # Attribute is not accessible.
 
@@ -803,6 +804,15 @@ def get_base_class(cls: GenericType) -> type:
     return get_base_class(cls.__origin__) if is_generic_alias(cls) else cls
 
 
+# "No extra items" sentinels of PEP 728 TypedDicts (typing on Python 3.15+,
+# typing_extensions on older versions).
+_NO_EXTRA_ITEMS_SENTINELS = tuple(
+    sentinel
+    for mod in (typing, typing_extensions)
+    if (sentinel := getattr(mod, "NoExtraItems", None)) is not None
+)
+
+
 def does_obj_satisfy_typed_dict(
     obj: Any,
     cls: GenericType,
@@ -830,6 +840,10 @@ def does_obj_satisfy_typed_dict(
     required_keys: frozenset[str] = getattr(cls, "__required_keys__", frozenset())
     is_closed = getattr(cls, "__closed__", False)
     extra_items_type = getattr(cls, "__extra_items__", Any)
+    if any(extra_items_type is sentinel for sentinel in _NO_EXTRA_ITEMS_SENTINELS):
+        # Extra keys of a non-closed TypedDict are unconstrained; a closed
+        # one already rejected them above.
+        extra_items_type = Any
 
     for key, value in obj.items():
         if is_closed and key not in key_names_to_values:

@@ -5,11 +5,87 @@ from collections.abc import Generator
 import pytest
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import HybridPropertyError
+from reflex_base.vars.number import BooleanVar, NumberVar
+from reflex_base.vars.object import ObjectVar
+from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import assert_type
 
 import reflex as rx
 from reflex.experimental import hybrid_property
 from reflex.vars import Var
+
+
+def test_hybrid_property_access_types():
+    """Resolve frontend types on state classes and Python types on instances."""
+
+    class TypedHybridState(rx.State):
+        name: str = "Ada"
+        count: int = 2
+        maybe_count: int | None = None
+        values: list[int] = [1, 2]
+        mapping: dict[str, int] = {"a": 1}
+
+        @hybrid_property
+        def greeting(self) -> str:
+            return f"Hello {self.name}"
+
+        @hybrid_property
+        def doubled(self) -> int:
+            return self.count * 2
+
+        @hybrid_property
+        def positive(self) -> bool:
+            return self.count > 0
+
+        @hybrid_property
+        def half(self) -> float:
+            return self.count / 2
+
+        @hybrid_property
+        def optional(self) -> int | None:
+            return self.maybe_count
+
+        @hybrid_property
+        def items(self) -> list[int]:
+            return self.values
+
+        @hybrid_property
+        def lookup(self) -> dict[str, int]:
+            return self.mapping
+
+        @hybrid_property
+        def custom(self) -> int:  # pyright: ignore[reportRedeclaration]
+            return self.count
+
+        @custom.var
+        @classmethod
+        def custom(cls) -> StringVar:
+            return Var.create("frontend")
+
+    assert_type(TypedHybridState.greeting, StringVar)
+    assert_type(TypedHybridState.doubled, NumberVar[int])
+    assert_type(TypedHybridState.positive, BooleanVar)
+    assert_type(TypedHybridState.half, NumberVar[float])
+    assert_type(TypedHybridState.optional, NumberVar[int] | None)
+    assert_type(TypedHybridState.items, ArrayVar[list[int]])
+    assert_type(TypedHybridState.lookup, ObjectVar[dict[str, int]])
+    assert_type(TypedHybridState.custom, StringVar)
+
+    state = TypedHybridState(_reflex_internal_init=True)  # pyright: ignore[reportCallIssue]
+    assert_type(state.greeting, str)
+    assert_type(state.doubled, int)
+    assert_type(state.positive, bool)
+    assert_type(state.half, float)
+    assert_type(state.optional, int | None)
+    assert_type(state.items, list[int])
+    assert_type(state.lookup, dict[str, int])
+    assert_type(state.custom, int)
+
+    class Child(TypedHybridState):
+        pass
+
+    assert_type(Child.greeting, StringVar)
+    assert_type(Child.custom, StringVar)
 
 
 @pytest.fixture(autouse=True)
