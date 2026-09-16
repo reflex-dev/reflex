@@ -2438,3 +2438,23 @@ def test_memo_app_wraps_reach_all_app_wrap_components():
     assert (60, "ProbeProvider") in rx.box(
         chained_provider_memo()
     )._get_all_app_wrap_components()
+
+
+def test_memo_app_wraps_survive_self_referencing_body():
+    """A memo whose body holds an instance of itself must not recurse forever.
+
+    Collecting the body's wraps walks the body, which reaches that inner
+    instance, which is asked for its own body's wraps -- the same body. Without
+    a re-entrancy guard the walk never bottoms out.
+    """
+
+    @rx.memo
+    def recursive_provider_memo(items: rx.Var[list[int]]) -> rx.Component:
+        return rx.box(
+            _ProviderProbe.create(),
+            rx.foreach(items, lambda _item: recursive_provider_memo(items=items)),
+        )
+
+    instance = recursive_provider_memo(items=Var(_js_expr="items", _var_type=list[int]))
+
+    assert (60, "ProbeProvider") in instance._get_app_wrap_components()

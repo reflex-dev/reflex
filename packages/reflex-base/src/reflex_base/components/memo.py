@@ -525,6 +525,7 @@ def _make_memo_app_wrap_getter() -> Callable[
         The method to install on the wrapper class.
     """
     collected: dict[tuple[int, str], Component] | None = None
+    collecting = False
 
     def _get_app_wrap_components(
         self: MemoComponent,
@@ -534,9 +535,19 @@ def _make_memo_app_wrap_getter() -> Callable[
         Returns:
             The app wrap components.
         """
-        nonlocal collected
+        nonlocal collected, collecting
         if collected is None:
-            collected = _memo_body_app_wraps(type(self)._memo_definition)
+            if collecting:
+                # A self-referencing memo (see ``_LazyBody``): the body holds an
+                # instance of this same memo, so walking it again would never
+                # bottom out. Its requirements are the ones the walk one frame
+                # up is already collecting, so contribute nothing here.
+                return {}
+            collecting = True
+            try:
+                collected = _memo_body_app_wraps(type(self)._memo_definition)
+            finally:
+                collecting = False
         # Callers merge into the returned mapping (``_get_all_app_wrap_components``
         # does), so hand out a copy rather than the cached one.
         return dict(collected)
