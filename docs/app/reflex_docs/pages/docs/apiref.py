@@ -10,12 +10,12 @@ from reflex_docs.templates.docpage import docpage
 from .api_reference_layout import generate_class_reference
 
 # Classes that get a generated reference page. Where each page appears is
-# decided by section_order below, not by this list.
+# decided by section_order below, not by this list. rx.Model is deliberately
+# absent: it is deprecated since 0.9.2 and removed in 1.0.
 modules = [
     rx.App,
     rx.Config,
     rx.State,
-    # rx.state.BaseState,
     StateManager,
     rx.Component,
     rx.ComponentState,
@@ -24,8 +24,6 @@ modules = [
     rx.event.Event,
     rx.Var,
     ImportVar,
-    # rx.Model excluded: deprecated in 0.9.2, removed in 1.0.
-    # rx.testing.AppHarness,
 ]
 
 # The single source of truth for the order of the API reference section, by URL
