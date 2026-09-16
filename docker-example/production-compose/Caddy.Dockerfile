@@ -1,4 +1,5 @@
-FROM library/caddy
+FROM caddy:2
 
-COPY --from=local/reflex-app /app/.web/build/client /srv
-ADD Caddyfile /etc/caddy/Caddyfile
+# The `app` build context is the app service image (see compose.yaml).
+COPY --from=app /app/.web/build/client /srv
+COPY Caddyfile /etc/caddy/Caddyfile

@@ -49,16 +49,47 @@ Build the complete documentation app before auditing SEO or load performance:
 uv run reflex export --no-zip
 node --test tests/frontend_quality.test.mjs
 uv run pytest tests
+uv run pytest --runxfail tests/test_published_seo.py
 ```
 
-If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable to both test commands. The Python link validator reads that build's sitemap. The frontend tests use the build's installed React and bundler to check server-rendered code, highlight invalidation, and removal of unused components.
+If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable to all test commands above. The Python link validator reads that build's sitemap. The frontend tests use the build's installed React and bundler to check server-rendered code, highlight invalidation, and removal of unused components.
 
 The `reflex-docs` integration CI jobs run the frontend tests after building the production site, using the installed React and bundler dependencies.
 
-Breadcrumbs and canonical URLs use `deploy_url` and `frontend_path` from the app config. Local runs use the framework's localhost default. Deployment jobs must set `REFLEX_DEPLOY_URL` to the origin serving that build (for example, `https://reflex.dev` in production or the staging origin).
+Public URLs use `deploy_url` and `frontend_path`. Keep the default localhost origin expected by the Helm sitemap rewrite; environments may override `REFLEX_DEPLOY_URL`. The `/docs` mount is configured separately.
 
 The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Reflex backend serves the frontend. In development or when HTML is hosted separately, requests reach the frontend instead: the redirect pages retain client navigation and prerendered HTML includes an immediate refresh, canonical link, noindex directive, and a usable destination link. That fallback navigates readers but returns HTTP 200. For HTTP 301 semantics on a separate frontend/CDN, configure redirects at that host's edge using the `redirects` list in `reflex_docs/reflex_docs.py`; backend middleware alone cannot redirect requests it never receives.
 
 Docs pages intentionally omit the marketing site's pixels and session recording scripts. Search, examples, newsletter signup, and status information remain available.
 
 The docs config enables `frontend_lazy_bundled_libraries`. Optional libraries registered for dynamic components load on the first dynamic-component evaluation, while React and the shared runtime stay available immediately. This prevents the full Radix namespace from being imported on every page. The framework default remains `False`; custom scripts that read optional libraries from `window.__reflex` directly should retain that default or await `window.__reflex_load()` first.
+
+Run the imported functional browser checks against a running preview with `REFLEX_DOCS_PREVIEW_URL=http://localhost:3000 uv run pytest tests/test_docs_features_browser.py`.
+
+## Editing a page's source
+
+"Edit this page" opens the Markdown source, documented Python class, or CLI
+callback that supplies the page content. Packaged content without an editable
+source in this repository omits this action and retains "Raise an issue".
+Links target `main` by default. For a PR preview containing files that are not on
+`main` yet, set `DOCS_GITHUB_REF` to the PR branch when building and running the
+preview, for example `DOCS_GITHUB_REF=codex/docs-editorial-refresh`.
+
+## Agent-readable exports
+
+The deployed app is mounted at `/docs/`. Its indexes are `/docs/llms.txt` and
+`/docs/llms-full.txt`; the docs home is `/docs/index.md`. Other canonical pages
+use the page URL with the trailing slash removed and `.md` appended. Each page
+advertises its exact Markdown destination with a `rel="alternate"` link.
+
+`AgentFilesPlugin` preserves authored guides and generated API source. After the
+production frontend is prerendered, it exports missing programmatic pages and
+eval-only catalogs from their main HTML content, then rebuilds both indexes from
+the canonical sitemap. This runs before compression. Navigation, decorative
+artwork, and footer controls are excluded; headings, destinations, examples,
+and tables remain readable. The complete exports require a production build.
+
+`tests/test_published_seo.py` checks every canonical page's Markdown asset and
+flags links that would redirect only to add a trailing slash. Component catalogs
+share identical inherited HTML props once per page; overrides and specific props
+stay beside their component, and the full API remains in Markdown.

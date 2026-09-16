@@ -28,6 +28,7 @@ dependencies = [
     "ruff-format",
     "sqlalchemy",
     "sqlmodel",
+    "griffelib>=2.0.1",
 ]
 
 [dependency-groups]
