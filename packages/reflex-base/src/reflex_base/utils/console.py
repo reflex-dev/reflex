@@ -13,7 +13,6 @@ import contextlib
 import datetime
 import time
 from collections.abc import Sequence
-from pathlib import Path
 from typing import TYPE_CHECKING, overload
 
 from rich.console import Console, OverflowMethod
@@ -39,9 +38,6 @@ def _human_console() -> Console:
     """
     return _console_stderr if _log.is_stdout_reserved() else _console
 
-
-# Deprecated features who's warning has been printed.
-_EMITTED_DEPRECATION_WARNINGS = set()
 
 # Info messages which have been printed.
 _EMITTED_INFO = set()
@@ -292,12 +288,6 @@ def warn(msg: str, *, dedupe: bool = False, **kwargs):
         print_to_log_file(f"[orange1]Warning: {msg}[/orange1]", **kwargs)
 
 
-# Frame attribution is shared with the logging pipeline: one implementation,
-# one populated cache of framework paths (building it walks every stdlib
-# module). Bound here so callers and tests can still patch it on this module.
-_get_first_non_framework_frame = _log._get_first_non_framework_frame
-
-
 def deprecate(
     *,
     feature_name: str,
@@ -307,43 +297,25 @@ def deprecate(
     dedupe: bool = True,
     **kwargs,
 ):
-    """Print a deprecation warning.
+    """Log a deprecation warning through the standard logging pipeline.
 
     Args:
-        feature_name: The feature to deprecate.
-        reason: The reason for deprecation.
-        deprecation_version: The version the feature was deprecated
-        removal_version: The version the deprecated feature will be removed
-        dedupe: If True, suppress multiple console logs of deprecation message.
-        kwargs: Keyword arguments to pass to the print function.
+        feature_name: Passed to :func:`reflex_base.utils.log.deprecate`.
+        reason: Passed to :func:`reflex_base.utils.log.deprecate`.
+        deprecation_version: Passed to :func:`reflex_base.utils.log.deprecate`.
+        removal_version: Passed to :func:`reflex_base.utils.log.deprecate`.
+        dedupe: Passed to :func:`reflex_base.utils.log.deprecate`.
+        kwargs: Legacy Rich print arguments, ignored by the logging pipeline.
     """
-    dedupe_key = feature_name
-    loc = ""
-
-    # See if we can find where the deprecation exists in "user code"
-    origin_frame = _get_first_non_framework_frame()
-    if origin_frame is not None:
-        filename = Path(origin_frame.f_code.co_filename)
-        if filename.is_relative_to(Path.cwd()):
-            filename = filename.relative_to(Path.cwd())
-        loc = f" ({filename}:{origin_frame.f_lineno})"
-        dedupe_key = f"{dedupe_key} {loc}"
-
-    if dedupe_key not in _EMITTED_DEPRECATION_WARNINGS:
-        msg = (
-            f"{feature_name} has been deprecated in version {deprecation_version}. {reason.rstrip('.').lstrip('. ')}. It will be completely "
-            f"removed in {removal_version}.{loc}"
-        )
-        if _log.get_log_level() <= LogLevel.WARNING:
-            print(
-                f"[yellow]DeprecationWarning: {msg}[/yellow]",
-                level="warning",
-                **kwargs,
-            )
-        if should_use_log_file_console():
-            print_to_log_file(f"[yellow]DeprecationWarning: {msg}[/yellow]", **kwargs)
-        if dedupe:
-            _EMITTED_DEPRECATION_WARNINGS.add(dedupe_key)
+    _log.ensure_configured()
+    _log.deprecate(
+        feature_name=feature_name,
+        reason=reason,
+        deprecation_version=deprecation_version,
+        removal_version=removal_version,
+        dedupe=dedupe,
+        **kwargs,
+    )
 
 
 def error(msg: str, *, dedupe: bool = False, **kwargs):
