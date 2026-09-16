@@ -96,7 +96,20 @@ for violation in result.violations:
     print(violation.severity, violation.file_path, violation.line, violation.message)
 ```
 
-Security reviews need the Pro or Enterprise plan. `client.providers` reads whether an organization can deploy to its own Google Cloud, and `client.apps.set_provider`, `set_full_deploy` and `set_instance_bounds` configure where an app runs.
+Security reviews need the Pro or Enterprise plan.
+
+## Google Cloud
+
+Apps can run on an organization's own Google Cloud instead of Reflex Cloud:
+
+```python
+status = client.providers.gcp_status(client.auth.me().org_id)
+if status.configured and status.allowed:
+    client.apps.set_provider(app.id, "gcp")
+    client.apps.set_instance_bounds(app.id, min_instances=1, max_instances=10)
+```
+
+Running on Google Cloud needs the Enterprise plan. `client.apps.set_full_deploy` also serves an app's frontend from Google Cloud, and `client.providers.cloud_run_manifest()` returns the Dockerfile and script to deploy to Cloud Run yourself.
 
 ## Errors
 
