@@ -12,9 +12,9 @@ import reflex_enterprise as rxe
 Reflex Enterprise provides comprehensive drag and drop functionality for creating interactive UI elements using the `rxe.dnd` module. Built on top of react-dnd, it offers both high-level components for common use cases and low-level hooks for advanced scenarios.
 
 ```md alert warning
-# Important: Decorate functions defining `rxe.dnd.draggable` or `rxe.dnd.drop_target` with `@rx.memo`.
+# Memoize reusable drag-and-drop components
 
-Each drop target needs its own hook and ref. Pass dynamic destinations as `rx.Var` props using keyword arguments, especially inside `rx.foreach`. Place these memoized components below a shared [provider](#provider).
+Use `@rx.memo` when a draggable or drop-target helper is rendered multiple times, especially inside `rx.foreach`, so each instance has its own hook and ref. Pass dynamic destinations as `rx.Var` props using keyword arguments. A single instance defined directly in a page can use the page's hook scope. Place memoized components below a shared [provider](#provider).
 
 See [memo](/docs/library/other/memo) for how `@rx.memo` components handle parameters.
 ```
@@ -115,7 +115,8 @@ def movable_card() -> rxe.dnd.Draggable:
     )
 
 
-def drop_zone(position: int):
+@rx.memo
+def drop_zone(position: rx.Var[int]) -> rx.Component:
     params = rxe.dnd.DropTarget.collected_params
     return rxe.dnd.drop_target(
         rx.cond(
@@ -137,17 +138,19 @@ def drop_zone(position: int):
 
 
 def multi_position_example():
-    return rx.vstack(
-        rx.text("Drag the card between positions", weight="bold"),
-        rx.grid(
-            drop_zone(0),
-            drop_zone(1),
-            drop_zone(2),
-            drop_zone(3),
-            columns="2",
+    return rxe.dnd.provider(
+        rx.vstack(
+            rx.text("Drag the card between positions", weight="bold"),
+            rx.grid(
+                drop_zone(position=0),
+                drop_zone(position=1),
+                drop_zone(position=2),
+                drop_zone(position=3),
+                columns="2",
+                spacing="4",
+            ),
             spacing="4",
         ),
-        spacing="4",
     )
 ```
 
@@ -298,7 +301,7 @@ def draggable_list_item(item: rx.Var[ListItem]) -> rx.Component:
 @rx.memo
 def droppable_list(
     title: rx.Var[str], items: rx.Var[list[ListItem]], list_id: rx.Var[str]
-):
+) -> rx.Component:
     return rxe.dnd.drop_target(
         rx.vstack(
             rx.text(title, weight="bold", size="5"),
@@ -625,7 +628,7 @@ The default backend is `rxe.dnd.HTML5Backend`. To select a backend explicitly, p
 
 ## Best Practices
 
-1. **Always use `@rx.memo`** on functions containing draggable or drop-target components
+1. **Use `@rx.memo`** on draggable and drop-target helpers rendered multiple times, including inside `rx.foreach`
 2. **Use descriptive type names** for better debugging
 3. **Handle edge cases** in drop handlers (invalid items, etc.)
 4. **Provide visual feedback** using collected parameters
