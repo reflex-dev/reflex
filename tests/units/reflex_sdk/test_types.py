@@ -43,6 +43,7 @@ SCHEMA_MODELS: dict[type, tuple[str, ...]] = {
 # backend source.
 UNTYPED_MODELS = {
     types.Me,
+    types.TokenAccess,
     types.Token,
     types.AppSummary,
     types.LogRecord,
