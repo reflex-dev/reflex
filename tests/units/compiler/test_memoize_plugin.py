@@ -52,6 +52,7 @@ from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
 import reflex.compiler.plugins.memoize as memoize_plugin
+from reflex.compiler.compiler import compile_memo_components
 from reflex.compiler.plugins import DefaultCollectorPlugin, default_page_plugins
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin, _should_memoize
 from reflex.state import BaseState
@@ -682,7 +683,6 @@ def test_user_memo_recursive_controls_descendant_auto_memoization() -> None:
 
 def test_recursive_user_memo_auto_memoizes_stateful_body_descendant() -> None:
     """A state read authored inside a recursive memo gets a nested boundary."""
-    from reflex.compiler.compiler import compile_memo_components
 
     @rx.memo
     def non_recursive_dashboard() -> Component:
@@ -710,7 +710,6 @@ def test_recursive_user_memo_auto_memoizes_stateful_body_descendant() -> None:
 
 def test_recursive_user_memo_keeps_captured_parameters_in_scope() -> None:
     """Extraction must not move local memo parameters into an unbound scope."""
-    from reflex.compiler.compiler import compile_memo_components
 
     @rx.memo(recursive=True)
     def parameterized_dashboard(label: rx.Var[str]) -> Component:
