@@ -36,6 +36,10 @@ async def _redirect(request: web.Request) -> web.Response:  # noqa: RUF029
     return web.Response(status=302, headers={"Location": "/echo/redirected"})
 
 
+async def _error(request: web.Request) -> web.Response:  # noqa: RUF029
+    return web.json_response({"detail": "boom"}, status=500)
+
+
 @pytest.fixture
 async def server() -> AsyncIterator[TestServer]:
     """A local HTTP server to send requests to.
@@ -47,6 +51,7 @@ async def server() -> AsyncIterator[TestServer]:
     app.router.add_route("*", "/echo/{name}", _echo)
     app.router.add_get("/slow", _slow)
     app.router.add_get("/redirect", _redirect)
+    app.router.add_get("/error", _error)
     server = TestServer(app)
     await server.start_server()
     yield server
@@ -86,6 +91,14 @@ async def test_redirects_are_not_followed(server: TestServer):
     assert response.status_code == 302
 
 
+async def test_error_status_from_raising_session(server: TestServer):
+    async with aiohttp.ClientSession(raise_for_status=True) as session:
+        transport = AiohttpTransport(session)
+        response = await transport.send(_request(str(server.make_url("/error"))))
+    assert response.status_code == 500
+    assert response.json() == {"detail": "boom"}
+
+
 async def test_request_timeout(server: TestServer):
     transport = AiohttpTransport()
     with pytest.raises(TransportError) as exc_info:
@@ -96,12 +109,14 @@ async def test_request_timeout(server: TestServer):
 
 
 async def test_connection_refused():
+    transport = AiohttpTransport()
+    # Bound but not listening: connecting is refused, and holding the port keeps
+    # another process from taking it during the test.
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
-    transport = AiohttpTransport()
-    with pytest.raises(TransportError) as exc_info:
-        await transport.send(_request(f"http://127.0.0.1:{port}/echo/x"))
+        with pytest.raises(TransportError) as exc_info:
+            await transport.send(_request(f"http://127.0.0.1:{port}/echo/x"))
     await transport.aclose()
     assert exc_info.value.sent is False
     assert exc_info.value.timed_out is False

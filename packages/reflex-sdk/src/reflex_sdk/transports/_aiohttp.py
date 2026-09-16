@@ -72,8 +72,11 @@ class AiohttpTransport:
                 request.url,
                 headers=request.headers,
                 data=request.content,
-                # Redirects are reported, like the httpx transport does.
+                # Redirects and error statuses are returned for the client to
+                # handle, like the httpx transport does, even from a session
+                # configured to follow or raise on them.
                 allow_redirects=False,
+                raise_for_status=False,
                 **options,
             ) as response:
                 content = await response.read()

@@ -60,7 +60,7 @@ class AsyncReflexCloud(BaseClient):
             token=token, base_url=base_url, timeout=timeout, max_retries=max_retries
         )
         self._owns_transport = transport is None
-        self._transport = transport or AsyncDefaultTransport()
+        self._transport = AsyncDefaultTransport() if transport is None else transport
         self.auth = AsyncAuth(self)
 
     async def __aenter__(self) -> AsyncReflexCloud:

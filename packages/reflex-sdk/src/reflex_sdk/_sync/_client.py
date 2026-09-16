@@ -61,7 +61,7 @@ class ReflexCloud(BaseClient):
             token=token, base_url=base_url, timeout=timeout, max_retries=max_retries
         )
         self._owns_transport = transport is None
-        self._transport = transport or DefaultTransport()
+        self._transport = DefaultTransport() if transport is None else transport
         self.auth = Auth(self)
 
     def __enter__(self) -> ReflexCloud:

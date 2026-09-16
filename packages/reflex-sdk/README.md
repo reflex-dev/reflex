@@ -41,7 +41,8 @@ import httpx
 from reflex_sdk import AsyncReflexCloud, ReflexCloud
 from reflex_sdk.transports import AiohttpTransport, AsyncHttpxTransport, HttpxTransport
 
-async with aiohttp.ClientSession(proxy="http://proxy:8080") as session:
+# Reads HTTP_PROXY, HTTPS_PROXY and NO_PROXY from the environment.
+async with aiohttp.ClientSession(trust_env=True) as session:
     async with AsyncReflexCloud(transport=AiohttpTransport(session)) as client:
         ...
 

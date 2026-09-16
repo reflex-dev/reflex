@@ -75,10 +75,9 @@ def test_request_retries_idempotent_request(client: ReflexCloud, mock_api: MockA
         reply(200, json=[]),
     )
     assert client._request("GET", "user/token", list) == []
-    first, second, third = mock_api.requests
-    # Retries resend the same request, so the server logs one request id.
-    assert first is second
-    assert second is third
+    # Every attempt carries the same request id, so the server logs one request.
+    assert len({request.headers["X-Request-ID"] for request in mock_api.requests}) == 1
+    assert len(mock_api.requests) == 3
 
 
 def test_request_gives_up_after_max_retries(client: ReflexCloud, mock_api: MockAPI):
@@ -175,6 +174,20 @@ def test_request_timeout_setting(mock_api: MockAPI):
     transport_default, explicit = mock_api.requests
     assert transport_default.timeout is None
     assert explicit.timeout == pytest.approx(7.0)
+
+
+def test_client_uses_falsy_transport(mock_api: MockAPI):
+    class FalsyTransport(MockTransport):
+        def __len__(self) -> int:
+            return 0
+
+    mock_api.add("GET", TOKENS, reply(200, json=[]))
+    transport = FalsyTransport(mock_api)
+    with ReflexCloud(token="test-token", transport=transport) as client:
+        assert client._transport is transport
+        client._request("GET", "user/token", list)
+    assert len(mock_api.requests) == 1
+    assert not mock_api.closed
 
 
 def test_client_leaves_passed_transport_open(mock_api: MockAPI):
