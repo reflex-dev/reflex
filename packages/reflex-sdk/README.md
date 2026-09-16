@@ -37,6 +37,32 @@ with ReflexCloud() as client:
 
 `client.apps` lists, creates, starts, stops, pauses, scales, rolls back and deletes apps, and reads their deployment history and runtime logs; `client.apps.secrets` manages their secrets. `client.projects` lists, searches and creates projects, with `projects.roles` and `projects.members` for access control. `AsyncReflexCloud` has the same methods as coroutines, with `logs` as an async iterator.
 
+## Deploying
+
+```python
+from reflex_sdk import DeploymentFailedError, ReflexCloud
+
+with ReflexCloud() as client:
+    urls = client.apps.reserve_hostname(app.id, app.name)
+    # Export the app against urls.frontend_url and urls.backend_url, e.g. with
+    # `reflex export`, producing backend.zip and frontend.zip.
+    deployment_id = client.deployments.create(
+        app.id,
+        backend="backend.zip",
+        frontend="frontend.zip",
+        regions={"sjc": 1},
+        on_upload_progress=lambda sent, total: print(f"{sent}/{total} bytes"),
+    )
+    try:
+        report = client.deployments.wait(deployment_id, on_status=print, timeout=900)
+    except DeploymentFailedError as error:
+        print(error.report.reason, error.report.guidance)
+        print(error.report.build_log_excerpt)
+        raise
+```
+
+`deployments.create` streams the archives straight to storage, then submits the deployment. `deployments.wait` returns the deployment's report once it is running, or awaiting approval (`report.status == "AwaitingApproval"`), and raises `DeploymentFailedError` if it fails. `deployments.status`, `report` and `build_logs` read a deployment's progress, and `regions` and `vm_types` list what can be deployed to.
+
 ## Authentication
 
 The client uses the first access token it finds:

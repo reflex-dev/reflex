@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterable, AsyncIterator
 from typing import TYPE_CHECKING, Any
 
 from reflex_sdk.transports._base import (
@@ -15,6 +16,59 @@ from reflex_sdk.transports._base import (
 
 if TYPE_CHECKING:
     import aiohttp
+
+
+class _StallWatchdog:
+    """Cancels the task sending a streamed body when the body stops moving.
+
+    aiohttp has no write timeout. Its ``sock_read`` only bounds reads, so an upload
+    the server stops accepting would otherwise wait forever. aiohttp asks for the
+    next chunk once the previous one is written, so the time between requests for
+    chunks bounds each write.
+    """
+
+    def __init__(self, timeout: float) -> None:
+        self._timeout = timeout
+        self._task = asyncio.current_task()
+        self._loop = asyncio.get_running_loop()
+        self._handle: asyncio.TimerHandle | None = None
+        self.fired = False
+
+    def _fire(self) -> None:
+        self.fired = True
+        if self._task is not None:
+            self._task.cancel()
+
+    def arm(self) -> None:
+        self.disarm()
+        self._handle = self._loop.call_later(self._timeout, self._fire)
+
+    def disarm(self) -> None:
+        if self._handle is not None:
+            self._handle.cancel()
+            self._handle = None
+
+    def take_back_cancellation(self) -> bool:
+        """Withdraw the cancellation this watchdog requested.
+
+        Returns:
+            Whether no other cancellation of the task is pending. From Python 3.11
+            tasks count cancellation requests, so a caller's cancellation arriving
+            alongside the watchdog's is told apart and still propagates. Python
+            3.10 cannot tell them apart.
+        """
+        if self._task is None or not hasattr(self._task, "uncancel"):
+            return True
+        return self._task.uncancel() == 0
+
+    async def watch(self, content: AsyncIterable[bytes]) -> AsyncIterator[bytes]:
+        self.arm()
+        try:
+            async for chunk in content:
+                yield chunk
+                self.arm()
+        finally:
+            self.disarm()
 
 
 class AiohttpTransport:
@@ -43,7 +97,11 @@ class AiohttpTransport:
 
             self._session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(
-                    total=DEFAULT_TIMEOUT, sock_connect=DEFAULT_CONNECT_TIMEOUT
+                    total=None,
+                    # Waiting for a free connection in the pool, then connecting.
+                    connect=DEFAULT_TIMEOUT,
+                    sock_connect=DEFAULT_CONNECT_TIMEOUT,
+                    sock_read=DEFAULT_TIMEOUT,
                 )
             )
         return self._session
@@ -65,13 +123,30 @@ class AiohttpTransport:
         session = self._get_session()
         options: dict[str, Any] = {}
         if request.timeout is not None:
-            options["timeout"] = aiohttp.ClientTimeout(total=request.timeout)
+            # Per operation, like httpx: a total would cut off long uploads.
+            options["timeout"] = aiohttp.ClientTimeout(
+                total=None,
+                connect=request.timeout,
+                sock_connect=request.timeout,
+                sock_read=request.timeout,
+            )
+        data = request.content
+        watchdog = None
+        if isinstance(data, AsyncIterable):
+            watchdog = _StallWatchdog(
+                DEFAULT_TIMEOUT if request.timeout is None else request.timeout
+            )
+            data = watchdog.watch(data)
+        if not any(name.lower() == "content-type" for name in request.headers):
+            # aiohttp labels any body application/octet-stream; httpx sends none,
+            # and a presigned upload may be signed without one.
+            options["skip_auto_headers"] = ("Content-Type",)
         try:
             async with session.request(
                 request.method,
                 request.url,
                 headers=request.headers,
-                data=request.content,
+                data=data,
                 # Redirects and error statuses are returned for the client to
                 # handle, like the httpx transport does, even from a session
                 # configured to follow or raise on them.
@@ -80,6 +155,17 @@ class AiohttpTransport:
                 **options,
             ) as response:
                 content = await response.read()
+        except asyncio.CancelledError as ex:
+            if (
+                watchdog is None
+                or not watchdog.fired
+                or not watchdog.take_back_cancellation()
+            ):
+                raise
+            msg = "the server stopped accepting the request body"
+            raise TransportError(
+                msg, request=request, sent=True, timed_out=True
+            ) from ex
         except aiohttp.ConnectionTimeoutError as ex:
             msg = str(ex) or "connection timed out"
             raise TransportError(
@@ -95,6 +181,9 @@ class AiohttpTransport:
         except aiohttp.ClientError as ex:
             msg = str(ex) or type(ex).__name__
             raise TransportError(msg, request=request, sent=True) from ex
+        finally:
+            if watchdog is not None:
+                watchdog.disarm()
         return Response(
             request=request,
             status_code=response.status,

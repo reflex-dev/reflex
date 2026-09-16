@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json as json_module
 import re
-from collections.abc import Callable
+from collections.abc import AsyncIterable, Callable
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -32,6 +32,7 @@ def _load_routes() -> list[tuple[str, re.Pattern[str]]]:
 
 
 ROUTES = _load_routes()
+API_HOST = "build.reflex.dev"
 
 Handler = Callable[[Request], Response]
 
@@ -73,6 +74,19 @@ def reply(
     return handle
 
 
+def json_body(request: Request) -> Any:
+    """Parse the JSON body of a request the SDK built.
+
+    Args:
+        request: The request.
+
+    Returns:
+        The parsed body.
+    """
+    assert isinstance(request.content, bytes)
+    return json_module.loads(request.content)
+
+
 class MockAPI:
     """Serves canned responses to the SDK, failing on routes the real API does not have."""
 
@@ -80,6 +94,8 @@ class MockAPI:
         """Start with no handlers and no recorded requests."""
         self.handlers: dict[tuple[str, str], list[Handler]] = {}
         self.requests: list[Request] = []
+        # The streamed bodies the transports read, by request URL.
+        self.uploads: dict[str, bytes] = {}
         self.closed = False
 
     def add(self, method: str, path: str, *handlers: Handler) -> None:
@@ -87,7 +103,7 @@ class MockAPI:
 
         Args:
             method: The HTTP method.
-            path: The encoded request path, including ``/api/v1``.
+            path: The encoded request path, including ``/api/v1`` for API routes.
             handlers: Functions building a response from the request, or raising
                 ``TransportError``.
         """
@@ -103,8 +119,10 @@ class MockAPI:
             The response.
         """
         self.requests.append(request)
-        path = urlsplit(request.url).path
-        assert any(
+        url = urlsplit(request.url)
+        path = url.path
+        # Requests to other hosts, such as signed storage uploads, are not API routes.
+        assert url.netloc != API_HOST or any(
             method == request.method and pattern.match(path)
             for method, pattern in ROUTES
         ), f"{request.method} {path} is not a route in openapi.json"
@@ -125,7 +143,7 @@ class MockTransport:
         self.api = api
 
     def send(self, request: Request) -> Response:
-        """Answer a request from the mock API.
+        """Read a streamed body, then answer the request from the mock API.
 
         Args:
             request: The request.
@@ -133,6 +151,9 @@ class MockTransport:
         Returns:
             The response.
         """
+        if request.content is not None and not isinstance(request.content, bytes):
+            assert not isinstance(request.content, AsyncIterable)
+            self.api.uploads[request.url] = b"".join(request.content)
         return self.api.handle(request)
 
     def close(self) -> None:
@@ -152,7 +173,7 @@ class AsyncMockTransport:
         self.api = api
 
     async def send(self, request: Request) -> Response:
-        """Answer a request from the mock API.
+        """Read a streamed body, then answer the request from the mock API.
 
         Args:
             request: The request.
@@ -160,6 +181,11 @@ class AsyncMockTransport:
         Returns:
             The response.
         """
+        if request.content is not None and not isinstance(request.content, bytes):
+            assert isinstance(request.content, AsyncIterable)
+            self.api.uploads[request.url] = b"".join([
+                chunk async for chunk in request.content
+            ])
         return self.api.handle(request)
 
     async def aclose(self) -> None:

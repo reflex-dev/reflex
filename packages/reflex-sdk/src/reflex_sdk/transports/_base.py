@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import AsyncIterable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-# The timeout of a request attempt when neither the client nor the transport's
-# own HTTP client sets one: 60 seconds overall, 10 of them to connect.
+# The timeouts of each network operation when neither the client nor the
+# transport's own HTTP client sets them: 10 seconds to connect, and 60 seconds for
+# any single read or write. They bound a stalled connection, not a whole request,
+# so a large upload on a slow but working link is not cut off.
 DEFAULT_TIMEOUT = 60.0
 DEFAULT_CONNECT_TIMEOUT = 10.0
 
@@ -21,8 +23,13 @@ class Request:
     # The absolute URL, with the path and query already encoded.
     url: str
     headers: Mapping[str, str]
-    content: bytes | None = None
-    # The timeout of the attempt in seconds, or None for the transport's default.
+    # The body, either whole or as chunks: an ``Iterable`` for synchronous
+    # transports, an ``AsyncIterable`` for asynchronous ones. A streamed body is
+    # sent with the ``Content-Length`` header the caller sets, and can only be
+    # sent once.
+    content: bytes | Iterable[bytes] | AsyncIterable[bytes] | None = None
+    # The timeout of each network operation in seconds, or None for the
+    # transport's defaults.
     timeout: float | None = None
 
 
@@ -91,7 +98,11 @@ class TransportError(Exception):
 
 
 class Transport(Protocol):
-    """Sends requests for the synchronous client."""
+    """Sends requests for the synchronous client.
+
+    Implementations must be thread-safe: ``deployments.create`` sends a build's
+    archives from concurrent threads.
+    """
 
     def send(self, request: Request) -> Response:
         """Send a request and read the whole response.

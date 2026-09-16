@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import email.utils
-import json
 import uuid
 from pathlib import Path
 from typing import Any
@@ -12,14 +11,20 @@ from reflex_sdk._base import (
     DEFAULT_BASE_URL,
     DEFAULT_MAX_RETRIES,
     BaseClient,
+    connection_error,
     decode_response,
     path_segment,
 )
-from reflex_sdk._errors import APIResponseValidationError, MissingTokenError
-from reflex_sdk.transports import Request
+from reflex_sdk._errors import (
+    APIConnectionError,
+    APIResponseValidationError,
+    APITimeoutError,
+    MissingTokenError,
+)
+from reflex_sdk.transports import Request, TransportError
 from reflex_sdk.types import Me
 
-from tests.units.reflex_sdk.conftest import reply
+from tests.units.reflex_sdk.conftest import json_body, reply
 
 
 def _client(**kwargs: Any) -> BaseClient:
@@ -126,8 +131,7 @@ def test_build_unauthenticated_request_without_token():
     )
     assert "X-API-TOKEN" not in request.headers
     assert request.headers["Content-Type"] == "application/json"
-    assert request.content is not None
-    assert json.loads(request.content) == {"a": 1}
+    assert json_body(request) == {"a": 1}
 
 
 def test_build_authenticated_request_without_token():
@@ -228,6 +232,26 @@ def test_retry_after_falls_back_to_backoff(
     delay = _retry_delay("GET", status_code=429, headers={"retry-after": retry_after})
     assert delay is not None
     assert 0.375 <= delay <= 0.5
+
+
+@pytest.mark.parametrize(
+    ("timed_out", "error_type"),
+    [(True, APITimeoutError), (False, APIConnectionError)],
+)
+def test_connection_error_leaves_out_the_query(
+    timed_out: bool, error_type: type[APIConnectionError]
+):
+    request = Request(
+        method="PUT",
+        url="https://storage.example.com/app/backend.zip?X-Amz-Signature=secret",
+        headers={},
+    )
+    error = connection_error(
+        TransportError("reset", request=request, sent=True, timed_out=timed_out)
+    )
+    assert type(error) is error_type
+    assert error.request is request
+    assert str(error) == "PUT https://storage.example.com/app/backend.zip failed: reset"
 
 
 def test_decode_response():
