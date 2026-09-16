@@ -31,6 +31,16 @@ from reflex.state import BaseState
 from reflex.utils import prerequisites
 
 
+@pytest.mark.parametrize("content", ["", '["index",'])
+def test_read_stateful_pages_marker_recovers_legacy_corruption(
+    tmp_path, mocker, content
+):
+    """A marker truncated by an older writer requests full page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    (tmp_path / constants.Dirs.STATEFUL_PAGES).write_text(content)
+    assert compiler._read_stateful_pages_marker() is None
+
+
 @pytest.mark.parametrize(
     ("fields", "test_default", "test_rest"),
     [

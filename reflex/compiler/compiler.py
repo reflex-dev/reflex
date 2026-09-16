@@ -1209,17 +1209,16 @@ def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
 def _read_stateful_pages_marker() -> list[str] | None:
     """Read the routes that create state classes from a previous compile.
 
-    The marker is swapped into place atomically, so it is either complete or
-    absent. It may be absent because no compile has happened yet or because a
-    concurrently starting worker has not finished writing it.
+    A missing marker or one truncated by an older writer requires full page
+    evaluation. New writers replace the marker atomically.
 
     Returns:
-        The stateful routes, or None if no marker has been written yet.
+        The stateful routes, or None if no valid marker has been written yet.
     """
     marker = prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
     try:
         return json.loads(marker.read_text())
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return None
 
 
@@ -1330,7 +1329,8 @@ def compile_app(
 
     app._evaluated_pages.update(compile_ctx.compiled_pages)
     app._stateful_pages.update(compile_ctx.stateful_routes)
-    app._write_stateful_pages_marker()
+    if not dry_run:
+        app._write_stateful_pages_marker()
     app._add_optional_endpoints()
     app._validate_var_dependencies()
 

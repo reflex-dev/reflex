@@ -9,12 +9,15 @@ import io
 import json
 import logging
 import multiprocessing
+import os
 import pickle
 import re
+import tempfile
 import threading
 import unittest.mock
 import uuid
 from collections.abc import Generator
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
@@ -4989,6 +4992,50 @@ def test_write_stateful_pages_marker_is_always_written(
     assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Unix file permissions")
+def test_write_stateful_pages_marker_is_shared_readable(tmp_path, mocker):
+    """Backend workers running as another user can read the compiled marker."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    app = App(enable_state=False)
+    app._write_stateful_pages_marker()
+    assert (tmp_path / constants.Dirs.STATEFUL_PAGES).stat().st_mode & 0o777 == 0o644
+
+
+def test_write_stateful_pages_marker_closes_descriptor_on_open_failure(
+    tmp_path, mocker
+):
+    """Failure to open the temporary marker must not leak its raw descriptor."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    created = mocker.spy(tempfile, "mkstemp")
+    mocker.patch("os.fdopen", side_effect=OSError("open failed"))
+    mocker.patch.object(Path, "open", side_effect=OSError("open failed"))
+    with pytest.raises(OSError, match="open failed"):
+        App(enable_state=False)._write_stateful_pages_marker()
+    descriptor, _ = created.spy_return
+    try:
+        with pytest.raises(OSError, match="Bad file descriptor"):
+            os.fstat(descriptor)
+    finally:
+        with contextlib.suppress(OSError):
+            os.close(descriptor)
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_compile_dry_run_preserves_stateful_marker(compilable_app, mocker, existing):
+    """A dry compile neither creates nor replaces the backend route marker."""
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    marker = web_dir / constants.Dirs.BACKEND / constants.Dirs.STATEFUL_PAGES
+    if existing:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text('["previous"]')
+    app._compile(dry_run=True)
+    assert marker.exists() == existing
+    if existing:
+        assert marker.read_text() == '["previous"]'
+
+
 def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
     tmp_path: Path, mocker: MockerFixture
 ):
@@ -4999,33 +5046,29 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
     app = App(_state=rx.State)
     app._stateful_pages = dict.fromkeys(routes)
     stop = threading.Event()
-    errors: list[BaseException] = []
 
     def writer():
+        """Repeatedly replace the marker."""
         for _ in range(50):
             app._write_stateful_pages_marker()
 
     def reader():
+        """Check that every observed marker is complete."""
         while not stop.is_set():
             try:
                 content = marker.read_text()
             except FileNotFoundError:
                 continue
-            try:
-                assert json.loads(content) == routes
-            except (AssertionError, json.JSONDecodeError) as exc:
-                errors.append(exc)
-                return
+            assert json.loads(content) == routes
 
-    writers = [threading.Thread(target=writer) for _ in range(4)]
-    readers = [threading.Thread(target=reader) for _ in range(4)]
-    for thread in readers + writers:
-        thread.start()
-    for thread in writers:
-        thread.join()
-    stop.set()
-    for thread in readers:
-        thread.join()
-
-    assert errors == []
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        readers = [pool.submit(reader) for _ in range(4)]
+        try:
+            writers = [pool.submit(writer) for _ in range(4)]
+            for future in writers:
+                future.result()
+        finally:
+            stop.set()
+        for future in readers:
+            future.result()
     assert json.loads(marker.read_text()) == routes

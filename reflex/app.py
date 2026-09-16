@@ -1761,10 +1761,12 @@ class App(MiddlewareMixin, LifespanMixin):
             prefix=f"{stateful_pages_marker.name}.",
             suffix=".tmp",
         )
+        os.close(fd)
         tmp_marker = Path(tmp_path)
         try:
-            with os.fdopen(fd, "w") as f:
+            with tmp_marker.open("w", encoding="utf-8") as f:
                 json.dump(list(self._stateful_pages), f)
+            tmp_marker.chmod(0o644)
             tmp_marker.replace(stateful_pages_marker)
         except BaseException:
             tmp_marker.unlink(missing_ok=True)
