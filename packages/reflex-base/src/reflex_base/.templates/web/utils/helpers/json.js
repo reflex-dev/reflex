@@ -6,16 +6,32 @@
 // guaranteeing bare-token matches only land in numeric positions.
 const NAN_SENTINEL = "__reflex_nan__";
 const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
-const NON_FINITE_REPLACEMENTS = {
-  Infinity: "1e999",
-  "-Infinity": "-1e999",
-  NaN: `"${NAN_SENTINEL}"`,
+
+// Reviving by string value would also convert a genuine string equal to the
+// sentinel, so lengthen it until the payload no longer contains it. Only the
+// placeholder can then survive parsing as that exact value.
+const uniqueNanSentinel = (str) => {
+  let sentinel = NAN_SENTINEL;
+  while (str.includes(sentinel)) {
+    sentinel += "_";
+  }
+  return sentinel;
 };
-const rewriteBareNonFiniteFloats = (str) =>
-  str.replace(NON_FINITE_FLOAT_RE, (match) =>
-    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
+
+const parseNonFiniteFloats = (str) => {
+  const sentinel = uniqueNanSentinel(str);
+  const replacements = {
+    Infinity: "1e999",
+    "-Infinity": "-1e999",
+    NaN: `"${sentinel}"`,
+  };
+  return JSON.parse(
+    str.replace(NON_FINITE_FLOAT_RE, (match) =>
+      match[0] === '"' ? match : replacements[match],
+    ),
+    (_k, v) => (v === sentinel ? NaN : v),
   );
-const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
+};
 
 /**
  * Parse a JSON payload, tolerating the bare non-finite float tokens that
@@ -32,6 +48,6 @@ export const parseJson = (str) => {
   try {
     return JSON.parse(str);
   } catch {
-    return JSON.parse(rewriteBareNonFiniteFloats(str), reviveNonFiniteFloats);
+    return parseNonFiniteFloats(str);
   }
 };

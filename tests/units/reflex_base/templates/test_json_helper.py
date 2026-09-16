@@ -30,7 +30,7 @@ const results = JSON.parse(process.argv[3]).map((payload) => {
 process.stdout.write(JSON.stringify(results));
 """
 
-pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
+requires_node = pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 
 
 def _parse_json(payloads: list[str], tmp_path: Path) -> list[dict]:
@@ -72,6 +72,7 @@ def test_templates_do_not_import_json5() -> None:
     assert not offenders, f"templates still reference json5: {offenders}"
 
 
+@requires_node
 def test_parses_python_non_finite_floats(tmp_path: Path) -> None:
     """Bare NaN/Infinity tokens from python's json.dumps are parsed.
 
@@ -96,6 +97,7 @@ def test_parses_python_non_finite_floats(tmp_path: Path) -> None:
     }
 
 
+@requires_node
 def test_parses_plain_json_unchanged(tmp_path: Path) -> None:
     """Ordinary payloads round-trip through the plain JSON.parse fast path.
 
@@ -109,6 +111,7 @@ def test_parses_plain_json_unchanged(tmp_path: Path) -> None:
     assert result == {"ok": {"delta": {"state": {"a": 1, "b": [None, True, "x"]}}}}
 
 
+@requires_node
 def test_non_finite_tokens_inside_strings_are_preserved(tmp_path: Path) -> None:
     """Rewriting bare tokens must not corrupt string values that contain them.
 
@@ -127,6 +130,7 @@ def test_non_finite_tokens_inside_strings_are_preserved(tmp_path: Path) -> None:
     }
 
 
+@requires_node
 def test_raises_on_unparseable_payload(tmp_path: Path) -> None:
     """A truncated payload raises so streaming callers can wait for more data.
 
@@ -139,3 +143,21 @@ def test_raises_on_unparseable_payload(tmp_path: Path) -> None:
     (result,) = _parse_json(['{"delta": {"state": NaN'], tmp_path)
 
     assert "error" in result
+
+
+@requires_node
+def test_sentinel_lookalike_string_survives(tmp_path: Path) -> None:
+    """A string equal to the NaN placeholder is not revived into NaN.
+
+    The fallback swaps bare NaN for a sentinel string and revives it after
+    parsing, so a payload carrying both a bare NaN and that exact string would
+    otherwise lose the string.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    payload = json.dumps({"text": "__reflex_nan__", "value": float("nan")})
+
+    (result,) = _parse_json([payload], tmp_path)
+
+    assert result == {"ok": {"text": "__reflex_nan__", "value": {"nonFinite": "NaN"}}}
