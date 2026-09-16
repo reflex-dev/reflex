@@ -48,11 +48,18 @@ class _StallWatchdog:
             self._handle.cancel()
             self._handle = None
 
-    def uncancel(self) -> None:
-        # From Python 3.11, a task remembers cancellation requests; the one this
-        # watchdog made is handled here, and must not cancel anything later.
-        if self._task is not None and hasattr(self._task, "uncancel"):
-            self._task.uncancel()
+    def take_back_cancellation(self) -> bool:
+        """Withdraw the cancellation this watchdog requested.
+
+        Returns:
+            Whether no other cancellation of the task is pending. From Python 3.11
+            tasks count cancellation requests, so a caller's cancellation arriving
+            alongside the watchdog's is told apart and still propagates. Python
+            3.10 cannot tell them apart.
+        """
+        if self._task is None or not hasattr(self._task, "uncancel"):
+            return True
+        return self._task.uncancel() == 0
 
     async def watch(self, content: AsyncIterable[bytes]) -> AsyncIterator[bytes]:
         self.arm()
@@ -149,9 +156,12 @@ class AiohttpTransport:
             ) as response:
                 content = await response.read()
         except asyncio.CancelledError as ex:
-            if watchdog is None or not watchdog.fired:
+            if (
+                watchdog is None
+                or not watchdog.fired
+                or not watchdog.take_back_cancellation()
+            ):
                 raise
-            watchdog.uncancel()
             msg = "the server stopped accepting the request body"
             raise TransportError(
                 msg, request=request, sent=True, timed_out=True

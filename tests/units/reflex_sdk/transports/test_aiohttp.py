@@ -12,6 +12,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestServer
 from reflex_sdk.transports import AiohttpTransport, Request, TransportError
+from reflex_sdk.transports._aiohttp import _StallWatchdog
 
 
 async def _echo(request: web.Request) -> web.Response:
@@ -155,6 +156,29 @@ async def test_stalled_upload_times_out(server: TestServer):
     assert asyncio.get_running_loop().time() - started < 4
     # The watchdog's cancellation is consumed, so the task keeps running normally.
     await asyncio.sleep(0)
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11), reason="tasks count cancellations from Python 3.11"
+)
+@pytest.mark.parametrize("caller_cancels", [False, True])
+async def test_watchdog_leaves_caller_cancellation(caller_cancels: bool):
+    async def cancelled() -> bool:
+        watchdog = _StallWatchdog(60)
+        watchdog._fire()
+        if caller_cancels:
+            task = asyncio.current_task()
+            assert task is not None
+            task.cancel()
+        try:
+            await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            assert watchdog.fired
+            return watchdog.take_back_cancellation()
+        return False
+
+    # Only a cancellation the watchdog made alone is reported as a stalled upload.
+    assert await asyncio.ensure_future(cancelled()) is not caller_cancels
 
 
 async def test_timeouts_cover_each_operation():
