@@ -125,10 +125,11 @@ def test_api_reference_groups_related_symbols():
 def test_api_reference_section_lists_every_generated_page_once():
     """A page added to apiref.modules stays reachable from the sidebar."""
     from reflex_docs.pages.docs import apiref
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.item import create_item
     from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
         api_reference,
     )
 
     links = [item.link for item in api_reference]
     assert len(links) == len(set(links))
-    assert set(links).issuperset(page.path for page in apiref.pages)
+    assert set(links).issuperset(create_item(page).link for page in apiref.pages)

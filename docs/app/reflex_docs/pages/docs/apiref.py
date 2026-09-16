@@ -9,6 +9,8 @@ from reflex_docs.templates.docpage import docpage
 
 from .api_reference_layout import generate_class_reference
 
+# The order here only affects route registration; the sidebar order lives in
+# templates/docpage/sidebar/sidebar_items/reference.py.
 modules = [
     rx.App,
     rx.Component,
