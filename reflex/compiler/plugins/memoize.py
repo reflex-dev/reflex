@@ -35,6 +35,9 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition
 from reflex_base.plugins import ComponentAndChildren, PageContext
 from reflex_base.plugins.base import Plugin
+from reflex_components_core.base.bare import Bare
+from reflex_components_core.core.cond import Cond
+from reflex_components_core.core.match import Match
 
 from reflex.compiler.plugins.builtin import (
     collect_var_app_wraps_for_component,
@@ -134,16 +137,18 @@ def _should_memoize(component: Component) -> bool:
     are evaluated from their own props/triggers; descendants are visited
     independently by the walker.
 
+    Explicitly memoized (``@rx.memo``) components are no exception: React's
+    ``memo`` only spares their own subtree, so state bound at the call site
+    still needs a wrapper to keep the hooks out of the page module. The
+    wrappers this pass generates are themselves memo components and opt out
+    via ``MemoizationDisposition.NEVER``.
+
     Args:
         component: The candidate component.
 
     Returns:
         True if the component should be wrapped in a memo definition.
     """
-    from reflex_components_core.base.bare import Bare
-    from reflex_components_core.core.cond import Cond
-    from reflex_components_core.core.match import Match
-
     strategy = get_memoization_strategy(component)
 
     if component._memoization_mode.disposition == MemoizationDisposition.NEVER:

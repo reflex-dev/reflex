@@ -7,8 +7,10 @@ import dataclasses
 import json
 import logging
 import os
+import re
 import shutil
 import tempfile
+import uuid
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
@@ -128,8 +130,62 @@ def _resolve_gcp_connection(
     return match
 
 
+# Cloud Run's service name grammar: lowercase, starts with a letter, ends
+# alphanumeric, at most 49 characters. Mirrors the server's validation so a
+# hostname that cannot be a service name is skipped here (the server mints one)
+# instead of failing the deploy.
+_GCP_SERVICE_NAME_RE = re.compile(r"^[a-z]([-a-z0-9]*[a-z0-9])?$")
+_GCP_SERVICE_NAME_MAX_LENGTH = 49
+
+
+def _gcp_service_name_from_hostname(hostname: str | None) -> str | None:
+    """The --hostname value as a Cloud Run service name, if it can be one.
+
+    On the first deploy to GCP the hostname doubles as the app's Cloud Run
+    service name, so the service in the customer's console reads like the app's
+    URL. A hostname the service-name grammar refuses (too long, leading digit,
+    or the reserved ``app-<uuid>`` shape) is skipped with a note rather than
+    failing the deploy — the server then mints a name from the app name.
+
+    Args:
+        hostname: The ``--hostname`` value, if the user passed one.
+
+    Returns:
+        The service name to request, or None to let the server choose.
+
+    """
+    if not hostname:
+        return None
+    name = hostname.strip().lower()
+    reserved = False
+    if name.startswith("app-"):
+        try:
+            uuid.UUID(name.removeprefix("app-"))
+            reserved = True
+        except ValueError:
+            reserved = False
+    if (
+        not name
+        or len(name) > _GCP_SERVICE_NAME_MAX_LENGTH
+        or not _GCP_SERVICE_NAME_RE.match(name)
+        or reserved
+    ):
+        logger.info(
+            f"The hostname '{hostname}' cannot be used as the Cloud Run service "
+            "name (lowercase letters, digits and hyphens, starting with a "
+            f"letter, at most {_GCP_SERVICE_NAME_MAX_LENGTH} characters); one "
+            "will be generated from the app name."
+        )
+        return None
+    return name
+
+
 def _pin_app_provider(
-    app: dict[str, Any], target: str, connection: dict[str, Any] | None, client: Any
+    app: dict[str, Any],
+    target: str,
+    connection: dict[str, Any] | None,
+    client: Any,
+    service_name: str | None = None,
 ) -> None:
     """Write the app's provider (and connection), aborting the deploy on refusal.
 
@@ -138,6 +194,8 @@ def _pin_app_provider(
         target: The backend provider value to pin.
         connection: The GCP connection to deploy through, if one was named.
         client: The authenticated client.
+        service_name: The Cloud Run service name to request (GCP only); None
+            keeps the app's current name or lets the server mint one.
 
     Raises:
         Exit: If the server refused the change.
@@ -150,6 +208,7 @@ def _pin_app_provider(
         target,
         client=client,
         provider_account_id=str(connection["id"]) if connection else None,
+        service_name=service_name,
     )
     if isinstance(result, str) and result.startswith("set provider failed"):
         logger.error(result)
@@ -163,6 +222,7 @@ def _resolve_deploy_provider(
     app_was_created: bool,
     client: Any,
     gcp_connection: str | None = None,
+    hostname: str | None = None,
 ) -> str | None:
     """Resolve and pin the hosting provider for this deploy.
 
@@ -182,6 +242,10 @@ def _resolve_deploy_provider(
             connections to deploy through. Omitted leaves the app on the
             connection it already has, or the org's default the first time it
             targets GCP.
+        hostname: The ``--hostname`` value. When this deploy is what first
+            lands the app on GCP, it doubles as the requested Cloud Run service
+            name; on later GCP deploys the name is already pinned to the live
+            service, so it is not sent.
 
     Returns:
         The backend provider value in effect (Reflex Cloud's default or GCP), or
@@ -253,9 +317,19 @@ def _resolve_deploy_provider(
             logger.info("Deployment cancelled.")
             raise click.exceptions.Exit(0)
 
-    _pin_app_provider(app, target, connection, client)
+    # Only this pin — the one that first lands the app on GCP — carries a
+    # service name. It is the moment the server would mint one, and the only
+    # time a request cannot collide with a name already serving traffic.
+    service_name = (
+        _gcp_service_name_from_hostname(hostname)
+        if target == hosting.PROVIDER_GCP
+        else None
+    )
+    _pin_app_provider(app, target, connection, client, service_name=service_name)
     via = f" through connection '{connection.get('name')}'" if connection else ""
     logger.info(f"Deploying to {hosting.provider_display_name(target)}{via}.")
+    if service_name:
+        logger.info(f"Requested Cloud Run service name '{service_name}'.")
     return target
 
 
@@ -483,7 +557,9 @@ def deploy(
         project: The project to deploy to.
         envs: The environment variables to set.
         vmtype: The VM type to allocate.
-        hostname: The hostname to use for the frontend.
+        hostname: The hostname to use for the frontend. On the deploy that
+            first lands the app on GCP it also names the app's Cloud Run
+            service, when the service-name grammar allows it.
         interactive: Whether to use interactive mode.
         envfile: The path to an env file to use. Will override any envs set manually.
         loglevel: The log level to use.
@@ -748,6 +824,7 @@ def deploy(
         app_was_created=app_was_created,
         client=authenticated_client,
         gcp_connection=gcp_connection,
+        hostname=hostname,
     )
     # A destructive provider switch on an already-deployed app tears its old
     # resources down; remember what to restore to if a later step fails.
@@ -847,11 +924,12 @@ def deploy(
         import importlib.metadata
 
         rx_version = version.parse(importlib.metadata.version("reflex"))
-        breaking_version = version.parse("0.7.6")
+        # The 7-argument export_fn (with upload_db) landed in reflex 0.7.7.
+        breaking_release = (0, 7, 7)
         # Try zipping backend first
         try:
-            # Check if the reflex version is >= 0.7.6
-            if rx_version <= breaking_version:
+            # Check if the reflex version predates 0.7.7
+            if rx_version.release < breaking_release:
                 export_fn(
                     str(temporary_dir_path),
                     server_url,
@@ -878,8 +956,8 @@ def deploy(
 
         # Zip frontend
         try:
-            # Check if the reflex version is >= 0.7.6
-            if rx_version <= breaking_version:
+            # Check if the reflex version predates 0.7.7
+            if rx_version.release < breaking_release:
                 export_fn(
                     str(temporary_dir_path), server_url, host_url, True, False, True
                 )  # pyright: ignore[reportCallIssue]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from unittest import mock
@@ -673,7 +674,15 @@ def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
 
     result = runner.invoke(
         hosting_cli,
-        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--interactive",
+        ],
         input="n\n",
     )
 
@@ -1056,3 +1065,92 @@ def test_deploy_gcp_requires_gcp_project(mocker: MockFixture, tmp_path: Path):
 @pytest.fixture(autouse=True)
 def _no_log_level_side_effects(mocker: MockFixture):
     mocker.patch("reflex_cli.utils.console.set_log_level")
+
+
+def test_gcp_deploy_json_output(mocker: MockFixture, tmp_path: Path):
+    """A standalone deploy reports where it deployed and whether it worked."""
+    _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--region",
+            "us-central1",
+            "--service-name",
+            "svc",
+            "--version",
+            "v1",
+            "--source",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "dry_run": False,
+        "deployed": True,
+        "exit_code": 0,
+        "gcp_project": "p",
+        "region": "us-central1",
+        "service_name": "svc",
+        "version": "v1",
+    }
+
+
+def test_gcp_deploy_json_output_on_dry_run(mocker: MockFixture, tmp_path: Path):
+    """A dry run hands back what it would have staged, unrendered."""
+    run_mock = _patch_environment(mocker)
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--dry-run",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.stdout)
+    assert payload["dry_run"] is True
+    assert payload["dockerfile"] == DOCKERFILE
+    assert "gcloud builds submit" in payload["deploy_script"]
+    assert payload["deploy_env"]["GCP_PROJECT"] == "p"
+    run_mock.assert_not_called()
+
+
+def test_gcp_deploy_json_output_on_script_failure(mocker: MockFixture, tmp_path: Path):
+    """A failing script still produces a document, alongside the non-zero exit."""
+    run_mock = _patch_environment(mocker)
+    run_mock.return_value = 7
+    _mock_manifest_response(mocker)
+
+    result = runner.invoke(
+        hosting_cli,
+        [
+            "gcp-standalone",
+            "--gcp",
+            "--gcp-project",
+            "p",
+            "--source",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 7
+    payload = json.loads(result.stdout)
+    assert payload["deployed"] is False
+    assert payload["exit_code"] == 7

@@ -5,6 +5,7 @@ from typing import Any, ClassVar, TypedDict
 
 import pytest
 from reflex_base.components.component import Component, field
+from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -43,6 +44,33 @@ from reflex import (
 )
 from reflex.state import BaseState
 from reflex.utils import imports
+
+
+@pytest.mark.parametrize("name", ["div", "", None])
+def test_plain_tag_render_matches_tag_protocol(name, monkeypatch):
+    """Direct rendering preserves names, props, children, and render caching."""
+    tag = Tag(name=name).add_props(title="hello")
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(component, "_render", lambda: tag)
+    expected = dict(tag.set(children=[child.render() for child in component.children]))
+    assert component.render() == expected
+    assert component.render() is component.render()
+    assert not tag.children
+
+
+def test_custom_tag_render_uses_subclass_protocol(monkeypatch):
+    """A custom tag renders through the generic field protocol."""
+
+    class ChildrenTag(CommonTag):
+        """A tag whose iteration depends on its child list."""
+
+        def __iter__(self):
+            """Yield a value derived from the child list."""
+            yield "child_count", len(self.children)
+
+    component = Component._create(children=[Bare.create("child")])
+    monkeypatch.setattr(component, "_render", lambda: ChildrenTag())
+    assert component.render() == {"child_count": 1}
 
 
 class TestState(BaseState):
@@ -521,6 +549,63 @@ def test_get_imports_includes_components_in_props():
         "parent-lib": ["ParentComponent"],
         "prop-lib": ["PropComponent"],
     })
+
+
+@pytest.mark.parametrize(
+    "bad_library",
+    [
+        "react-router-dom",
+        "react-router-dom@7.18.2",
+        "react-router-dom/server",
+        "react-router-dom@7.18.2/server",
+    ],
+)
+def test_get_imports_rejects_react_router_dom_library(bad_library: str):
+    """Test that a library resolving to react-router-dom raises a pointered error.
+
+    React Router 8 removed the react-router-dom package, so installing it would
+    silently pull in a second, unpinned React Router 7 copy that breaks prod builds.
+
+    Args:
+        bad_library: A library string that resolves to the removed package.
+    """
+
+    class BadDomLink(Component):
+        library = bad_library
+        tag = "Link"
+
+    with pytest.raises(ValueError, match=r"`BadDomLink`.*react-router-dom"):
+        BadDomLink.create()._get_all_imports()
+
+
+def test_get_imports_rejects_react_router_dom_lib_dependency():
+    """Test that a lib_dependencies entry of react-router-dom raises the same error."""
+
+    class BadDepLink(Component):
+        library = "react-router"
+        tag = "Link"
+        lib_dependencies = ["react-router-dom"]
+
+    with pytest.raises(ValueError, match=r"`BadDepLink`.*react-router-dom"):
+        BadDepLink.create()._get_all_imports()
+
+
+@pytest.mark.parametrize(
+    "good_library",
+    ["react-router", "react-router/dom", "react-router-dom-fork"],
+)
+def test_get_imports_allows_react_router_libraries(good_library: str):
+    """Test that react-router and unrelated similarly named libraries still work.
+
+    Args:
+        good_library: A library string that must not be rejected.
+    """
+
+    class GoodLink(Component):
+        library = good_library
+        tag = "Link"
+
+    assert good_library in GoodLink.create()._get_all_imports()
 
 
 def test_get_custom_code(component1: Component, component2: Component):
@@ -2341,3 +2426,24 @@ def test_get_all_hooks_internal_does_not_mutate_hooks_cache():
     assert dict(parent._get_hooks_internal()) == parent_own_hooks
     # And repeated collection yields the same result.
     assert parent._get_all_hooks_internal() == combined
+
+
+def test_set_props_iteration_skips_unset_props_and_keeps_defaults():
+    """Only set props and class defaults are visited, in declaration order."""
+
+    class DefaultedProps(Component):
+        first: Var[str]
+        second: Var[str] = LiteralVar.create("second-default")
+        third: Var[str]
+
+    component = DefaultedProps._create(children=(), third="set")
+    assert [(prop, str(value)) for prop, value in component._iter_set_props()] == [
+        ("second", '"second-default"'),
+        ("third", '"set"'),
+    ]
+    assert [str(var) for var in component._get_vars()] == ['"second-default"', '"set"']
+    assert {prop: str(value) for prop, value in component._render().props.items()} == {
+        "second": '"second-default"',
+        "third": '"set"',
+    }
+    assert "first" not in vars(component)

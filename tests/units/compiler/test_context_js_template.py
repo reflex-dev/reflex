@@ -50,9 +50,9 @@ def test_event_loop_provider_still_publishes_module_dispatchers() -> None:
     """
     body = _event_loop_provider_body()
 
-    assign_index = body.index("_addEventsImpl = addEventsLocal;")
+    assign_index = body.index("eventLoop.addEvents = addEventsLocal;")
     memo_index = body.index("return useMemo(")
     assert assign_index < memo_index, (
         "module-level dispatchers must be published before the memoized return."
     )
-    assert "_connectErrorsImpl = connectErrors;" in body[:memo_index]
+    assert "eventLoop.connectErrors = connectErrors;" in body[:memo_index]

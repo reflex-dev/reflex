@@ -12,13 +12,20 @@ if TYPE_CHECKING:
     # type-checked; reflex_cli.constants.log_level is checked on its own.
     from reflex_base.constants.base import LogLevel as LogLevel
 else:
+    # reflex-base only exists from reflex 0.9 on, and the hosting CLI supports
+    # older reflex too, so the fork is the baseline and the shared enum is
+    # adopted when it is there. Older reflex-base releases predate part of the
+    # enum's API, and adopting one of those leaves the CLI calling a method
+    # that does not exist, so those keep the fork as well.
+    from reflex_cli.constants.log_level import LogLevel as LogLevel
+
     try:
-        # reflex-base only exists from reflex 0.9 on, and the hosting CLI
-        # supports older reflex too, so its LogLevel is shared when available
-        # and forked otherwise.
-        from reflex_base.constants.base import LogLevel as LogLevel
+        from reflex_base.constants.base import LogLevel as _BaseLogLevel
     except ImportError:
-        from reflex_cli.constants.log_level import LogLevel as LogLevel
+        pass
+    else:
+        if hasattr(_BaseLogLevel, "to_logging_level"):
+            LogLevel = _BaseLogLevel
 
 
 class Reflex(SimpleNamespace):
