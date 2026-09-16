@@ -35,11 +35,14 @@ ROUTES = _load_routes()
 
 Handler = Callable[[Request], Response]
 
+# Tells an omitted JSON body apart from a JSON null body.
+_NO_JSON: Any = object()
+
 
 def reply(
     status_code: int,
     *,
-    json: Any = None,
+    json: Any = _NO_JSON,
     text: str = "",
     headers: dict[str, str] | None = None,
     reason_phrase: str = "",
@@ -48,15 +51,15 @@ def reply(
 
     Args:
         status_code: The status code.
-        json: A JSON body.
-        text: A text body, used when ``json`` is None.
+        json: A JSON body, which may be None to send ``null``.
+        text: A text body, used when ``json`` is not given.
         headers: The response headers, with lowercase names.
         reason_phrase: The reason phrase.
 
     Returns:
         The handler.
     """
-    content = (json_module.dumps(json) if json is not None else text).encode()
+    content = (json_module.dumps(json) if json is not _NO_JSON else text).encode()
 
     def handle(request: Request) -> Response:
         return Response(

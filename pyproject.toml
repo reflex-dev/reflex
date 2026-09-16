@@ -272,6 +272,8 @@ preview = true
 "*.pyi" = ["D301", "D415", "D417", "D418", "E742", "N", "PGH"]
 "pyi_generator.py" = ["N802"]
 "packages/reflex-base/src/reflex_base/constants/*.py" = ["N"]
+# Generated from async generators, which cannot `yield from`.
+"packages/reflex-sdk/src/reflex_sdk/_sync/**/*.py" = ["UP028"]
 "packages/reflex-hosting-cli/src/reflex_cli/**/*.py" = [
   "B008",
   "D420",
@@ -280,6 +282,8 @@ preview = true
   "RET504",
 ]
 "tests/units/reflex_cli/**/*.py" = ["DOC201", "PT006", "RUF052"]
+# Generated from async comprehensions, which have no list() equivalent.
+"tests/units/reflex_sdk/_sync/**/*.py" = ["C416"]
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]

@@ -78,6 +78,7 @@ class Node:
         (int | None, 1, 1),
         (Literal["all"] | list[str], ["p"], ["p"]),
         (int | str, "a", "a"),
+        (tuple[list[int], str | None], [[1], None], ([1], None)),
     ],
 )
 def test_decode_values(tp: Any, value: Any, expected: Any):
@@ -101,6 +102,13 @@ def test_decode_values(tp: Any, value: Any, expected: Any):
         (list, {}, "expected array, got dict at $"),
         (dict[str, int], {"a": 1, "b": "c"}, "expected integer, got str at $.b"),
         (dict, [], "expected object, got list at $"),
+        (tuple[int, str], [1], "expected array of 2, got list at $"),
+        (tuple[int, str], {}, "expected array of 2, got dict at $"),
+        (
+            tuple[list[int], str],
+            [[1, "x"], "a"],
+            "expected integer, got str at $[0][1]",
+        ),
         (
             list[dict[str, list[int]]],
             [{"a": [1]}, {"a": [2, None]}],

@@ -6,8 +6,8 @@ from __future__ import annotations
 import builtins
 import dataclasses
 from typing import TYPE_CHECKING, Any
-from urllib.parse import quote
 
+from reflex_sdk._base import path_segment
 from reflex_sdk.types import AccessScope, Me, Token
 
 if TYPE_CHECKING:
@@ -62,7 +62,7 @@ class Tokens:
         Args:
             name: The name of the token.
         """
-        self._client._request("DELETE", f"user/token/{quote(name, safe='')}", None)
+        self._client._request("DELETE", f"user/token/{path_segment(name)}", None)
 
 
 class Auth:

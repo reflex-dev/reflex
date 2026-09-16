@@ -64,7 +64,8 @@ def decode(tp: type[T], value: Any) -> T:
 
     Args:
         tp: The type to decode into: a dataclass, a primitive, ``UUID``, ``datetime``,
-            ``date``, an ``Enum``, a ``Literal``, or a ``list``, ``dict``, or union of those.
+            ``date``, an ``Enum``, a ``Literal``, or a ``list``, ``dict``, fixed-length
+            ``tuple`` or union of those.
         value: The JSON value, as returned by ``json.loads``.
 
     Returns:
@@ -180,6 +181,8 @@ def _build(tp: Any) -> Decoder:
         return _build_list(args[0])
     if origin is dict:
         return _build_dict(args[1])
+    if origin is tuple:
+        return _build_tuple(args)
     if isinstance(tp, type):
         if issubclass(tp, enum.Enum):
             return _build_enum(tp)
@@ -276,6 +279,27 @@ def _build_dict(value_type: Any) -> Decoder:
             raise
 
     return decode_dict
+
+
+def _build_tuple(item_types: tuple[Any, ...]) -> Decoder:
+    # Fixed-length tuples only: a JSON array with one value per position.
+    decoders = [_decoder_for(item_type) for item_type in item_types]
+    length = len(decoders)
+
+    def decode_tuple(value: Any) -> tuple:
+        if type(value) is not list or len(value) != length:
+            _mismatch(f"array of {length}", value)
+        index = 0
+        items = []
+        try:
+            for index, decoder in enumerate(decoders):
+                items.append(decoder(value[index]))
+        except DecodeError as ex:
+            ex.path.append(index)
+            raise
+        return tuple(items)
+
+    return decode_tuple
 
 
 def _build_enum(tp: type[enum.Enum]) -> Decoder:

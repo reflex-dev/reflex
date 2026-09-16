@@ -6,7 +6,9 @@ import asyncio
 from types import TracebackType
 from typing import Any, TypeVar, overload
 
+from reflex_sdk._async.resources.apps import AsyncApps
 from reflex_sdk._async.resources.auth import AsyncAuth
+from reflex_sdk._async.resources.projects import AsyncProjects
 from reflex_sdk._base import DEFAULT_MAX_RETRIES, BaseClient, decode_response, logger
 from reflex_sdk._errors import (
     APIConnectionError,
@@ -25,8 +27,12 @@ class AsyncReflexCloud(BaseClient):
     Use it as a context manager, or call ``aclose()``, to release its connections.
     """
 
+    # Manage apps, their lifecycle, deployment history, logs and secrets.
+    apps: AsyncApps
     # The identity of the access token, and the token management endpoints.
     auth: AsyncAuth
+    # Manage projects and who has access to them.
+    projects: AsyncProjects
 
     def __init__(
         self,
@@ -61,7 +67,9 @@ class AsyncReflexCloud(BaseClient):
         )
         self._owns_transport = transport is None
         self._transport = AsyncDefaultTransport() if transport is None else transport
+        self.apps = AsyncApps(self)
         self.auth = AsyncAuth(self)
+        self.projects = AsyncProjects(self)
 
     async def __aenter__(self) -> AsyncReflexCloud:
         """Enter the client's context.

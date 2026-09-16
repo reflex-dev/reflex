@@ -13,7 +13,7 @@ import random
 import uuid
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from reflex_sdk._credentials import load_stored_token
 from reflex_sdk._decode import decode
@@ -40,6 +40,18 @@ _MAX_RETRY_DELAY = 8.0
 # The longest server-requested wait honored, in seconds (one minute). A longer
 # Retry-After falls back to the exponential backoff rather than stalling the caller.
 _MAX_RETRY_AFTER = 60.0
+
+
+def path_segment(value: str | uuid.UUID) -> str:
+    """Quote a value for use as one segment of a request path.
+
+    Args:
+        value: The path parameter.
+
+    Returns:
+        The value with every reserved character, ``/`` included, percent-encoded.
+    """
+    return quote(str(value), safe="")
 
 
 @functools.cache
@@ -155,7 +167,8 @@ class BaseClient:
             method: The HTTP method.
             path: The endpoint path relative to ``/api/v1/``, with path parameters
                 already quoted.
-            params: The query parameters; None values are left out.
+            params: The query parameters; None values are left out, and booleans are
+                sent as ``true`` or ``false``.
             json: The JSON body, if any.
             authenticated: Whether to send the access token.
 
@@ -178,7 +191,13 @@ class BaseClient:
         url = self._api_url + path
         if params:
             query = urlencode(
-                {name: value for name, value in params.items() if value is not None},
+                {
+                    name: ("true" if value else "false")
+                    if type(value) is bool
+                    else value
+                    for name, value in params.items()
+                    if value is not None
+                },
                 doseq=True,
             )
             if query:

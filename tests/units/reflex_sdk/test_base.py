@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import email.utils
 import json
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,7 @@ from reflex_sdk._base import (
     DEFAULT_MAX_RETRIES,
     BaseClient,
     decode_response,
+    path_segment,
 )
 from reflex_sdk._errors import APIResponseValidationError, MissingTokenError
 from reflex_sdk.transports import Request
@@ -82,6 +84,32 @@ def test_build_request():
     assert "Content-Type" not in request.headers
     assert request.content is None
     assert request.timeout == pytest.approx(5.0)
+
+
+def test_build_request_boolean_params():
+    request = _client(token="secret")._build_request(
+        "POST",
+        "apps/a/secrets",
+        params={"reboot": True, "dry_run": False},
+        json=None,
+        authenticated=True,
+    )
+    assert request.url.endswith("?reboot=true&dry_run=false")
+
+
+@pytest.mark.parametrize(
+    ("value", "segment"),
+    [
+        ("plain", "plain"),
+        ("a/b c?d#e", "a%2Fb%20c%3Fd%23e"),
+        (
+            uuid.UUID("12345678-1234-5678-1234-567812345678"),
+            "12345678-1234-5678-1234-567812345678",
+        ),
+    ],
+)
+def test_path_segment(value: str | uuid.UUID, segment: str):
+    assert path_segment(value) == segment
 
 
 def test_build_request_without_query():
