@@ -120,6 +120,7 @@ dev = [
   "reflex-docgen",
   "reflex-otel",
   "reflex-release",
+  "reflex-sdk",
   "reflex-site-shared",
   "ruff",
   "selenium",
@@ -176,6 +177,7 @@ extraPaths = [
   "packages/reflex-sonner/src",
   "packages/reflex-components-internal/src",
   "packages/reflex-otel/src",
+  "packages/reflex-sdk/src",
   "packages/reflex-site-shared/src",
   "packages/integrations-docs/src",
 ]
@@ -281,6 +283,7 @@ preview = true
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
+"packages/reflex-sdk/scripts/*.py" = ["INP001", "T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
 "scripts/verify_pyi.py" = ["T201"]
@@ -293,7 +296,7 @@ asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 
 [tool.codespell]
-skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, uv.lock, */bun.lock, node_modules"
+skip = "*.html, examples, *.pyi, */nba.csv, */olympic-winners.json, packages/reflex-sdk/openapi.json, uv.lock, */bun.lock, node_modules"
 ignore-words-list = "te, TreeE, selectin"
 
 
@@ -316,6 +319,7 @@ source = [
   "reflex_docgen",
   "reflex_otel",
   "reflex_release",
+  "reflex_sdk",
   "reflex_site_shared",
   "reflex_components_internal",
   "reflex_integrations_docs",
@@ -532,6 +536,7 @@ reflex-docgen.workspace = true
 reflex-release.workspace = true
 reflex-hosting-cli.workspace = true
 reflex-otel.workspace = true
+reflex-sdk.workspace = true
 reflex-components-internal.workspace = true
 reflex-site-shared.workspace = true
 reflex-integrations-docs.workspace = true
