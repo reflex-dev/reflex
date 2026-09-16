@@ -49,13 +49,14 @@ Build the complete documentation app before auditing SEO or load performance:
 uv run reflex export --no-zip
 node --test tests/frontend_quality.test.mjs
 uv run pytest tests
+uv run pytest --runxfail tests/test_published_seo.py
 ```
 
 If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable to both test commands. The Python link validator reads that build's sitemap. The frontend tests use the build's installed React and bundler to check server-rendered code, highlight invalidation, and removal of unused components.
 
 The `reflex-docs` integration CI jobs run the frontend tests after building the production site, using the installed React and bundler dependencies.
 
-Breadcrumbs and canonical URLs use `deploy_url` and `frontend_path` from the app config. Local runs use the framework's localhost default. Deployment jobs must set `REFLEX_DEPLOY_URL` to the origin serving that build (for example, `https://reflex.dev` in production or the staging origin).
+Breadcrumbs and canonical URLs use `deploy_url` and `frontend_path` from the app config. Builds default to `https://reflex.dev`. Staging builds must set `REFLEX_DEPLOY_URL` to their public origin, without `/docs`; `frontend_path` adds that prefix once. Publish the generated sitemap and HTML metadata unchanged so canonical and social URLs stay aligned. A runtime sitemap-only rewrite does not update the HTML metadata.
 
 The docs app serves permanent HTTP 301 redirects for its legacy URLs when the Reflex backend serves the frontend. In development or when HTML is hosted separately, requests reach the frontend instead: the redirect pages retain client navigation and prerendered HTML includes an immediate refresh, canonical link, noindex directive, and a usable destination link. That fallback navigates readers but returns HTTP 200. For HTTP 301 semantics on a separate frontend/CDN, configure redirects at that host's edge using the `redirects` list in `reflex_docs/reflex_docs.py`; backend middleware alone cannot redirect requests it never receives.
 
@@ -63,19 +64,4 @@ Docs pages intentionally omit the marketing site's pixels and session recording 
 
 The docs config enables `frontend_lazy_bundled_libraries`. Optional libraries registered for dynamic components load on the first dynamic-component evaluation, while React and the shared runtime stay available immediately. This prevents the full Radix namespace from being imported on every page. The framework default remains `False`; custom scripts that read optional libraries from `window.__reflex` directly should retain that default or await `window.__reflex_load()` first.
 
-## Editorial theme
-
-The docs app opts into `SharedSiteStylesPlugin(editorial=True)`, ported from
-[marketing PR #102](https://github.com/reflex-dev/marketing/pull/102). Its neutral
-palette and semantic roles live in `reflex_site_shared/styles/assets/editorial.css`;
-its button uses the marketing variant and size contract (36px compact, 44px
-standard, 48px large). The default shared theme remains available to other sites.
-Dark mode adapts the neutral ramp; Radix example accent colors remain available.
-The header, sidebar, breadcrumbs, and heading anchors share `--docs-header-height`,
-which follows the rendered announcement so dismissal leaves no empty strip.
-
-With a production preview running, verify responsive layout and interactions:
-
-```bash
-REFLEX_DOCS_PREVIEW_URL=http://localhost:3035 uv run pytest tests/test_editorial_browser.py
-```
+Run the imported functional browser checks against a running preview with `REFLEX_DOCS_PREVIEW_URL=http://localhost:3003 uv run pytest tests/test_docs_features_browser.py`.

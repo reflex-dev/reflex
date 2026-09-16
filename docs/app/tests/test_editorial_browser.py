@@ -207,14 +207,16 @@ def test_editorial_footer_preserves_links_and_email_validation(page: Page, width
     expect(footer.get_by_role("status")).to_have_count(0)
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
+    surface = page.locator(".docs-cta-art > [class*=cta-surface]").first
+    light_surface = surface.evaluate(
+        "element => getComputedStyle(element).backgroundColor"
+    )
     footer.get_by_role("button", name="Toggle dark color mode", exact=True).click()
     expect(
         footer.get_by_role("button", name="Toggle dark color mode")
     ).to_have_attribute("aria-pressed", "true")
     expect(page.locator("header")).to_have_css("background-color", "rgb(24, 24, 24)")
-    expect(page.locator(".docs-cta-art [fill='var(--background)']").first).to_have_css(
-        "fill", "rgb(24, 24, 24)"
-    )
+    expect(surface).not_to_have_css("background-color", light_surface)
 
 
 def test_editorial_closing_actions_keep_native_navigation_and_dialog(page: Page):
@@ -390,6 +392,14 @@ def test_gallery_sort_menu_supports_keyboard_selection(page: Page):
     recent.press("Enter")
     expect(page.get_by_role("button", name="Sort: Recent", exact=True)).to_be_visible()
     expect(page.get_by_role("menuitem", name="Recent")).to_have_count(0)
+    page.get_by_role("button", name="Sort: Recent", exact=True).press("Enter")
+    downloads = page.get_by_role("menuitem", name="Downloads", exact=True)
+    downloads.focus()
+    downloads.press("Enter")
+    expect(
+        page.get_by_role("button", name="Sort: Downloads", exact=True)
+    ).to_be_visible()
+    expect(downloads).to_have_count(0)
 
 
 def test_missing_page_uses_docs_shell_and_recovery_link(page: Page):

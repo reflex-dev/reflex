@@ -48,24 +48,24 @@ def _menu_item(
     row = rx.el.div(
         rx.el.div(
             icon,
-            class_name="flex size-8 items-center justify-center rounded-md border border-secondary-5 bg-secondary-2 text-secondary-11 shrink-0",
+            class_name="flex size-8 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground shrink-0",
         ),
         rx.el.div(
             rx.el.div(
-                rx.el.span(title, class_name="text-sm font-medium text-secondary-12"),
+                rx.el.span(title, class_name="text-sm font-medium text-foreground"),
                 ui.icon(
                     "ArrowUpRight01Icon",
                     size=12,
-                    class_name="text-secondary-9",
+                    class_name="text-subtle-foreground",
                 )
                 if href
                 else rx.fragment(),
                 class_name="flex items-center gap-1",
             ),
-            rx.el.span(description, class_name="text-xs text-secondary-10"),
+            rx.el.span(description, class_name="text-xs text-subtle-foreground"),
             class_name="flex flex-col items-start gap-0.5",
         ),
-        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-secondary-3 transition-colors cursor-pointer",
+        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-accent transition-colors cursor-pointer",
     )
     if href:
         return rx.el.a(
@@ -100,30 +100,30 @@ def _reflex_build_menu_item(markdown_url: str) -> rx.Component:
     return rx.el.a(
         rx.el.div(
             rx.el.div(
-                ui.icon("AiMagicIcon", size=16, class_name="text-primary-contrast"),
+                ui.icon("AiMagicIcon", size=16, class_name="text-primary-foreground"),
                 class_name=(
                     "flex size-8 items-center justify-center rounded-md "
-                    "bg-gradient-to-br from-primary-9 to-primary-11 "
-                    "dark:from-primary-7 dark:to-primary-9 "
-                    "shadow-[0_0_0_1px_var(--primary-7),0_2px_8px_-2px_var(--primary-a8)] shrink-0"
+                    "bg-gradient-to-br from-primary to-foreground "
+                    "dark:from-border-strong dark:to-primary "
+                    "shadow-[0_0_0_1px_var(--border-strong),0_2px_8px_-2px_var(--ring)] shrink-0"
                 ),
             ),
             rx.el.div(
                 rx.el.div(
                     rx.el.span(
                         "Build this with AI",
-                        class_name="text-sm font-semibold text-secondary-12",
+                        class_name="text-sm font-semibold text-foreground",
                     ),
                     ui.icon(
                         "ArrowUpRight01Icon",
                         size=12,
-                        class_name="!text-primary-11",
+                        class_name="!text-foreground",
                     ),
                     class_name="flex items-center gap-1",
                 ),
                 rx.el.span(
                     "Open in Reflex Build",
-                    class_name="text-xs text-secondary-10",
+                    class_name="text-xs text-subtle-foreground",
                 ),
                 class_name="flex flex-col items-start gap-0.5",
             ),
@@ -134,11 +134,11 @@ def _reflex_build_menu_item(markdown_url: str) -> rx.Component:
         rel="noopener noreferrer",
         class_name=(
             "no-underline w-full text-left block "
-            "bg-gradient-to-br from-primary-2 to-secondary-1 "
-            "hover:from-primary-3 hover:to-primary-2 "
-            "dark:from-primary-a3 dark:to-secondary-2 "
-            "dark:hover:from-primary-a4 dark:hover:to-secondary-3 "
-            "border-b border-secondary-4 transition-colors cursor-pointer"
+            "bg-gradient-to-br from-muted to-background "
+            "hover:from-accent hover:to-muted "
+            "dark:from-accent dark:to-muted "
+            "dark:hover:from-border-subtle dark:hover:to-accent "
+            "border-b border-border-subtle transition-colors cursor-pointer"
         ),
     )
 
@@ -268,8 +268,8 @@ def docs_page_actions(
             on_click=copy_action,
             class_name=(
                 "flex items-center justify-center px-2.5 h-8 "
-                "border border-secondary-5 border-r-0 rounded-l-md text-secondary-11 "
-                "hover:text-secondary-12 hover:bg-secondary-3 active:scale-[0.96] "
+                "border border-border border-r-0 rounded-l-md text-muted-foreground "
+                "hover:text-foreground hover:bg-accent active:scale-[0.96] "
                 "transition-all cursor-pointer"
             ),
         ),
@@ -281,8 +281,8 @@ def docs_page_actions(
                     aria_label="Copy page options",
                     class_name=(
                         "flex items-center justify-center px-1.5 h-8 "
-                        "border border-secondary-5 rounded-r-md text-secondary-11 "
-                        "hover:text-secondary-12 hover:bg-secondary-3 active:scale-[0.96] "
+                        "border border-border rounded-r-md text-muted-foreground "
+                        "hover:text-foreground hover:bg-accent active:scale-[0.96] "
                         "transition-all cursor-pointer"
                     ),
                 )
@@ -304,7 +304,7 @@ def docs_page_actions(
                                 description="View all docs as Markdown for LLMs",
                                 href=llms_full_txt_url,
                             ),
-                            rx.el.div(class_name="h-px bg-secondary-4"),
+                            rx.el.div(class_name="h-px bg-border-subtle"),
                             _menu_item(
                                 icon=ui.icon("MessageProgrammingIcon", size=16),
                                 title="Open in ChatGPT",
@@ -327,7 +327,7 @@ def docs_page_actions(
                             ),
                             class_name=(
                                 "flex flex-col min-w-[260px] "
-                                "bg-white dark:bg-secondary-2 border border-secondary-5 rounded-lg shadow-lg "
+                                "bg-white dark:bg-muted border border-border rounded-lg shadow-lg "
                                 "data-[state=open]:animate-in data-[state=open]:fade-in-0 "
                                 "data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-top-2"
                             ),

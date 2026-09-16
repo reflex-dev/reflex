@@ -40,6 +40,10 @@ def test_shared_site_styles_plugin_emits_package_css():
         Path("public/components/DeferredDemo.jsx"),
         Path("public/components/GradientButton.tsx"),
         Path("public/icons/search.svg"),
+        Path("public/components/marketing-date.jsx"),
+        Path("public/homepage/announcement-visibility.tsx"),
+        Path("public/homepage/lib/use-isomorphic-layout-effect.ts"),
+        Path("public/favicon.svg"),
     ]
     assert all(content.strip() for _path, content in assets)
     assert "ph-conversations-widget" in assets[1][1]
@@ -47,6 +51,7 @@ def test_shared_site_styles_plugin_emits_package_css():
     assert "export function DeferredDemo" in assets[4][1]
     assert "export function GradientButton" in assets[5][1]
     assert "<svg" in assets[6][1]
+    assert "<svg" in assets[-1][1]
 
 
 def test_docs_markdown_plugin_emits_route_equivalents(tmp_path: Path, monkeypatch):
@@ -107,33 +112,16 @@ def test_docs_markdown_plugin_stages_assets_for_production_relocation(
     assert not (static_dir / "guide.html").exists()
 
 
-def test_editorial_theme_emits_matching_styles_and_button_without_changing_default():
-    """Opt-in themes ship their button and CSS together, retaining legacy assets."""
-    plugin = SharedSiteStylesPlugin(editorial=True)
-    assets = dict(plugin.get_static_assets())
-    default_assets = dict(SharedSiteStylesPlugin().get_static_assets())
-    stylesheet = Path("styles/reflex-site-shared/editorial.css")
-    button_path = Path("public/components/GradientButton.tsx")
-
-    assert plugin.get_stylesheet_paths()[-1] == "./reflex-site-shared/editorial.css"
-    assert stylesheet in assets
-    assert stylesheet not in default_assets
-    assert ".dark" in assets[stylesheet]
-    assert "--c-slate-12: #181818" in assets[stylesheet]
-    assert "--c-slate-12: #f5f5f5" in assets[stylesheet]
-    assert "export function GradientButton" in assets[button_path]
-    assert "buttonVariants" in assets[button_path]
-    assert "buttonVariants" not in default_assets[button_path]
-    assert len(assets) == len(default_assets) + 1
+def test_compact_marketing_buttons_use_navigation_spacing():
+    """Keep compact navigation actions at the marketing control size."""
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    button = assets[Path("public/components/GradientButton.tsx")]
+    assert 'sm: "px-4 h-9 rounded-control gap-2 text-sm leading-none"' in button
 
 
-def test_editorial_theme_can_keep_consumer_font_loading():
-    """Custom font loading does not remove the opt-in editorial stylesheet."""
-    plugin = SharedSiteStylesPlugin(include_fonts=False, editorial=True)
-    paths = plugin.get_stylesheet_paths()
-    assert paths[-1].endswith("/editorial.css")
-    assert not any(path.endswith("/fonts.css") for path in paths)
-    assert all(
-        Path("styles") / path.removeprefix("./") in dict(plugin.get_static_assets())
-        for path in paths
-    )
+def test_counter_code_preserves_its_syntax_colors():
+    """Exclude the counter tutorial from neutral syntax overrides."""
+    assets = dict(SharedSiteStylesPlugin().get_static_assets())
+    theme = assets[Path("styles/reflex-site-shared/tailwind-theme.css")]
+    assert ".counter-code-block .token.keyword" not in theme
+    assert ".code-block:not(.counter-code-block) code" in theme

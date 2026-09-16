@@ -131,7 +131,7 @@ def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
         type="button",
         size="sm",
         variant="ghost",
-        class_name="justify-start pl-0 text-secondary-11",
+        class_name="justify-start pl-0 text-muted-foreground",
         on_click=[
             rx.call_function(copied.set_value(True)),
             rx.set_clipboard(text),
@@ -147,7 +147,7 @@ def ask_ai_chat() -> rx.Component:
             "Ask AI about this page",
             size="sm",
             variant="ghost",
-            class_name="justify-start pl-0 text-secondary-11",
+            class_name="justify-start pl-0 text-muted-foreground",
             native_button=False,
         ),
         to="/ai/integrations/mcp-overview/",
@@ -250,7 +250,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
         label = to_title_case(to_snake_case(segment), sep=" ")
         label = _BREADCRUMB_LABEL_OVERRIDES.get(label, label)
         base_class = ui.cn(
-            "min-h-8 flex items-center text-sm font-book text-foreground last:text-muted-foreground",
+            "min-h-8 flex items-center text-sm font-[525] text-foreground last:text-muted-foreground",
             "truncate" if i == len(segments) - 1 else "",
         )
 
@@ -265,7 +265,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
                     label,
                     class_name=ui.cn(
                         base_class,
-                        "hover:text-muted-foreground rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                        "hover:text-primary-hover dark:hover:text-primary",
                     ),
                     underline="none",
                     href=href,
@@ -277,16 +277,15 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             breadcrumbs.append(
                 ui.icon(
                     "ArrowRight01Icon",
-                    class_name="lg:flex hidden text-secondary-11 size-4",
+                    class_name="lg:flex hidden text-muted-foreground size-4",
                 ),
             )
             breadcrumbs.append(
                 rx.text(
                     "/",
-                    class_name="font-sm text-secondary-11 lg:hidden flex",
+                    class_name="font-sm text-muted-foreground lg:hidden flex",
                 )
             )
-    from reflex_site_shared.views.hosting_banner import HostingBannerState
 
     # Return the list of breadcrumb items with separators
     return rx.box(
@@ -295,7 +294,7 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             trigger=rx.el.button(
                 type="button",
                 aria_label="Open documentation navigation",
-                class_name="absolute inset-0 bg-transparent z-[1] lg:hidden flex focus-visible:outline-2 focus-visible:outline-primary-9",
+                class_name="absolute inset-0 bg-transparent z-[1] lg:hidden flex focus-visible:outline-2 focus-visible:outline-primary",
             ),
         ),
         rx.el.nav(
@@ -313,17 +312,46 @@ def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = N
             ui.icon(
                 "ArrowDown01Icon",
                 size=14,
-                class_name="!text-secondary-9 lg:hidden flex",
+                class_name="!text-subtle-foreground lg:hidden flex",
             ),
             class_name="flex flex-row items-center gap-2 lg:p-0 p-[0.563rem]",
         ),
         class_name=ui.cn(
-            "docs-breadcrumb relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-secondary-4 mt-[139px] lg:p-0 border-b lg:border-none w-full max-lg:py-2",
-            rx.cond(
-                HostingBannerState.is_banner_visible,
-                "lg:mt-[139px]",
-                "lg:mt-[145px] mt-[77px]",
-            ),
+            "relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-border-subtle lg:p-0 border-b lg:border-none w-full max-lg:py-2",
+            "mt-[var(--docs-header-height)] lg:mt-[calc(var(--docs-header-height)+2rem)]",
+        ),
+    )
+
+
+def page_navigation_link(title: str, href: str, *, forward: bool) -> rx.Component:
+    """Render the entire adjacent-page block as a single link.
+
+    Args:
+        title: Destination page title.
+        href: Destination route.
+        forward: Whether this is the next page rather than the previous page.
+
+    Returns:
+        Padded link containing the direction and destination title.
+    """
+    arrow = get_icon(
+        icon="arrow_right", transform="none" if forward else "rotate(180deg)"
+    )
+    label = rx.el.span("Next" if forward else "Back")
+    return rx.el.a(
+        rx.el.span(
+            *([label, arrow] if forward else [arrow, label]),
+            class_name="flex items-center gap-2 font-small text-subtle-foreground group-hover:text-foreground",
+        ),
+        rx.el.span(
+            title,
+            class_name="text-base font-[500] leading-6 tracking-[-0.015rem] text-foreground",
+        ),
+        href=href,
+        class_name=(
+            "group flex min-w-0 flex-col gap-1 rounded-lg p-3 no-underline "
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring "
+            + ("items-end text-right" if forward else "items-start text-left")
         ),
     )
 
@@ -337,6 +365,7 @@ def docpage(
     description: str | None = None,
     image: str | None = None,
     source_path: str | None = None,
+    show_breadcrumb: bool = True,
 ):
     """A template that most pages on the reflex.dev site should use.
 
@@ -354,6 +383,8 @@ def docpage(
         image: Social-preview image (relative path or absolute URL).
         source_path: File the page is generated from, used for the footer's
             "Edit this page" link. Defaults to the Python file defining the page.
+        show_breadcrumb: Whether to display the page breadcrumb. Mobile sidebar
+            access remains available when the breadcrumb is hidden.
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -391,8 +422,6 @@ def docpage(
             Returns:
                 The page with the template applied.
             """
-            from reflex_site_shared.views.hosting_banner import HostingBannerState
-
             from reflex_docs.templates.docpage.sidebar import get_prev_next
             from reflex_docs.templates.docpage.sidebar import sidebar as sb
             from reflex_docs.views.docs_navbar import docs_navbar
@@ -405,51 +434,22 @@ def docpage(
             links = []
 
             if prev:
-                next_prev_name = prev.alt_name_for_next_prev or prev.names
                 links.append(
-                    rx.box(
-                        rx.link(
-                            rx.box(
-                                get_icon(
-                                    icon="arrow_right", transform="rotate(180deg)"
-                                ),
-                                "Back",
-                                class_name="flex flex-row justify-center lg:justify-start items-center gap-2 rounded-lg w-full",
-                            ),
-                            underline="none",
-                            href=prev.link,
-                            class_name="py-0.5 rounded-sm text-sm font-normal text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
-                        ),
-                        rx.text(
-                            next_prev_name,
-                            class_name="text-base font-book tracking-tight text-foreground",
-                        ),
-                        class_name="flex flex-col justify-start gap-1",
+                    page_navigation_link(
+                        prev.alt_name_for_next_prev or prev.names,
+                        prev.link,
+                        forward=False,
                     )
                 )
             else:
                 links.append(rx.fragment())
             links.append(rx.spacer())
-
             if next:
-                next_prev_name = next.alt_name_for_next_prev or next.names
                 links.append(
-                    rx.box(
-                        rx.link(
-                            rx.box(
-                                "Next",
-                                get_icon(icon="arrow_right"),
-                                class_name="flex flex-row lg:justify-start items-center gap-2 rounded-lg w-full self-end",
-                            ),
-                            underline="none",
-                            href=next.link,
-                            class_name="py-0.5 rounded-sm text-sm font-normal text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
-                        ),
-                        rx.text(
-                            next_prev_name,
-                            class_name="text-base font-book tracking-tight text-foreground",
-                        ),
-                        class_name="flex flex-col justify-start gap-1 items-end",
+                    page_navigation_link(
+                        next.alt_name_for_next_prev or next.names,
+                        next.link,
+                        forward=True,
                     )
                 )
             else:
@@ -480,32 +480,33 @@ def docpage(
                     rx.box(
                         rx.box(
                             breadcrumb(
-                                path=path,
+                                path=path if show_breadcrumb else "",
                                 nav_sidebar=nav_sidebar,
                                 doc_content=doc_content,
                             ),
                             class_name=(
                                 "px-0 pt-0 mb-[2rem]"
-                                + rx.cond(
-                                    HostingBannerState.is_banner_visible,
-                                    " mt-[90px]",
-                                    "",
-                                )
+                                + ("" if show_breadcrumb else " lg:hidden")
                             ),
                         ),
                         rx.box(
-                            rx.el.article(comp, class_name="docs-prose [&>div]:!p-0"),
+                            rx.el.article(comp, class_name="[&>div]:!p-0"),
                             rx.el.nav(
                                 *links,
-                                aria_label="Previous and next pages",
-                                class_name="docs-page-navigation flex flex-row gap-2 mt-8 lg:mt-10 mb-8",
+                                class_name="flex flex-row gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",
                             ),
                             docpage_footer(path=path.rstrip("/"), edit_href=edit_href),
-                            class_name="lg:mt-0 h-auto",
+                            class_name="lg:mt-0 h-auto"
+                            + (
+                                ""
+                                if show_breadcrumb
+                                else " lg:pt-[calc(var(--docs-header-height)+2rem)]"
+                            ),
                         ),
                         class_name=ui.cn(
                             "flex-1 h-auto mx-auto lg:max-w-[52rem] px-4 overflow-y-auto",
                             "lg:max-w-[64rem]" if not show_right_sidebar else "",
+                            "lg:px-8 xl:px-12" if not show_breadcrumb else "",
                         ),
                     ),
                     docs_right_sidebar(
@@ -557,10 +558,10 @@ def hover_item(component: rx.Component, component_str: str) -> rx.Component:
                 get_icon(icon="copy", class_name="p-[5px]"),
                 rx.text(
                     component_str,
-                    class_name="flex-1 text-sm font-book truncate",
+                    class_name="flex-1 font-small truncate",
                 ),
                 on_click=rx.set_clipboard(component_str),
-                class_name="flex flex-row items-center gap-1.5 border-border bg-background hover:bg-muted pr-3 border rounded-compact min-h-9 w-full max-w-[300px] text-muted-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                class_name="flex flex-row items-center gap-1.5 border-border bg-background hover:bg-accent shadow-small pr-1.5 border rounded-md w-full max-w-[300px] text-muted-foreground transition-bg cursor-pointer",
             ),
         ),
     )
@@ -644,7 +645,7 @@ def style_grid(
         rx.grid(
             rx.text("", size="5"),
             *[
-                rx.text(variant, class_name=text_cn + " text-secondary-11")
+                rx.text(variant, class_name=text_cn + " text-muted-foreground")
                 for variant in variants
             ],
             rx.text(
@@ -681,7 +682,7 @@ def style_grid(
                 )
                 for variant in variants
             ],
-            rx.text("Gray", class_name=text_cn + " text-secondary-11"),
+            rx.text("Gray", class_name=text_cn + " text-muted-foreground"),
             *[
                 hover_item(
                     component=used_component(
@@ -713,7 +714,7 @@ def style_grid(
             ],
             (
                 rx.fragment(
-                    rx.text("Disabled", class_name=text_cn + " text-secondary-11"),
+                    rx.text("Disabled", class_name=text_cn + " text-muted-foreground"),
                     *[
                         hover_item(
                             component=used_component(
@@ -760,7 +761,7 @@ def style_grid(
                             rx.icon(
                                 "check",
                                 size=15,
-                                class_name="top-1/2 left-1/2 absolute text-secondary-12 transform -translate-x-1/2 -translate-y-1/2"
+                                class_name="top-1/2 left-1/2 absolute text-foreground transform -translate-x-1/2 -translate-y-1/2"
                                 + rx.cond(
                                     RadixDocState.color == color,
                                     " block",
@@ -772,7 +773,7 @@ def style_grid(
                             class_name="relative rounded-md cursor-pointer shrink-0 size-[30px]"
                             + rx.cond(
                                 RadixDocState.color == color,
-                                " border-2 border-secondary-12",
+                                " border-2 border-foreground",
                                 "",
                             ),
                         )
@@ -783,6 +784,5 @@ def style_grid(
                 ),
             ),
         ),
-        class_name="flex flex-col justify-center items-center gap-6 border-border-subtle bg-muted mb-4 p-6 border rounded-card",
-        data_docs_example=True,
+        class_name="flex flex-col justify-center items-center gap-6 border-border-subtle bg-muted mb-4 p-6 border rounded-xl",
     )

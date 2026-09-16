@@ -278,14 +278,14 @@
 @layer components {
   .docs-prose .pill-tab-list {
     border: 1px solid var(--border) !important;
-    border-radius: var(--radius-control) !important;
+    border-radius: 9999px !important;
     background: var(--background) !important;
     padding: 3px !important;
   }
   .docs-prose .pill-tab {
     font-size: 0.875rem !important;
     font-weight: 450 !important;
-    border-radius: var(--radius-control) !important;
+    border-radius: 9999px !important;
     color: var(--muted-foreground) !important;
   }
   .docs-prose .pill-tab[data-state='active'] {
@@ -606,8 +606,9 @@ details[open] > .docs-sidebar-group-trigger > p {
   color: var(--foreground);
 }
 :is(.docs-theme-toggle, .docs-page-footer .site-color-mode-toggle) button[aria-pressed="true"] {
-  background: var(--muted);
+  background: var(--background);
   color: var(--foreground);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 :is(.docs-theme-toggle, .docs-page-footer .site-color-mode-toggle) svg {
   width: 0.875rem;

@@ -31,6 +31,7 @@ from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
 
 SIDEBAR_ICON_MAP = {
+    "Getting Started": "rocket",
     "Tutorials": "graduation-cap",
     "Advanced Onboarding": "newspaper",
     "Components": "layers",
@@ -129,8 +130,8 @@ def sidebar_leaf_outer(
                     width="100%",
                     class_name=rx.cond(
                         is_active,
-                        "m-0 transition-color text-primary-10",
-                        "m-0 transition-color text-secondary-11 hover:text-secondary-12",
+                        "m-0 transition-color text-primary-hover",
+                        "m-0 transition-color text-muted-foreground hover:text-foreground",
                     ),
                 ),
             ),
@@ -346,7 +347,6 @@ def sidebar_comp(
 
     is_docs_hosting = url.startswith("/hosting/")
     is_docs_ai_builder = url.startswith("/ai/")
-    is_ai_overview = url == "/ai/"
     is_ai_mcp_or_skills = (
         url.startswith("/ai/integrations/agent-toolkit/")
         | url.startswith("/ai/integrations/skills/")
@@ -380,17 +380,12 @@ def sidebar_comp(
     )
 
     ai_builder_categories = rx.el.ul(
+        sidebar_category("Build with AI", "/ai/", "sparkles", url == "/ai/"),
         sidebar_category(
-            "Overview",
-            "/ai/",
-            "sparkles",
-            is_ai_overview,
-        ),
-        sidebar_category(
-            "Reflex Build",
-            ai_builder_pages.overview.what_is_reflex_build.path,
+            "AI Builder",
+            ai_builder_pages.overview.best_practices.path,
             "bot",
-            ~is_ai_mcp_or_skills & ~is_ai_overview,
+            ~is_ai_mcp_or_skills & (url != "/ai/"),
         ),
         sidebar_category(
             "Agent Toolkit",
@@ -428,7 +423,7 @@ def sidebar_comp(
     )
     ai_builder_overview_content = rx.el.ul(
         create_sidebar_section(
-            "Guides",
+            "Overview",
             ai_builder_pages.overview.best_practices.path,
             ai_builder_overview_items,
             ai_builder_overview_index,
@@ -504,19 +499,19 @@ def sidebar_comp(
                     rx.icon("atom", size=16),  # pyright: ignore [reportCallIssue]
                     rx.el.h5(
                         "Custom Components",
-                        class_name="text-sm font-book leading-5 tracking-tight text-foreground transition-colors",
+                        class_name="font-smbold text-[0.875rem] text-foreground leading-5 tracking-[-0.01313rem] transition-color",
                     ),
-                    class_name="flex flex-row items-center gap-3 text-secondary-12",
+                    class_name="flex flex-row items-center gap-3 text-foreground",
                 ),
                 rx.text(  # pyright: ignore [reportCallIssue]
                     "See what components people have made with Reflex!",
-                    class_name="text-sm font-normal leading-5 text-muted-foreground",
+                    class_name="font-small text-muted-foreground",
                 ),
-                class_name="flex flex-col gap-2 border-border-subtle bg-muted hover:border-border-strong px-3.5 py-3 border rounded-card transition-colors",
+                class_name="flex flex-col gap-2 border-border bg-background hover:bg-accent shadow-large px-3.5 py-2 border rounded-xl transition-bg",
             ),
             underline="none",
             href=custom_components.path,
-            class_name="w-fit rounded-card lg:ml-[2.5rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+            class_name="w-fit lg:ml-[2.5rem]",
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
     )

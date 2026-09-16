@@ -3,6 +3,7 @@
 import reflex as rx
 import reflex_components_internal as ui
 from reflex_site_shared.components.marketing_button import button
+from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 from reflex_docs.pages.docs import getting_started
 from reflex_docs.pages.docs_landing.views.artwork import artwork
@@ -28,6 +29,7 @@ def hero() -> rx.Component:
                         ui.icon("ArrowRight01Icon"),
                         variant="primary",
                         size="lg",
+                        class_name="!px-6",
                         native_button=False,
                     ),
                     href="/ai/",
@@ -39,6 +41,7 @@ def hero() -> rx.Component:
                         ui.icon("ArrowRight01Icon"),
                         variant="outline",
                         size="lg",
+                        class_name="!px-6",
                         native_button=False,
                     ),
                     href=getting_started.introduction.path,
@@ -52,5 +55,10 @@ def hero() -> rx.Component:
             "squares_docs_logo",
             class_name="docs-hero-art absolute left-1/2 w-1/2 max-lg:hidden",
         ),
+        style={
+            "--docs-hero-header-height": rx.cond(
+                HostingBannerState.is_banner_visible, "6.5rem", "4rem"
+            )
+        },
         class_name="docs-hero relative max-w-(--landing-layout-max-width) mx-auto w-full px-6 xl:px-0 pb-16 lg:pb-24",
     )

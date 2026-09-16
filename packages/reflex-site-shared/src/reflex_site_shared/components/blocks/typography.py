@@ -33,7 +33,6 @@ def definition(title: str, *children) -> rx.Component:
             "background_color": rx.color("mauve", 3),
         },
         align_items="start",
-        class_name="docs-definition",
     )
 
 
@@ -44,9 +43,7 @@ def text_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.text(
-        text, class_name="docs-body-text font-normal text-secondary-11 mb-4 leading-7"
-    )
+    return rx.text(text, class_name="font-normal text-muted-foreground mb-4 leading-7")
 
 
 @rx.memo
@@ -58,7 +55,7 @@ def text_comp_2(text: rx.Var[str]) -> rx.Component:
     """
     return rx.text(
         text,
-        class_name="docs-introduction docs-body-text font-normal text-secondary-11 max-w-[80%] mb-10",
+        class_name="font-normal text-muted-foreground max-w-[80%] mb-10",
     )
 
 
@@ -69,9 +66,7 @@ def list_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.list_item(
-        text, class_name="docs-body-text font-normal text-secondary-11 mb-4"
-    )
+    return rx.list_item(text, class_name="font-normal text-muted-foreground mb-4")
 
 
 @rx.memo
@@ -119,7 +114,7 @@ def doclink(text: str, href: str, **props) -> rx.Component:
         text,
         href=href,
         **props,
-        class_name="docs-text-link text-secondary-12 decoration-secondary-12 underline",
+        class_name="text-foreground decoration-foreground underline",
     )
 
 
@@ -138,5 +133,5 @@ def doclink2(text: str, **props) -> rx.Component:
         text,
         **props,
         style=fonts.base,
-        class_name="docs-text-link text-secondary-12 decoration-secondary-12 underline",
+        class_name="text-foreground decoration-foreground underline",
     )

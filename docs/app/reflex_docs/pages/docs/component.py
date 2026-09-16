@@ -46,7 +46,7 @@ TYPE_COLORS = {
     "float": "orange",
     "str": "yellow",
     "bool": "teal",
-    "Component": "purple",
+    "Component": "gray",
     "List": "blue",
     "Dict": "blue",
     "Tuple": "blue",
@@ -90,16 +90,16 @@ EXCLUDED_COMPONENTS = [
 
 
 _PILL_BTN_CLASS = (
-    "inline-flex h-7 cursor-pointer items-center justify-center rounded-full "
-    "border border-border bg-background px-3 text-sm font-book text-muted-foreground "
-    "transition-colors hover:border-border-strong hover:bg-muted hover:text-foreground "
-    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    "inline-flex h-7 cursor-pointer items-center justify-center rounded-md "
+    "border border-border bg-background px-2.5 text-sm font-medium text-muted-foreground "
+    "transition-colors hover:border-border hover:bg-muted hover:text-foreground "
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong"
 )
 _PILL_BTN_ACTIVE_CLASS = (
-    "inline-flex h-7 cursor-pointer items-center justify-center rounded-full "
-    "border border-foreground bg-foreground px-3 text-sm font-book text-background "
-    "transition-colors hover:bg-primary-hover "
-    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    "inline-flex h-7 cursor-pointer items-center justify-center rounded-md "
+    "border border-border-strong bg-accent px-2.5 text-sm font-medium text-foreground "
+    "shadow-[inset_0_0_0_1px_var(--border)] transition-colors "
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-strong"
 )
 _PROPS_TABLE_COMPACT_CELL_CLASS = (
     "cell-content max-h-[4.25rem] overflow-hidden "
@@ -209,10 +209,10 @@ def render_select(prop: PropDocumentation, component: type[Component], prop_dict
                 type="button",
                 class_name=(
                     "inline-flex h-8 w-32 cursor-pointer items-center justify-between "
-                    "rounded-md border border-secondary-5 bg-secondary-1 px-2.5 text-secondary-11 "
-                    "transition-colors hover:border-secondary-6 hover:bg-secondary-2 "
-                    "hover:text-secondary-12 focus-visible:outline-none "
-                    "focus-visible:ring-2 focus-visible:ring-secondary-7"
+                    "rounded-md border border-border bg-background px-2.5 text-muted-foreground "
+                    "transition-colors hover:border-border hover:bg-muted "
+                    "hover:text-foreground focus-visible:outline-none "
+                    "focus-visible:ring-2 focus-visible:ring-border-strong"
                 ),
             ),
             content=rx.box(
@@ -254,7 +254,7 @@ def hovercard(trigger: rx.Component, content: rx.Component) -> rx.Component:
             content,
             side="top",
             align="center",
-            class_name="font-small text-secondary-11",
+            class_name="font-small text-muted-foreground",
         ),
     )
 
@@ -372,8 +372,8 @@ def prop_docs(
                             size=14,
                             class_name=rx.cond(
                                 expanded,
-                                "row-expand-icon mt-0.5 shrink-0 rotate-180 text-secondary-9 opacity-100 transition-[opacity,transform]",
-                                "row-expand-icon mt-0.5 shrink-0 text-secondary-9 opacity-0 transition-[opacity,transform] group-hover:opacity-100",
+                                "row-expand-icon mt-0.5 shrink-0 rotate-180 text-subtle-foreground opacity-100 transition-[opacity,transform]",
+                                "row-expand-icon mt-0.5 shrink-0 text-subtle-foreground opacity-0 transition-[opacity,transform] group-hover:opacity-100",
                             ),
                         )
                         if expanded is not None
@@ -421,11 +421,11 @@ def prop_docs(
                             rx.icon(
                                 tag="info",
                                 size=15,
-                                class_name="!text-secondary-9 shrink-0",
+                                class_name="!text-subtle-foreground shrink-0",
                             ),
                             rx.text(
                                 f"Union[{', '.join(all_types)}]",
-                                class_name="font-small text-secondary-11",
+                                class_name="font-small text-muted-foreground",
                             ),
                         ),
                     ),
@@ -437,7 +437,7 @@ def prop_docs(
                 rx.box(
                     render_inline_markdown(
                         description,
-                        class_name="font-small text-secondary-11 whitespace-normal leading-snug break-words",
+                        class_name="font-small text-muted-foreground whitespace-normal leading-snug break-words",
                     ),
                     class_name=cell_content_class,
                 ),
@@ -459,9 +459,10 @@ def generate_props(
     prop_list = list(props)
     if len(prop_list) == 0:
         return rx.box(
-            rx.heading("Props", as_="h3", class_name="font-large text-secondary-12"),
+            rx.heading("Props", as_="h3", class_name="font-large text-foreground"),
             rx.text(
-                "No component specific props", class_name="text-secondary-11 font-base"
+                "No component specific props",
+                class_name="text-muted-foreground font-base",
             ),
             class_name="flex flex-col overflow-x-auto justify-start py-2 w-full",
         )
@@ -529,7 +530,7 @@ def generate_props(
         cells, is_long_row, expanded_name, expanded = prop_docs(prop, component)
         row_props = {
             "class_name": ui.cn(
-                "border-b border-secondary-4 last:border-b-0 transition-colors hover:bg-secondary-2",
+                "border-b border-border-subtle last:border-b-0 transition-colors hover:bg-muted",
                 "group cursor-pointer" if is_long_row else "",
             )
         }
@@ -599,10 +600,10 @@ def generate_props(
                 return False
 
         line_class = "font-mono text-sm whitespace-pre"
-        kw_class = "text-primary-11"
+        kw_class = "text-foreground"
         str_class = "text-orange-11"
         bool_class = "text-blue-11"
-        prop_name_class = "text-secondary-12"
+        prop_name_class = "text-foreground"
         token_re = re.compile(
             r'(rx\.[\w.]+)|("[^"]*")|(\b(?:True|False|None)\b)|(\b\d+(?:\.\d+)?\b)|(\w+)|(\s+)|(.)'
         )
@@ -715,20 +716,19 @@ def generate_props(
         interactive_component = rx.el.div(
             rx.el.div(
                 comp,
-                data_docs_example=True,
                 class_name=(
                     "flex flex-col items-center justify-center p-6 flex-1 "
-                    "bg-secondary-2 border-b lg:border-b-0 lg:border-r "
-                    "border-secondary-4 min-w-0"
+                    "bg-muted border-b lg:border-b-0 lg:border-r "
+                    "border-border-subtle min-w-0"
                 ),
             ),
             rx.el.div(
                 *code_children,
-                class_name="flex-1 p-4 bg-secondary-1 min-w-0 overflow-x-auto",
+                class_name="flex-1 p-4 bg-background min-w-0 overflow-x-auto",
             ),
             class_name=(
-                "flex flex-col lg:flex-row w-full rounded-card border "
-                "border-secondary-4 overflow-hidden"
+                "flex flex-col lg:flex-row w-full rounded-xl border "
+                "border-border-subtle overflow-hidden"
             ),
         )
     else:
@@ -741,20 +741,20 @@ def generate_props(
                 rx.el.div(
                     rx.code(
                         prop.name,
-                        class_name="code-style text-nowrap leading-normal text-secondary-11",
+                        class_name="code-style text-nowrap leading-normal text-muted-foreground",
                     ),
                     control,
                     class_name=(
                         "grid grid-cols-[8rem_minmax(0,1fr)] items-start gap-4 "
-                        "border-b border-secondary-4 px-4 py-3 transition-colors "
-                        "last:border-b-0 hover:bg-secondary-2"
+                        "border-b border-border-subtle px-4 py-3 transition-colors "
+                        "last:border-b-0 hover:bg-muted"
                     ),
                 )
                 for prop, control in interactive_controls
             ],
             class_name=(
-                "mb-4 w-full min-w-0 overflow-hidden rounded-card border "
-                "border-border-subtle bg-background"
+                "mb-4 w-full min-w-0 overflow-hidden rounded-xl border "
+                "border-border-subtle bg-background shadow-small"
             ),
         )
 
@@ -764,7 +764,7 @@ def generate_props(
         rx.heading(
             "Props",
             as_="h3",
-            class_name="font-large text-secondary-12 mt-4 mb-2 text-left self-start",
+            class_name="font-large text-foreground mt-4 mb-2 text-left self-start",
         ),
         docs_api_table(*rows),
     )
@@ -778,27 +778,25 @@ def generate_event_triggers(
     if not custom_handlers:
         return rx.box(
             rx.heading(
-                "Event Triggers", as_="h3", class_name="font-large text-secondary-12"
+                "Event Triggers", as_="h3", class_name="font-large text-foreground"
             ),
             rx.link(
                 "See the full list of default event triggers",
                 href="https://reflex.dev/docs/api-reference/event-triggers/",
-                class_name="text-primary-11 font-base",
+                class_name="text-foreground font-base",
                 is_external=True,
             ),
             class_name="py-2 overflow-x-auto justify-start flex flex-col gap-4",
         )
     table_header_class_name = (
-        "font-small text-secondary-12 text-normal w-auto justify-start pl-4 font-bold"
+        "font-small text-foreground text-normal w-auto justify-start pl-4 font-bold"
     )
     return rx.box(
-        rx.heading(
-            "Event Triggers", as_="h3", class_name="font-large text-secondary-12"
-        ),
+        rx.heading("Event Triggers", as_="h3", class_name="font-large text-foreground"),
         rx.link(
             "See the full list of default event triggers",
             href="https://reflex.dev/docs/api-reference/event-triggers/",
-            class_name="text-primary-11 font-base",
+            class_name="text-foreground font-base",
             is_external=True,
         ),
         rx.scroll_area(
@@ -819,7 +817,7 @@ def generate_event_triggers(
                             "Description", class_name=table_header_class_name
                         ),
                     ),
-                    class_name="bg-secondary-3",
+                    class_name="bg-accent",
                 ),
                 rx.table.body(
                     *[
@@ -830,16 +828,16 @@ def generate_event_triggers(
                             ),
                             rx.table.cell(
                                 handler.description or "",
-                                class_name="justify-start p-4 text-secondary-11 font-small",
+                                class_name="justify-start p-4 text-muted-foreground font-small",
                             ),
                         )
                         for handler in custom_handlers
                     ],
-                    class_name="bg-secondary-2",
+                    class_name="bg-muted",
                 ),
                 variant="surface",
                 size="1",
-                class_name="w-full border border-secondary-4",
+                class_name="w-full border border-border-subtle",
             ),
             class_name="w-full justify-start overflow-hidden",
         ),
@@ -856,9 +854,7 @@ def generate_valid_children(comp: type[Component]) -> rx.Component:
         for child in comp._valid_children
     ]
     return rx.box(
-        rx.heading(
-            "Valid Children", as_="h3", class_name="font-large text-secondary-12"
-        ),
+        rx.heading("Valid Children", as_="h3", class_name="font-large text-foreground"),
         rx.box(*valid_children, class_name="flex flex-row gap-2 flex-wrap"),
         class_name="pb-6 w-full items-start flex flex-col gap-4",
     )
@@ -917,9 +913,9 @@ def multi_docs(
         component_docs(component_tuple, previews) for component_tuple in ll_list[1:]
     ]
 
-    active_class_name = "text-sm font-book bg-foreground px-4 py-2 text-background rounded-full w-28 cursor-default text-center"
+    active_class_name = "font-small bg-muted p-2 text-muted-foreground rounded-xl shadow-large w-28 cursor-default border border-border-subtle text-center"
 
-    non_active_class_name = "text-sm font-book w-28 rounded-full transition-colors hover:bg-muted hover:text-foreground text-muted-foreground px-4 py-2 text-center"
+    non_active_class_name = "font-small w-28 transition-color hover:text-foreground text-muted-foreground p-2 text-center"
 
     def links(current_page, ll_doc_exists, path):
         path = str(path).rstrip("/")
@@ -939,7 +935,7 @@ def multi_docs(
                             href=path + "/low",
                             underline="none",
                         ),
-                        class_name="docs-api-level-switch bg-background border border-border rounded-full p-1 gap-1 flex items-center justify-center [&_a]:rounded-full [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-ring",
+                        class_name="bg-accent rounded-[1.125rem] p-2 gap-2 flex items-center justify-center",
                     ),
                     class_name="flex mb-2",
                 )
@@ -959,7 +955,7 @@ def multi_docs(
                             href=path + "/low",
                             underline="none",
                         ),
-                        class_name="docs-api-level-switch bg-background border border-border rounded-full p-1 gap-1 flex items-center justify-center [&_a]:rounded-full [&_a]:focus-visible:outline-2 [&_a]:focus-visible:outline-ring",
+                        class_name="bg-accent rounded-[1.125rem] p-2 gap-2 flex items-center justify-center",
                     ),
                     class_name="flex mb-2",
                 )

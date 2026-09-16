@@ -352,3 +352,14 @@ def test_docs_titles_and_descriptions_are_unique(routes_fixture):
             if value and count > 1
         }
         assert duplicates == {}, (attr, duplicates)
+
+
+def test_routes_have_specific_descriptions(routes_fixture):
+    """Published pages must not fall back to the generic documentation snippet."""
+    generic = (
+        "documentation, examples, and reference for building Python web applications"
+    )
+    failures = [
+        route.path for route in routes_fixture if generic in (route.description or "")
+    ]
+    assert not failures, failures

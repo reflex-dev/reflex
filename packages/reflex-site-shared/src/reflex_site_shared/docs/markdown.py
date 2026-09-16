@@ -272,7 +272,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             return text_comp(text=children[0])
         return rx.text(
             *children,
-            class_name="docs-body-text font-[475] text-secondary-11 mb-4 leading-7",
+            class_name="font-[475] text-muted-foreground mb-4 leading-7",
         )
 
     def code_block(self, block: CodeBlock) -> rx.Component:
@@ -331,7 +331,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             return list_comp(text=_spans_to_plaintext(spans))
         return rx.list_item(
             *_render_spans(spans),
-            class_name="docs-body-text font-[475] text-secondary-11 mb-4",
+            class_name="font-[475] text-muted-foreground mb-4",
         )
 
     def transform_list_item(self, item: ListItem) -> rx.Component:
@@ -350,14 +350,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         children = [self.transform_block(b) for b in block.children]
         return rx.box(
             *children,
-            class_name="border-l-[3px] border-secondary-4 pl-6 mt-2 mb-6",
+            class_name="border-l-[3px] border-border-subtle pl-6 mt-2 mb-6",
         )
 
     def table(self, block: TableBlock) -> rx.Component:
         header_cells = [
             rx.table.column_header_cell(
                 *_render_spans(cell.children),
-                class_name="font-small text-secondary-12 font-bold",
+                class_name="font-small text-foreground font-bold",
             )
             for cell in block.header.cells
         ]
@@ -366,7 +366,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             cells = [
                 rx.table.cell(
                     *_render_spans(cell.children),
-                    class_name="font-small text-secondary-11",
+                    class_name="font-small text-muted-foreground",
                 )
                 for cell in row.cells
             ]
@@ -377,7 +377,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             rx.table.body(*rows),
             variant="surface",
             size="1",
-            class_name="docs-table w-full border border-secondary-4 mb-4",
+            class_name="w-full border border-border-subtle mb-4",
         )
 
     def transform_table_row(self, row: TableRow) -> rx.Component:
@@ -500,7 +500,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             )
             raise
 
-        return rx.box(comp, margin_bottom="1em", id=comp_id, data_docs_example=True)
+        return rx.box(comp, margin_bottom="1em", id=comp_id)
 
     def _render_children(self, blocks: tuple[Block, ...]) -> rx.Component:
         """Render a sequence of parsed blocks into a single component."""
@@ -542,9 +542,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         # For "info" alerts, use the site secondary scale (--secondary-*) so the
         # card matches codeblock styling instead of rx.color("slate", ...).
         is_info = status == "info"
-        foreground_override = "var(--secondary-11)" if is_info else None
-        bg_override = "var(--secondary-2)" if is_info else None
-        border_override = "var(--secondary-4)" if is_info else None
+        foreground_override = "var(--muted-foreground)" if is_info else None
+        bg_override = "var(--muted)" if is_info else None
+        border_override = "var(--border-subtle)" if is_info else None
 
         def foreground_color() -> str:
             return foreground_override or f"{rx.color(color, 11)}"
@@ -567,7 +567,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         def title_comp() -> rx.Component:
             return rx.box(
                 *_render_spans(title_spans),
-                class_name="docs-callout-title font-[475]",
+                class_name="font-[475]",
                 color=foreground_color(),
             )
 
@@ -610,7 +610,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             trigger.append(
                 rx.box(
                     *spans,
-                    class_name="docs-callout-title font-[475]",
+                    class_name="font-[475]",
                     color=foreground_color(),
                 ),
             )
@@ -628,7 +628,6 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             margin_bottom="16px",
             margin_top="16px",
             width="100%",
-            class_name="docs-callout",
         )
 
     def _render_video(self, block: DirectiveBlock) -> rx.Component:
@@ -680,14 +679,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 '"',
                 *quote_parts,
                 '"',
-                class_name="text-secondary-11 font-base italic",
+                class_name="text-muted-foreground font-base italic",
             ),
             rx.box(
-                rx.text(name, class_name="text-secondary-11 font-base"),
-                rx.text(role, class_name="text-secondary-10 font-base"),
+                rx.text(name, class_name="text-muted-foreground font-base"),
+                rx.text(role, class_name="text-subtle-foreground font-base"),
                 class_name="flex flex-col gap-0.5",
             ),
-            class_name="flex flex-col gap-4 border-l-[3px] border-secondary-4 pl-6 mt-2 mb-6",
+            class_name="flex flex-col gap-4 border-l-[3px] border-border-subtle pl-6 mt-2 mb-6",
         )
 
     def _render_tabs(self, block: DirectiveBlock) -> rx.Component:
@@ -750,7 +749,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                             header,
                             style={
                                 "fontWeight": "600",
-                                "color": "var(--secondary-12)",
+                                "color": "var(--foreground)",
                                 "fontSize": "1rem",
                                 "lineHeight": "1.5",
                             },
@@ -774,7 +773,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                     "gap": "1.25rem",
                     "width": "100%",
                     "paddingLeft": "1.5rem",
-                    "borderLeft": "1.5px solid var(--secondary-4)",
+                    "borderLeft": "1.5px solid var(--border-subtle)",
                 },
             ),
             style={"width": "100%", "margin": "1.5rem 0"},

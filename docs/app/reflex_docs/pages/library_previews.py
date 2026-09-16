@@ -55,32 +55,48 @@ def get_preview_asset(name: str, section: str) -> tuple[str, str]:
 
 def component_card(name: str, link: str, section: str) -> rx.Component:
     preview_section, preview_name = get_preview_asset(name, section)
+
+    def preview_src(mode: str) -> str:
+        """Resolve locally bundled previews or existing CDN artwork.
+
+        Args:
+            mode: Color mode for the preview.
+
+        Returns:
+            Image asset URL.
+        """
+        path = f"components_previews/{preview_section}/{mode}/{preview_name}.svg"
+        if (preview_section, preview_name) == ("charts", "treemap"):
+            return rx.asset(path)
+        return f"{REFLEX_ASSETS_CDN}{path}"
+
     return rx.link(
         rx.box(
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/light/{preview_name}.svg",
+                src=preview_src("light"),
                 loading="lazy",
                 alt=f"Image preview of {name}",
+                style={"filter": "grayscale(1)"},
                 class_name="object-contain object-center h-full w-full dark:hidden",
             ),
             rx.image(
-                src=f"{REFLEX_ASSETS_CDN}components_previews/{preview_section}/dark/{preview_name}.svg",
+                src=preview_src("dark"),
                 loading="lazy",
                 alt=f"Image preview of {name}",
+                style={"filter": "grayscale(1) brightness(1.8)"},
                 class_name="object-contain object-center h-full w-full dark:block hidden",
             ),
             rx.box(
                 rx.text(
                     get_display_name(name),
-                    class_name="truncate text-sm font-book text-foreground",
+                    class_name="truncate font-base text-foreground",
                 ),
-                rx.icon("chevron-right", size=14, class_name="!text-secondary-9"),
+                rx.icon("chevron-right", size=14, class_name="!text-subtle-foreground"),
                 class_name="bottom-0 absolute flex flex-row justify-between w-full px-4 py-2 items-center",
             ),
-            class_name="rounded-card border overflow-hidden relative box-border bg-background group-hover:bg-muted transition-colors border-border-subtle",
+            class_name="aspect-[320/232] rounded-xl border overflow-hidden relative box-border shadow-large bg-muted hover:bg-accent transition-bg border-border",
         ),
         href=link,
-        class_name="docs-preview-card group rounded-card focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
 
 

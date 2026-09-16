@@ -5,9 +5,6 @@ title: Enterprise Components
 ```python exec
 import reflex as rx
 
-from reflex_docs.components.component_catalog import component_category
-from reflex_docs.templates.docpage import h1_comp, text_comp_2
-
 
 def enterprise_component_grid():
     sections = [
@@ -69,17 +66,44 @@ def enterprise_component_grid():
         },
     ]
 
-    return rx.box(
-        *[
-            component_category(
-                title=section["title"],
-                href=section["link"],
-                description=section["description"],
-                links=section["components"],
+    cards = []
+    for section in sections:
+        cards.append(
+            rx.box(
+                rx.link(
+                    rx.el.h2(
+                        section["title"],
+                        class_name="font-large text-foreground",
+                    ),
+                    rx.icon(
+                        "arrow_up_right", size=16, class_name="text-muted-foreground"
+                    ),
+                    href=section["link"],
+                    underline="none",
+                    class_name="px-4 py-2 bg-background hover:bg-accent transition-bg flex flex-row justify-between items-center !text-foreground",
+                ),
+                rx.text(
+                    section["description"],
+                    class_name="px-4 py-2 font-small text-subtle-foreground border-t border-border",
+                ),
+                rx.box(
+                    *[
+                        rx.link(
+                            comp[0],
+                            href=comp[1],
+                            class_name="font-small text-muted-foreground hover:!text-primary transition-color w-fit",
+                        )
+                        for comp in section["components"]
+                    ],
+                    class_name="flex flex-col gap-2.5 px-4 py-2 border-t border-border",
+                ),
+                class_name="flex flex-col border border-border rounded-xl bg-muted shadow-large overflow-hidden",
             )
-            for section in sections
-        ],
-        class_name="docs-enterprise-catalog flex flex-col mt-8 mb-12",
+        )
+
+    return rx.box(
+        *cards,
+        class_name="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8",
     )
 
 
@@ -87,12 +111,16 @@ component_grid = enterprise_component_grid()
 ```
 
 ```python eval
-h1_comp(text="Enterprise Components")
+rx.el.h1(
+    "Enterprise Components",
+    class_name="lg:text-5xl text-3xl font-[525] scroll-mt-[113px] my-4 text-foreground",
+)
 ```
 
 ```python eval
-text_comp_2(
-    text="Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
+rx.el.span(
+    "Advanced UI components and features to enhance your Reflex applications. Available for free with the 'Built with Reflex' badge, or without the badge with an enterprise license.",
+    class_name="font-[475] text-muted-foreground max-w-[80%] text-sm",
 )
 ```
 

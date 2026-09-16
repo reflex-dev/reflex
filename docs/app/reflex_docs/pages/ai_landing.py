@@ -1,9 +1,9 @@
 """Choose a workflow for building Reflex apps with AI."""
 
 import reflex as rx
+import reflex_components_internal as ui
 
 from reflex_docs.pages.docs import ai_builder
-from reflex_docs.pages.docs_landing.views.artwork import artwork
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
 
@@ -34,26 +34,20 @@ def _workflow_preview(icon: rx.Component, labels: tuple[str, ...]) -> rx.Compone
         rx.el.div(
             rx.el.div(
                 icon,
-                rx.el.div(
-                    *[
-                        rx.el.span(
-                            class_name="size-1 rounded-full bg-subtle-foreground"
-                        )
-                        for _ in range(3)
-                    ],
-                    class_name="flex gap-1",
+                ui.icon(
+                    "MoreHorizontalIcon", size=20, class_name="text-subtle-foreground"
                 ),
                 class_name="flex items-center justify-between border-b border-border px-5 py-4",
             ),
             rx.el.div(
                 *[
                     rx.el.div(
-                        rx.icon(symbol, size=16, class_name="text-[var(--fw-accent)]"),
+                        ui.icon(symbol, size=16, class_name="text-[var(--ai-accent)]"),
                         rx.el.span(label, class_name="text-sm text-foreground"),
-                        class_name="flex items-center gap-3 rounded-sm bg-[var(--fw-tint)] px-4 py-3",
+                        class_name="flex items-center gap-3 rounded-sm bg-[var(--ai-tint)] px-4 py-3",
                     )
                     for symbol, label in zip(
-                        ("message-square", "panels-top-left", "layers"),
+                        ("Message01Icon", "Layout02Icon", "Layers01Icon"),
                         labels,
                         strict=True,
                     )
@@ -63,7 +57,7 @@ def _workflow_preview(icon: rx.Component, labels: tuple[str, ...]) -> rx.Compone
             class_name="w-full max-w-xs overflow-hidden rounded-xl border border-border bg-background",
         ),
         aria_hidden=True,
-        class_name="docs-framework-stage !p-7 sm:!p-9",
+        class_name="docs-workflow-preview flex items-center justify-center p-7 sm:p-9",
     )
 
 
@@ -87,7 +81,7 @@ def _workflow_card(
                 ),
                 rx.el.span(
                     "Recommended",
-                    class_name="rounded-sm bg-foreground px-2.5 py-1 text-xs font-book leading-4 text-background",
+                    class_name="rounded-full bg-foreground px-2.5 py-1 text-xs font-book leading-4 text-background",
                 )
                 if recommended
                 else rx.fragment(),
@@ -98,7 +92,7 @@ def _workflow_card(
             ),
             rx.el.div(
                 action,
-                rx.icon("arrow-right", size=16, aria_hidden=True),
+                ui.icon("ArrowRight01Icon", size=16, aria_hidden=True),
                 class_name="mt-auto flex items-center gap-2 pt-7 text-sm font-book text-foreground",
             ),
             class_name="flex flex-1 flex-col border-t border-border bg-background p-6 sm:p-8",
@@ -109,7 +103,7 @@ def _workflow_card(
         if recommended
         else None,
         custom_attrs={"data-tone": tone},
-        class_name="docs-ai-workflow-card docs-framework-panel flex min-w-0 flex-col overflow-hidden rounded-panel border border-border transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+        class_name="docs-ai-workflow-card docs-ai-card flex min-w-0 flex-col overflow-hidden rounded-panel border border-border shadow-small dark:shadow-none transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
 
 
@@ -117,6 +111,7 @@ def _workflow_card(
     set_path="/ai/",
     t="Build with AI",
     right_sidebar=False,
+    show_breadcrumb=False,
     description="Build in your browser with Reflex Build, or use Agent Toolkit with your own coding agent.",
 )
 def ai_landing() -> rx.Component:
@@ -132,9 +127,9 @@ def ai_landing() -> rx.Component:
                 "The most powerful way to build Reflex apps. Bring AI generation, live previews, testing, integrations, and deployment together in one workspace.",
                 "Explore Reflex Build",
                 ai_builder.overview.what_is_reflex_build.path,
-                "lavender",
+                "blue",
                 _workflow_preview(
-                    artwork("reflex_mark", class_name="w-5"),
+                    rx.image(src=rx.asset("favicon.svg"), alt="", class_name="size-5"),
                     (
                         "Plan and build with AI",
                         "Preview and test your app",

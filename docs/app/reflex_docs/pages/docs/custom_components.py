@@ -176,7 +176,7 @@ def download(download_url: str) -> rx.Component:
         underline="none",
         href=download_url,
         is_external=True,
-        class_name="text-secondary-9 hover:!text-secondary-9 bg-secondary-1 hover:bg-secondary-3 transition-bg cursor-pointer rounded-compact",
+        class_name="text-subtle-foreground hover:!text-subtle-foreground bg-background hover:bg-accent transition-bg cursor-pointer rounded-[6px]",
         title="Documentation",
     )
 
@@ -195,17 +195,15 @@ def table_rows(category: dict):
         rx.table.cell(name),
         rx.table.cell(updated_at),
         rx.table.cell(
-            rx.el.button(
+            rx.box(
                 rx.text(
                     "pip install " + category["package_name"],
                     as_="p",
-                    class_name="font-mono text-xs truncate flex-1 min-w-0",
+                    class_name="font-small truncate flex-1 min-w-0",
                 ),
                 get_icon(icon="copy", class_name="p-[5px]"),
                 on_click=rx.set_clipboard("pip install " + category["package_name"]),
-                type="button",
-                aria_label="Copy install command for " + category["package_name"],
-                class_name="flex flex-row gap-1.5 text-muted-foreground w-full items-center overflow-hidden border border-border bg-background hover:bg-muted transition-colors cursor-pointer rounded-compact px-3 min-h-9 max-w-[20rem] focus-visible:outline-2 focus-visible:outline-ring",
+                class_name="flex flex-row gap-1.5 text-subtle-foreground w-full items-center overflow-hidden border border-border bg-background hover:bg-accent transition-bg cursor-pointer shadow-small rounded-[6px] px-1.5 max-w-[20rem]",
             )
         ),
         rx.table.cell(download(category["download_url"])),
@@ -248,9 +246,7 @@ def component_grid():
 def create_pagination():
     return rx.hstack(
         rx.hstack(
-            rx.text(
-                "Rows per page", class_name="text-xs font-normal text-muted-foreground"
-            ),
+            rx.text("Rows per page", weight="bold", font_size="12px"),
             rx.select(
                 CustomComponentGalleryState.limits,
                 default_value="50",
@@ -263,27 +259,34 @@ def create_pagination():
             rx.text(
                 f"Page {CustomComponentGalleryState.current_page} of {CustomComponentGalleryState.total_pages}",
                 width="100px",
-                class_name="text-xs font-normal text-muted-foreground",
+                weight="bold",
+                font_size="12px",
             ),
-            button(
-                rx.icon("chevron-left", size=16),
-                on_click=CustomComponentGalleryState.previous,
-                disabled=CustomComponentGalleryState.offset == 0,
-                aria_label="Previous page",
-                variant="outline",
-                size="icon-sm",
-            ),
-            button(
-                rx.icon("chevron-right", size=16),
-                on_click=CustomComponentGalleryState.next,
-                disabled=(
-                    CustomComponentGalleryState.offset
-                    + CustomComponentGalleryState.current_limit
-                    >= CustomComponentGalleryState.number_of_rows
+            rx.button(
+                rx.icon(
+                    tag="chevron-left",
+                    on_click=CustomComponentGalleryState.previous,
+                    size=25,
+                    cursor="pointer",
                 ),
-                aria_label="Next page",
-                variant="outline",
-                size="icon-sm",
+                color_scheme="gray",
+                variant="surface",
+                size="1",
+                width="32px",
+                height="32px",
+            ),
+            rx.button(
+                rx.icon(
+                    tag="chevron-right",
+                    on_click=CustomComponentGalleryState.next,
+                    size=25,
+                    cursor="pointer",
+                ),
+                color_scheme="gray",
+                variant="surface",
+                size="1",
+                width="32px",
+                height="32px",
             ),
             align_items="center",
             spacing="1",
@@ -304,9 +307,9 @@ def custom_components() -> rx.Component:
                     text="Reflex has a growing ecosystem of custom components that you can use to build your apps. Below is a list of some of the custom components available for Reflex.",
                 ),
                 sorting_filters_dropdown_menu(),
-                class_name="flex flex-col w-full gap-4 justify-between items-start sm:flex-row sm:items-start [&>p]:mb-0",
+                class_name="flex flex-row w-full gap-12 justify-between items-center",
             ),
-            class_name="flex flex-col w-full gap-6",
+            class_name="flex flex-col w-full",
         ),
         component_grid(),
         create_pagination(),

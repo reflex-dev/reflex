@@ -1,6 +1,5 @@
 import reflex as rx
 import reflex_components_internal as ui
-from reflex_site_shared.components.marketing_button import button
 
 from reflex_docs.templates.docpage.feedback_state import FeedbackState
 
@@ -9,11 +8,9 @@ def request_integration_dialog() -> rx.Component:
     return ui.dialog(
         title="Request Integration",
         description="Let us know what integration you'd like to see added.",
-        trigger=button(
-            "Request integration",
-            variant="outline",
-            size="sm",
-            native_button=False,
+        trigger=rx.el.strong(
+            rx.el.u("here"),
+            class_name="cursor-pointer text-foreground decoration-primary",
         ),
         content=rx.el.form(
             ui.textarea(
@@ -24,11 +21,10 @@ def request_integration_dialog() -> rx.Component:
                 max_length=2000,
                 class_name="h-[6rem]",
             ),
-            button(
+            ui.button(
                 "Submit",
                 variant="primary",
                 size="md",
-                type="submit",
             ),
             on_submit=[
                 rx.run_script(
@@ -39,5 +35,4 @@ def request_integration_dialog() -> rx.Component:
             class_name="flex flex-col gap-4 w-full",
             reset_on_submit=True,
         ),
-        class_name="docs-integration-dialog rounded-panel border-border [&_[data-slot=dialog-title]]:font-book [&_[data-slot=dialog-title]]:tracking-tight",
     )

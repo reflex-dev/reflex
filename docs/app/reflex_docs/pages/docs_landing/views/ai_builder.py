@@ -8,6 +8,7 @@ from reflex_site_shared.integrations import get_integration_logo_url
 
 from reflex_docs.pages.docs import ai_builder as ai_builder_pages
 from reflex_docs.pages.docs_landing.views.artwork import artwork
+from reflex_docs.pages.docs_landing.views.mcp_artwork import mcp_artwork
 
 
 def get_integration_path() -> list:
@@ -88,8 +89,8 @@ def card(
                 )
                 if enterprise_only
                 else None,
-                rx.icon(
-                    "arrow-up-right",
+                ui.icon(
+                    "ArrowUpRight01Icon",
                     size=18,
                     aria_hidden=True,
                     class_name="ml-auto shrink-0",
@@ -126,7 +127,7 @@ def integration_icon_marquee(integration_name: str) -> rx.Component:
         ),
         ui.avatar.fallback(
             integration_name[0],
-            class_name="text-secondary-12 text-base font-semibold uppercase size-full",
+            class_name="text-foreground text-base font-semibold uppercase size-full",
             unstyled=True,
         ),
         unstyled=True,
@@ -146,7 +147,7 @@ def integrations_marquee() -> rx.Component:
             gradient=False,
             class_name="h-auto w-full overflow-hidden",
             speed=25,
-            pause_on_hover=True,
+            pause_on_hover=False,
         ),
         marquee(
             *[integration_icon_marquee(name) for name in integration_names],
@@ -154,7 +155,7 @@ def integrations_marquee() -> rx.Component:
             gradient=False,
             class_name="h-auto w-full overflow-hidden",
             speed=25,
-            pause_on_hover=True,
+            pause_on_hover=False,
         ),
         class_name="docs-ai-integrations flex w-full flex-col gap-4",
     )
@@ -166,11 +167,11 @@ def ai_builder_section() -> rx.Component:
             rx.el.div(
                 rx.el.h2(
                     "AI Builder",
-                    class_name="text-secondary-12 text-3xl font-book tracking-tight",
+                    class_name="text-foreground text-3xl font-medium tracking-tight",
                 ),
                 rx.el.p(
                     "Learn how to build applications with Reflex AI.",
-                    class_name="text-secondary-11 text-sm font-normal",
+                    class_name="text-muted-foreground text-sm font-normal",
                 ),
                 class_name="flex flex-col gap-4",
             ),
@@ -195,10 +196,7 @@ def ai_builder_section() -> rx.Component:
                 card(
                     title="MCP",
                     description="The Reflex Model Context Protocol (MCP) provides AI assistants and coding tools with structured access to Reflex documentation and component information.",
-                    content=artwork(
-                        "ai_mcp",
-                        "w-full",
-                    ),
+                    content=mcp_artwork(),
                     href=ai_builder_pages.integrations.mcp_overview.path,
                     tone="mint",
                     enterprise_only=True,

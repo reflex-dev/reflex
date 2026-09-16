@@ -2,15 +2,14 @@
 
 import reflex as rx
 import reflex_components_internal as ui
-from reflex_components_internal.blocks.demo_form import demo_form_open_cs
 from reflex_site_shared.components.marketing_button import button
 from reflex_site_shared.constants import REFLEX_BUILD_URL
 
-from reflex_docs.pages.docs_landing.views.artwork import artwork
+from reflex_docs.pages.docs_landing.views.cta_artwork import cta_artwork
 
 
 def docs_cta() -> rx.Component:
-    """Render the closing actions alongside the original product illustration."""
+    """Render the closing actions alongside the component illustration."""
     return rx.el.section(
         rx.el.div(
             rx.el.div(
@@ -30,6 +29,7 @@ def docs_cta() -> rx.Component:
                             "Try for free",
                             ui.icon("ArrowRight01Icon", aria_hidden=True),
                             variant="primary",
+                            class_name="!px-6",
                             native_button=False,
                         ),
                         href=REFLEX_BUILD_URL,
@@ -37,20 +37,21 @@ def docs_cta() -> rx.Component:
                         rel="noopener noreferrer",
                         class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                     ),
-                    button(
-                        "Book a Demo",
-                        variant="ghost",
-                        aria_haspopup="dialog",
-                        on_click=rx.call_function(demo_form_open_cs.set_value(True)),
+                    rx.el.elements.a(
+                        button(
+                            "Book a Demo",
+                            variant="ghost",
+                            class_name="!px-6",
+                            native_button=False,
+                        ),
+                        href="https://reflex.dev/demo/",
+                        class_name="rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
                     ),
                     class_name="flex flex-wrap items-center gap-x-5 gap-y-3",
                 ),
                 class_name="relative z-10 flex flex-col items-start gap-6 p-6 sm:p-10 lg:py-14 lg:pl-12 lg:pr-0",
             ),
-            artwork(
-                "cta_illustration",
-                "docs-cta-art self-center w-full max-lg:hidden",
-            ),
+            cta_artwork(),
             class_name="grid lg:grid-cols-[1.1fr_1fr] items-center overflow-hidden rounded-panel border border-border-subtle bg-muted",
         ),
         aria_labelledby="docs-cta-title",

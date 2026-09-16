@@ -134,7 +134,7 @@ def primary_button(
     *,
     label: rx.Var[str],
 ) -> rx.Component:
-    return rx.button(label, rest, class_name="bg-primary-9 text-white")
+    return rx.button(label, rest, class_name="bg-primary text-white")
 
 
 def index():
@@ -166,7 +166,7 @@ def primary_button(
     *,
     label: rx.Var[str],
 ) -> rx.Component:
-    class_name = rest.get("class_name", "") + " bg-primary-9 text-white"
+    class_name = rest.get("class_name", "") + " bg-primary text-white"
     return rx.button(label, rest.merge({"class_name": class_name}))
 ```
 
@@ -211,7 +211,7 @@ def card(
     return rx.box(
         rx.heading(title, as_="h2"),
         children,
-        class_name="border border-secondary-5 rounded-lg p-4",
+        class_name="border border-border rounded-lg p-4",
     )
 
 

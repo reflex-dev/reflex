@@ -1,7 +1,7 @@
 import reflex as rx
 from reflex.utils.format import to_snake_case, to_title_case
+from reflex_site_shared.components.icons import get_icon
 
-from reflex_docs.components.component_catalog import component_category
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp, text_comp_2
 
 
@@ -44,23 +44,43 @@ def component_grid():
         components,
         prefix: str = "",
     ):
-        categories = [
-            component_category(
-                title=get_display_name(category),
-                href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
-                description=f"{len(components[category])} components",
-                links=[
-                    (
-                        get_display_name(c[0]),
-                        get_component_link(category=category, clist=c, prefix=prefix),
-                    )
-                    for c in get_components_for_category(category, components[category])
-                ],
+        sidebar = [
+            rx.box(
+                rx.link(
+                    rx.el.h2(
+                        get_display_name(category),
+                        class_name="font-large text-foreground",
+                    ),
+                    get_icon(
+                        "new_tab", class_name="text-muted-foreground [&>svg]:size-4"
+                    ),
+                    href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
+                    underline="none",
+                    class_name="px-6 py-4 bg-background hover:bg-accent transition-bg flex flex-row justify-between items-center !text-foreground",
+                ),
+                rx.box(
+                    *[
+                        rx.link(
+                            get_display_name(c[0]),
+                            href=get_component_link(
+                                category=category,
+                                clist=c,
+                                prefix=prefix,
+                            ),
+                            class_name="font-small text-muted-foreground hover:!text-primary transition-color w-fit",
+                        )
+                        for c in get_components_for_category(
+                            category, components[category]
+                        )
+                    ],
+                    class_name="flex flex-col gap-2.5 px-6 py-4 border-t border-border",
+                ),
+                class_name="flex flex-col border border-border rounded-xl bg-muted shadow-large overflow-hidden",
             )
             for category in components
         ]
 
-        return categories
+        return sidebar
 
     core = generate_gallery(
         components=component_list,
@@ -73,7 +93,7 @@ def component_grid():
     return rx.box(
         rx.box(
             *core,
-            class_name="flex flex-col",
+            class_name="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6",
         ),
         rx.box(
             h2_comp(
@@ -84,7 +104,7 @@ def component_grid():
             ),
             rx.box(
                 *graphs,
-                class_name="flex flex-col",
+                class_name="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6",
             ),
             class_name="flex flex-col",
         ),

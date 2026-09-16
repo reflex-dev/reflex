@@ -114,20 +114,9 @@ def test_external_links_bypass_the_router(navbar):
     assert _collect_links(navbar.github_button()) == [("anchor", GITHUB_URL)]
 
 
-def test_docs_logo_returns_to_internal_overview(navbar):
-    """The Docs logo resolves its overview destination through the docs basename."""
+def test_docs_logo_returns_to_docs_overview(navbar):
+    """The router adds the docs mount exactly once to the overview link."""
     assert _collect_links(navbar.logo()) == [("router", "/")]
-
-
-def test_github_badge_combines_both_projects(navbar, monkeypatch):
-    """The displayed star count sums both projects and identifies the total."""
-    monkeypatch.setattr(navbar, "GITHUB_STARS", 12500)
-    monkeypatch.setattr(navbar, "XY_GITHUB_STARS", 2500)
-    button = navbar.github_button()
-    assert "15K combined stars for Reflex and Reflex XY" in str(
-        button.custom_attrs["aria-label"]
-    )
-    assert "15K" in str(button.children[-1])
 
 
 def test_reflex_el_a_and_elements_a_are_not_interchangeable():
@@ -139,3 +128,29 @@ def test_reflex_el_a_and_elements_a_are_not_interchangeable():
     """
     assert _collect_links(rx.el.a(href="/x/")) == [("router", "/x/")]
     assert _collect_links(rx.el.elements.a(href="/x/")) == [("anchor", "/x/")]
+
+
+def test_ai_overview_is_in_the_ai_navbar_section(navbar):
+    """The AI landing route remains selected when the router strips its slash."""
+    rendered = str(navbar.menu_item("Build with AI", "/ai/", "ai"))
+    assert '=== "/ai"' in rendered
+    framework = str(
+        navbar.menu_item("Framework", "/getting-started/introduction/", "framework")
+    )
+    assert '=== "/ai"' in framework
+
+
+def test_desktop_and_mobile_demo_actions_link_to_marketing(navbar):
+    """Both navbar layouts navigate to the booking page outside the docs mount."""
+    links = _collect_links(navbar.navigation_menu())
+    assert links.count(("anchor", "https://reflex.dev/demo/")) == 2
+    assert ("router", "/demo/") not in links
+
+
+def test_section_links_hover_with_text_only(navbar):
+    """Keep section navigation free of button hover backgrounds."""
+    item = navbar.menu_item("Framework", "/getting-started/introduction/", "framework")
+    link = item.children[0]
+    assert all(child.tag != "GradientButton" for child in link.children)
+    assert "hover:text-muted-foreground" in str(link.class_name)
+    assert "hover:bg-" not in str(link.class_name)

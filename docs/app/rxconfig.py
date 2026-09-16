@@ -17,7 +17,7 @@ config = rx.Config(
     telemetry_enabled=False,
     plugins=[
         rx.plugins.TailwindV4Plugin(),
-        SharedSiteStylesPlugin(editorial=True),
+        SharedSiteStylesPlugin(),
         rx.plugins.SitemapPlugin(trailing_slash="always"),
         AgentFilesPlugin(),
     ],
