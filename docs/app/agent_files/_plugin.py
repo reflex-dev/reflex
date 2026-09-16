@@ -881,7 +881,7 @@ def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
 class AgentFilesPlugin(Plugin):
     def post_build(self, **context):
         """Complete agent exports from the final canonical page content."""
-        from ._rendered import export_rendered_pages
+        from agent_files._rendered import export_rendered_pages
 
         export_rendered_pages(context["static_dir"], get_config().frontend_path)
 

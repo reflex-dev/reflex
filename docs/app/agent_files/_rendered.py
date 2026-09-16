@@ -166,7 +166,7 @@ def rendered_content(html: str, page_url: str) -> tuple[str, str]:
 
 def export_rendered_pages(static_dir: Path, frontend_path: str) -> None:
     """Complete canonical-page exports and discovery files after prerendering."""
-    from ._plugin import (
+    from agent_files._plugin import (
         MarkdownIndexEntry,
         _extract_markdown_title,
         _markdown_directive,
