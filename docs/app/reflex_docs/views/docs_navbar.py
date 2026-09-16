@@ -36,8 +36,10 @@ def github_button() -> rx.Component:
 
 
 def logo() -> rx.Component:
-    return rx.el.a(
-        rx.el.div(
+    """Link each wordmark to its respective site overview."""
+    focus_class = "rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+    return rx.el.div(
+        rx.el.elements.a(
             rx.image(
                 src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
                 alt="Reflex Logo",
@@ -48,8 +50,11 @@ def logo() -> rx.Component:
                 alt="Reflex Logo",
                 class_name="shrink-0 hidden dark:block",
             ),
+            href="https://reflex.dev/",
+            aria_label="Reflex home",
+            class_name=focus_class,
         ),
-        rx.el.div(
+        rx.el.a(
             rx.image(
                 src=f"{REFLEX_ASSETS_CDN}logos/light/docs.svg",
                 alt="Docs Logo",
@@ -62,10 +67,11 @@ def logo() -> rx.Component:
                 class_name="shrink-0 hidden dark:block",
                 style={"filter": "grayscale(1) brightness(2)"},
             ),
+            href="/",
+            aria_label="Docs overview",
+            class_name=focus_class,
         ),
-        href="/",
-        aria_label="Reflex Docs home",
-        class_name="flex flex-row gap-2.5 items-center shrink-0 mr-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
+        class_name="flex flex-row gap-2.5 items-center shrink-0 mr-10",
     )
 
 

@@ -116,7 +116,10 @@ def test_external_links_bypass_the_router(navbar):
 
 def test_docs_logo_returns_to_docs_overview(navbar):
     """The router adds the docs mount exactly once to the overview link."""
-    assert _collect_links(navbar.logo()) == [("router", "/")]
+    assert _collect_links(navbar.logo()) == [
+        ("anchor", "https://reflex.dev/"),
+        ("router", "/"),
+    ]
 
 
 def test_reflex_el_a_and_elements_a_are_not_interchangeable():
@@ -158,9 +161,11 @@ def test_section_links_hover_with_text_only(navbar):
 
 def test_logo_has_accessible_name_and_keyboard_focus(navbar):
     """The docs home link must be named and visible during keyboard navigation."""
-    link = navbar.logo()
-    assert "Reflex Docs home" in str(link)
-    assert "focus-visible:outline-ring" in str(link.class_name)
+    for link, label in zip(
+        navbar.logo().children, ("Reflex home", "Docs overview"), strict=True
+    ):
+        assert label in str(link)
+        assert "focus-visible:outline-ring" in str(link.class_name)
 
 
 def test_navigation_switches_to_mobile_before_links_overflow(navbar):
