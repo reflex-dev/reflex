@@ -6,7 +6,7 @@ import reflex as rx
 
 **~20 min hands-on** · Build a small data dashboard where users can input data that renders in a table and a graph.
 
-This tutorial does not assume any existing Reflex knowledge, but we do recommend checking out the quick [Basics Guide](/docs/getting-started/basics) first. The techniques you'll learn are fundamental to any Reflex app.
+This tutorial does not assume any existing Reflex knowledge, but we do recommend checking out the quick [Basics Guide](/docs/getting-started/basics/) first. The techniques you'll learn are fundamental to any Reflex app.
 
 This tutorial is divided into several sections:
 
@@ -41,10 +41,16 @@ class State5(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
     users_for_graph: list[dict] = []
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
+        self.add_user_dialog_open = False
 
         return rx.toast.info(
             f"User {form_data['name']} has been added.",
@@ -109,9 +115,7 @@ def add_customer_button5() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -123,6 +127,8 @@ def add_customer_button5() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State5.add_user_dialog_open,
+        on_open_change=State5.set_add_user_dialog_open,
     )
 
 
@@ -216,7 +222,7 @@ rx.box(
 
 ## Setup
 
-1. [Install Reflex](/docs/getting-started/installation) if you haven't already.
+1. [Install Reflex](/docs/getting-started/installation/) if you haven't already.
 2. Create a folder called `dashboard_tutorial` and `cd` into it.
 3. Run `uv init` and `uv add reflex`.
 4. Run `uv run reflex init` and choose template `0` (the blank template).
@@ -226,7 +232,7 @@ rx.box(
 
 ### Starter code
 
-The `reflex init` command scaffolds an `rxconfig.py` (app [config](/docs/advanced-onboarding/configuration)), an `assets/` folder for static files, and a `dashboard_tutorial/dashboard_tutorial.py` module containing your app. Open that module and replace its contents — we'll build the app up from scratch.
+The `reflex init` command scaffolds an `rxconfig.py` (app [config](/docs/advanced-onboarding/configuration/)), an `assets/` folder for static files, and a `dashboard_tutorial/dashboard_tutorial.py` module containing your app. Open that module and replace its contents — we'll build the app up from scratch.
 
 A minimal Reflex page is just a component function plus an app that registers it:
 
@@ -310,7 +316,7 @@ def index() -> rx.Component:
 
 ## Dynamic data with State
 
-The table above is static — the rows are hardcoded. To make it dynamic, we move the data onto **state**: a Python class whose fields ([state vars](/docs/state/overview)) hold the app's data and whose methods ([event handlers](/docs/events/events-overview)) mutate them.
+The table above is static — the rows are hardcoded. To make it dynamic, we move the data onto **state**: a Python class whose fields ([state vars](/docs/state/overview/)) hold the app's data and whose methods ([event handlers](/docs/events/events-overview/)) mutate them.
 
 We'll model each row as a `User` dataclass so we can access fields by name (`user.name`) instead of by index:
 
@@ -332,7 +338,7 @@ class State(rx.State):
     ]
 ```
 
-To iterate a list state var, use [`rx.foreach`](/docs/components/rendering-iterables) — it takes an iterable and a function that renders each item. Here `show_user` receives a `User` and returns a `table.row`:
+To iterate a list state var, use [`rx.foreach`](/docs/components/rendering-iterables/) — it takes an iterable and a function that renders each item. Here `show_user` receives a `User` and returns a `table.row`:
 
 ```python
 def show_user(user: User) -> rx.Component:
@@ -363,7 +369,7 @@ def index() -> rx.Component:
 ```md alert info
 # Why not a `for` loop?
 
-A regular `for` loop runs at compile time, but state vars change at runtime — so the rendered rows wouldn't update. `rx.foreach` tells the compiler to re-render when the state var changes. See [compile-time vs runtime](/docs/getting-started/basics#compile-time-vs.-runtime).
+A regular `for` loop runs at compile time, but state vars change at runtime — so the rendered rows wouldn't update. `rx.foreach` tells the compiler to re-render when the state var changes. See [compile-time vs runtime](/docs/getting-started/basics/#compile-time-vs.-runtime).
 ```
 
 ```python exec
@@ -421,7 +427,7 @@ The table looks the same, but the rows now come from state — next we'll add a 
 
 ## Add data with a form
 
-We build a form using `rx.form`, which takes several components such as `rx.input` and `rx.select`, which represent the form fields that allow you to add information to submit with the form. Check out the [form](/docs/library/forms/form) docs for more information on form components.
+We build a form using `rx.form`, which takes several components such as `rx.input` and `rx.select`, which represent the form fields that allow you to add information to submit with the form. Check out the [form](/docs/library/forms/form/) docs for more information on form components.
 
 The `rx.input` component takes in several props. The `placeholder` prop is the text that is displayed in the input field when it is empty. The `name` prop is the name of the input field, which gets passed through in the dictionary when the form is submitted. The `required` prop is a boolean that determines if the input field is required.
 
@@ -442,7 +448,7 @@ rx.form(
 )
 ```
 
-This form is all very compact as you can see from the example, so we need to add some styling to make it look better. We can do this by adding a `vstack` component around the form fields. The `vstack` component stacks the form fields vertically. Check out the [layout](/docs/styling/layout) docs for more information on how to layout your app.
+This form is all very compact as you can see from the example, so we need to add some styling to make it look better. We can do this by adding a `vstack` component around the form fields. The `vstack` component stacks the form fields vertically. Check out the [layout](/docs/styling/layout/) docs for more information on how to layout your app.
 
 ```python demo
 rx.form(
@@ -463,7 +469,7 @@ rx.form(
 
 Now you have probably realised that we have all the form fields, but we have no way to submit the form. We can add a submit button to the form by adding a `rx.button` component to the `vstack` component. The `rx.button` component takes in the text that is displayed on the button and the `type` prop which is the type of button. The `type` prop is set to `submit` so that the form is submitted when the button is clicked.
 
-In addition to this we need a way to update the `users` state variable when the form is submitted. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events-overview).
+In addition to this we need a way to update the `users` state variable when the form is submitted. All state changes are handled through functions in the state class, called [event handlers](/docs/events/events-overview/).
 
 Components have special props called event triggers, such as `on_submit`, that can be used to make components interactive. Event triggers connect components to event handlers, which update the state. Different event triggers expect the event handler that you hook them up to, to take in different arguments (and some do not take in any arguments).
 
@@ -645,7 +651,7 @@ rx.dialog.trigger(
 )
 ```
 
-After the trigger we have the `rx.dialog.content` which contains everything within our dialog, including a title, a description and our form. The first way to close the dialog is without submitting the form and the second way is to close the dialog by submitting the form as shown below. This requires two `rx.dialog.close` components within the dialog.
+After the trigger we have the `rx.dialog.content` which contains everything within our dialog, including a title, a description and our form. The Cancel button uses `rx.dialog.close`. The Submit button stays inside the form, and the `on_submit` handler closes the controlled dialog only after the required fields validate.
 
 ```python
 (
@@ -657,9 +663,31 @@ After the trigger we have the `rx.dialog.content` which contains everything with
         ),
     ),
 )
-rx.dialog.close(
-    rx.button("Submit", type="submit"),
-)
+rx.button("Submit", type="submit")
+```
+
+To close the dialog after a valid submission, add a dialog-specific state class. The browser will not call `add_user` while a required field is empty, so the dialog remains open for native validation in that case.
+
+```python exec
+class DialogState3(rx.State):
+    users: list[User] = [
+        User(name="Danilo Sousa", email="danilo@example.com", gender="Male"),
+        User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
+    ]
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
+
+    def add_user(self, form_data: dict):
+        self.users.append(User(**form_data))
+        self.add_user_dialog_open = False
+
+        return rx.toast.info(
+            f"User has been added: {form_data}.",
+            position="bottom-right",
+        )
 ```
 
 The total code for the dialog with the form in it is below.
@@ -700,21 +728,21 @@ rx.dialog.root(
                             color_scheme="gray",
                         ),
                     ),
-                    rx.dialog.close(
-                        rx.button("Submit", type="submit"),
-                    ),
+                    rx.button("Submit", type="submit"),
                     spacing="3",
                     justify="end",
                 ),
                 direction="column",
                 spacing="4",
             ),
-            on_submit=State3.add_user,
+            on_submit=DialogState3.add_user,
             reset_on_submit=False,
         ),
         # max_width is used to limit the width of the dialog
         max_width="450px",
     ),
+    open=DialogState3.add_user_dialog_open,
+    on_open_change=DialogState3.set_add_user_dialog_open,
 )
 ```
 
@@ -756,20 +784,20 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
                     direction="column",
                     spacing="4",
                 ),
-                on_submit=State3.add_user,
+                on_submit=DialogState3.add_user,
                 reset_on_submit=False,
             ),
             max_width="450px",
         ),
+        open=DialogState3.add_user_dialog_open,
+        on_open_change=DialogState3.set_add_user_dialog_open,
     )
 ```
 
@@ -785,7 +813,7 @@ rx.vstack(
             ),
         ),
         rx.table.body(
-            rx.foreach(State3.users, show_user),
+            rx.foreach(DialogState3.users, show_user),
         ),
         variant="surface",
         size="3",
@@ -812,9 +840,15 @@ class State(rx.State):
         User(name="Danilo Sousa", email="danilo@example.com", gender="Male"),
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
+        self.add_user_dialog_open = False
 
 
 def show_user(user: User):
@@ -861,9 +895,7 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -875,6 +907,8 @@ def add_customer_button() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State.add_user_dialog_open,
+        on_open_change=State.set_add_user_dialog_open,
     )
 
 
@@ -968,10 +1002,16 @@ class State4(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
     users_for_graph: list[dict] = []
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
+        self.add_user_dialog_open = False
 
         return rx.toast.info(
             f"User {form_data['name']} has been added.",
@@ -1025,9 +1065,7 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -1039,6 +1077,8 @@ def add_customer_button() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State4.add_user_dialog_open,
+        on_open_change=State4.set_add_user_dialog_open,
     )
 
 
@@ -1092,10 +1132,16 @@ class State(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
     users_for_graph: list[dict] = []
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
+        self.add_user_dialog_open = False
 
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
@@ -1153,9 +1199,7 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -1167,6 +1211,8 @@ def add_customer_button() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State.add_user_dialog_open,
+        on_open_change=State.set_add_user_dialog_open,
     )
 
 
@@ -1263,9 +1309,9 @@ The most important one is `theme` which allows you to customize the look and fee
 
 The `radius` prop sets the global radius value for the app that is inherited by all components that have a `radius` prop. It can be overwritten locally for a specific component by manually setting the `radius` prop.
 
-The `accent_color` prop sets the accent color of the app. See the [theme docs](/docs/library/other/theme) for the full list of options.
+The `accent_color` prop sets the accent color of the app. See the [theme docs](/docs/library/other/theme/) for the full list of options.
 
-To see other props that can be set at the app level check out this [documentation](/docs/styling/theming)
+To see other props that can be set at the app level check out this [documentation](/docs/styling/theming/)
 
 ```python
 app = rx.App(
@@ -1360,10 +1406,16 @@ class State(rx.State):
         User(name="Zahra Ambessa", email="zahra@example.com", gender="Female"),
     ]
     users_for_graph: list[dict] = []
+    add_user_dialog_open: bool = False
+
+    def set_add_user_dialog_open(self, open_: bool):
+        """Set whether the add-user dialog is open."""
+        self.add_user_dialog_open = open_
 
     def add_user(self, form_data: dict):
         self.users.append(User(**form_data))
         self.transform_data()
+        self.add_user_dialog_open = False
 
     def transform_data(self):
         """Transform user gender group data into a format suitable for visualization in graphs."""
@@ -1423,9 +1475,7 @@ def add_customer_button() -> rx.Component:
                                 color_scheme="gray",
                             ),
                         ),
-                        rx.dialog.close(
-                            rx.button("Submit", type="submit"),
-                        ),
+                        rx.button("Submit", type="submit"),
                         spacing="3",
                         justify="end",
                     ),
@@ -1437,6 +1487,8 @@ def add_customer_button() -> rx.Component:
             ),
             max_width="450px",
         ),
+        open=State.add_user_dialog_open,
+        on_open_change=State.set_add_user_dialog_open,
     )
 
 

@@ -44,10 +44,11 @@ def test_legacy_global_ref_false_drops_the_name() -> None:
     assert not cs._is_global
 
 
-def test_legacy_path_warns(capsys: pytest.CaptureFixture) -> None:
+def test_legacy_path_warns(caplog: pytest.LogCaptureFixture) -> None:
     """All the deprecation noise lives on the old entry point, not the new API."""
     rx._x.client_state("warned", 0)
-    assert "rx._x.client_state" in capsys.readouterr().out
+    assert "rx._x.client_state" in caplog.text
 
+    caplog.clear()
     rx.client_state(0, name="quiet")
-    assert "deprecat" not in capsys.readouterr().out.lower()
+    assert "deprecat" not in caplog.text.lower()

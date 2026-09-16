@@ -179,6 +179,8 @@ doc_markdown_sources: dict[str, str] = {}
 
 
 manual_titles = {
+    "docs/ai_builder/apis.md": "APIs",
+    "docs/ai_builder/urls.md": "URLs",
     "docs/database/overview.md": "Database Overview",
     "docs/custom-components/overview.md": "Custom Components Overview",
     "docs/custom-components/command-reference.md": "Custom Component CLI Reference",
@@ -268,7 +270,7 @@ def extract_doc_description(
     Returns:
         A cleaned, truncated description, or None.
     """
-    min_len = 120
+    min_len = 40
     if metadata:
         for key in ("meta_description", "description"):
             value = metadata.get(key)
@@ -316,8 +318,8 @@ def extract_doc_description(
             *(f"{n}." for n in range(1, 10)),
         )
         # Accumulate prose across paragraph breaks until the description is
-        # substantial (~120 chars) so a short opening sentence doesn't become a
-        # too-short meta description. Stop at the first structural line
+        # a useful summary (~40 chars) so a short opening sentence doesn't become a
+        # generic meta description. Stop at the first structural line
         # (heading/list/code) once some prose has been collected.
         for raw in text.splitlines():
             line = raw.strip()
@@ -359,6 +361,7 @@ def make_docpage(
     title: str,
     doc_virtual: str,
     render_fn,
+    actual_path: str,
     description: str | None = None,
     image: str | None = None,
 ):
@@ -367,9 +370,13 @@ def make_docpage(
     render_fn.__module__ = ".".join(doc_path.parts[:-1])
     render_fn.__name__ = doc_path.stem
     render_fn.__qualname__ = doc_path.stem
-    return docpage(set_path=route, t=title, description=description, image=image)(
-        render_fn
-    )
+    return docpage(
+        set_path=route,
+        t=title,
+        description=description,
+        image=image,
+        source_path=actual_path,
+    )(render_fn)
 
 
 CHANGELOG_VIRTUAL_PREFIX = "docs/changelog/"
@@ -389,7 +396,7 @@ def handle_changelog_doc(doc: str, actual_path: str, resolved: ResolvedDoc):
         toc = [(level, text) for level, text in toc if level <= 2]
         return ((toc, source), body)
 
-    return make_docpage(resolved.route, resolved.display_title, doc, comp)
+    return make_docpage(resolved.route, resolved.display_title, doc, comp, actual_path)
 
 
 def handle_library_doc(
@@ -486,6 +493,7 @@ def get_component_docgen(virtual_doc: str, actual_path: str, title: str):
         resolved.display_title,
         virtual_doc,
         comp,
+        actual_path,
         description=description,
         image=image,
     )

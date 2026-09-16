@@ -68,7 +68,7 @@ def HybridProperties():
             return "yes" if self.last_name else "no"
 
         @has_last_name.var
-        def has_last_name(cls) -> Var[str]:
+        def _has_last_name_var(cls) -> Var[str]:
             """The frontend code for the `has_last_name` hybrid property.
 
             Returns:

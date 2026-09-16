@@ -924,11 +924,12 @@ def deploy(
         import importlib.metadata
 
         rx_version = version.parse(importlib.metadata.version("reflex"))
-        breaking_version = version.parse("0.7.6")
+        # The 7-argument export_fn (with upload_db) landed in reflex 0.7.7.
+        breaking_release = (0, 7, 7)
         # Try zipping backend first
         try:
-            # Check if the reflex version is >= 0.7.6
-            if rx_version <= breaking_version:
+            # Check if the reflex version predates 0.7.7
+            if rx_version.release < breaking_release:
                 export_fn(
                     str(temporary_dir_path),
                     server_url,
@@ -955,8 +956,8 @@ def deploy(
 
         # Zip frontend
         try:
-            # Check if the reflex version is >= 0.7.6
-            if rx_version <= breaking_version:
+            # Check if the reflex version predates 0.7.7
+            if rx_version.release < breaking_release:
                 export_fn(
                     str(temporary_dir_path), server_url, host_url, True, False, True
                 )  # pyright: ignore[reportCallIssue]

@@ -16,8 +16,6 @@ The map components in Reflex Enterprise provide interactive mapping capabilities
 For advanced Leaflet features, refer to the [Leaflet documentation](https://leafletjs.com/reference.html).
 ```
 
-🌍 **[View Live Demo](https://map.reflex.run)** - See the map components in action with interactive examples.
-
 ## Installation & Setup
 
 Map components are included with `reflex-enterprise`. No additional installation is required.

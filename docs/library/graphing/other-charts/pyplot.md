@@ -55,7 +55,14 @@ def create_contour_plot():
 
 def pyplot_simple_example():
     return rx.card(
-        pyplot(create_contour_plot(), width="100%", height="400px"),
+        pyplot(
+            create_contour_plot(),
+            alt="Filled contour plot of a two-dimensional function",
+            loading="lazy",
+            decoding="async",
+            width="100%",
+            height="400px",
+        ),
         bg_color="#ffffff",
         width="100%",
     )
@@ -92,7 +99,14 @@ def create_line_plot():
 
 def pyplot_line_example():
     return rx.card(
-        pyplot(create_line_plot(), width="100%", height="400px"),
+        pyplot(
+            create_line_plot(),
+            alt="Sine and cosine curves from zero to ten",
+            loading="lazy",
+            decoding="async",
+            width="100%",
+            height="400px",
+        ),
         bg_color="#ffffff",
         width="100%",
     )
@@ -121,7 +135,14 @@ def create_bar_chart():
 
 def pyplot_bar_example():
     return rx.card(
-        pyplot(create_bar_chart(), width="100%", height="400px"),
+        pyplot(
+            create_bar_chart(),
+            alt="Fruit inventory: apples 23, oranges 17, bananas 35, pears 29",
+            loading="lazy",
+            decoding="async",
+            width="100%",
+            height="400px",
+        ),
         bg_color="#ffffff",
         width="100%",
     )
@@ -199,8 +220,22 @@ def pyplot_example():
     return rx.vstack(
         rx.card(
             rx.color_mode_cond(
-                pyplot(PyplotState.fig_light, width="100%", height="100%"),
-                pyplot(PyplotState.fig_dark, width="100%", height="100%"),
+                pyplot(
+                    PyplotState.fig_light,
+                    alt="Scatter plot of the current randomized points",
+                    loading="lazy",
+                    decoding="async",
+                    width="100%",
+                    height="100%",
+                ),
+                pyplot(
+                    PyplotState.fig_dark,
+                    alt="Scatter plot of the current randomized points",
+                    loading="lazy",
+                    decoding="async",
+                    width="100%",
+                    height="100%",
+                ),
             ),
             rx.vstack(
                 rx.hstack(

@@ -41,7 +41,7 @@ def client_state(
             "it global; an unnamed var is scoped to the component tree that "
             "first uses it, so `global_ref` is no longer needed."
         ),
-        deprecation_version="0.9.9",
+        deprecation_version="0.9.12",
         removal_version="1.0",
     )
     # `global_ref=False` meant "anonymous": the name was never a store key, so

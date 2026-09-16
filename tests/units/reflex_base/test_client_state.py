@@ -384,11 +384,11 @@ def test_name_addressed_paths_require_global(accessor: str) -> None:
             getattr(cs, accessor)
 
 
-def test_set_value_delegates_and_deprecates(capsys: pytest.CaptureFixture) -> None:
+def test_set_value_delegates_and_deprecates(caplog: pytest.LogCaptureFixture) -> None:
     """``set_value`` still works, and says to use ``set``."""
     cs = client_state(0, name="counter")
     assert str(cs.set_value(42)) == str(cs.set(42))
-    assert "set_value" in capsys.readouterr().out
+    assert "set_value" in caplog.text
 
 
 def test_var_renders_as_null() -> None:
@@ -537,7 +537,7 @@ def test_retrieve_with_callback_serializes_the_handler() -> None:
     cs = client_state(0, name="counter")
     args = {str(k): str(v) for k, v in cs.retrieve(RetrieveState.got).args}
     assert args["var_name"] == '"counter"'
-    assert "queueEvents" in args["callback"]
+    assert "addEvents" in args["callback"]
     assert "got" in args["callback"]
 
 

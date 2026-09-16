@@ -7,7 +7,7 @@ import inspect
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.constants import Dirs
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import GenericType
@@ -59,7 +59,7 @@ def scoped_loop_var(name: str, var_type: GenericType) -> Var:
 
 
 @dataclasses.dataclass(frozen=True)
-class IterTag(Tag):
+class IterTag(CommonTag):
     """An iterator tag."""
 
     # The var to iterate over.

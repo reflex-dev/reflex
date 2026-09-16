@@ -433,7 +433,7 @@ class ClientStateVar(Var):
                     "Use .set instead -- `cs.set` for the bare setter, "
                     "`cs.set(value)` to bind a value."
                 ),
-                deprecation_version="0.9.9",
+                deprecation_version="0.9.12",
                 removal_version="1.0",
             )
             return self.set(value)
