@@ -401,10 +401,13 @@ def test_flush_resolves_provider_configured_after_enable(
     provider.add_span_processor(
         BatchSpanProcessor(exporter, schedule_delay_millis=60_000)
     )
+    from opentelemetry.util._once import Once
+
     monkeypatch.setattr(trace, "_TRACER_PROVIDER", None)
+    monkeypatch.setattr(trace, "_TRACER_PROVIDER_SET_ONCE", Once())
     otel.enable()
     try:
-        monkeypatch.setattr(trace, "_TRACER_PROVIDER", provider)
+        trace.set_tracer_provider(provider)
         with otel._tracer.start_as_current_span("compile"):
             pass
 
