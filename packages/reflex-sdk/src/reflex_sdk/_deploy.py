@@ -56,8 +56,6 @@ class UploadReservation:
     deployment_id: uuid.UUID
     backend: UploadTarget
     frontend: UploadTarget
-    # How long the upload URLs stay valid, in seconds.
-    expires_in: int
 
 
 # Status messages the approval flow publishes when a build never runs, and the one
