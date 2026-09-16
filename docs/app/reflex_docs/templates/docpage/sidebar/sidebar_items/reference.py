@@ -14,36 +14,11 @@ def get_sidebar_items_changelog():
 def get_sidebar_items_api_reference():
     from reflex_docs.pages.docs import api_reference, apiref
 
-    # Ordered so related symbols sit together: app setup, state, components,
-    # events, vars, then the standalone topic pages.
-    routes = [
-        api_reference.app,
-        api_reference.config,
-        apiref.env_vars_doc,
-        api_reference.state,
-        api_reference.state_manager,
-        api_reference.component,
-        api_reference.component_state,
-        api_reference.event_triggers,
-        api_reference.special_events,
-        api_reference.event_handler,
-        api_reference.event_spec,
-        api_reference.event,
-        api_reference.var,
-        api_reference.import_var,
-        api_reference.var_system,
-        api_reference.cli,
-        api_reference.browser_storage,
-        api_reference.browser_javascript,
-        api_reference.plugins,
-        api_reference.utils,
-        api_reference.telemetry,
-        api_reference.observability,
-    ]
-    # A class reference page added to apiref.modules without a place above
-    # lands at the end of the section rather than dropping out of the sidebar.
-    placed = {route.path for route in routes}
-    routes += [page for page in apiref.pages if page.path not in placed]
+    pages = {route.path: route for route in vars(api_reference).values()}
+    routes = [pages.pop(f"/api-reference/{slug}/") for slug in apiref.section_order]
+    # A page added under docs/api-reference/ without a place in section_order
+    # lands at the end rather than dropping out of the sidebar.
+    routes += pages.values()
     return [create_item(route) for route in routes]
 
 
