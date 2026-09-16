@@ -597,7 +597,7 @@ def generate_environment_variables_markdown() -> tuple[Path, str]:
     """
     import inspect
 
-    from reflex.config import EnvironmentVariables
+    from reflex_base.environment import EnvironmentVariables
 
     env_vars = [
         (name, var)
@@ -642,7 +642,7 @@ def generate_environment_variables_markdown() -> tuple[Path, str]:
         "",
         "# Environment Variables",
         "",
-        "`reflex.config.EnvironmentVariables`",
+        f"`{EnvironmentVariables.__module__}.{EnvironmentVariables.__qualname__}`",
         "",
         "Reflex provides a number of environment variables that can be used to configure the behavior of your application.",
         "These environment variables can be set in your shell environment or in a `.env` file.",

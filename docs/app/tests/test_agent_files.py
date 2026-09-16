@@ -4,6 +4,8 @@ import re
 from pathlib import Path
 from types import SimpleNamespace
 
+from reflex_base.environment import EnvironmentVariables
+
 from agent_files._plugin import (
     MarkdownFileEntry,
     MarkdownIndexEntry,
@@ -252,7 +254,11 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
         "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
         "# Environment Variables\n\n"
     )
-    assert "`reflex.config.EnvironmentVariables`" in env_vars
+    assert (
+        f"`{EnvironmentVariables.__module__}.{EnvironmentVariables.__qualname__}`"
+        in env_vars
+    )
+    assert "`reflex.config.EnvironmentVariables`" not in env_vars
 
     # Dynamic API-reference pages must land in the llms.txt index.
     _, llms_txt = generate_llms_txt(dynamic_api_reference_index_entries(raw_files))
