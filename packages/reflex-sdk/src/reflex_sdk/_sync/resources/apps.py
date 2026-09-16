@@ -16,8 +16,21 @@ if TYPE_CHECKING:
     from reflex_sdk._sync._client import ReflexCloud
 
 
+# The name under which the secrets route reads every secret at once, which a single
+# secret can also have.
+_ALL_SECRETS = "__all__"
+
+
 def _epoch_seconds(moment: datetime.datetime | None) -> int | None:
-    return None if moment is None else int(moment.timestamp())
+    # The logs endpoint takes whole seconds since the Unix epoch.
+    if moment is None:
+        return None
+    # timestamp() reads a naive datetime as local time, which would shift the log
+    # window by the machine's UTC offset.
+    if moment.utcoffset() is None:
+        msg = f"expected a timezone-aware datetime, got naive {moment!r}"
+        raise ValueError(msg)
+    return int(moment.timestamp())
 
 
 class Secrets:
@@ -74,7 +87,7 @@ class Secrets:
         Raises:
             KeyError: If a secret named ``__all__`` does not exist.
         """
-        if name == "__all__":
+        if name == _ALL_SECRETS:
             # That path reads every secret, so this one secret is picked out of them.
             return (self.get_all(app_id, environment_id=environment_id))[name]
         return self._client._request(
@@ -98,7 +111,7 @@ class Secrets:
         """
         return self._client._request(
             "GET",
-            f"apps/{path_segment(app_id)}/secrets/__all__",
+            f"apps/{path_segment(app_id)}/secrets/{_ALL_SECRETS}",
             dict[str, str],
             params={"environment_id": environment_id},
         )
@@ -295,11 +308,21 @@ class Apps:
             cpu: The number of CPUs of a custom machine size.
             ram_mb: The memory of a custom machine size, in MB.
             regions: The number of machines to run in each region, by region code.
+
+        Raises:
+            ValueError: If the arguments are not exactly one of those forms.
         """
+        custom_size = cpu is not None or ram_mb is not None
+        forms = (vm_type is not None) + custom_size + (regions is not None)
+        if forms != 1 or (custom_size and (cpu is None or ram_mb is None)):
+            msg = "pass exactly one of vm_type, both cpu and ram_mb, or regions"
+            raise ValueError(msg)
         body: dict[str, Any] = (
             {"type": "region", "regions": dict(regions)}
             if regions is not None
-            else {"type": "size", "size": vm_type, "cpu": cpu, "ram_mb": ram_mb}
+            else {"type": "size", "size": vm_type}
+            if vm_type is not None
+            else {"type": "size", "cpu": cpu, "ram_mb": ram_mb}
         )
         self._client._request(
             "POST", f"apps/{path_segment(app_id)}/scale", None, json=body
@@ -357,9 +380,9 @@ class Apps:
 
         Args:
             app_id: The app.
-            start: The earliest time to read logs from, with second precision. Defaults
-                to 30 days ago.
-            end: The latest time to read logs until. Defaults to now.
+            start: The earliest time to read logs from, timezone-aware, with second
+                precision. Defaults to 30 days ago.
+            end: The latest time to read logs until, timezone-aware. Defaults to now.
             search: Only return lines containing this text, ignoring case.
             region: Only return lines logged in this region.
             order: Whether to iterate from the oldest line or the newest.
@@ -369,6 +392,9 @@ class Apps:
 
         Yields:
             The log lines.
+
+        Raises:
+            ValueError: If ``start`` or ``end`` is a naive datetime, when iteration starts.
         """
         params: dict[str, Any] = {
             "start": _epoch_seconds(start),

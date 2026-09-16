@@ -23,7 +23,8 @@ async with AsyncReflexCloud() as client:
 from reflex_sdk import ReflexCloud
 
 with ReflexCloud() as client:
-    (project,) = client.projects.search("default")
+    projects = client.projects.search("default")
+    project = projects[0] if projects else client.projects.create("default")
     app = client.apps.create("dashboard", project_id=project.id)
     client.apps.secrets.set(app.id, {"DATABASE_URL": "postgresql://..."})
 

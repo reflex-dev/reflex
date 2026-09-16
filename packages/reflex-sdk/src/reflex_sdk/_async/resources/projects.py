@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import builtins
 import uuid
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_sdk._base import path_segment
 from reflex_sdk._errors import NotFoundError
@@ -53,7 +53,7 @@ class AsyncRoles:
         permissions = await self._client._request(
             "GET",
             f"project/{path_segment(project_id)}/role/{path_segment(role_id)}",
-            builtins.list[dict[str, str]] | None,
+            builtins.list[dict[str, Any]] | None,
         )
         return [permission["name"] for permission in permissions or ()]
 

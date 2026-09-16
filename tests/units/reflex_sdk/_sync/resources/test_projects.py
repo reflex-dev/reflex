@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import Iterator
+from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -167,13 +168,14 @@ def test_roles_list(client: ReflexCloud, mock_api: MockAPI):
     ("body", "permissions"),
     [
         ([{"name": "can_deploy"}, {"name": "can_view"}], ["can_deploy", "can_view"]),
+        ([{"name": "can_deploy", "granted_via": ["editor"]}], ["can_deploy"]),
         (None, []),
     ],
 )
 def test_roles_permissions(
     client: ReflexCloud,
     mock_api: MockAPI,
-    body: list[dict[str, str]] | None,
+    body: list[dict[str, Any]] | None,
     permissions: list[str],
 ):
     mock_api.add("GET", f"{PROJECT_PATH}/role/{ROLE_ID}", reply(200, json=body))
@@ -201,6 +203,11 @@ def test_members_list(client: ReflexCloud, mock_api: MockAPI):
             is_service_account=False,
         )
     ]
+
+
+def test_members_list_null(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add("GET", f"{PROJECT_PATH}/users", reply(200, json=None))
+    assert client.projects.members.list(PROJECT_ID) == []
 
 
 @pytest.mark.parametrize(

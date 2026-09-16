@@ -4,7 +4,7 @@ import dataclasses
 import inspect
 import uuid
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal
 
 import pytest
 from reflex_sdk import types
@@ -79,6 +79,7 @@ class _Model:
     count: int
     nested: _Nested | None
     tags: list[str]
+    level: Literal[1, 2] = 1
     extra: str = ""
 
 
@@ -90,6 +91,7 @@ _COMPONENT = {
             "anyOf": [{"$ref": "#/components/schemas/Nested"}, {"type": "null"}]
         },
         "tags": {"type": "array", "items": {"type": "string"}},
+        "level": {"enum": [1, 2]},
         "extra": {"type": "string"},
     },
     "required": ["id", "count", "nested", "tags"],
@@ -127,6 +129,10 @@ def test_checker_accepts_matching_model():
         (
             {"nested": {"$ref": "#/components/schemas/Other"}},
             "_Model.nested: no SDK type accepts schema member",
+        ),
+        (
+            {"level": {"enum": [True]}},
+            "_Model.level: typing.Literal[1, 2] does not accept every value",
         ),
     ],
 )

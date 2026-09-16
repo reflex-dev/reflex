@@ -94,9 +94,18 @@ def type_problems(
     schema_type = schema.get("type")
     schema_format = schema.get("format")
     if origin is Literal or (isinstance(tp, type) and issubclass(tp, enum.Enum)):
-        allowed = set(args) if origin is Literal else {member.value for member in tp}
-        missing = set(schema.get("enum", [])) - allowed
-        if "enum" not in schema or missing:
+        # Types are compared too, as the decoder does: True == 1, but a JSON true
+        # does not decode into the literal 1.
+        allowed = {
+            (type(value), value)
+            for value in (
+                args if origin is Literal else [member.value for member in tp]
+            )
+        }
+        values = schema.get("enum")
+        if values is None or any(
+            (type(value), value) not in allowed for value in values
+        ):
             return [
                 f"{path}: {tp!r} does not accept every value of {_describe(schema)}"
             ]

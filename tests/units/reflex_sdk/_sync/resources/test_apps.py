@@ -208,8 +208,26 @@ def test_scale(
 ):
     mock_api.add("POST", f"{APP_PATH}/scale", reply(200, json=None))
     client.apps.scale(APP_ID, **kwargs)
-    sent = _body(mock_api.requests[0])
-    assert {key: value for key, value in sent.items() if value is not None} == body
+    assert _body(mock_api.requests[0]) == body
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {},
+        {"cpu": 2.0},
+        {"ram_mb": 4096},
+        {"vm_type": "c2m4", "cpu": 2.0, "ram_mb": 4096},
+        {"vm_type": "c2m4", "regions": {"sjc": 1}},
+        {"cpu": 2.0, "ram_mb": 4096, "regions": {"sjc": 1}},
+    ],
+)
+def test_scale_rejects_ambiguous_arguments(
+    client: ReflexCloud, mock_api: MockAPI, kwargs: dict[str, Any]
+):
+    with pytest.raises(ValueError, match="exactly one of"):
+        client.apps.scale(APP_ID, **kwargs)
+    assert not mock_api.requests
 
 
 def test_rollback(client: ReflexCloud, mock_api: MockAPI):
@@ -334,8 +352,20 @@ def test_logs_follow_cursor_until_empty_page(client: ReflexCloud, mock_api: Mock
         "order": ["newest_first"],
         "limit": ["50"],
     }
-    assert second["cursor"] == ["2"]
-    assert third["cursor"] == ["3"]
+    # Later pages keep the filters and add the cursor.
+    assert second == {**first, "cursor": ["2"]}
+    assert third == {**first, "cursor": ["3"]}
+
+
+@pytest.mark.parametrize("bound", ["start", "end"])
+def test_logs_reject_naive_datetimes(
+    client: ReflexCloud, mock_api: MockAPI, bound: str
+):
+    naive: dict[str, Any] = {bound: datetime.datetime(2026, 9, 16, 10)}
+    with pytest.raises(ValueError, match="timezone-aware"):
+        for _ in client.apps.logs(APP_ID, **naive):
+            pass
+    assert not mock_api.requests
 
 
 def test_logs_stop_without_cursor(client: ReflexCloud, mock_api: MockAPI):

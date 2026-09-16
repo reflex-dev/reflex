@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import AsyncIterator
+from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -168,13 +169,14 @@ async def test_roles_list(client: AsyncReflexCloud, mock_api: MockAPI):
     ("body", "permissions"),
     [
         ([{"name": "can_deploy"}, {"name": "can_view"}], ["can_deploy", "can_view"]),
+        ([{"name": "can_deploy", "granted_via": ["editor"]}], ["can_deploy"]),
         (None, []),
     ],
 )
 async def test_roles_permissions(
     client: AsyncReflexCloud,
     mock_api: MockAPI,
-    body: list[dict[str, str]] | None,
+    body: list[dict[str, Any]] | None,
     permissions: list[str],
 ):
     mock_api.add("GET", f"{PROJECT_PATH}/role/{ROLE_ID}", reply(200, json=body))
@@ -202,6 +204,11 @@ async def test_members_list(client: AsyncReflexCloud, mock_api: MockAPI):
             is_service_account=False,
         )
     ]
+
+
+async def test_members_list_null(client: AsyncReflexCloud, mock_api: MockAPI):
+    mock_api.add("GET", f"{PROJECT_PATH}/users", reply(200, json=None))
+    assert await client.projects.members.list(PROJECT_ID) == []
 
 
 @pytest.mark.parametrize(
