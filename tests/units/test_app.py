@@ -5092,6 +5092,7 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
     routes = [f"route-{i}" for i in range(4000)]
     app = App(_state=rx.State)
     app._stateful_pages = dict.fromkeys(routes)
+    app._write_stateful_pages_marker()
     stop = threading.Event()
 
     def writer():
@@ -5101,7 +5102,11 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
 
     def reader():
         """Check that every observed marker is complete."""
-        while not stop.is_set():
+        # Backend workers read on startup; an infinite read storm can starve
+        # Windows replacement because its readers do not share delete access.
+        for _ in range(50):
+            if stop.is_set():
+                break
             content = _read_stateful_pages_marker()
             if content is None:
                 continue
