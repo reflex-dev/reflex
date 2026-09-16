@@ -129,7 +129,10 @@ class _Progress:
 
 
 def _upload_request(
-    target: UploadTarget, size: int, content: Iterator[bytes] | AsyncIterator[bytes]
+    target: UploadTarget,
+    size: int,
+    content: Iterator[bytes] | AsyncIterator[bytes],
+    timeout: float | None,
 ) -> Request:
     return Request(
         method="PUT",
@@ -142,6 +145,7 @@ def _upload_request(
             "User-Agent": user_agent(),
         },
         content=content,
+        timeout=timeout,
     )
 
 
@@ -159,16 +163,22 @@ class AsyncArchiveUploader:
     """Uploads a build's archives concurrently through an asynchronous transport."""
 
     def __init__(
-        self, transport: AsyncTransport, on_progress: ProgressCallback | None
+        self,
+        transport: AsyncTransport,
+        on_progress: ProgressCallback | None,
+        timeout: float | None,
     ) -> None:
         """Bind the uploader to a transport.
 
         Args:
             transport: The transport to send the uploads with.
             on_progress: Called with the bytes uploaded so far and the total.
+            timeout: The timeout of each network operation in seconds, or None for
+                the transport's defaults.
         """
         self._transport = transport
         self._on_progress = on_progress
+        self._timeout = timeout
 
     async def upload(self, archives: Sequence[tuple[Path, int, UploadTarget]]) -> None:
         """Upload archives to their targets, stopping every upload if one fails.
@@ -194,7 +204,9 @@ class AsyncArchiveUploader:
     ) -> None:
         try:
             response = await self._transport.send(
-                _upload_request(target, size, self._chunks(path, progress))
+                _upload_request(
+                    target, size, self._chunks(path, progress), self._timeout
+                )
             )
         except TransportError as ex:
             raise connection_error(ex) from ex
@@ -217,16 +229,22 @@ class ArchiveUploader:
     """
 
     def __init__(
-        self, transport: Transport, on_progress: ProgressCallback | None
+        self,
+        transport: Transport,
+        on_progress: ProgressCallback | None,
+        timeout: float | None,
     ) -> None:
         """Bind the uploader to a transport.
 
         Args:
             transport: The transport to send the uploads with.
             on_progress: Called with the bytes uploaded so far and the total.
+            timeout: The timeout of each network operation in seconds, or None for
+                the transport's defaults.
         """
         self._transport = transport
         self._on_progress = on_progress
+        self._timeout = timeout
 
     def upload(self, archives: Sequence[tuple[Path, int, UploadTarget]]) -> None:
         """Upload archives to their targets, stopping every upload if one fails.
@@ -266,7 +284,12 @@ class ArchiveUploader:
     ) -> None:
         try:
             response = self._transport.send(
-                _upload_request(target, size, self._chunks(path, progress, abandoned))
+                _upload_request(
+                    target,
+                    size,
+                    self._chunks(path, progress, abandoned),
+                    self._timeout,
+                )
             )
         except TransportError as ex:
             if abandoned.is_set():

@@ -94,9 +94,9 @@ def connection_error(error: TransportError) -> APIConnectionError:
     """
     request = error.request
     error_type = APITimeoutError if error.timed_out else APIConnectionError
-    return error_type(
-        f"{request.method} {request.url} failed: {error}", request=request
-    )
+    # The query is left out: a signed upload URL carries its credential there.
+    url = request.url.partition("?")[0]
+    return error_type(f"{request.method} {url} failed: {error}", request=request)
 
 
 def _retry_after(response: Response) -> float | None:

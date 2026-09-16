@@ -11,11 +11,17 @@ from reflex_sdk._base import (
     DEFAULT_BASE_URL,
     DEFAULT_MAX_RETRIES,
     BaseClient,
+    connection_error,
     decode_response,
     path_segment,
 )
-from reflex_sdk._errors import APIResponseValidationError, MissingTokenError
-from reflex_sdk.transports import Request
+from reflex_sdk._errors import (
+    APIConnectionError,
+    APIResponseValidationError,
+    APITimeoutError,
+    MissingTokenError,
+)
+from reflex_sdk.transports import Request, TransportError
 from reflex_sdk.types import Me
 
 from tests.units.reflex_sdk.conftest import json_body, reply
@@ -226,6 +232,26 @@ def test_retry_after_falls_back_to_backoff(
     delay = _retry_delay("GET", status_code=429, headers={"retry-after": retry_after})
     assert delay is not None
     assert 0.375 <= delay <= 0.5
+
+
+@pytest.mark.parametrize(
+    ("timed_out", "error_type"),
+    [(True, APITimeoutError), (False, APIConnectionError)],
+)
+def test_connection_error_leaves_out_the_query(
+    timed_out: bool, error_type: type[APIConnectionError]
+):
+    request = Request(
+        method="PUT",
+        url="https://storage.example.com/app/backend.zip?X-Amz-Signature=secret",
+        headers={},
+    )
+    error = connection_error(
+        TransportError("reset", request=request, sent=True, timed_out=timed_out)
+    )
+    assert type(error) is error_type
+    assert error.request is request
+    assert str(error) == "PUT https://storage.example.com/app/backend.zip failed: reset"
 
 
 def test_decode_response():

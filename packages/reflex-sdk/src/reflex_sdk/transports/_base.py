@@ -98,7 +98,11 @@ class TransportError(Exception):
 
 
 class Transport(Protocol):
-    """Sends requests for the synchronous client."""
+    """Sends requests for the synchronous client.
+
+    Implementations must be thread-safe: ``deployments.create`` sends a build's
+    archives from concurrent threads.
+    """
 
     def send(self, request: Request) -> Response:
         """Send a request and read the whole response.

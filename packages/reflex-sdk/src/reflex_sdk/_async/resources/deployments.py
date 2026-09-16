@@ -120,7 +120,17 @@ class AsyncDeployments:
 
         Returns:
             The id of the new deployment.
+
+        Raises:
+            ValueError: If ``cpu`` and ``ram_mb`` are not passed together, or are
+                passed with ``vm_type``.
         """
+        # Checked before uploading, which can take minutes for a large build.
+        if (cpu is None) != (ram_mb is None) or (
+            vm_type is not None and cpu is not None
+        ):
+            msg = "pass either vm_type, or both cpu and ram_mb, or neither"
+            raise ValueError(msg)
         archives = (Path(backend), Path(frontend))
         sizes = (archives[0].stat().st_size, archives[1].stat().st_size)
         reservation = await self._upload(app_id, archives, sizes, on_upload_progress)
@@ -166,7 +176,9 @@ class AsyncDeployments:
         Returns:
             The reservation the archives were uploaded under.
         """
-        uploader = AsyncArchiveUploader(self._client._transport, on_progress)
+        uploader = AsyncArchiveUploader(
+            self._client._transport, on_progress, self._client._timeout
+        )
         for _ in range(UPLOAD_ATTEMPTS - 1):
             reservation = await self._reserve(app_id, sizes)
             try:
@@ -296,10 +308,17 @@ class AsyncDeployments:
                     raise DeploymentFailedError(deployment_uuid, report)
                 if outcome is not None:
                     return report
-            if deadline is not None and monotonic() >= deadline:
-                msg = f"deployment {deployment_uuid} was still in progress: {message}"
-                raise DeploymentTimeoutError(msg)
-            await asyncio.sleep(poll_interval)
+            delay = poll_interval
+            if deadline is not None:
+                remaining = deadline - monotonic()
+                if remaining <= 0:
+                    msg = (
+                        f"deployment {deployment_uuid} was still in progress: {message}"
+                    )
+                    raise DeploymentTimeoutError(msg)
+                # The last wait ends at the deadline rather than a whole interval on.
+                delay = min(delay, remaining)
+            await asyncio.sleep(delay)
 
     async def set_description(
         self,

@@ -36,6 +36,12 @@ async def _echo_upload(request: web.Request) -> web.Response:
     })
 
 
+async def _ignore_body(request: web.Request) -> web.Response:
+    # Longer than the client's timeout, short enough not to hold up server shutdown.
+    await asyncio.sleep(1)
+    return web.Response()
+
+
 async def _slow(request: web.Request) -> web.Response:
     await asyncio.sleep(5)
     return web.Response()
@@ -60,6 +66,7 @@ async def server() -> AsyncIterator[TestServer]:
     app.router.add_route("*", "/echo/{name}", _echo)
     app.router.add_get("/slow", _slow)
     app.router.add_put("/upload", _echo_upload)
+    app.router.add_put("/stalled", _ignore_body)
     app.router.add_get("/redirect", _redirect)
     app.router.add_get("/error", _error)
     server = TestServer(app)
@@ -119,6 +126,57 @@ async def test_send_upload(server: TestServer, streamed: bool):
         "transfer_encoding": None,
         "content_type": None,
     }
+
+
+async def test_stalled_upload_times_out(server: TestServer):
+    size = 64 * 1024 * 1024
+
+    async def chunks():
+        for _ in range(size // (256 * 1024)):
+            yield b"x" * (256 * 1024)
+            await asyncio.sleep(0)
+
+    transport = AiohttpTransport()
+    started = asyncio.get_running_loop().time()
+    # The server never reads the body, so writes stop once its buffers fill.
+    with pytest.raises(TransportError, match="stopped accepting") as exc_info:
+        await transport.send(
+            Request(
+                method="PUT",
+                url=str(server.make_url("/stalled")),
+                headers={"Content-Length": str(size)},
+                content=chunks(),
+                timeout=0.3,
+            )
+        )
+    await transport.aclose()
+    assert exc_info.value.timed_out is True
+    assert exc_info.value.sent is True
+    assert asyncio.get_running_loop().time() - started < 4
+    # The watchdog's cancellation is consumed, so the task keeps running normally.
+    await asyncio.sleep(0)
+
+
+async def test_timeouts_cover_each_operation():
+    class RecordingSession:
+        timeouts: list[Any] = []
+
+        def request(self, *args: Any, **kwargs: Any) -> Any:
+            self.timeouts.append(kwargs.get("timeout"))
+            msg = "stop"
+            raise aiohttp.ClientPayloadError(msg)
+
+    session = RecordingSession()
+    transport = AiohttpTransport(session)  # pyright: ignore[reportArgumentType]
+    with pytest.raises(TransportError):
+        await transport.send(_request("http://127.0.0.1/echo/x", timeout=7.0))
+    (timeout,) = session.timeouts
+    assert timeout.total is None
+    assert (timeout.connect, timeout.sock_connect, timeout.sock_read) == pytest.approx((
+        7.0,
+        7.0,
+        7.0,
+    ))
 
 
 async def test_json_content_type_is_kept(server: TestServer):

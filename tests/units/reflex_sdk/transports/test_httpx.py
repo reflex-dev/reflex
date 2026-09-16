@@ -100,8 +100,12 @@ async def test_async_send_streamed_body():
         httpx.AsyncClient(transport=httpx.MockTransport(_echo_upload))
     )
     response = await transport.send(_upload(chunks()))
-    assert response.json()["body"] == "abcdef"
-    assert response.json()["transfer_encoding"] is None
+    assert response.json() == {
+        "body": "abcdef",
+        "content_length": "6",
+        "transfer_encoding": None,
+        "content_type": None,
+    }
     await transport.aclose()
 
 

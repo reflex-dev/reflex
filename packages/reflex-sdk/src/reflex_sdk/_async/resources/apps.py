@@ -352,8 +352,9 @@ class AsyncApps:
         Args:
             app_id: The app.
             app_name: The app's name.
-            hostname: The subdomain to serve the app at, e.g. ``"my-app"``. Defaults
-                to the app's current or generated hostname.
+            hostname: The subdomain to serve the app at, as a single label such as
+                ``"my-app"``, not a full hostname. Defaults to the app's current or
+                generated hostname.
 
         Returns:
             The frontend and backend URLs.

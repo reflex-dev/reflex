@@ -92,7 +92,23 @@ def test_upload_raises_the_first_failure(tmp_path: Path):
             pass
 
     with pytest.raises(PermissionDeniedError):
-        ArchiveUploader(Storage(), None).upload(_archives(tmp_path))
+        ArchiveUploader(Storage(), None, None).upload(_archives(tmp_path))
+
+
+def test_upload_swallows_abandoned_archives(tmp_path: Path):
+    class Storage:
+        def send(self, request: Request) -> Response:
+            if request.url.endswith("frontend.zip"):
+                return reply(403)(request)
+            # The backend's reader noticed the frontend failed and stopped.
+            raise _UploadAbandonedError
+
+        def close(self) -> None:
+            pass
+
+    # The failure that caused the abandonment is raised, not the abandonment.
+    with pytest.raises(PermissionDeniedError):
+        ArchiveUploader(Storage(), None, None).upload(_archives(tmp_path))
 
 
 def test_upload_chunks_stop_once_abandoned(tmp_path: Path):
@@ -118,11 +134,35 @@ def test_upload_reports_progress(tmp_path: Path):
 
     progress = []
     ArchiveUploader(
-        Storage(), lambda sent, total: progress.append((sent, total))
+        Storage(), lambda sent, total: progress.append((sent, total)), 5.0
     ).upload(_archives(tmp_path))
     total = 3 * UPLOAD_CHUNK_SIZE + 10
     assert progress[-1] == (total, total)
     assert len(progress) == 4
+
+
+def test_upload_requests(tmp_path: Path):
+    requests = []
+
+    class Storage:
+        def send(self, request: Request) -> Response:
+            requests.append(request)
+            assert not isinstance(request.content, bytes | None)
+            b"".join(request.content)  # pyright: ignore[reportArgumentType]
+            return reply(200)(request)
+
+        def close(self) -> None:
+            pass
+
+    archives = _archives(tmp_path)
+    ArchiveUploader(Storage(), None, 7.0).upload(archives)
+    by_url = {request.url: request for request in requests}
+    for _, size, target in archives:
+        request = by_url[target.url]
+        assert request.method == "PUT"
+        assert request.timeout == pytest.approx(7.0)
+        assert request.headers["Content-Length"] == str(size)
+        assert "X-API-TOKEN" not in request.headers
 
 
 async def test_async_upload_cancels_other_archives_after_a_failure(tmp_path: Path):
@@ -143,5 +183,5 @@ async def test_async_upload_cancels_other_archives_after_a_failure(tmp_path: Pat
             pass
 
     with pytest.raises(InternalServerError):
-        await AsyncArchiveUploader(Storage(), None).upload(_archives(tmp_path))
+        await AsyncArchiveUploader(Storage(), None, None).upload(_archives(tmp_path))
     assert backend_cancelled.is_set()

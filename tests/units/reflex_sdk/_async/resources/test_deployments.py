@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
+from time import monotonic
 from urllib.parse import parse_qs
 
 import pytest
@@ -153,6 +154,42 @@ async def test_create(
         "deployment_strategy": "rolling",
         "python_version": "3.13.1",
     }
+
+
+@pytest.mark.parametrize(
+    "sizing",
+    [{"cpu": 2.0}, {"ram_mb": 4096}, {"vm_type": "c2m4", "cpu": 2.0, "ram_mb": 4096}],
+)
+async def test_create_checks_sizing_before_uploading(
+    client: AsyncReflexCloud,
+    mock_api: MockAPI,
+    archives: tuple[Path, Path],
+    sizing: dict,
+):
+    backend, frontend = archives
+    with pytest.raises(ValueError, match="vm_type, or both cpu and ram_mb"):
+        await client.deployments.create(
+            APP_ID, backend=backend, frontend=frontend, **sizing
+        )
+    assert not mock_api.requests
+
+
+async def test_create_uploads_with_the_client_timeout(
+    mock_api: MockAPI, archives: tuple[Path, Path]
+):
+    mock_api.add(
+        "POST", "/api/v1/deployments/reserve", reply(200, json=_reservation(FIRST_ID))
+    )
+    _add_storage(mock_api, FIRST_ID)
+    mock_api.add("POST", "/api/v1/deployments", reply(201, json=FIRST_ID))
+    backend, frontend = archives
+    async with AsyncReflexCloud(
+        token="test-token", transport=AsyncMockTransport(mock_api), timeout=7.0
+    ) as client:
+        await client.deployments.create(APP_ID, backend=backend, frontend=frontend)
+    uploads = [request for request in mock_api.requests if request.method == "PUT"]
+    assert len(uploads) == 2
+    assert all(upload.timeout == pytest.approx(7.0) for upload in uploads)
 
 
 async def test_create_reserves_again_when_upload_urls_expire(
@@ -359,6 +396,17 @@ async def test_wait_checks_the_recorded_state_periodically(
     with pytest.raises(DeploymentFailedError):
         await client.deployments.wait(FIRST_ID, poll_interval=0)
     assert len([r for r in mock_api.requests if r.url.endswith("/status")]) == 6
+
+
+async def test_wait_stops_waiting_at_the_timeout(
+    client: AsyncReflexCloud, mock_api: MockAPI
+):
+    _statuses(mock_api, "Building backend application...")
+    started = monotonic()
+    with pytest.raises(DeploymentTimeoutError):
+        await client.deployments.wait(FIRST_ID, timeout=0.05, poll_interval=60)
+    # The last sleep is cut short at the deadline instead of lasting a whole interval.
+    assert monotonic() - started < 5
 
 
 async def test_wait_timeout(client: AsyncReflexCloud, mock_api: MockAPI):
