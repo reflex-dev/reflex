@@ -4458,12 +4458,14 @@ requires-dist = [
 name = "reflex-sdk"
 source = { editable = "packages/reflex-sdk" }
 dependencies = [
+    { name = "aiohttp" },
     { name = "httpx" },
     { name = "platformdirs" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.10.0,<4.0" },
     { name = "httpx", specifier = ">=0.25.1,<1.0" },
     { name = "platformdirs", specifier = ">=3.10.0,<5.0" },
 ]

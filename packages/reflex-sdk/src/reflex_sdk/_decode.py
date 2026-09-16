@@ -221,7 +221,10 @@ def _build_union(members: tuple[Any, ...]) -> Decoder:
 
 def _build_literal(allowed: tuple[Any, ...]) -> Decoder:
     def decode_literal(value: Any) -> Any:
-        if value not in allowed:
+        # Types are compared too: True == 1, but a boolean is not the literal 1.
+        if not any(
+            type(value) is type(option) and value == option for option in allowed
+        ):
             msg = f"expected one of {allowed!r}, got {value!r}"
             raise DecodeError(msg)
         return value

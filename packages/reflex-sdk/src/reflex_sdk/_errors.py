@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import httpx
+from reflex_sdk.transports._base import Request, Response
 
 
 class ReflexCloudError(Exception):
@@ -18,10 +18,10 @@ class MissingTokenError(ReflexCloudError):
 class APIError(ReflexCloudError):
     """An error tied to a request sent to the Reflex Cloud API."""
 
-    request: httpx.Request
+    request: Request
     request_id: str
 
-    def __init__(self, message: str, *, request: httpx.Request) -> None:
+    def __init__(self, message: str, *, request: Request) -> None:
         """Initialize the error.
 
         Args:
@@ -44,9 +44,9 @@ class APITimeoutError(APIConnectionError):
 class APIResponseValidationError(APIError):
     """The API responded successfully with a body the client could not decode."""
 
-    response: httpx.Response
+    response: Response
 
-    def __init__(self, message: str, *, response: httpx.Response) -> None:
+    def __init__(self, message: str, *, response: Response) -> None:
         """Initialize the error.
 
         Args:
@@ -60,11 +60,11 @@ class APIResponseValidationError(APIError):
 class APIStatusError(APIError):
     """The API responded with a 4xx or 5xx status code."""
 
-    response: httpx.Response
+    response: Response
     status_code: int
     detail: Any
 
-    def __init__(self, message: str, *, response: httpx.Response, detail: Any) -> None:
+    def __init__(self, message: str, *, response: Response, detail: Any) -> None:
         """Initialize the error.
 
         Args:
@@ -122,7 +122,7 @@ _STATUS_ERRORS: dict[int, type[APIStatusError]] = {
 }
 
 
-def status_error_from_response(response: httpx.Response) -> APIStatusError:
+def status_error_from_response(response: Response) -> APIStatusError:
     """Build the exception matching an error response.
 
     Args:

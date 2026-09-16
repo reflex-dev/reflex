@@ -7,22 +7,15 @@ import time
 from types import TracebackType
 from typing import Any, TypeVar, overload
 
-import httpx
-
-from reflex_sdk._base import (
-    DEFAULT_MAX_RETRIES,
-    DEFAULT_TIMEOUT,
-    UNSENT_REQUEST_ERRORS,
-    BaseClient,
-    decode_response,
-    logger,
-)
+from reflex_sdk._base import DEFAULT_MAX_RETRIES, BaseClient, decode_response, logger
 from reflex_sdk._errors import (
     APIConnectionError,
     APITimeoutError,
     status_error_from_response,
 )
 from reflex_sdk._sync.resources.auth import Auth
+from reflex_sdk.transports._base import Transport, TransportError
+from reflex_sdk.transports._defaults import DefaultTransport
 
 T = TypeVar("T")
 
@@ -41,9 +34,9 @@ class ReflexCloud(BaseClient):
         *,
         token: str | None = None,
         base_url: str | None = None,
-        timeout: float | httpx.Timeout | None = None,
+        timeout: float | None = None,
         max_retries: int = DEFAULT_MAX_RETRIES,
-        http_client: httpx.Client | None = None,
+        transport: Transport | None = None,
     ) -> None:
         """Create a client.
 
@@ -53,19 +46,22 @@ class ReflexCloud(BaseClient):
             base_url: The Reflex Cloud URL. Defaults to the ``REFLEX_CLOUD_BACKEND_URL``
                 environment variable, then to ``https://build.reflex.dev``.
             timeout: The timeout of each request attempt, in seconds. Defaults to the
-                timeout of ``http_client`` when one is passed, and to 60 seconds, 10 of
-                them to connect, otherwise.
+                transport's timeout, 60 seconds (10 of them to connect) for the
+                transports the SDK creates.
             max_retries: How many times a failed request is retried. Only requests that
                 cannot be applied twice are retried: those the server never received or
-                processed, and idempotent ``GET``, ``HEAD``, ``OPTIONS`` and ``PUT`` requests.
-            http_client: An HTTP client to send requests with, e.g. to configure proxies.
-                The caller keeps ownership of it: closing this client leaves it open.
+                turned away with 408 or 429, and ``GET``, ``HEAD``, ``OPTIONS`` and ``PUT``
+                requests that timed out, lost their connection, or got a 500, 502, 503
+                or 504 response.
+            transport: Sends the requests, e.g. a transport wrapping a preconfigured
+                HTTP client. The caller keeps ownership of it: closing this client
+                leaves it open. Defaults to a transport the client creates and closes.
         """
         super().__init__(
             token=token, base_url=base_url, timeout=timeout, max_retries=max_retries
         )
-        self._owns_http_client = http_client is None
-        self._http_client = http_client or httpx.Client(timeout=DEFAULT_TIMEOUT)
+        self._owns_transport = transport is None
+        self._transport = transport or DefaultTransport()
         self.auth = Auth(self)
 
     def __enter__(self) -> ReflexCloud:
@@ -92,9 +88,9 @@ class ReflexCloud(BaseClient):
         self.close()
 
     def close(self) -> None:
-        """Close the connections of the HTTP client, unless it was passed in."""
-        if self._owns_http_client:
-            self._http_client.close()
+        """Close the transport, unless it was passed in."""
+        if self._owns_transport:
+            self._transport.close()
 
     @overload
     def _request(
@@ -137,7 +133,7 @@ class ReflexCloud(BaseClient):
             path: The endpoint path relative to ``/api/v1/``, with path parameters
                 already quoted.
             cast: The type to decode the JSON response into, or None to ignore it.
-            params: The query parameters.
+            params: The query parameters; None values are left out.
             json: The JSON body, if any.
             authenticated: Whether to send the access token.
 
@@ -146,31 +142,22 @@ class ReflexCloud(BaseClient):
 
         Raises:
             APITimeoutError: If the last attempt timed out.
-            APIConnectionError: If the last attempt could not reach the API.
+            APIConnectionError: If the last attempt failed without a response.
             APIStatusError: If the API responded with an error status.
         """
         request = self._build_request(
-            self._http_client,
-            method,
-            path,
-            params=params,
-            json=json,
-            authenticated=authenticated,
+            method, path, params=params, json=json, authenticated=authenticated
         )
         attempt = 0
         while True:
             try:
-                response = self._http_client.send(request)
-            except httpx.TransportError as ex:
-                delay = self._retry_delay(
-                    request, attempt, sent=not isinstance(ex, UNSENT_REQUEST_ERRORS)
-                )
+                response = self._transport.send(request)
+            except TransportError as ex:
+                delay = self._retry_delay(request, attempt, sent=ex.sent)
                 if delay is None:
-                    if isinstance(ex, httpx.TimeoutException):
-                        msg = f"{method} {request.url} timed out"
-                        raise APITimeoutError(msg, request=request) from ex
+                    error_type = APITimeoutError if ex.timed_out else APIConnectionError
                     msg = f"{method} {request.url} failed: {ex}"
-                    raise APIConnectionError(msg, request=request) from ex
+                    raise error_type(msg, request=request) from ex
             else:
                 if response.is_success:
                     return decode_response(response, cast)

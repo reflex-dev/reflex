@@ -6,12 +6,11 @@ import json
 import uuid
 from collections.abc import Iterator
 
-import httpx
 import pytest
 from reflex_sdk import AuthenticationError, ReflexCloud
 from reflex_sdk.types import AccessScope, Me, Token
 
-from tests.units.reflex_sdk.conftest import MockAPI
+from tests.units.reflex_sdk.conftest import MockAPI, MockTransport, reply
 
 USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
 ORG_ID = "1f6c1d0e-6f59-4d2b-a0f1-0f4e4a3b2c19"
@@ -27,10 +26,7 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(
-        token="test-token",
-        http_client=httpx.Client(transport=mock_api.transport()),
-    ) as client:
+    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
@@ -39,7 +35,7 @@ def test_me(client: ReflexCloud, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/authenticate/me",
-        httpx.Response(
+        reply(
             200,
             json={
                 "user_id": USER_ID,
@@ -65,14 +61,14 @@ def test_me(client: ReflexCloud, mock_api: MockAPI):
     )
     (request,) = mock_api.requests
     assert request.headers["X-API-TOKEN"] == "test-token"
-    assert not request.url.query
+    assert "?" not in request.url
 
 
 def test_me_invalid_token(client: ReflexCloud, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/authenticate/me",
-        httpx.Response(401, json={"detail": "Token not found or is inactive"}),
+        reply(401, json={"detail": "Token not found or is inactive"}),
     )
     with pytest.raises(AuthenticationError, match="Token not found or is inactive"):
         client.auth.me()
@@ -80,22 +76,22 @@ def test_me_invalid_token(client: ReflexCloud, mock_api: MockAPI):
 
 def test_create_token(client: ReflexCloud, mock_api: MockAPI):
     token_id = str(uuid.uuid4())
-    mock_api.add("POST", "/api/v1/user/token", httpx.Response(200, json=token_id))
+    mock_api.add("POST", "/api/v1/user/token", reply(200, json=token_id))
     assert client.auth.tokens.create("ci") == token_id
-    assert json.loads(mock_api.requests[0].content) == {
+    assert json.loads(mock_api.requests[0].content or b"") == {
         "name": "ci",
         "expiration": None,
     }
 
 
 def test_create_scoped_token(client: ReflexCloud, mock_api: MockAPI):
-    mock_api.add("POST", "/api/v1/user/token", httpx.Response(200, json="token"))
+    mock_api.add("POST", "/api/v1/user/token", reply(200, json="token"))
     client.auth.tokens.create(
         "deploy",
         expires_in_days=7,
         access=AccessScope(permissions={"apps": "write"}, projects=["p1"]),
     )
-    assert json.loads(mock_api.requests[0].content) == {
+    assert json.loads(mock_api.requests[0].content or b"") == {
         "name": "deploy",
         "expiration": 7,
         "access": {"permissions": {"apps": "write"}, "projects": ["p1"]},
@@ -106,7 +102,7 @@ def test_list_tokens(client: ReflexCloud, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/user/token",
-        httpx.Response(
+        reply(
             200,
             json=[
                 {
@@ -134,6 +130,6 @@ def test_delete_token_quotes_name(client: ReflexCloud, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         "/api/v1/user/token/ci%2Fprod%20key",
-        httpx.Response(200, json={"message": "success"}),
+        reply(200, json={"message": "success"}),
     )
     assert client.auth.tokens.delete("ci/prod key") is None

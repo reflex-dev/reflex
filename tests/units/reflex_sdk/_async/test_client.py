@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
-import httpx
 import pytest
 from reflex_sdk import (
     APIConnectionError,
@@ -14,12 +13,12 @@ from reflex_sdk import (
     NotFoundError,
     RateLimitError,
 )
-from reflex_sdk._base import DEFAULT_TIMEOUT
+from reflex_sdk.transports import Request, Response, TransportError
+from reflex_sdk.transports._defaults import AsyncDefaultTransport
 
-from tests.units.reflex_sdk.conftest import MockAPI
+from tests.units.reflex_sdk.conftest import AsyncMockTransport, MockAPI, reply
 
 TOKENS = "/api/v1/user/token"
-CREATE_TOKEN = TOKENS
 
 
 @pytest.fixture
@@ -33,14 +32,31 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
         The client.
     """
     async with AsyncReflexCloud(
-        token="test-token",
-        http_client=httpx.AsyncClient(transport=mock_api.transport()),
+        token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
 
 
+def fail(*, sent: bool, timed_out: bool = False):
+    """Build a handler failing every request without a response.
+
+    Args:
+        sent: Whether the failed request may have reached the server.
+        timed_out: Whether the request timed out.
+
+    Returns:
+        The handler.
+    """
+
+    def handle(request: Request) -> Response:
+        msg = "timed out" if timed_out else "connection failed"
+        raise TransportError(msg, request=request, sent=sent, timed_out=timed_out)
+
+    return handle
+
+
 async def test_request_decodes_response(client: AsyncReflexCloud, mock_api: MockAPI):
-    mock_api.add("GET", TOKENS, httpx.Response(200, json=[]))
+    mock_api.add("GET", TOKENS, reply(200, json=[]))
     assert await client._request("GET", "user/token", list) == []
     (request,) = mock_api.requests
     assert request.headers["X-API-TOKEN"] == "test-token"
@@ -49,7 +65,7 @@ async def test_request_decodes_response(client: AsyncReflexCloud, mock_api: Mock
 async def test_request_ignores_body_without_cast(
     client: AsyncReflexCloud, mock_api: MockAPI
 ):
-    mock_api.add("DELETE", f"{TOKENS}/ci", httpx.Response(200, text="not json"))
+    mock_api.add("DELETE", f"{TOKENS}/ci", reply(200, text="not json"))
     assert await client._request("DELETE", "user/token/ci", None) is None
 
 
@@ -59,28 +75,28 @@ async def test_request_retries_idempotent_request(
     mock_api.add(
         "GET",
         TOKENS,
-        httpx.Response(503),
-        httpx.Response(429, headers={"Retry-After": "0"}),
-        httpx.Response(200, json=[]),
+        reply(503),
+        reply(429, headers={"retry-after": "0"}),
+        reply(200, json=[]),
     )
     assert await client._request("GET", "user/token", list) == []
     first, second, third = mock_api.requests
     # Retries resend the same request, so the server logs one request id.
-    assert first.headers["X-Request-ID"] == third.headers["X-Request-ID"]
-    assert second is first
+    assert first is second
+    assert second is third
 
 
 async def test_request_gives_up_after_max_retries(
     client: AsyncReflexCloud, mock_api: MockAPI
 ):
-    mock_api.add("GET", TOKENS, httpx.Response(429))
+    mock_api.add("GET", TOKENS, reply(429))
     with pytest.raises(RateLimitError):
         await client._request("GET", "user/token", list)
     assert len(mock_api.requests) == client.max_retries + 1
 
 
 async def test_request_does_not_retry_post(client: AsyncReflexCloud, mock_api: MockAPI):
-    mock_api.add("POST", CREATE_TOKEN, httpx.Response(502))
+    mock_api.add("POST", TOKENS, reply(502))
     with pytest.raises(InternalServerError):
         await client._request("POST", "user/token", str, json={"name": "ci"})
     assert len(mock_api.requests) == 1
@@ -89,7 +105,7 @@ async def test_request_does_not_retry_post(client: AsyncReflexCloud, mock_api: M
 async def test_request_does_not_retry_delete(
     client: AsyncReflexCloud, mock_api: MockAPI
 ):
-    mock_api.add("DELETE", f"{TOKENS}/ci", httpx.Response(503))
+    mock_api.add("DELETE", f"{TOKENS}/ci", reply(503))
     with pytest.raises(InternalServerError):
         await client._request("DELETE", "user/token/ci", None)
     assert len(mock_api.requests) == 1
@@ -100,9 +116,9 @@ async def test_request_retries_rate_limited_post(
 ):
     mock_api.add(
         "POST",
-        CREATE_TOKEN,
-        httpx.Response(429, headers={"Retry-After": "0"}),
-        httpx.Response(200, json="token"),
+        TOKENS,
+        reply(429, headers={"retry-after": "0"}),
+        reply(200, json="token"),
     )
     assert await client._request("POST", "user/token", str, json={}) == "token"
     assert len(mock_api.requests) == 2
@@ -111,7 +127,7 @@ async def test_request_retries_rate_limited_post(
 async def test_request_does_not_retry_client_errors(
     client: AsyncReflexCloud, mock_api: MockAPI
 ):
-    mock_api.add("GET", TOKENS, httpx.Response(404, json={"detail": "Not Found"}))
+    mock_api.add("GET", TOKENS, reply(404, json={"detail": "Not Found"}))
     with pytest.raises(NotFoundError) as exc_info:
         await client._request("GET", "user/token", list)
     assert exc_info.value.detail == "Not Found"
@@ -120,24 +136,16 @@ async def test_request_does_not_retry_client_errors(
 
 
 async def test_request_timeout(client: AsyncReflexCloud, mock_api: MockAPI):
-    def time_out(request: httpx.Request) -> httpx.Response:
-        msg = "timed out"
-        raise httpx.ReadTimeout(msg, request=request)
-
-    mock_api.add("GET", TOKENS, time_out)
+    mock_api.add("GET", TOKENS, fail(sent=True, timed_out=True))
     with pytest.raises(APITimeoutError, match="timed out"):
         await client._request("GET", "user/token", list)
     assert len(mock_api.requests) == client.max_retries + 1
 
 
 async def test_request_connection_lost(client: AsyncReflexCloud, mock_api: MockAPI):
-    def drop(request: httpx.Request) -> httpx.Response:
-        msg = "connection reset"
-        raise httpx.ReadError(msg, request=request)
-
     # The server may have processed a POST whose connection broke, so it is not retried.
-    mock_api.add("POST", CREATE_TOKEN, drop)
-    with pytest.raises(APIConnectionError, match="connection reset") as exc_info:
+    mock_api.add("POST", TOKENS, fail(sent=True))
+    with pytest.raises(APIConnectionError, match="connection failed") as exc_info:
         await client._request("POST", "user/token", str, json={"name": "ci"})
     assert not isinstance(exc_info.value, APITimeoutError)
     assert len(mock_api.requests) == 1
@@ -146,12 +154,8 @@ async def test_request_connection_lost(client: AsyncReflexCloud, mock_api: MockA
 async def test_request_retries_unsent_request(
     client: AsyncReflexCloud, mock_api: MockAPI
 ):
-    def refuse(request: httpx.Request) -> httpx.Response:
-        msg = "connection refused"
-        raise httpx.ConnectError(msg, request=request)
-
-    # A request that never connected can be sent again whatever its method.
-    mock_api.add("POST", CREATE_TOKEN, refuse, httpx.Response(200, json="token"))
+    # A request that never reached the server can be sent again whatever its method.
+    mock_api.add("POST", TOKENS, fail(sent=False), reply(200, json="token"))
     assert await client._request("POST", "user/token", str, json={}) == "token"
     assert len(mock_api.requests) == 2
 
@@ -159,12 +163,8 @@ async def test_request_retries_unsent_request(
 async def test_request_gives_up_on_unsent_request(
     client: AsyncReflexCloud, mock_api: MockAPI
 ):
-    def refuse(request: httpx.Request) -> httpx.Response:
-        msg = "connection refused"
-        raise httpx.ConnectError(msg, request=request)
-
-    mock_api.add("POST", CREATE_TOKEN, refuse)
-    with pytest.raises(APIConnectionError, match="connection refused"):
+    mock_api.add("POST", TOKENS, fail(sent=False))
+    with pytest.raises(APIConnectionError, match="connection failed"):
         await client._request("POST", "user/token", str, json={})
     assert len(mock_api.requests) == client.max_retries + 1
 
@@ -172,46 +172,47 @@ async def test_request_gives_up_on_unsent_request(
 async def test_request_invalid_response_body(
     client: AsyncReflexCloud, mock_api: MockAPI
 ):
-    mock_api.add("GET", TOKENS, httpx.Response(200, json={"not": "a list"}))
+    mock_api.add("GET", TOKENS, reply(200, json={"not": "a list"}))
     with pytest.raises(APIResponseValidationError, match="expected array"):
         await client._request("GET", "user/token", list)
 
 
 async def test_request_without_token(mock_api: MockAPI):
-    client = AsyncReflexCloud(
-        http_client=httpx.AsyncClient(transport=mock_api.transport())
-    )
+    client = AsyncReflexCloud(transport=AsyncMockTransport(mock_api))
     with pytest.raises(MissingTokenError):
         await client._request("GET", "user/token", list)
     assert not mock_api.requests
 
 
-async def test_client_closes_its_own_http_client():
-    client = AsyncReflexCloud(token="test-token")
-    assert client._http_client.timeout == DEFAULT_TIMEOUT
-    async with client:
-        pass
-    assert client._http_client.is_closed
-
-
-async def test_client_leaves_passed_http_client_open():
-    http_client = httpx.AsyncClient()
-    async with AsyncReflexCloud(token="test-token", http_client=http_client):
-        pass
-    assert not http_client.is_closed
-    await http_client.aclose()
-
-
-async def test_client_timeout(mock_api: MockAPI):
-    mock_api.add("GET", TOKENS, httpx.Response(200, json=[]))
-    http_client = httpx.AsyncClient(timeout=3.0, transport=mock_api.transport())
-    async with AsyncReflexCloud(token="test-token", http_client=http_client) as client:
+async def test_request_timeout_setting(mock_api: MockAPI):
+    mock_api.add("GET", TOKENS, reply(200, json=[]))
+    transport = AsyncMockTransport(mock_api)
+    async with AsyncReflexCloud(token="test-token", transport=transport) as client:
         await client._request("GET", "user/token", list)
     async with AsyncReflexCloud(
-        token="test-token", http_client=http_client, timeout=7.0
+        token="test-token", transport=transport, timeout=7.0
     ) as client:
         await client._request("GET", "user/token", list)
-    passed_client_default, explicit = mock_api.requests
-    assert passed_client_default.extensions["timeout"] == httpx.Timeout(3.0).as_dict()
-    assert explicit.extensions["timeout"] == httpx.Timeout(7.0).as_dict()
-    await http_client.aclose()
+    transport_default, explicit = mock_api.requests
+    assert transport_default.timeout is None
+    assert explicit.timeout == pytest.approx(7.0)
+
+
+async def test_client_leaves_passed_transport_open(mock_api: MockAPI):
+    async with AsyncReflexCloud(transport=AsyncMockTransport(mock_api)):
+        pass
+    assert not mock_api.closed
+
+
+async def test_client_closes_its_own_transport(monkeypatch: pytest.MonkeyPatch):
+    closed = []
+    original_aclose = AsyncDefaultTransport.aclose
+
+    async def aclose(self: AsyncDefaultTransport) -> None:
+        closed.append(self)
+        await original_aclose(self)
+
+    monkeypatch.setattr(AsyncDefaultTransport, "aclose", aclose)
+    async with AsyncReflexCloud() as client:
+        assert type(client._transport) is AsyncDefaultTransport
+    assert closed == [client._transport]

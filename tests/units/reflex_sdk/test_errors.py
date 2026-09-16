@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import httpx
 import pytest
 from reflex_sdk._errors import (
     APIStatusError,
@@ -16,13 +15,31 @@ from reflex_sdk._errors import (
     UnprocessableEntityError,
     status_error_from_response,
 )
+from reflex_sdk.transports import Request, Response
+
+from tests.units.reflex_sdk.conftest import reply
+
+REASONS = {
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    409: "Conflict",
+    418: "I'm a Teapot",
+    422: "Unprocessable Entity",
+    429: "Too Many Requests",
+    500: "Internal Server Error",
+    503: "Service Unavailable",
+}
 
 
-def _response(status_code: int, **kwargs: Any) -> httpx.Response:
-    request = httpx.Request(
-        "GET", "https://build.reflex.dev/api/v1/apps", headers={"X-Request-ID": "abc"}
+def _response(status_code: int, **kwargs: Any) -> Response:
+    request = Request(
+        method="GET",
+        url="https://build.reflex.dev/api/v1/apps",
+        headers={"X-Request-ID": "abc"},
     )
-    return httpx.Response(status_code, request=request, **kwargs)
+    return reply(status_code, reason_phrase=REASONS[status_code], **kwargs)(request)
 
 
 @pytest.mark.parametrize(
