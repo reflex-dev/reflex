@@ -11,7 +11,7 @@ import logging
 import sys
 import time
 from collections.abc import AsyncGenerator, Callable, Coroutine, Mapping, Sequence
-from concurrent.futures import Executor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from contextvars import Token, copy_context
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -112,7 +112,7 @@ class EventProcessor:
         Callable[[Exception], EventSpec | list[EventSpec] | None] | None
     ) = None
     graceful_shutdown_timeout: float | None = None
-    default_executor: Executor | None = None
+    default_executor: ThreadPoolExecutor | None = None
 
     _queue: asyncio.Queue[EventQueueEntry] | None = dataclasses.field(
         default=None, init=False
@@ -139,7 +139,7 @@ class EventProcessor:
     ] = dataclasses.field(default_factory=dict, init=False)
     _owns_default_executor: bool = dataclasses.field(default=False, init=False)
 
-    def get_executor_for(self, handler: RegisteredEventHandler) -> Executor:
+    def get_executor_for(self, handler: RegisteredEventHandler) -> ThreadPoolExecutor:
         """Return the executor used to run a handler's non-async body.
 
         The handler's per-handler executor (from ``@rx.event(executor=...)``)

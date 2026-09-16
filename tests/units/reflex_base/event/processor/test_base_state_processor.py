@@ -1460,7 +1460,9 @@ async def test_executor_preserves_context(mocker, generator):
             An empty event update.
         """
         seen.append(marker.get())
+        marker.set("generator context")
         yield
+        seen.append(marker.get())
 
     mocker.patch(
         "reflex_base.event.processor.base_state_processor.chain_updates",
@@ -1478,7 +1480,9 @@ async def test_executor_preserves_context(mocker, generator):
             )
     finally:
         marker.reset(reset)
-    assert seen == ["event context"]
+    assert seen == (
+        ["event context", "generator context"] if generator else ["event context"]
+    )
 
 
 async def test_cancelled_executor_handler_finishes_before_releasing_state(mocker):

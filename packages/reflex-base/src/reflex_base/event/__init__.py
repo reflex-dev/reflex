@@ -9,7 +9,7 @@ import types
 import warnings
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
-from concurrent.futures import Executor
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache, partial
 from typing import (
     TYPE_CHECKING,
@@ -585,7 +585,7 @@ class EventHandler(EventActionsMixin):
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
 
     @property
-    def executor(self) -> Executor | None:
+    def executor(self) -> ThreadPoolExecutor | None:
         """The executor to run a non-async handler in, if any.
 
         Returns:
@@ -2975,7 +2975,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-        executor: Executor | None = None,
+        executor: ThreadPoolExecutor | None = None,
     ) -> (
         "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
     ): ...
@@ -2992,7 +2992,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-        executor: Executor | None = None,
+        executor: ThreadPoolExecutor | None = None,
     ) -> EventCallback[Unpack[P]]: ...
 
     def __new__(
@@ -3006,7 +3006,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
-        executor: Executor | None = None,
+        executor: ThreadPoolExecutor | None = None,
     ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
         """Wrap a function to be used as an event.
 

@@ -10,8 +10,8 @@ import inspect
 import logging
 import warnings
 from collections.abc import Callable, Mapping, Sequence
-from concurrent.futures import Executor
-from contextvars import copy_context
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import Context, copy_context
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
@@ -300,12 +300,15 @@ def _next_or_done(generator: Any) -> _GeneratorStep:
         return _GeneratorStep(value=si.value, done=True)
 
 
-async def _run_sync_handler(executor: Executor, fn: Callable[[], Any]) -> Any:
+async def _run_sync_handler(
+    executor: ThreadPoolExecutor, fn: Callable[[], Any], context: Context
+) -> Any:
     """Run a handler with its context while retaining ownership until it stops.
 
     Args:
         executor: The worker pool.
         fn: The handler call or generator step.
+        context: The context shared by every step of this handler.
 
     Returns:
         The handler's result.
@@ -313,9 +316,7 @@ async def _run_sync_handler(executor: Executor, fn: Callable[[], Any]) -> Any:
     Raises:
         asyncio.CancelledError: After a cancelled handler's worker has finished.
     """
-    future = asyncio.get_running_loop().run_in_executor(
-        executor, copy_context().run, fn
-    )
+    future = asyncio.get_running_loop().run_in_executor(executor, context.run, fn)
     try:
         return await asyncio.shield(future)
     except asyncio.CancelledError:
@@ -333,7 +334,7 @@ async def process_event(
     payload: dict,
     state: BaseState | StateProxy,
     root_state: BaseState | None,
-    executor: Executor | None = None,
+    executor: ThreadPoolExecutor | None = None,
 ):
     """Process event.
 
@@ -369,6 +370,8 @@ async def process_event(
             f"Error transforming event payload for handler {handler_name}: {ex}"
         )
 
+    worker_context = copy_context() if executor is not None else None
+
     # Handle async functions.
     if inspect.iscoroutinefunction(fn.func):
         events = await fn(**payload)
@@ -381,7 +384,10 @@ async def process_event(
     # Handle regular functions - run off the asyncio loop when an executor
     # is configured so blocking calls in user code don't stall the loop.
     elif executor is not None:
-        events = await _run_sync_handler(executor, functools.partial(fn, **payload))
+        assert worker_context is not None
+        events = await _run_sync_handler(
+            executor, functools.partial(fn, **payload), worker_context
+        )
     else:
         events = fn(**payload)
     # Handle async generators.
@@ -400,8 +406,9 @@ async def process_event(
     elif inspect.isgenerator(events):
         while True:
             if executor is not None:
+                assert worker_context is not None
                 step = await _run_sync_handler(
-                    executor, functools.partial(_next_or_done, events)
+                    executor, functools.partial(_next_or_done, events), worker_context
                 )
             else:
                 step = _next_or_done(events)
