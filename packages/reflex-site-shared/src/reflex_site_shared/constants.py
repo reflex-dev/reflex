@@ -5,13 +5,14 @@ import os
 CHANGELOG_URL = "https://reflex.dev/docs/changelog/"
 CONTRIBUTING_URL = "https://github.com/reflex-dev/reflex/blob/main/CONTRIBUTING.md"
 DISCUSSIONS_URL = "https://github.com/orgs/reflex-dev/discussions"
-GITHUB_STARS = 28000
+GITHUB_STARS = 28_881
 GITHUB_URL = "https://github.com/reflex-dev/reflex"
 GITHUB_ORG_URL = "https://github.com/reflex-dev"
-XY_GITHUB_STARS = 1400
+XY_GITHUB_STARS = 1_829
 XY_GITHUB_URL = "https://github.com/reflex-dev/xy"
 JOBS_BOARD_URL = "https://www.ycombinator.com/companies/reflex/jobs"
 REFLEX_ASSETS_CDN = "https://web.reflex-assets.dev/"
+OG_IMAGE_URL = f"{REFLEX_ASSETS_CDN}previews/og_reflex.webp"
 SCREENSHOT_BUCKET = "https://pub-c14a5dcf674640a6b73fded32bad72ca.r2.dev/"
 REFLEX_BUILD_URL = os.getenv("REFLEX_BUILD_URL", "https://build.reflex.dev/")
 REFLEX_BUILD_LOGIN_URL = f"{REFLEX_BUILD_URL.rstrip('/')}/login"

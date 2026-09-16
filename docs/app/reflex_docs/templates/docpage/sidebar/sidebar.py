@@ -30,33 +30,6 @@ from .sidebar_items.recipes import recipes
 from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
 
-SIDEBAR_ICON_MAP = {
-    "Getting Started": "rocket",
-    "Tutorials": "graduation-cap",
-    "Advanced Onboarding": "newspaper",
-    "Components": "layers",
-    "Pages": "sticky-note",
-    "Styling": "palette",
-    "Assets": "folder-open-dot",
-    "Wrapping React": "atom",
-    "Vars": "variable",
-    "Events": "arrow-left-right",
-    "State Structure": "boxes",
-    "API Routes": "route",
-    "Client Storage": "package-open",
-    "Database": "database",
-    "Authentication": "lock-keyhole",
-    "Utility Methods": "cog",
-    "Deploy Quick Start": "earth",
-    "CLI Reference": "square-terminal",
-    "App": "blocks",
-    "Project": "server",
-    "Self Hosting": "server",
-    "Custom Components": "blocks",
-    "Usage": "chart-column",
-    "Testing": "beaker",
-}
-
 Scrollable_SideBar = """
 function scrollToActiveSidebarLink() {
   const sidebarContainer = document.getElementById('sidebar-container');
@@ -79,13 +52,15 @@ function scrollToActiveSidebarLink() {
     const linkRect = activeLink.getBoundingClientRect();
     const containerRect = scrollableParent.getBoundingClientRect();
 
-    // Calculate the scroll position to center the link
-    const scrollTop = scrollableParent.scrollTop + (linkRect.top - containerRect.top) - (containerRect.height / 2) + (linkRect.height / 2);
-
-    scrollableParent.scrollTo({
-      top: scrollTop,
-      behavior: 'instant'
-    });
+    let offset = 0;
+    if (linkRect.top < containerRect.top) {
+      offset = linkRect.top - containerRect.top;
+    } else if (linkRect.bottom > containerRect.bottom) {
+      offset = linkRect.bottom - containerRect.bottom;
+    }
+    if (offset !== 0) {
+      scrollableParent.scrollBy({ top: offset, behavior: 'instant' });
+    }
   }
 }
 
@@ -93,13 +68,6 @@ setTimeout(scrollToActiveSidebarLink, 100);
 
 window.addEventListener("popstate", () => {
   setTimeout(scrollToActiveSidebarLink, 100);
-});
-
-document.addEventListener('click', (e) => {
-  const link = e.target.closest('#sidebar-container a[href]');
-  if (link && !link.getAttribute('href')?.startsWith('http')) {
-    setTimeout(scrollToActiveSidebarLink, 200);
-  }
 });
 """
 
@@ -130,8 +98,8 @@ def sidebar_leaf_outer(
                     width="100%",
                     class_name=rx.cond(
                         is_active,
-                        "m-0 transition-color text-primary-10",
-                        "m-0 transition-color text-secondary-11 hover:text-secondary-12",
+                        "m-0 transition-color text-primary-hover",
+                        "m-0 transition-color text-muted-foreground hover:text-foreground",
                     ),
                 ),
             ),
@@ -147,7 +115,7 @@ def sidebar_item_comp(
     item: SideBarItem,
     index: rx.vars.ArrayVar[list[int]],
     url: rx.vars.StringVar[str],
-    guide_margin_class: str = "ml-[3rem]",
+    guide_margin_class: str = "ml-[2.5rem]",
 ) -> rx.Component:
     """Render an item in the sidebar, recursing into its children."""
     if not item.children:
@@ -166,11 +134,20 @@ def sidebar_item_comp(
                 guide_margin_class=guide_margin_class,
             )
 
+    if len(item.children) == 1 and not item.children[0].children:
+        child = item.children[0]
+        return rx.el.li(
+            sidebar_link(
+                rx.el.p(item.names, class_name="m-0 text-sm font-[475]"),
+                href=child.link,
+                aria_current=rx.cond(url == child.link, "page", "false"),
+                class_name="flex min-h-8 w-full items-center rounded-lg py-1 pl-[2.5rem] text-foreground hover:!text-foreground transition-colors [&[aria-current=page]]:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+            ),
+            class_name="m-0 p-0 w-full list-none",
+        )
+
     is_open = (index.length() > 0) & (index[0] == item_index)
     nested_index = rx.cond(is_open, index[1:], []).to(list[int])
-    child_guide_margin_class = (
-        "ml-[3rem]" if has_sidebar_icon(item.names) else "ml-[2.5rem]"
-    )
     return docs_sidebar_group(
         item.names,
         *(
@@ -179,17 +156,12 @@ def sidebar_item_comp(
                 item=child,
                 index=nested_index,
                 url=url,
-                guide_margin_class=child_guide_margin_class,
+                guide_margin_class="ml-[2.5rem]",
             )
             for child_index, child in enumerate(item.children)
         ),
-        icon=SIDEBAR_ICON_MAP.get(item.names),
         open_=is_open,
     )
-
-
-def has_sidebar_icon(name):
-    return name in SIDEBAR_ICON_MAP
 
 
 def calculate_index(sidebar_items, url: str) -> list[int]:
@@ -274,6 +246,7 @@ def create_sidebar_section(
     index: rx.vars.ArrayVar[list[int]],
     url: rx.vars.StringVar[str],
     connected_line: bool = False,
+    guide_margin_class: str = "ml-[2.5rem]",
 ) -> rx.Component:
     """Render a titled section of the sidebar."""
     return docs_sidebar_section(
@@ -285,6 +258,7 @@ def create_sidebar_section(
                 item=item,
                 index=index,
                 url=url,
+                guide_margin_class=guide_margin_class,
             )
             for item_index, item in enumerate(items)
         ),
@@ -341,7 +315,6 @@ def sidebar_comp(
     from reflex_docs.pages.docs import enterprise, getting_started, state, ui
     from reflex_docs.pages.docs import hosting as hosting_page
     from reflex_docs.pages.docs.apiref import pages
-    from reflex_docs.pages.docs.custom_components import custom_components
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
@@ -363,7 +336,7 @@ def sidebar_comp(
         sidebar_category(
             "Cloud",
             hosting_page.deploy_quick_start.path,
-            "cloud",
+            None,
             True,
         ),
         class_name="flex flex-col items-start gap-2 w-full list-none",
@@ -380,16 +353,17 @@ def sidebar_comp(
     )
 
     ai_builder_categories = rx.el.ul(
+        sidebar_category("Build with AI", "/ai/", None, url == "/ai/"),
         sidebar_category(
             "AI Builder",
             ai_builder_pages.overview.best_practices.path,
-            "bot",
-            ~is_ai_mcp_or_skills,
+            None,
+            ~is_ai_mcp_or_skills & (url != "/ai/"),
         ),
         sidebar_category(
             "Agent Toolkit",
             ai_builder_pages.integrations.agent_toolkit.path,
-            "plug",
+            None,
             is_ai_mcp_or_skills,
         ),
         class_name="flex flex-col items-start gap-2 w-full list-none",
@@ -492,26 +466,6 @@ def sidebar_comp(
             html_lib_index,
             url,
         ),
-        rx.link(  # pyright: ignore [reportCallIssue]
-            rx.box(  # pyright: ignore [reportCallIssue]
-                rx.box(  # pyright: ignore [reportCallIssue]
-                    rx.icon("atom", size=16),  # pyright: ignore [reportCallIssue]
-                    rx.el.h5(
-                        "Custom Components",
-                        class_name="font-smbold text-[0.875rem] text-secondary-12 leading-5 tracking-[-0.01313rem] transition-color",
-                    ),
-                    class_name="flex flex-row items-center gap-3 text-secondary-12",
-                ),
-                rx.text(  # pyright: ignore [reportCallIssue]
-                    "See what components people have made with Reflex!",
-                    class_name="font-small text-secondary-11",
-                ),
-                class_name="flex flex-col gap-2 border-secondary-5 bg-secondary-1 hover:bg-secondary-3 shadow-large px-3.5 py-2 border rounded-xl transition-bg",
-            ),
-            underline="none",
-            href=custom_components.path,
-            class_name="w-fit lg:ml-[2.5rem]",
-        ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
     )
     api_reference_content = rx.el.ul(
@@ -521,6 +475,7 @@ def sidebar_comp(
             api_reference,
             api_reference_index,
             url,
+            guide_margin_class="ml-[1.5rem] [&_.pointer-events-none]:hidden",
         ),
         create_sidebar_section(
             "Changelog",
@@ -528,7 +483,7 @@ def sidebar_comp(
             changelog_items,
             changelog_index,
             url,
-            connected_line=True,
+            guide_margin_class="ml-[1.5rem] [&_.pointer-events-none]:hidden",
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
     )
