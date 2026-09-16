@@ -42,10 +42,15 @@ ARG PORT
 ENV PATH="/app/.venv/bin:$PATH" PORT=$PORT REFLEX_REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
 
 WORKDIR /app
-COPY --from=builder /app/.venv .venv
-COPY --from=builder /app/.web/backend .web/backend
+# The app user needs to own /app itself so reflex can create .states there.
+# Caddy keeps its state under $HOME and redis its dump in the workdir, both
+# of which resolve to /app. PORT must stay above 1024 for the unprivileged bind.
+RUN adduser --disabled-password --home /app reflex && chown reflex /app
+COPY --chown=reflex --from=builder /app/.venv .venv
+COPY --chown=reflex --from=builder /app/.web/backend .web/backend
 COPY --from=builder /app/.web/build/client /srv
-COPY . .
+COPY --chown=reflex . .
+USER reflex
 
 EXPOSE $PORT
 

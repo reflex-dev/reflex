@@ -18,16 +18,24 @@ reflex run --env prod
 
 Production mode compiles the app, builds an optimized static frontend, and
 serves it together with the backend (event websocket, `/ping`, `/_upload`)
-from a single process on port `3000`. Pass `--frontend-port` or
-`--backend-port` to listen on a different port.
+from a single server on port `3000`. Pass `--frontend-port` or
+`--backend-port` to listen on a different port. When redis is configured,
+the server runs `2 * cpu_count + 1` worker processes; set `GRANIAN_WORKERS`
+to override this.
 
 The frontend and backend can also run as separate processes, for example to
-serve the frontend from a CDN and scale the backend independently:
+serve the frontend from a CDN and scale the backend independently. The
+frontend-only server only serves static files, so tell it where the backend
+is when compiling the frontend — otherwise it assumes its own port:
 
 ```bash
 reflex run --env prod --backend-only --backend-port 8000
-reflex run --env prod --frontend-only --frontend-port 3000
+REFLEX_API_URL=http://localhost:8000 reflex run --env prod --frontend-only --frontend-port 3000
 ```
+
+Alternatively, put a reverse proxy in front of both processes and route the
+backend routes (`/_event`, `/ping`, `/_upload`, `/_health`) to the backend
+port, as the `Caddyfile`s in the container examples below do.
 
 ```md alert warning
 # Reverse Proxy and Websockets
@@ -104,8 +112,11 @@ this, use the `--no-zip` parameter. This provides the frontend in the
 `.web/build/client/` directory and the backend can be found in the root directory of
 the project.
 
-The export also writes a pre-compressed `.gz` copy of every frontend asset, so
-configure the static host to serve those directly where it supports it.
+The export also writes a pre-compressed `.gz` copy of the compressible text
+assets (JS, CSS, HTML, JSON, SVG, and similar), so configure the static host
+to serve those directly where it supports it. Set the
+`frontend_compression_formats` config option to also generate `brotli` or
+`zstd` copies.
 
 ## Reflex Container Service
 
