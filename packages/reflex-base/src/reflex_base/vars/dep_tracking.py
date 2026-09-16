@@ -388,8 +388,8 @@ class DependencyTracker:
             if the_var_data is None:
                 msg = f"Cannot determine the source code for the var in {self.func!r}."
                 raise VarValueError(msg)
-            self.dependencies.setdefault(the_var_data.state, set()).add(
-                the_var_data.field_name
+            self.dependencies.setdefault(the_var_data.state, set()).update(
+                the_var._dependency_field_names()
             )
             self.scan_status = ScanStatus.SCANNING
 

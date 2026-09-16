@@ -3799,6 +3799,18 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     State._potentially_dirty_states.discard(RouterVarDepState.get_full_name())
 
 
+@pytest.mark.parametrize("name", constants.ROUTER_VARS)
+@pytest.mark.parametrize("base", [BaseState, State])
+def test_router_field_names_are_reserved(name, base):
+    """Application fields cannot replace framework-owned router storage."""
+    with pytest.raises(ValueError, match="reserved"):
+        type(
+            "InvalidRouterState",
+            (base,),
+            {"__module__": __name__, "__annotations__": {name: int}, name: 1},
+        )
+
+
 def test_router_var_dep_legacy_string() -> None:
     """An explicit deps=["router"] still fires when any router var changes.
 

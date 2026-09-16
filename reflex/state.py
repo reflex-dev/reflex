@@ -748,9 +748,14 @@ class BaseState(EvenMoreBasicBaseState):
             **kwargs: The kwargs to pass to the init_subclass method.
 
         Raises:
-            StateValueError: If a substate class shadows another.
+            StateValueError: If a substate shadows another or declares a reserved router field.
         """
         from reflex_base.utils.exceptions import StateValueError
+
+        for name in constants.ROUTER_VARS:
+            if name in cls.__own_fields__ or name in cls.__dict__:
+                msg = f"The state name `{name}` is reserved for router data; use a different name instead"
+                raise StateValueError(msg)
 
         super().__init_subclass__(**kwargs)
 
@@ -1158,7 +1163,7 @@ class BaseState(EvenMoreBasicBaseState):
                         feature_name='ComputedVar deps=["router"]',
                         reason="the router var was split; depend on the specific"
                         ' router var instead (e.g. deps=["rx_router_url"]).',
-                        deprecation_version="0.9.9",
+                        deprecation_version="0.9.12",
                         removal_version="1.0",
                     )
                     dvar_set = (dvar_set - {constants.ROUTER}) | set(
