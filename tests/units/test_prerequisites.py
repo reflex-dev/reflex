@@ -1,5 +1,8 @@
+import importlib.metadata
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
 import uuid
 from collections.abc import Callable, Generator
@@ -64,10 +67,12 @@ def _mock_pypi_versions(
     Returns:
         The installed-version and network request mocks.
     """
-    installed_version = mocker.patch.object(
-        prerequisites.importlib.metadata,
-        "version",
-        return_value=current_version,
+    installed_version = mocker.Mock(return_value=current_version)
+    # Keep lazy dependency imports on real metadata, outside this consumer's mock.
+    mocker.patch.object(
+        prerequisites,
+        "importlib",
+        mocker.Mock(metadata=mocker.Mock(version=installed_version)),
     )
     response = mocker.Mock()
     response.json.return_value = {"info": {"version": latest_version}}
@@ -113,6 +118,14 @@ def test_check_latest_package_version_tracks_packages_independently(
     )
     stored = json.loads(version_check_file.read_text())
     assert "last_version_check_datetime_reflex_hosting_cli" in stored
+
+
+def test_version_check_mock_keeps_dependency_metadata_real(mocker):
+    """Lazy dependency imports must not see the version check's fixture value."""
+    original_version = importlib.metadata.version
+    installed_version, _ = _mock_pypi_versions(mocker)
+    assert importlib.metadata.version is original_version
+    assert prerequisites.importlib.metadata.version is installed_version
 
 
 def test_check_latest_package_version_refreshes_expired_check(
@@ -287,6 +300,26 @@ def test_check_latest_package_version_can_be_disabled(
     installed_version.assert_not_called()
     request.assert_not_called()
     assert json.loads(version_check_file.read_text()) == {}
+
+
+def test_prerequisites_does_not_import_database_stack() -> None:
+    """Importing general prerequisites must not load optional database support."""
+    script = """
+import sys
+
+from reflex.utils import prerequisites  # noqa: F401
+
+loaded = [name for name in ("reflex.model", "alembic", "sqlmodel") if name in sys.modules]
+assert not loaded, f"database modules imported eagerly: {loaded}"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
@@ -1857,6 +1890,129 @@ def test_install_frontend_packages_does_not_fall_back(
 
     with pytest.raises(RuntimeError, match=error_message):
         env.install({"some-pkg@1.0.0"})
+
+
+def test_npm_install_drops_stale_bun_lock_instead_of_persisting_both(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Switching to npm removes stale bun lockfiles.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    env.root_lock.write_text("exact-spec bun lock from an earlier bun run")
+    env.web_package_json.write_text('{"dependencies": {"react": "19.0.0"}}')
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+
+    def run_npm(args, **kwargs):
+        # npm rewrites exact versions to caret ranges.
+        web_npm_lock.write_text('{"lockfileVersion": 3}')
+        env.web_package_json.write_text('{"dependencies": {"react": "^19.0.0"}}')
+
+    env.patch_pm(["npm"], run_npm)
+
+    with chdir(env.tmp_path):
+        env.install()
+        implies_npm = js_runtimes._persisted_lockfile_implies_npm()
+
+    assert root_npm_lock.exists()
+    assert not env.root_lock.exists(), (
+        "stale bun.lock was persisted beside package-lock.json"
+    )
+    assert not env.web_lock.exists()
+    assert implies_npm is True
+
+
+def test_bun_install_drops_stale_npm_lock_instead_of_persisting_both(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Switching to bun removes stale npm lockfiles.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+    root_npm_lock.write_text('{"lockfileVersion": 3}')
+    env.web_package_json.write_text('{"dependencies": {"react": "^19.0.0"}}')
+
+    def run_bun(args, **kwargs):
+        env.web_lock.write_text("bun lock")
+        env.web_package_json.write_text('{"dependencies": {"react": "19.0.0"}}')
+
+    env.patch_pm(["bun"], run_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+        implies_npm = js_runtimes._persisted_lockfile_implies_npm()
+
+    assert env.root_lock.exists()
+    assert not root_npm_lock.exists(), (
+        "stale package-lock.json was persisted beside bun.lock"
+    )
+    assert not web_npm_lock.exists()
+    assert implies_npm is False
+
+
+def test_install_keeps_the_running_managers_lockfile_untouched(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Preserve the active manager's lockfile unchanged.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    env.root_lock.write_text("bun lock")
+    env.web_package_json.write_text("{}")
+
+    def run_bun(args, **kwargs):
+        env.web_lock.write_text("bun lock")
+
+    env.patch_pm(["bun"], run_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+
+    assert env.root_lock.read_text() == "bun lock"
+    assert env.web_lock.read_text() == "bun lock"
+
+
+def test_install_drops_nothing_for_a_custom_named_bun_binary(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Custom bun executable names leave both lockfiles intact.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    root_npm_lock.write_text('{"lockfileVersion": 3}')
+    env.web_package_json.write_text("{}")
+
+    def run_custom_bun(args, **kwargs):
+        env.web_lock.write_text("fresh bun lock")
+
+    env.patch_pm(["/opt/tools/bun-1.3"], run_custom_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+
+    assert env.root_lock.read_text() == "fresh bun lock"
+    assert env.web_lock.read_text() == "fresh bun lock"
+    assert root_npm_lock.exists()
 
 
 @pytest.mark.usefixtures("install_packages_env")

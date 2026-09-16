@@ -179,6 +179,8 @@ doc_markdown_sources: dict[str, str] = {}
 
 
 manual_titles = {
+    "docs/ai_builder/apis.md": "APIs",
+    "docs/ai_builder/urls.md": "URLs",
     "docs/database/overview.md": "Database Overview",
     "docs/custom-components/overview.md": "Custom Components Overview",
     "docs/custom-components/command-reference.md": "Custom Component CLI Reference",
@@ -268,7 +270,7 @@ def extract_doc_description(
     Returns:
         A cleaned, truncated description, or None.
     """
-    min_len = 120
+    min_len = 40
     if metadata:
         for key in ("meta_description", "description"):
             value = metadata.get(key)
@@ -316,8 +318,8 @@ def extract_doc_description(
             *(f"{n}." for n in range(1, 10)),
         )
         # Accumulate prose across paragraph breaks until the description is
-        # substantial (~120 chars) so a short opening sentence doesn't become a
-        # too-short meta description. Stop at the first structural line
+        # a useful summary (~40 chars) so a short opening sentence doesn't become a
+        # generic meta description. Stop at the first structural line
         # (heading/list/code) once some prose has been collected.
         for raw in text.splitlines():
             line = raw.strip()

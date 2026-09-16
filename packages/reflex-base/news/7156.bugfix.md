@@ -1,0 +1,1 @@
+Fix client-side event routing for events queued from callbacks (e.g. a `rx.call_script` callback or toast action triggering an upload handler): the client handler name was passed in the `event_actions` slot, so handlers like `uploadFiles` never ran.
