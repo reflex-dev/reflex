@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from typing import overload
 
 from reflex_cli.constants.base import LogLevel
-from reflex_cli.utils.log import HAS_REFLEX_BASE, is_json_mode
+from reflex_cli.utils.log import HAS_REFLEX_BASE, is_json_mode, is_stdout_reserved
 from reflex_cli.utils.log import set_log_level as _set_log_level
 
 if HAS_REFLEX_BASE:
@@ -28,6 +28,16 @@ else:
     from rich.table import Table
 
     _console = Console(highlight=False)
+    _console_stderr = Console(stderr=True, highlight=False)
+
+    def _human_console() -> Console:
+        """Resolve the console human-readable output belongs on.
+
+        Returns:
+            The stderr console while stdout is carrying a machine-readable
+            document, and the stdout console otherwise.
+        """
+        return _console_stderr if is_stdout_reserved() else _console
 
     def print(msg: str, **kwargs):
         """Print a message.
@@ -36,7 +46,7 @@ else:
             msg: The message to print.
             kwargs: Keyword arguments to pass to the print function.
         """
-        _console.print(msg, **kwargs)
+        _human_console().print(msg, **kwargs)
 
     def print_table(
         tabular_data: list[list[str]],
@@ -60,7 +70,7 @@ else:
         for row in tabular_data:
             table.add_row(*row)
 
-        _console.print(table)
+        _human_console().print(table)
 
     def rule(title: str, **kwargs):
         """Print a horizontal rule with a title.
@@ -69,7 +79,7 @@ else:
             title: The title of the rule.
             kwargs: Keyword arguments to pass to the print function.
         """
-        _console.rule(title, **kwargs)
+        _human_console().rule(title, **kwargs)
 
     @overload
     def ask(
@@ -105,7 +115,11 @@ else:
             A string with the user input.
         """
         return Prompt.ask(
-            question, choices=choices, default=default, show_choices=show_choices
+            question,
+            choices=choices,
+            default=default,
+            show_choices=show_choices,
+            console=_human_console(),
         )
 
     def progress():
@@ -130,17 +144,28 @@ else:
         Returns:
             A new status.
         """
-        return _console.status(*args, **kwargs)
+        return _human_console().status(*args, **kwargs)
 
 
-def set_log_level(log_level: LogLevel | str):
-    """Set the log level, accepting legacy string values.
+def set_log_level(log_level: LogLevel | str | None):
+    """Set the log level, accepting legacy string values and foreign enums.
+
+    Older reflex releases call the CLI's entrypoints directly rather than
+    through click, handing over their own ``reflex.constants.LogLevel``. That is
+    a different class from this package's -- and, before the enum grew
+    ``to_logging_level``, one the CLI cannot use -- so it is resolved by value,
+    the way a legacy plain string is. An unrecognized value falls back to INFO.
 
     Args:
-        log_level: The log level to set.
+        log_level: The log level to set, or None to leave it unchanged.
     """
-    if isinstance(log_level, str):
-        log_level = LogLevel.from_string(log_level) or LogLevel.INFO
+    if log_level is not None and not isinstance(log_level, LogLevel):
+        # A foreign LogLevel carries the level in ``value``; a plain string is
+        # already the value. Either way it resolves by name.
+        log_level = (
+            LogLevel.from_string(getattr(log_level, "value", log_level))
+            or LogLevel.INFO
+        )
     _set_log_level(log_level)
 
 

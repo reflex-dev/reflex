@@ -10,9 +10,10 @@ import inspect
 import json
 import sys
 from collections.abc import Callable, Sequence
+from importlib import import_module
 from importlib.util import find_spec
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypeVar, cast
 
 import wrapt
 from reflex_base.event import Event
@@ -40,6 +41,38 @@ _UNREFRESHABLE_ACCESS_SPEC: _AccessSpec = ("unrefreshable", None)
 # from `dataclasses.asdict`/`astuple` internals on the proxy read hot-path.
 _DATACLASSES_FILE = dataclasses.__file__
 
+# The data `@dataclass` writes on the class. Callers read it off the class,
+# which the proxy's instance-level forwarding cannot answer for; the methods
+# `@dataclass` writes need no copy, resolving through the wrapped object.
+_DATACLASS_CLASS_ATTRS = (
+    dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
+    dataclasses._PARAMS,  # pyright: ignore [reportAttributeAccessIssue]
+    "__match_args__",
+)
+
+
+def _dataclass_proxy_namespace(wrapped_cls: type) -> dict[str, Any]:
+    """Collect the dataclass metadata to define a wrapped type's proxy class with.
+
+    Args:
+        wrapped_cls: The wrapped dataclass type.
+
+    Returns:
+        The metadata attributes to copy, keyed by name.
+    """
+    # A class attribute is found before `__getattr__` forwards, so a name the
+    # dataclass declares as an instance field must not be copied. `fields()`
+    # lists exactly those, excluding the ClassVar and InitVar entries that
+    # `__dataclass_fields__` also carries, which stay class-level regardless.
+    instance_fields = {field.name for field in dataclasses.fields(wrapped_cls)}  # pyright: ignore [reportArgumentType]
+    return {
+        attr: getattr(wrapped_cls, attr)
+        for attr in _DATACLASS_CLASS_ATTRS
+        # `hasattr` skips metadata the class was declared without, such as
+        # `__match_args__` under `@dataclass(match_args=False)`.
+        if attr not in instance_fields and hasattr(wrapped_cls, attr)
+    }
+
 
 class StateProxy(wrapt.ObjectProxy):
     """Proxy of a state instance to control mutability of vars for a background task.
@@ -66,6 +99,12 @@ class StateProxy(wrapt.ObjectProxy):
                 async with self:
                     self.counter += 1
     """
+
+    if TYPE_CHECKING:
+        # wrapt-stubs types `ObjectProxy.__new__` as returning `ObjectProxy`
+        # rather than `Self`, which loses the subclass type at every call site.
+        def __new__(cls, *args: Any, **kwargs: Any) -> Self:  # noqa: D102
+            ...
 
     def __init__(
         self,
@@ -240,7 +279,9 @@ class StateProxy(wrapt.ObjectProxy):
             # ensure mutations to these containers are blocked unless proxy is _mutable
             return ImmutableMutableProxy(
                 wrapped=value.__wrapped__,
-                state=self,
+                # The proxy stands in for the wrapped state, and is passed
+                # deliberately so mutability is still gated on this proxy.
+                state=cast("BaseState", self),
                 field_name=value._self_field_name,
             )
         if isinstance(value, functools.partial) and value.args[0] is self.__wrapped__:
@@ -375,21 +416,38 @@ class ReadOnlyStateProxy(StateProxy):
         raise NotImplementedError(msg)
 
 
-MUTABLE_TYPES = (
+_MUTABLE_BUILTIN_TYPES = (
     list,
     dict,
     set,
 )
 
-if find_spec("sqlalchemy"):
-    from sqlalchemy.orm import DeclarativeBase
+_MUTABLE_MODEL_BASES = (
+    ("sqlalchemy.orm.decl_api", "DeclarativeBase"),
+    ("pydantic.main", "BaseModel"),
+)
 
-    MUTABLE_TYPES += (DeclarativeBase,)
 
-if find_spec("pydantic"):
-    from pydantic import BaseModel
+def __getattr__(name: str) -> Any:
+    """Resolve the legacy mutable-types tuple only when explicitly requested.
 
-    MUTABLE_TYPES += (BaseModel,)
+    Args:
+        name: The module attribute to resolve.
+
+    Returns:
+        The mutable builtin and model base types.
+
+    Raises:
+        AttributeError: If the requested attribute is unknown.
+    """
+    if name == "MUTABLE_TYPES":
+        return _MUTABLE_BUILTIN_TYPES + tuple(
+            getattr(import_module(module_name), base_name)
+            for module_name, base_name in _MUTABLE_MODEL_BASES
+            if find_spec(module_name.partition(".")[0])
+        )
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
 
 
 class MutableProxy(wrapt.ObjectProxy):
@@ -436,7 +494,7 @@ class MutableProxy(wrapt.ObjectProxy):
         *args,
         path: tuple[_AccessSpec, ...] | None = None,
         **kwargs,
-    ) -> MutableProxy:
+    ) -> Self:
         """Create a proxy instance for a mutable object that tracks changes.
 
         Args:
@@ -453,20 +511,17 @@ class MutableProxy(wrapt.ObjectProxy):
             wrapper_cls_key = (cls, wrapped_cls)
             # Find the associated class
             if wrapper_cls_key not in cls.__dataclass_proxies__:
-                # Create a new class that has the __dataclass_fields__ defined
+                # Create a new class carrying the wrapped type's dataclass metadata.
                 wrapper_cls_name = wrapped_cls.__name__ + cls.__name__
                 cls.__dataclass_proxies__[wrapper_cls_key] = type(
                     wrapper_cls_name,
                     (cls,),
-                    {
-                        dataclasses._FIELDS: getattr(  # pyright: ignore [reportAttributeAccessIssue]
-                            wrapped_cls,
-                            dataclasses._FIELDS,  # pyright: ignore [reportAttributeAccessIssue]
-                        ),
-                    },
+                    _dataclass_proxy_namespace(wrapped_cls),
                 )
             cls = cls.__dataclass_proxies__[wrapper_cls_key]
-        return super().__new__(cls)  # pyright: ignore[reportArgumentType]
+        # wrapt-stubs types `ObjectProxy.__new__` as returning `ObjectProxy`
+        # rather than `Self`, hence the cast.
+        return cast("Self", super().__new__(cls))  # pyright: ignore[reportArgumentType]
 
     def __init__(
         self,
@@ -975,6 +1030,15 @@ def is_mutable_type(type_: type) -> bool:
     Returns:
         Whether the type is mutable and should be wrapped.
     """
-    return issubclass(type_, MUTABLE_TYPES) or (
+    if issubclass(type_, _MUTABLE_BUILTIN_TYPES) or (
         dataclasses.is_dataclass(type_) and not issubclass(type_, Var)
-    )
+    ):
+        return True
+    # A model's defining module is already loaded before its subclasses exist.
+    # Read its namespace directly so lazy module attributes cannot load packages.
+    for module_name, base_name in _MUTABLE_MODEL_BASES:
+        if (module := sys.modules.get(module_name)) is not None:
+            base = vars(module).get(base_name)
+            if base is not None and issubclass(type_, base):
+                return True
+    return False

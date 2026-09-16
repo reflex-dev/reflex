@@ -1,3 +1,121 @@
+## v0.9.11 (2026-09-11)
+
+### Breaking Changes
+
+- State deltas may emit state entries and variable keys in a different order. Values are unchanged, but downstream snapshots or tests comparing serialized deltas as text may need updating; compare parsed JSON objects or normalize key order instead. ([#7087](https://github.com/reflex-dev/reflex/issues/7087))
+
+### Features
+
+- Propagate a frontend `traceparent` into event spans, count websocket connections and message sizes, and wrap the ASGI app when the `reflex-otel` instrumentor is active. ([#6227](https://github.com/reflex-dev/reflex/issues/6227))
+
+### Bug Fixes
+
+- A backend var whose name is annotated on a state now takes the default declared by a `field()` on a base class instead of silently becoming `None`, and an error raised by that field's `default_factory` surfaces instead of being swallowed. ([#6812](https://github.com/reflex-dev/reflex/issues/6812))
+- State classes no longer resolve descriptors while being constructed, so a hybrid property's frontend var is no longer built against a half-built class. ([#6812](https://github.com/reflex-dev/reflex/issues/6812))
+- Assigning to a state attribute backed by a property (including a `hybrid_property`) now runs its setter instead of raising `SetUndefinedStateVarError`. ([#6812](https://github.com/reflex-dev/reflex/issues/6812))
+- Telemetry events are now collected under the submitting thread's registration context, so the background worker reuses the config the app already loaded instead of re-importing `rxconfig.py` (and mutating `sys.path`) off-thread. ([#6960](https://github.com/reflex-dev/reflex/issues/6960))
+- Make `reflex.testing` importable without test-only dependencies and provide a `testing` extra for `AppHarness`. ([#6974](https://github.com/reflex-dev/reflex/issues/6974))
+- Mutable proxies over dataclass state values now carry the wrapped type's `__dataclass_params__` and `__match_args__` on their class alongside `__dataclass_fields__`, so code that inspects a dataclass through the class — reading the `frozen`/`eq` flags or the positional field names after `dataclasses.is_dataclass` — no longer raises `AttributeError` on a proxied value. ([#7014](https://github.com/reflex-dev/reflex/issues/7014))
+- `AdminDash` now works with starlette-admin 1.0, which renamed the SQLAlchemy `Admin(engine=...)` argument to `session_provider`. Both starlette-admin 0.x and 1.x are supported. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+- Compiling an app from several processes against one working directory — pytest-xdist workers, parallel builds, or containers sharing a bind mount — no longer aborts with `FileNotFoundError` or `FileExistsError` while linking a `rx.asset(shared=True)` file into `assets/external/`. A shared asset whose link already points at a different file is repointed at the asset rather than left alone. ([#7039](https://github.com/reflex-dev/reflex/issues/7039))
+- `reflex run --env prod` and `reflex export` no longer fail with `FileNotFoundError` when `frontend_path` is set and route prerendering is disabled (`REFLEX_SSR=false`), and no longer fail on Windows with `cannot instantiate 'PosixPath'` whenever `frontend_path` is set. ([#7044](https://github.com/reflex-dev/reflex/issues/7044))
+- Generate the frontend context module as `utils/context.jsx` so `reflex run` hot updates keep the state providers mounted; a stale `utils/context.js` is removed on the next compile. ([#7071](https://github.com/reflex-dev/reflex/issues/7071))
+- Fix `rx.AdminDash` pages failing with `NoMatchFound` by preserving named route lookup through the application's context middleware. ([#7107](https://github.com/reflex-dev/reflex/issues/7107))
+- Give forked backend workers distinct socket-owner identities so Redis can deliver backend-initiated state updates to clients connected to another worker. ([#7108](https://github.com/reflex-dev/reflex/issues/7108))
+- Preserve explicit `bundle_library()` registrations through frontend compilation and automatically bundle imports used by initial-state components. Explicitly registered component subpaths can first appear after an event, and initial components such as Lucide icons no longer need a separate registration. ([#7109](https://github.com/reflex-dev/reflex/issues/7109))
+
+### Performance
+
+- Clear auto-memoization naming caches after compiling app. ([#6947](https://github.com/reflex-dev/reflex/issues/6947))
+- New opt-in dev-server knobs: `REFLEX_DEV_PROD_REACT=1` serves React's production build under the Vite dev server (navigation CPU on a large app 54 → 36 ms, prod build 24 ms; edits become a full reload since Fast Refresh needs dev React), and `REFLEX_VITE_WARMUP_ROUTES=1` pre-transforms route modules at startup so the first visit to a page no longer waits on Vite (105–131 → 43–69 ms, or 20–32 ms with both). ([#7021](https://github.com/reflex-dev/reflex/issues/7021))
+- Trimmed the framework overhead around every event handler: the state fast-paths its own bookkeeping attributes, foreground handler tasks start eagerly on Python 3.12+, the computed-var expiry check only looks at interval vars, route matching is memoized per path, and socket.io handlers run inline. About 28% less CPU per trivial event and 20% more events per second per worker under concurrent load. ([#7025](https://github.com/reflex-dev/reflex/issues/7025))
+- Reduce CLI startup time by loading component and cloud command implementations only when invoked, and avoid frontend package reinstalls after backend-only config changes. ([#7050](https://github.com/reflex-dev/reflex/issues/7050))
+- Avoid repeated PyPI requests by caching successful latest-version checks for 24 hours and throttling failed checks for one hour. ([#7050](https://github.com/reflex-dev/reflex/issues/7050))
+
+### Miscellaneous
+
+- Allow `wrapt` 2.2 and 2.3. ([#7019](https://github.com/reflex-dev/reflex/issues/7019))
+
+
+## v0.9.10 (2026-09-01)
+
+### Bug Fixes
+
+- Shared state updates now reach linked clients connected to other backend instances — the fan-out previously skipped any client whose websocket was not connected to the instance processing the event, so with redis and multiple workers only same-instance clients received live updates. ([#6934](https://github.com/reflex-dev/reflex/issues/6934))
+- Allow static IDs on document-root head components without generating React hooks. ([#7005](https://github.com/reflex-dev/reflex/issues/7005))
+
+
+## v0.9.9 (2026-08-28)
+
+### Breaking Changes
+
+- `pip install reflex` no longer installs `pydantic`; pydantic model support activates when it is installed. Use the new `reflex[pydantic]` extra (or `reflex[db]`) to keep it. ([#6786](https://github.com/reflex-dev/reflex/issues/6786))
+- The compiled frontend now targets React Router 8.3.0 (from 7.18.2), and Reflex requires Node 22.22.0 or newer as a result. Apps on the default generated setup need no `rxconfig.py` or app code changes. One change is required if you wrote a custom component against `react-router-dom`: that package no longer exists upstream and is no longer installed, so `library = "react-router-dom"` must become `react-router` (or `react-router/dom` for `RouterProvider`/`HydratedRouter`). ([#6854](https://github.com/reflex-dev/reflex/issues/6854))
+- A `RegistrationContext` can only be associated with a single `App` instance, so creating a second bare `rx.App()` in one process now raises `ReflexRuntimeError` (0.9.8 allowed it); use a fresh `RegistrationContext` (e.g. `RegistrationContext.fork()`) to create multiple apps. ([#6382](https://github.com/reflex-dev/reflex/issues/6382))
+
+### Deprecations
+
+- `reflex.components.dynamic.bundled_libraries` and `DEFAULT_BUNDLED_LIBRARIES` are deprecated (removal in 1.0) but keep working, resolving against the active `RegistrationContext`. Use `RegistrationContext.ensure_context().bundled_libraries` to read the list, or `bundle_library()` / `reset_bundled_libraries()` to modify it. ([#6967](https://github.com/reflex-dev/reflex/issues/6967))
+- `reflex.page.DECORATED_PAGES` is deprecated (removal in 1.0) but keeps working, resolving to a mapping of the app name to the active `RegistrationContext`'s page registrations. Use `RegistrationContext.ensure_context().decorated_pages` instead. ([#6985](https://github.com/reflex-dev/reflex/issues/6985))
+
+### Features
+
+- The current `App`, the loaded `Config`, `@rx.page` registrations, and the bundled-library registry are now scoped to the active `RegistrationContext` instead of module-level globals, so multiple apps (and test harnesses) can coexist in one process without leaking registrations into each other. ([#6382](https://github.com/reflex-dev/reflex/issues/6382))
+- Report state deltas the frontend cannot process back to the backend via a new `client_error` socket event, logging an actionable error in the terminal instead of failing silently. A frontend/backend state mismatch is fatal for the session: further events stop until the page is reloaded after the frontend is rebuilt or `api_url` is corrected. ([#6827](https://github.com/reflex-dev/reflex/issues/6827))
+- Framework logging now flows through standard python `logging` with per-module loggers (`reflex_base.utils.log`, re-exported as `reflex.utils.log`), bootstrapped on `import reflex`. Rich colored output is preserved, and `REFLEX_LOG_JSON` emits machine-readable JSON-lines records. `--loglevel critical` no longer prints the system-info banner. ([#6863](https://github.com/reflex-dev/reflex/issues/6863))
+- The reflex CLI accepts `--json` (equivalent to `REFLEX_LOG_JSON`) to emit machine-readable JSON-lines logs. ([#6865](https://github.com/reflex-dev/reflex/issues/6865))
+- `reflex deploy` accepts `--min-instances` and `--max-instances` to set the autoscaling bounds of an app deployed to Google Cloud. Omitted bounds are left unchanged. ([#6884](https://github.com/reflex-dev/reflex/issues/6884))
+- `reflex deploy` gains `--gcp-connection`, to pick which of your organization's connected GCP accounts an app deploys through; `--full-deploy`, to serve the frontend from the provider's own container instead of Reflex's CDN; and `--strategy`, which was previously only settable in the config file. ([#6908](https://github.com/reflex-dev/reflex/issues/6908))
+- Compiled components are now named for React DevTools: memoized components take a `displayName` from the Python class or `@rx.memo` function they came from instead of showing as `Anonymous`, generated contexts are named (`StateContext(reflex___state____state.my_state).Provider` rather than an unlabelled `Context.Provider`), pages are labelled with their route (`Component(blog/[slug])`), and client-only (`NoSSRComponent`) wrappers render as `ClientSide(<Tag>)`. ([#6945](https://github.com/reflex-dev/reflex/issues/6945))
+
+### Bug Fixes
+
+- Stale `on_load` work no longer blocks or outlives a page navigation: a newer navigation for the same client now cancels the previous page's unfinished `on_load` event chain, including `on_load` handlers that are background tasks (`@rx.event(background=True)`), which 0.9.8 let run to completion. Background tasks started from other events are unaffected. ([#6593](https://github.com/reflex-dev/reflex/issues/6593))
+- A `[[...splat]]` catchall route no longer matches paths that merely share its prefix — `posts/[[...splat]]` matched `/postsomething` as well as `/posts` and its descendants, so the wrong page's `on_load` events could fire. ([#6790](https://github.com/reflex-dev/reflex/issues/6790))
+- Ensure state manager instances use isolated internal locks instead of sharing one lock across instances. ([#6830](https://github.com/reflex-dev/reflex/issues/6830))
+- Qualify `dict` annotations on `BaseState` that were shadowed by `BaseState.dict`, so type checkers resolve them to the builtin. ([#6846](https://github.com/reflex-dev/reflex/issues/6846))
+- `reflex run` now pre-enables the `development` export condition for the dev server via `NODE_OPTIONS`/`BUN_OPTIONS`, fixing the dev server exiting with `restartWithMergedOptions() was called, but the process has already been restarted` on installs without node, where react-router 8's CLI re-executes itself to set the condition. ([#6857](https://github.com/reflex-dev/reflex/issues/6857))
+- An `AppHarnessProd` no longer leaks `REFLEX_ENV_MODE=prod` to dev `AppHarness` instances created later in the same process, which made them compile with route prerendering enabled and drop events dispatched during hydration recovery. ([#6857](https://github.com/reflex-dev/reflex/issues/6857))
+- Cache event handler annotations before runtime state-class patches can shadow builtin names on Python 3.14. ([#6890](https://github.com/reflex-dev/reflex/issues/6890))
+- `rx.script` head updates now flush synchronously instead of via react-helmet's requestAnimationFrame batching, fixing intermittently missing script tags after hydration (flaky "scripts not loaded" failures). ([#6905](https://github.com/reflex-dev/reflex/issues/6905))
+- Fixed a race where a finishing background task could silently discard state updates made by a concurrently running event handler before they reached the frontend, leaving the UI stale until the next write. Background handlers that never enter `async with self` still emit their delta, now computed under the state lock. ([#6920](https://github.com/reflex-dev/reflex/issues/6920))
+- `AppHarness` starts the frontend dev server with the `development` export condition enabled, fixing "Frontend did not start" on node-less (bun-only) installs where react-router's dev CLI restart guard trips. ([#6931](https://github.com/reflex-dev/reflex/issues/6931))
+- Adding a page no longer raises a spurious `RouteValueError` when a static segment lines up with another route's dynamic segment (e.g. `/posts/all/[x]` alongside `/posts/[id]`). React Router resolves such siblings in favor of the static one, so only two differently named dynamic segments at the same position conflict. The check was also order-dependent: it only tripped when the bracket-carrying route was added second. ([#6953](https://github.com/reflex-dev/reflex/issues/6953))
+- Reduce published wheel and sdist size by removing misplaced generated artifacts. ([#6966](https://github.com/reflex-dev/reflex/issues/6966))
+- A `client_error` socket emit with no payload no longer raises an unhandled `TypeError` inside python-socketio's dispatch, which let any connected socket — even one without a valid token — spam asyncio tracebacks into the backend logs past the handler's rate limits. ([#6984](https://github.com/reflex-dev/reflex/issues/6984))
+- Console warnings and errors no longer print literal backslash-escaped brackets (e.g. `dict\[str, str]`). The rich-markup escapes were left over from the legacy console helpers, but the logging pipeline renders messages with markup disabled, so bracketed type names now print verbatim. `VarAttributeError` messages drop the same escapes. ([#6989](https://github.com/reflex-dev/reflex/issues/6989))
+- `reflex run` no longer hangs forever when a fatal error (e.g. the node minimum-version check on the npm path) exits the frontend worker thread while the backend blocks the main thread; the failure now interrupts the main thread and the CLI exits promptly with the original error. ([#6990](https://github.com/reflex-dev/reflex/issues/6990), [#6994](https://github.com/reflex-dev/reflex/issues/6994))
+
+### Performance
+
+- Remove the per-update `asyncio.create_task` wrapper in `EventNamespace.emit_update`, cutting scheduling overhead roughly in half for every outgoing state update. ([#6734](https://github.com/reflex-dev/reflex/issues/6734))
+- Dev mode no longer pays for React's per-element owner-stack capture: navigation clicks in a large app dropped from ~350ms to ~83ms of main-thread CPU (5.6x prod down to ~1.3x). In exchange `React.captureOwnerStack()` returns no owner frames in dev, which affects React DevTools' owner-stack view and custom error overlays built on that API; set `REFLEX_REACT_OWNER_STACKS=1` to restore them. ([#6905](https://github.com/reflex-dev/reflex/issues/6905))
+- `@rx.memo` components with props bound to state are now auto-memoized at the call site: the state hooks those props need compile into a generated wrapper component instead of the page module. A state change re-renders that wrapper rather than the whole page, and React's `memo` stops there unless one of the prop values actually changed. ([#6949](https://github.com/reflex-dev/reflex/issues/6949))
+- The generated `vite.config.js` now declares a hook filter on the plugin that redirects `react-dom/server` to `react-dom/server.node`, so the bundler no longer calls into it for every import in the module graph — on the Reflex docs site that was ~15,800 calls per build to rewrite a single specifier. ([#6959](https://github.com/reflex-dev/reflex/issues/6959))
+
+### Documentation
+
+- Documented the `provider`, `gcp_connection` and `full_deploy` cloud config settings, including which settings a Google Cloud target ignores and why `full_deploy` is left unset rather than false by default. ([#6908](https://github.com/reflex-dev/reflex/issues/6908))
+
+### Miscellaneous
+
+- The generated `package.json` no longer carries a framework-owned `postcss` override; the pinned `postcss` dev dependency already forces a single resolved copy for every transitive requirer. Projects that already installed 0.9.8 keep an inert `"postcss": "8.5.23"` override in `reflex.lock/package.json`; it matches the dev-dependency pin, so it changes nothing today and can be deleted by hand. ([#6854](https://github.com/reflex-dev/reflex/issues/6854))
+- Upgrade the locked dev tooling: `ruff` 0.15.12 -> 0.16.2, `pyright` 1.1.408 -> 1.1.411, `typer` 0.25.1 -> 0.27.1. ([#6893](https://github.com/reflex-dev/reflex/issues/6893))
+- The `reflex deploy` command implementation moved out of the `reflex` package into `reflex-hosting-cli`, so cloud code is no longer shipped inside the framework. Flags and behavior are unchanged, and `reflex-hosting-cli` remains a dependency of `reflex`, so `reflex deploy` and `reflex cloud` stay available out of the box. If the package is not installed, these commands now report which package to install instead of failing with a missing-command error. ([#6924](https://github.com/reflex-dev/reflex/issues/6924))
+
+
+## v0.9.8.post1 (2026-08-18)
+
+### Features
+
+- `reflex deploy` accepts `--min-instances` and `--max-instances` to set the autoscaling bounds of an app deployed to Google Cloud. Omitted bounds are left unchanged. ([#6884](https://github.com/reflex-dev/reflex/issues/6884))
+- `reflex deploy` gains `--gcp-connection`, to pick which of your organization's connected GCP accounts an app deploys through; `--full-deploy`, to serve the frontend from the provider's own container instead of Reflex's CDN; and `--strategy`, which was previously only settable in the config file. ([#6908](https://github.com/reflex-dev/reflex/issues/6908))
+
+### Documentation
+
+- Documented the `provider`, `gcp_connection` and `full_deploy` cloud config settings, including which settings a Google Cloud target ignores and why `full_deploy` is left unset rather than false by default. ([#6908](https://github.com/reflex-dev/reflex/issues/6908))
+
+
 ## v0.9.8 (2026-08-04)
 
 ### Features

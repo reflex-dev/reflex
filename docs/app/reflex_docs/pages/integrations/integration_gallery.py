@@ -19,9 +19,7 @@ FilterOptions = [
 
 
 def integration_filter_button(data: dict):
-    active_pill = (
-        "border border-primary-8 bg-primary-3 hover:bg-primary-3 !text-primary-10"
-    )
+    active_pill = "border border-ring bg-accent hover:bg-accent !text-primary-hover"
 
     return ui.button(
         ui.icon(icon=data["icon"]),
@@ -60,33 +58,30 @@ def integration_gallery_cards(data):
                     ),
                     ui.avatar.fallback(
                         data["name"][0],
-                        class_name="text-secondary-12 text-xl font-semibold uppercase size-full",
+                        class_name="text-foreground text-xl font-semibold uppercase size-full",
                         unstyled=True,
                     ),
                     unstyled=True,
                     class_name="size-8 flex items-center justify-center",
                 ),
-                ui.link(
-                    render_=ui.button(
-                        "Learn More",
-                        variant="outline",
-                        class_name="group-hover:bg-secondary-2 hover:bg-transparent",
-                    ),
-                    to=data["path"],
+                rx.el.span(
+                    "Learn more",
+                    rx.icon("arrow-up-right", size=14, aria_hidden=True),
+                    class_name="flex items-center gap-1 text-sm text-muted-foreground",
                 ),
                 class_name="w-full flex flex-row items-center justify-between",
             ),
             rx.el.div(
                 rx.el.p(
-                    data["title"], class_name="text-lg font-semibold text-secondary-12"
+                    data["title"], class_name="text-lg font-semibold text-foreground"
                 ),
                 rx.el.p(
                     data["description"],
-                    class_name="font-medium text-secondary-11 leading-[1.35]",
+                    class_name="font-medium text-muted-foreground leading-[1.35]",
                 ),
                 class_name="flex flex-col gap-y-1",
             ),
-            class_name="flex flex-col gap-y-6 rounded-ui-xl border border-secondary-a4 bg-secondary-1 shadow-small p-6 h-[13rem] justify-between hover:bg-secondary-2",
+            class_name="flex flex-col gap-y-6 rounded-ui-xl border border-border-subtle bg-background shadow-small p-6 h-[13rem] justify-between hover:bg-muted",
         ),
         href=data["path"],
         class_name="group text-inherit hover:!text-inherit decoration-none no-underline "
