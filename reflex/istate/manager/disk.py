@@ -47,15 +47,37 @@ def _mark_state_tree_touched(state: BaseState) -> None:
         _mark_state_tree_touched(substate)
 
 
-def _mark_replacement_state_touched(cached_state: object, state: object) -> None:
+def _mark_replacement_state_touched(
+    known_states: dict[int, BaseState], state: object
+) -> None:
     """Mark a replacement state tree for persistence.
 
     Args:
-        cached_state: The state instance currently cached for the token.
+        known_states: Previously known state instances in the state tree.
         state: The state instance supplied to set_state.
     """
-    if isinstance(state, BaseState) and state is not cached_state:
+    if not isinstance(state, BaseState):
+        return
+    if known_states.get(id(state)) is not state:
         _mark_state_tree_touched(state)
+        return
+    for substate in state.substates.values():
+        _mark_replacement_state_touched(known_states, substate)
+
+
+def _get_state_instances(state: BaseState) -> dict[int, BaseState]:
+    """Get the state instances in a state tree.
+
+    Args:
+        state: The root of the state tree.
+
+    Returns:
+        The state instances keyed by object identity.
+    """
+    instances = {id(state): state}
+    for substate in state.substates.values():
+        instances.update(_get_state_instances(substate))
+    return instances
 
 
 @dataclasses.dataclass
@@ -79,6 +101,12 @@ class StateManagerDisk(StateManager):
 
     # Last time a token was touched.
     _token_last_touched: dict[str, float] = dataclasses.field(
+        default_factory=dict,
+        init=False,
+    )
+
+    # The last known instances in each base state tree.
+    _state_instances: dict[str, dict[int, BaseState]] = dataclasses.field(
         default_factory=dict,
         init=False,
     )
@@ -220,6 +248,7 @@ class StateManagerDisk(StateManager):
                 root_state.substates = fresh_root_state.substates
             await self.populate_substates(token, root_state, root_state)
             self.states[token.cache_key] = root_state
+            self._state_instances[token.cache_key] = _get_state_instances(root_state)
             return cast(TOKEN_TYPE, root_state)
         # For non-BaseState tokens, if the deserialized state is None, we create a new instance using the token's cls.
         state = await self.load_state(token)
@@ -360,7 +389,11 @@ class StateManagerDisk(StateManager):
             context: The state modification context.
         """
         token = self._coerce_token(token)
-        _mark_replacement_state_touched(self.states.get(token.cache_key), state)
+        if isinstance(state, BaseState):
+            _mark_replacement_state_touched(
+                self._state_instances.get(token.cache_key, {}),
+                state,
+            )
         self._token_last_touched[token.cache_key] = time.time()
         if self._write_debounce_seconds > 0:
             # Deferred write to reduce disk IO overhead.
@@ -374,10 +407,14 @@ class StateManagerDisk(StateManager):
                 )
             else:
                 queued_item.state = state
+            if isinstance(state, BaseState):
+                self._state_instances[token.cache_key] = _get_state_instances(state)
         else:
             # Immediate write to disk.
             await self.set_state_for_substate(token, state)
             self.states[token.cache_key] = state
+            if isinstance(state, BaseState):
+                self._state_instances[token.cache_key] = _get_state_instances(state)
         # Ensure the processing task is scheduled to handle expirations and any deferred writes.
         await self._schedule_process_write_queue()
 
