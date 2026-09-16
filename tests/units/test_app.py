@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import contextlib
 import contextvars
 import functools
@@ -37,6 +38,7 @@ from reflex_base.registry import RegistrationContext
 from reflex_base.style import Style
 from reflex_base.utils import exceptions, format, memo_paths
 from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.types import Receive, Scope, Send
 from reflex_base.vars.base import computed_var
 from reflex_components_core.base.bare import Bare
 from reflex_components_core.base.fragment import Fragment
@@ -45,6 +47,7 @@ from reflex_components_radix.themes.typography.text import Text
 from reflex_otel import ReflexInstrumentor
 from starlette.applications import Starlette
 from starlette.datastructures import FormData, Headers, UploadFile
+from starlette.exceptions import HTTPException
 from starlette.requests import ClientDisconnect
 from starlette.responses import StreamingResponse
 from starlette.testclient import TestClient
@@ -57,6 +60,7 @@ from reflex.app import (
     App,
     ComponentCallable,
     EventNamespace,
+    _ContextMiddleware,
     _sio_dumps,
     _sio_loads,
     default_overlay_component,
@@ -250,6 +254,23 @@ def test_default_app(app: App):
     assert app.admin_dash is None
 
 
+def test_setup_admin_dash_skips_optional_imports_without_config(
+    app: App, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A default app must not load the optional admin and database stacks."""
+    real_import = builtins.__import__
+
+    def import_without_admin(name, *args, **kwargs):
+        if name.startswith("starlette_admin") or name == "reflex.model":
+            msg = f"unexpected optional import: {name}"
+            raise AssertionError(msg)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", import_without_admin)
+
+    app._setup_admin_dash()
+
+
 def test_multiple_states_error(
     monkeypatch: pytest.MonkeyPatch,
     test_state: BaseState,
@@ -285,6 +306,37 @@ def test_add_page_default_route(
     app.add_page(about_page)
     app._compile_page("about")
     assert app._pages.keys() == {"index", "about"}
+
+
+def test_prepare_404_page_preserves_dynamic_metadata():
+    """404 fallback defaults should not evaluate explicitly supplied Vars."""
+
+    class PageState(rx.State):
+        title: str = "Dynamic title"
+        description: str = "Dynamic description"
+
+    app = App()
+    prepared = app._prepare_page(
+        route=constants.Page404.SLUG,
+        title=PageState.title,
+        description=PageState.description,
+    )
+
+    assert prepared.page.title is PageState.title
+    assert prepared.page.description is PageState.description
+
+
+def test_prepare_404_page_empty_string_metadata_uses_defaults():
+    """Empty-string 404 metadata keeps falling back to the defaults."""
+    app = App()
+    prepared = app._prepare_page(
+        route=constants.Page404.SLUG,
+        title="",
+        description="",
+    )
+
+    assert prepared.page.title == constants.Page404.TITLE
+    assert prepared.page.description == constants.Page404.DESCRIPTION
 
 
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
@@ -1525,6 +1577,37 @@ async def test_upload_file_without_annotation(
 
 
 @pytest.mark.asyncio
+async def test_upload_file_unknown_handler_returns_400(
+    token: str,
+):
+    """Test that an unregistered upload event handler raises a controlled 400.
+
+    A stale, misspelled, or since-removed handler name in the
+    ``reflex-event-handler`` header must not fall through to an unhandled
+    ``KeyError`` (which Starlette would surface as a 500); it should raise a
+    ``HTTPException`` before any form parsing or event dispatch happens.
+
+    Args:
+        token: a Token.
+    """
+    app = App(_state=State)
+
+    request_mock = unittest.mock.Mock()
+    request_mock.headers = {
+        "reflex-client-token": token,
+        "reflex-event-handler": "no.such.State.handler",
+    }
+
+    fn = upload(app)
+    with pytest.raises(HTTPException) as err:
+        await fn(request_mock)
+    assert err.value.status_code == 400
+    # The form should never have been read: the handler lookup fails first.
+    request_mock.form.assert_not_called()
+    await app.state_manager.close()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "state",
     [FileUploadState, ChildFileUploadState, GrandChildFileUploadState],
@@ -1828,7 +1911,6 @@ class DynamicState(State):
         recalculated when the dynamic route var was dirty
     """
 
-    is_hydrated: bool = False
     loaded: int = 0
     counter: int = 0
 
@@ -2313,6 +2395,15 @@ def test_app_wrap_compile_theme(
     ).read_text()
     assert "fallbackRender" in memo_contents
     assert "handle_frontend_exception" in memo_contents
+    # The fallback icon's stroke attributes must reach React in camelCase:
+    # kebab-case DOM properties log "Invalid DOM property" warnings.
+    for camel_case, kebab_case in (
+        ("strokeWidth", "stroke-width"),
+        ("strokeLinecap", "stroke-linecap"),
+        ("strokeLinejoin", "stroke-linejoin"),
+    ):
+        assert camel_case in memo_contents
+        assert kebab_case not in memo_contents
 
 
 def test_compile_without_radix_components_skips_radix_plugin(
@@ -3203,6 +3294,81 @@ def test_get_frontend_packages_maps_versioned_subpath_imports_to_pinned_base(
     assert "@scope/pkg@2.0.0/subpath" not in install_set
 
 
+def test_get_frontend_packages_keeps_local_and_git_specifiers_intact(
+    mocker: MockerFixture,
+):
+    """Location specifiers must reach the package manager unmodified.
+
+    Local paths, ``file:`` URLs and git references contain slashes that are
+    part of the location, not a package subpath, so they must not be
+    truncated at the first slash (reflex-dev/reflex#7117).
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    specifiers = [
+        "@masenf/hello-react@../hello-react",
+        "@masenf/hello-react@../hello-react.tgz",
+        "@masenf/hello-react@./vendor/hello-react",
+        "@masenf/hello-react@/opt/hello-react",
+        "@masenf/hello-react@~/hello-react",
+        "@masenf/hello-react@file:../hello-react",
+        "@masenf/hello-react@github:masenf/hello-react",
+        "@masenf/hello-react@masenf/hello-react#main",
+        "local-pkg@../local-pkg",
+    ]
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        specifier: {ImportVar(tag="Counter")} for specifier in specifiers
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert install_set == set(specifiers)
+
+
+def test_get_frontend_packages_maps_subpath_of_local_package_to_its_specifier(
+    mocker: MockerFixture,
+):
+    """A subpath import of a locally sourced package installs the local package once."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "@masenf/hello-react@../hello-react": {ImportVar(tag="Counter")},
+        "@masenf/hello-react/dist/style.css": {ImportVar(tag="")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert install_set == {"@masenf/hello-react@../hello-react"}
+
+
+def test_get_frontend_packages_maps_scoped_subpath_import_of_local_package(
+    mocker: MockerFixture,
+):
+    """A library subpath pinned to a local path installs the base package."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "@scope/pkg/subpath@../pkg": {ImportVar(tag="Widget")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert install_set == {"@scope/pkg@../pkg"}
+
+
 def test_app_state_determination():
     """Test that the stateless status of an app is determined correctly."""
     a1 = App()
@@ -3280,7 +3446,7 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
 
     for _ in range(2):
         receiver, sender = workers.Pipe(duplex=False)
-        process = workers.Process(
+        process = workers.Process(  # pyright: ignore[reportAttributeAccessIssue]
             target=_probe_worker_token_identity, args=(app, redis, sender)
         )
         process.start()
@@ -3852,6 +4018,49 @@ def test_set_contexts_no_event_processor(isolated_context: contextvars.Context):
                 EventContext.get()
 
     isolated_context.run(_test)
+
+
+def test_context_middleware_is_registered_as_a_class(
+    compilable_app: tuple[App, Path],
+    mocker: MockerFixture,
+):
+    """The context middleware must reach Starlette as a class, not a bound method.
+
+    ASGI instrumentation libraries (sentry-sdk's Starlette integration among them)
+    wrap every registered middleware by assigning to ``cls.__call__``. A bound
+    method has a read-only ``__call__``, so registering one makes that assignment
+    raise ``AttributeError`` and takes the app down at startup.
+    """
+    app, _ = compilable_app
+    mocker.patch.object(app, "_compile")
+
+    asgi_app = app()
+
+    assert isinstance(asgi_app, Starlette)
+    registered = [m.cls for m in asgi_app.user_middleware]
+    assert _ContextMiddleware in registered, (
+        f"context middleware not registered as a class, got {registered}"
+    )
+    # Mimic the instrumentation's patch on every middleware in the stack.
+    for cls in registered:
+        cls.__call__ = cls.__call__
+
+
+async def test_context_middleware_sets_contexts(app_with_processor: App):
+    """The context middleware attaches Reflex contexts before calling the app."""
+    seen: list[tuple[RegistrationContext, EventContext]] = []
+
+    async def inner_app(scope: Scope, receive: Receive, send: Send) -> None:  # noqa: RUF029
+        seen.append((RegistrationContext.get(), EventContext.get()))
+
+    await _ContextMiddleware(inner_app, app_with_processor)(
+        {"type": "http"}, AsyncMock(), AsyncMock()
+    )
+
+    assert app_with_processor._event_processor is not None
+    ((registration, event),) = seen
+    assert registration is app_with_processor._registration_context
+    assert event is app_with_processor._event_processor._root_context
 
 
 def test_compile_sends_telemetry_when_enabled(

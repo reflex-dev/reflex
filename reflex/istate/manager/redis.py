@@ -458,7 +458,7 @@ class StateManagerRedis(StateManager):
             for substate in base_state.substates.values()
         ]
         # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-        if base_state._get_was_touched():
+        if BaseState._get_was_touched(base_state):
             pickle_state = base_state._serialize()
             if pickle_state:
                 await self.redis.set(

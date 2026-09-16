@@ -46,6 +46,7 @@ from reflex.utils.prerequisites import get_web_dir
 
 # To re-export this function.
 merge_imports = imports.merge_imports
+write_file = path_ops.write_file
 
 
 def compile_import_statement(fields: list[ImportVar]) -> tuple[str, list[str]]:
@@ -269,6 +270,33 @@ def _compile_initial_state(
     initial_state = compile_state(state)
     return initial_state, format.json_dumps(
         initial_state, default=serialize_initial_value
+    )
+
+
+def _compile_bundled_libraries() -> tuple[str, str]:
+    """Return the bundled-library registry as a frontend build artifact.
+
+    Returns:
+        The output path and serialized registry.
+    """
+    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
+    return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
+
+
+def _restore_bundled_libraries() -> None:
+    """Restore the registry emitted by the most recent frontend compile."""
+    path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
+    try:
+        bundled_libraries = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return
+    if not isinstance(bundled_libraries, list) or not all(
+        isinstance(library, str) for library in bundled_libraries
+    ):
+        return
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = list(
+        dict.fromkeys([*bundled_libraries, *context.bundled_libraries])
     )
 
 
@@ -905,10 +933,10 @@ def get_memo_module_path(segments: tuple[str, ...]) -> str:
 
 def add_meta(
     page: Component,
-    title: str,
+    title: str | Var,
     image: str,
     meta: Sequence[Mapping[str, Any] | Component],
-    description: str | None = None,
+    description: str | Var | None = None,
 ) -> Component:
     """Add metadata to a page.
 
@@ -922,12 +950,14 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
+    from reflex.utils.misc import is_page_meta_set
+
     meta_tags = [
         item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
 
     children: list[Any] = [Title.create(title)]
-    if description:
+    if is_page_meta_set(description):
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 
@@ -951,20 +981,6 @@ def resolve_path_of_web_dir(path: str | Path) -> Path:
     if path.is_relative_to(web_dir):
         return path.absolute()
     return (web_dir / path).absolute()
-
-
-def write_file(path: str | Path, code: str):
-    """Write the given code to the given path.
-
-    Args:
-        path: The path to write the code to.
-        code: The code to write.
-    """
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.read_text(encoding="utf-8") == code:
-        return
-    path.write_text(code, encoding="utf-8")
 
 
 _MEMO_MANIFEST_FILENAME = ".memo-manifest.json"

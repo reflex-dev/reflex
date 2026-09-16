@@ -206,6 +206,10 @@ class ComputedVarShadowsBaseVarsError(ReflexError, NameError):
     """Raised when a computed var shadows a base var."""
 
 
+class BaseVarShadowsInheritedVarError(ReflexError, NameError):
+    """Raised when a base var shadows a var inherited from a parent state."""
+
+
 class EventHandlerShadowsBuiltInStateMethodError(ReflexError, NameError):
     """Raised when an event handler shadows a built-in state method."""
 

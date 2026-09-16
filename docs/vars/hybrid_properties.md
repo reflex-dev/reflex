@@ -51,7 +51,7 @@ event handler, `self.full_name` returns the actual combined string.
 
 ## Hybrid Properties vs. Computed Vars
 
-[Computed vars](/docs/vars/computed-vars) and hybrid properties both derive a value from
+[Computed vars](/docs/vars/computed-vars/) and hybrid properties both derive a value from
 other state vars, but they work very differently:
 
 | | Computed var (`@rx.var`) | Hybrid property (`hybrid_property`) |
@@ -74,7 +74,7 @@ value can only be produced on the server.
 
 By default a hybrid property reuses the **same code** on the frontend and backend. When
 the two should differ, register a frontend-only implementation with `@<name>.var`. The
-function receives the state class and returns a [Var](/docs/vars/base-vars); declaring it
+function receives the state class and returns a [Var](/docs/vars/base-vars/); declaring it
 a `classmethod` types that first parameter as the class:
 
 ```python demo exec id=hybrid_greeting
