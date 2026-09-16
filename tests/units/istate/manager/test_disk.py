@@ -158,6 +158,7 @@ async def test_set_state_persists_replaced_nested_state(tmp_path, monkeypatch):
 
     await state_manager.set_state(token, cached_root)
     assert replacement._was_touched
+    assert token.cache_key in state_manager._state_instances
     await state_manager.close()
 
     fresh_state_manager = StateManagerDisk(_write_debounce_seconds=0)

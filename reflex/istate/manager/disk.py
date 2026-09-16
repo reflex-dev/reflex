@@ -333,6 +333,7 @@ class StateManagerDisk(StateManager):
                     if now - last_touched > self.token_expiration:
                         self._token_last_touched.pop(cache_key)
                         self.states.pop(cache_key, None)
+                        self._state_instances.pop(cache_key, None)
                 await run_in_thread(self._purge_expired_states)
                 await self._process_write_queue_delay()
             except asyncio.CancelledError:  # noqa: PERF203
