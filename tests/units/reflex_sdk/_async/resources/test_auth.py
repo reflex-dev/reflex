@@ -142,8 +142,8 @@ async def test_list_tokens(client: AsyncReflexCloud, mock_api: MockAPI):
     assert await client.auth.tokens.list() == [
         Token(
             name="ci",
-            creation_time=datetime.datetime(2026, 9, 16, 10, tzinfo=utc),
-            expiration=datetime.datetime(2026, 10, 16, 10, tzinfo=utc),
+            created_at=datetime.datetime(2026, 9, 16, 10, tzinfo=utc),
+            expires_at=datetime.datetime(2026, 10, 16, 10, tzinfo=utc),
             org_name="Acme",
         )
     ]

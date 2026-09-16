@@ -55,6 +55,36 @@ def _format_path(root: str, path: list[str | int]) -> str:
 
 _decoders: dict[Any, Decoder] = {}
 
+# The dataclass field metadata key holding the field's name in API responses.
+_JSON_NAME = "reflex_sdk.json_name"
+
+
+def json_name(name: str) -> dict[str, str]:
+    """Build the field metadata of a model field stored under another key in responses.
+
+    Used as ``dataclasses.field(metadata=json_name("key"))``, which type checkers
+    still see as a required field.
+
+    Args:
+        name: The key in API responses.
+
+    Returns:
+        The metadata to pass to ``dataclasses.field``.
+    """
+    return {_JSON_NAME: name}
+
+
+def json_key(field: dataclasses.Field) -> str:
+    """Get the key API responses store a model field under.
+
+    Args:
+        field: The dataclass field.
+
+    Returns:
+        The response key, which is the field name unless declared with ``json_name``.
+    """
+    return field.metadata.get(_JSON_NAME, field.name)
+
 
 def decode(tp: type[T], value: Any) -> T:
     """Decode a JSON value into a type.
@@ -64,7 +94,8 @@ def decode(tp: type[T], value: Any) -> T:
 
     Args:
         tp: The type to decode into: a dataclass, a primitive, ``UUID``, ``datetime``,
-            ``date``, an ``Enum``, a ``Literal``, or a ``list``, ``dict``, or union of those.
+            ``date``, an ``Enum``, a ``Literal``, or a ``list``, ``dict``, fixed-length
+            ``tuple`` or union of those.
         value: The JSON value, as returned by ``json.loads``.
 
     Returns:
@@ -180,6 +211,8 @@ def _build(tp: Any) -> Decoder:
         return _build_list(args[0])
     if origin is dict:
         return _build_dict(args[1])
+    if origin is tuple:
+        return _build_tuple(args)
     if isinstance(tp, type):
         if issubclass(tp, enum.Enum):
             return _build_enum(tp)
@@ -278,6 +311,27 @@ def _build_dict(value_type: Any) -> Decoder:
     return decode_dict
 
 
+def _build_tuple(item_types: tuple[Any, ...]) -> Decoder:
+    # Fixed-length tuples only: a JSON array with one value per position.
+    decoders = [_decoder_for(item_type) for item_type in item_types]
+    length = len(decoders)
+
+    def decode_tuple(value: Any) -> tuple:
+        if type(value) is not list or len(value) != length:
+            _mismatch(f"array of {length}", value)
+        index = 0
+        items = []
+        try:
+            for index, decoder in enumerate(decoders):
+                items.append(decoder(value[index]))
+        except DecodeError as ex:
+            ex.path.append(index)
+            raise
+        return tuple(items)
+
+    return decode_tuple
+
+
 def _build_enum(tp: type[enum.Enum]) -> Decoder:
     def decode_enum(value: Any) -> enum.Enum:
         try:
@@ -294,13 +348,14 @@ def _build_dataclass(tp: type) -> Decoder:
     # forever on a self-referencing model, and resolving the string annotations
     # needs every referenced model to be defined, which import order may not
     # guarantee yet.
-    fields: list[tuple[str, Decoder, bool]] | None = None
+    fields: list[tuple[str, str, Decoder, bool]] | None = None
 
-    def resolve_fields() -> list[tuple[str, Decoder, bool]]:
+    def resolve_fields() -> list[tuple[str, str, Decoder, bool]]:
         hints = typing.get_type_hints(tp)
         return [
             (
                 field.name,
+                json_key(field),
                 _decoder_for(hints[field.name]),
                 field.default is dataclasses.MISSING
                 and field.default_factory is dataclasses.MISSING,
@@ -316,19 +371,19 @@ def _build_dataclass(tp: type) -> Decoder:
         if fields is None:
             fields = resolve_fields()
         kwargs = {}
-        name = ""
+        key = ""
         try:
-            for name, decode_field, required in fields:
-                if name in value:
-                    kwargs[name] = decode_field(value[name])
+            for name, key, decode_field, required in fields:
+                if key in value:
+                    kwargs[name] = decode_field(value[key])
                 elif required:
                     break
             else:
                 return tp(**kwargs)
         except DecodeError as ex:
-            ex.path.append(name)
+            ex.path.append(key)
             raise
-        msg = f"missing required field {name!r}"
+        msg = f"missing required field {key!r}"
         raise DecodeError(msg)
 
     return decode_dataclass

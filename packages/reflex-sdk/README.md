@@ -17,6 +17,26 @@ async with AsyncReflexCloud() as client:
     me = await client.auth.me()
 ```
 
+## Apps and projects
+
+```python
+from reflex_sdk import ReflexCloud
+
+with ReflexCloud() as client:
+    projects = client.projects.search("default")
+    project = projects[0] if projects else client.projects.create("default")
+    app = client.apps.create("dashboard", project_id=project.id)
+    client.apps.secrets.set(app.id, {"DATABASE_URL": "postgresql://..."})
+
+    for deployment in client.apps.history(app.id):
+        print(deployment.status, deployment.url)
+
+    for record in client.apps.logs(app.id, search="error"):
+        print(record.timestamp, record.message)
+```
+
+`client.apps` lists, creates, starts, stops, pauses, scales, rolls back and deletes apps, and reads their deployment history and runtime logs; `client.apps.secrets` manages their secrets. `client.projects` lists, searches and creates projects, with `projects.roles` and `projects.members` for access control. `AsyncReflexCloud` has the same methods as coroutines, with `logs` as an async iterator.
+
 ## Authentication
 
 The client uses the first access token it finds:

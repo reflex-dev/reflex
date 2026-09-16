@@ -13,7 +13,9 @@ from reflex_sdk._errors import (
     APITimeoutError,
     status_error_from_response,
 )
+from reflex_sdk._sync.resources.apps import Apps
 from reflex_sdk._sync.resources.auth import Auth
+from reflex_sdk._sync.resources.projects import Projects
 from reflex_sdk.transports._base import Transport, TransportError
 from reflex_sdk.transports._defaults import DefaultTransport
 
@@ -26,8 +28,12 @@ class ReflexCloud(BaseClient):
     Use it as a context manager, or call ``close()``, to release its connections.
     """
 
+    # Manage apps, their lifecycle, deployment history, logs and secrets.
+    apps: Apps
     # The identity of the access token, and the token management endpoints.
     auth: Auth
+    # Manage projects and who has access to them.
+    projects: Projects
 
     def __init__(
         self,
@@ -62,7 +68,9 @@ class ReflexCloud(BaseClient):
         )
         self._owns_transport = transport is None
         self._transport = DefaultTransport() if transport is None else transport
+        self.apps = Apps(self)
         self.auth = Auth(self)
+        self.projects = Projects(self)
 
     def __enter__(self) -> ReflexCloud:
         """Enter the client's context.
