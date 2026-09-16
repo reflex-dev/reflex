@@ -167,6 +167,7 @@ def rendered_content(html: str, page_url: str) -> tuple[str, str]:
 def export_rendered_pages(static_dir: Path, frontend_path: str) -> None:
     """Complete canonical-page exports and discovery files after prerendering."""
     from agent_files._plugin import (
+        MARKDOWN_DIRECTIVE_PREFIX,
         MarkdownIndexEntry,
         _extract_markdown_title,
         _markdown_directive,
@@ -198,7 +199,12 @@ def export_rendered_pages(static_dir: Path, frontend_path: str) -> None:
             existing,
             flags=re.MULTILINE | re.DOTALL,
         )
-        prose = re.sub(r"^> For AI agents:.*$", "", prose, flags=re.MULTILINE).strip()
+        prose = re.sub(
+            rf"^{re.escape(MARKDOWN_DIRECTIVE_PREFIX)}.*$",
+            "",
+            prose,
+            flags=re.MULTILINE,
+        ).strip()
         prose = re.sub(
             r"\A---\s*\n.*?\n---(?:\n|$)",
             "",

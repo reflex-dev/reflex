@@ -152,7 +152,7 @@ def test_section_links_hover_with_text_only(navbar):
     item = navbar.menu_item("Framework", "/getting-started/introduction/", "framework")
     link = item.children[0]
     assert all(child.tag != "GradientButton" for child in link.children)
-    assert "hover:text-muted-foreground" in str(link.class_name)
+    assert "hover:text-foreground" in str(link.class_name)
     assert "hover:bg-" not in str(link.class_name)
 
 

@@ -47,9 +47,10 @@ This file stitches together the full Reflex documentation as Markdown for AI age
 For a navigable index with links to individual docs pages, see [llms.txt]({llms_txt_url}).
 """
 
+MARKDOWN_DIRECTIVE_PREFIX = "> For AI agents: the complete documentation index is at "
 MARKDOWN_DIRECTIVE = (
-    "> For AI agents: the complete documentation index is at "
-    "[llms.txt]({llms_txt_url}). For a Markdown version, remove the trailing slash "
+    MARKDOWN_DIRECTIVE_PREFIX
+    + "[llms.txt]({llms_txt_url}). For a Markdown version, remove the trailing slash "
     "from the page URL and append `.md`. The docs home is available at "
     "[index.md]({docs_home_markdown_url})."
 )
@@ -157,7 +158,7 @@ def _strip_markdown_directive(source: str) -> str:
     Returns:
         The markdown content without the generated directive.
     """
-    if source.startswith("> For AI agents: the complete documentation index is at "):
+    if source.startswith(MARKDOWN_DIRECTIVE_PREFIX):
         return source.partition("\n")[2].lstrip()
     return source
 

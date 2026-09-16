@@ -2,8 +2,6 @@
 
 import json
 
-from reflex_base.config import get_config
-
 import reflex as rx
 from reflex_site_shared.constants import (
     DISCORD_URL,
@@ -110,7 +108,7 @@ def favicons_links() -> list[dict[str, str] | rx.Component]:
         rx.el.link(
             rel="icon",
             type="image/svg+xml",
-            href=f"{get_config().frontend_path.rstrip('/')}/favicon.svg",
+            href=rx.asset("favicon.svg"),
         ),
         rx.el.link(rel="shortcut icon", href=rx.asset("favicon.ico")),
     ]

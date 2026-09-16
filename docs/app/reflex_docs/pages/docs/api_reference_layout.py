@@ -186,7 +186,7 @@ def method_section(cls: type, method: MethodDocumentation) -> rx.Component:
                 multiline_signature(method),
                 class_name="font-mono text-[13px] leading-6",
             ),
-            class_name="m-0 min-w-0 rounded-lg border border-border-subtle bg-accent p-4 text-foreground whitespace-pre-wrap [overflow-wrap:anywhere]",
+            class_name="m-0 min-w-0 rounded-lg border border-border bg-accent p-4 text-foreground whitespace-pre-wrap [overflow-wrap:anywhere]",
         ),
         *method_details(cls, method),
         class_name="flex min-w-0 flex-col gap-4 border-t border-border py-6",

@@ -143,10 +143,15 @@ def doclink(text: str, href: str, **props) -> rx.Component:
     Returns:
         The styled link.
     """
+    custom_style = props.pop("style", {})
     return rx.el.elements.a(
         text,
         href=_canonical_docs_href(href),
-        style={**DOCS_LINK_STYLE, **props.pop("style", {})},
+        style=custom_style
+        if isinstance(custom_style, rx.Var)
+        else [DOCS_LINK_STYLE, *custom_style]
+        if isinstance(custom_style, list)
+        else [DOCS_LINK_STYLE, custom_style],
         **props,
         class_name="text-foreground decoration-foreground underline underline-offset-4",
     )
@@ -163,11 +168,16 @@ def doclink2(text: str, **props) -> rx.Component:
     Returns:
         The styled link.
     """
+    custom_style = props.pop("style", {})
     if "href" in props:
         props["href"] = _canonical_docs_href(props["href"])
     return rx.el.elements.a(
         text,
-        style={**DOCS_LINK_STYLE, **props.pop("style", {})},
+        style=custom_style
+        if isinstance(custom_style, rx.Var)
+        else [DOCS_LINK_STYLE, *custom_style]
+        if isinstance(custom_style, list)
+        else [DOCS_LINK_STYLE, custom_style],
         **props,
         class_name="text-foreground decoration-foreground underline underline-offset-4",
     )

@@ -182,8 +182,8 @@ def test_ai_overview_keeps_desktop_content_gutters(page: Page, width: int):
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
 
 
-def test_sidebar_category_icons_align_with_section_headings(page: Page):
-    """Top-level category icons share the section heading's left edge."""
+def test_sidebar_category_labels_align_with_section_headings(page: Page):
+    """Text-only AI categories share the section heading's left edge."""
     page.set_viewport_size({"width": 1440, "height": 1000})
     page.goto(f"{PREVIEW_URL}/docs/ai/")
     sidebar = page.locator("#sidebar-container")
@@ -191,13 +191,9 @@ def test_sidebar_category_icons_align_with_section_headings(page: Page):
     expect(heading).to_be_visible()
     heading_x = heading.bounding_box()["x"]
     for name in ("Build with AI", "AI Builder", "Agent Toolkit"):
-        icon = (
-            sidebar
-            .get_by_role("link", name=f"Navigate to {name}", exact=True)
-            .locator("svg")
-            .first
-        )
-        assert abs(icon.bounding_box()["x"] - heading_x) <= 1
+        link = sidebar.get_by_role("link", name=f"Navigate to {name}", exact=True)
+        expect(link.locator("svg")).to_have_count(0)
+        assert abs(link.locator("h3").bounding_box()["x"] - heading_x) <= 1
 
 
 def test_sidebar_offsets_follow_navbar_and_announcement(page: Page):
@@ -294,8 +290,32 @@ def test_sidebar_click_preserves_scroll_position(page: Page):
     }""")
     target.click()
     expect(target).to_have_attribute("aria-current", "page")
-    page.wait_for_timeout(500)
+    target.evaluate("""el => new Promise(resolve => {
+        const scroller = el.closest('[class*="overflow-y-scroll"]');
+        let previous = scroller.scrollTop;
+        let stableFrames = 0;
+        function check() {
+            const current = scroller.scrollTop;
+            stableFrames = current === previous ? stableFrames + 1 : 0;
+            previous = current;
+            if (stableFrames >= 3) resolve();
+            else requestAnimationFrame(check);
+        }
+        requestAnimationFrame(check);
+    })""")
     after = target.evaluate(
         "el => el.closest('[class*=\"overflow-y-scroll\"]').scrollTop"
     )
     assert abs(after - before) <= 1
+
+
+def test_unknown_route_serves_docs_recovery_page(page: Page):
+    """Unknown URLs render the registered docs recovery page and stay unindexed."""
+    page.goto(f"{PREVIEW_URL}/docs/not-a-real-docs-page/")
+    expect(
+        page.get_by_role("heading", name="Page not found", exact=True)
+    ).to_be_visible()
+    expect(page.get_by_role("link", name="Back to docs", exact=True)).to_have_attribute(
+        "href", "/docs/"
+    )
+    expect(page.locator('meta[name="robots"]')).to_have_attribute("content", "noindex")

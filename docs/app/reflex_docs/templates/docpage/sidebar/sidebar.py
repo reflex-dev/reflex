@@ -138,7 +138,7 @@ def sidebar_item_comp(
         child = item.children[0]
         return rx.el.li(
             sidebar_link(
-                rx.text(item.names, class_name="m-0 text-sm font-[475]"),
+                rx.el.p(item.names, class_name="m-0 text-sm font-[475]"),
                 href=child.link,
                 aria_current=rx.cond(url == child.link, "page", "false"),
                 class_name="flex min-h-8 w-full items-center rounded-lg py-1 pl-[2.5rem] text-foreground hover:!text-foreground transition-colors [&[aria-current=page]]:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",

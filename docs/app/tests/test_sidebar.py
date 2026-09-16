@@ -60,6 +60,7 @@ def test_single_page_group_is_a_direct_link(active):
     assert rendered.count('"Webhooks"') == 1
     assert 'to:"/ai/webhooks/"' in rendered
     assert '"aria-current":' in rendered
+    assert '"page"' in rendered and '"false"' in rendered
 
 
 def test_group_with_nested_pages_remains_expandable():
@@ -85,3 +86,5 @@ def test_group_with_nested_pages_remains_expandable():
         sidebar_item_comp(0, group, rx.Var.create([0, 0]), rx.Var.create("/postgres/"))
     )
     assert rendered.count('jsx("details"') == 2
+    assert 'href:"/postgres/"' in rendered
+    assert 'href:"/sqlite/"' in rendered
