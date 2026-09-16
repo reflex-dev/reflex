@@ -30,6 +30,7 @@ Test design notes:
   the unit tests instead.
 """
 
+import re
 from collections.abc import Generator
 
 import pytest
@@ -626,9 +627,15 @@ def test_slot_transparency_adds_no_rerenders(memo_app: AppHarness, page: Page) -
     wrapper_sources = "\n".join(
         path.read_text() for path in (memo_app.app_path / ".web").rglob("*.jsx")
     )
-    assert wrapper_sources.count("jsx(RenderProbe,{...mergeSlotProps(rest, ({") == 2, (
-        "both RenderProbe call sites must compile to transparent memo wrappers"
-    )
+    assert (
+        len(
+            re.findall(
+                r"jsx\(\s*RenderProbe\s*,\s*\{\s*\.\.\.mergeSlotProps\s*\(",
+                wrapper_sources,
+            )
+        )
+        == 2
+    ), "both RenderProbe call sites must compile to transparent memo wrappers"
 
     page.goto(memo_app.frontend_url)
 

@@ -1423,12 +1423,10 @@ export const mergeSlotProps = (injectedProps, ownProps) => {
       // shadowed the injection with null/undefined. Keep the injection.
       merged[propName] = injected;
     } else if (EVENT_HANDLER_PROP.test(propName)) {
-      merged[propName] = composeCached(
-        composedHandlerCache,
-        own,
-        injected,
-        composeHandlers,
-      );
+      merged[propName] =
+        own && injected
+          ? composeCached(composedHandlerCache, own, injected, composeHandlers)
+          : own || injected;
     } else if (propName === "ref") {
       merged[propName] = composeCached(
         composedRefCache,
