@@ -483,9 +483,9 @@ def test_algolia_navbar_button_matches_marketing_spacing() -> None:
         "}", 1
     )[0]
     assert "flex-shrink: 0;" in collapsed_icon
-    assert "height: 1.25rem;" in collapsed_icon
+    assert "height: 1rem;" in collapsed_icon
     assert "margin-right: 0;" in collapsed_icon
-    assert "width: 1.25rem;" in collapsed_icon
+    assert "width: 1rem;" in collapsed_icon
 
 
 def test_algolia_search_escape_matches_navbar_keycap_style() -> None:

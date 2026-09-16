@@ -80,7 +80,7 @@ def component_link(name: str, href: str) -> rx.Component:
     return rx.el.a(
         rx.el.span(name),
         ui.icon("ArrowRight01Icon", class_name="ml-auto size-4 shrink-0"),
-        to=f"/library/{href.strip('/')}",
+        to=f"/library/{href.strip('/')}/",
         class_name="flex min-h-9 w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
     )
 
@@ -177,5 +177,5 @@ def framework() -> rx.Component:
             components_section(),
             class_name="flex flex-col lg:flex-row relative",
         ),
-        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-(--landing-layout-max-width) mx-auto w-full justify-start pt-10 lg:pt-24 lg:mb-24 mb-10 max-xl:px-6 overflow-hidden",
+        class_name="flex flex-col gap-10 max-lg:text-center relative max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12 mx-auto w-full justify-start pt-10 lg:pt-24 lg:mb-24 mb-10 overflow-hidden",
     )

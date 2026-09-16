@@ -161,3 +161,12 @@ def test_logo_has_accessible_name_and_keyboard_focus(navbar):
     link = navbar.logo()
     assert "Reflex Docs home" in str(link)
     assert "focus-visible:outline-ring" in str(link.class_name)
+
+
+def test_navigation_switches_to_mobile_before_links_overflow(navbar):
+    """Keep desktop links and the mobile menu mutually exclusive below 1280px."""
+    menu = navbar.navigation_menu()
+    sections, actions = menu.children[:2]
+    assert "hidden xl:flex" in str(sections.class_name)
+    assert "xl:flex hidden" in str(actions.children[0].class_name)
+    assert "xl:hidden flex" in str(actions.children[-1].class_name)

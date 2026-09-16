@@ -8,7 +8,7 @@ def test_component_link_is_a_padded_single_navigation_target():
 
     link = component_link("Data Display", "/data-display/")
 
-    assert str(link.to).strip('"') == "/library/data-display"
+    assert str(link.to).strip('"') == "/library/data-display/"
     assert all(child.tag != "GradientButton" for child in link.children)
     classes = str(link.class_name)
     assert "px-3" in classes

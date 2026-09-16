@@ -112,10 +112,11 @@ def menu_item(
         anchor(
             text,
             href=href,
+            aria_current=rx.cond(active, "page", None),
             class_name="inline-flex h-9 items-center justify-center whitespace-nowrap px-4 text-sm font-book leading-none text-foreground transition-colors hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         ),
         class_name=ui.cn(
-            "md:flex hidden h-full items-center justify-center",
+            "flex h-full items-center justify-center",
             rx.cond(active, active_cn, ""),
         ),
         custom_attrs={"role": "menuitem"},
@@ -130,14 +131,14 @@ def navigation_menu() -> rx.Component:
             menu_item("Framework", getting_started.introduction.path, "framework"),
             menu_item("Cloud", hosting.deploy_quick_start.path, "hosting"),
             menu_item("XY", "/docs/xy/", "xy", external=True),
-            class_name="flex flex-row items-center gap-2 m-0 h-full list-none",
+            class_name="hidden xl:flex flex-row items-center gap-2 m-0 h-full list-none",
             custom_attrs={"role": "menubar"},
         ),
         ui.navigation_menu.list(
             ui.navigation_menu.item(
                 github_button(),
                 unstyled=True,
-                class_name="md:flex hidden",
+                class_name="xl:flex hidden",
                 custom_attrs={"role": "menuitem"},
             ),
             ui.navigation_menu.item(
@@ -163,7 +164,7 @@ def navigation_menu() -> rx.Component:
             ),
             ui.navigation_menu.item(
                 navbar_sidebar_button(),
-                class_name="md:hidden flex",
+                class_name="xl:hidden flex",
                 unstyled=True,
                 custom_attrs={"role": "menuitem"},
             ),
@@ -186,7 +187,7 @@ def navigation_menu() -> rx.Component:
             ),
         ),
         unstyled=True,
-        class_name="relative flex w-full items-center h-full justify-between gap-6 mx-auto flex-row",
+        class_name="relative flex w-full items-center h-full justify-end xl:justify-between gap-6 mx-auto flex-row",
     )
 
 

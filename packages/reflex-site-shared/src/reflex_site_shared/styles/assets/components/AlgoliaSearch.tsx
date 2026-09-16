@@ -1251,9 +1251,9 @@ const SEARCH_STYLES = `
 
     .ReflexSearch-button > svg {
       flex-shrink: 0;
-      height: 1.25rem;
+      height: 1rem;
       margin-right: 0;
-      width: 1.25rem;
+      width: 1rem;
     }
 
     .ReflexSearch-buttonText,

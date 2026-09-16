@@ -55,5 +55,5 @@ def docs_cta() -> rx.Component:
             class_name="grid lg:grid-cols-[1.1fr_1fr] items-center overflow-hidden rounded-panel border border-border-subtle bg-muted",
         ),
         aria_labelledby="docs-cta-title",
-        class_name="docs-cta mx-auto w-full max-w-(--landing-layout-max-width) px-6 xl:px-0 py-16 lg:py-24",
+        class_name="docs-cta mx-auto w-full max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12 py-16 lg:py-24",
     )

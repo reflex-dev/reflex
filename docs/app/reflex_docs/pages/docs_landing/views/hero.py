@@ -60,5 +60,5 @@ def hero() -> rx.Component:
                 HostingBannerState.is_banner_visible, "6.5rem", "4rem"
             )
         },
-        class_name="docs-hero relative max-w-(--landing-layout-max-width) mx-auto w-full px-6 xl:px-0 pb-16 lg:pb-24",
+        class_name="docs-hero relative max-w-[90rem] px-4 min-[55rem]:px-8 lg:px-12 mx-auto w-full pb-16 lg:pb-24",
     )
