@@ -127,7 +127,7 @@ _NOOP_INSTRUMENT = _NoOpInstrument()
 
 # Bound by enable(); the trace points only run while enabled.
 _tracer: trace.Tracer
-_tracer_provider: trace.TracerProvider
+_tracer_provider: trace.TracerProvider | None
 _event_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
 _state_acquire_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
 _message_size: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
@@ -207,9 +207,7 @@ def enable(
     )
 
     _remote_propagator = TraceContextTextMapPropagator()
-    _tracer_provider = (
-        tracer_provider if tracer_provider is not None else trace.get_tracer_provider()
-    )
+    _tracer_provider = tracer_provider
     _tracer = trace.get_tracer(
         INSTRUMENTATION_NAME, Reflex.VERSION, tracer_provider=tracer_provider
     )
@@ -255,7 +253,8 @@ def flush(timeout_millis: int = 5000) -> bool:
     """
     if not enabled:
         return True
-    force_flush = getattr(_tracer_provider, "force_flush", None)
+    provider = _tracer_provider or trace.get_tracer_provider()
+    force_flush = getattr(provider, "force_flush", None)
     if force_flush is None:
         return True
     try:
