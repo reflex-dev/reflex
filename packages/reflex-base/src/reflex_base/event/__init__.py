@@ -589,6 +589,8 @@ class EventHandler(EventActionsMixin):
         When True, enqueuing this handler cancels the previous unfinished
         invocation chain for the same handler and client token. This also
         applies when the handler is yielded by multiple distinct roots.
+        Supersession follows enqueue order, so a later child enqueue can
+        supersede an earlier child even when their root handlers differ.
         Cancellation is cooperative: a handler that never yields to the event
         loop runs to completion, and only its not-yet-started chained events
         are skipped.
