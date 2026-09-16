@@ -389,7 +389,9 @@ def test_flushes_finished_spans(mocker, otel_exporter: InMemorySpanExporter):
     assert len(otel_exporter.get_finished_spans()) == 1
 
 
-def test_flush_resolves_provider_configured_after_enable():
+def test_flush_resolves_provider_configured_after_enable(
+    monkeypatch: pytest.MonkeyPatch,
+):
     """Flush the provider configured after tracing was enabled."""
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -399,9 +401,10 @@ def test_flush_resolves_provider_configured_after_enable():
     provider.add_span_processor(
         BatchSpanProcessor(exporter, schedule_delay_millis=60_000)
     )
+    monkeypatch.setattr(trace, "_TRACER_PROVIDER", None)
     otel.enable()
     try:
-        trace.set_tracer_provider(provider)
+        monkeypatch.setattr(trace, "_TRACER_PROVIDER", provider)
         with otel._tracer.start_as_current_span("compile"):
             pass
 
