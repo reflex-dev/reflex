@@ -13,7 +13,7 @@ import operator
 import typing
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from dataclasses import _MISSING_TYPE, MISSING
+from dataclasses import MISSING
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
@@ -36,6 +36,7 @@ from reflex_base.event import (
 )
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import format, imports, types
+from reflex_base.utils.compat import MISSING_TYPE
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
@@ -64,10 +65,10 @@ class ComponentField(BaseField[FIELD_TYPE]):
 
     def __init__(
         self,
-        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_javascript: bool | None = None,
-        annotated_type: type[Any] | _MISSING_TYPE = MISSING,
+        annotated_type: type[Any] | MISSING_TYPE = MISSING,
         doc: str | None = None,
     ) -> None:
         """Initialize the field.
@@ -129,7 +130,7 @@ class ComponentField(BaseField[FIELD_TYPE]):
 
 
 def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: FIELD_TYPE | MISSING_TYPE = MISSING,
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_javascript_property: bool | None = None,
     doc: str | None = None,
