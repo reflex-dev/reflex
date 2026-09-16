@@ -7,12 +7,13 @@ from collections.abc import AsyncIterator
 
 import pytest
 from reflex_sdk import AsyncReflexCloud, AuthenticationError
-from reflex_sdk.types import AccessScope, Me, Token
+from reflex_sdk.types import AccessScope, Me, Token, TokenAccess
 
 from tests.units.reflex_sdk.conftest import AsyncMockTransport, MockAPI, reply
 
 USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
 ORG_ID = "1f6c1d0e-6f59-4d2b-a0f1-0f4e4a3b2c19"
+PROJECT_ID = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
 
 
 @pytest.fixture
@@ -31,38 +32,59 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
         yield client
 
 
+# The shape the control plane returns: its AuthZ dataclass through FastAPI's encoder,
+# including fields the SDK does not model.
+ME = {
+    "user_id": USER_ID,
+    "org_id": ORG_ID,
+    "tier": "Enterprise",
+    "superuser": False,
+    "email": "dev@example.com",
+    "pilot": False,
+    "access": None,
+    "is_service_account": False,
+    "impersonated_by": None,
+    "impersonation_expires_at": None,
+    "_memo": {},
+    "_project_of": {},
+    "_org_projects": None,
+    "_org_projects_consistency": None,
+    "_impersonation_org_of": {},
+}
+
+
 async def test_me(client: AsyncReflexCloud, mock_api: MockAPI):
-    # The shape returned by the control plane, including fields the SDK does not model.
-    mock_api.add(
-        "POST",
-        "/api/v1/authenticate/me",
-        reply(
-            200,
-            json={
-                "user_id": USER_ID,
-                "org_id": ORG_ID,
-                "tier": "enterprise",
-                "superuser": False,
-                "email": "dev@example.com",
-                "pilot": False,
-                "access": {"permissions": {"apps": "read"}, "projects": "all"},
-                "is_service_account": True,
-                "impersonated_by": None,
-                "impersonation_expires_at": None,
-            },
-        ),
-    )
+    mock_api.add("POST", "/api/v1/authenticate/me", reply(200, json=ME))
     assert await client.auth.me() == Me(
         user_id=uuid.UUID(USER_ID),
         org_id=uuid.UUID(ORG_ID),
         email="dev@example.com",
-        tier="enterprise",
-        is_service_account=True,
-        access=AccessScope(permissions={"apps": "read"}, projects="all"),
+        tier="Enterprise",
     )
     (request,) = mock_api.requests
     assert request.headers["X-API-TOKEN"] == "test-token"
     assert "?" not in request.url
+
+
+async def test_me_scoped_token(client: AsyncReflexCloud, mock_api: MockAPI):
+    # Every token `reflex login` mints carries an access map.
+    body = {
+        **ME,
+        "is_service_account": True,
+        "access": {
+            "permissions": {"app": "write", "project": "read"},
+            "all_projects": False,
+            "project_ids": [PROJECT_ID],
+        },
+    }
+    mock_api.add("POST", "/api/v1/authenticate/me", reply(200, json=body))
+    me = await client.auth.me()
+    assert me.is_service_account
+    assert me.access == TokenAccess(
+        permissions={"app": "write", "project": "read"},
+        all_projects=False,
+        project_ids=[uuid.UUID(PROJECT_ID)],
+    )
 
 
 async def test_me_invalid_token(client: AsyncReflexCloud, mock_api: MockAPI):
