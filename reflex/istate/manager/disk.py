@@ -27,13 +27,35 @@ from reflex.utils.misc import run_in_thread
 logger = logging.getLogger(__name__)
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class QueueItem(Generic[TOKEN_TYPE]):
     """An item in the write queue."""
 
     token: StateToken[TOKEN_TYPE]
     state: TOKEN_TYPE
     timestamp: float
+
+
+def _mark_state_tree_touched(state: BaseState) -> None:
+    """Mark a state and all of its substates as touched.
+
+    Args:
+        state: The root of the state tree to mark.
+    """
+    state._was_touched = True
+    for substate in state.substates.values():
+        _mark_state_tree_touched(substate)
+
+
+def _mark_replacement_state_touched(cached_state: object, state: object) -> None:
+    """Mark a replacement state tree for persistence.
+
+    Args:
+        cached_state: The state instance currently cached for the token.
+        state: The state instance supplied to set_state.
+    """
+    if isinstance(state, BaseState) and state is not cached_state:
+        _mark_state_tree_touched(state)
 
 
 @dataclasses.dataclass
@@ -338,17 +360,24 @@ class StateManagerDisk(StateManager):
             context: The state modification context.
         """
         token = self._coerce_token(token)
+        _mark_replacement_state_touched(self.states.get(token.cache_key), state)
+        self._token_last_touched[token.cache_key] = time.time()
         if self._write_debounce_seconds > 0:
             # Deferred write to reduce disk IO overhead.
-            if token not in self._write_queue:
+            self.states[token.cache_key] = state
+            queued_item = self._write_queue.get(token)
+            if queued_item is None:
                 self._write_queue[token] = QueueItem(
                     token=token,
                     state=state,
                     timestamp=time.time(),
                 )
+            else:
+                queued_item.state = state
         else:
             # Immediate write to disk.
             await self.set_state_for_substate(token, state)
+            self.states[token.cache_key] = state
         # Ensure the processing task is scheduled to handle expirations and any deferred writes.
         await self._schedule_process_write_queue()
 
