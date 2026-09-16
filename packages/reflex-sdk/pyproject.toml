@@ -1,0 +1,28 @@
+[project]
+name = "reflex-sdk"
+dynamic = ["version"]
+description = "Python client for the Reflex Cloud API."
+license.text = "Apache-2.0"
+readme = "README.md"
+authors = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+maintainers = [{ name = "Khaleel Al-Adhami", email = "khaleel@reflex.dev" }]
+requires-python = ">=3.10"
+dependencies = ["httpx >=0.25.1,<1.0", "platformdirs >=3.10.0,<5.0"]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+pattern-prefix = "reflex-sdk-"
+fallback-version = "0.0.0dev0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reflex_sdk"]
+
+[tool.hatch.build.targets.sdist]
+# The API schema snapshot is test data for the monorepo.
+exclude = ["/openapi.json"]
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
