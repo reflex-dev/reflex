@@ -124,7 +124,9 @@ async def test_get(client: AsyncReflexCloud, mock_api: MockAPI):
     mock_api.add("GET", PROJECT_PATH, reply(200, json=info))
     project = await client.projects.get(PROJECT_ID)
     assert isinstance(project, Project)
-    assert project.project_owner == uuid.UUID(USER_ID)
+    assert project.owner_id == uuid.UUID(USER_ID)
+    assert project.owner_email == "dev@example.com"
+    assert project.seats == 2
     assert [app.name for app in project.apps] == ["dashboard"]
 
 

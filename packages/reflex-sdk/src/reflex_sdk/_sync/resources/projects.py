@@ -158,8 +158,9 @@ class Projects:
                 params={"project_name": name},
             )
         except NotFoundError:
-            # The API reports finding nothing as 404, where app search responds with
-            # an empty list.
+            # The API reports finding no match, and having no project to search, as
+            # 404; either way no accessible project has the name. App search responds
+            # with an empty list instead.
             return []
 
     def get(self, project_id: uuid.UUID | str) -> Project:

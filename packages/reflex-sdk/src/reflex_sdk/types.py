@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import datetime
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
+
+from reflex_sdk._decode import json_name
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -38,8 +40,8 @@ class Token:
     """An access token, listed without its secret value."""
 
     name: str
-    creation_time: datetime.datetime
-    expiration: datetime.datetime
+    created_at: datetime.datetime = field(metadata=json_name("creation_time"))
+    expires_at: datetime.datetime = field(metadata=json_name("expiration"))
     org_name: str
     access: AccessScope | None = None
 
@@ -78,16 +80,15 @@ class AppDeployment:
     pause_reason: str | None
     reflex_version: str | None
     python_version: str | None
-    # When the deployment was created.
-    timestamp: datetime.datetime
+    created_at: datetime.datetime = field(metadata=json_name("timestamp"))
     # The region of each machine, one entry per machine.
     regions: list[str]
     vm_type_name: str
     vm_type_cpu: float
     # Memory per machine, in GB.
     vm_type_ram: float
-    last_updated: datetime.datetime | None
-    last_updated_by: User | None
+    updated_at: datetime.datetime | None = field(metadata=json_name("last_updated"))
+    updated_by: User | None = field(metadata=json_name("last_updated_by"))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -140,10 +141,10 @@ class DeploymentRecord:
     description: str | None
     reflex_version: str | None
     python_version: str | None
-    # When the deployment was created.
-    timestamp: datetime.datetime
-    last_updated: datetime.datetime | None
-    deployment_user: User | None
+    created_at: datetime.datetime = field(metadata=json_name("timestamp"))
+    updated_at: datetime.datetime | None = field(metadata=json_name("last_updated"))
+    # The user who deployed it.
+    deployed_by: User | None = field(metadata=json_name("deployment_user"))
     vm_type: VmType | None
     environment_id: uuid.UUID | None
     environment_name: str | None
@@ -215,9 +216,9 @@ class ProjectAppDeployment:
     pause_reason: str | None
     reflex_version: str | None
     python_version: str | None
-    # When the deployment was created.
-    timestamp: datetime.datetime
-    deployment_user: User | None
+    created_at: datetime.datetime = field(metadata=json_name("timestamp"))
+    # The user who deployed it.
+    deployed_by: User | None = field(metadata=json_name("deployment_user"))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -239,9 +240,10 @@ class Project:
     id: uuid.UUID
     name: str
     tier: ProjectTier
-    project_owner: uuid.UUID
-    project_owner_email: str
-    project_seats: int
+    owner_id: uuid.UUID = field(metadata=json_name("project_owner"))
+    owner_email: str = field(metadata=json_name("project_owner_email"))
+    # The number of members.
+    seats: int = field(metadata=json_name("project_seats"))
     apps: list[ProjectApp]
 
 

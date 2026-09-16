@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 import pytest
-from reflex_sdk._decode import DecodeError, _decoder_for, decode
+from reflex_sdk._decode import DecodeError, _decoder_for, decode, json_name
 
 
 class Color(enum.Enum):
@@ -175,6 +175,40 @@ def test_decode_dataclass_nested_error_path():
     with pytest.raises(DecodeError) as exc_info:
         decode(Outer, {"name": "app", "inner": {"value": 1}, "items": [{"value": "x"}]})
     assert str(exc_info.value) == "expected integer, got str at $.items[0].value"
+
+
+@dataclass(frozen=True, kw_only=True)
+class Renamed:
+    """A model with fields stored under other keys in responses."""
+
+    created_at: datetime.date = field(metadata=json_name("timestamp"))
+    owner: Inner = field(metadata=json_name("project_owner"))
+
+
+def test_decode_renamed_fields():
+    decoded = decode(
+        Renamed,
+        {"timestamp": "2026-09-16", "project_owner": {"value": 1}, "created_at": "x"},
+    )
+    assert decoded == Renamed(
+        created_at=datetime.date(2026, 9, 16), owner=Inner(value=1)
+    )
+
+
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        (
+            {"timestamp": "2026-09-16", "project_owner": {"value": "x"}},
+            "expected integer, got str at $.project_owner.value",
+        ),
+        ({"created_at": "2026-09-16"}, "missing required field 'timestamp' at $"),
+    ],
+)
+def test_decode_renamed_field_errors(value: dict[str, Any], message: str):
+    with pytest.raises(DecodeError) as exc_info:
+        decode(Renamed, value)
+    assert str(exc_info.value) == message
 
 
 def test_decode_self_referencing_dataclass():

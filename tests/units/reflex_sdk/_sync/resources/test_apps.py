@@ -140,13 +140,13 @@ def test_get(client: ReflexCloud, mock_api: MockAPI):
             pause_reason=None,
             reflex_version="0.9.11",
             python_version="3.13",
-            timestamp=datetime.datetime(2026, 9, 16, 10, tzinfo=UTC),
+            created_at=datetime.datetime(2026, 9, 16, 10, tzinfo=UTC),
             regions=["ams", "sjc"],
             vm_type_name="c1m1",
             vm_type_cpu=1.0,
             vm_type_ram=1.0,
-            last_updated=None,
-            last_updated_by=User(id=uuid.UUID(USER_ID), username="dev"),
+            updated_at=None,
+            updated_by=User(id=uuid.UUID(USER_ID), username="dev"),
         ),
     )
 
@@ -259,9 +259,9 @@ def test_history(client: ReflexCloud, mock_api: MockAPI):
             description="release",
             reflex_version="0.9.11",
             python_version="3.13",
-            timestamp=datetime.datetime(2026, 9, 16, 10, tzinfo=UTC),
-            last_updated=None,
-            deployment_user=User(id=uuid.UUID(USER_ID), username="dev"),
+            created_at=datetime.datetime(2026, 9, 16, 10, tzinfo=UTC),
+            updated_at=None,
+            deployed_by=User(id=uuid.UUID(USER_ID), username="dev"),
             vm_type=VmType(id="c1m1", name="c1m1", cpu=1.0, ram=1.0),
             environment_id=None,
             environment_name=None,
@@ -355,6 +355,20 @@ def test_secrets_list(client: ReflexCloud, mock_api: MockAPI):
 def test_secrets_get(client: ReflexCloud, mock_api: MockAPI):
     mock_api.add("GET", f"{APP_PATH}/secrets/API%2FKEY", reply(200, json="value"))
     assert client.apps.secrets.get(APP_ID, "API/KEY") == "value"
+
+
+def test_secrets_get_named_all(client: ReflexCloud, mock_api: MockAPI):
+    # A secret named __all__ shares its path with the route reading every secret.
+    mock_api.add(
+        "GET",
+        f"{APP_PATH}/secrets/__all__",
+        reply(200, json={"__all__": "value", "OTHER": "x"}),
+        reply(200, json={"OTHER": "x"}),
+    )
+    assert client.apps.secrets.get(APP_ID, "__all__") == "value"
+    with pytest.raises(KeyError):
+        client.apps.secrets.get(APP_ID, "__all__", environment_id="env")
+    assert _query(mock_api.requests[1]) == {"environment_id": ["env"]}
 
 
 def test_secrets_get_all(client: ReflexCloud, mock_api: MockAPI):

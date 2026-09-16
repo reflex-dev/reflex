@@ -3,11 +3,12 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import pytest
 from reflex_sdk import types
+from reflex_sdk._decode import json_name
 
 from tests.units.reflex_sdk.schema_check import load_components, model_problems
 
@@ -133,6 +134,24 @@ def test_checker_reports_mismatches(overrides: dict[str, Any], problem: str):
     problems = _problems(**overrides)
     assert len(problems) == 1
     assert problems[0].startswith(problem)
+
+
+@dataclass(frozen=True, kw_only=True)
+class _RenamedModel:
+    """A model with a field stored under another key, for checker tests."""
+
+    owner_id: uuid.UUID = field(metadata=json_name("project_owner"))
+
+
+def test_checker_uses_response_keys():
+    component = {
+        "properties": {"project_owner": {"type": "string", "format": "uuid"}},
+        "required": ["project_owner"],
+    }
+    assert model_problems(_RenamedModel, component, {}) == []
+    assert model_problems(
+        _RenamedModel, {"properties": {"owner_id": {"type": "string"}}}, {}
+    ) == ["_RenamedModel.owner_id: not in the schema"]
 
 
 def test_checker_reports_missing_and_optional_fields():

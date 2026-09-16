@@ -64,13 +64,18 @@ class AsyncSecrets:
 
         Args:
             app_id: The app.
-            name: The name of the secret. ``get_all`` reads a secret named ``__all__``,
-                which this method cannot address.
+            name: The name of the secret.
             environment_id: The environment whose secret to read.
 
         Returns:
             The secret's value.
+
+        Raises:
+            KeyError: If a secret named ``__all__`` does not exist.
         """
+        if name == "__all__":
+            # That path reads every secret, so this one secret is picked out of them.
+            return (await self.get_all(app_id, environment_id=environment_id))[name]
         return await self._client._request(
             "GET",
             f"apps/{path_segment(app_id)}/secrets/{path_segment(name)}",

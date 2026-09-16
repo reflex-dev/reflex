@@ -12,6 +12,8 @@ import uuid
 from pathlib import Path
 from typing import Any, Literal, Union
 
+from reflex_sdk._decode import json_key
+
 OPENAPI_SNAPSHOT = Path(__file__).parents[3] / "packages/reflex-sdk/openapi.json"
 
 
@@ -155,17 +157,16 @@ def model_problems(
     required = set(component.get("required", []))
     problems = []
     for field in dataclasses.fields(model):
+        key = json_key(field)
         path = f"{model.__name__}.{field.name}"
-        if field.name not in properties:
+        if key not in properties:
             problems.append(f"{path}: not in the schema")
             continue
         has_default = (
             field.default is not dataclasses.MISSING
             or field.default_factory is not dataclasses.MISSING
         )
-        if field.name not in required and not has_default:
+        if key not in required and not has_default:
             problems.append(f"{path}: optional in the schema but required by the SDK")
-        problems.extend(
-            type_problems(hints[field.name], properties[field.name], models, path)
-        )
+        problems.extend(type_problems(hints[field.name], properties[key], models, path))
     return problems
