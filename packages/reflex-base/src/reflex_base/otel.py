@@ -242,8 +242,9 @@ def disable() -> None:
 def flush(timeout_millis: int = 5000) -> bool:
     """Flush spans already ended by the current process.
 
-    This is needed before a compile worker exits with ``os._exit``, which
-    bypasses the SDK's normal interpreter shutdown hooks.
+    This is needed before a compile worker exits: on Python <= 3.12,
+    multiprocessing fork and forkserver children exit with ``os._exit``,
+    skipping the ``atexit`` hook where the SDK registers its shutdown flush.
 
     Args:
         timeout_millis: Maximum time to wait for exporters to flush.
