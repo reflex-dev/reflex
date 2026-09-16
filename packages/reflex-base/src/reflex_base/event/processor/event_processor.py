@@ -426,8 +426,7 @@ class EventProcessor:
             # event) so the child runs instead of crashing.
             if not parent_future.done():
                 parent_future.add_child(tracked)
-        if parent_future is None:
-            self._supersede_previous(token=token, event=event, tracked=tracked)
+        self._supersede_previous(token=token, event=event, tracked=tracked)
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
 
@@ -548,9 +547,10 @@ class EventProcessor:
     ) -> None:
         """Cancel the previous unfinished chain of a superseding event handler.
 
-        Root handlers marked with ``supersedes`` (e.g. ``on_load_internal``)
-        use latest-wins semantics: enqueuing a new invocation cancels the
-        previous unfinished event chain for the same handler and client token.
+        Handlers marked with ``supersedes`` use latest-wins semantics:
+        enqueuing a new invocation cancels the previous unfinished event chain
+        for the same handler and client token. This applies to both chain roots
+        and shared handlers yielded by multiple roots.
 
         Args:
             token: The client token associated with the event.

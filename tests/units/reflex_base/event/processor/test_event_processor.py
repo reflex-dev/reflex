@@ -197,6 +197,43 @@ async def _superseding_root_handler(value: str = "default", child: str = "load")
 _superseding_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
 
 
+async def _update_stuff_handler(value: str = "default"):
+    """Run a superseding background update and record its completion."""
+    gate = _GATES.get(value)
+    if gate is not None:
+        gate.set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            _CALL_LOG.append({"value": f"{value}_cancelled"})
+            raise
+    else:
+        await asyncio.sleep(0.01)
+    _CALL_LOG.append({"value": value})
+
+
+_update_stuff_handler._reflex_background_task = True  # type: ignore[attr-defined]
+_update_stuff_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
+async def _event_a_handler():
+    """A superseding root that enqueues the shared update handler."""
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(update_stuff_event("a"))[0])
+
+
+_event_a_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
+async def _event_b_handler():
+    """A second superseding root that enqueues the shared update handler."""
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(update_stuff_event("b"))[0])
+
+
+_event_b_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
 error_event = EventHandler(fn=_error_handler)
@@ -214,6 +251,9 @@ gated_logging_event = EventHandler(fn=_gated_logging_handler)
 cancellable_load_event = EventHandler(fn=_cancellable_load_handler)
 resurrecting_load_event = EventHandler(fn=_resurrecting_load_handler)
 superseding_root_event = EventHandler(fn=_superseding_root_handler)
+update_stuff_event = EventHandler(fn=_update_stuff_handler)
+event_a_event = EventHandler(fn=_event_a_handler)
+event_b_event = EventHandler(fn=_event_b_handler)
 
 
 @pytest.fixture(autouse=True)
@@ -243,6 +283,9 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         cancellable_load_event,
         resurrecting_load_event,
         superseding_root_event,
+        update_stuff_event,
+        event_a_event,
+        event_b_event,
     ):
         RegistrationContext.register_event_handler(handler)
 
@@ -1081,3 +1124,23 @@ async def test_superseded_chain_cannot_chain_new_events(
 
     assert {"value": "resurrected"} not in _CALL_LOG
     assert {"value": "fresh"} in _CALL_LOG
+
+
+async def test_distinct_superseding_roots_cancel_shared_superseding_child(
+    processor: EventProcessor,
+    token: str,
+):
+    """A shared superseding child cancels its prior invocation across root chains."""
+    _GATES["a"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(token, Event.from_event_type(event_a_event())[0])
+        await asyncio.wait_for(_GATES["a"].wait(), timeout=1)
+        assert not first.all_done()
+
+        second = await ep.enqueue(token, Event.from_event_type(event_b_event())[0])
+        await asyncio.wait_for(second.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+        assert {"value": "a_cancelled"} in _CALL_LOG
+        assert {"value": "b"} in _CALL_LOG
