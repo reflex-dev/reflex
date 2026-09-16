@@ -1,4 +1,4 @@
-# Generated from packages/reflex-sdk/src/reflex_sdk/_async/resources/projects.py by scripts/unasync_reflex_sdk.py. Do not edit.
+# Generated from packages/reflex-sdk/src/reflex_sdk/_async/resources/projects.py by packages/reflex-sdk/scripts/unasync.py. Do not edit.
 """The project, role and member endpoints."""
 
 from __future__ import annotations
