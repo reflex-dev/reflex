@@ -32,7 +32,7 @@ ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
 
 WORKDIR /app
 # The app user needs to own /app itself so reflex can create .states there.
-RUN adduser --disabled-password --home /app reflex && chown reflex /app
+RUN adduser --disabled-password --gecos "" --home /app reflex && chown reflex /app
 COPY --chown=reflex --from=builder /app/.venv .venv
 COPY --chown=reflex --from=builder /app/.web/backend .web/backend
 COPY --chown=reflex --from=builder /app/.web/build/client .web/build/client

@@ -10,7 +10,7 @@ ENV UV_COMPILE_BYTECODE=1 UV_NO_CACHE=1 PATH="/app/.venv/bin:$PATH" PYTHONUNBUFF
 
 WORKDIR /app
 # The app user needs to own /app itself so reflex can create .states there.
-RUN adduser --disabled-password --home /app reflex && chown reflex /app
+RUN adduser --disabled-password --gecos "" --home /app reflex && chown reflex /app
 
 # Install python requirements first so app edits do not reinstall them. uv is
 # mounted only for this step so it does not end up in the image.
