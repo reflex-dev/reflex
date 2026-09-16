@@ -17,6 +17,13 @@ _CODE_TAB_VALUE = "code"
 _DATA_TAB_VALUE = "data"
 
 
+class DeferredDemo(rx.Component):
+    """Mount a costly interactive preview when it approaches the viewport."""
+
+    library = "$/public/components/DeferredDemo"
+    tag = "DeferredDemo"
+
+
 def _reflex_build_icon() -> rx.Component:
     """Create the Reflex Build mark for the demo action.
 

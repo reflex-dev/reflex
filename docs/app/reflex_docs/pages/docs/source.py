@@ -30,49 +30,39 @@ def stacked_description_rows(
     description: Callable[[], rx.Component],
     breakpoint: str,
     description_cell_class: str = "",
-) -> tuple[rx.Component, rx.Component]:
+) -> tuple[rx.Component, ...]:
     """Build a table row whose description column stacks on narrow containers.
 
     On containers at least as wide as the Tailwind ``breakpoint``, the
     description renders as the last cell of a single row. Below that, it
-    drops to a second full-width row so the table never needs horizontal
+    stacks below the other cells so the table never needs horizontal
     scrolling just to read descriptions. The nearest ancestor with the
     ``@container`` class defines the measured width.
 
     Args:
         leading_cells: The non-description cells as (content, extra cell classes).
-        description: Description factory, called once per rendered copy.
+        description: Description factory, called once.
         breakpoint: Tailwind container breakpoint (e.g. ``"4xl"``) above which
             the description stays in-row.
         description_cell_class: Extra classes for the in-row description cell.
 
     Returns:
-        The main row and the narrow-only description row.
+        A single row whose description spans the grid on narrow containers.
     """
     return (
         rx.table.row(
             *[
                 rx.table.cell(
                     content,
-                    # When stacked, the description row below carries the divider.
-                    class_name=f"{extra_class} @max-{breakpoint}:shadow-none".strip(),
+                    class_name=f"{extra_class} @max-{breakpoint}:shadow-none @max-{breakpoint}:min-w-0 @max-{breakpoint}:h-auto".strip(),
                 )
                 for content, extra_class in leading_cells
-            ]
-            + [
-                rx.table.cell(
-                    description(),
-                    class_name=f"{description_cell_class_name} {description_cell_class} hidden @{breakpoint}:table-cell",
-                ),
-            ]
-        ),
-        rx.table.row(
+            ],
             rx.table.cell(
                 description(),
-                col_span=len(leading_cells),
-                class_name=description_cell_class_name,
+                class_name=f"{description_cell_class_name} {description_cell_class} @max-{breakpoint}:col-span-full @max-{breakpoint}:h-auto [&_p:last-child]:mb-0",
             ),
-            class_name=f"@{breakpoint}:hidden",
+            class_name=f"@max-{breakpoint}:grid @max-{breakpoint}:grid-cols-{len(leading_cells)}",
         ),
     )
 
@@ -119,7 +109,7 @@ def format_fields(
     if env_var_prefix is not None:
         headers = [headers[0], "Environment Variable", *headers[1:]]
 
-    def field_rows(field: FieldDocumentation) -> tuple[rx.Component, rx.Component]:
+    def field_rows(field: FieldDocumentation) -> tuple[rx.Component, ...]:
         leading_cells = [(format_field(field), "")]
         if env_var_prefix is not None:
             leading_cells.append((

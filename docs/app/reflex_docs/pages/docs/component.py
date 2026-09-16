@@ -964,7 +964,13 @@ def multi_docs(
                 )
         return rx.fragment()
 
-    @docpage(set_path=path, t=title, description=description, image=image)
+    @docpage(
+        set_path=path,
+        t=title,
+        description=description,
+        image=image,
+        source_path=actual_path,
+    )
     def out():
         toc = get_docgen_toc(actual_path)
         # Reuse the source already read by the caller to avoid a second read.
@@ -1012,6 +1018,7 @@ def multi_docs(
         t=title + " (Low Level)",
         description=ll_description,
         image=image,
+        source_path=ll_actual_path,
     )
     def ll():
         ll_virtual = virtual_path.replace(".md", "-ll.md")

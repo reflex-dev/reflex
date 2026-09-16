@@ -1,22 +1,26 @@
 """The main Reflex website."""
 
+import json
 import os
 import sys
+from functools import partial
 
 import reflex as rx
 import reflex_enterprise as rxe
 from reflex_site_shared import styles
 from reflex_site_shared.backend.status import monitor_checkly_status
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN, REFLEX_DOMAIN_URL
+from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 from reflex_site_shared.meta.meta import (
     ONE_LINE_DESCRIPTION,
     create_meta_tags,
     favicons_links,
     to_cdn_image_url,
 )
-from reflex_site_shared.telemetry import get_pixel_website_trackers
+from reflex_site_shared.utils.url import public_url
 
 from reflex_docs.pages import page404, routes
+from reflex_docs.redirects import DocsRedirectMiddleware
+from reflex_docs.templates.docpage.docpage import breadcrumb_data
 from reflex_docs.whitelist import _check_whitelisted_path
 
 # This number discovered by trial and error on Windows 11 w/ Node 18, any
@@ -48,7 +52,7 @@ app = rxe.App(
         radius="large",
         accent_color="violet",
     ),
-    head_components=get_pixel_website_trackers() + favicons_links(),
+    head_components=favicons_links(),
 )
 
 app.register_lifespan_task(monitor_checkly_status)
@@ -82,7 +86,7 @@ def _canonical_url(path: str) -> str:
     # "/docsoverview/" instead of "/docs/overview/".
     if not path.startswith("/"):
         path = "/" + path
-    url = REFLEX_DOMAIN_URL.rstrip("/") + _FRONTEND_PATH + path
+    url = public_url(path)
     return url if url.endswith("/") else url + "/"
 
 
@@ -135,6 +139,16 @@ for route in routes:
             # can't be emitted, so keep any page-provided meta as-is.
             canonical = None
             meta = list(route.meta) if route.meta is not None else []
+        if canonical is not None:
+            meta.append(
+                rx.el.script(
+                    json.dumps(
+                        breadcrumb_data(route.path, head_title.split(" · ")[0]),
+                        ensure_ascii=False,
+                    ).replace("<", "\\u003c"),
+                    type="application/ld+json",
+                )
+            )
         meta.append({"name": "theme-color", "content": route.background_color})
 
         # Reflex's compiler always renders exactly one og:image from add_page's
@@ -188,21 +202,50 @@ redirects.extend([
 ])
 
 
-def _redirect_page():
+def _redirect_page(target: str):
+    """Render a usable destination link for static hosting.
+
+    Args:
+        target: The app-relative destination, prefixed by the router.
+
+    Returns:
+        The static redirect page content.
+    """
     return rx.fragment(
-        rx.el.h1("Redirecting", class_name="sr-only"),
+        rx.el.h1("This page has moved"),
+        rx.el.a("Continue to the documentation", href=target),
     )
 
 
 for source, target in redirects:
     if _check_whitelisted_path(target):
         app.add_page(
-            _redirect_page,
+            partial(_redirect_page, target),
             route=source,
             title="Redirecting - Reflex Web Framework",
             description="You are being redirected to the requested page.",
             on_load=rx.redirect(target),
             context={"sitemap": None},
+            meta=[
+                rx.el.link(rel="canonical", href=_canonical_url(target)),
+                {"name": "robots", "content": "noindex, follow"},
+                rx.el.meta(
+                    http_equiv="refresh", content=f"0;url={_FRONTEND_PATH}{target}"
+                ),
+            ],
         )
 
 app.add_page(page404.component, route=page404.path)
+
+
+# HTTP 301 applies when page requests reach this backend. Separate frontend
+# hosts use the redirect pages above and need edge rules for HTTP 301 semantics.
+app.api_transformer = partial(
+    DocsRedirectMiddleware,
+    redirects=[
+        (source, target)
+        for source, target in redirects
+        if _check_whitelisted_path(target)
+    ],
+    frontend_path=_FRONTEND_PATH,
+)
