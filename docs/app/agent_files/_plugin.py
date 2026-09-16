@@ -50,7 +50,8 @@ For a navigable index with links to individual docs pages, see [llms.txt]({llms_
 MARKDOWN_DIRECTIVE = (
     "> For AI agents: the complete documentation index is at "
     "[llms.txt]({llms_txt_url}). For a Markdown version, remove the trailing slash "
-    "from the page URL and append `.md`."
+    "from the page URL and append `.md`. The docs home is available at "
+    "[index.md]({docs_home_markdown_url})."
 )
 PUBLIC_LLMS_TXT_URL = "https://reflex.dev/docs/llms.txt"
 PUBLIC_EVENT_TRIGGERS_URL = "https://reflex.dev/docs/api-reference/event-triggers/"
@@ -156,29 +157,9 @@ def _strip_markdown_directive(source: str) -> str:
     Returns:
         The markdown content without the generated directive.
     """
-    directive = _markdown_directive()
-    if source.startswith(directive):
-        return source.removeprefix(directive).lstrip()
+    if source.startswith("> For AI agents: the complete documentation index is at "):
+        return source.partition("\n")[2].lstrip()
     return source
-
-
-def _include_index_entry_in_llms_txt(markdown_file: MarkdownIndexEntry) -> bool:
-    """Return whether an index entry should appear in llms.txt.
-
-    Args:
-        markdown_file: The markdown index entry.
-
-    Returns:
-        Whether the entry should be included in llms.txt.
-    """
-    path = markdown_file.url_path.as_posix()
-    return (
-        path in MCP_DOC_PATHS
-        or path in AGENT_TOOLKIT_DOC_PATHS
-        or path in SKILLS_DOC_PATHS
-        or not path.startswith("ai/")
-        or path.startswith("ai/overview/")
-    )
 
 
 def _section_for_path(url_path: Path) -> str:
@@ -271,7 +252,10 @@ def _markdown_directive() -> str:
     Returns:
         The markdown blockquote directive.
     """
-    return MARKDOWN_DIRECTIVE.format(llms_txt_url=PUBLIC_LLMS_TXT_URL).strip()
+    return MARKDOWN_DIRECTIVE.format(
+        llms_txt_url=PUBLIC_LLMS_TXT_URL,
+        docs_home_markdown_url=public_url("/index.md"),
+    ).strip()
 
 
 def generate_markdown_file_content(entry: MarkdownFileEntry) -> str:
@@ -747,8 +731,6 @@ def generate_llms_txt(
     """Generate an llms.txt index grouped by docs section."""
     sections: OrderedDict[str, list[MarkdownIndexEntry]] = OrderedDict()
     for markdown_file in markdown_files:
-        if not _include_index_entry_in_llms_txt(markdown_file):
-            continue
         sections.setdefault(markdown_file.section, []).append(markdown_file)
 
     lines = [
@@ -897,6 +879,12 @@ def generate_agent_files() -> tuple[tuple[Path, str | bytes], ...]:
 
 
 class AgentFilesPlugin(Plugin):
+    def post_build(self, **context):
+        """Complete agent exports from the final canonical page content."""
+        from ._rendered import export_rendered_pages
+
+        export_rendered_pages(context["static_dir"], get_config().frontend_path)
+
     def get_static_assets(
         self, **context: Unpack[CommonContext]
     ) -> Sequence[tuple[Path, str | bytes]]:

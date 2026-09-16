@@ -252,7 +252,7 @@ rx.table.root(
 )
 ```
 
-Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs](/docs/library/other/theme).
+Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs](/docs/library/other/theme/).
 
 ## Colors
 

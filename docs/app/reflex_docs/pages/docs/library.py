@@ -54,7 +54,7 @@ def component_grid():
                     get_icon(
                         "new_tab", class_name="text-muted-foreground [&>svg]:size-4"
                     ),
-                    href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}",
+                    href=f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower()}/",
                     underline="none",
                     class_name="px-6 py-4 bg-background hover:bg-accent transition-bg flex flex-row justify-between items-center !text-foreground",
                 ),
@@ -126,5 +126,15 @@ def library():
             text="Components let you split the UI into independent, reusable pieces, and think about each piece in isolation. This page contains a list of all builtin components.",
         ),
         component_grid(),
+        rx.el.p(
+            "Connect your components to data and events with the ",
+            rx.el.a(
+                "state guides",
+                href="/library/state/",
+                class_name="docs-text-link underline underline-offset-4",
+            ),
+            ".",
+            class_name="mt-8 text-sm leading-6 text-muted-foreground",
+        ),
         class_name="flex flex-col h-full mb-12",
     )

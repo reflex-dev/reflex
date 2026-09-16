@@ -549,3 +549,54 @@ def test_cloud_diagram_preserves_guides_without_overlapping(
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
     section.get_by_role("link", name="Deployment", exact=True).click()
     expect(page).to_have_url(f"{PREVIEW_URL}/docs/hosting/deploy-quick-start/")
+
+
+def test_agent_file_links_respect_docs_mount(page: Page):
+    """The router adds the docs prefix exactly once to agent-file links."""
+    page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    expect(page.locator('a[href="/docs/llms.txt"]').first).to_have_count(1)
+    page.get_by_role("button", name="Copy page options").click()
+    link = page.get_by_role("link", name="llms-full.txt", exact=False)
+    expect(link).to_have_attribute("href", "/docs/llms-full.txt")
+    response = page.request.get(f"{PREVIEW_URL}/docs/llms-full.txt")
+    assert response.status == 200
+    assert "# Reflex Documentation" in response.text()
+
+
+def test_wrapping_walkthrough_color_event_updates_state(page: Page):
+    """The documented React wrapper sends color changes to Python state."""
+    page.goto(
+        f"{PREVIEW_URL}/docs/wrapping-react/step-by-step/", wait_until="networkidle"
+    )
+    label = page.locator("p").filter(has_text="Selected color:").first
+    expect(label).to_contain_text("#6750a4")
+    picker = page.locator(".react-colorful__saturation")
+    picker.click(position={"x": 20, "y": 20})
+    expect(label).not_to_contain_text("#6750a4")
+
+
+def test_markdown_alternate_updates_with_client_navigation(page: Page):
+    """Discovery points to emitted files at the root and after router navigation."""
+    page.goto(f"{PREVIEW_URL}/docs/", wait_until="networkidle")
+    alternate = page.locator('head link[rel="alternate"][type="text/markdown"]')
+    expect(alternate).to_have_attribute("href", "https://reflex.dev/docs/index.md")
+    page.locator("header").get_by_role("link", name="Build with AI", exact=True).click()
+    expect(page).to_have_url(f"{PREVIEW_URL}/docs/ai/")
+    expect(alternate).to_have_attribute("href", "https://reflex.dev/docs/ai.md")
+
+
+def test_reference_table_keeps_columns_readable_on_mobile(page: Page):
+    """Narrow screens scroll the reference table instead of overlapping columns."""
+    page.set_viewport_size({"width": 390, "height": 950})
+    page.goto(f"{PREVIEW_URL}/docs/library/html/layout/", wait_until="networkidle")
+    table = page.locator(".docs-table").first
+    table.scroll_into_view_if_needed()
+    assert table.locator("table").bounding_box()["width"] >= 640
+    assert table.evaluate("element => element.scrollWidth > element.clientWidth")
+    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+    name = table.locator("td code").filter(has_text="content_editable").first
+    assert name.evaluate(
+        "element => element.getBoundingClientRect().right <= element.closest('td').getBoundingClientRect().right"
+    )
+    table.evaluate("element => { element.scrollLeft = 100; }")
+    assert table.evaluate("element => element.scrollLeft") == 100

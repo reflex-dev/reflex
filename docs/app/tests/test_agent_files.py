@@ -107,8 +107,8 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
         "- [Reflex Build: Best Practices](https://reflex.dev/docs/ai/overview/best-practices.md)"
         in content
     )
-    assert "Resend Integration" not in content
-    assert "Code and Review" not in content
+    assert "Resend Integration" in content
+    assert "Code and Review" in content
     assert "### Agent Toolkit\n\n" in content
     assert (
         "- [Agent Toolkit](https://reflex.dev/docs/ai/integrations/agent-toolkit.md)"
@@ -152,7 +152,8 @@ def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_pa
     assert content.startswith(
         "> For AI agents: the complete documentation index is at "
         "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
-        "remove the trailing slash from the page URL and append `.md`.\n\n"
+        "remove the trailing slash from the page URL and append `.md`. "
+        "The docs home is available at [index.md](http://localhost:3000/docs/index.md).\n\n"
         "# Overview"
     )
 
@@ -220,7 +221,8 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert files[Path("api-reference/var.md")].startswith(
         "> For AI agents: the complete documentation index is at "
         "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
-        "remove the trailing slash from the page URL and append `.md`.\n\n"
+        "remove the trailing slash from the page URL and append `.md`. "
+        "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
         "# Var\n\n"
     )
     assert "## Methods" in files[Path("api-reference/var.md")]
@@ -232,7 +234,8 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert files[Path("api-reference/eventhandler.md")].startswith(
         "> For AI agents: the complete documentation index is at "
         "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
-        "remove the trailing slash from the page URL and append `.md`.\n\n"
+        "remove the trailing slash from the page URL and append `.md`. "
+        "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
         "# Eventhandler\n\n"
     )
     assert Path("api-reference/event-handler.md") not in files
@@ -244,7 +247,8 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert env_vars.startswith(
         "> For AI agents: the complete documentation index is at "
         "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
-        "remove the trailing slash from the page URL and append `.md`.\n\n"
+        "remove the trailing slash from the page URL and append `.md`. "
+        "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
         "# Environment Variables\n\n"
     )
     assert "`reflex.config.EnvironmentVariables`" in env_vars
@@ -305,7 +309,8 @@ def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
                 ),
                 "> For AI agents: the complete documentation index is at "
                 "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
-                "remove the trailing slash from the page URL and append `.md`.\n\n"
+                "remove the trailing slash from the page URL and append `.md`. "
+                "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
                 "# Eventhandler\n\n"
                 "`reflex_base.event.EventHandler`\n",
             )

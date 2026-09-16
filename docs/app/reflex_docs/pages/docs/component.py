@@ -14,6 +14,7 @@ from reflex.components.base.fragment import Fragment
 from reflex.components.component import Component
 from reflex.components.radix.primitives.base import RadixPrimitiveComponent
 from reflex.components.radix.themes.base import RadixThemesComponent
+from reflex_components_core.el.elements.base import BaseHTML
 from reflex_docgen import (
     EventHandlerDocumentation,
     PropDocumentation,
@@ -860,8 +861,27 @@ def generate_valid_children(comp: type[Component]) -> rx.Component:
     )
 
 
+def shared_html_props(
+    components: list[type[Component]],
+) -> tuple[PropDocumentation, ...]:
+    """Find inherited HTML props shared unchanged by at least two components."""
+    if len(components) < 2:
+        return ()
+    props_by_component = [
+        {prop.name: prop for prop in generate_documentation(component).props}
+        for component in components
+    ]
+    return tuple(
+        prop
+        for prop in generate_documentation(BaseHTML).props
+        if sum(props.get(prop.name) == prop for props in props_by_component) >= 2
+    )
+
+
 def component_docs(
-    component_tuple: tuple[type[Component], str], previews: dict[str, str]
+    component_tuple: tuple[type[Component], str],
+    previews: dict[str, str],
+    shared_props: tuple[PropDocumentation, ...] = (),
 ) -> rx.Component:
     """Generates documentation for a given component."""
     component = component_tuple[0]
@@ -876,7 +896,13 @@ def component_docs(
         component_tuple[1], component_tuple[1]
     )
 
-    props = generate_props(doc.props, component, previews, comp_display_name)
+    inherited_props = tuple(prop for prop in doc.props if prop in shared_props)
+    props = generate_props(
+        tuple(prop for prop in doc.props if prop not in inherited_props),
+        component,
+        previews,
+        comp_display_name,
+    )
     triggers = generate_event_triggers(doc.event_handlers)
     children = generate_valid_children(component)
 
@@ -884,6 +910,18 @@ def component_docs(
         h2_comp(text=comp_display_name),
         rx.box(render_markdown(doc.description or ""), class_name="pb-2"),
         props,
+        rx.el.p(
+            "Also accepts the ",
+            rx.el.a(
+                "shared HTML props",
+                href="#shared-html-props",
+                class_name="docs-text-link underline underline-offset-4",
+            ),
+            ".",
+            class_name="mb-4 text-sm text-muted-foreground",
+        )
+        if inherited_props
+        else rx.fragment(),
         children,
         triggers,
         class_name="pb-8 w-full text-left",
@@ -902,16 +940,33 @@ def multi_docs(
     ll_component_list: list | None = None,
     source: str | None = None,
 ):
+    shared = shared_html_props([item[0] for item in component_list[1:]])
     components = [
-        component_docs(component_tuple, previews)
+        component_docs(component_tuple, previews, shared)
         for component_tuple in component_list[1:]
     ]
     ll_actual_path = actual_path.replace(".md", "-ll.md")
     ll_doc_exists = os.path.exists(ll_actual_path)
     ll_list = ll_component_list if ll_component_list is not None else component_list
+    ll_shared = shared_html_props([item[0] for item in ll_list[1:]])
     ll_components = [
-        component_docs(component_tuple, previews) for component_tuple in ll_list[1:]
+        component_docs(component_tuple, previews, ll_shared)
+        for component_tuple in ll_list[1:]
     ]
+
+    def shared_reference(props):
+        """Render the common reference once, retaining it in prerendered HTML."""
+        if not props:
+            return rx.fragment()
+        return rx.box(
+            h2_comp(text="Shared HTML props"),
+            rx.el.p(
+                "Components linked to this section accept these HTML props. "
+                "Component-specific additions and overrides are listed below.",
+                class_name="mb-4 text-sm leading-6 text-muted-foreground",
+            ),
+            generate_props(props, BaseHTML, {}),
+        )
 
     active_class_name = "font-small bg-muted p-2 text-muted-foreground rounded-xl shadow-large w-28 cursor-default border border-border-subtle text-center"
 
@@ -932,7 +987,7 @@ def multi_docs(
                             rx.box(
                                 rx.text("Low Level"), class_name=non_active_class_name
                             ),
-                            href=path + "/low",
+                            href=path + "/low/",
                             underline="none",
                         ),
                         class_name="bg-accent rounded-[1.125rem] p-2 gap-2 flex items-center justify-center",
@@ -947,12 +1002,12 @@ def multi_docs(
                             rx.box(
                                 rx.text("High Level"), class_name=non_active_class_name
                             ),
-                            href=path,
+                            href=path + "/",
                             underline="none",
                         ),
                         rx.link(
                             rx.box(rx.text("Low Level"), class_name=active_class_name),
-                            href=path + "/low",
+                            href=path + "/low/",
                             underline="none",
                         ),
                         class_name="bg-accent rounded-[1.125rem] p-2 gap-2 flex items-center justify-center",
@@ -979,11 +1034,14 @@ def multi_docs(
         # Append API Reference headings for the component list
         if components:
             toc.append((1, "API Reference"))
+        if shared:
+            toc.append((2, "Shared HTML props"))
         for component_tuple in component_list[1:]:
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
                 h2_comp(text="API Reference"),
+                shared_reference(shared),
                 rx.box(*components, class_name="flex flex-col"),
             ]
             if components
@@ -1011,7 +1069,7 @@ def multi_docs(
     )
 
     @docpage(
-        set_path=path + "low",
+        set_path=path.rstrip("/") + "/low/",
         t=title + " (Low Level)",
         description=ll_description,
         image=image,
@@ -1023,11 +1081,14 @@ def multi_docs(
         doc_content = Path(ll_actual_path).read_text(encoding="utf-8")
         if ll_components:
             toc.append((1, "API Reference"))
+        if ll_shared:
+            toc.append((2, "Shared HTML props"))
         for component_tuple in ll_list[1:]:
             toc.append((2, component_tuple[1]))
         api_ref_section = (
             [
                 h2_comp(text="API Reference"),
+                shared_reference(ll_shared),
                 rx.box(*ll_components, class_name="flex flex-col"),
             ]
             if ll_components

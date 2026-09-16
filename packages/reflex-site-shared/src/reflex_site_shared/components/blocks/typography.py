@@ -1,5 +1,8 @@
 """Typography blocks for doc pages."""
 
+from pathlib import PurePosixPath
+from urllib.parse import urlsplit
+
 import reflex as rx
 from reflex_site_shared.styles import fonts
 
@@ -99,6 +102,29 @@ def code_comp(text: rx.Var[str]) -> rx.Component:
     return rx.code(text, class_name="code-style")
 
 
+def _canonical_docs_href(href: str | rx.Var[str] | None):
+    """Add the docs page slash while preserving assets, queries and fragments.
+
+    Args:
+        href: Literal or reactive link destination.
+
+    Returns:
+        The canonical docs destination, or the original non-docs link.
+    """
+    if not isinstance(href, str):
+        return href
+    url = urlsplit(href)
+    if (
+        url.netloc in {"", "reflex.dev", "www.reflex.dev"}
+        and url.scheme in {"", "http", "https"}
+        and (url.path == "/docs" or url.path.startswith("/docs/"))
+        and not url.path.endswith("/")
+        and not PurePosixPath(url.path).suffix
+    ):
+        return url._replace(path=url.path + "/").geturl()
+    return href
+
+
 def doclink(text: str, href: str, **props) -> rx.Component:
     """Create a styled link for doc pages.
 
@@ -112,7 +138,7 @@ def doclink(text: str, href: str, **props) -> rx.Component:
     """
     return rx.el.elements.a(
         text,
-        href=href,
+        href=_canonical_docs_href(href),
         **props,
         class_name="text-foreground decoration-foreground underline",
     )
@@ -129,6 +155,8 @@ def doclink2(text: str, **props) -> rx.Component:
     Returns:
         The styled link.
     """
+    if "href" in props:
+        props["href"] = _canonical_docs_href(props["href"])
     return rx.el.elements.a(
         text,
         **props,
