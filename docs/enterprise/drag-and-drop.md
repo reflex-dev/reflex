@@ -12,9 +12,7 @@ import reflex_enterprise as rxe
 Reflex Enterprise provides comprehensive drag and drop functionality for creating interactive UI elements using the `rxe.dnd` module. Built on top of react-dnd, it offers both high-level components for common use cases and low-level hooks for advanced scenarios.
 
 ```md alert warning
-# Memoize reusable drag-and-drop components
-
-Use `@rx.memo` when a draggable or drop-target helper is rendered multiple times, especially inside `rx.foreach`, so each instance has its own hook and ref. Pass dynamic destinations as `rx.Var` props using keyword arguments. A single instance defined directly in a page can use the page's hook scope.
+# Important: Always decorate functions defining `rxe.dnd.draggable` components with `@rx.memo` to avoid compilation errors.
 
 See [memo](/docs/library/other/memo) for how `@rx.memo` components handle parameters.
 ```
@@ -115,8 +113,7 @@ def movable_card() -> rxe.dnd.Draggable:
     )
 
 
-@rx.memo
-def drop_zone(position: rx.Var[int]) -> rx.Component:
+def drop_zone(position: int):
     params = rxe.dnd.DropTarget.collected_params
     return rxe.dnd.drop_target(
         rx.cond(
@@ -141,10 +138,10 @@ def multi_position_example():
     return rx.vstack(
         rx.text("Drag the card between positions", weight="bold"),
         rx.grid(
-            drop_zone(position=0),
-            drop_zone(position=1),
-            drop_zone(position=2),
-            drop_zone(position=3),
+            drop_zone(0),
+            drop_zone(1),
+            drop_zone(2),
+            drop_zone(3),
             columns="2",
             spacing="4",
         ),
@@ -296,10 +293,7 @@ def draggable_list_item(item: rx.Var[ListItem]) -> rx.Component:
     )
 
 
-@rx.memo
-def droppable_list(
-    title: rx.Var[str], items: rx.Var[list[ListItem]], list_id: rx.Var[str]
-) -> rx.Component:
+def droppable_list(title: str, items: list[ListItem], list_id: str):
     return rxe.dnd.drop_target(
         rx.vstack(
             rx.text(title, weight="bold", size="5"),
@@ -325,8 +319,8 @@ def droppable_list(
 
 def dynamic_list_example():
     return rx.hstack(
-        droppable_list(title="List A", items=DynamicListState.list_a, list_id="A"),
-        droppable_list(title="List B", items=DynamicListState.list_b, list_id="B"),
+        droppable_list("List A", DynamicListState.list_a, "A"),
+        droppable_list("List B", DynamicListState.list_b, "B"),
         spacing="6",
         align="start",
     )
@@ -611,7 +605,7 @@ def app():
     return rxe.dnd.provider(
         # Your app content
         your_app_content(),
-        backend="HTML5",  # or "Touch" for mobile
+        backend=rxe.dnd.HTML5Backend,  # or rxe.dnd.TouchBackend for mobile
     )
 ```
 
@@ -623,7 +617,7 @@ Because the provider is added automatically when `draggable` or `drop_target` co
 
 ## Best Practices
 
-1. **Use `@rx.memo`** on draggable and drop-target helpers rendered multiple times, including inside `rx.foreach`
+1. **Always use `@rx.memo`** on functions containing draggable components
 2. **Use descriptive type names** for better debugging
 3. **Handle edge cases** in drop handlers (invalid items, etc.)
 4. **Provide visual feedback** using collected parameters
