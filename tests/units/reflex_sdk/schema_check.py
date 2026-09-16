@@ -102,7 +102,13 @@ def type_problems(
                 args if origin is Literal else [member.value for member in tp]
             )
         }
-        values = schema.get("enum")
+        values = (
+            schema["enum"]
+            if "enum" in schema
+            else [schema["const"]]
+            if "const" in schema
+            else None
+        )
         if values is None or any(
             (type(value), value) not in allowed for value in values
         ):

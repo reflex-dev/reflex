@@ -212,12 +212,16 @@ def test_members_list_null(client: ReflexCloud, mock_api: MockAPI):
 
 @pytest.mark.parametrize(
     ("body", "result"),
-    [(None, "applied"), ({"status": "pending_approval"}, "pending_approval")],
+    [
+        (None, "applied"),
+        ({"status": "pending_approval"}, "pending_approval"),
+        ({"status": "pending_approval", "request_id": 7}, "pending_approval"),
+    ],
 )
 def test_members_set_role(
     client: ReflexCloud,
     mock_api: MockAPI,
-    body: dict[str, str] | None,
+    body: dict[str, Any] | None,
     result: str,
 ):
     mock_api.add("POST", "/api/v1/project/users/invite", reply(200, json=body))

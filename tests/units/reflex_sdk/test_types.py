@@ -108,6 +108,7 @@ def _problems(**overrides: Any) -> list[str]:
 
 def test_checker_accepts_matching_model():
     assert _problems() == []
+    assert _problems(level={"const": 2}) == []
 
 
 @pytest.mark.parametrize(
@@ -132,6 +133,14 @@ def test_checker_accepts_matching_model():
         ),
         (
             {"level": {"enum": [True]}},
+            "_Model.level: typing.Literal[1, 2] does not accept every value",
+        ),
+        (
+            {"level": {"const": 3}},
+            "_Model.level: typing.Literal[1, 2] does not accept every value",
+        ),
+        (
+            {"level": {"type": "integer"}},
             "_Model.level: typing.Literal[1, 2] does not accept every value",
         ),
     ],

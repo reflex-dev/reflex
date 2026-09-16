@@ -102,7 +102,7 @@ class Members:
         result = self._client._request(
             "POST",
             "project/users/invite",
-            dict[str, str] | None,
+            dict[str, Any] | None,
             json={"user_id": str(user_id), "role_id": str(role_id)},
         )
         return (
