@@ -1161,8 +1161,9 @@ class BaseState(EvenMoreBasicBaseState):
                     # depend on all the per-field router vars instead.
                     console.deprecate(
                         feature_name='ComputedVar deps=["router"]',
-                        reason="the router var was split; depend on the specific"
-                        ' router var instead (e.g. deps=["rx_router_url"]).',
+                        reason="the router var was split; depend on the router"
+                        " Var instead (e.g. deps=[State.router.url] for one"
+                        " field, or deps=[State.router] for all of them).",
                         deprecation_version="0.9.12",
                         removal_version="1.0",
                     )
