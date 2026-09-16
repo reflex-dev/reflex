@@ -958,7 +958,7 @@ def multi_docs(
         """Render the common reference once, retaining it in prerendered HTML."""
         if not props:
             return rx.fragment()
-        return rx.box(
+        return rx.el.div(
             h2_comp(text="Shared HTML props"),
             rx.el.p(
                 "Components linked to this section accept these HTML props. "

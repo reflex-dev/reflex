@@ -116,6 +116,24 @@ def test_navbar_controls_fit_and_search_opens(page: Page, width: int):
         expect(menu).to_be_visible()
         menu.click()
         expect(menu.locator("..")).to_have_attribute("open", "")
+        navigation = page.get_by_role("navigation", name="Documentation navigation")
+        expect(navigation).to_have_css("position", "fixed")
+        bounds = navigation.bounding_box()
+        assert bounds["x"] == 0
+        assert bounds["width"] == width
+        assert (
+            bounds["y"] == header.bounding_box()["y"] + header.bounding_box()["height"]
+        )
+        for label, href in (
+            ("Overview", "/docs/"),
+            ("Build with AI", "/docs/ai/"),
+            ("Framework", "/docs/getting-started/introduction/"),
+            ("Cloud", "/docs/hosting/deploy-quick-start/"),
+            ("XY", "/docs/xy/"),
+        ):
+            link = navigation.get_by_role("link", name=label, exact=True)
+            expect(link).to_be_visible()
+            expect(link).to_have_attribute("href", href)
         menu.click()
     else:
         expect(overview).to_be_visible()

@@ -170,3 +170,20 @@ def test_navigation_switches_to_mobile_before_links_overflow(navbar):
     assert "hidden xl:flex" in str(sections.class_name)
     assert "xl:flex hidden" in str(actions.children[0].class_name)
     assert "xl:hidden flex" in str(actions.children[-1].class_name)
+
+
+def test_mobile_menu_preserves_primary_docs_destinations(navbar):
+    """Mobile readers can reach every top-level docs section."""
+    from reflex_docs.components.docpage.navbar.buttons.sidebar import (
+        navbar_sidebar_button,
+    )
+
+    links = _collect_links(navbar_sidebar_button())
+    for path in (
+        "/docs/",
+        "/docs/ai/",
+        "/docs/getting-started/introduction/",
+        "/docs/hosting/deploy-quick-start/",
+        "/docs/xy/",
+    ):
+        assert ("anchor", path) in links
