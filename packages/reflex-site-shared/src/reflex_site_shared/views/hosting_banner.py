@@ -24,15 +24,8 @@ AGENT_TOOLKIT_EARLY_ACCESS_URL = (
 DEADLINE = datetime.datetime(2025, 10, 25, 7, 1, tzinfo=datetime.timezone.utc)
 
 
-ANNOUNCEMENT_RELEASE = "xy-in-reflex-build-v1"
-
-
 class HostingBannerState(rx.State):
     """HostingBannerState."""
-
-    dismissed_release: str = rx.LocalStorage(
-        name="reflex_announcement_dismissed_release", sync=True
-    )
 
     show_banner: rx.Field[bool] = rx.field(True)
     force_hide_banner: rx.Field[bool] = rx.field(False)
@@ -41,7 +34,6 @@ class HostingBannerState(rx.State):
     def hide_banner(self):
         """Hide banner."""
         self.force_hide_banner = True
-        self.dismissed_release = ANNOUNCEMENT_RELEASE
 
     @rx.event
     def check_deadline(self):
@@ -61,11 +53,7 @@ class HostingBannerState(rx.State):
         Returns:
             The component.
         """
-        return (
-            self.show_banner
-            and not self.force_hide_banner
-            and self.dismissed_release != ANNOUNCEMENT_RELEASE
-        )
+        return self.show_banner and not self.force_hide_banner
 
 
 def timer():

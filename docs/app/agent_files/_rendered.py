@@ -199,6 +199,13 @@ def export_rendered_pages(static_dir: Path, frontend_path: str) -> None:
             flags=re.MULTILINE | re.DOTALL,
         )
         prose = re.sub(r"^> For AI agents:.*$", "", prose, flags=re.MULTILINE).strip()
+        prose = re.sub(
+            r"\A---\s*\n.*?\n---(?:\n|$)",
+            "",
+            prose,
+            count=1,
+            flags=re.DOTALL,
+        ).strip()
         title = None
         if not prose:
             title, content = rendered_content(html, url)

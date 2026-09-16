@@ -7,6 +7,7 @@ from urllib.parse import urljoin, urlsplit
 from xml.etree import ElementTree
 
 import pytest
+import reflex_base.config as reflex_config
 from reflex_base.environment import environment
 
 APP = Path(__file__).parents[1]
@@ -52,7 +53,11 @@ class PageURLs(HTMLParser):
 )
 def test_generated_sitemap_and_page_urls_share_public_origin():
     """Every sitemap location and generated canonical uses one public docs prefix."""
-    config = runpy.run_path(str(APP / "rxconfig.py"))["config"]
+    previous_auto_setters = reflex_config._state_auto_setters
+    try:
+        config = runpy.run_path(str(APP / "rxconfig.py"))["config"]
+    finally:
+        reflex_config._state_auto_setters = previous_auto_setters
     base = config.deploy_url.rstrip("/") + config.frontend_path.rstrip("/")
     urls = [
         element.text

@@ -23,9 +23,7 @@ _PUBLIC_ASSETS = (
     "components/GradientButton.tsx",
     "icons/search.svg",
     "components/marketing-date.jsx",
-    "homepage/announcement-visibility.tsx",
     "homepage/lib/use-isomorphic-layout-effect.ts",
-    "favicon.svg",
 )
 
 

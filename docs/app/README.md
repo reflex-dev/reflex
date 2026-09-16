@@ -52,7 +52,7 @@ uv run pytest tests
 uv run pytest --runxfail tests/test_published_seo.py
 ```
 
-If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable to both test commands. The Python link validator reads that build's sitemap. The frontend tests use the build's installed React and bundler to check server-rendered code, highlight invalidation, and removal of unused components.
+If the build uses a custom `REFLEX_WEB_WORKDIR`, pass that environment variable to all test commands above. The Python link validator reads that build's sitemap. The frontend tests use the build's installed React and bundler to check server-rendered code, highlight invalidation, and removal of unused components.
 
 The `reflex-docs` integration CI jobs run the frontend tests after building the production site, using the installed React and bundler dependencies.
 
@@ -64,7 +64,7 @@ Docs pages intentionally omit the marketing site's pixels and session recording 
 
 The docs config enables `frontend_lazy_bundled_libraries`. Optional libraries registered for dynamic components load on the first dynamic-component evaluation, while React and the shared runtime stay available immediately. This prevents the full Radix namespace from being imported on every page. The framework default remains `False`; custom scripts that read optional libraries from `window.__reflex` directly should retain that default or await `window.__reflex_load()` first.
 
-Run the imported functional browser checks against a running preview with `REFLEX_DOCS_PREVIEW_URL=http://localhost:3003 uv run pytest tests/test_docs_features_browser.py`.
+Run the imported functional browser checks against a running preview with `REFLEX_DOCS_PREVIEW_URL=http://localhost:3000 uv run pytest tests/test_docs_features_browser.py`.
 
 ## Agent-readable exports
 

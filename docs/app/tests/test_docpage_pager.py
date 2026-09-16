@@ -15,6 +15,7 @@ def test_pager_title_and_direction_share_one_link(forward):
 
     assert str(link.to).strip('"') == "/ai/overview/"
     assert len(link.children) == 2
+    assert ("Next" if forward else "Back") in str(link.children[0])
     assert "What Is Reflex Build" in str(link.children[1])
     assert all(child.tag not in {"a", "ReactRouterLink"} for child in link.children)
     assert "p-3" in str(link.class_name)

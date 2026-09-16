@@ -134,7 +134,7 @@ def primary_button(
     *,
     label: rx.Var[str],
 ) -> rx.Component:
-    return rx.button(label, rest, class_name="bg-primary text-white")
+    return rx.button(label, rest, class_name="bg-primary text-primary-foreground")
 
 
 def index():
@@ -166,7 +166,7 @@ def primary_button(
     *,
     label: rx.Var[str],
 ) -> rx.Component:
-    class_name = rest.get("class_name", "") + " bg-primary text-white"
+    class_name = rest.get("class_name", "") + " bg-primary text-primary-foreground"
     return rx.button(label, rest.merge({"class_name": class_name}))
 ```
 

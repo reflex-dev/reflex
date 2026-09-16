@@ -197,7 +197,7 @@ with RegistrationContext(), patch('reflex.compiler.compiler.get_config', return_
   }
 });
 
-test("Editorial actions preserve native semantics and caller events", async () => {
+test("Published marketing actions preserve native semantics and caller events", async () => {
   const { createElement } = await import(resolve("react"));
   const { renderToStaticMarkup } = await import(resolve("react-dom/server"));
   const { transform } = await import(resolve("rolldown/utils"));

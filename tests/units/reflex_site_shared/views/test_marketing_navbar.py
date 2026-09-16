@@ -45,18 +45,18 @@ def test_mobile_navigation_uses_native_disclosures_and_absolute_links():
 def test_navbar_preserves_banner_customization():
     """Allow existing consumers to hide or replace the default announcement."""
     hidden = list(_walk(marketing_navbar(show_banner=False)))
-    assert not any(node.tag == "AnnouncementVisibility" for node in hidden)
+    assert not any("data-announcement" in node.custom_attrs for node in hidden)
     custom = rx.el.div("Custom announcement", id="custom-announcement")
     nodes = list(_walk(marketing_navbar(banner=custom)))
     assert any(node is custom for node in nodes)
-    assert not any(node.tag == "AnnouncementVisibility" for node in nodes)
+    assert not any("data-announcement" in node.custom_attrs for node in nodes)
 
 
-def test_announcement_has_release_persistence_and_accessible_dismissal():
-    """Expose the current release and an independent dismissal button."""
+def test_announcement_uses_reflex_state_and_accessible_dismissal():
+    """Use a normal Reflex component with a state-backed dismissal button."""
     banner: Any = announcement_banner()
-    assert banner.tag == "AnnouncementVisibility"
-    assert str(banner.release).strip('"') == "xy-in-reflex-build-v1"
+    assert banner.tag == "div"
+    assert "AnnouncementVisibility" not in str(banner)
     buttons = [node for node in _walk(banner) if node.tag == "button"]
     assert len(buttons) == 1
     assert str(buttons[0].type).strip('"') == "button"

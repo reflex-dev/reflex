@@ -1,6 +1,6 @@
 """Overview of deploying and operating Reflex applications."""
 
-from reflex_docs.docgen_pipeline import render_markdown
+from reflex_docs.docgen_pipeline import render_markdown_with_toc
 from reflex_docs.templates.docpage import docpage
 
 CLOUD_OVERVIEW_MARKDOWN = """# Reflex Cloud Overview
@@ -41,11 +41,22 @@ If you need to run in your own environment, compare
 workflows and the setup each requires.
 """
 
+
+def cloud_overview_content():
+    """Render the Cloud guide with its TOC and exact Markdown source.
+
+    Returns:
+        TOC and Markdown metadata paired with the rendered guide.
+    """
+    toc, body = render_markdown_with_toc(CLOUD_OVERVIEW_MARKDOWN)
+    return (toc, CLOUD_OVERVIEW_MARKDOWN), body
+
+
 cloud_overview = docpage(
     "/overview/",
     "Cloud Overview",
     description="Deploy a Reflex app, configure secrets and domains, monitor logs, and compare Reflex Cloud with bring-your-own-cloud and self-hosting options.",
-)(lambda: render_markdown(CLOUD_OVERVIEW_MARKDOWN))
+)(cloud_overview_content)
 cloud_overview.title = "Overview"
 cloud_overview.seo_title = "Reflex Cloud Overview · Reflex Docs"
 pages = [cloud_overview]

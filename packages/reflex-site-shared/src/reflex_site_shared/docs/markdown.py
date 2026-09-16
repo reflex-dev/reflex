@@ -539,7 +539,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         }
         color: ColorType = colors.get(status, "slate")
         background_shade = 2 if status == "info" else 3
-        # For "info" alerts, use the site secondary scale (--secondary-*) so the
+        # For "info" alerts, use semantic muted surface and border tokens so the
         # card matches codeblock styling instead of rx.color("slate", ...).
         is_info = status == "info"
         foreground_override = "var(--muted-foreground)" if is_info else None

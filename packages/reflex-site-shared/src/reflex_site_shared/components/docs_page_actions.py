@@ -65,7 +65,7 @@ def _menu_item(
             rx.el.span(description, class_name="text-xs text-subtle-foreground"),
             class_name="flex flex-col items-start gap-0.5",
         ),
-        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-accent transition-colors cursor-pointer",
+        class_name="flex items-start gap-3 px-3 py-2 w-full hover:bg-accent dark:hover:bg-border-subtle transition-colors cursor-pointer",
     )
     if href:
         return rx.el.a(

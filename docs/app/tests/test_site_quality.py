@@ -108,6 +108,7 @@ def test_multi_component_reference_shares_only_identical_html_props():
     assert "#shared-html-props" in rendered
     assert '"value"' in rendered
     assert '"access_key"' not in rendered
+    assert '"title"' not in rendered
 
     class OverrideTitle(type(rx.el.div())):
         title: rx.Var[int]
@@ -127,3 +128,25 @@ def test_state_catalog_offers_real_guides_instead_of_an_empty_grid():
     assert 'href:"/docs/state/overview/"' in rendered
     assert 'href:"/docs/events/events-overview/"' in rendered
     assert 'to:"/library/state/"' in str(library.component())
+
+
+def test_docs_registers_its_own_not_found_page():
+    """The registered 404 uses the docs recovery page."""
+    from reflex_docs.pages import page404
+    from reflex_docs.pages.page404 import not_found
+
+    assert page404.component is not_found
+    assert page404.meta == [{"name": "robots", "content": "noindex"}]
+
+
+def test_cloud_overview_exposes_markdown_and_toc():
+    """The Cloud guide provides the metadata consumed by docs page actions."""
+    from reflex_docs.pages.docs.cloud import (
+        CLOUD_OVERVIEW_MARKDOWN,
+        cloud_overview_content,
+    )
+
+    (toc, markdown), body = cloud_overview_content()
+    assert len(toc) >= 4
+    assert markdown == CLOUD_OVERVIEW_MARKDOWN
+    assert "Deploy your first app" in str(body)

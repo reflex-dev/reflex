@@ -2,11 +2,14 @@
 
 from types import SimpleNamespace
 
+import pytest
+
 from agent_files import AgentFilesPlugin
 
 
+@pytest.mark.parametrize("frontmatter", ["", "---\ntitle: Build with AI\n---\n\n"])
 def test_post_build_exports_missing_pages_and_preserves_authored_markdown(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, frontmatter
 ):
     """Catalog links and answers survive export without replacing authored code."""
     monkeypatch.setattr(
@@ -31,7 +34,9 @@ def test_post_build_exports_missing_pages_and_preserves_authored_markdown(
     authored = '# Guide\n\n```python\nprint("keep original code")\n```\n'
     (root / "ai/guide.md").write_text(authored)
     (root / "ai.md").write_text(
-        "> For AI agents: old directive\n\n```python exec\nfrom example import page\n```\n\n```python eval\npage()\n```\n"
+        "> For AI agents: old directive\n\n"
+        + frontmatter
+        + "```python exec\nfrom example import page\n```\n\n```python eval\npage()\n```\n"
     )
     (tmp_path / "sitemap.xml").write_text(
         "<urlset>"

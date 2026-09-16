@@ -3,19 +3,7 @@
 import reflex_components_internal as ui
 
 import reflex as rx
-from reflex_site_shared.views.hosting_banner import (
-    ANNOUNCEMENT_RELEASE,
-    HostingBannerState,
-)
-
-
-class AnnouncementVisibility(rx.Component):
-    """Client-side persistence without a flash of a dismissed announcement."""
-
-    library = "$/public/homepage/announcement-visibility"
-    tag = "AnnouncementVisibility"
-    release: rx.Var[str]
-
+from reflex_site_shared.views.hosting_banner import HostingBannerState
 
 XY_IN_REFLEX_BUILD_URL = "https://reflex.dev/blog/xy-in-reflex-build/"
 
@@ -28,7 +16,7 @@ def announcement_banner() -> rx.Component:
     """
     # Keep banner geometry stable when navigating between marketing routes.
     height_class = "h-10"
-    return AnnouncementVisibility.create(
+    return rx.el.div(
         rx.cond(
             HostingBannerState.is_banner_visible,
             rx.el.div(
@@ -87,7 +75,6 @@ def announcement_banner() -> rx.Component:
                     type="button",
                     aria_label="Dismiss announcement",
                     on_click=HostingBannerState.hide_banner,
-                    custom_attrs={"data-announcement-dismiss": ""},
                     class_name=(
                         "bg-transparent text-primary-foreground hover:bg-gray-white/15 focus-visible:outline-2 focus-visible:outline-primary-foreground focus-visible:outline-offset-2 absolute right-2 top-1/2 "
                         "-translate-y-1/2 inline-flex size-7 items-center justify-center "
@@ -103,5 +90,5 @@ def announcement_banner() -> rx.Component:
                 ),
             ),
         ),
-        release=ANNOUNCEMENT_RELEASE,
+        on_mount=HostingBannerState.show_agent_toolkit_banner,
     )

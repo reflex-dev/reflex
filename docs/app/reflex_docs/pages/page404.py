@@ -50,5 +50,6 @@ page404 = Route(
     path="/404",
     title="Page Not Found · Reflex Docs",
     component=not_found,
+    meta=[{"name": "robots", "content": "noindex"}],
     add_as_page=False,
 )

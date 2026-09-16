@@ -2,6 +2,8 @@
 
 import json
 
+from reflex_base.config import get_config
+
 import reflex as rx
 from reflex_site_shared.constants import (
     DISCORD_URL,
@@ -97,7 +99,11 @@ def favicons_links() -> list[dict[str, str] | rx.Component]:
             rel="icon", type="image/png", sizes="16x16", href="/meta/favicon-16x16.png"
         ),
         rx.el.link(rel="manifest", href="/meta/site.webmanifest"),
-        rx.el.link(rel="icon", type="image/svg+xml", href=rx.asset("favicon.svg")),
+        rx.el.link(
+            rel="icon",
+            type="image/svg+xml",
+            href=f"{get_config().frontend_path.rstrip('/')}/favicon.svg",
+        ),
         rx.el.link(rel="shortcut icon", href="/favicon.ico"),
     ]
 
@@ -243,12 +249,12 @@ def website_organization_jsonld(url: str = REFLEX_DOMAIN_URL) -> rx.Component:
                 "url": REFLEX_DOMAIN_URL,
                 "logo": f"{org_url}/meta/apple-touch-icon.png",
                 "description": "Open-source Python framework for building full-stack web applications. Deploy to any cloud with AI-powered code generation.",
+                "image": OG_IMAGE_URL,
                 "sameAs": [
                     GITHUB_URL,
                     TWITTER_URL,
                     DISCORD_URL,
                     LINKEDIN_URL,
-                    OG_IMAGE_URL,
                     FORUM_URL,
                 ],
             },

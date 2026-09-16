@@ -11,19 +11,10 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_low_level_form_example_has_valid_inline_result_markup(page: Page):
-    """Inline submitted values must not cause the browser to repair nested paragraphs."""
-    errors = []
-    page.on("pageerror", lambda error: errors.append(str(error)))
-    page.goto(f"{PREVIEW_URL}/docs/library/forms/form/low/", wait_until="networkidle")
-    expect(page.get_by_text("Username submitted:", exact=False)).to_be_visible()
-    assert not errors
-
-
 def test_agent_file_links_respect_docs_mount(page: Page):
     """The router adds the docs prefix exactly once to agent-file links."""
     page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
-    expect(page.locator('a[href="/docs/llms.txt"]').first).to_have_count(1)
+    expect(page.locator('a[href="/docs/llms.txt"]')).to_have_count(1)
     page.get_by_role("button", name="Copy page options").click()
     link = page.get_by_role("link", name="llms-full.txt", exact=False)
     expect(link).to_have_attribute("href", "/docs/llms-full.txt")

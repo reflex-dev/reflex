@@ -1,5 +1,7 @@
 """SEO metadata helpers for docs routes."""
 
+GENERIC_DESCRIPTION_TEMPLATE = "{subject}: documentation, examples, and reference for building Python web applications with Reflex."
+
 # Summaries for generated catalogs, reference pages, and pages without usable prose.
 PAGE_DESCRIPTIONS = {
     "library": "Browse Reflex UI components for forms, layouts, data display, charts, and media, with Python examples and prop references.",
@@ -33,7 +35,7 @@ PAGE_DESCRIPTIONS = {
     "enterprise/components": "Explore enterprise Reflex components for advanced data grids, charts, editors, and interactive workflows, with guides and examples.",
     "library/typography/em": "Add semantic emphasis to inline text with rx.text.em. See a Python example of emphasizing words within a Reflex text component.",
     "library/typography/quote": "Mark short inline quotations with rx.text.quote. See how to include quoted text within a Reflex text component.",
-    "wrapping-react/step-by-step": "The Wrapping React Step by Step documentation page is a placeholder; a detailed component-wrapping walkthrough is not yet available.",
+    "wrapping-react/step-by-step": "Wrap a React color picker in Reflex, declare typed props and events, connect Python state, and troubleshoot imports and browser-only rendering.",
 }
 
 
@@ -98,8 +100,6 @@ def docs_metadata(path: str, title: str, description: str | None) -> tuple[str, 
     else:
         fallback = PAGE_DESCRIPTIONS.get(route)
     summary = (
-        description
-        or fallback
-        or f"{subject}: documentation, examples, and reference for building Python web applications with Reflex."
+        description or fallback or GENERIC_DESCRIPTION_TEMPLATE.format(subject=subject)
     )
     return f"{subject} · Reflex Docs", truncate_meta_description(summary)

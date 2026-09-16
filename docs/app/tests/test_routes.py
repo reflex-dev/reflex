@@ -356,10 +356,19 @@ def test_docs_titles_and_descriptions_are_unique(routes_fixture):
 
 def test_routes_have_specific_descriptions(routes_fixture):
     """Published pages must not fall back to the generic documentation snippet."""
-    generic = (
-        "documentation, examples, and reference for building Python web applications"
+    from reflex_docs.pages.docs.metadata import (
+        GENERIC_DESCRIPTION_TEMPLATE,
+        truncate_meta_description,
     )
+
     failures = [
-        route.path for route in routes_fixture if generic in (route.description or "")
+        route.path
+        for route in routes_fixture
+        if route.description
+        == truncate_meta_description(
+            GENERIC_DESCRIPTION_TEMPLATE.format(
+                subject=(route.seo_title or route.title).removesuffix(" · Reflex Docs")
+            )
+        )
     ]
     assert not failures, failures
