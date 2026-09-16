@@ -87,21 +87,20 @@ def test_bad_versions(version):
         app.version_key(version)
 
 
-def test_detect_untagged_published_and_wrong_branch(app_repo: Config, capsys):
+def test_detect_untagged_published_and_wrong_branch(app_repo: Config, outputs):
     version = app.materialize(app_repo, "", "Release")
-    capsys.readouterr()
     app.detect(app_repo, "main")
-    assert "any=true" in capsys.readouterr().out
+    assert outputs()["any"] == "true"
     git(app_repo.root, "tag", version)
     app.detect(app_repo, "main")
-    assert "any=false" in capsys.readouterr().out
+    assert outputs()["any"] == "false"
     with pytest.raises(ReleaseError, match="only deploy from main"):
         app.detect(app_repo, "feature")
 
 
-def test_detect_empty_and_stale(app_repo: Config, capsys):
+def test_detect_empty_and_stale(app_repo: Config, outputs):
     app.detect(app_repo, "main")
-    assert "any=false" in capsys.readouterr().out
+    assert outputs()["any"] == "false"
     app.materialize(app_repo, "", "Old version")
     git(app_repo.root, "tag", "2026.37.99")
     with pytest.raises(ReleaseError, match="newer published"):
@@ -182,9 +181,9 @@ def test_finalize_reuses_release_tools_and_rejects_wrong_commit(
     assert called == ["tag", "release"]
 
 
-def test_dev_never_changes_changelog_or_tags(app_repo: Config, capsys):
+def test_dev_never_changes_changelog_or_tags(app_repo: Config, outputs):
     app.dev(app_repo)
-    assert "version=dev-" in capsys.readouterr().out
+    assert outputs()["version"].startswith("dev-")
     assert not (app_repo.root / "CHANGELOG.md").exists()
     assert not git(app_repo.root, "tag", "--list").strip()
     with pytest.raises(ReleaseError, match="requires app source-submodule"):
@@ -239,7 +238,88 @@ def test_app_workflow_contracts_and_dependency_graph(app_repo: Config):
         sync(app_repo, check=True)
 
 
-def test_app_cli_materialize_and_detect(app_repo: Config, capsys):
+@pytest.mark.parametrize(
+    "setting",
+    [
+        "changelog-exempt-packages = []",
+        'root-source-dirs = ["src"]',
+        'package-source-subdirs = ["src"]',
+        'dispatch-package-inputs = "text"',
+        'prerelease-branch-prefix = "pre/"',
+        'hotfix-branch-prefix = "hotfix/"',
+    ],
+)
+def test_app_rejects_package_only_settings(app_repo: Config, setting):
+    """App mode rejects settings that only affect package publishing."""
+    path = app_repo.root / "pyproject.toml"
+    path.write_text(
+        path.read_text().replace(
+            "[tool.reflex-release.app]", setting + "\n[tool.reflex-release.app]"
+        )
+    )
+    with pytest.raises(ReleaseError, match="package"):
+        load_config(app_repo.root)
+
+
+@pytest.mark.parametrize("timezone", ["Mars/Olympus", "", "/etc/passwd"])
+def test_app_rejects_invalid_timezone_at_load(app_repo: Config, timezone):
+    """Invalid timezones produce a configuration error before release allocation."""
+    path = app_repo.root / "pyproject.toml"
+    path.write_text(
+        path.read_text().replace(
+            "[tool.reflex-release.app]",
+            f'release-timezone = "{timezone}"\n[tool.reflex-release.app]',
+        )
+    )
+    with pytest.raises(ReleaseError, match="release-timezone"):
+        load_config(app_repo.root)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "type: boolean",
+        "type: number",
+        "description: missing type",
+        "type: string\n        required: false",
+        "type: boolean\n        required: true\n        description: |\n          type: string",
+    ],
+)
+def test_app_rejects_invalid_hook_contract(app_repo: Config, field):
+    """Hooks must declare the required string inputs the generated caller sends."""
+    path = app_repo.root / ".github/workflows/build.yml"
+    text = path.read_text().replace("type: string\n        required: true", field, 1)
+    path.write_text(text)
+    with pytest.raises(ReleaseError, match="required string"):
+        sync(app_repo)
+
+
+def test_app_checks_manual_changelog_headings(app_repo: Config):
+    """Ordinary PRs cannot introduce a heading that triggers a deployment."""
+    args = ["--root", str(app_repo.root), "check-headings", "--base-ref", "HEAD"]
+    assert main(args) == 0
+    path = app_repo.root / "CHANGELOG.md"
+    path.write_text("## 2026.37.0\n\nRelease notes.\n")
+    assert main(args) == 1
+    commit_all(app_repo.root)
+    path.write_text(path.read_text() + "Additional notes.\n")
+    assert main(args) == 0
+
+
+def test_app_changelog_workflow_guards_release_headings(app_repo: Config):
+    """Generated PR checks enforce heading provenance with the bot exemption."""
+    workflow = yaml.safe_load(render("changelog.yml", app_repo))
+    steps = workflow["jobs"]["check"]["steps"]
+    guard = next(
+        step for step in steps if step.get("run", "").endswith(" check-headings")
+    )
+    assert "github-actions[bot]" in guard["if"]
+    assert "startsWith(github.head_ref, 'release/')" in guard["if"]
+    assert "version_edit" in guard["if"]
+    assert workflow["permissions"]["pull-requests"] == "read"
+
+
+def test_app_cli_materialize_and_detect(app_repo: Config, outputs):
     assert (
         main([
             "--root",
@@ -251,7 +331,7 @@ def test_app_cli_materialize_and_detect(app_repo: Config, capsys):
         == 0
     )
     assert main(["--root", str(app_repo.root), "app-detect", "--ref-name", "main"]) == 0
-    assert "any=true" in capsys.readouterr().out
+    assert outputs()["any"] == "true"
 
 
 def test_app_init_does_not_add_towncrier(app_repo: Config):

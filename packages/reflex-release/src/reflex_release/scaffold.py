@@ -503,6 +503,7 @@ def render(name: str, config: Config) -> str:
             "@@CLI@@": cli,
             "@@UV_SETUP_WITH@@": _uv_setup_block(config),
             "@@MAIN_BRANCH@@": config.main_branch,
+            "@@RELEASE_PREFIX@@": config.release_branch_prefix,
             "@@BUILD_WORKFLOW@@": config.app.build_workflow,
             "@@DEPLOY_WORKFLOW@@": config.app.deploy_workflow,
             "@@PRODUCTION_ENVIRONMENT@@": config.app.production_environment,
@@ -672,6 +673,18 @@ def workflow_call_inputs(text: str) -> set[str]:
     Returns:
         The declared input names, empty when the block cannot be found.
     """
+    return set(_workflow_call_input_blocks(text))
+
+
+def _workflow_call_input_blocks(text: str) -> dict[str, list[str]]:
+    """Read block-style workflow inputs and their declaration lines.
+
+    Args:
+        text: The workflow file's contents.
+
+    Returns:
+        Input names mapped to their nested declaration lines.
+    """
     lines = [
         line
         for line in text.splitlines()
@@ -679,19 +692,21 @@ def workflow_call_inputs(text: str) -> set[str]:
     ]
     call = _key_index(lines, "workflow_call")
     if call is None:
-        return set()
+        return {}
     block = _nested_lines(lines, call)
     inputs = _key_index(block, "inputs")
     if inputs is None:
-        return set()
+        return {}
     declared = _nested_lines(block, inputs)
     if not declared:
-        return set()
+        return {}
     # Only the keys at the shallowest depth are the input names; anything
     # deeper describes one of them.
     depth = min(_indent_of(line) for line in declared)
     return {
-        line.strip().partition(":")[0] for line in declared if _indent_of(line) == depth
+        line.strip().partition(":")[0]: _nested_lines(declared, index)
+        for index, line in enumerate(declared)
+        if _indent_of(line) == depth
     }
 
 
@@ -804,11 +819,36 @@ def sync(config: Config, check: bool = False, force: bool = False) -> None:
                 fail(
                     f"app workflow {workflow} must be an existing, repository-owned workflow"
                 )
-            missing = inputs - workflow_call_inputs(target.read_text(encoding="utf-8"))
+            declarations = _workflow_call_input_blocks(
+                target.read_text(encoding="utf-8")
+            )
+            missing = inputs - declarations.keys()
             if missing:
                 fail(
                     f"app workflow {workflow} must declare workflow_call inputs: {', '.join(sorted(missing))}"
                 )
+            for name in sorted(inputs):
+                lines = declarations[name]
+                depth = min((_indent_of(line) for line in lines), default=0)
+                lines = [line for line in lines if _indent_of(line) == depth]
+                if not (
+                    any(
+                        re.fullmatch(
+                            r"\s+type:\s*(?:string|'string'|\"string\")\s*(?:#.*)?",
+                            line,
+                        )
+                        for line in lines
+                    )
+                    and any(
+                        re.fullmatch(
+                            r"\s+required:\s*(?:true|True|TRUE)\s*(?:#.*)?", line
+                        )
+                        for line in lines
+                    )
+                ):
+                    fail(
+                        f"app workflow {workflow} input {name!r} must be a required string"
+                    )
     else:
         check_title_format(config)
         check_custom_build_workflows(config)

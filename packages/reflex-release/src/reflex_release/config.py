@@ -12,6 +12,7 @@ import dataclasses
 import re
 import sys
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from packaging.version import Version
 
@@ -938,11 +939,17 @@ def _load_app(table: dict, towncrier: dict) -> AppConfig:
             key in table
             for key in (
                 "root-package",
+                "root-source-dirs",
                 "packages-dir",
+                "package-source-subdirs",
                 "custom-build",
+                "dispatch-package-inputs",
                 "lockstep",
                 "internal-packages",
+                "changelog-exempt-packages",
                 "never-publish-packages",
+                "prerelease-branch-prefix",
+                "hotfix-branch-prefix",
                 "latest-release-package",
                 "post-release-workflow",
                 "tag-prefix",
@@ -1074,6 +1081,10 @@ def load_config(root: Path) -> Config:
         )
 
     if "app" in table:
+        try:
+            ZoneInfo(config.release_timezone)
+        except (ValueError, ZoneInfoNotFoundError):
+            fail(f"invalid release-timezone: {config.release_timezone!r}")
         return dataclasses.replace(
             config, app=_load_app(table, towncrier), packages_dir=None
         )

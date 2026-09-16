@@ -19,6 +19,7 @@ from .gitutil import (
     git,
     git_push,
     git_run,
+    git_show,
     tag_exists,
 )
 
@@ -88,6 +89,23 @@ def sections(config: Config) -> list[tuple[str, str]]:
         end = headings[index + 1].start() if index + 1 < len(headings) else len(text)
         result.append((version, text[heading.end() : end].strip()))
     return result
+
+
+def check_headings(config: Config, base_ref: str) -> None:
+    """Reject newly added application release headings in ordinary pull requests.
+
+    Args:
+        config: Repository configuration.
+        base_ref: The revision to compare the changelog against.
+    """
+    base_text = git_show(config.root, base_ref, config.changelog_filename) or ""
+    known = {heading["version"] for heading in HEADING_RE.finditer(base_text)}
+    added = [version for version, _ in sections(config) if version not in known]
+    if added:
+        fail(
+            "new CHANGELOG.md version headings are deployment triggers and must be "
+            "materialized by the Dispatch release workflow: " + ", ".join(added)
+        )
 
 
 def resolve_source(config: Config, revision: str = "") -> str:

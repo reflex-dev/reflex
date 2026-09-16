@@ -1070,8 +1070,10 @@ starts from the configured main branch, resolves the submodule branch, tag or SH
 section, and opens a PR against main. Omitting `source-submodule` supports apps
 whose source lives entirely in the deployment repository; in that case leave
 `revision` empty. The source repository URL comes from `.gitmodules`. The default
-checkout/token must be able to read it; private cross-repository submodules need
-an appropriately scoped checkout credential configured by the consumer.
+checkout/token must be able to read it. Private cross-repository submodules are
+not supported by the generated app workflows: their checkout uses the current
+repository's token and there is no configurable cross-repository credential.
+Use a public source submodule or keep the source in the deployment repository.
 
 Versions use `ISO-year.week.sequence`, for example `2026.37.0`, `2026.37.1`.
 Weeks and week years follow ISO 8601 in `release-timezone`, including December/

@@ -362,7 +362,10 @@ def dispatch(args: argparse.Namespace, config: Config) -> None:
         case "extract-notes":
             commands.cmd_extract_notes(config, args.package, args.version, args.output)
         case "check-headings":
-            commands.cmd_check_headings(config, args.base_ref)
+            if config.app:
+                app.check_headings(config, args.base_ref)
+            else:
+                commands.cmd_check_headings(config, args.base_ref)
         case "changelog-check":
             commands.cmd_changelog_check(config, args.base_ref)
         case "check-dev-pins":
