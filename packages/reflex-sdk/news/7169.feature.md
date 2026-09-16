@@ -1,0 +1,1 @@
+Add app, secret and project management to `reflex-sdk`: `client.apps` (list, search, get, create, delete, start, stop, pause, scale, rollback, deployment history, and runtime logs as an iterator), `client.apps.secrets`, and `client.projects` with its roles and members.
