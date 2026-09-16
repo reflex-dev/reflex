@@ -47,10 +47,10 @@ This file stitches together the full Reflex documentation as Markdown for AI age
 For a navigable index with links to individual docs pages, see [llms.txt]({llms_txt_url}).
 """
 
-MARKDOWN_DIRECTIVE_PREFIX = "> For AI agents: the complete documentation index is at "
+MARKDOWN_DIRECTIVE_PREFIX = "> For AI agents:"
 MARKDOWN_DIRECTIVE = (
-    MARKDOWN_DIRECTIVE_PREFIX
-    + "[llms.txt]({llms_txt_url}). For a Markdown version, remove the trailing slash "
+    MARKDOWN_DIRECTIVE_PREFIX + " the complete documentation index is at "
+    "[llms.txt]({llms_txt_url}). For a Markdown version, remove the trailing slash "
     "from the page URL and append `.md`. The docs home is available at "
     "[index.md]({docs_home_markdown_url})."
 )
