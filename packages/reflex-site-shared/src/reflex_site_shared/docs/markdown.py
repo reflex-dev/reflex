@@ -749,15 +749,17 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                         rx.el.div(
                             header,
                             style={
-                                "fontWeight": "600",
+                                "fontWeight": "500",
                                 "color": "var(--foreground)",
-                                "fontSize": "1rem",
-                                "lineHeight": "1.5",
+                                "fontSize": "1.0625rem",
+                                "lineHeight": "1.5rem",
+                                "letterSpacing": "-0.015em",
                             },
                         ),
                         rx.el.div(
                             self._render_children(body),
                             style={"width": "100%"},
+                            class_name="[&>p:last-child]:mb-0",
                         ),
                         style={
                             "display": "flex",
@@ -771,13 +773,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 style={
                     "display": "flex",
                     "flexDirection": "column",
-                    "gap": "1.25rem",
+                    "gap": "1.5rem",
                     "width": "100%",
                     "paddingLeft": "1.5rem",
-                    "borderLeft": "1.5px solid var(--border-subtle)",
+                    "borderLeft": "1px solid var(--border)",
                 },
             ),
             style={"width": "100%", "margin": "1.5rem 0"},
+            class_name="docs-section-list",
         )
 
 
