@@ -21,7 +21,7 @@ def component_category(
         A component catalog section.
     """
     return rx.el.section(
-        rx.link(
+        rx.el.a(
             rx.el.div(
                 rx.el.h2(
                     title,
@@ -34,7 +34,6 @@ def component_category(
                 class_name="flex min-w-0 flex-col gap-2",
             ),
             href=href,
-            underline="none",
             class_name="group block rounded-compact text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
         ),
         rx.el.ul(

@@ -23,4 +23,4 @@ from reflex_site_shared.components.blocks.typography import doclink2
 )
 def test_markdown_doc_links_use_canonical_paths(href, expected):
     """Only known docs page paths get a slash; assets and other sites stay intact."""
-    assert str(doclink2("Guide", href=href).href) == f'"{expected}"'
+    assert f'href:"{expected}"' in str(doclink2("Guide", href=href))

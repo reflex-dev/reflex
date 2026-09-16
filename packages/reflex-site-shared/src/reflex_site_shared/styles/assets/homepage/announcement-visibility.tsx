@@ -41,7 +41,8 @@ export function AnnouncementVisibility({
     const sync = () => {
       try {
         const dismissed = isAnnouncementDismissed(window.localStorage, release);
-        if (dismissed) document.documentElement.dataset.announcementDismissed = "true";
+        if (dismissed)
+          document.documentElement.dataset.announcementDismissed = "true";
         else delete document.documentElement.dataset.announcementDismissed;
         setVisible(!dismissed);
       } catch {

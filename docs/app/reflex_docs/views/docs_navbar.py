@@ -64,7 +64,8 @@ def logo() -> rx.Component:
             ),
         ),
         href="/",
-        class_name="flex flex-row gap-2.5 items-center shrink-0 mr-10",
+        aria_label="Reflex Docs home",
+        class_name="flex flex-row gap-2.5 items-center shrink-0 mr-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring",
     )
 
 

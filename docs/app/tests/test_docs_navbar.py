@@ -154,3 +154,10 @@ def test_section_links_hover_with_text_only(navbar):
     assert all(child.tag != "GradientButton" for child in link.children)
     assert "hover:text-muted-foreground" in str(link.class_name)
     assert "hover:bg-" not in str(link.class_name)
+
+
+def test_logo_has_accessible_name_and_keyboard_focus(navbar):
+    """The docs home link must be named and visible during keyboard navigation."""
+    link = navbar.logo()
+    assert "Reflex Docs home" in str(link)
+    assert "focus-visible:outline-ring" in str(link.class_name)

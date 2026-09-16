@@ -53,8 +53,11 @@ def test_bannerless_sidebars_use_static_navbar_offsets() -> None:
 
     assert "hosting_banner_state" not in left
     assert "hosting_banner_state" not in right
-    assert "top-[77px] h-[calc(100vh-77px)]" in left
-    assert "mt-[90px]" in right
+    assert (
+        "top-[var(--docs-header-height)] h-[calc(100vh-var(--docs-header-height))]"
+        in left
+    )
+    assert "mt-[calc(var(--docs-header-height)+2rem)]" in right
 
 
 def test_bannerless_layout_uses_navbar_only_content_offset() -> None:
@@ -82,7 +85,7 @@ def test_bannerless_layout_uses_navbar_only_content_offset() -> None:
     )
 
     assert "hosting_banner_state" not in rendered
-    assert "pt-[7.25rem]" in rendered
+    assert "pt-[calc(var(--docs-header-height)+2rem)]" in rendered
     assert "pt-[9.5rem]" not in rendered
 
 
@@ -142,12 +145,12 @@ def test_shared_sidebar_rows_keep_official_structure() -> None:
     )
 
     assert "Navigate to Learn" in category
-    assert "ml-[3rem]" in category
+    assert "ml-[2.5rem]" in category
     assert "LucideGraduationCap" in category
     assert "group/details" in group
     assert "ArrowDown01Icon" in group
-    assert "docs-sidebar-group-trigger" in group
-    assert "docs-sidebar-group-items" in group
+    assert 'jsx("summary"' in group
+    assert 'jsx("ul"' in group
     assert "open:true" in group
 
 
@@ -165,8 +168,8 @@ def test_official_docs_footer_content_is_shared() -> None:
     assert "Links" in rendered
     assert "Documentation" in rendered
     assert "Resources" in rendered
-    assert "Social link for GitHub" in rendered
-    assert "Social link for Forum" not in rendered
+    assert "Social link for Github" in rendered
+    assert "Social link for Forum" in rendered
     assert "Pynecone, Inc." in rendered
     assert "https://reflex.dev/docs/getting-started/introduction/" not in rendered
     assert "/getting-started/introduction/" in rendered

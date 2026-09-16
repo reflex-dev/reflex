@@ -10,7 +10,7 @@ from reflex_docs.pages.library_previews import core_components_dict
 def docs_item(
     icon: str, title: str, description: str, href: str, enterprise_only: bool = False
 ) -> rx.Component:
-    return rx.el.div(
+    return rx.el.a(
         rx.el.div(
             ui.icon(
                 icon,
@@ -37,8 +37,8 @@ def docs_item(
             description,
             class_name="text-muted-foreground text-sm font-[475]",
         ),
-        rx.el.a(to=href, class_name="absolute inset-0"),
-        class_name="flex flex-col gap-2 py-8 pr-8 relative group lg:max-w-[21rem] w-full max-lg:text-start hover:bg-[linear-gradient(243deg,var(--muted)_0%,var(--background)_100%)]",
+        to=href,
+        class_name="flex flex-col gap-2 py-8 pr-8 relative group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:max-w-[21rem] w-full max-lg:text-start hover:bg-[linear-gradient(243deg,var(--muted)_0%,var(--background)_100%)]",
     )
 
 

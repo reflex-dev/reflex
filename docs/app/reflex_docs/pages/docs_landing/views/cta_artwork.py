@@ -1,8 +1,5 @@
 """Component reconstruction on the original illustration's 596 by 380 grid."""
 
-import math
-from itertools import pairwise
-
 import reflex as rx
 
 
@@ -97,26 +94,26 @@ def _account_row(y: float) -> rx.Component:
 
 
 def _chart_line(points: tuple[tuple[float, float], ...]) -> rx.Component:
-    """Connect chart points with thin solid HTML line segments.
+    """Draw one chart line with rounded joins and endpoints.
 
     Args:
         points: Chart coordinates on the original artwork grid.
 
     Returns:
-        A group of connected line segments.
+        A responsive chart stroke.
     """
-    return rx.el.div(*[
-        _box(
-            x=x1,
-            y=y1,
-            width=math.hypot(x2 - x1, y2 - y1),
-            height=0.6,
-            class_name="bg-muted-foreground",
-            transform_origin="left center",
-            transform=f"rotate({math.degrees(math.atan2(y2 - y1, x2 - x1))}deg)",
-        )
-        for (x1, y1), (x2, y2) in pairwise(points)
-    ])
+    return rx.el.svg(
+        rx.el.path(
+            d="M " + " L ".join(f"{x},{y}" for x, y in points),
+            fill="none",
+            stroke="currentColor",
+            stroke_width=1,
+            stroke_linecap="round",
+            stroke_linejoin="round",
+        ),
+        view_box="0 0 596 380",
+        class_name="absolute inset-0 size-full text-muted-foreground",
+    )
 
 
 def cta_artwork() -> rx.Component:
@@ -290,18 +287,6 @@ def cta_artwork() -> rx.Component:
             (521, 153),
             (535, 148),
             (545, 151),
-            (560, 136),
-        )),
-        _chart_line((
-            (450, 166),
-            (464, 168),
-            (478, 155),
-            (489, 159),
-            (499, 165),
-            (509, 150),
-            (520, 156),
-            (535, 155),
-            (545, 146),
             (560, 136),
         )),
         *[_account_row(y) for y in (200, 272, 344)],

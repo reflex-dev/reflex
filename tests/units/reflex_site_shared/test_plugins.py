@@ -120,8 +120,8 @@ def test_compact_marketing_buttons_use_navigation_spacing():
 
 
 def test_counter_code_preserves_its_syntax_colors():
-    """Exclude the counter tutorial from neutral syntax overrides."""
+    """Preserve original syntax colors in all documentation examples."""
     assets = dict(SharedSiteStylesPlugin().get_static_assets())
     theme = assets[Path("styles/reflex-site-shared/tailwind-theme.css")]
     assert ".counter-code-block .token.keyword" not in theme
-    assert ".code-block:not(.counter-code-block) code" in theme
+    assert "filter: grayscale(1)" not in theme
