@@ -241,6 +241,26 @@ async def test_finish_login_does_not_retry_a_lost_response(
     assert len(mock_api.requests) == 1
 
 
+async def test_finish_login_retries_an_unsent_request(
+    client: AsyncReflexCloud, mock_api: MockAPI
+):
+    token = str(uuid.uuid4())
+
+    def refuse_connection(request: Request) -> Response:
+        msg = "connection refused"
+        raise TransportError(msg, request=request, sent=False)
+
+    mock_api.add(
+        "GET",
+        "/api/v1/cli/token",
+        refuse_connection,
+        reply(200, json={"token_id": token}),
+    )
+    # The server never saw the first request, so the token is still there.
+    assert await client.auth.finish_login(LOGIN, poll_interval=0) == token
+    assert len(mock_api.requests) == 2
+
+
 async def test_finish_login_denied(client: AsyncReflexCloud, mock_api: MockAPI):
     mock_api.add(
         "GET",

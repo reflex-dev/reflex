@@ -260,6 +260,7 @@ class BaseClient:
         response: Response | None = None,
         *,
         sent: bool = True,
+        idempotent: bool | None = None,
     ) -> float | None:
         """Decide whether and when to retry a failed request.
 
@@ -272,21 +273,22 @@ class BaseClient:
             response: The error response, or None if the request did not get one.
             sent: Whether the request may have reached the server, for a request
                 without a response.
+            idempotent: Whether repeating the request is harmless. Defaults to
+                whether the method is idempotent.
 
         Returns:
             The delay in seconds before retrying, or None to give up.
         """
         if attempt >= self._max_retries:
             return None
+        if idempotent is None:
+            idempotent = request.method in _IDEMPOTENT_METHODS
         if response is None:
-            retryable = not sent or request.method in _IDEMPOTENT_METHODS
+            retryable = not sent or idempotent
         elif response.status_code in _REJECTED_STATUS_CODES:
             retryable = True
         else:
-            retryable = (
-                response.status_code in _TRANSIENT_STATUS_CODES
-                and request.method in _IDEMPOTENT_METHODS
-            )
+            retryable = response.status_code in _TRANSIENT_STATUS_CODES and idempotent
         if not retryable:
             return None
         if response is not None:
