@@ -20,16 +20,16 @@ if TYPE_CHECKING:
 _ALL_SECRETS = "__all__"
 
 
-def _epoch_seconds(moment: datetime.datetime | None) -> int | None:
+def _epoch_seconds(dt: datetime.datetime | None) -> int | None:
     # The logs endpoint takes whole seconds since the Unix epoch.
-    if moment is None:
+    if dt is None:
         return None
     # timestamp() reads a naive datetime as local time, which would shift the log
     # window by the machine's UTC offset.
-    if moment.utcoffset() is None:
-        msg = f"expected a timezone-aware datetime, got naive {moment!r}"
+    if dt.utcoffset() is None:
+        msg = f"expected a timezone-aware datetime, got naive {dt!r}"
         raise ValueError(msg)
-    return int(moment.timestamp())
+    return int(dt.timestamp())
 
 
 class AsyncSecrets:
