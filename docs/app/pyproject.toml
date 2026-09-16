@@ -10,11 +10,14 @@ dependencies = [
     "orjson",
     "pandas",
     "plotly-express",
-    "psycopg[binary]",
+    # TODO: revert to a single "psycopg[binary]" once a psycopg release
+    # ships cp315 wheels for psycopg-binary
+    "psycopg[binary]; python_version < '3.15'",
+    "psycopg; python_version >= '3.15'",
     "python-frontmatter",
     "reflex",
     "reflex-docgen",
-    "reflex-enterprise",
+    "reflex-enterprise>=0.9.4",
     "reflex-hosting-cli",
     "reflex-pyplot",
     "reflex-integrations-docs",
@@ -25,6 +28,7 @@ dependencies = [
     "ruff-format",
     "sqlalchemy",
     "sqlmodel",
+    "griffelib>=2.0.1",
 ]
 
 [dependency-groups]

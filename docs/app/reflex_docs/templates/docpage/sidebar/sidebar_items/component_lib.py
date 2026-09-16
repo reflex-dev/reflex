@@ -40,7 +40,7 @@ def sort_html_components(components: list) -> list:
 def get_component_link(category, clist, prefix="") -> str:
     component_name = rx.utils.format.to_kebab_case(clist[0])
     # construct the component link. The component name points to the name of the md file.
-    return f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower().replace(' ', '-')}/{component_name.lower()}"
+    return f"/library/{prefix.strip('/') + '/' if prefix.strip('/') else ''}{category.lower().replace(' ', '-')}/{component_name.lower()}/"
 
 
 def get_category_children(category, category_list, prefix=""):
@@ -59,9 +59,13 @@ def get_category_children(category, category_list, prefix=""):
             link=f"/library/{prefix or ''}{category.lower().replace(' ', '-')}/",
         )
     )
+    from reflex_docs.pages.docs import library_display_titles
+
     for c in category_list:
+        # Prefer a frontmatter-provided display title (e.g. "Area Chart"); fall
+        # back to deriving one from the filename key (e.g. "Areachart").
         item = SideBarItem(
-            names=get_display_name(c[0]),
+            names=library_display_titles.get(c[0], get_display_name(c[0])),
             link=get_component_link(category, c, prefix=prefix),
         )
         category_item_children.append(item)

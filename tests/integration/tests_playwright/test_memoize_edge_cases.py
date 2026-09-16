@@ -12,6 +12,12 @@ These exercise components whose memoization needs special care:
   the component child as ``[object Object]`` (or refuses to render at all
   for void elements). Snapshot-wrapping keeps the Bare a text interpolation
   inside the parent's body.
+- Third-party components whose ``children`` prop asserts a string type
+  (``react-markdown``). Same failure mode as constrained HTML elements:
+  without snapshot-wrapping, ``rx.markdown(State.var)`` compiles to
+  ``jsx(ReactMarkdown, {...}, jsx(Bare_xxx, {}))``, which raises
+  "Unexpected value [object Object] for children prop, expected string"
+  at render time.
 
 Test design notes:
 - The page title is supplied via ``app.add_page(..., title=MemoState.title_marker)``
@@ -41,6 +47,7 @@ def MemoEdgeCasesApp():
         title_marker: str = "memo-title-home"
         css_marker: str = "memo-css-light"
         counter: int = 0
+        markdown_source: str = "Initial **memo-md-home** text"
 
         @rx.event
         def toggle_open(self):
@@ -58,6 +65,10 @@ def MemoEdgeCasesApp():
         def bump(self):
             self.counter = self.counter + 1
 
+        @rx.event
+        def set_markdown_alt(self):
+            self.markdown_source = "Updated **memo-md-away** text"
+
     def index():
         return rx.box(
             rx.el.style("body { --memo-marker: " + MemoState.css_marker + "; }"),
@@ -66,6 +77,7 @@ def MemoEdgeCasesApp():
                 rx.button("title", on_click=MemoState.set_title_about, id="set-title"),
                 rx.button("css", on_click=MemoState.set_css_dark, id="set-css"),
                 rx.button("bump", on_click=MemoState.bump, id="bump"),
+                rx.button("md", on_click=MemoState.set_markdown_alt, id="set-markdown"),
             ),
             rx.accordion.root(
                 rx.accordion.item(
@@ -84,6 +96,15 @@ def MemoEdgeCasesApp():
                 ),
             ),
             rx.text(MemoState.counter, id="counter"),
+            # Mirrors the bug-report repro: a static-source markdown next to
+            # a Var-source markdown inside the same parent. Pre-fix, the
+            # Var-source sibling crashed react-markdown with
+            # "Unexpected value [object Object] for children prop".
+            rx.vstack(
+                rx.markdown("This *is* **working**", id="md-static"),
+                rx.markdown(MemoState.markdown_source, id="md-host"),
+                id="md-section",
+            ),
         )
 
     app = rx.App()
@@ -207,3 +228,34 @@ def test_style_element_renders_stateful_css_as_text(
     )
     assert _document_contains_style(page, "memo-css-dark")
     assert not _document_contains_style(page, "memo-css-light")
+
+
+def test_markdown_with_state_var_renders_and_updates(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """``rx.markdown(State.var)`` renders the Var as a string and tracks state.
+
+    Mirrors the bug-report repro: static-source markdown sibling next to a
+    Var-source markdown. Pre-fix, the Var-source markdown crashed
+    react-markdown and prevented the whole subtree from rendering.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page.goto(memo_app.frontend_url)
+
+    static = page.locator("#md-static")
+    expect(static.locator("em")).to_have_text("is")
+    expect(static.locator("strong")).to_have_text("working")
+
+    host = page.locator("#md-host")
+    expect(host.locator("strong")).to_have_text("memo-md-home")
+    expect(host).not_to_contain_text("[object Object]")
+
+    page.click("#set-markdown")
+
+    expect(host.locator("strong")).to_have_text("memo-md-away")
+    expect(host).not_to_contain_text("[object Object]")
+    expect(static.locator("strong")).to_have_text("working")

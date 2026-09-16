@@ -9,7 +9,7 @@ Events are composed of two parts: Event Triggers and Event Handlers.
 - **Events Handlers** are how the State of a Reflex application is updated. They are triggered by user interactions with the UI, such as clicking a button or hovering over an element. Events can also be triggered by the page loading or by other events.
 
 - **Event triggers** are component props that create an event to be sent to an event handler.
-  Each component supports a set of events triggers. They are described in each [component's documentation](/docs/library) in the event trigger section.
+  Each component supports a set of events triggers. They are described in each [component's documentation](/docs/library/) in the event trigger section.
 
 ## Example
 
@@ -35,6 +35,7 @@ class WordCycleState(rx.State):
 def event_triggers_example():
     return rx.heading(
         WordCycleState.get_text,
+        as_="h2",
         on_mouse_over=WordCycleState.next_word,
         color="green",
     )
@@ -45,6 +46,18 @@ Whenever the user hovers over the heading, the `next_word` **event handler** wil
 
 Adding the `@rx.event` decorator above the event handler is strongly recommended. This decorator enables proper static type checking, which ensures event handlers receive the correct number and types of arguments.
 
-# What's in this section?
+## Synchronous handlers
+
+Synchronous handlers run in a worker thread, allowing the event loop to serve
+other clients during blocking work. A handler still holds its state lock until
+it finishes. Cancellation waits for a running worker to return before releasing
+that lock.
+
+Use an `async def` handler when code must run on the event loop. To use a pool
+managed by your application, pass a `concurrent.futures.ThreadPoolExecutor` to
+`@rx.event(executor=pool)`; your application is responsible for shutting it down.
+The executor option has no effect on async handlers.
+
+## What's in this section?
 
 In the event section of the documentation, you will explore the different types of events supported by Reflex, along with the different ways to call them.

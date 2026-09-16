@@ -2,10 +2,7 @@
 
 import datetime
 
-import reflex_components_internal as ui
-
 import reflex as rx
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
 
 
 def glow() -> rx.Component:
@@ -19,11 +16,12 @@ def glow() -> rx.Component:
     )
 
 
-POST_LINK = "https://www.producthunt.com/products/reflex-5?launch=reflex-7"
-BLOG_LINK = "/blog/on-premises-deployment"
+AGENT_TOOLKIT_EARLY_ACCESS_URL = (
+    "https://us.posthog.com/external_surveys/019e669c-939f-0000-a8b1-0aaceee08e3b"
+)
 
 # October 25, 2025 12:01 AM PDT (UTC-7) = October 25, 2025 07:01 AM UTC
-DEADLINE = datetime.datetime(2025, 10, 25, 7, 1, tzinfo=datetime.UTC)
+DEADLINE = datetime.datetime(2025, 10, 25, 7, 1, tzinfo=datetime.timezone.utc)
 
 
 class HostingBannerState(rx.State):
@@ -40,12 +38,12 @@ class HostingBannerState(rx.State):
     @rx.event
     def check_deadline(self):
         """Check deadline."""
-        if datetime.datetime.now(datetime.UTC) < DEADLINE:
+        if datetime.datetime.now(datetime.timezone.utc) < DEADLINE:
             self.show_banner = True
 
     @rx.event
-    def show_blog_banner(self):
-        """Show the on-premises blog banner."""
+    def show_agent_toolkit_banner(self):
+        """Show the Agent Toolkit launch banner."""
         self.show_banner = True
 
     @rx.var
@@ -85,70 +83,11 @@ def timer():
 
 
 def hosting_banner() -> rx.Component:
-    """Hosting banner.
+    """Render the shared marketing announcement through the legacy entry point.
 
     Returns:
-        The component.
+        The rendered component.
     """
-    return rx.el.div(
-        rx.cond(
-            HostingBannerState.is_banner_visible,
-            rx.el.div(
-                rx.el.elements.a(
-                    rx.box(
-                        rx.image(
-                            src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_banner.svg",
-                            alt="Square Banner",
-                            class_name="pointer-events-none absolute -left-[16rem] max-lg:hidden",
-                        ),
-                        rx.box(
-                            # Header text with responsive spans
-                            rx.el.span(
-                                "New",
-                                class_name="items-center font-[525] px-2.5 h-7 rounded-lg text-sm text-m-slate-3 z-[1] max-lg:hidden lg:inline-flex border border-white/16",
-                            ),
-                            rx.el.span(
-                                "Reflex Build On-Prem: A Secure Builder Running in Your Environment",
-                                rx.el.span(
-                                    ". Learn more",
-                                    class_name="lg:hidden text-m-slate-6 dark:text-m-slate-2",
-                                ),
-                                class_name="text-m-slate-3 font-[525] text-sm lg:text-nowrap inline-block",
-                            ),
-                            rx.el.span(
-                                class_name="w-px h-7 bg-gradient-to-b from-transparent via-white/24 to-transparent max-lg:hidden",
-                            ),
-                            ui.button(
-                                "Learn more",
-                                ui.icon("ArrowRight01Icon"),
-                                variant="ghost-highlight",
-                                size="xs",
-                                aria_label="Learn more",
-                                class_name="max-lg:hidden text-white hover:text-primary-10",
-                            ),
-                            class_name="flex flex-row items-center md:gap-4 gap-2",
-                        ),
-                        rx.image(
-                            src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_banner.svg",
-                            alt="Square Banner",
-                            class_name="pointer-events-none absolute -right-[16rem] max-lg:hidden",
-                        ),
-                        class_name="flex flex-row items-center relative",
-                    ),
-                    href=BLOG_LINK,
-                    class_name="flex justify-start md:justify-center md:col-start-2 max-w-[73rem]",
-                ),
-                rx.el.button(
-                    ui.icon(
-                        "MultiplicationSignIcon",
-                    ),
-                    aria_label="Close banner",
-                    type="button",
-                    class_name="cursor-pointer hover:text-m-slate-5 transition-colors text-m-slate-3 z-10 size-10 flex items-center justify-center shrink-0 md:col-start-3 justify-self-end ml-auto",
-                    on_click=HostingBannerState.hide_banner,
-                ),
-                class_name="px-5 lg:px-0 w-screen min-h-[2rem] lg:h-10 flex md:grid md:grid-cols-[1fr_auto_1fr] items-center bg-m-slate-12 dark:bg-[#6550B9] gap-4 overflow-hidden relative lg:py-0 py-2 max-w-full group",
-            ),
-        ),
-        on_mount=HostingBannerState.show_blog_banner,
-    )
+    from reflex_site_shared.views.announcement_banner import announcement_banner
+
+    return announcement_banner()

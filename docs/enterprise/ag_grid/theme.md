@@ -1,4 +1,5 @@
 ---
+meta_description: "Theme and style AG Grid in Python with Reflex. Customize your data grid with built-in AG Grid themes and custom styling — all in pure Python, no JavaScript required."
 order: 3
 ---
 

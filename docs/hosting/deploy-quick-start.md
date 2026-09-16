@@ -8,6 +8,8 @@ So far, we have been running our apps locally on our own machines.
 But what if we want to share our apps with the world? This is where
 the hosting service comes in.
 
+For hosting options and configuration guides, see the [Reflex Cloud overview](/docs/overview/).
+
 ## Quick Start
 
 Reflex’s hosting service makes it easy to deploy your apps without worrying about configuring the infrastructure.
@@ -29,30 +31,30 @@ reflex login
 
 You will be redirected to your browser where you can authenticate through Github or Gmail.
 
-### Web UI
+### Find the Deploy Command
 
-Once you are at this URL and you have successfully authenticated, click on the one project you have in your workspace. You should get a screen like this:
+Open **Deployments** in the project sidebar. If the project has no deployments yet, select **How to deploy**. This page shows the available workflows: one-click deployment from the Builder, deployment from the CLI, and deployment to a cloud provider.
+
+For the CLI workflow, copy the project-specific `reflex deploy --project ...` command.
 
 ```python eval
 rx.image(
-    src="https://web.reflex-assets.dev/other/cloud_project_page.webp",
-    alt="Reflex Cloud Dashboard",
+    src="https://web.reflex-assets.dev/docs-preview/hosting/how_to_deploy.webp",
+    alt="How to deploy page with Deployments selected and a project-specific Reflex CLI command",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
-
-This screen shows the login command and the deploy command. As we are already logged in, we can skip the login command.
 
 ### Deployment
 
 Now you can start deploying your app.
 
-In your cloud UI copy the `reflex deploy` command similar to the one shown below.
+From your project directory, where you normally run `reflex run`, run the command copied from the dashboard. It looks similar to:
 
 ```bash
 reflex deploy --project 2a432b8f-2605-4753-####-####0cd1####
 ```
-
-In your project directory (where you would normally run `reflex run`) paste this command.
 
 The command is by default interactive. It asks you a few questions for information required for the deployment.
 
@@ -64,7 +66,7 @@ The command is by default interactive. It asks you a few questions for informati
 
 That’s it! You should receive some feedback on the progress of your deployment and in a few minutes your app should be up. 🎉
 
-For detailed information about the deploy command and its options, see the [Deploy API Reference](/docs/hosting/deploy-quick-start/) and the [CLI Reference](https://reflex.dev/docs/api-reference/cli/).
+For detailed information about the deploy command and its options, see the [Deploy Command Reference](/docs/hosting/cli/deploy/) and the [CLI Reference](https://reflex.dev/docs/api-reference/cli/).
 
 
 ```md alert info

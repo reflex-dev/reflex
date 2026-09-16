@@ -1,229 +1,77 @@
 # What Is Reflex Build
 
-Reflex Build is an AI-powered platform that lets anyone create full-stack web apps just by describing ideas in plain English—no coding needed. It includes a full-fledged built-in IDE, real-time collaboration, and project sharing—all in your browser, no installation required.
+Reflex Build is an AI app builder for creating full-stack web apps with natural language and Python. It combines an AI agent, a running preview, a code workspace, testing, integrations, and deployment in one browser-based workflow.
 
-```python exec
-import reflex as rx
+The result is a standard Reflex app with source code you can inspect, edit, connect to Git, download, and deploy.
 
+## Describe, Build, Test, and Ship
 
-landing_features = [
-    {
-        "title": "Database Integration",
-        "description": "Automatically integrate your database\ninto your application with ease",
-        "icon": "database",
-    },
-    {
-        "title": "Secure Secrets",
-        "description": "Safely manage your API keys and tokens\nwith a built in secrets manager",
-        "icon": "shield",
-    },
-    {
-        "title": "Live Preview",
-        "description": "See all application changes in real-time\nwith our interactive preview tab",
-        "icon": "eye",
-    },
-    {
-        "title": "Quick Download",
-        "description": "Download your complete project files\nwith just a single click operation",
-        "icon": "download",
-    },
-    {
-        "title": "Easy Deployment",
-        "description": "Deploy your application to production\nwith just a single click process",
-        "icon": "rocket",
-    },
-    {
-        "title": "Manual File Editing",
-        "description": "Edit your project files directly\nwith our intuitive code editor",
-        "icon": "code",
-    },
-    {
-        "title": "AI Package Manager",
-        "description": "Let AI handle your package installations\nvia natural prompting",
-        "icon": "sparkles",
-    },
-    {
-        "title": "Smart Prompting",
-        "description": "Get better development results\nwith AI-optimized prompt templates",
-        "icon": "message-circle",
-    },
-]
+Start with a prompt that describes the app or change you need. Builder can then plan the work, update the source, run the app, and show the result in **Preview**.
 
+When a task needs more context, the agent can search the web, run Python, or generate an image. See [Agent Tools](/docs/ai/features/agent-tools/) for when and how those tools are used.
 
-features_data = [
-    {
-        "title": "Project Menu Bar",
-        "subtitle": "Browse previously built applications, create new sessions, store database variables, and much more!",
-        "img": "https://web.reflex-assets.dev/ai_builder/what_is_reflex_build/project_bar_light.avif",
-    },
-    {
-        "title": "Chat Area",
-        "subtitle": "See your prompts in action with visual cues, editing notifications, and file generations every step of the way.",
-        "img": "https://web.reflex-assets.dev/ai_builder/what_is_reflex_build/chat_light.avif",
-    },
-    {
-        "title": "Application Workspace",
-        "subtitle": "Your workspace contains all the folders and files of your application. You can add new files and folders as well!",
-        "img": "https://web.reflex-assets.dev/ai_builder/what_is_reflex_build/file_tree_light.avif",
-    },
-    {
-        "title": "Code Editor",
-        "subtitle": "The code editor displays the current selected file. You can edit the code directly and save it instantly.",
-        "img": "https://web.reflex-assets.dev/ai_builder/what_is_reflex_build/code_light.avif",
-    },
-    {
-        "title": "Integrations",
-        "subtitle": "Easily connect with the tools your team already uses or extend your app with any Python SDK, library, or API.",
-        "img": "https://web.reflex-assets.dev/ai_builder/what_is_reflex_build/integrations_light.avif",
-    },
-    {
-        "title": "Plan",
-        "subtitle": "Plan your application's development with the AI Builder. You can add or remove phases and tasks as you go.",
-        "img": "https://web.reflex-assets.dev/ai_builder/what_is_reflex_build/plan_light.avif",
-    },
-    {
-        "title": "Top Menu Bar",
-        "subtitle": "This menu contains the main views of the application. Preview, Code, Plan, Integrations, Knowledge, Secrets and Settings. You can also see the current workspace RAM and CPU usage. Deploy, copy or share your application with the buttons in the top right corner.",
-        "img": "https://web.reflex-assets.dev/ai_builder/what_is_reflex_build/top_light.avif",
-    },
-    {
-        "title": "Preview Tab",
-        "subtitle": "The preview tab showcases a live application. You can navigate to other applications directly from this tab, refresh the app, and even view it in full screen.",
-        "img": "https://web.reflex-assets.dev/ai_builder/what_is_reflex_build/preview_light.avif",
-    },
-]
+A typical workflow is:
 
+1. Describe one clear outcome and include any useful screenshots, files, or constraints.
+2. Review the plan when the work spans several pages, systems, or files.
+3. Let the agent implement the change and follow its progress.
+4. Test the result in **Preview** and send focused follow-up instructions.
+5. Add or run tests for the workflows that matter.
+6. Deploy, share, download, or continue developing the app locally.
 
-def feature_card(feature: dict) -> rx.Component:
-    return rx.el.div(
-        rx.el.div(
-            rx.el.span(
-                rx.icon(
-                    tag=feature["icon"],
-                    size=15,
-                    class_name="inline-block mr-2 text-primary-11",
-                ),
-                rx.el.span(f"{feature['title']}"),
-                class_name="text-sm font-semibold flex flex-row items-center pt-5 px-2 text-secondary-12",
-            ),
-            rx.el.span(
-                feature["description"],
-                class_name="text-sm font-medium block align-center px-2 text-secondary-11",
-            ),
-            class_name="flex flex-col gap-2",
-        ),
-        class_name="w-full rounded-md",
-    )
+For a guided example, follow [Your First Reflex Build App](/docs/ai/overview/tutorial/). For prompting and review guidance, see [Reflex Build Best Practices](/docs/ai/overview/best-practices/).
 
+## Production Python Code You Own
 
-def _docs_features() -> rx.Component:
-    return rx.el.div(
-        rx.el.div(
-            rx.foreach(landing_features, feature_card),
-            class_name="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-4",
-        ),
-        class_name="flex flex-col w-full h-full justify-start align-start items-start py-4 gap-x-4 z-[99]",
-    )
+Builder generates a regular Reflex project rather than an opaque hosted artifact. The project contains the Python application code, assets, dependency definitions, and Reflex configuration needed to run it.
 
+Use **Code** to browse, search, and edit the source. You can also:
 
-def _docs_app_section_features_small_screen(feature: dict):
-    return rx.el.div(
-        rx.image(
-            src=feature["img"],
-            class_name="rounded-md h-auto",
-            border=f"0.81px solid {rx.color('slate', 5)}",
-        ),
-        rx.el.div(
-            rx.el.label(
-                feature["title"], class_name="text-sm font-bold cursor-pointer"
-            ),
-            rx.el.label(
-                feature["subtitle"], class_name="text-sm font-light cursor-pointer"
-            ),
-            class_name="flex flex-col px-1 py-2",
-        ),
-        class_name="w-full flex flex-col rounded-md",
-    )
+- Connect the app to GitHub or connect its project to another Git provider.
+- Download the source and continue development with your own tools.
+- Install Python packages when the app needs an external library.
+- Use checkpoints and Git history to understand or recover earlier changes.
 
+See [Code and Review](/docs/ai/features/editor-modes/), [Connecting to GitHub](/docs/ai/features/connect-to-github/), and [Download App](/docs/ai/app-lifecycle/download-app/) for the relevant workflows.
 
-def _docs_app_section_toggles(feature: dict):
-    return rx.el.div(
-        rx.el.label(feature["title"], class_name="text-sm font-bold"),
-        rx.el.label(feature["subtitle"], class_name="text-sm font-light"),
-        class_name="w-full flex flex-col max-w-md rounded-md p-4",
-    )
+## Testing Is Built In
 
+Ask the agent to create unit or browser tests in plain language. You can run one test or the full suite, inspect failures, and ask the agent to fix the underlying behavior.
 
-def _docs_app_sections():
-    return rx.el.div(
-        rx.el.div(
-            rx.el.div(
-                rx.el.label(
-                    "Small details, big impact", class_name="text-sm font-light"
-                ),
-                rx.el.label(
-                    "Made With Exceptional Care", class_name="text-3xl font-bold"
-                ),
-                rx.el.label(
-                    "Every feature in Reflex Build is carefully crafted to set new standards. Mediocre isn't an option.",
-                    class_name="text-md font-regular",
-                ),
-                class_name="flex flex-col w-full max-w-lg gap-y-1",
-            ),
-            rx.foreach(
-                features_data[:5],
-                lambda feature: _docs_app_section_toggles(feature),
-            ),
-            class_name="flex flex-col gap-y-4 justify-start max-w-sm",
-        ),
-        rx.el.div(
-            rx.image(
-                src=features_data[0]["img"],
-                class_name="rounded-md h-auto",
-                border=f"0.81px solid {rx.color('slate', 5)}",
-            ),
-            class_name="w-full max-w-4xl",
-        ),
-        class_name="flex flex-row w-full h-full justify-between align-center items-center py-4 gap-x-4 z-[99]",
-        display=["none" if i <= 4 else "flex" for i in range(6)],
-    )
+Tests help catch regressions as the app changes, but they do not replace checking the primary workflow with realistic data in **Preview**. See [Automated Testing](/docs/ai/features/automated-testing/).
 
+Before deployment, the [Security Scanner](/docs/ai/features/security-scanner/) can check the source and dependencies for common security issues.
 
-def _docs_app_sections_small_screen():
-    return rx.el.div(
-        rx.el.div(
-            rx.grid(
-                rx.foreach(
-                    features_data,
-                    lambda feature: _docs_app_section_features_small_screen(feature),
-                ),
-                class_name="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-10 w-full",
-            ),
-            class_name="flex flex-col gap-y-4 justify-start py-4",
-        ),
-    )
+## Connect to Your Systems
 
+Builder can work with databases, authentication providers, APIs, storage services, AI models, and other external systems.
 
-screen_normalization = "z-[99] w-full"
-```
+- Use a packaged integration for a supported service.
+- Create a custom integration for internal APIs, shared context, or credentials.
+- Add MCP servers when the agent needs access to another tool.
+- Install an ordinary Python package when no dedicated integration is required.
+- Store credentials in integrations or **Secrets**, not in prompts or source code.
 
+Only enable the services an app needs. See [Integrations](/docs/ai/features/integration-shortcut/), [Installing External Packages](/docs/ai/features/installing-external-packages/), and [Secrets](/docs/ai/features/secrets/).
 
-## Feature Overview
+## Work with Your Team
 
-Reflex Build provides a streamlined interface for building AI applications. The **Project Menu Bar** helps you manage sessions and stored variables, while the **Chat Area** displays real-time prompts, edits, and file generations. The **Application Workspace** organizes your project structure, and the **Code Editor** allows direct, instant code editing. Key actions like deploy and share are accessible via the **Bottom Menu Bar**, and the **Preview Tab** lets you view and interact with your live app at any time.
+An organization contains projects, and each project contains apps. This structure keeps apps, integrations, knowledge, repositories, deployments, and access controls together for a team.
 
-```python eval
-rx.el.div(
-    _docs_app_sections_small_screen(),
-)
-```
+Organizations and projects support members, teams, standard and custom roles, deployment approvals, and audit logs. Developers can work in Builder or through a connected repository while using the same app source.
 
-## Interface Highlights
+Start with [Organizations](/docs/ai/organization/overview/) for the hierarchy, [Project Overview](/docs/ai/overview/project-overview/) for project-level resources, and [Roles and Permissions](/docs/ai/organization/roles-and-permissions/) for access control.
 
-Reflex Build’s interface is designed for clarity and efficiency. The **Project Menu Bar** helps you manage sessions, apps, and variables. The **Chat Area** shows prompts in action with visual feedback and file generation. In the **Application Workspace**, you can view and organize your project files. The **Code Editor** allows quick, direct edits with instant saving. Use the **Bottom Menu Bar** for key actions like deploy and download. The **Preview Tab** lets you interact with a live version of your app, including refresh and full-screen options.
+## Review Every Change
 
-```python eval
-rx.el.div(
-    rx.el.div(_docs_features(), class_name=screen_normalization),
-)
-```
+Use **Preview** after every meaningful step. When feedback applies to a specific part of the interface, use **Review mode** to draw on the page, add comments, and send the annotations to the agent.
+
+For larger changes, review the plan before implementation. If a result moves in the wrong direction, inspect the changed files or restore an earlier checkpoint instead of asking the agent to rebuild the entire app.
+
+See [Planning](/docs/ai/features/planning/), [Generation Controls and Collaboration](/docs/ai/features/generation-controls/), and [Restore a Checkpoint](/docs/ai/features/restore-checkpoint/).
+
+## Deploy Where You Need It
+
+Deploy an app to Reflex Cloud from Builder, deploy from the command line, or follow the supported cloud and self-hosting workflows. After deployment, you can monitor status and logs, manage domains and settings, review deployment history, and roll back when necessary.
+
+See [Deploy an App](/docs/ai/app-lifecycle/deploy-app/), [Manage a Deployed App](/docs/hosting/app-management/), and [Cloud Providers](/docs/hosting/cloud-providers/).

@@ -3,28 +3,42 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import dataclasses
 import functools
 import inspect
+import logging
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import Executor
+from contextvars import copy_context
 from enum import Enum
 from importlib.util import find_spec
+from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from reflex.istate.data import RouterData
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
-from reflex.utils import console, types
+from reflex.utils import types
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
 from reflex_base.utils.format import format_event_handler
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
-    from reflex.event import EventHandler, EventSpec
+    from reflex.event import Event, EventHandler
     from reflex.state import BaseState
+
+# Resolved once at import: find_spec on a missing package scans sys.path (~90us),
+# far too slow for the per-event-argument path below.
+if find_spec("pydantic"):
+    from pydantic import BaseModel as BaseModelV2
+else:
+    BaseModelV2 = None
 
 
 @functools.lru_cache(maxsize=1)
@@ -115,11 +129,8 @@ def _transform_event_arg(value: Any, hinted_args: Any) -> Any:
             })
         if dataclasses.is_dataclass(hinted_args):
             return hinted_args(**value)
-        if find_spec("pydantic"):
-            from pydantic import BaseModel as BaseModelV2
-
-            if issubclass(hinted_args, BaseModelV2):
-                return hinted_args.model_validate(value)
+        if BaseModelV2 is not None and issubclass(hinted_args, BaseModelV2):
+            return hinted_args.model_validate(value)
     if isinstance(value, list) and (hinted_args is set or hinted_args is frozenset):
         return set(value)
     if isinstance(value, list) and hinted_args is tuple:
@@ -165,8 +176,31 @@ def _transform_event_payload(
     return transformed
 
 
+async def _route_events(ctx: EventContext, events: Sequence[Event]) -> None:
+    """Emit frontend events to the client and queue backend events.
+
+    Events whose name starts with ``_`` are frontend-only specs (e.g.
+    ``_redirect``, ``_call_function``) with no registered backend handler.
+
+    Args:
+        ctx: The event context to emit/enqueue through.
+        events: The events to route.
+    """
+    frontend_events: list[Event] = []
+    backend_events: list[Event] = []
+    for ev in events:
+        if ev.name.startswith("_"):
+            frontend_events.append(ev)
+        else:
+            backend_events.append(ev)
+    if frontend_events:
+        await ctx.emit_event(*frontend_events)
+    if backend_events:
+        await ctx.enqueue(*backend_events)
+
+
 async def chain_updates(
-    events: EventSpec | list[EventSpec] | None,
+    events: Any,
     handler_name: str,
     root_state: BaseState | None = None,
 ) -> None:
@@ -176,7 +210,9 @@ async def chain_updates(
     to be queued against the current EventContext.
 
     Args:
-        events: The events to queue with the update.
+        events: Whatever the handler yielded; `_check_valid_yield` raises TypeError
+            for anything that is not an Event, EventHandler, EventSpec, a sequence
+            of those, or None.
         handler_name: The name of the handler that yielded the events, used for error messages.
         root_state: The root state of the app, no delta emitted if omitted.
     """
@@ -185,7 +221,12 @@ async def chain_updates(
     ctx = EventContext.get()
 
     if root_state is not None:
-        # Emit deltas first, so any frontend events are processed with the latest state.
+        # Emit deltas first, so any frontend events are processed with the
+        # latest state. The clean deliberately runs after resolution: the
+        # SharedState fan-out captures its dirty vars at clean time, and
+        # resolving the delta is what re-marks linked vars through the patch
+        # machinery, so cleaning earlier would fan out a stale set (see
+        # tests/integration/test_linked_state.py).
         try:
             delta = await root_state._get_resolved_delta()
             if delta:
@@ -197,11 +238,34 @@ async def chain_updates(
     if fixed_events := Event.from_event_type(
         _check_valid_yield(events, handler_name=handler_name),
     ):
-        # Frontend events.
-        if frontend_events := [e for e in fixed_events if e.name.startswith("_")]:
-            await ctx.emit_event(*frontend_events)
-        # Backend events.
-        await ctx.enqueue(*(e for e in fixed_events if not e.name.startswith("_")))
+        await _route_events(ctx, fixed_events)
+
+
+def ensure_locked(
+    state: BaseState | StateProxy, root_state: BaseState | None
+) -> BaseState | None:
+    """The root to flush deltas from, only while the state lock is held.
+
+    Foreground handlers pass the locked root in. A background handler
+    yielding from inside ``async with self`` is suspended while its proxy
+    still holds the lock, so flushing through the proxy's root keeps the
+    documented ordering: deltas reach the frontend before the yielded event.
+    Outside the proxy context there is no lock, and flushing there is the
+    unlocked snapshot/clean that discards concurrent writes. Evaluated per
+    yield: a generator can move between inside and outside the context.
+
+    Args:
+        state: The state the handler runs against, possibly a StateProxy.
+        root_state: The locked root passed by foreground callers, if any.
+
+    Returns:
+        The root state to flush, or None when the lock is not held.
+    """
+    if root_state is not None:
+        return root_state
+    if isinstance(state, StateProxy) and state._is_mutable():
+        return state.__wrapped__._get_root_state()
+    return None
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -236,11 +300,39 @@ def _next_or_done(generator: Any) -> _GeneratorStep:
         return _GeneratorStep(value=si.value, done=True)
 
 
+async def _run_sync_handler(executor: Executor, fn: Callable[[], Any]) -> Any:
+    """Run a handler with its context while retaining ownership until it stops.
+
+    Args:
+        executor: The worker pool.
+        fn: The handler call or generator step.
+
+    Returns:
+        The handler's result.
+
+    Raises:
+        asyncio.CancelledError: After a cancelled handler's worker has finished.
+    """
+    future = asyncio.get_running_loop().run_in_executor(
+        executor, copy_context().run, fn
+    )
+    try:
+        return await asyncio.shield(future)
+    except asyncio.CancelledError:
+        # A running thread cannot be cancelled. Keep the state lock until it stops.
+        while not future.done():
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await asyncio.shield(future)
+        if not future.cancelled():
+            future.exception()
+        raise
+
+
 async def process_event(
     handler: EventHandler,
     payload: dict,
     state: BaseState | StateProxy,
-    root_state: BaseState,
+    root_state: BaseState | None,
     executor: Executor | None = None,
 ):
     """Process event.
@@ -249,7 +341,12 @@ async def process_event(
         handler: EventHandler to process.
         payload: The event payload.
         state: State to process the handler.
-        root_state: The root state of the app, used for emitting deltas.
+        root_state: The root state of the app, used for emitting deltas. Pass
+            None when the caller does not hold the state lock (background
+            tasks): computing and cleaning a delta on an unlocked root races
+            concurrent events on a shared state tree, and background state
+            changes are emitted by the ``async with self`` context exits
+            instead.
         executor: The executor to run a non-async handler in. Async handlers
             run on the asyncio loop and ignore this argument. If None, sync
             handlers run inline on the asyncio loop (matching pre-executor
@@ -268,7 +365,7 @@ async def process_event(
         payload = _transform_event_payload(payload, type_hints)
     except Exception as ex:
         # No transformation was possible, continue with the original payload
-        console.warn(
+        logger.warning(
             f"Error transforming event payload for handler {handler_name}: {ex}"
         )
 
@@ -284,38 +381,54 @@ async def process_event(
     # Handle regular functions - run off the asyncio loop when an executor
     # is configured so blocking calls in user code don't stall the loop.
     elif executor is not None:
-        loop = asyncio.get_running_loop()
-        events = await loop.run_in_executor(executor, functools.partial(fn, **payload))
+        events = await _run_sync_handler(executor, functools.partial(fn, **payload))
     else:
         events = fn(**payload)
     # Handle async generators.
     if inspect.isasyncgen(events):
         async for event in events:
-            await chain_updates(event, root_state=root_state, handler_name=handler_name)
-        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+            await chain_updates(
+                event,
+                root_state=ensure_locked(state, root_state),
+                handler_name=handler_name,
+            )
+        await chain_updates(
+            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
+        )
 
     # Handle regular generators.
     elif inspect.isgenerator(events):
-        loop = asyncio.get_running_loop() if executor is not None else None
         while True:
-            if loop is not None:
-                step = await loop.run_in_executor(executor, _next_or_done, events)
+            if executor is not None:
+                step = await _run_sync_handler(
+                    executor, functools.partial(_next_or_done, events)
+                )
             else:
                 step = _next_or_done(events)
             if step.done:
                 if step.value is not None:
                     await chain_updates(
-                        step.value, root_state=root_state, handler_name=handler_name
+                        step.value,
+                        root_state=ensure_locked(state, root_state),
+                        handler_name=handler_name,
                     )
                 break
             await chain_updates(
-                step.value, root_state=root_state, handler_name=handler_name
+                step.value,
+                root_state=ensure_locked(state, root_state),
+                handler_name=handler_name,
             )
-        await chain_updates(None, root_state=root_state, handler_name=handler_name)
+        await chain_updates(
+            None, root_state=ensure_locked(state, root_state), handler_name=handler_name
+        )
 
     # Handle regular event chains.
     else:
-        await chain_updates(events, root_state=root_state, handler_name=handler_name)
+        await chain_updates(
+            events,
+            root_state=ensure_locked(state, root_state),
+            handler_name=handler_name,
+        )
 
 
 class BaseStateEventProcessor(EventProcessor):
@@ -334,10 +447,13 @@ class BaseStateEventProcessor(EventProcessor):
         """
         from reflex.state import OnLoadInternalState, State
 
-        if (
-            type(root_state) is not State
-            or OnLoadInternalState.get_name() not in root_state.substates
-        ):
+        if type(root_state) is not State:
+            return
+
+        # A backend-initiated event carries no route, so nothing sets
+        # router_data and every one of them would rehydrate again.
+        routeless = not root_state.router_data
+        if routeless and root_state.is_hydrated:
             return
 
         await process_event(
@@ -346,6 +462,15 @@ class BaseStateEventProcessor(EventProcessor):
             state=root_state,
             root_state=root_state,
         )
+        if routeless:
+            # No page to load, but hydration still has to finish.
+            await process_event(
+                handler=State.event_handlers["set_is_hydrated"],
+                payload={"value": True},
+                state=root_state,
+                root_state=root_state,
+            )
+            return
         await process_event(
             handler=OnLoadInternalState.event_handlers["on_load_internal"],
             payload={},
@@ -367,7 +492,10 @@ class BaseStateEventProcessor(EventProcessor):
         """
         ctx = entry.ctx
         event = entry.event
-        router_data = event.router_data or {}
+        # The context, not the event: a chained event carries none of its own
+        # and inherits the producing view's through fork().
+        router_data = ctx.router_data
+        acquire_start = perf_counter() if otel.enabled else 0.0
         # Get the state for the session exclusively.
         async with ctx.state_manager.modify_state_with_links(
             BaseStateToken(
@@ -376,6 +504,8 @@ class BaseStateEventProcessor(EventProcessor):
             ),
             event=entry.event,
         ) as state:
+            if otel.enabled:
+                otel.record_state_acquired(acquire_start, event)
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
                 not state.router_data and event.name != _hydrate_event_name()
@@ -399,7 +529,7 @@ class BaseStateEventProcessor(EventProcessor):
                 if update.delta:
                     await ctx.emit_delta(update.delta)
                 if update.events:
-                    await ctx.enqueue(*update.events)
+                    await _route_events(ctx, update.events)
                 return
 
             # Get the event's substate.
@@ -419,14 +549,57 @@ class BaseStateEventProcessor(EventProcessor):
                     executor=self.get_executor_for(registered_handler),
                 )
                 return
-        # Otherwise drop the state lock and start processing the background task with a proxy state.
-        await process_event(
-            handler=registered_handler.handler,
-            state=StateProxy(substate),
-            payload=event.payload,
-            root_state=root_state,
-            executor=self.get_executor_for(registered_handler),
-        )
+        # Otherwise drop the state lock and start processing the background task
+        # with a proxy state. No root_state: the lock is no longer held, and
+        # under a shared state tree (opportunistic locking, in-memory manager)
+        # computing a delta here races whatever event holds the lock now -- a
+        # foreground write landing between this task's dirty-var snapshot and
+        # its _clean() would be discarded before any delta carries it. A
+        # background task's own state changes are emitted (and cleaned) by its
+        # `async with self` context exits, which re-acquire the lock.
+        proxy = StateProxy(substate)
+        handler_error: BaseException | None = None
+        try:
+            await process_event(
+                handler=registered_handler.handler,
+                state=proxy,
+                payload=event.payload,
+                root_state=None,
+            )
+        except BaseException as ex:
+            handler_error = ex
+            raise
+        finally:
+            if not proxy._self_entered_context:
+                # A handler that never entered `async with self` emitted nothing,
+                # but every background event used to flush a delta (refreshing
+                # uncached computed vars, and any dirty vars the preamble left,
+                # like router_data). Preserve that, under the lock this time --
+                # also when the handler raises, so the client gets the same
+                # refresh regardless of how the task ended.
+                try:
+                    async with ctx.state_manager.modify_state_with_links(
+                        BaseStateToken(
+                            ident=ctx.token,
+                            cls=registered_handler.states[0],
+                        ),
+                        event=event,
+                    ) as flush_state:
+                        await chain_updates(
+                            None,
+                            root_state=flush_state._get_root_state(),
+                            handler_name=registered_handler.handler.fn.__qualname__,
+                        )
+                except Exception:
+                    if handler_error is None:
+                        raise
+                    # The handler's exception is the actionable one; log the
+                    # flush failure instead of letting it mask the exception
+                    # already propagating to the backend exception handler.
+                    logger.exception(
+                        "Error flushing delta after background handler "
+                        f"{registered_handler.handler.fn.__qualname__} raised:"
+                    )
 
     async def _handle_backend_exception(
         self, ex: Exception, ev_ctx: EventContext | None = None
@@ -441,6 +614,9 @@ class BaseStateEventProcessor(EventProcessor):
             if ev_ctx is not None:
                 # Ensure the event context is set for the exception handler.
                 EventContext.set(ev_ctx)
+                if otel.enabled:
+                    # Chain the handler's events under the failed event's span.
+                    otel.attach_context(ev_ctx.otel_context)
             if events := self.backend_exception_handler(ex):
                 await chain_updates(
                     events=events,

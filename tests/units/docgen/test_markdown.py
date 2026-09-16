@@ -107,6 +107,27 @@ def test_component_previews():
     assert preview.source.startswith("lambda")
 
 
+def test_meta_description_not_treated_as_preview():
+    """SEO frontmatter keys are excluded from component-preview detection.
+
+    ``meta_description``/``description`` are string-valued frontmatter keys, so
+    without being in the known-keys set they would be misparsed as component
+    preview lambdas. They must be ignored as previews but stay in ``metadata``.
+    """
+    source = (
+        "---\ncomponents:\n  - rx.recharts.BarChart\n"
+        "title: Bar Chart\n"
+        "meta_description: Create interactive bar charts in Python with Reflex.\n"
+        "description: A longer description that also should not become a preview.\n"
+        "---\n# Bar Chart\n"
+    )
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.component_previews == ()
+    assert fm.title == "Bar Chart"
+    assert str(fm.metadata["meta_description"]).startswith("Create interactive bar")
+
+
 def test_multiple_previews():
     """Multiple component preview lambdas are extracted."""
     source = "---\ncomponents:\n  - rx.input\n\nInput: |\n  lambda **props: rx.input(**props)\n\nInputSlot: |\n  lambda **props: rx.input(rx.input.slot(**props))\n---\n# Input\n"
@@ -116,6 +137,49 @@ def test_multiple_previews():
     names = [p.name for p in fm.component_previews]
     assert "Input" in names
     assert "InputSlot" in names
+
+
+def test_frontmatter_description():
+    """Frontmatter ``description`` is extracted as a string."""
+    source = "---\ndescription: A short SEO description.\n---\n# Hello\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.description == "A short SEO description."
+
+
+def test_frontmatter_image():
+    """Frontmatter ``image`` is extracted as a string."""
+    source = "---\nimage: /previews/foo.webp\n---\n# Hello\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.image == "/previews/foo.webp"
+
+
+def test_frontmatter_description_and_image_default_none():
+    """``description`` / ``image`` default to None when absent."""
+    source = "---\ntitle: Test\n---\n# Hello\n"
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.description is None
+    assert fm.image is None
+
+
+def test_frontmatter_description_image_not_treated_as_preview():
+    """``description`` / ``image`` are reserved keys, not component previews."""
+    source = (
+        "---\n"
+        "components:\n  - rx.button\n"
+        "description: SEO desc\n"
+        "image: /img.webp\n\n"
+        "Button: |\n  lambda **props: rx.button(**props)\n"
+        "---\n# Button\n"
+    )
+    fm = parse_document(source).frontmatter
+    assert fm is not None
+    assert fm.description == "SEO desc"
+    assert fm.image == "/img.webp"
+    assert len(fm.component_previews) == 1
+    assert fm.component_previews[0].name == "Button"
 
 
 def test_transform_frontmatter_with_previews():
@@ -147,6 +211,113 @@ def test_transform_frontmatter_with_only_low_level():
         component_previews=(),
     )
     assert "only_low_level" in _md.frontmatter(fm)
+
+
+def test_transform_frontmatter_with_description_and_image():
+    """FrontMatter ``description`` / ``image`` round-trip through the writer."""
+    fm = FrontMatter(
+        components=(),
+        only_low_level=False,
+        title=None,
+        description="A SEO description.",
+        image="/previews/foo.webp",
+        component_previews=(),
+    )
+    md = _md.frontmatter(fm)
+    assert "description: A SEO description." in md
+    assert "image: /previews/foo.webp" in md
+
+
+def test_transform_frontmatter_omits_unset_description_and_image():
+    """Unset ``description`` / ``image`` are not emitted by the writer."""
+    fm = FrontMatter(
+        components=(),
+        only_low_level=False,
+        title=None,
+        component_previews=(),
+    )
+    md = _md.frontmatter(fm)
+    assert "description:" not in md
+    assert "image:" not in md
+
+
+def test_frontmatter_description_image_round_trip():
+    """Parser → transformer → parser preserves ``description`` and ``image``."""
+    original = "---\ndescription: Round trip\nimage: /round/trip.webp\n---\n# Hi\n"
+    fm = parse_document(original).frontmatter
+    assert fm is not None
+    rendered = _md.frontmatter(fm) + "\n# Hi\n"
+    fm2 = parse_document(rendered).frontmatter
+    assert fm2 is not None
+    assert fm2.description == "Round trip"
+    assert fm2.image == "/round/trip.webp"
+
+
+def test_metadata_exposes_raw_frontmatter():
+    """document.metadata exposes the full raw frontmatter mapping."""
+    source = "---\ntitle: T\nauthor: Jane\norder: 3\ntags:\n  - a\n  - b\n---\n# Hi\n"
+    doc = parse_document(source)
+    assert doc.metadata["title"] == "T"
+    assert doc.metadata["author"] == "Jane"
+    assert doc.metadata["order"] == 3
+    assert doc.metadata["tags"] == ["a", "b"]
+
+
+def test_metadata_empty_without_frontmatter():
+    """document.metadata is an empty mapping when there is no frontmatter."""
+    assert dict(parse_document("# Hi\n").metadata) == {}
+
+
+def test_frontmatter_is_hashable_with_metadata():
+    """FrontMatter / Document stay hashable even when metadata holds a dict."""
+    doc = parse_document("---\nauthor: Jane\norder: 3\n---\n# Hi\n")
+    hash(doc.frontmatter)
+    hash(doc)
+
+
+def test_metadata_on_frontmatter_block():
+    """The raw mapping is also available on the FrontMatter block itself."""
+    fm = parse_document("---\nauthor: Jane\n---\n# Hi\n").frontmatter
+    assert fm is not None
+    assert fm.metadata["author"] == "Jane"
+
+
+def test_frontmatter_metadata_defaults_to_empty():
+    """A FrontMatter constructed without metadata defaults to an empty mapping."""
+    fm = FrontMatter(
+        components=(), only_low_level=False, title=None, component_previews=()
+    )
+    assert dict(fm.metadata) == {}
+
+
+def test_transform_frontmatter_preserves_extra_metadata():
+    """Round-tripping preserves arbitrary metadata keys (lists, ints, scalars)."""
+    source = "---\ntitle: T\ntags:\n  - a\n  - b\norder: 3\n---\n# Hi\n"
+    doc = parse_document(source)
+    rendered = _md.transform(doc)
+    assert "tags:" in rendered
+    assert "order: 3" in rendered
+    # The round-trip is stable and the keys survive a re-parse.
+    doc2 = parse_document(rendered)
+    assert doc2.metadata["tags"] == ["a", "b"]
+    assert doc2.metadata["order"] == 3
+    assert _md.transform(doc2) == rendered
+
+
+def test_transform_frontmatter_preserves_falsy_modeled_keys():
+    """Explicit falsy values for modeled keys survive a round-trip."""
+    source = "---\ncomponents: []\nonly_low_level: false\n---\n# Hi\n"
+    rendered = _md.transform(parse_document(source))
+    assert "components:" in rendered
+    assert "only_low_level:" in rendered
+
+
+def test_transform_frontmatter_preserves_string_metadata_verbatim():
+    """String-valued site metadata round-trips verbatim, not stripped."""
+    source = "---\nauthor: '  Jane  '\n---\n# Hi\n"
+    doc = parse_document(source)
+    rendered = _md.transform(doc)
+    assert parse_document(rendered).metadata["author"] == "  Jane  "
 
 
 def test_h1():
@@ -295,6 +466,13 @@ def test_directive_section():
     d = doc.directives[0]
     assert d.name == "section"
     assert d.args == ()
+
+
+def test_directive_preserves_raw_content():
+    """DirectiveBlock.content holds the raw, unparsed inner text."""
+    source = "```md quote\n- name: Jane\n- role: CEO\nGreat product.\n```\n"
+    d = parse_document(source).directives[0]
+    assert d.content == "- name: Jane\n- role: CEO\nGreat product."
 
 
 def test_directive_not_in_code_blocks():

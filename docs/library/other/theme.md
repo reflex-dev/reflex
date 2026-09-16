@@ -16,7 +16,7 @@ app = rx.App(
 )
 ```
 
-# Theme Panel
+## Theme Panel
 
 The `ThemePanel` component is a container for the `Theme` component. It provides a way to change the theme of the application.
 

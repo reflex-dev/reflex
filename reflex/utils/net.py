@@ -1,6 +1,7 @@
 """Helpers for downloading files from the network."""
 
 import functools
+import logging
 import time
 from collections.abc import Callable
 from typing import ParamSpec, TypeVar
@@ -8,7 +9,7 @@ from typing import ParamSpec, TypeVar
 from reflex_base.utils.decorator import once
 from reflex_base.utils.types import Unset
 
-from . import console
+logger = logging.getLogger(__name__)
 
 
 def _httpx_verify_kwarg() -> bool:
@@ -43,20 +44,20 @@ def _wrap_https_func(
         import httpx
 
         url = args[0]
-        console.debug(f"Sending HTTPS request to {args[0]}")
+        logger.debug(f"Sending HTTPS request to {args[0]}")
         initial_time = time.time()
         try:
             response = func(*args, **kwargs)
         except httpx.ConnectError as err:
             if "CERTIFICATE_VERIFY_FAILED" in str(err):
                 # If the error is a certificate verification error, recommend mitigating steps.
-                console.error(
+                logger.error(
                     f"Certificate verification failed for {url}. Set environment variable SSL_CERT_FILE to the "
                     "path of the certificate file or SSL_NO_VERIFY=1 to disable verification."
                 )
             raise
         else:
-            console.debug(
+            logger.debug(
                 f"Received response from {url} in {time.time() - initial_time:.3f} seconds"
             )
             return response

@@ -1,39 +1,41 @@
 # Deploy App
 
+Deploying publishes the current app to Reflex Cloud or to a connected cloud provider.
+
 ```python exec
 import reflex as rx
 ```
 
-It is easy to deploy your app into production from Reflex Build to Reflex Cloud.
+## Deploy from the Builder
 
-Simply click the `Deploy` button in the top right corner of Reflex Build, as shown below:
-
-
-
-```python exec
-import reflex as rx
-
-
-def render_image():
-    return rx.el.div(
-        rx.image(
-            src="https://web.reflex-assets.dev/ai_builder/app_lifecycle/deploy_light.avif",
-            class_name="rounded-md h-auto",
-            border=f"0.81px solid {rx.color('slate', 5)}",
-        ),
-        class_name="w-full flex flex-col rounded-md",
-    )
-```
+1. Open the app and wait for the current generation to finish.
+2. Select **Deploy** in the upper-right corner.
+3. Review the workspace resource check and deployment configuration.
+4. Confirm the deployment.
 
 ```python eval
-rx.el.div(render_image())
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/hosting/builder_deploy_dialog.webp",
+    alt="Deploy dialog with hosting provider choices in Reflex Build",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
+)
 ```
 
-When deploying you can set the following options:
-- **App Name**: The name of your app
-- **Hostname**: Set your url by setting your hostname, i.e. if you set `myapp` as your hostname, your app will be available at `myapp.reflex.run`
-- **Region**: The regions where your app will be deployed
-- **VM Size**: The size of the VM where your app will be deployed
-- **Secrets**: The environment variables that will be set for your app, you can load the variables currently being used by your app by clicking the `Load from settings` button
+If the app needs more memory than the active workspace provides, the dialog recommends a larger workspace before deployment. Upgrading the workspace can prevent build failures; deploy anyway only when you understand the resource requirement.
 
-Note: Hostname customization, region selection, and VM sizing are only available on paid plans.
+Depending on your plan and organization configuration, the deployment flow can include:
+
+- App name and generated hostname.
+- Hosting provider.
+- Region and machine size.
+- App secrets and environment variables.
+- A deployment approval request.
+
+## Project Approvals
+
+When **Require approval to deploy** is enabled for the project, the deployment waits in the **Approvals** queue. It runs automatically after a member with **Approve deployments** permission approves it. See [Project Approvals](/docs/ai/organization/deployment-approvals/).
+
+## After Deployment
+
+Open **Deployments** in the project sidebar to view status, resource allocation, logs, history, domains, and settings. See the [Reflex Cloud quick start](/docs/hosting/deploy-quick-start/) for the current dashboard and CLI workflows.

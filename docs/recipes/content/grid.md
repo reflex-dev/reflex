@@ -6,7 +6,7 @@ import reflex as rx
 
 A simple responsive grid layout. We specify the number of columns to the `grid_template_columns` property as a list. The grid will automatically adjust the number of columns based on the screen size.
 
-For details, see the [responsive docs page](/docs/styling/responsive).
+For details, see the [responsive docs page](/docs/styling/responsive/).
 
 ## Cards
 
@@ -38,6 +38,7 @@ rx.grid(
             rx.inset(
                 rx.image(
                     src="https://web.reflex-assets.dev/other/reflex_banner.png",
+                    alt="Reflex banner image",
                     width="100%",
                     height="auto",
                 ),

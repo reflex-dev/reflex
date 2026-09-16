@@ -18,6 +18,7 @@ def webpage(
     meta: list[dict[str, str]] | None = None,
     props: dict | None = None,
     add_as_page: bool = True,
+    show_banner: bool = True,
 ) -> Callable:
     """A template that most pages on the reflex.dev site should use.
 
@@ -31,6 +32,7 @@ def webpage(
         meta: Additional meta tags to add to the page.
         props: Props to apply to the template.
         add_as_page: whether to add the route to the app pages.
+        show_banner: Whether to show the hosting banner above the navbar.
 
     Returns:
         A wrapper function that returns the full webpage.
@@ -67,7 +69,7 @@ def webpage(
             # Wrap the component in the template.
             return rx.box(
                 *default_patterns(),
-                marketing_navbar(),
+                marketing_navbar(show_banner=show_banner),
                 rx.el.main(
                     contents(*children, **props),
                     rx.box(class_name="flex-grow"),

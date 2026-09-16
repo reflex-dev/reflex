@@ -1,4 +1,10 @@
-"""GCP Cloud Run deploy commands for the Reflex Cloud CLI.
+"""Standalone GCP Cloud Run deploy command for the Reflex Cloud CLI.
+
+This is the *unmanaged* path: it deploys straight to Cloud Run under the
+user's own gcloud credentials, and Reflex Cloud is never told about the
+result -- no app, no dashboard, no logs, no rollback. For a GCP deploy the
+platform manages (through a GCP account connected to the organization), use
+``reflex deploy --provider gcp`` instead.
 
 Fetches a Dockerfile + bash deploy script from Reflex and runs the script
 against the user's source directory. The Dockerfile is materialized inside
@@ -6,12 +12,17 @@ a Cloud Build job (via a ``cloudbuild.yaml`` written to a tempfile and
 referenced with ``gcloud builds submit --config=...``) — the user's project
 tree is never modified. The script reads its parameters from environment
 variables (GCP_PROJECT, GCP_REGION, SERVICE_NAME, AR_REPO, VERSION,
-REFLEX_CLOUDBUILD_YAML).
+CLOUD_RUN_CPU, CLOUD_RUN_MEMORY, CLOUD_RUN_MIN_INSTANCES,
+CLOUD_RUN_MAX_INSTANCES, CLOUD_RUN_ALLOW_UNAUTHENTICATED,
+CLOUD_RUN_SERVICE_ACCOUNT, REFLEX_CLOUDBUILD_YAML,
+REFLEX_ENV_VARS_FILE).
 """
 
 from __future__ import annotations
 
 import contextlib
+import json
+import logging
 import os
 import re
 import shutil
@@ -25,7 +36,10 @@ from urllib.parse import urljoin
 import click
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
+from reflex_cli.utils.output import interactive_option, json_option, print_json
+
+logger = logging.getLogger(__name__)
 
 GCP_MANIFEST_ENDPOINT = "/api/v1/cli/gcp-cloud-run-manifest"
 
@@ -37,9 +51,18 @@ ENV_GCP_REGION = "GCP_REGION"
 ENV_SERVICE_NAME = "SERVICE_NAME"
 ENV_AR_REPO = "AR_REPO"
 ENV_VERSION = "VERSION"
+ENV_CPU = "CLOUD_RUN_CPU"
+ENV_MEMORY = "CLOUD_RUN_MEMORY"
+ENV_MIN_INSTANCES = "CLOUD_RUN_MIN_INSTANCES"
+ENV_MAX_INSTANCES = "CLOUD_RUN_MAX_INSTANCES"
+ENV_ALLOW_UNAUTHENTICATED = "CLOUD_RUN_ALLOW_UNAUTHENTICATED"
+ENV_SERVICE_ACCOUNT = "CLOUD_RUN_SERVICE_ACCOUNT"
 # Path to the Cloud Build config file written by the CLI. The rewritten
 # deploy script references it as ``--config="${REFLEX_CLOUDBUILD_YAML}"``.
 ENV_REFLEX_CLOUDBUILD_YAML = "REFLEX_CLOUDBUILD_YAML"
+# Path to a YAML file with user-supplied env vars. When set, the deploy
+# script passes it to ``gcloud run deploy --env-vars-file=...``.
+ENV_REFLEX_ENV_VARS_FILE = "REFLEX_ENV_VARS_FILE"
 
 # Pattern for the start of the `gcloud builds submit` invocation in the
 # Reflex deploy script. We rewrite that whole multi-line command to use
@@ -98,7 +121,7 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
 })
 
 
-@click.command(name="deploy")
+@click.command(name="gcp-standalone")
 @click.option(
     "--gcp",
     "use_gcp",
@@ -137,6 +160,60 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     help="The image version tag (sets VERSION). Defaults to a UTC timestamp.",
 )
 @click.option(
+    "--cpu",
+    "cpu",
+    default="1",
+    show_default=True,
+    help="Cloud Run CPU allocation, e.g. '1', '2', '4' (sets CLOUD_RUN_CPU).",
+)
+@click.option(
+    "--memory",
+    "memory",
+    default="1Gi",
+    show_default=True,
+    help="Cloud Run memory allocation, e.g. '512Mi', '1Gi', '2Gi' (sets CLOUD_RUN_MEMORY).",
+)
+@click.option(
+    "--min-instances",
+    "min_instances",
+    default=1,
+    show_default=True,
+    type=click.IntRange(min=0),
+    help="Minimum number of Cloud Run instances to keep warm (sets CLOUD_RUN_MIN_INSTANCES). Set to 0 to scale to zero.",
+)
+@click.option(
+    "--max-instances",
+    "max_instances",
+    default=100,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="Maximum number of Cloud Run instances during autoscaling (sets CLOUD_RUN_MAX_INSTANCES). Caps cost under traffic spikes.",
+)
+@click.option(
+    "--allow-unauthenticated/--no-allow-unauthenticated",
+    "allow_unauthenticated",
+    default=True,
+    show_default=True,
+    help="Whether to make the Cloud Run service publicly reachable (sets CLOUD_RUN_ALLOW_UNAUTHENTICATED). Use --no-allow-unauthenticated for internal / IAP-fronted services; callers will then need a roles/run.invoker IAM binding.",
+)
+@click.option(
+    "--service-account",
+    "service_account",
+    default=None,
+    help="IAM service account email the Cloud Run service this command creates runs as (sets CLOUD_RUN_SERVICE_ACCOUNT). If omitted, Cloud Run uses the project's default compute SA. The deploying principal needs roles/iam.serviceAccountUser on the target SA. Unrelated to the credentials this command deploys with, and unrelated to managed GCP deploys, where the runtime identity belongs to the organization's connection: see `reflex cloud providers connections`.",
+)
+@click.option(
+    "--envfile",
+    default=None,
+    help="Path to a .env file. Loaded into the Cloud Run service as env vars. Takes precedence over --env.",
+)
+@click.option(
+    "--env",
+    "envs",
+    multiple=True,
+    help="Environment variable to set on the Cloud Run service: <key>=<value>. Repeat for multiple, e.g. --env K1=V1 --env K2=V2. Plain Cloud Run env vars — visible to anyone with roles/run.viewer; for sensitive values use Secret Manager separately.",
+)
+@click.option(
     "--source",
     "source_dir",
     default=".",
@@ -145,12 +222,8 @@ DEPLOY_ENV_ALLOWLIST = frozenset({
     help="The directory containing the Reflex app. Uploaded to Cloud Build as the build context; the source tree itself is not modified.",
 )
 @click.option("--token", help="The Reflex authentication token.")
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to prompt before running the deploy script.",
-)
+@json_option
+@interactive_option
 @click.option(
     "--dry-run",
     is_flag=True,
@@ -170,33 +243,65 @@ def deploy_command(
     service_name: str,
     ar_repo: str,
     version_tag: str | None,
+    cpu: str,
+    memory: str,
+    min_instances: int,
+    max_instances: int,
+    allow_unauthenticated: bool,
+    service_account: str | None,
+    envfile: str | None,
+    envs: tuple[str, ...],
     source_dir: str,
     token: str | None,
+    as_json: bool,
     interactive: bool,
     dry_run: bool,
     loglevel: str,
 ):
-    """Deploy a Reflex app to a cloud target.
+    """Deploy a Reflex app to GCP Cloud Run yourself, outside Reflex Cloud.
 
-    Currently the only supported target is GCP Cloud Run via --gcp. The
-    command fetches a Dockerfile and bash deploy script from Reflex, embeds
+    The command fetches a Dockerfile and bash deploy script from Reflex, embeds
     the Dockerfile inside a generated ``cloudbuild.yaml`` (written to a
     tempfile), rewrites the script's ``gcloud builds submit`` invocation to
     reference that config, then runs the script with cwd= your source dir.
     Your project tree is never modified.
+
+    Everything runs under your own gcloud credentials and the resulting service
+    is yours alone: Reflex Cloud records no app for it, so it has no dashboard,
+    logs, rollback or teardown. For a GCP deploy the platform manages, through a
+    GCP account connected to your organization, use `reflex deploy --provider
+    gcp`.
     """
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
 
+    if click.get_current_context().info_name == "deploy":
+        logger.warning(
+            "DeprecationWarning: `reflex cloud deploy` is deprecated as of "
+            "reflex-hosting-cli 0.1.70 and will be removed in 0.2.0. Use "
+            "`reflex cloud gcp-standalone`, which it is now named so it cannot "
+            "be mistaken for `reflex deploy`: this command deploys to Cloud Run "
+            "under your own gcloud credentials and Reflex Cloud never hears "
+            "about the result, while `reflex deploy --provider gcp` is the "
+            "managed GCP path."
+        )
+
     if not use_gcp:
-        console.error(
+        logger.error(
             "Specify a deploy target. Currently supported: --gcp (GCP Cloud Run)."
         )
         raise click.exceptions.Exit(2)
     if not gcp_project:
-        console.error("--gcp-project is required when using --gcp.")
+        logger.error("--gcp-project is required when using --gcp.")
         raise click.exceptions.Exit(2)
+    if max_instances < min_instances:
+        logger.error(
+            f"--max-instances ({max_instances}) must be >= --min-instances ({min_instances})."
+        )
+        raise click.exceptions.Exit(2)
+
+    parsed_envs = _parse_envs(envfile=envfile, envs=envs)
 
     authenticated_client = hosting.get_authenticated_client(
         token=token, interactive=interactive
@@ -204,14 +309,12 @@ def deploy_command(
 
     bash_path = shutil.which("bash")
     if not bash_path:
-        console.error(
-            "`bash` was not found on PATH; required to run the deploy script."
-        )
+        logger.error("`bash` was not found on PATH; required to run the deploy script.")
         raise click.exceptions.Exit(1)
 
     gcloud_path = shutil.which("gcloud")
     if not gcloud_path:
-        console.error(
+        logger.error(
             "The `gcloud` CLI was not found on PATH. Install it from "
             "https://cloud.google.com/sdk/docs/install and run `gcloud auth login` "
             "and `gcloud auth application-default login` before retrying."
@@ -219,13 +322,13 @@ def deploy_command(
         raise click.exceptions.Exit(1)
 
     if not shutil.which("docker"):
-        console.error(
+        logger.error(
             "The `docker` CLI was not found on PATH; required to build the image."
         )
         raise click.exceptions.Exit(1)
 
     if not _get_active_gcp_account(gcloud_path):
-        console.error(
+        logger.error(
             "No active GCP account found. Run `gcloud auth login` and "
             "`gcloud auth application-default login`, then retry."
         )
@@ -233,16 +336,31 @@ def deploy_command(
 
     dockerfile, deploy_script = _request_manifest(authenticated_client.token)
 
+    # If the user asks for a private service, abort when the fetched script
+    # doesn't reference CLOUD_RUN_ALLOW_UNAUTHENTICATED. Without that backend
+    # support the deploy would silently use the script's hard-coded
+    # --allow-unauthenticated, producing a public service when the user
+    # explicitly asked for a private one — a silent privacy flip we'd rather
+    # fail loud on.
+    if not allow_unauthenticated and ENV_ALLOW_UNAUTHENTICATED not in deploy_script:
+        logger.error(
+            "The Reflex backend's deploy script doesn't yet recognize "
+            f"{ENV_ALLOW_UNAUTHENTICATED} — without it, --no-allow-unauthenticated "
+            "would be silently ignored and the service would deploy as PUBLIC. "
+            "Upgrade the Reflex backend, or remove --no-allow-unauthenticated."
+        )
+        raise click.exceptions.Exit(1)
+
     source_path = Path(source_dir).resolve()
     if not source_path.is_dir():
-        console.error(f"Source directory does not exist: {source_path}")
+        logger.error(f"Source directory does not exist: {source_path}")
         raise click.exceptions.Exit(1)
 
     cloudbuild_yaml = _build_cloudbuild_yaml(dockerfile)
     try:
         deploy_script = _rewrite_builds_submit(deploy_script)
     except ValueError as ex:
-        console.error(str(ex))
+        logger.error(str(ex))
         raise click.exceptions.Exit(1) from ex
 
     version_value = version_tag or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -252,9 +370,19 @@ def deploy_command(
         ENV_SERVICE_NAME: service_name,
         ENV_AR_REPO: ar_repo,
         ENV_VERSION: version_value,
+        ENV_CPU: cpu,
+        ENV_MEMORY: memory,
+        ENV_MIN_INSTANCES: str(min_instances),
+        ENV_MAX_INSTANCES: str(max_instances),
+        ENV_ALLOW_UNAUTHENTICATED: "true" if allow_unauthenticated else "false",
     }
+    if service_account is not None:
+        if not service_account:
+            logger.error("--service-account cannot be an empty string.")
+            raise click.exceptions.Exit(2)
+        deploy_env[ENV_SERVICE_ACCOUNT] = service_account
 
-    console.info("Received deploy manifest from Reflex.")
+    logger.info("Received deploy manifest from Reflex.")
     console.print("")
     console.print(f"Source: {source_path}")
     console.print("Deploy environment:")
@@ -265,14 +393,16 @@ def deploy_command(
     console.print("─" * 60)
     console.print(deploy_script)
     console.print("─" * 60)
-    console.info(
+    logger.info(
         f"The script runs with a restricted env (only {len(DEPLOY_ENV_ALLOWLIST)} "
         "allowlisted host variables forwarded plus the deploy variables above)."
     )
-    console.info(
+    logger.info(
         "The Dockerfile is embedded in a Cloud Build config written to a "
         "tempfile; your source directory is not modified."
     )
+
+    env_vars_yaml = _format_env_vars_yaml(parsed_envs) if parsed_envs else None
 
     if dry_run:
         console.print("")
@@ -285,7 +415,23 @@ def deploy_command(
         console.print("─" * 60)
         console.print(dockerfile)
         console.print("─" * 60)
-        console.info("Dry run — nothing staged or executed.")
+        if env_vars_yaml is not None:
+            console.print("")
+            console.print(f"env-vars file contents ({len(parsed_envs)} variable(s)):")
+            console.print("─" * 60)
+            console.print(env_vars_yaml)
+            console.print("─" * 60)
+        logger.info("Dry run — nothing staged or executed.")
+        if as_json:
+            print_json({
+                "dry_run": True,
+                "source_dir": str(source_path),
+                "deploy_env": deploy_env,
+                "cloudbuild_yaml": cloudbuild_yaml,
+                "dockerfile": dockerfile,
+                "deploy_script": deploy_script,
+                "env_vars_yaml": env_vars_yaml,
+            })
         return
 
     if interactive:
@@ -293,23 +439,39 @@ def deploy_command(
             "Run the deploy script now?", choices=["y", "n"], default="y"
         )
         if answer != "y":
-            console.warn("Aborted by user.")
+            logger.warning("Aborted by user.")
             raise click.exceptions.Exit(1)
 
-    with _temp_cloudbuild_yaml(cloudbuild_yaml) as cloudbuild_path:
+    with contextlib.ExitStack() as stack:
+        cloudbuild_path = stack.enter_context(_temp_cloudbuild_yaml(cloudbuild_yaml))
+        env_overrides = {
+            **deploy_env,
+            ENV_REFLEX_CLOUDBUILD_YAML: str(cloudbuild_path),
+        }
+        if env_vars_yaml is not None:
+            env_vars_path = stack.enter_context(_temp_env_vars_yaml(env_vars_yaml))
+            env_overrides[ENV_REFLEX_ENV_VARS_FILE] = str(env_vars_path)
+
         exit_code = _run_deploy_script(
             bash_path=bash_path,
             script=deploy_script,
             cwd=source_path,
-            env_overrides={
-                **deploy_env,
-                ENV_REFLEX_CLOUDBUILD_YAML: str(cloudbuild_path),
-            },
+            env_overrides=env_overrides,
         )
+    if as_json:
+        print_json({
+            "dry_run": False,
+            "deployed": exit_code == 0,
+            "exit_code": exit_code,
+            "gcp_project": gcp_project,
+            "region": region,
+            "service_name": service_name,
+            "version": version_value,
+        })
     if exit_code != 0:
-        console.error(f"Deploy script exited with status {exit_code}.")
+        logger.error(f"Deploy script exited with status {exit_code}.")
         raise click.exceptions.Exit(exit_code)
-    console.success("Deployment finished.")
+    logger.log(log.SUCCESS, "Deployment finished.")
 
 
 def _get_active_gcp_account(gcloud_path: str) -> str | None:
@@ -337,7 +499,7 @@ def _get_active_gcp_account(gcloud_path: str) -> str | None:
             timeout=10,
         )
     except (OSError, subprocess.SubprocessError) as ex:
-        console.debug(f"Failed to query gcloud auth list: {ex}")
+        logger.debug(f"Failed to query gcloud auth list: {ex}")
         return None
     account = result.stdout.strip().splitlines()
     return account[0] if account else None
@@ -373,36 +535,36 @@ def _request_manifest(token: str) -> tuple[str, str]:
         with contextlib.suppress(ValueError):
             detail = ex.response.json().get("detail", detail)
         if ex.response.status_code == 403:
-            console.error(
+            logger.error(
                 "Reflex denied the request (403). GCP Cloud Run deploys require an "
                 "Enterprise tier subscription."
             )
         else:
-            console.error(f"Reflex rejected the manifest request: {detail}")
+            logger.error(f"Reflex rejected the manifest request: {detail}")
         raise click.exceptions.Exit(1) from ex
     except httpx.HTTPError as ex:
-        console.error(f"Failed to reach Reflex at {url}: {ex}")
+        logger.error(f"Failed to reach Reflex at {url}: {ex}")
         raise click.exceptions.Exit(1) from ex
 
     try:
         body = response.json()
     except ValueError as ex:
-        console.error("Reflex returned a non-JSON response.")
+        logger.error("Reflex returned a non-JSON response.")
         raise click.exceptions.Exit(1) from ex
 
     if not isinstance(body, dict):
-        console.error("Reflex returned an unexpected response shape.")
+        logger.error("Reflex returned an unexpected response shape.")
         raise click.exceptions.Exit(1)
 
     dockerfile = body.get(FIELD_DOCKERFILE)
     deploy_command = body.get(FIELD_DEPLOY_COMMAND)
     if not isinstance(dockerfile, str) or not dockerfile.strip():
-        console.error(
+        logger.error(
             f"Reflex response is missing a non-empty {FIELD_DOCKERFILE!r} field."
         )
         raise click.exceptions.Exit(1)
     if not isinstance(deploy_command, str) or not deploy_command.strip():
-        console.error(
+        logger.error(
             f"Reflex response is missing a non-empty {FIELD_DEPLOY_COMMAND!r} field."
         )
         raise click.exceptions.Exit(1)
@@ -531,6 +693,85 @@ def _temp_cloudbuild_yaml(contents: str):
             path.unlink()
 
 
+@contextlib.contextmanager
+def _temp_env_vars_yaml(contents: str):
+    """Write the env-vars YAML to a tempfile and yield its path; always clean up.
+
+    Args:
+        contents: The YAML body to write (one ``KEY: "value"`` line per env var).
+
+    Yields:
+        The path to the written tempfile.
+
+    """
+    fd, path_str = tempfile.mkstemp(prefix="reflex-env-vars-", suffix=".yaml")
+    path = Path(path_str)
+    try:
+        with os.fdopen(fd, "w") as fh:
+            fh.write(contents)
+        yield path
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            path.unlink()
+
+
+def _parse_envs(envfile: str | None, envs: tuple[str, ...]) -> dict[str, str]:
+    """Resolve --envfile + --env into a single dict of env vars.
+
+    Mirrors the precedence of the existing `reflex deploy` / `reflex secrets
+    update` flow: when both are provided, --envfile wins and --env is
+    discarded with a warning. Empty values are preserved as empty strings;
+    keys defined without a value in the envfile (``FOO`` with no ``=``)
+    become empty strings rather than ``None``.
+
+    Args:
+        envfile: Path to a .env file, or None.
+        envs: Tuple of ``KEY=VALUE`` strings from repeated --env flags.
+
+    Returns:
+        Dict of env var name → string value. Empty when neither input is set.
+
+    """
+    from reflex_cli.utils import hosting
+
+    if envfile and envs:
+        logger.warning("--envfile is set; ignoring --env")
+
+    if envfile:
+        try:
+            from dotenv import dotenv_values  # pyright: ignore[reportMissingImports]
+        except ImportError:
+            logger.error(
+                'The `python-dotenv` package is required for --envfile. Run `pip install "python-dotenv>=1.0.1"`.'
+            )
+            raise click.exceptions.Exit(1) from None
+        return {
+            k: (v if v is not None else "") for k, v in dotenv_values(envfile).items()
+        }
+
+    if envs:
+        return hosting.process_envs(list(envs))
+
+    return {}
+
+
+def _format_env_vars_yaml(envs: dict[str, str]) -> str:
+    """Format env vars as YAML for gcloud ``--env-vars-file``.
+
+    Uses ``json.dumps`` per value so any string — quotes, backslashes,
+    newlines, unicode — is encoded safely. JSON strings are valid YAML, so
+    the output round-trips through gcloud's YAML loader.
+
+    Args:
+        envs: Dict of env var name → string value.
+
+    Returns:
+        YAML body with one ``KEY: "value"`` line per env var.
+
+    """
+    return "".join(f"{k}: {json.dumps(v)}\n" for k, v in envs.items())
+
+
 def _run_deploy_script(
     bash_path: str,
     script: str,
@@ -567,10 +808,10 @@ def _run_deploy_script(
             cwd=cwd,
             env=env,
             check=False,
-            stdout=sys.stdout,
+            stdout=sys.stderr if log.is_stdout_reserved() else sys.stdout,
             stderr=sys.stderr,
         )
     except OSError as ex:
-        console.error(f"Failed to launch bash: {ex}")
+        logger.error(f"Failed to launch bash: {ex}")
         return 1
     return result.returncode

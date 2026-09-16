@@ -8,7 +8,7 @@ A pricing card shows the price of a product or service. It typically includes a 
 
 ## Basic
 
-```python demo exec toggle
+```python demo exec
 def feature_item(text: str) -> rx.Component:
     return rx.hstack(
         rx.icon("check", color=rx.color("grass", 9)), rx.text(text, size="4")
@@ -65,7 +65,7 @@ def pricing_card_beginner() -> rx.Component:
 
 ## Comparison cards
 
-```python demo exec toggle
+```python demo exec
 def feature_item(feature: str) -> rx.Component:
     return rx.hstack(
         rx.icon("check", color=rx.color("blue", 9), size=21),

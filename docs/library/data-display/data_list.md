@@ -21,7 +21,7 @@ DataListItem: |
       ),
       rx.data_list.item(
           rx.data_list.label("Name"),
-          rx.data_list.value(rx.heading("Developer Success", size="4")),
+          rx.data_list.value(rx.heading("Developer Success", as_="h2", size="4")),
           **props,
       ),
       rx.data_list.item(

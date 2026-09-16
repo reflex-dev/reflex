@@ -42,6 +42,30 @@ def test_figure_out_type(value, expected):
     assert figure_out_type(value) == expected
 
 
+def test_var_subclass_registration_invalidates_lookup_caches() -> None:
+    """A Var subclass registered after lookups were cached takes priority.
+
+    ``Var.to`` / ``Var.guess_type`` dispatch through cached registry lookups;
+    registering a new Var subclass must drop those caches so the new (higher
+    priority) entry wins for types it claims.
+    """
+    from reflex_base.vars.base import Var
+    from reflex_base.vars.sequence import StringVar
+
+    class FancyTestStr(str):
+        """A str subtype that later gets its own Var subclass."""
+
+    assert isinstance(Var(_js_expr="a").to(FancyTestStr), StringVar)
+
+    class FancyTestStrVar(Var, python_types=FancyTestStr):
+        """Var subclass claiming FancyTestStr."""
+
+    assert isinstance(Var(_js_expr="a").to(FancyTestStr), FancyTestStrVar)
+    assert isinstance(
+        Var(_js_expr="a", _var_type=FancyTestStr).guess_type(), FancyTestStrVar
+    )
+
+
 def test_computed_var_replace() -> None:
     class StateTest(State):
         @computed_var(cache=True)

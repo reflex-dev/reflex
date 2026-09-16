@@ -16,15 +16,21 @@ from agent_files._plugin import (
 )
 
 
+def _patch_config(monkeypatch, deploy_url: str, frontend_path: str = "/docs"):
+    """Patch the site config everywhere it is read.
+
+    Public URLs are built via ``reflex_site_shared.utils.url.public_url``, which
+    reads the config through its own module-level ``get_config`` import, so
+    patching only ``agent_files._plugin.get_config`` is not enough.
+    """
+    config = SimpleNamespace(deploy_url=deploy_url, frontend_path=frontend_path)
+    monkeypatch.setattr("agent_files._plugin.get_config", lambda: config)
+    monkeypatch.setattr("reflex_site_shared.utils.url.get_config", lambda: config)
+
+
 def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     """The docs mount exposes public-root llms.txt as /docs/llms.txt."""
-    monkeypatch.setattr(
-        "reflex_base.config.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
 
     path, content = generate_llms_txt([
         MarkdownIndexEntry(
@@ -58,9 +64,9 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
             section="MCP",
         ),
         MarkdownIndexEntry(
-            url_path=Path("ai/integrations/ai-onboarding.md"),
-            title="AI Onboarding",
-            section="AI Onboarding",
+            url_path=Path("ai/integrations/agent-toolkit.md"),
+            title="Agent Toolkit",
+            section="Agent Toolkit",
         ),
         MarkdownIndexEntry(
             url_path=Path("ai/integrations/mcp-installation.md"),
@@ -73,8 +79,8 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
             section="Skills",
         ),
         MarkdownIndexEntry(
-            url_path=Path("ai/features/ide.md"),
-            title="Reflex Build IDE",
+            url_path=Path("ai/features/editor-modes.md"),
+            title="Code and Review",
             section="AI Builder",
         ),
     ])
@@ -101,11 +107,11 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
         "- [Reflex Build: Best Practices](https://reflex.dev/docs/ai/overview/best-practices.md)"
         in content
     )
-    assert "Resend Integration" not in content
-    assert "Reflex Build IDE" not in content
-    assert "### AI Onboarding\n\n" in content
+    assert "Resend Integration" in content
+    assert "Code and Review" in content
+    assert "### Agent Toolkit\n\n" in content
     assert (
-        "- [AI Onboarding](https://reflex.dev/docs/ai/integrations/ai-onboarding.md)"
+        "- [Agent Toolkit](https://reflex.dev/docs/ai/integrations/agent-toolkit.md)"
         in content
     )
     assert "### MCP\n\n" in content
@@ -119,21 +125,15 @@ def test_generate_llms_txt_groups_docs_at_public_root(monkeypatch):
     )
     assert "### Skills\n\n" in content
     assert "- [Skills](https://reflex.dev/docs/ai/integrations/skills.md)" in content
-    assert content.index("### AI Builder") < content.index("### AI Onboarding")
-    assert content.index("### AI Onboarding") < content.index("### MCP")
+    assert content.index("### AI Builder") < content.index("### Agent Toolkit")
+    assert content.index("### Agent Toolkit") < content.index("### MCP")
     assert content.index("### MCP") < content.index("### Skills")
     assert content.index("mcp-overview.md") < content.index("mcp-installation.md")
 
 
 def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_path):
     """Generated markdown pages advertise the docs index and markdown access."""
-    monkeypatch.setattr(
-        "reflex_base.config.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="http://localhost:3000",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="http://localhost:3000")
     source = tmp_path / "overview.md"
     source.write_text(
         "# Overview\n\nBuild full-stack apps in Python.\n",
@@ -151,8 +151,9 @@ def test_generate_markdown_file_content_adds_agent_directive(monkeypatch, tmp_pa
 
     assert content.startswith(
         "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+        "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+        "remove the trailing slash from the page URL and append `.md`. "
+        "The docs home is available at [index.md](http://localhost:3000/docs/index.md).\n\n"
         "# Overview"
     )
 
@@ -161,13 +162,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
     monkeypatch, tmp_path
 ):
     """Component docs markdown includes generated API reference props tables."""
-    monkeypatch.setattr(
-        "reflex_base.config.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
     source = tmp_path / "button.md"
     source.write_text(
         "---\n"
@@ -217,13 +212,7 @@ def test_generate_markdown_file_content_appends_component_props_table(
 
 def test_generate_dynamic_api_reference_files(monkeypatch):
     """Dynamic API reference pages have generated markdown assets."""
-    monkeypatch.setattr(
-        "reflex_base.config.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
 
     raw_files = generate_dynamic_api_reference_files()
     files = dict(raw_files)
@@ -231,8 +220,9 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert Path("api-reference/var.md") in files
     assert files[Path("api-reference/var.md")].startswith(
         "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+        "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+        "remove the trailing slash from the page URL and append `.md`. "
+        "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
         "# Var\n\n"
     )
     assert "## Methods" in files[Path("api-reference/var.md")]
@@ -243,8 +233,9 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     assert Path("api-reference/eventhandler.md") in files
     assert files[Path("api-reference/eventhandler.md")].startswith(
         "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+        "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+        "remove the trailing slash from the page URL and append `.md`. "
+        "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
         "# Eventhandler\n\n"
     )
     assert Path("api-reference/event-handler.md") not in files
@@ -255,8 +246,9 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     env_vars = files[Path("api-reference/environment-variables.md")]
     assert env_vars.startswith(
         "> For AI agents: the complete documentation index is at "
-        "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-        "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+        "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+        "remove the trailing slash from the page URL and append `.md`. "
+        "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
         "# Environment Variables\n\n"
     )
     assert "`reflex.config.EnvironmentVariables`" in env_vars
@@ -271,15 +263,17 @@ def test_generate_dynamic_api_reference_files(monkeypatch):
     )
 
 
+def test_section_for_root_level_markdown_strips_extension():
+    """Root-level docs (e.g. the changelog index) get a clean section name."""
+    from agent_files._plugin import _section_for_path
+
+    assert _section_for_path(Path("changelog.md")) == "Changelog"
+    assert _section_for_path(Path("changelog/reflex-base.md")) == "Changelog"
+
+
 def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
     """llms-full.txt contains full Markdown page bodies with source URLs."""
-    monkeypatch.setattr(
-        "reflex_base.config.get_config",
-        lambda: SimpleNamespace(
-            deploy_url="https://reflex.dev",
-            frontend_path="/docs",
-        ),
-    )
+    _patch_config(monkeypatch, deploy_url="https://reflex.dev")
     introduction = tmp_path / "introduction.md"
     introduction.write_text(
         "# Introduction\n\nBuild full-stack apps in Python.\n",
@@ -314,8 +308,9 @@ def test_generate_llms_full_txt_stitches_markdown_docs(monkeypatch, tmp_path):
                     section="API Reference",
                 ),
                 "> For AI agents: the complete documentation index is at "
-                "[llms.txt](https://reflex.dev/docs/llms.txt). Markdown versions are "
-                "available by appending `.md` or sending `Accept: text/markdown`.\n\n"
+                "[llms.txt](https://reflex.dev/docs/llms.txt). For a Markdown version, "
+                "remove the trailing slash from the page URL and append `.md`. "
+                "The docs home is available at [index.md](https://reflex.dev/docs/index.md).\n\n"
                 "# Eventhandler\n\n"
                 "`reflex_base.event.EventHandler`\n",
             )
@@ -365,8 +360,49 @@ def test_generate_agent_files_emits_trailing_slash_variants():
         path for path in files if path.suffix == ".md" and path.name != ".md"
     ]
     assert markdown_paths, "expected at least one markdown asset"
+    assert (
+        files[Path("ai/integrations/ai-onboarding.md")]
+        == files[Path("ai/integrations/agent-toolkit.md")]
+    )
 
     for path in markdown_paths:
         twin = markdown_path_for_trailing_slash_url(path)
         assert twin in files, f"missing trailing-slash twin for {path}"
         assert files[twin] == files[path], f"content mismatch for {twin}"
+
+
+def test_agent_directive_only_advertises_static_markdown():
+    """Static builds must not promise unsupported content negotiation."""
+    from agent_files._plugin import MARKDOWN_DIRECTIVE
+
+    assert "Accept:" not in MARKDOWN_DIRECTIVE
+    assert "trailing slash" in MARKDOWN_DIRECTIVE
+
+
+def test_cloud_cli_markdown_matches_published_commands():
+    """CLI Markdown and the agent index must include the rendered command source."""
+    from agent_files._plugin import generate_agent_files
+    from reflex_docs.pages.docs.cloud_cliref import modules
+
+    files = dict(generate_agent_files())
+    for name, source in modules.items():
+        path = Path(f"hosting/cli/{name}.md")
+        assert path in files
+        assert source.strip() in files[path]
+        assert f"/docs/{path}" in files[Path("llms.txt")]
+
+
+def test_txt_assets_do_not_duplicate_frontend_mount(monkeypatch):
+    """TXT files are served beneath the frontend mount exactly once."""
+    from agent_files._plugin import AgentFilesPlugin
+
+    _patch_config(monkeypatch, "https://reflex.dev")
+    monkeypatch.setattr(
+        "agent_files._plugin.generate_agent_files",
+        lambda: ((Path("llms.txt"), "index"), (Path("llms-full.txt"), "full")),
+    )
+    assets = dict(AgentFilesPlugin().get_static_assets())
+    assert assets == {
+        Path("public/llms.txt"): "index",
+        Path("public/llms-full.txt"): "full",
+    }

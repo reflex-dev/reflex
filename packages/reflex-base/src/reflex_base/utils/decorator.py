@@ -1,9 +1,12 @@
 """Decorator utilities."""
 
 import functools
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import ParamSpec, TypeVar, cast
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
@@ -120,9 +123,7 @@ def cached_procedure(
                 _write_cached_procedure_file(new_payload, cache_file, new_value)
                 return new_value
 
-            from reflex_base.utils import console
-
-            console.debug(
+            logger.debug(
                 f"Using cached value for {func.__name__} with payload: {new_payload}"
             )
             return cast("Picklable", value)

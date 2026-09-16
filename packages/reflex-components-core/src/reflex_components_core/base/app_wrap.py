@@ -7,7 +7,13 @@ from reflex_components_core.base.fragment import Fragment
 
 
 class AppWrap(Fragment):
-    """Top-level component that wraps the entire app."""
+    """Innermost (priority 0) element of the python app-wrap chain.
+
+    Renders as ``jsx(Fragment, {}, children)`` — the chain ends here, with
+    the route ``children`` JS variable flowing through. Same-priority
+    siblings (e.g. ``StickyBadge``) get appended via the chain reducer and
+    sit alongside ``children`` inside this Fragment.
+    """
 
     @classmethod
     def create(cls) -> Component:

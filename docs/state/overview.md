@@ -5,7 +5,11 @@ import reflex as rx
 def definition(title, *children):
     return rx.vstack(
         rx.heading(
-            title, font_size="1em", font_weight="bold", color=rx.color("mauve", 12)
+            title,
+            as_="h2",
+            font_size="1em",
+            font_weight="bold",
+            color=rx.color("mauve", 12),
         ),
         *children,
         color=rx.color("mauve", 10),
@@ -134,6 +138,7 @@ class ExampleState(rx.State):
 def index():
     return rx.heading(
         "Welcome to Reflex!",
+        as_="h2",
         # Event handlers can be bound to event triggers.
         on_click=ExampleState.next_color,
         # State vars can be bound to component props.

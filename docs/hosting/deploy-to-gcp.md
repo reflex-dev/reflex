@@ -4,12 +4,19 @@ import reflex as rx
 
 # Deploy to GCP Cloud Run
 
-The `reflex cloud deploy --gcp` command deploys a Reflex app to your own [Google Cloud Run](https://cloud.google.com/run) service. Reflex Cloud fetches a Cloud Run-ready Dockerfile and a `gcloud` deploy script, wraps the Dockerfile inside a [Cloud Build config (`cloudbuild.yaml`)](https://cloud.google.com/build/docs/build-config-file-schema), and runs the script against the Google Cloud project you specify. The image is built on Cloud Build (so it works from any host OS, including Apple Silicon) and pushed to Artifact Registry. Your project tree is never modified — the Dockerfile lives only inside the build config that's submitted to Cloud Build.
+The `reflex cloud deploy --gcp` command deploys a Reflex app to your own [Google Cloud Run](https://cloud.google.com/run) service.
+
+The CLI fetches a Cloud Run-ready Dockerfile and deploy script, then submits the build through [Cloud Build](https://cloud.google.com/build/docs/build-config-file-schema). Google Cloud stores the image in Artifact Registry and runs it on Cloud Run. The temporary deployment files do not modify your project tree.
 
 ```md alert info
-# Enterprise tier only.
+# Enterprise tier only
+Self-deploying to GCP Cloud Run is part of the **Enterprise tier** of Reflex Cloud. Contact [sales@reflex.dev](mailto:sales@reflex.dev) to upgrade.
+```
 
-Self-deploying to GCP Cloud Run is part of the **Enterprise tier** of Reflex Cloud. The control plane will return `403` to non-Enterprise tokens, and the CLI surfaces a clear error pointing at this. Contact [sales@reflex.dev](mailto:sales@reflex.dev) to upgrade.
+```md alert warning
+# Self-service vs. managed GCP deploys
+
+This page covers the **self-service** `reflex cloud deploy --gcp` command, which builds and deploys from your own machine using your local `gcloud`. If you'd rather connect a GCP account to your organization once and deploy with the normal `reflex deploy` command — keeping the managed lifecycle (history, rollback, scaling, logs) — see [Cloud Providers](/docs/hosting/cloud-providers/).
 ```
 
 ## Prerequisites
@@ -39,13 +46,13 @@ reflex cloud deploy --gcp \
 
 The CLI will:
 
-1. Authenticate against Reflex Cloud and fetch the deploy manifest (Dockerfile + `gcloud` script).
-2. Generate a `cloudbuild.yaml` that embeds the Dockerfile as a build step, write it to a tempfile, and rewrite the script's `gcloud builds submit` invocation to use `--config="$REFLEX_CLOUDBUILD_YAML"`.
-3. Print the (rewritten) script so you can review it.
-4. Ask for confirmation, then run the script with `cwd=` your source directory: enable the required APIs, create the Artifact Registry repository, build the image on Cloud Build (which materializes the Dockerfile inside the build step from the `cloudbuild.yaml`), and deploy a public Cloud Run service.
-5. Delete the tempfile after the script finishes.
+1. Authenticate with Reflex Cloud and fetch the deployment files.
+2. Create a temporary `cloudbuild.yaml`.
+3. Print the commands for review.
+4. Ask for confirmation, then enable the required APIs, create the Artifact Registry repository, build the image, and deploy the Cloud Run service.
+5. Delete the temporary file.
 
-Your source tree is never written to — if you have an existing `Dockerfile` in `--source`, it's left in place and ignored. The Reflex-provided Dockerfile only exists inside the `cloudbuild.yaml` tempfile (and inside the Cloud Build job).
+An existing `Dockerfile` in `--source` remains unchanged and is not used by this workflow.
 
 When it's done, you'll get a service URL like `https://my-reflex-app-<project-number>.us-central1.run.app`.
 

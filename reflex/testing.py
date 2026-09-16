@@ -8,12 +8,12 @@ import contextvars
 import dataclasses
 import functools
 import inspect
+import logging
 import os
 import platform
 import re
 import signal
 import socket
-import socketserver
 import subprocess
 import sys
 import textwrap
@@ -21,15 +21,12 @@ import threading
 import time
 import types
 from collections.abc import Callable, Coroutine, Sequence
-from copy import deepcopy
-from http.server import SimpleHTTPRequestHandler
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
-import uvicorn
-from reflex_base.components.component import CUSTOM_COMPONENTS, CustomComponent
-from reflex_base.config import get_config
+from reflex_base.components.memo import MEMOS
+from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.types import ASGIApp
@@ -38,15 +35,18 @@ from typing_extensions import Self
 import reflex
 import reflex.reflex
 import reflex.utils.build
+import reflex.utils.exec
 import reflex.utils.format
 import reflex.utils.prerequisites
 import reflex.utils.processes
-from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.istate.shared import SharedState as SharedState  # To register it.
 from reflex.state import reload_state_module
-from reflex.utils import console, js_runtimes
+from reflex.utils import js_runtimes
+from reflex.utils.exec import _with_development_condition
 from reflex.utils.export import export
 from reflex.utils.token_manager import TokenManager
+
+logger = logging.getLogger(__name__)
 
 try:
     from selenium import webdriver
@@ -60,12 +60,34 @@ try:
 except ImportError:
     has_selenium = False
 
+if TYPE_CHECKING:
+    import uvicorn
+
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
 FRONTEND_POPEN_ARGS = {}
 T = TypeVar("T")
 TimeoutType = int | float | None
+
+
+def _get_uvicorn():
+    """Import uvicorn for an AppHarness server.
+
+    Returns:
+        The imported uvicorn module.
+    """
+    try:
+        import uvicorn
+    except ImportError as exc:
+        msg = (
+            "AppHarness backend support requires `uvicorn`. Install it with "
+            "`pip install 'reflex[testing]'`."
+        )
+        raise ImportError(msg) from exc
+    return uvicorn
+
+
 if platform.system() == "Windows":
     FRONTEND_POPEN_ARGS["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
     FRONTEND_POPEN_ARGS["shell"] = True
@@ -240,11 +262,15 @@ class AppHarness:
     def _initialize_app(self):
         # disable telemetry reporting for tests
         os.environ["REFLEX_TELEMETRY_ENABLED"] = "false"
-        # Reset global memo registries so previous AppHarness apps do not
+        # Pin dev mode like `reflex run` does. A previous AppHarnessProd in
+        # this process ran export(), which sets REFLEX_ENV_MODE=prod for the
+        # whole process; compiling a dev app in leaked prod mode enables route
+        # prerendering, so the dev server serves prerendered page HTML whose
+        # hydration failures break event delivery (notably under vite >= 8.2).
+        environment.REFLEX_ENV_MODE.set(reflex.constants.Env.DEV)
+        # Reset the global memo registry so previous AppHarness apps do not
         # leak compiled component definitions into the next test app.
-        CUSTOM_COMPONENTS.clear()
-        EXPERIMENTAL_MEMOS.clear()
-        CustomComponent.create().get_component.cache_clear()
+        MEMOS.clear()
         self.app_path.mkdir(parents=True, exist_ok=True)
         if self.app_source is not None:
             app_globals = self._get_globals_from_signature(self.app_source)
@@ -275,10 +301,10 @@ class AppHarness:
                 AppHarness._base_registration_context = (
                     RegistrationContext.ensure_context()
                 )
-            new_registration_context = deepcopy(AppHarness._base_registration_context)
+            new_registration_context = AppHarness._base_registration_context.fork()
             self._registry_token = RegistrationContext.set(new_registration_context)
             # ensure config and app are reloaded when testing different app
-            config = get_config(reload=True)
+            config = reload_config()
             # Ensure the AppHarness test does not skip State assignment due to running via pytest
             os.environ.pop(reflex.constants.PYTEST_CURRENT_TEST, None)
             os.environ[reflex.constants.APP_HARNESS_FLAG] = "true"
@@ -336,6 +362,7 @@ class AppHarness:
         if self.app_asgi is None:
             msg = "App was not initialized."
             raise RuntimeError(msg)
+        uvicorn = _get_uvicorn()
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_asgi,
@@ -380,7 +407,14 @@ class AppHarness:
                 "dev",
             ],
             cwd=self.app_path / reflex.utils.prerequisites.get_web_dir(),
-            env={"PORT": "0", "NO_COLOR": "1"},
+            # The development condition keeps react-router's dev CLI from
+            # re-executing itself, which trips its restart guard on node-less
+            # (bun-only) installs.
+            env=_with_development_condition({
+                **os.environ,
+                "PORT": "0",
+                "NO_COLOR": "1",
+            }),
             **FRONTEND_POPEN_ARGS,
         )
 
@@ -411,7 +445,7 @@ class AppHarness:
                     )
                 # catch I/O operation on closed file.
                 except ValueError as e:
-                    console.error(str(e))
+                    logger.debug(str(e))
                     break
                 if not line:
                     break
@@ -458,7 +492,14 @@ class AppHarness:
 
     def stop(self) -> None:
         """Stop the frontend and backend servers."""
-        import psutil
+        try:
+            import psutil
+        except ImportError as exc:
+            msg = (
+                "AppHarness cleanup requires `psutil`. Install it with "
+                "`pip install 'reflex[testing]'`."
+            )
+            raise ImportError(msg) from exc
 
         # Quit browsers first to avoid any lingering events being sent during shutdown.
         for driver in self._frontends:
@@ -801,115 +842,29 @@ class AppHarness:
         )
 
 
-class SimpleHTTPRequestHandlerCustomErrors(SimpleHTTPRequestHandler):
-    """SimpleHTTPRequestHandler with custom error page handling."""
-
-    def __init__(self, *args, error_page_map: dict[int, Path], **kwargs):
-        """Initialize the handler.
-
-        Args:
-            error_page_map: map of error code to error page path
-            *args: passed through to superclass
-            **kwargs: passed through to superclass
-        """
-        self.error_page_map = error_page_map
-        super().__init__(*args, **kwargs)
-
-    def send_error(
-        self, code: int, message: str | None = None, explain: str | None = None
-    ) -> None:
-        """Send the error page for the given error code.
-
-        If the code matches a custom error page, then message and explain are
-        ignored.
-
-        Args:
-            code: the error code
-            message: the error message
-            explain: the error explanation
-        """
-        error_page = self.error_page_map.get(code)
-        if error_page:
-            self.send_response(code, message)
-            self.send_header("Connection", "close")
-            body = error_page.read_bytes()
-            self.send_header("Content-Type", self.error_content_type)
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-        else:
-            super().send_error(code, message, explain)
-
-
-class Subdir404TCPServer(socketserver.TCPServer):
-    """TCPServer for SimpleHTTPRequestHandlerCustomErrors that serves from a subdir."""
-
-    def __init__(
-        self,
-        *args,
-        root: Path,
-        error_page_map: dict[int, Path] | None,
-        **kwargs,
-    ):
-        """Initialize the server.
-
-        Args:
-            root: the root directory to serve from
-            error_page_map: map of error code to error page path
-            *args: passed through to superclass
-            **kwargs: passed through to superclass
-        """
-        self.root = root
-        self.error_page_map = error_page_map or {}
-        super().__init__(*args, **kwargs)
-
-    def finish_request(self, request: socket.socket, client_address: tuple[str, int]):
-        """Finish one request by instantiating RequestHandlerClass.
-
-        Args:
-            request: the requesting socket
-            client_address: (host, port) referring to the client's address.
-        """
-        self.RequestHandlerClass(
-            request,
-            client_address,
-            self,
-            directory=str(self.root),  # pyright: ignore [reportCallIssue]
-            error_page_map=self.error_page_map,  # pyright: ignore [reportCallIssue]
-        )
-
-
 class AppHarnessProd(AppHarness):
     """AppHarnessProd executes a reflex app in-process for testing.
 
     In prod mode, instead of running `react-router dev` the app is exported as static
-    files and served via the builtin python http.server with custom 404 redirect
-    handling. Additionally, the backend runs in multi-worker mode.
+    files and served via Starlette StaticFiles in a dedicated Uvicorn server.
+    Additionally, the backend runs in multi-worker mode.
     """
 
     frontend_thread: threading.Thread | None = None
-    frontend_server: Subdir404TCPServer | None = None
+    frontend_server: uvicorn.Server | None = None
 
     def _run_frontend(self):
-        web_root = (
-            self.app_path
-            / reflex.utils.prerequisites.get_web_dir()
-            / reflex.constants.Dirs.STATIC
+        uvicorn = _get_uvicorn()
+        with chdir(self.app_path):
+            frontend_app = reflex.utils.exec._frontend_prod_app()
+        self.frontend_server = uvicorn.Server(
+            uvicorn.Config(
+                app=frontend_app,
+                host="127.0.0.1",
+                port=0,
+            )
         )
-        config = reflex.config.get_config()
-        with Subdir404TCPServer(
-            ("", 0),
-            SimpleHTTPRequestHandlerCustomErrors,
-            root=web_root,
-            error_page_map={
-                404: web_root / config.prepend_frontend_path("/404.html").lstrip("/"),
-            },
-        ) as self.frontend_server:
-            frontend_path = config.frontend_path.strip("/")
-            self.frontend_url = "http://localhost:{1}".format(
-                *self.frontend_server.socket.getsockname()
-            ) + (f"/{frontend_path}/" if frontend_path else "/")
-            self.frontend_server.serve_forever()
+        self.frontend_server.run()
 
     def _start_frontend(self):
         # Set up the frontend.
@@ -942,16 +897,33 @@ class AppHarnessProd(AppHarness):
         self.frontend_thread.start()
 
     def _wait_frontend(self):
-        self._poll_for(lambda: self.frontend_server is not None)
-        if self.frontend_server is None or not self.frontend_server.socket.fileno():
+        self._poll_for(
+            lambda: (
+                self.frontend_server is not None
+                and getattr(self.frontend_server, "servers", [])
+                and self.frontend_server.servers[0].sockets
+            )
+        )
+        if (
+            self.frontend_server is None
+            or not self.frontend_server.servers[0].sockets
+            or not self.frontend_server.servers[0].sockets[0].fileno()
+        ):
             msg = "Frontend did not start"
             raise RuntimeError(msg)
+        frontend_socket = self.frontend_server.servers[0].sockets[0]
+        config = get_config()
+        self.frontend_url = "http://{}:{}".format(
+            *frontend_socket.getsockname()
+        ) + config.prepend_frontend_path("/")
+        config.deploy_url = self.frontend_url
 
     def _start_backend(self):
         if self.app_asgi is None:
             msg = "App was not initialized."
             raise RuntimeError(msg)
         environment.REFLEX_SKIP_COMPILE.set(True)
+        uvicorn = _get_uvicorn()
         self.backend = uvicorn.Server(
             uvicorn.Config(
                 app=self.app_asgi,
@@ -982,9 +954,9 @@ class AppHarnessProd(AppHarness):
             environment.REFLEX_SKIP_COMPILE.set(None)
 
     def stop(self):
-        """Stop the frontend python webserver."""
-        super().stop()
+        """Stop the frontend and backend servers."""
         if self.frontend_server is not None:
-            self.frontend_server.shutdown()
+            self.frontend_server.should_exit = True
+        super().stop()
         if self.frontend_thread is not None:
             self.frontend_thread.join()

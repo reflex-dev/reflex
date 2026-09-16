@@ -2,49 +2,62 @@
 
 from __future__ import annotations
 
+import collections
+import dataclasses
 import json
+import logging
 import sys
 from collections.abc import Callable, Iterable, Sequence
 from inspect import getmodule
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.components.component import (
-    CUSTOM_COMPONENTS,
     BaseComponent,
     Component,
     ComponentStyle,
-    CustomComponent,
     evaluate_style_namespaces,
+)
+from reflex_base.components.memo import (
+    MEMOS,
+    MemoComponentDefinition,
+    MemoDefinition,
+    MemoFunctionDefinition,
+    create_component_memo,
+    reset_memo_component_classes,
 )
 from reflex_base.config import get_config
 from reflex_base.constants.compiler import PageNames, ResetStylesheet
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext, Plugin
-from reflex_base.style import SYSTEM_COLOR_MODE
+from reflex_base.registry import RegistrationContext, _default_bundled_libraries
+from reflex_base.utils import log, memo_paths
 from reflex_base.utils.exceptions import ReflexError
 from reflex_base.utils.format import to_title_case
-from reflex_base.utils.imports import ImportVar
+from reflex_base.utils.imports import (
+    ABSOLUTE_IMPORT_PREFIXES,
+    ImportVar,
+    ParsedImportDict,
+)
 from reflex_base.vars.base import LiteralVar, Var
+from reflex_base.vars.sequence import LiteralStringVar
 from reflex_components_core.base.app_wrap import AppWrap
 from reflex_components_core.base.fragment import Fragment
 from reflex_components_radix.plugin import RadixThemesPlugin
-from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
+from rich.progress import Progress
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.experimental.memo import (
-    EXPERIMENTAL_MEMOS,
-    ExperimentalMemoComponentDefinition,
-    ExperimentalMemoDefinition,
-    ExperimentalMemoFunctionDefinition,
-)
+from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
+from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 from reflex.state import BaseState, code_uses_state_contexts
 from reflex.utils import console, frontend_skeleton, path_ops, prerequisites
 from reflex.utils.exec import get_compile_context, is_prod_mode
 from reflex.utils.prerequisites import get_web_dir
+
+logger = logging.getLogger(__name__)
 
 RADIX_THEMES_STYLESHEET = "@radix-ui/themes/styles.css"
 
@@ -80,11 +93,7 @@ def _extend_imports_in_place(
     for lib, fields in (
         import_dict if isinstance(import_dict, tuple) else import_dict.items()
     ):
-        lib = (
-            "$" + lib
-            if lib.startswith(("/utils/", "/components/", "/styles/", "/public/"))
-            else lib
-        )
+        lib = "$" + lib if lib.startswith(ABSOLUTE_IMPORT_PREFIXES) else lib
         target_fields = target.setdefault(lib, [])
         if isinstance(fields, (list, tuple, set)):
             target_fields.extend(
@@ -125,25 +134,61 @@ def _normalize_library_name(lib: str) -> str:
     """
     if lib == "react":
         return "React"
-    return lib.replace("$/", "").replace("@", "").replace("/", "_").replace("-", "_")
+    return (
+        lib
+        .replace("$/", "")
+        .replace("@", "")
+        .replace("/", "_")
+        .replace("-", "_")
+        .replace(".", "_")
+    )
 
 
-def _compile_app(app_root: Component) -> str:
+def _get_window_libraries() -> list[tuple[str, str]]:
+    """Build distinct JavaScript aliases for bundled libraries and subpaths.
+
+    Returns:
+        Library aliases paired with their original module paths.
+    """
+    used_aliases: set[str] = set()
+    window_libraries: list[tuple[str, str]] = []
+    for library in dict.fromkeys(
+        RegistrationContext.ensure_context().bundled_libraries
+    ):
+        base_alias = _normalize_library_name(library)
+        alias = base_alias
+        suffix = 2
+        while alias in used_aliases:
+            alias = f"{base_alias}_{suffix}"
+            suffix += 1
+        used_aliases.add(alias)
+        window_libraries.append((alias, library))
+    return window_libraries
+
+
+def _compile_app(
+    app_root: Component, hydrate_fallback_export: str | None = None
+) -> str:
     """Compile the app template component.
 
     Args:
         app_root: The app root to compile.
+        hydrate_fallback_export: The exported name of the hydrate-fallback memo
+            component to re-export as ``HydrateFallback``, or None for no fallback.
 
     Returns:
         The compiled app.
     """
-    from reflex_base.components.dynamic import bundled_libraries
-
-    window_libraries = [
-        (_normalize_library_name(name), name) for name in bundled_libraries
-    ]
-
-    window_libraries_deduped = list(dict.fromkeys(window_libraries))
+    window_libraries = _get_window_libraries()
+    lazy_window_libraries = []
+    if get_config().frontend_lazy_bundled_libraries:
+        core_libraries = set(_default_bundled_libraries())
+        lazy_window_libraries = [
+            library for library in window_libraries if library[1] not in core_libraries
+        ]
+        window_libraries = [
+            library for library in window_libraries if library[1] in core_libraries
+        ]
 
     app_root_imports = app_root._get_all_imports()
     _apply_common_imports(app_root_imports)
@@ -152,9 +197,11 @@ def _compile_app(app_root: Component) -> str:
         imports=utils.compile_imports(app_root_imports),
         custom_codes=app_root._get_all_custom_code(),
         hooks=app_root._get_all_hooks(),
-        window_libraries=window_libraries_deduped,
+        window_libraries=window_libraries,
+        lazy_window_libraries=lazy_window_libraries,
         render=app_root.render(),
         dynamic_imports=app_root._get_all_dynamic_imports(),
+        hydrate_fallback_export=hydrate_fallback_export,
     )
 
 
@@ -170,41 +217,81 @@ def _compile_theme(theme: str) -> str:
     return templates.theme_template(theme=theme)
 
 
-def _compile_contexts(state: type[BaseState] | None, theme: Component | None) -> str:
+def _resolve_default_color_mode(theme: Component | None) -> str:
+    """Resolve the app's compile-time default color mode.
+
+    An explicit theme appearance ("light"/"dark") takes precedence over the
+    ``Config.default_color_mode`` option; "inherit", no appearance, or a
+    non-literal appearance Var falls back to the config value.
+
+    Args:
+        theme: The top-level app theme, if any.
+
+    Returns:
+        One of "system", "light", or "dark".
+    """
+    appearance = getattr(theme, "appearance", None)
+    if appearance is not None:
+        appearance_var = LiteralVar.create(appearance)
+        if (
+            isinstance(appearance_var, LiteralStringVar)
+            and appearance_var._var_value != "inherit"
+        ):
+            return appearance_var._var_value
+    return get_config().default_color_mode
+
+
+def _compile_contexts(
+    state: type[BaseState] | None,
+    theme: Component | None,
+    *,
+    component_imports: ParsedImportDict | None = None,
+) -> str:
     """Compile the initial state and contexts.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        component_imports: Optional accumulator for initial component dependencies.
 
     Returns:
         The compiled context file.
     """
-    appearance = getattr(theme, "appearance", None)
-    if appearance is None or str(LiteralVar.create(appearance)) == '"inherit"':
-        appearance = LiteralVar.create(SYSTEM_COLOR_MODE)
+    default_color_mode = str(LiteralVar.create(_resolve_default_color_mode(theme)))
+    disable_react_owner_stacks = (
+        not is_prod_mode() and not environment.REFLEX_REACT_OWNER_STACKS.get()
+    )
+    initial_state, initial_state_json = (
+        utils._compile_initial_state(state, component_imports=component_imports)
+        if state
+        else (None, None)
+    )
 
     return (
         templates.context_template(
-            initial_state=utils.compile_state(state),
+            initial_state=initial_state,
+            initial_state_json=initial_state_json,
             state_name=state.get_name(),
             client_storage=utils.compile_client_storage(state),
             is_dev_mode=not is_prod_mode(),
-            default_color_mode=str(appearance),
+            default_color_mode=default_color_mode,
+            disable_react_owner_stacks=disable_react_owner_stacks,
         )
         if state
         else templates.context_template(
             is_dev_mode=not is_prod_mode(),
-            default_color_mode=str(appearance),
+            default_color_mode=default_color_mode,
+            disable_react_owner_stacks=disable_react_owner_stacks,
         )
     )
 
 
-def _compile_page(component: BaseComponent) -> str:
+def _compile_page(component: BaseComponent, route: str) -> str:
     """Compile the component.
 
     Args:
         component: The component to compile.
+        route: The route the page is compiled for.
 
     Returns:
         The compiled component.
@@ -220,6 +307,7 @@ def _compile_page(component: BaseComponent) -> str:
         custom_codes=component._get_all_custom_code(),
         hooks=component._get_all_hooks(),
         render=component.render(),
+        route=route,
     )
 
 
@@ -361,20 +449,28 @@ def _compile_root_stylesheet(
                 from sass import compile as sass_compile
 
                 target.write_text(
-                    data=sass_compile(
-                        filename=str(stylesheet),
-                        output_style="compressed",
+                    # libsass is untyped; compiling from a filename returns the CSS.
+                    data=cast(
+                        "str",
+                        sass_compile(
+                            filename=str(stylesheet),
+                            output_style="compressed",
+                        ),
                     ),
                     encoding="utf8",
                 )
             except ImportError:
                 failed_to_import_sass = True
 
-        str_target_path = "./" + str(target_path)
+        # Use POSIX separators: this string is emitted verbatim into a CSS
+        # `@import url(...)`, where a backslash is an escape introducer, not a
+        # path separator, so `str(target_path)` would break nested stylesheets
+        # on Windows.
+        str_target_path = "./" + target_path.as_posix()
         sheets.append(str_target_path) if str_target_path not in sheets else None
 
     if failed_to_import_sass:
-        console.error(
+        logger.error(
             'The `libsass` package is required to compile sass/scss stylesheet files. Run `pip install "libsass>=0.23.0"`.'
         )
 
@@ -393,78 +489,138 @@ def _compile_component(component: Component) -> str:
     return templates.component_template(component=component)
 
 
+@dataclasses.dataclass
+class _MemoGroup:
+    """Accumulator for memos that share a mirrored output path."""
+
+    components: list[dict] = dataclasses.field(default_factory=list)
+    functions: list[dict] = dataclasses.field(default_factory=list)
+    imports: dict[str, list[ImportVar]] = dataclasses.field(default_factory=dict)
+    dynamic_imports: list[str] = dataclasses.field(default_factory=list)
+    custom_code: list[str] = dataclasses.field(default_factory=list)
+
+    def add_component(
+        self, render: dict, memo_imports: dict[str, list[ImportVar]]
+    ) -> None:
+        self.components.append(render)
+        _extend_imports_in_place(self.imports, memo_imports)
+        self.dynamic_imports.extend(sorted(render.get("dynamic_imports", []) or []))
+        self.custom_code.extend(render.get("custom_code", []) or [])
+
+    def add_function(
+        self, render: dict, memo_imports: dict[str, list[ImportVar]]
+    ) -> None:
+        self.functions.append(render)
+        _extend_imports_in_place(self.imports, memo_imports)
+
+
+# Imports every memo module needs regardless of its body: ``isTrue`` for prop
+# coercion. The component wrapper import (``memo`` from React by default)
+# rides on each definition's ``wrapper`` var data instead, so a module whose
+# memos swap or drop the default wrapper doesn't import it. Shared by the
+# grouped and un-mirrored compile paths so they can't drift apart.
+_MEMO_BASE_IMPORTS: dict[str, list[ImportVar]] = {
+    f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
+}
+
+
 def _compile_memo_components(
-    components: Iterable[CustomComponent],
-    experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
+    memos: Iterable[MemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile each memo/custom-component as its own module plus an index.
+    """Compile memos grouped by their source module's mirrored output path.
 
-    Each memo lands in ``.web/<components>/<name>.jsx`` with only the imports
-    it actually uses. Experimental memo wrappers declare their ``library`` as
-    that per-memo file path so page-side imports resolve directly to the
-    individual module.
-
-    The ``$/utils/components`` index only re-exports the legacy
-    ``@rx.memo`` custom components, which are the ones app-level code
-    (``root.jsx``) imports by name. Keeping experimental memos out of the
-    index is what lets root's ``import * as utils_components`` avoid
-    transitively dragging every page-specific memo into the always-loaded
-    chunk — the tree-shaking win of per-memo files relies on that.
+    Memos that captured a source module land in a single combined file at
+    ``.web/app_components/<segments>.jsx`` so the page-side import surface
+    matches the source layout. Memos that can't be mirrored (``__main__``,
+    unsafe module names) fall back to one file per memo at
+    ``.web/utils/components/<name>.jsx`` that page-side code imports directly.
 
     Args:
-        components: The components to compile.
-        experimental_memos: The experimental memos to compile.
+        memos: The memos to compile.
 
     Returns:
-        A list of ``(path, code)`` pairs to write — one per memo plus one
-        index — and the aggregated imports across all memo modules.
+        A list of ``(path, code)`` pairs to write and the aggregated imports
+        across all memo modules.
     """
-    per_memo_files: list[tuple[str, str]] = []
-    # Only legacy custom components go through the index: they are the ones
-    # root.jsx/custom code imports by name from ``$/utils/components``.
-    # Experimental memos declare their library per-file (see
-    # ``_get_experimental_memo_component_class``) so pages import them
-    # directly and the index stays small.
-    index_entries: list[tuple[str, str]] = []
+    output_files: list[tuple[str, str]] = []
     aggregate_imports: dict[str, list[ImportVar]] = {}
+    unmirrored_files: list[tuple[str, str]] = []
+    unmirrored_base_dir = utils.get_memo_components_dir()
+    groups: collections.defaultdict[tuple[str, ...], _MemoGroup] = (
+        collections.defaultdict(_MemoGroup)
+    )
 
-    base_dir = utils.get_memo_components_dir()
-
-    for component in components:
-        component_render, component_imports = utils.compile_custom_component(component)
-        name = component_render["name"]
-        code, file_imports = _compile_single_memo_component(
-            component_render, component_imports
-        )
-        path = _memo_component_file_path(base_dir, name)
-        specifier = _memo_component_index_specifier(name)
-        per_memo_files.append((path, code))
-        index_entries.append((name, specifier))
+    def _emit_unmirrored(
+        compile_fn: Callable[[dict, dict], tuple[str, dict[str, list[ImportVar]]]],
+        render: dict,
+        render_imports: dict,
+    ) -> None:
+        code, file_imports = compile_fn(render, render_imports)
+        unmirrored_files.append((
+            _memo_component_file_path(unmirrored_base_dir, render["name"]),
+            code,
+        ))
         _extend_imports_in_place(aggregate_imports, file_imports)
 
-    for memo in experimental_memos:
-        if isinstance(memo, ExperimentalMemoComponentDefinition):
+    for memo in memos:
+        if isinstance(memo, MemoComponentDefinition):
             memo_render, memo_imports = utils.compile_experimental_component_memo(memo)
-            name = memo_render["name"]
-            code, file_imports = _compile_single_memo_component(
-                memo_render, memo_imports
-            )
-            path = _memo_component_file_path(base_dir, name)
-            per_memo_files.append((path, code))
-            _extend_imports_in_place(aggregate_imports, file_imports)
-        elif isinstance(memo, ExperimentalMemoFunctionDefinition):
+            segments = memo_paths.module_to_mirrored_segments(memo.source_module)
+            if segments is None:
+                _emit_unmirrored(
+                    _compile_single_memo_component, memo_render, memo_imports
+                )
+            else:
+                groups[segments].add_component(memo_render, memo_imports)
+        elif isinstance(memo, MemoFunctionDefinition):
             memo_render, memo_imports = utils.compile_experimental_function_memo(memo)
-            name = memo_render["name"]
-            code, file_imports = _compile_single_memo_function(
-                memo_render, memo_imports
-            )
-            path = _memo_component_file_path(base_dir, name)
-            per_memo_files.append((path, code))
-            _extend_imports_in_place(aggregate_imports, file_imports)
+            segments = memo_paths.module_to_mirrored_segments(memo.source_module)
+            if segments is None:
+                _emit_unmirrored(
+                    _compile_single_memo_function, memo_render, memo_imports
+                )
+            else:
+                groups[segments].add_function(memo_render, memo_imports)
 
-    index_path = utils.get_components_path()
-    index_code = templates.memo_index_template(index_entries)
-    return [(index_path, index_code), *per_memo_files], aggregate_imports
+    if groups:
+        _extend_imports_in_place(aggregate_imports, _MEMO_BASE_IMPORTS)
+        _apply_common_imports(aggregate_imports)
+
+    # Maps a case-folded output path to the module that claimed it, so two
+    # modules differing only by case (which collide on case-insensitive
+    # filesystems) are caught instead of one silently overwriting the other.
+    claimed_paths: dict[str, str] = {}
+    for segments, group in groups.items():
+        module_path = utils.get_memo_module_path(segments)
+        module_name = ".".join(segments)
+        case_key = module_path.casefold()
+        if (clash := claimed_paths.get(case_key)) is not None:
+            msg = (
+                f"Memoized component modules {clash!r} and {module_name!r} both "
+                f"mirror to {module_path!r} (their paths differ only by case), "
+                f"which collides on case-insensitive filesystems. Rename one of "
+                f"the source modules."
+            )
+            raise ReflexError(msg)
+        claimed_paths[case_key] = module_name
+        # Strip self-imports — when memos in this group reference each other,
+        # their compiled imports point at this group's own mirrored specifier.
+        # Importing from the same file would shadow the module's own exports.
+        self_specifier = memo_paths.mirrored_library_specifier(segments)
+        group.imports.pop(self_specifier, None)
+        merged_imports = utils.merge_imports(_MEMO_BASE_IMPORTS, group.imports)
+        _apply_common_imports(merged_imports)
+        code = templates.memo_components_template(
+            imports=utils.compile_imports(merged_imports),
+            components=group.components,
+            functions=group.functions,
+            dynamic_imports=sorted(set(group.dynamic_imports)),
+            custom_codes=list(dict.fromkeys(group.custom_code)),
+        )
+        output_files.append((module_path, code))
+        _extend_imports_in_place(aggregate_imports, group.imports)
+
+    return [*unmirrored_files, *output_files], aggregate_imports
 
 
 def _compile_single_memo_component(
@@ -481,13 +637,7 @@ def _compile_single_memo_component(
     Returns:
         The file contents and the full import dict used to compile it.
     """
-    imports = utils.merge_imports(
-        {
-            "react": [ImportVar(tag="memo")],
-            f"$/{constants.Dirs.STATE_PATH}": [ImportVar(tag="isTrue")],
-        },
-        component_imports,
-    )
+    imports = utils.merge_imports(_MEMO_BASE_IMPORTS, component_imports)
     _apply_common_imports(imports)
     code = templates.memo_single_component_template(
         imports=utils.compile_imports(imports),
@@ -532,22 +682,11 @@ def _memo_component_file_path(base_dir: str, name: str) -> str:
     return str(Path(base_dir) / f"{name}{constants.Ext.JSX}")
 
 
-def _memo_component_index_specifier(name: str) -> str:
-    """Return the module specifier the index uses to re-export a memo.
-
-    Args:
-        name: The memo's export name.
-
-    Returns:
-        A relative specifier resolvable from the memo index module.
-    """
-    return f"./{constants.PageNames.COMPONENTS}/{name}"
-
-
 def compile_document_root(
     head_components: list[Component],
     html_lang: str | None = None,
     html_custom_attrs: dict[str, Var | Any] | None = None,
+    default_color_mode: str = "system",
 ) -> tuple[str, str]:
     """Compile the document root.
 
@@ -555,6 +694,8 @@ def compile_document_root(
         head_components: The components to include in the head.
         html_lang: The language of the document, will be added to the html root element.
         html_custom_attrs: custom attributes added to the html root element.
+        default_color_mode: The color mode applied before hydration when no theme
+            is saved in the browser.
 
     Returns:
         The path and code of the compiled document root.
@@ -566,7 +707,10 @@ def compile_document_root(
 
     # Create the document root.
     document_root = utils.create_document_root(
-        head_components, html_lang=html_lang, html_custom_attrs=html_custom_attrs
+        head_components,
+        html_lang=html_lang,
+        html_custom_attrs=html_custom_attrs,
+        default_color_mode=default_color_mode,
     )
 
     # Compile the document root.
@@ -574,11 +718,15 @@ def compile_document_root(
     return output_path, code
 
 
-def compile_app_root(app_root: Component) -> tuple[str, str]:
+def compile_app_root(
+    app_root: Component, hydrate_fallback_export: str | None = None
+) -> tuple[str, str]:
     """Compile the app root.
 
     Args:
         app_root: The app root component to compile.
+        hydrate_fallback_export: The exported name of the hydrate-fallback memo
+            component to re-export as ``HydrateFallback``, or None for no fallback.
 
     Returns:
         The path and code of the compiled app wrapper.
@@ -589,7 +737,7 @@ def compile_app_root(app_root: Component) -> tuple[str, str]:
     )
 
     # Compile the document root.
-    code = _compile_app(app_root)
+    code = _compile_app(app_root, hydrate_fallback_export)
     return output_path, code
 
 
@@ -615,12 +763,15 @@ def compile_theme(style: ComponentStyle) -> tuple[str, str]:
 def compile_contexts(
     state: type[BaseState] | None,
     theme: Component | None,
+    *,
+    component_imports: ParsedImportDict | None = None,
 ) -> tuple[str, str]:
     """Compile the initial state / context.
 
     Args:
         state: The app state.
         theme: The top-level app theme.
+        component_imports: Optional accumulator for initial component dependencies.
 
     Returns:
         The path and code of the compiled context.
@@ -628,7 +779,9 @@ def compile_contexts(
     # Get the path for the output file.
     output_path = utils.get_context_path()
 
-    return output_path, _compile_contexts(state, theme)
+    return output_path, _compile_contexts(
+        state, theme, component_imports=component_imports
+    )
 
 
 def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
@@ -645,7 +798,7 @@ def compile_page(path: str, component: BaseComponent) -> tuple[str, str]:
     output_path = utils.get_page_path(path)
 
     # Add the style to the component.
-    code = _compile_page(component)
+    code = _compile_page(component, path)
     return output_path, code
 
 
@@ -673,25 +826,24 @@ def compile_page_from_context(page_ctx: PageContext) -> tuple[str, str]:
         custom_codes=page_ctx.custom_code_dict(),
         hooks=page_ctx.hooks,
         render=page_ctx.root_component.render(),
+        route=page_ctx.route,
     )
     return output_path, code
 
 
 def compile_memo_components(
-    components: Iterable[CustomComponent],
-    experimental_memos: Iterable[ExperimentalMemoDefinition] = (),
+    memos: Iterable[MemoDefinition] = (),
 ) -> tuple[list[tuple[str, str]], dict[str, list[ImportVar]]]:
-    """Compile the custom components into one module per memo plus an index.
+    """Compile the memos into one module per memo.
 
     Args:
-        components: The custom components to compile.
-        experimental_memos: The experimental memos to compile.
+        memos: The memos to compile.
 
     Returns:
-        A list of ``(path, code)`` pairs (one per memo module and one index)
-        alongside the aggregated imports across all memo modules.
+        A list of ``(path, code)`` pairs (one per memo module) alongside the
+        aggregated imports across all memo modules.
     """
-    return _compile_memo_components(components, experimental_memos)
+    return _compile_memo_components(memos)
 
 
 def purge_web_pages_dir():
@@ -944,10 +1096,10 @@ def _resolve_app_wrap_components(
         app_wrappers[200, "StrictMode"] = StrictMode.create()
 
     if (toaster := app.toaster) is not None:
-        from reflex_base.components.component import memo
+        from reflex_base.components.memo import memo
 
         @memo
-        def memoized_toast_provider():
+        def memoized_toast_provider() -> Component:
             return toaster
 
         app_wrappers[44, "ToasterProvider"] = Fragment.create(memoized_toast_provider())
@@ -958,7 +1110,61 @@ def _resolve_app_wrap_components(
             if component is not None:
                 app_wrappers[key] = component
 
+    # The page collector only walks pages, but app-wrap components have their
+    # own subtrees (e.g. ``ErrorBoundary``'s fallback render). Surface their
+    # Var-declared ``app_wraps`` here, fixpoint-iterating because newly added
+    # wraps may themselves contain further declarations.
+    pending: list[Component] = list(app_wrappers.values())
+    while pending:
+        next_pending: list[Component] = []
+        for wrapper in pending:
+            before = set(app_wrappers)
+            collect_var_app_wraps_in_subtree(app_wrappers, wrapper)
+            next_pending.extend(
+                app_wrappers[key] for key in app_wrappers.keys() - before
+            )
+        pending = next_pending
+
     return app_wrappers
+
+
+def _memoize_stateful_app_wraps(
+    app_root: Component,
+    compile_context: CompileContext,
+) -> Component:
+    """Extract stateful app wraps from the app root into memo components.
+
+    The app root compiles outside the page plugin pipeline, so hooks from
+    every wrap in the chain hoist into the single generated ``AppWrap``
+    function — above the ``StateProvider`` rendered in that same function,
+    where a state ``useContext`` can never resolve. Walking the assembled
+    chain with the auto-memoize plugin moves each stateful wrap (and any
+    stateful descendant) into its own memo module, which renders below the
+    provider — the same treatment page trees get.
+
+    Args:
+        app_root: The assembled app-wrap chain from ``App._app_root``.
+        compile_context: The active compile context; generated memo
+            definitions are registered on ``auto_memo_components``.
+
+    Returns:
+        The app root with stateful wraps replaced by memo wrappers.
+    """
+    hooks = CompilerHooks(plugins=(MemoizeStatefulPlugin(),))
+    page_context = PageContext(
+        name="app_root",
+        route=constants.PageNames.APP_ROOT,
+        root_component=app_root,
+    )
+    compiled_root = hooks.compile_component(
+        app_root,
+        page_context=page_context,
+        compile_context=compile_context,
+    )
+    if not isinstance(compiled_root, Component):
+        msg = "Compiled app root must be a Component."
+        raise TypeError(msg)
+    return compiled_root
 
 
 def _resolve_radix_themes_plugin(
@@ -987,6 +1193,19 @@ def _resolve_radix_themes_plugin(
     return plugin_chain, radix_plugin
 
 
+def _register_plugin_routes(app: App, plugins: Sequence[Plugin]) -> None:
+    """Run plugin ``register_route`` hooks at their point in the compile lifecycle.
+
+    Fires after app-defined pages are collected and before any page is
+    evaluated. The staging and atomic-commit machinery lives on ``App``.
+
+    Args:
+        app: The app being compiled.
+        plugins: The active plugins, in configuration order.
+    """
+    app._register_plugin_pages(plugins)
+
+
 def compile_app(
     app: App,
     *,
@@ -1000,10 +1219,15 @@ def compile_app(
         ``True`` when a real frontend compile ran, ``False`` when the call
         short-circuited (backend-only paths that only re-evaluate pages).
     """
-    from reflex_base.components.dynamic import bundle_library, reset_bundled_libraries
+    from reflex_base.components.dynamic import (
+        _bundle_library,
+        _reset_bundled_libraries_for_compile,
+    )
     from reflex_base.utils.exceptions import ReflexRuntimeError
 
     app._apply_decorated_pages()
+    config = get_config()
+    _register_plugin_routes(app, config.plugins)
     app._pages = {}
 
     should_compile = app._should_compile()
@@ -1014,8 +1238,11 @@ def compile_app(
             with stateful_pages_marker.open("r") as file:
                 stateful_pages = json.load(file)
             for route in stateful_pages:
-                console.debug(f"BE Evaluating stateful page: {route}")
+                logger.debug(f"BE Evaluating stateful page: {route}")
                 app._compile_page(route, save_page=False)
+        if app._state is not None:
+            utils._restore_bundled_libraries()
+            utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
 
@@ -1023,36 +1250,37 @@ def compile_app(
         app.add_page(route=constants.Page404.SLUG)
 
     app.style = evaluate_style_namespaces(app.style)
-    config = get_config()
 
     if not should_compile and not dry_run:
-        with console.timing("Evaluate Pages (Backend)"):
+        with (
+            log.timing(logger, "Evaluate Pages (Backend)"),
+            otel.span("reflex.compile.evaluate_pages"),
+        ):
             for route in app._unevaluated_pages:
-                console.debug(f"Evaluating page: {route}")
+                logger.debug(f"Evaluating page: {route}")
                 app._compile_page(route, save_page=False)
 
         app._write_stateful_pages_marker()
+        if app._state is not None:
+            utils._restore_bundled_libraries()
+            utils._compile_initial_state(app._state)
         app._add_optional_endpoints()
         return False
 
-    progress = (
-        Progress(
-            *Progress.get_default_columns()[:-1],
-            MofNCompleteColumn(),
-            TimeElapsedColumn(),
-        )
-        if use_rich
-        else console.PoorProgress()
-    )
+    progress = console.progress() if use_rich else console.PoorProgress()
     fixed_steps = 7
     compiler_plugins, radix_themes_plugin = _resolve_radix_themes_plugin(
         app,
         config.plugins,
     )
-    reset_bundled_libraries()
+    _reset_bundled_libraries_for_compile()
+    # Drop cached memo wrapper classes so each compile recomputes a memo's
+    # ``library`` from the current module layout (handles a module flipping to
+    # a package across hot reloads).
+    reset_memo_component_classes()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
-            bundle_library(dependency)
+            _bundle_library(dependency)
     base_total = (len(app._unevaluated_pages) * 2) + fixed_steps + len(config.plugins)
     progress.start()
     task = progress.add_task("Compiling:", total=base_total)
@@ -1064,7 +1292,11 @@ def compile_app(
         ),
     )
 
-    with console.timing("Compile pages"), compile_ctx:
+    with (
+        log.timing(logger, "Compile pages"),
+        otel.span("reflex.compile.pages"),
+        compile_ctx,
+    ):
         compile_ctx.compile(
             evaluate_progress=lambda: progress.advance(task),
             render_progress=lambda: progress.advance(task),
@@ -1080,6 +1312,7 @@ def compile_app(
             raise TypeError(msg)
         app._pages[route] = page_ctx.root_component
 
+    app._evaluated_pages.update(compile_ctx.compiled_pages)
     app._stateful_pages.update(compile_ctx.stateful_routes)
     app._write_stateful_pages_marker()
     app._add_optional_endpoints()
@@ -1125,14 +1358,27 @@ def compile_app(
     progress.advance(task)
 
     app_wrappers = _resolve_app_wrap_components(app, compile_ctx.app_wrap_components)
-    app_root = app._app_root(app_wrappers)
+    app_root = _memoize_stateful_app_wraps(app._app_root(app_wrappers), compile_ctx)
     all_imports = utils.merge_imports(all_imports, app_root._get_all_imports())
 
+    hydrate_fallback = app._resolve_hydrate_fallback()
+    hydrate_fallback_export = None
+    if hydrate_fallback is not None:
+        hydrate_fallback._add_style_recursive(app.style)
+        # Compile the fallback through the memo pipeline so it lands in its own
+        # JS module; root.jsx then re-exports it as HydrateFallback.
+        hydrate_fallback_definition = create_component_memo(
+            hydrate_fallback, "hydrate_fallback"
+        )
+        compile_ctx.auto_memo_components[
+            hydrate_fallback_definition.export_name, None
+        ] = hydrate_fallback_definition
+        hydrate_fallback_export = hydrate_fallback_definition.export_name
+
     memo_component_files, memo_components_imports = compile_memo_components(
-        dict.fromkeys(CUSTOM_COMPONENTS.values()),
         (
-            *tuple(EXPERIMENTAL_MEMOS.values()),
-            *tuple(compile_ctx.auto_memo_components.values()),
+            *MEMOS.values(),
+            *compile_ctx.auto_memo_components.values(),
         ),
     )
     compile_results.extend(memo_component_files)
@@ -1148,13 +1394,16 @@ def compile_app(
                 if app.html_custom_attrs
                 else {"suppressHydrationWarning": True}
             ),
+            default_color_mode=_resolve_default_color_mode(
+                radix_themes_plugin.get_theme()
+            ),
         )
     )
     progress.advance(task)
 
     assets_src = Path.cwd() / constants.Dirs.APP_ASSETS
     if assets_src.is_dir() and not dry_run:
-        with console.timing("Copy assets"):
+        with log.timing(logger, "Copy assets"), otel.span("reflex.compile.copy_assets"):
             path_ops.update_directory_tree(
                 src=assets_src,
                 dest=Path.cwd() / prerequisites.get_web_dir() / constants.Dirs.PUBLIC,
@@ -1216,12 +1465,17 @@ def compile_app(
             compile_results.append(result)
         progress.advance(task)
 
-    compile_results.append(
-        compile_contexts(app._state, radix_themes_plugin.get_theme())
-    )
+    compile_results.extend([
+        compile_contexts(
+            app._state,
+            radix_themes_plugin.get_theme(),
+            component_imports=all_imports,
+        ),
+        utils._compile_bundled_libraries(),
+    ])
     progress.advance(task)
 
-    compile_results.append(compile_app_root(app_root))
+    compile_results.append(compile_app_root(app_root, hydrate_fallback_export))
     progress.advance(task)
 
     progress.stop()
@@ -1229,7 +1483,17 @@ def compile_app(
     if dry_run:
         return True
 
-    with console.timing("Install Frontend Packages"):
+    # Delete memo files this compile no longer emits. Done here (not before the
+    # dry-run return) so ``--dry`` never mutates ``.web`` or the manifest.
+    utils.prune_stale_memo_files(path for path, _ in memo_component_files)
+    # A leftover ``.js`` module would win extensionless resolution of
+    # ``$/utils/context`` over the ``.jsx`` file written below.
+    Path(utils.get_context_path()).with_suffix(constants.Ext.JS).unlink(missing_ok=True)
+
+    with (
+        log.timing(logger, "Install Frontend Packages"),
+        otel.span("reflex.compile.install_frontend_packages"),
+    ):
         app._get_frontend_packages(all_imports)
 
     frontend_skeleton.update_react_router_config(
@@ -1252,7 +1516,7 @@ def compile_app(
     for output_path, code in compile_results:
         path = utils.resolve_path_of_web_dir(output_path)
         if path in output_mapping:
-            console.warn(
+            logger.warning(
                 f"Path {path} has two different outputs. The last one will be used."
             )
         output_mapping[path] = code
@@ -1261,7 +1525,7 @@ def compile_app(
         for static_file_path, content in plugin.get_static_assets():
             path = utils.resolve_path_of_web_dir(static_file_path)
             if path in output_mapping:
-                console.warn(
+                logger.warning(
                     f"Plugin {plugin.__class__.__name__} is overwriting existing files at {path}."
                 )
             output_mapping[path] = (
@@ -1279,7 +1543,7 @@ def compile_app(
                 raise FileNotFoundError(msg)
         output_mapping[path] = modify_fn(file_content)
 
-    with console.timing("Write to Disk"):
+    with log.timing(logger, "Write to Disk"), otel.span("reflex.compile.write"):
         for output_path, code in output_mapping.items():
             utils.write_file(output_path, code)
 

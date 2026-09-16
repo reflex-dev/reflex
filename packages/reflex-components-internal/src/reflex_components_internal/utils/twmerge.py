@@ -4,9 +4,14 @@ from reflex.utils.imports import ImportVar
 from reflex.vars import FunctionVar, Var
 from reflex.vars.base import VarData
 
-CN = Var(
-    "cn",
-    _var_data=VarData(imports={"clsx-for-tailwind@1.0.0": ImportVar(tag="cn")}),
+CLSX = Var(
+    "clsx",
+    _var_data=VarData(imports={"clsx@2.1.1": ImportVar(tag="clsx", is_default=True)}),
+).to(FunctionVar)
+
+TW_MERGE = Var(
+    "twMerge",
+    _var_data=VarData(imports={"tailwind-merge@3.6.0": ImportVar(tag="twMerge")}),
 ).to(FunctionVar)
 
 
@@ -22,4 +27,4 @@ def cn(
         Var: A Var representing the merged classes string.
 
     """
-    return CN.call(*classes).to(str)
+    return TW_MERGE.call(CLSX.call(*classes)).to(str)

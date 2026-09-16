@@ -4,6 +4,13 @@ from reflex_components_code.code import CodeBlock, Theme
 import reflex as rx
 
 
+def test_default_code_copy_button_has_an_accessible_name():
+    """Icon-only copy controls must announce their action."""
+    assert '"aria-label":"Copy code"' in str(
+        CodeBlock.create("print('Hello')", can_copy=True)
+    )
+
+
 @pytest.mark.parametrize(
     ("theme", "expected"),
     [(Theme.one_light, "oneLight"), (Theme.one_dark, "oneDark")],
@@ -17,6 +24,26 @@ def test_code_light_dark_theme(theme, expected):
 def test_code_block_rejects_string_theme():
     with pytest.raises(TypeError, match=r"CodeBlock\.theme"):
         CodeBlock.create("print('Hello')", theme="one_dark")  # pyright: ignore[reportArgumentType]
+
+
+def test_code_block_collects_custom_style_state_vars():
+    class CustomStyleState(rx.State):
+        color: str = "red"
+
+    code_block = CodeBlock.create(
+        "x = 1", custom_style={"color": CustomStyleState.color}
+    )
+
+    rendered = str(code_block.render())
+    assert CustomStyleState.color._js_expr in rendered  # pyright: ignore [reportAttributeAccessIssue]
+
+    var_data = CustomStyleState.color._get_all_var_data()  # pyright: ignore [reportAttributeAccessIssue]
+    assert var_data is not None
+    assert var_data.hooks
+    collected_hooks = code_block._get_all_hooks()
+    assert all(hook in collected_hooks for hook in var_data.hooks), (
+        "state hook for custom_style var was not collected"
+    )
 
 
 def test_code_block_accepts_color_mode_cond_theme():

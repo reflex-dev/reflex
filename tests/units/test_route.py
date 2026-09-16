@@ -2,8 +2,9 @@ import pytest
 from pytest_mock import MockerFixture
 from reflex_base import constants
 
+import reflex as rx
 from reflex.app import App
-from reflex.route import get_route_args, verify_route_validity
+from reflex.route import get_route_args, get_router, verify_route_validity
 
 
 @pytest.mark.parametrize(
@@ -104,9 +105,76 @@ def test_check_routes_conflict_invalid(
         ("/posts/[slug]/info/[[...splat]]", "/posts/[slug]/info1/[[...splat]]"),
         ("/posts/[slug]/info/[...slug1]", "/posts/[slug]/info1/[...slug1]"),
         ("/posts/[slug]/info/[...slug1]", "/posts/[slug]/info1/[...slug2]"),
+        # static siblings of dynamic segments are legal (static wins in React Router)
+        ("/posts/[slug]", "/posts/all/[x]"),
+        ("/posts/all/[x]", "/posts/[slug]"),
+        ("/[org]/dashboard", "/admin/devices/[pk]"),
+        ("/admin/devices/[pk]", "/[org]/dashboard"),
     ],
 )
 def test_check_routes_conflict_valid(mocker: MockerFixture, app, route1, route2):
     mocker.patch.object(app, "_pages", {route1: []})
     # test that running this does not throw an error.
     app._check_routes_conflict(route2)
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/posts", "posts/[[...splat]]"),
+        ("/posts/", "posts/[[...splat]]"),
+        ("/posts/2024/hello", "posts/[[...splat]]"),
+        ("/postsomething", None),
+        ("/posts-archive", None),
+    ],
+)
+def test_get_router_splat_catchall(path: str, expected: str | None):
+    # The frontend maps [[...splat]] to React Router's `posts/*`, which matches
+    # the route and its descendants but not paths that merely share the prefix.
+    router = get_router(["posts/[[...splat]]"])
+    assert router(path) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("/apple", "apple"),
+        ("/app", "app"),
+        ("/", "index"),
+    ],
+)
+def test_get_router_ignores_frontend_path(
+    mocker: MockerFixture, path: str, expected: str | None
+):
+    # The frontend sends basename-relative paths, so a route that starts with the
+    # frontend_path text must not have that text stripped again.
+    conf = rx.Config(app_name="testing", frontend_path="/app")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    router = get_router(["index", "app", "apple"])
+    assert router(path) == expected
+
+
+@pytest.mark.parametrize(
+    ("url_path", "expected"),
+    [
+        ("/app", ["index"]),
+        ("/app/", ["index"]),
+        ("/app/apple", ["apple"]),
+        ("/app/app", ["app"]),
+        ("/apple", ["404"]),
+    ],
+)
+def test_get_load_events_strips_frontend_path(
+    mocker: MockerFixture, url_path: str, expected: list[str]
+):
+    conf = rx.Config(app_name="testing", frontend_path="/app")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App()
+    app._unevaluated_pages = dict.fromkeys(["index", "app", "apple"])  # pyright: ignore[reportAttributeAccessIssue]
+    app._load_events = {  # pyright: ignore[reportAttributeAccessIssue]
+        "index": ["index"],
+        "app": ["app"],
+        "apple": ["apple"],
+        "404": ["404"],
+    }
+    assert app.get_load_events(url_path) == expected

@@ -37,7 +37,7 @@ def root_state() -> type[RedisTestState]:
     return RedisTestState
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_redis(
     root_state: type[RedisTestState],
 ) -> AsyncGenerator[StateManagerRedis]:
@@ -113,6 +113,29 @@ async def test_basic_get_set(
     await state_manager_redis.set_state(
         BaseStateToken(ident=token, cls=root_state), fresh_state
     )
+
+
+async def test_set_state_with_shadowed_touched_method(clean_registration_context):
+    """Persist a backend var that shadows the touched-state method.
+
+    Args:
+        clean_registration_context: A fresh, empty registration context.
+    """
+
+    class ShadowState(BaseState):
+        """State with an intentional framework-method collision."""
+
+        _get_was_touched: int = 7
+
+    state = ShadowState()
+    state._get_was_touched = 8
+    manager = StateManagerRedis(redis=mock_redis())
+    token = BaseStateToken(ident="shadowed", cls=ShadowState)
+
+    await manager.set_state(token, state)
+
+    restored = BaseState._deserialize(data=await manager.redis.get(str(token)))
+    assert restored._get_was_touched == 8
 
 
 async def test_modify(

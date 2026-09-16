@@ -1,31 +1,35 @@
+---
+tags: AI Builder
+description: Use a public URL as visual reference material or extract specific public content for a Reflex Build app.
+---
+
 # URLs
 
-When you **paste a URL directly into the AI Builder chat**, the AI will automatically decide how to handle it depending on your prompt.
+Paste a public URL into the chat when the agent needs a page as a visual reference or a source of content. State which result you want instead of sending the URL by itself.
 
-You can use URLs to **copy a page’s design** or **extract its content**, without needing to set up any integration.
+## Use a page as a visual reference
 
-## How It Works
+Tell the agent which visual qualities to reproduce and what must remain unchanged:
 
-* If you say something like **“copy the design”** or **“use this layout”**, the AI will:
+```text
+Use https://example.com as a layout reference for the pricing page. Match its
+section order and card hierarchy, but keep our current colors and copy.
+```
 
-  * Take a **screenshot** of the page.
-  * Use it as a **visual reference** to recreate the UI in your app.
-  * Allow you to **customize** the generated design afterward.
+The agent captures the public page and uses it as context. Review the result for copied trademarks, content, or assets before publishing.
 
-* 🪄 If you say something like **“get the content”**, **“scrape this page”**, or just paste the URL without mentioning design, the AI will:
+## Extract public content
 
-  * **Scrape the content** of the page (text, links, images, metadata).
-  * Return it as structured data that can be used in components, workflows, or AI actions.
+Ask for the specific information and output shape you need:
 
-## Example Prompts
+```text
+Extract the product names, prices, and detail-page links from this public page.
+Return a table and flag any item without a price.
+```
 
-* “Copy the design of this page.”
-* “Scrape the content from this blog post.”
-* “Get all the product details from this URL.”
-* (Paste the URL alone) → AI will assume content scraping by default.
+Only public pages that the Builder can reach are supported. It cannot use your signed-in browser session to read private pages. Make sure you have permission to reuse extracted content.
 
-## Notes
+## Related
 
-* **Public pages only:** The AI can only process URLs that are publicly accessible.
-* **Editable:** Both the generated design and scraped content can be modified after processing.
-
+- [Images and Attachments](/docs/ai/features/image-as-prompt/) — provide a screenshot when the page cannot be accessed directly.
+- [Files](/docs/ai/files/) — attach approved source material directly to the prompt.

@@ -89,12 +89,12 @@ import sys
 from reflex_base.utils import lazy_loader
 
 if sys.version_info < (3, 11):
-    from reflex_base.utils import console
+    import logging
 
-    console.warn(
+    logging.getLogger(__name__).warning(
         "Reflex support for Python 3.10 is deprecated and will be removed in a future release. Please upgrade to Python 3.11 or higher for continued support."
     )
-    del console
+    del logging
 del sys
 
 from reflex_components_radix.mappings import RADIX_MAPPING  # noqa: E402
@@ -140,9 +140,9 @@ _ALL_COMPONENTS_MAPPING: lazy_loader.SubmodAttrsType = {
     "reflex_base.components.component": [
         "Component",
         "NoSSRComponent",
-        "memo",
         "ComponentNamespace",
     ],
+    "reflex_base.components.memo": ["memo", "EMPTY_VAR_COMPONENT"],
     "reflex_components_core.el.elements.media": ["image"],
     "reflex_components_lucide": ["icon"],
     **_COMPONENTS_BASE_MAPPING,
@@ -235,7 +235,7 @@ _MAPPING: lazy_loader.SubmodAttrsType = {
     "utils.imports": ["ImportDict", "ImportVar"],
     "utils.misc": ["run_in_thread"],
     "utils.serializers": ["serializer"],
-    "vars": ["Var", "field", "Field", "RestProp"],
+    "vars": ["Var", "field", "Field", "RestProp", "EMPTY_VAR_STR", "EMPTY_VAR_INT"],
 }
 
 _SUBMODULES: set[str] = {

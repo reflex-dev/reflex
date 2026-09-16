@@ -14,7 +14,6 @@ def get_sidebar_items_learn():
                 getting_started.introduction,
                 getting_started.basics,
                 getting_started.project_structure,
-                getting_started.open_source_templates,
             ],
         ),
         create_item(
@@ -120,16 +119,16 @@ def get_sidebar_items_frontend():
 def get_sidebar_items_backend():
     from reflex_docs.pages.docs import (
         api_routes,
-        authentication,
         client_storage,
         database,
+        enterprise,
         events,
         state,
         state_structure,
         utility_methods,
         vars,
     )
-    from reflex_docs.templates.docpage.sidebar.state import SideBarSection
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem, SideBarSection
 
     items = [
         SideBarSection(
@@ -140,6 +139,7 @@ def get_sidebar_items_backend():
             children=[
                 vars.base_vars,
                 vars.computed_vars,
+                vars.hybrid_properties,
                 vars.var_operations,
                 vars.custom_vars,
             ],
@@ -188,10 +188,16 @@ def get_sidebar_items_backend():
                 database.relationships,
             ],
         ),
-        create_item(
-            "Authentication",
+        SideBarItem(
+            names="Authentication",
             children=[
-                authentication.authentication_overview,
+                # Cross-reference to the enterprise docs, excluded from the
+                # prev/next chain so that page keeps its enterprise-flow footer.
+                SideBarItem(
+                    names="Overview",
+                    link=enterprise.auth.overview.path,
+                    exclude_from_prev_next=True,
+                ),
             ],
         ),
         create_item(
@@ -219,7 +225,8 @@ def get_sidebar_items_hosting():
         create_item(
             "Project",
             children=[
-                hosting.adding_members,
+                hosting.project_members,
+                hosting.project_settings,
             ],
         ),
         create_item(
@@ -233,6 +240,7 @@ def get_sidebar_items_hosting():
                 hosting.custom_domains,
                 hosting.config_file,
                 hosting.tokens,
+                hosting.security_scan,
                 hosting.deploy_with_github_actions,
             ],
         ),
@@ -249,6 +257,8 @@ def get_sidebar_items_hosting():
             children=[
                 hosting.self_hosting,
                 hosting.databricks,
+                hosting.cloud_providers,
+                hosting.bring_your_own_cloud,
                 hosting.deploy_to_gcp,
             ],
         ),

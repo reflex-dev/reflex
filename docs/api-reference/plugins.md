@@ -203,6 +203,10 @@ class Plugin:
         """Get paths to stylesheets required by the plugin."""
         return []
 
+    def register_route(self, **context) -> None:
+        """Contribute pages before the app's first compilation."""
+        pass
+
     def pre_compile(self, **context) -> None:
         """Called before compilation to perform custom tasks."""
         pass
@@ -245,3 +249,58 @@ config = rx.Config(
     ],
 )
 ```
+
+### Contributing Pages
+
+A plugin can contribute pages by overriding `register_route`. The hook runs
+once for each `App`, after app-defined pages have been collected and before any
+page is evaluated. A fresh app created by development reload or a new process
+runs the hooks again.
+
+Use the provided `add_page` capability rather than calling `app.add_page`
+directly. The framework collects every plugin's calls first and commits them
+only after all route hooks succeed, so a failing hook cannot leave partial pages
+or dynamic route arguments on the app:
+
+```python
+class DashboardPlugin(Plugin):
+    def __init__(self, route="/dashboard"):
+        self.route = route
+
+    def register_route(self, *, add_page, has_app_page, **context):
+        # Let an app-defined page override this optional default.
+        if not has_app_page(self.route):
+            add_page(dashboard_page, route=self.route, title="Dashboard")
+```
+
+`add_page` accepts the same page options as `App.add_page` (`title`,
+`on_load`, `meta`, ...) but takes them as keyword arguments only; its signature
+is described by the `AddPageProtocol` in the hook context. It uses the app's
+normal page-preparation path while collecting the descriptor, then the
+framework commits the prepared descriptors together.
+Adding a route already defined by the app or by another plugin raises a
+`RouteValueError` identifying the owner.
+`has_app_page(route)` checks only app-defined pages; it intentionally ignores
+pages staged by earlier plugins so plugin conflicts do not silently depend on
+configuration order.
+
+The hook also receives `app_type`, which supports concrete-app compatibility
+checks without exposing the mutable `App` instance.
+
+An `App` subclass that adds page-registration keyword arguments must normalize
+them in its protected `_prepare_page` override and return the base prepared-page
+descriptor. That method must not mutate app route state: plugin hooks call it
+during collection, while the framework owns the final batch commit. The public
+`add_page` and protected `_commit_page` overrides remain the direct-registration
+API but are intentionally not dispatched during a staged plugin batch, so an
+override cannot make the batch commit partially.
+
+### Looking Up Configured Plugins
+
+Use `rx.plugins.get_plugin(PluginType)` when runtime behavior needs the plugin
+instance declared in `rxconfig.py`. It returns the single configured instance
+matching that type (including subclasses), returns `None` when none matches,
+and raises `ConfigError` when the lookup is ambiguous. Runtime-readable values
+should be derived from the plugin's constructor arguments so every process can
+recreate the same behavior from `rxconfig.plugins` without a separate binding
+step.

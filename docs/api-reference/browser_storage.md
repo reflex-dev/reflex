@@ -25,6 +25,15 @@ class CookieState(rx.State):
     c6: str = rx.Cookie(name="c6-custom-name")
 ```
 
+```md alert info
+# The default value is the first positional argument.
+
+`rx.Cookie`, `rx.LocalStorage`, and `rx.SessionStorage` all take the default
+value as their first positional argument, e.g. `rx.LocalStorage("light")`. It
+cannot be passed as a keyword argument — the keyword arguments (`name`,
+`max_age`, `sync`, etc.) only configure the storage behavior.
+```
+
 ```md alert warning
 # **The default value of a Cookie is never set in the browser!**
 
@@ -52,7 +61,7 @@ Additionally, updating the cookie value in one state will not automatically
 update the value in the other state without a page refresh or navigation event.
 ```
 
-## rx.remove_cookies
+## rx.remove_cookie
 
 Remove a cookie from the client's browser.
 
@@ -204,7 +213,7 @@ rx.button(
 )
 ```
 
-# Serialization Strategies
+## Serialization Strategies
 
 If a non-trivial data structure should be stored in a `Cookie`, `LocalStorage`, or `SessionStorage` var it needs to be serialized before and after storing it. It is recommended to use a pydantic class for the data which provides simple serialization helpers and works recursively in complex object structures.
 
@@ -298,7 +307,7 @@ def app_settings_example():
     )
 ```
 
-# Comparison of Storage Types
+## Comparison of Storage Types
 
 Here's a comparison of the different client-side storage options in Reflex:
 
@@ -313,7 +322,7 @@ Here's a comparison of the different client-side storage options in Reflex:
 | Syncing Across Tabs | No                                | Yes (with sync=True)        | No                          |
 | Use Case            | Authentication, Server-side state | User preferences, App state | Temporary session data      |
 
-# When to Use Each Storage Type
+## When to Use Each Storage Type
 
 ## Use rx.Cookie When:
 

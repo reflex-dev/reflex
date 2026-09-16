@@ -5,8 +5,11 @@ from __future__ import annotations
 import dataclasses
 import enum
 import importlib
+import logging
 import os
+import re
 from collections.abc import Sequence
+from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import (
@@ -26,6 +29,8 @@ from reflex_base.constants.base import LogLevel
 from reflex_base.plugins import Plugin
 from reflex_base.utils.exceptions import EnvironmentVarValueError
 from reflex_base.utils.types import GenericType, is_union, value_inside_optional
+
+logger = logging.getLogger(__name__)
 
 
 def get_default_value_for_field(field: dataclasses.Field) -> Any:
@@ -113,6 +118,57 @@ def interpret_float_env(value: str, field_name: str) -> float:
         raise EnvironmentVarValueError(msg) from ve
 
 
+_TIMEDELTA_UNITS: dict[str, str] = {
+    "us": "microseconds",
+    "ms": "milliseconds",
+    "s": "seconds",
+    "m": "minutes",
+    "h": "hours",
+    "d": "days",
+}
+
+_TIMEDELTA_PATTERN = re.compile(r"([+-]?\d+(?:\.\d+)?)\s*([a-z]*)")
+
+
+def interpret_timedelta_env(value: str, field_name: str) -> timedelta:
+    """Interpret a duration environment variable value.
+
+    A bare number is read as seconds. A unit suffix overrides that: ``us``,
+    ``ms``, ``s``, ``m``, ``h`` and ``d`` are understood, making ``30``, ``30s``,
+    ``500ms`` and ``5m`` all valid.
+
+    Args:
+        value: The environment variable value.
+        field_name: The field name.
+
+    Returns:
+        The interpreted value.
+
+    Raises:
+        EnvironmentVarValueError: If the value is invalid.
+    """
+    match = _TIMEDELTA_PATTERN.fullmatch(value.strip().lower())
+    keyword = _TIMEDELTA_UNITS.get(match.group(2) or "s") if match else None
+    if match is None or keyword is None:
+        units = ", ".join(_TIMEDELTA_UNITS)
+        msg = (
+            f"Invalid duration value: {value!r} for {field_name}. Expected a "
+            f"number of seconds, optionally suffixed with one of {units}."
+        )
+        raise EnvironmentVarValueError(msg)
+    amount = match.group(1)
+    try:
+        # Only a written fraction goes through float: an integer of microseconds
+        # is exact at any size, where float silently rounds the large ones.
+        return timedelta(**{keyword: float(amount) if "." in amount else int(amount)})
+    except (OverflowError, ValueError) as e:
+        # A value can be well-formed and still be more than a timedelta holds.
+        # OverflowError is not a ValueError, so letting it out would escape the
+        # union fallback in `interpret_env_var_value` as well as this contract.
+        msg = f"Invalid duration value: {value!r} for {field_name} is out of range."
+        raise EnvironmentVarValueError(msg) from e
+
+
 def interpret_existing_path_env(value: str, field_name: str) -> ExistingPath:
     """Interpret a path environment variable value as an existing path.
 
@@ -146,6 +202,29 @@ def interpret_path_env(value: str, field_name: str) -> Path:
     return Path(value)
 
 
+@dataclasses.dataclass
+class _InvalidPlugin(Plugin):
+    """Placeholder for a plugin spec that could not be resolved or instantiated.
+
+    Returned by the plugin env-var interpreters instead of raising, so a single
+    bad entry does not abort interpretation of an entire plugin list. ``Config``
+    inspects the resulting list and either raises ``ConfigError`` (for
+    ``Config.plugins`` / ``REFLEX_PLUGINS``) or warns and drops the entry (for
+    ``REFLEX_EXTRA_PLUGINS`` and ``disable_plugins``).
+    """
+
+    spec: str
+    error: str
+
+    def describe(self) -> str:
+        """Describe the failed plugin spec for warning/error messages.
+
+        Returns:
+            A string combining the import path and the recorded error.
+        """
+        return f"{self.spec!r} ({self.error})"
+
+
 def interpret_plugin_class_env(value: str, field_name: str) -> type[Plugin]:
     """Interpret an environment variable value as a Plugin subclass.
 
@@ -174,7 +253,7 @@ def interpret_plugin_class_env(value: str, field_name: str) -> type[Plugin]:
         raise EnvironmentVarValueError(msg) from e
 
     try:
-        plugin_class = getattr(module, plugin_name, None)
+        plugin_class = getattr(module, plugin_name)
     except Exception as e:
         msg = f"Failed to get plugin class {plugin_name!r} from module {import_path!r} for {field_name}: {e}"
         raise EnvironmentVarValueError(msg) from e
@@ -190,24 +269,29 @@ def interpret_plugin_env(value: str, field_name: str) -> Plugin:
     """Interpret a plugin environment variable value.
 
     Resolves a fully qualified import path and returns an instance of the Plugin.
+    On failure (bad import path or instantiation error) an ``_InvalidPlugin``
+    recording the error is returned instead of raising, so callers can decide
+    whether a bad entry is fatal.
 
     Args:
         value: The environment variable value (e.g. "reflex.plugins.sitemap.SitemapPlugin").
         field_name: The field name.
 
     Returns:
-        An instance of the Plugin subclass.
-
-    Raises:
-        EnvironmentVarValueError: If the value is invalid.
+        An instance of the Plugin subclass, or an ``_InvalidPlugin`` on failure.
     """
-    plugin_class = interpret_plugin_class_env(value, field_name)
+    try:
+        plugin_class = interpret_plugin_class_env(value, field_name)
+    except EnvironmentVarValueError as e:
+        return _InvalidPlugin(spec=value, error=str(e))
 
     try:
         return plugin_class()
     except Exception as e:
-        msg = f"Failed to instantiate plugin {plugin_class.__name__!r} for {field_name}: {e}"
-        raise EnvironmentVarValueError(msg) from e
+        return _InvalidPlugin(
+            spec=value,
+            error=f"failed to instantiate plugin {plugin_class.__name__!r}: {e}",
+        )
 
 
 def interpret_enum_env(value: str, field_type: GenericType, field_name: str) -> Any:
@@ -295,6 +379,8 @@ def interpret_env_var_value(
         return interpret_int_env(value, field_name)
     if field_type is float:
         return interpret_float_env(value, field_name)
+    if field_type is timedelta:
+        return interpret_timedelta_env(value, field_name)
     if field_type is Path:
         if PathExistsFlag in annotated_metadata:
             return interpret_existing_path_env(value, field_name)
@@ -310,7 +396,10 @@ def interpret_env_var_value(
             and isinstance(type_args[0], type)
             and issubclass(type_args[0], Plugin)
         ):
-            return interpret_plugin_class_env(value, field_name)
+            try:
+                return interpret_plugin_class_env(value, field_name)
+            except EnvironmentVarValueError as e:
+                return _InvalidPlugin(spec=value, error=str(e))
     if get_origin(field_type) is Literal:
         literal_values = get_args(field_type)
         for literal_value in literal_values:
@@ -358,6 +447,29 @@ def interpret_env_var_value(
 
 
 T = TypeVar("T")
+
+
+def _serialize_env_value(value: Any) -> str:
+    """Render a value in the form :func:`interpret_env_var_value` reads back.
+
+    Only durations need help: ``str(timedelta)`` is ``0:01:30``, and past a day or
+    below zero it is ``1 day, 0:00:30`` / ``-1 day, 23:58:30``, none of which the
+    interpreter accepts.
+
+    Args:
+        value: The value to render.
+
+    Returns:
+        The rendered value.
+    """
+    if isinstance(value, timedelta):
+        # Not `total_seconds()`: it is a float, which drops microseconds on large
+        # durations and renders small ones in scientific notation.
+        seconds, fraction = divmod(value, timedelta(seconds=1))
+        if not fraction:
+            return f"{seconds}s"
+        return f"{value // timedelta(microseconds=1)}us"
+    return str(value)
 
 
 class EnvVar(Generic[T]):
@@ -432,9 +544,9 @@ class EnvVar(Generic[T]):
             if isinstance(value, enum.Enum):
                 value = value.value
             if isinstance(value, list):
-                str_value = ":".join(str(v) for v in value)
+                str_value = ":".join(_serialize_env_value(v) for v in value)
             else:
-                str_value = str(value)
+                str_value = _serialize_env_value(value)
             os.environ[self.name] = str_value
 
 
@@ -596,6 +708,12 @@ class EnvironmentVariables:
     # This env var stores the execution mode of the app
     REFLEX_ENV_MODE: EnvVar[constants.Env] = env_var(constants.Env.DEV)
 
+    # Whether to keep React's development-build owner-stack capture in dev mode.
+    # Reflex disables it by default because the per-element Error() capture
+    # dominates dev-mode render CPU on large pages; enable it to restore full
+    # owner stacks in React DevTools and dev warnings.
+    REFLEX_REACT_OWNER_STACKS: EnvVar[bool] = env_var(False)
+
     # Whether to run the backend only. Exclusive with REFLEX_FRONTEND_ONLY.
     REFLEX_BACKEND_ONLY: EnvVar[bool] = env_var(False)
 
@@ -633,14 +751,14 @@ class EnvironmentVariables:
     # The maximum size of the reflex state in kilobytes.
     REFLEX_STATE_SIZE_LIMIT: EnvVar[int] = env_var(1000)
 
-    # Whether to use the turbopack bundler.
-    REFLEX_USE_TURBOPACK: EnvVar[bool] = env_var(False)
-
     # Additional paths to include in the hot reload. Separated by a colon.
     REFLEX_HOT_RELOAD_INCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
 
     # Paths to exclude from the hot reload. Takes precedence over include paths. Separated by a colon.
     REFLEX_HOT_RELOAD_EXCLUDE_PATHS: EnvVar[list[Path]] = env_var([])
+
+    # Paths to override in the hot reload. Takes precedence over include and exclude paths. Separated by a colon.
+    REFLEX_HOT_RELOAD_OVERRIDE_PATHS: EnvVar[list[Path]] = env_var([])
 
     # Enables different behavior for when the backend would do a cold start if it was inactive.
     REFLEX_DOES_BACKEND_COLD_START: EnvVar[bool] = env_var(False)
@@ -674,17 +792,32 @@ class EnvironmentVariables:
     # Enable full logging of debug messages to reflex user directory.
     REFLEX_ENABLE_FULL_LOGGING: EnvVar[bool] = env_var(False)
 
+    # Emit logs as machine-readable JSON records instead of rich console output.
+    REFLEX_LOG_JSON: EnvVar[bool] = env_var(False)
+
     # Whether to enable hot module replacement
     VITE_HMR: EnvVar[bool] = env_var(True)
 
     # Whether to force a full reload on changes.
     VITE_FORCE_FULL_RELOAD: EnvVar[bool] = env_var(False)
 
+    # Serve React's production build under the Vite dev server (experimental).
+    REFLEX_DEV_PROD_REACT: EnvVar[bool] = env_var(False)
+
+    # Pre-transform all route modules when the Vite dev server starts (experimental).
+    REFLEX_VITE_WARMUP_ROUTES: EnvVar[bool] = env_var(False)
+
     # Whether to enable Rolldown's experimental HMR.
     VITE_EXPERIMENTAL_HMR: EnvVar[bool] = env_var(False)
 
     # Whether to generate sourcemaps for the frontend.
     VITE_SOURCEMAP: EnvVar[Literal[False, True, "inline", "hidden"]] = env_var(False)  # noqa: RUF038
+
+    # Whether to minify the frontend build output. Disabled by preview mode for readable bundles.
+    VITE_MINIFY: EnvVar[bool] = env_var(True)
+
+    # Read by the generated postcss.config.js to skip autoprefixer in preview mode.
+    REFLEX_NO_AUTOPREFIXER: EnvVar[bool] = env_var(False)
 
     # Whether to enable SSR for the frontend.
     REFLEX_SSR: EnvVar[bool] = env_var(True)
@@ -706,6 +839,13 @@ class EnvironmentVariables:
 
     # How long to opportunistically hold the redis lock in milliseconds (must be less than the token expiration).
     REFLEX_OPLOCK_HOLD_TIME_MS: EnvVar[int] = env_var(0)
+
+    # Extra plugins to append to the config's plugins list.
+    REFLEX_EXTRA_PLUGINS: EnvVar[list[type[Plugin]]] = env_var([])
+
+    # Referrer identifier appended (urlencoded) to the "Built with Reflex"
+    # badge link as https://reflex.dev/?ref=<value>. Read at compile time.
+    REFLEX_REFERRER_PARAM: EnvVar[str | None] = env_var(None)
 
 
 environment = EnvironmentVariables()
@@ -741,13 +881,11 @@ def _load_dotenv_from_files(files: list[Path]):
     Args:
         files: A list of Path objects representing the environment variable files.
     """
-    from reflex_base.utils import console
-
     if not files:
         return
 
     if load_dotenv is None:
-        console.error(
+        logger.error(
             """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.1.0"`."""
         )
         return

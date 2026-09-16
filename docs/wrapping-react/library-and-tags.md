@@ -12,7 +12,7 @@ There are two ways to find a component to wrap:
 
 In both cases, the process of wrapping the component is the same except for the `library` field.
 
-# Wrapping the Component
+## Wrapping the Component
 
 To start wrapping your React component, the first step is to create a new component in your Reflex app. This is done by creating a new class that inherits from `rx.Component` or `rx.NoSSRComponent`.
 
@@ -66,7 +66,7 @@ class MyBaseComponent(rx.Component):
         return super().create(*children, **props)
 ```
 
-# Wrapping a Dynamic Component
+## Wrapping a Dynamic Component
 
 When wrapping some libraries, you may want to use dynamic imports. This is because they may not be compatible with Server-Side Rendering (SSR).
 
@@ -111,7 +111,7 @@ The reason for this is that it does not make sense for your server to render the
 
 In addition, if in the component documentation it mentions nextJS compatibility or server side rendering compatibility, it is a good sign that it requires dynamic imports.
 
-# Advanced - Parsing a state Var with a JS Function
+## Advanced - Parsing a state Var with a JS Function
 
 When wrapping a component, you may need to parse a state var by applying a JS function to it.
 

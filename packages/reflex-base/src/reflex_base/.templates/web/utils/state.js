@@ -10,19 +10,21 @@ import {
   useSearchParams,
   useParams,
 } from "react-router";
-import {
-  initialEvents,
-  initialState,
-  onLoadInternalEvent,
-  state_name,
-  exception_state_name,
-} from "$/utils/context";
+import { app, eventLoop } from "$/utils/context-registry";
 import debounce from "$/utils/helpers/debounce";
+import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 
 // Endpoint URLs.
 const EVENTURL = env.EVENT;
+
+// Socket event names (must match reflex_base/constants/event.py SocketEvent)
+const CLIENT_ERROR_EVENT = "client_error";
+
+// Client error types (must match reflex_base/constants/event.py ClientErrorType)
+const ERROR_TYPE_DISPATCH_MISSING = "dispatch_function_missing";
+const ERROR_TYPE_STATE_UPDATE = "state_update_processing_error";
 
 // These hostnames indicate that the backend and frontend are reachable via the same domain.
 const SAME_DOMAIN_HOSTNAMES = ["localhost", "0.0.0.0", "::", "0:0:0:0:0:0:0:0"];
@@ -39,6 +41,10 @@ const cookies = new Cookies();
 // Dictionary holding component references.
 export const refs = {};
 
+// Set when the backend sends a delta the frontend cannot process. A mismatch
+// between frontend and backend state definitions is fatal (#6019): no further
+// events are sent until the frontend is rebuilt/reloaded.
+let backend_state_mismatch = false;
 // Array holding pending events to be processed.
 const event_queue = [];
 
@@ -160,6 +166,7 @@ export const applyDelta = (state, delta) => {
  * @returns The evaluated component.
  */
 export const evalReactComponent = async (component) => {
+  await window.__reflex_load?.();
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
   }
@@ -213,6 +220,10 @@ function urlFrom(string) {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
+  // Eval'd callback strings (format_queue_events) dispatch through addEvents
+  // like compiled event triggers do; late-bound so a remounted
+  // EventLoopProvider is picked up.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
@@ -247,31 +258,31 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
@@ -390,8 +401,16 @@ export const applyEvent = async (event, socket, navigate, params) => {
     Object.keys(event.router_data).length === 0
   ) {
     const loc = locationRef.current ?? window.location;
-    const search = loc.search ?? "";
-    const hash = loc.hash ?? "";
+    // React Router's location (mirrored in locationRef) does not observe direct
+    // window.history.pushState/replaceState calls (e.g. via rx.call_script), so
+    // read the live query string and hash to keep router_data in sync. The
+    // pathname stays basename-relative (from React Router) so the backend's
+    // frontend_path prefix is not applied twice. In embed mode the host page's
+    // window.location is unrelated to the in-widget memory router, so use the
+    // mirrored location there.
+    const liveLoc = env.MOUNT_TARGET ? loc : window.location;
+    const search = liveLoc.search ?? "";
+    const hash = liveLoc.hash ?? "";
     event.router_data = {
       pathname: loc.pathname,
       asPath: loc.pathname + search + hash,
@@ -407,6 +426,8 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   // Send the event to the server.
   if (socket) {
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend?.(event);
     socket.emit("event", event);
   }
 };
@@ -420,6 +441,12 @@ export const applyEvent = async (event, socket, navigate, params) => {
  */
 export const applyRestEvent = async (event, socket, navigate, params) => {
   if (event.handler === "uploadFiles") {
+    // The compiled event names its extra bound handler args; collect just those
+    // so they reach the backend handler (no need to know the reserved keys).
+    const extra_args = {};
+    for (const name of event.payload.__reflex_event_arg_names ?? []) {
+      extra_args[name] = event.payload[name];
+    }
     // Start upload, but do not wait for it, which would block other events.
     uploadFiles(
       event.name,
@@ -427,6 +454,7 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
       event.payload.upload_id,
       event.payload.on_upload_progress,
       event.payload.extra_headers,
+      extra_args,
       socket,
       refs,
       getBackendURL,
@@ -444,25 +472,6 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
 const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
-
-// Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
-// Rewrite them outside string literals so JSON.parse accepts the payload.
-// 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal, so it is
-// swapped for a sentinel string and revived back to NaN after parsing.
-// The alternation matches whole string literals first (passed through unchanged),
-// guaranteeing bare-token matches only land in numeric positions.
-const NAN_SENTINEL = "__reflex_nan__";
-const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
-const NON_FINITE_REPLACEMENTS = {
-  Infinity: "1e999",
-  "-Infinity": "-1e999",
-  NaN: `"${NAN_SENTINEL}"`,
-};
-const rewriteBareNonFiniteFloats = (str) =>
-  str.replace(NON_FINITE_FLOAT_RE, (match) =>
-    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
-  );
-const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
 
 /**
  * Queue events to be processed and trigger processing of queue.
@@ -501,6 +510,14 @@ export const queueEvents = async (
 export const processEvent = async (socket, navigate, params) => {
   // Only proceed if the socket is up or no event in the queue uses state, otherwise we throw the event into the void
   if (isStateful() && !(socket && socket.connected)) {
+    return;
+  }
+
+  // A backend/frontend state mismatch is fatal; do not send further events.
+  // Drop pending events too: callers drain the queue in while-loops that
+  // would otherwise spin forever on an early return.
+  if (backend_state_mismatch) {
+    event_queue.length = 0;
     return;
   }
 
@@ -569,16 +586,9 @@ export const connect = async (
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
-      return JSON.parse(str);
-    } catch (e) {
-      try {
-        return JSON.parse(
-          rewriteBareNonFiniteFloats(str),
-          reviveNonFiniteFloats,
-        );
-      } catch (e2) {
-        return false;
-      }
+      return parseJson(str);
+    } catch {
+      return false;
     }
   };
   // Set up a reconnect helper function
@@ -618,28 +628,33 @@ export const connect = async (
 
   const disconnectTrigger = (event) => {
     if (socket.current?.connected) {
-      console.log("Disconnect websocket on unload");
+      console.log("Disconnect websocket on page navigation");
       socket.current.disconnect();
     }
   };
 
   const pagehideHandler = (event) => {
-    if (event.persisted && socket.current?.connected) {
-      console.log("Disconnect backend before bfcache on navigation");
-      socket.current.disconnect();
+    if (!socket.current?.connected) {
+      return;
     }
+    if (event.persisted) {
+      console.log("Disconnect backend before bfcache on navigation");
+    } else {
+      console.log("Disconnect websocket on pagehide");
+    }
+    socket.current.disconnect();
   };
 
   // Once the socket is open, hydrate the page.
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
     setConnectErrors([]);
+    window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
-    window.addEventListener("unload", disconnectTrigger);
     if (socket.current.rehydrate) {
       socket.current.rehydrate = false;
-      queueEvents(initialEvents(), socket, true, navigate, params);
+      queueEvents(app.initialEvents(), socket, true, navigate, params);
     }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
@@ -664,9 +679,9 @@ export const connect = async (
 
   socket.current.on("disconnect", (reason, details) => {
     socket.current.wait_connect = false;
+    window.__reflex_otel?.onSocketDisconnect?.(reason);
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
-    window.removeEventListener("unload", disconnectTrigger);
     window.removeEventListener("beforeunload", disconnectTrigger);
     window.removeEventListener("pagehide", pagehideHandler);
     if (try_reconnect) {
@@ -675,24 +690,76 @@ export const connect = async (
     }
   });
 
+  // Report a failure to process a state update to the backend, so it surfaces
+  // in the terminal logs instead of only in the browser console.
+  const reportStateUpdateError = (error) => {
+    console.error("Error processing state update:", error);
+    socket.current?.emit(CLIENT_ERROR_EVENT, {
+      message: error?.message || String(error),
+      error_type: ERROR_TYPE_STATE_UPDATE,
+    });
+  };
+
   // On each received message, queue the updates and events.
-  socket.current.on("event", async (update) => {
-    if (update.delta && Object.keys(update.delta).length > 0) {
-      for (const substate in update.delta) {
-        dispatch[substate](update.delta[substate]);
-        // handle events waiting for `is_hydrated`
-        if (
-          substate === state_name &&
-          update.delta[substate]?.is_hydrated_rx_state_
-        ) {
-          queueEvents(on_hydrated_queue, socket, false, navigate, params);
-          on_hydrated_queue.length = 0;
-        }
-      }
-      applyClientStorageDelta(client_storage, update.delta);
+  socket.current.on("event", (update) => {
+    if (backend_state_mismatch) {
+      // A fatal state mismatch was already detected; drop further updates.
+      return;
     }
-    if (update.events && update.events.length > 0) {
-      queueEvents(update.events, socket, false, navigate, params);
+    // Validate the whole delta before dispatching anything, so a bad substate
+    // does not result in a partially applied state update. Walk the delta once
+    // and only allocate when a substate is actually missing.
+    let missing_substates;
+    for (const substate in update.delta) {
+      if (typeof dispatch[substate] !== "function") {
+        (missing_substates ??= []).push(substate);
+      }
+    }
+    if (missing_substates !== undefined) {
+      const errorMsg = `Cannot process state update: no dispatch function for substate(s) "${missing_substates.join(
+        '", "',
+      )}". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between frontend and backend state definitions. If you are the developer of this app, rebuild the frontend and check that api_url is correct.`;
+      console.error(errorMsg);
+      // Surface the error in the backend terminal logs.
+      socket.current.emit(CLIENT_ERROR_EVENT, {
+        message: errorMsg,
+        substate: missing_substates.join(", "),
+        error_type: ERROR_TYPE_DISPATCH_MISSING,
+      });
+      backend_state_mismatch = true;
+      return;
+    }
+    try {
+      if (update.delta) {
+        for (const substate in update.delta) {
+          dispatch[substate](update.delta[substate]);
+          // handle events waiting for `is_hydrated`
+          if (
+            substate === app.state_name &&
+            update.delta[substate]?.is_hydrated_rx_state_
+          ) {
+            // Deliberately not awaited: the rest of the delta and the client
+            // storage below must be applied before this handler yields, or a
+            // later update can interleave and apply its delta first.
+            queueEvents(
+              on_hydrated_queue,
+              socket,
+              false,
+              navigate,
+              params,
+            ).catch(reportStateUpdateError);
+            on_hydrated_queue.length = 0;
+          }
+        }
+        applyClientStorageDelta(client_storage, update.delta);
+      }
+      if (update.events && update.events.length > 0) {
+        queueEvents(update.events, socket, false, navigate, params).catch(
+          reportStateUpdateError,
+        );
+      }
+    } catch (error) {
+      reportStateUpdateError(error);
     }
   });
   socket.current.on("new_token", async (new_token) => {
@@ -925,7 +992,7 @@ export const useEventLoop = (
     }
     // only use websockets if state is present and backend is not disabled (reflex cloud).
     if (
-      Object.keys(initialState).length > 1 &&
+      Object.keys(app.initialState).length > 1 &&
       !isBackendDisabled() &&
       !socket.current?.connected
     ) {
@@ -989,7 +1056,7 @@ export const useEventLoop = (
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
           info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
@@ -1001,7 +1068,7 @@ export const useEventLoop = (
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
           info:
             event.reason?.name +
             ": " +
@@ -1067,7 +1134,7 @@ export const useEventLoop = (
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = ReflexEvent(
-          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
+          `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars },
         );
         addEvents([event], e);
@@ -1110,11 +1177,11 @@ export const useEventLoop = (
     }
 
     // Equivalent to routeChangeComplete - runs after navigation completes
-    addEvents(onLoadInternalEvent());
+    addEvents(app.onLoadInternalEvent());
 
     // Update the ref
     prevLocationRef.current = location;
-  }, [location, dispatch, onLoadInternalEvent, addEvents]);
+  }, [location, dispatch, addEvents]);
 
   return [addEvents, connectErrors];
 };
@@ -1138,6 +1205,95 @@ export const isTrue = (val) => {
 export const isNotNullOrUndefined = (val) => {
   return (val ?? undefined) !== undefined;
 };
+
+/***
+ * Python-semantics OR: returns `a` if python-truthy, else evaluates and returns `b`.
+ * `b` is a thunk so it is only evaluated when needed, preserving short-circuit.
+ * @template A
+ * @template B
+ * @param {A} a The left-hand value.
+ * @param {() => B} b Thunk producing the right-hand value.
+ * @returns {A | B} `a` if python-truthy, otherwise the result of `b()`.
+ */
+export const pyOr = (a, b) => (isTrue(a) ? a : b());
+
+/***
+ * Python-semantics AND: returns `a` if python-falsy, else evaluates and returns `b`.
+ * `b` is a thunk so it is only evaluated when needed, preserving short-circuit.
+ * @template A
+ * @template B
+ * @param {A} a The left-hand value.
+ * @param {() => B} b Thunk producing the right-hand value.
+ * @returns {A | B} `a` if python-falsy, otherwise the result of `b()`.
+ */
+export const pyAnd = (a, b) => (isTrue(a) ? b() : a);
+
+/***
+ * Python-semantics str.lstrip: remove leading characters in the given set.
+ * @param {string} s The string to strip.
+ * @param {string?} chars Characters to remove; null/undefined strips whitespace.
+ * @returns {string} The stripped string.
+ */
+export const pyLstrip = (s, chars) => {
+  if (chars == null) return s.trimStart();
+  const charSet = new Set(chars);
+  let start = 0;
+  while (start < s.length) {
+    const cp = String.fromCodePoint(s.codePointAt(start));
+    if (!charSet.has(cp)) break;
+    start += cp.length;
+  }
+  return s.slice(start);
+};
+
+/***
+ * Python-semantics str.rstrip: remove trailing characters in the given set.
+ * @param {string} s The string to strip.
+ * @param {string?} chars Characters to remove; null/undefined strips whitespace.
+ * @returns {string} The stripped string.
+ */
+export const pyRstrip = (s, chars) => {
+  if (chars == null) return s.trimEnd();
+  const charSet = new Set(chars);
+  let end = s.length;
+  while (end > 0) {
+    // step back over a full code point (surrogate pairs are 2 units wide)
+    let cp = s[end - 1];
+    if (end > 1) {
+      const pair = String.fromCodePoint(s.codePointAt(end - 2));
+      if (pair.length === 2) cp = pair;
+    }
+    if (!charSet.has(cp)) break;
+    end -= cp.length;
+  }
+  return s.slice(0, end);
+};
+
+/***
+ * Python-semantics str.strip: remove leading and trailing characters in the given set.
+ * @param {string} s The string to strip.
+ * @param {string?} chars Characters to remove; null/undefined strips whitespace.
+ * @returns {string} The stripped string.
+ */
+export const pyStrip = (s, chars) =>
+  chars == null ? s.trim() : pyRstrip(pyLstrip(s, chars), chars);
+
+/***
+ * Python-semantics flat map: map each element through fn and concatenate the
+ * results, iterating each one the way Python does (arrays yield their
+ * elements, strings yield characters, objects yield their keys).
+ * @param {Array} arr The array to map over.
+ * @param {Function} fn The mapping function applied to each element.
+ * @returns {Array} The flattened array of mapped results.
+ */
+export const pyFlatMap = (arr, fn) =>
+  arr.flatMap((element) => {
+    const value = fn(element);
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") return Array.from(value);
+    if (value === Object(value)) return Object.keys(value);
+    throw new TypeError(`flat_map value is not iterable: ${value}`);
+  });
 
 /**
  * Get the value from a ref.

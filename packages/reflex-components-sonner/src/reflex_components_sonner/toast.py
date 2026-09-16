@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import dataclasses
 from typing import Any, Literal
 
@@ -106,7 +107,6 @@ class ToastProps(NoExtrasAllowedProps):
     # Icon displayed in front of toast's text, aligned vertically.
     # icon: Icon | None = None # noqa: ERA001
 
-    # TODO: fix implementation for action / cancel buttons
     # Renders a primary button, clicking it will close the toast.
     action: ToastAction | None
 
@@ -137,7 +137,7 @@ class ToastProps(NoExtrasAllowedProps):
     # Function that gets called when the toast disappears automatically after it's timeout (duration` prop).
     on_auto_close: Any | None
 
-    def dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+    def dict(self, *args: Any, **kwargs: Any) -> builtins.dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
@@ -171,7 +171,7 @@ class ToastProps(NoExtrasAllowedProps):
 class Toaster(Component):
     """A Toaster Component for displaying toast notifications."""
 
-    library: str | None = "sonner@2.0.7"
+    library: str | None = "sonner@2.0.8"
 
     tag = "Toaster"
 

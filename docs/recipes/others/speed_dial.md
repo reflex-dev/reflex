@@ -6,9 +6,9 @@ import reflex as rx
 
 A speed dial is a component that allows users to quickly access frequently used actions or pages. It is often used in the bottom right corner of the screen.
 
-# Vertical
+## Vertical
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialVertical(rx.ComponentState):
     is_open: bool = False
 
@@ -93,9 +93,9 @@ def render_vertical():
     )
 ```
 
-# Horizontal
+## Horizontal
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialHorizontal(rx.ComponentState):
     is_open: bool = False
 
@@ -181,9 +181,9 @@ def render_horizontal():
     )
 ```
 
-# Vertical with text
+## Vertical with text
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialVerticalText(rx.ComponentState):
     is_open: bool = False
 
@@ -275,9 +275,9 @@ def render_vertical_text():
     )
 ```
 
-# Reveal animation
+## Reveal animation
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialReveal(rx.ComponentState):
     is_open: bool = False
 
@@ -378,9 +378,9 @@ def render_reveal():
     )
 ```
 
-# Menu
+## Menu
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialMenu(rx.ComponentState):
     is_open: bool = False
 

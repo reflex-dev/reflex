@@ -4,6 +4,7 @@ from reflex_docgen import markdown as markdown
 from reflex_docgen._class import ClassDocumentation as ClassDocumentation
 from reflex_docgen._class import FieldDocumentation as FieldDocumentation
 from reflex_docgen._class import MethodDocumentation as MethodDocumentation
+from reflex_docgen._class import format_type as format_type
 from reflex_docgen._class import (
     generate_class_documentation as generate_class_documentation,
 )
@@ -25,6 +26,7 @@ __all__ = [
     "FieldDocumentation",
     "MethodDocumentation",
     "PropDocumentation",
+    "format_type",
     "generate_class_documentation",
     "generate_documentation",
     "get_component_event_handlers",

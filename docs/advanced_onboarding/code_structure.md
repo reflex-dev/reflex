@@ -9,7 +9,7 @@ The main app module is responsible for importing all other modules that make up 
 
 **All other modules containing pages, state, and models MUST be imported by the main app module or package** for Reflex to include them in the compiled output.
 
-# Breaking the App into Smaller Pieces
+## Breaking the App into Smaller Pieces
 
 As applications scale, effective organization is crucial. This is achieved by breaking the application down into smaller, manageable modules and organizing them into logical packages that avoid circular dependencies.
 
@@ -91,7 +91,7 @@ def template(page: Callable[[], rx.Component]) -> rx.Component:
     )
 ```
 
-The `@template` decorator should appear below the `@rx.page` decorator and above the page-returning function. See the [Posts Page](#a-post-page-example_big_apppagespostspy) code for an example.
+The `@template` decorator should appear below the `@rx.page` decorator and above the page-returning function. See the [Posts Page](#a-post-page:-example_big_app/pages/posts.py) code for an example.
 
 ## State Management
 
@@ -259,7 +259,7 @@ component.
 
 ### External Components
 
-Reflex 0.4.3 introduced support for the [`reflex component` CLI commands](/docs/custom-components/overview), which makes it easy
+Reflex 0.4.3 introduced support for the [`reflex component` CLI commands](/docs/custom-components/overview/), which makes it easy
 to bundle up common functionality to publish on PyPI as a standalone Python package
 that can be installed and used in any Reflex app.
 

@@ -1,5 +1,7 @@
 ```python exec
 import reflex as rx
+from reflex_components_code.shiki_code_block import code_block as shiki_code_block
+from reflex_site_shared.components.blocks.code import DOCS_CODE_THEME
 ```
 
 # Introduction
@@ -58,14 +60,17 @@ class IntroTabsState(rx.State):
 def counter_code_section(code: str, tab: str) -> rx.Component:
     active = IntroTabsState.value == tab
     return rx.box(
-        rx.code_block(
+        shiki_code_block(
             code,
+            language="python",
             class_name="code-block counter-code-block",
+            theme=DOCS_CODE_THEME,
+            can_copy=False,
         ),
-        background=rx.cond(active, "var(--c-violet-3)", "transparent"),
+        background=rx.cond(active, "var(--c-slate-4)", "transparent"),
         border_left=rx.cond(
             active,
-            "3px solid var(--c-violet-9)",
+            "3px solid var(--border-strong)",
             "3px solid transparent",
         ),
         padding="0.875rem 1.5rem",
@@ -109,7 +114,7 @@ def tabs():
             value="tab3",
             class_name="pt-4",
         ),
-        class_name="text-slate-12 font-normal",
+        class_name="text-foreground font-normal [&_.rt-Code]:!text-muted-foreground [&_.rt-Code]:!bg-accent [&_.rt-Code]:!shadow-none",
         default_value="tab1",
         value=IntroTabsState.value,
         on_change=lambda x: IntroTabsState.change_value(x),
@@ -123,7 +128,7 @@ rx.hstack(
         color_scheme="ruby",
         on_click=CounterExampleState.decrement,
     ),
-    rx.heading(CounterExampleState.count, font_size="2em"),
+    rx.heading(CounterExampleState.count, as_="h2", font_size="2em"),
     rx.button(
         "Increment",
         color_scheme="grass",
@@ -183,7 +188,7 @@ app.add_page(index)""",
     ),
     class_name=(
         "w-full flex flex-col overflow-hidden rounded-xl border "
-        "border-slate-4 bg-slate-2 py-1"
+        "border-border-subtle bg-muted py-1"
     ),
 )
 ```
@@ -207,7 +212,7 @@ class State(rx.State):
     count: int = 0
 ```
 
-State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base-vars)**. Our counter has one: `count`, starting at `0`.
+State holds the app's mutable data. Variables declared here are called **[vars](/docs/vars/base-vars/)**. Our counter has one: `count`, starting at `0`.
 
 ### Event Handlers
 
@@ -234,7 +239,7 @@ def index():
             color_scheme="ruby",
             on_click=State.decrement,
         ),
-        rx.heading(State.count, font_size="2em"),
+        rx.heading(State.count, as_="h2", font_size="2em"),
         rx.button(
             "Increment",
             color_scheme="grass",
@@ -244,7 +249,7 @@ def index():
     )
 ```
 
-The UI is built from components (`rx.hstack`, `rx.button`, `rx.heading`) that can be nested and styled with CSS or [Tailwind](/docs/styling/tailwind). Reflex ships with [50+ built-in components](/docs/library), and you can [wrap any React component](/docs/wrapping-react/overview).
+The UI is built from components (`rx.hstack`, `rx.button`, `rx.heading`) that can be nested and styled with CSS or [Tailwind](/docs/styling/tailwind/). Reflex ships with [50+ built-in components](/docs/library/), and you can [wrap any React component](/docs/wrapping-react/overview/).
 
 Components reference state vars (`rx.heading(State.count, …)`) and reactively re-render when state changes. Event triggers (`on_click=State.decrement`) wire UI to handlers.
 
@@ -284,4 +289,4 @@ Create the app and register the page at the base route.
 - [Reflex Cloud](/docs/hosting/deploy-quick-start/) — one-command deploy.
 ```
 
-Browse our [open-source templates](/docs/getting-started/open-source-templates/), or press `Cmd+K` / `Ctrl+K` to search the docs.
+Press `Cmd+K` / `Ctrl+K` to search the docs.
