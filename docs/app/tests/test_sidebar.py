@@ -88,3 +88,47 @@ def test_group_with_nested_pages_remains_expandable():
     assert rendered.count('jsx("details"') == 2
     assert 'href:"/postgres/"' in rendered
     assert 'href:"/sqlite/"' in rendered
+
+
+def test_api_reference_groups_related_symbols():
+    """The API reference section keeps related symbols adjacent."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
+        api_reference,
+    )
+
+    assert [item.names for item in api_reference] == [
+        "App",
+        "Config",
+        "Environment Variables",
+        "State",
+        "StateManager",
+        "Component",
+        "ComponentState",
+        "Event Triggers",
+        "Special Events",
+        "EventHandler",
+        "EventSpec",
+        "Event",
+        "Var",
+        "ImportVar",
+        "Var System",
+        "CLI",
+        "Browser Storage",
+        "Browser Javascript",
+        "Plugins",
+        "Utils",
+        "Telemetry",
+        "Observability",
+    ]
+
+
+def test_api_reference_section_lists_every_generated_page_once():
+    """A page added to apiref.modules stays reachable from the sidebar."""
+    from reflex_docs.pages.docs import apiref
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
+        api_reference,
+    )
+
+    links = [item.link for item in api_reference]
+    assert len(links) == len(set(links))
+    assert set(links).issuperset(page.path for page in apiref.pages)
