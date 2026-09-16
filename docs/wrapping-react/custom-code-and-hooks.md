@@ -1,3 +1,5 @@
+# Custom Code and Hooks
+
 When wrapping a React component, you may need to define custom code or hooks that are specific to the component. This is done by defining the `add_custom_code`or `add_hooks` methods in your component class.
 
 ## Custom Code
@@ -48,10 +50,11 @@ from reflex.vars.base import Var, VarData
 from reflex_base.constants import Hooks
 from reflex.components.el.elements import Div
 
+
 class ComponentWithHooks(Div, MyBaseComponent):
     """MyComponent."""
 
-    def add_hooks(self) -> list[str| Var]:
+    def add_hooks(self) -> list[str | Var]:
         """Add hooks to the component."""
         hooks = []
         hooks1 = """const customHookVariable = "some value";"""
@@ -64,8 +67,10 @@ class ComponentWithHooks(Div, MyBaseComponent):
             }, []);
             """,
             _var_data=VarData(
-                imports=\{"react": ["useEffect"],\},
-                position=Hooks.HookPosition.PRE_TRIGGER
+                imports={
+                    "react": ["useEffect"],
+                },
+                position=Hooks.HookPosition.PRE_TRIGGER,
             ),
         )
         hooks.append(hooks2)
@@ -76,8 +81,10 @@ class ComponentWithHooks(Div, MyBaseComponent):
             }, []);
             """,
             _var_data=VarData(
-                imports=\{"react": ["useEffect"],\},
-                position=Hooks.HookPosition.POST_TRIGGER
+                imports={
+                    "react": ["useEffect"],
+                },
+                position=Hooks.HookPosition.POST_TRIGGER,
             ),
         )
         hooks.append(hooks3)
@@ -100,10 +107,29 @@ export function Div_7178f430b7b371af8a12d8265d65ab9b() {
     console.log("PostTrigger: "+ customHookVariable);
   }, []);
 
-  return jsx("div", \{\});
+  return jsx("div", {});
 }
 ```
 
 ```md alert info
 # You can mix custom code and hooks in the same component. Hooks can access a variable defined in the custom code, but custom code cannot access a variable defined in a hook.
 ```
+
+## Using a Hook's Return Value
+
+`add_hooks` inserts hook statements into the component, but the values they define are not directly accessible from Python. When you need the return value of a no-argument hook, use `rx.vars.use_hook_var()`, which binds the hook call to a unique variable name and returns it as a `Var`. The hook statement and its import are automatically included in any component where the var is used, so it composes with regular props and var operations.
+
+```python
+import reflex as rx
+
+
+def use_chart_width() -> rx.Var[int | None]:
+    """Get the width of the enclosing recharts chart as a var."""
+    return rx.vars.use_hook_var(
+        library="recharts@3.8.1", hook="useChartWidth", _var_type=int | None
+    )
+```
+
+For React's built-in [`useId`](https://react.dev/reference/react/useId), `rx.vars.use_id()` returns a `Var[str]` with a stable unique id for the component being rendered, e.g. for linking SVG elements to gradient or filter definitions.
+
+A hook var is evaluated once per compiled component, so every element that reads it must render inside the same one. An `rx.el.svg` root, an `@rx.memo` body, and a custom renderer body each compile into a single component and satisfy this.

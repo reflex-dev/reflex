@@ -16,10 +16,7 @@ LiteralContainerSize = Literal["1", "2", "3", "4"]
 
 
 class Container(elements.Div, RadixThemesComponent):
-    """Constrains the maximum width of page content.
-
-    See https://www.radix-ui.com/themes/docs/components/container
-    """
+    """Constrains the maximum width of page content."""
 
     tag = "Container"
 

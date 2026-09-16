@@ -45,9 +45,10 @@ class TooltipState(rx.State):
 def index():
     return rx.flex(
         rx.heading(
-            f"Number of times tooltip opened or closed: {TooltipState.num_opens}"
+            f"Number of times tooltip opened or closed: {TooltipState.num_opens}",
+            as_="h2",
         ),
-        rx.heading(f"Tooltip open: {TooltipState.opened}"),
+        rx.heading(f"Tooltip open: {TooltipState.opened}", as_="h2"),
         rx.text(
             "Hover over the button to see the tooltip.",
             rx.tooltip(

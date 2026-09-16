@@ -2,18 +2,27 @@
 
 import asyncio
 import contextlib
+import dataclasses
+import logging
+import sys
 from typing import Any
+from unittest.mock import Mock
 
 import pytest
+from opentelemetry.trace import SpanKind
+from pytest_mock import MockerFixture
+from reflex_base import otel
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import (
     EventProcessor,
     QueueShutDown,
     _stream_queue_until_done,
 )
+from reflex_base.event.processor.future import EventFuture
 from reflex_base.registry import RegistrationContext
 
 from reflex.event import Event, EventHandler
+from tests.units.conftest import active_tracer
 
 # Module-level log so event handlers can record what happened.
 _CALL_LOG: list[dict[str, Any]] = []
@@ -126,6 +135,103 @@ async def _background_slow_logging_handler(value: str = "default"):
 
 _background_slow_logging_handler._reflex_background_task = True  # type: ignore[attr-defined]
 
+# Gates for coordinating supersede tests; tests create loop-local events here.
+_GATES: dict[str, asyncio.Event] = {}
+
+
+async def _gated_logging_handler(value: str = "default"):
+    """Wait for the gate named ``value`` (if any), then log.
+
+    Args:
+        value: The value to log; also names the gate to wait for.
+    """
+    gate = _GATES.get(value)
+    if gate is not None:
+        await gate.wait()
+    _CALL_LOG.append({"value": value})
+
+
+async def _cancellable_load_handler(value: str = "default"):
+    """Log ``value``; if a gate named ``value`` exists, signal it and block.
+
+    Args:
+        value: The value to log; also names the gate to signal.
+    """
+    gate = _GATES.get(value)
+    if gate is not None:
+        gate.set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            _CALL_LOG.append({"value": f"{value}_cancelled"})
+            raise
+    _CALL_LOG.append({"value": value})
+
+
+async def _resurrecting_load_handler(value: str = "default"):
+    """Signal the gate named ``value``, block, and chain an event when cancelled.
+
+    Args:
+        value: The value naming the gate to signal.
+    """
+    gate = _GATES.get(value)
+    if gate is not None:
+        gate.set()
+    try:
+        await asyncio.sleep(10)
+    except asyncio.CancelledError:
+        ctx = EventContext.get()
+        await ctx.enqueue(Event.from_event_type(logging_event("resurrected"))[0])
+        raise
+
+
+async def _superseding_root_handler(value: str = "default", child: str = "load"):
+    """A superseding handler that chains a load event, like on_load_internal.
+
+    Args:
+        value: Label forwarded to the chained load event.
+        child: Which child handler to chain ("load" or "resurrect").
+    """
+    ctx = EventContext.get()
+    child_event = (
+        resurrecting_load_event if child == "resurrect" else cancellable_load_event
+    )
+    await ctx.enqueue(Event.from_event_type(child_event(value))[0])
+
+
+_superseding_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
+async def _polling_handler(tick: int = 0, ticks: int = 0):
+    """Re-chain itself ``ticks`` times, then signal the ``poll`` gate and block.
+
+    Each tick is a child of the previous one, so the chain grows one level
+    deeper per tick like a self-chaining polling handler.
+
+    Args:
+        tick: The current tick number.
+        ticks: How many ticks to run before blocking.
+    """
+    if tick < ticks:
+        ctx = EventContext.get()
+        await ctx.enqueue(Event.from_event_type(polling_event(tick + 1, ticks))[0])
+        return
+    _GATES["poll"].set()
+    await asyncio.sleep(10)
+
+
+async def _superseding_poll_root_handler(ticks: int = 0):
+    """A superseding root that chains a polling loop, like on_load -> poll.
+
+    Args:
+        ticks: How many ticks the polling loop runs before blocking.
+    """
+    ctx = EventContext.get()
+    await ctx.enqueue(Event.from_event_type(polling_event(0, ticks))[0])
+
+
+_superseding_poll_root_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
 
 noop_event = EventHandler(fn=_noop_handler)
 slow_event = EventHandler(fn=_slow_handler)
@@ -140,6 +246,12 @@ multi_chaining_event = EventHandler(fn=_multi_chaining_handler)
 background_slow_logging_event = EventHandler(fn=_background_slow_logging_handler)
 background_then_normal_event = EventHandler(fn=_background_then_normal_handler)
 error_then_logging_event = EventHandler(fn=_error_then_logging_handler)
+gated_logging_event = EventHandler(fn=_gated_logging_handler)
+cancellable_load_event = EventHandler(fn=_cancellable_load_handler)
+resurrecting_load_event = EventHandler(fn=_resurrecting_load_handler)
+superseding_root_event = EventHandler(fn=_superseding_root_handler)
+polling_event = EventHandler(fn=_polling_handler)
+superseding_poll_root_event = EventHandler(fn=_superseding_poll_root_handler)
 
 
 @pytest.fixture(autouse=True)
@@ -150,6 +262,7 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         forked_registration_context: Isolated registration context for the test.
     """
     _CALL_LOG.clear()
+    _GATES.clear()
     for handler in (
         noop_event,
         slow_event,
@@ -164,6 +277,12 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         background_slow_logging_event,
         background_then_normal_event,
         error_then_logging_event,
+        gated_logging_event,
+        cancellable_load_event,
+        resurrecting_load_event,
+        superseding_root_event,
+        polling_event,
+        superseding_poll_root_event,
     ):
         RegistrationContext.register_event_handler(handler)
 
@@ -224,6 +343,36 @@ async def test_stop_idempotent(processor: EventProcessor):
     await processor.start()
     await processor.stop()
     await processor.stop()
+
+
+@pytest.mark.skipif(
+    not hasattr(asyncio, "QueueShutDown"),
+    reason="asyncio.Queue.shutdown() requires Python 3.13+",
+)
+async def test_native_queue_shutdown_is_suppressed(
+    processor: EventProcessor, mocker: MockerFixture
+):
+    """Native queue shutdown exceptions do not surface as processor errors.
+
+    Args:
+        processor: The event processor fixture.
+        mocker: The pytest mock fixture.
+    """
+    send_error = mocker.patch("reflex.utils.telemetry.send_error")
+    console_error = mocker.patch("reflex.utils.console.error")
+    queue: asyncio.Queue = asyncio.Queue()
+    queue.shutdown()
+
+    processor._queue = queue
+    await processor._process_queue()
+
+    processor._queue = None
+    processor._queue_task = asyncio.create_task(queue.get())
+    await asyncio.sleep(0)
+    await processor.stop()
+
+    send_error.assert_not_called()
+    console_error.assert_not_called()
 
 
 async def test_async_context_manager(processor: EventProcessor):
@@ -356,6 +505,32 @@ async def test_multiple_futures_cancelled_on_stop(processor: EventProcessor):
     assert ep._futures == {}
 
 
+async def test_stop_drains_same_token_sequential_backlog(
+    processor: EventProcessor,
+    token: str,
+):
+    """Graceful stop drains queued same-token events within the shutdown budget.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    processor.configure()
+    async with processor as ep:
+        futures = [
+            await ep.enqueue(
+                token, Event.from_event_type(slow_logging_event(str(i)))[0]
+            )
+            for i in range(10)
+        ]
+
+    assert [entry["value"] for entry in _CALL_LOG] == [str(i) for i in range(10)]
+    assert all(future.done() and not future.cancelled() for future in futures)
+    assert ep._tasks == {}
+    assert ep._token_queues == {}
+    assert ep._futures == {}
+
+
 async def test_cancel_future_before_task_starts(
     mock_event_processor: EventProcessor,
     token: str,
@@ -428,6 +603,37 @@ async def test_backend_exception_handler_called(token: str):
     assert isinstance(caught[0], RuntimeError)
 
 
+async def test_exception_handler_can_chain_recovery_events(token: str):
+    """The backend exception handler task can enqueue recovery events.
+
+    The failed future must not be retained in ``_futures`` during exception
+    recovery, or the recovery event would find its done (non-cancelled) parent
+    and ``add_child`` would raise instead of queuing the event.
+
+    Args:
+        token: The client token.
+    """
+
+    class _RecoveringProcessor(EventProcessor):
+        async def _handle_backend_exception(
+            self, ex: Exception, ev_ctx: EventContext | None = None
+        ) -> None:
+            if ev_ctx is not None:
+                EventContext.set(ev_ctx)
+            await EventContext.get().enqueue(
+                Event.from_event_type(logging_event("recovered"))[0]
+            )
+
+    ep = _RecoveringProcessor(
+        backend_exception_handler=lambda ex: None, graceful_shutdown_timeout=2
+    )
+    ep.configure()
+    async with ep:
+        await ep.enqueue(token, Event.from_event_type(error_event())[0])
+        await asyncio.wait_for(ep.join(), timeout=1)
+    assert _CALL_LOG == [{"value": "recovered"}]
+
+
 async def test_error_does_not_stop_queue(
     processor: EventProcessor,
     token: str,
@@ -456,6 +662,38 @@ async def test_chained_event_processed(token: str):
     async with ep:
         await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
     assert _CALL_LOG == [{"value": "chained"}]
+
+
+async def test_enqueue_child_of_done_parent_does_not_crash(
+    mock_event_processor: EventProcessor,
+    token: str,
+):
+    """Regression: a late-chained event whose parent future already completed
+    still runs instead of crashing when registered as the parent's child.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+    """
+    async with mock_event_processor as ep:
+        done_parent = EventFuture(txid="parent-txid")
+        done_parent.set_result(None)
+        ep._futures["parent-txid"] = done_parent
+
+        assert ep._root_context is not None
+        child_ctx = dataclasses.replace(
+            ep._root_context.fork(token=token), parent_txid="parent-txid"
+        )
+        future = await ep.enqueue(
+            token,
+            Event.from_event_type(logging_event("late-child"))[0],
+            ev_ctx=child_ctx,
+        )
+        await future
+
+    assert _CALL_LOG == [{"value": "late-child"}]
+    # The child is not registered under the already-done parent.
+    assert done_parent.children == []
 
 
 async def test_join_when_not_started(processor: EventProcessor):
@@ -735,3 +973,266 @@ async def test_stream_queue_until_done_handles_concurrent_put_and_completion():
 
     collected = [v async for v in _stream_queue_until_done(queue, _watcher())]
     assert collected == [99]
+
+
+async def _drain_superseded(ep: EventProcessor) -> None:
+    """Wait for done callbacks to clean the supersession tracking.
+
+    Callback cleanup completes in a bounded number of event-loop ticks, so
+    failing to drain within the allotted ticks is a real bug, not a timing
+    flake.
+
+    Args:
+        ep: The event processor to wait on.
+
+    Raises:
+        AssertionError: If the tracking dict is not cleaned up in time.
+    """
+    for _ in range(100):
+        if not ep._superseded:
+            return
+        await asyncio.sleep(0)
+    msg = f"supersession tracking was not cleaned up: {ep._superseded}"
+    raise AssertionError(msg)
+
+
+async def test_superseding_event_cancels_previous_chain(
+    processor: EventProcessor,
+    token: str,
+):
+    """A newer superseding event cancels the previous running chain (#6593).
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["stale"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        stale = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("stale"))[0]
+        )
+        await asyncio.wait_for(_GATES["stale"].wait(), timeout=1)
+        # The root handler returned after chaining, but the chain is live.
+        assert stale.done()
+        assert not stale.all_done()
+
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("fresh"))[0]
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+        assert ep._superseded == {}
+
+    assert _CALL_LOG == [{"value": "stale_cancelled"}, {"value": "fresh"}]
+
+
+async def test_superseding_event_logs_debug_on_cancel(
+    processor: EventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """Cancelling a stale chain emits a debug log naming the handler (#6593).
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+        caplog: Pytest log capture fixture.
+    """
+    caplog.set_level(
+        logging.DEBUG, logger="reflex_base.event.processor.event_processor"
+    )
+    _GATES["stale"] = asyncio.Event()
+    stale_event = Event.from_event_type(superseding_root_event("stale"))[0]
+    processor.configure()
+    async with processor as ep:
+        await ep.enqueue(token, stale_event)
+        await asyncio.wait_for(_GATES["stale"].wait(), timeout=1)
+        # Nothing was superseded yet, so nothing is logged.
+        assert caplog.messages == []
+
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("fresh"))[0]
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+
+    assert len(caplog.messages) == 1
+    assert stale_event.name in caplog.messages[0]
+    assert token in caplog.messages[0]
+
+
+async def test_superseding_event_skips_queued_stale_chain(
+    processor: EventProcessor,
+    token: str,
+):
+    """A superseded chain that never started is skipped, not executed.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["blocker"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        await ep.enqueue(
+            token, Event.from_event_type(gated_logging_event("blocker"))[0]
+        )
+        stale = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("stale"))[0]
+        )
+        # Let the stale entry reach the per-token queue before superseding it.
+        await ep.join(timeout=1)
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("fresh"))[0]
+        )
+        # The root already completed, so superseding it cancels the pending leaf.
+        assert stale.all_done()
+        _GATES["blocker"].set()
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+
+    # The stale root handler never ran at all.
+    assert _CALL_LOG == [{"value": "blocker"}, {"value": "fresh"}]
+
+
+async def test_superseded_chain_cannot_chain_new_events(
+    processor: EventProcessor,
+    token: str,
+):
+    """A cancelled chain cannot resurrect itself by chaining during unwind.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+    """
+    _GATES["stale"] = asyncio.Event()
+    processor.configure()
+    async with processor as ep:
+        await ep.enqueue(
+            token,
+            Event.from_event_type(superseding_root_event("stale", "resurrect"))[0],
+        )
+        await asyncio.wait_for(_GATES["stale"].wait(), timeout=1)
+
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_root_event("fresh"))[0]
+        )
+        await asyncio.wait_for(current.wait_all(), timeout=1)
+        # Drain anything the unwinding stale chain may have enqueued.
+        await asyncio.wait_for(ep.join(), timeout=1)
+
+    assert {"value": "resurrected"} not in _CALL_LOG
+    assert {"value": "fresh"} in _CALL_LOG
+
+
+async def test_deep_self_chaining_poll_loop_under_superseding_root(
+    processor: EventProcessor,
+    token: str,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A polling loop chained deeper than the recursion limit keeps working (#7145).
+
+    A handler that re-chains itself on every tick (a polling loop started from
+    ``on_load``) builds a linear chain of futures one level deeper per tick.
+    Walking that chain recursively blows the stack in the cleanup callbacks and
+    in ``_supersede_previous`` on the client's next navigation.
+
+    Args:
+        processor: The event processor fixture.
+        token: The client token.
+        caplog: Log capture fixture.
+    """
+    _GATES["poll"] = asyncio.Event()
+    ticks = sys.getrecursionlimit() + 100
+    processor.configure()
+    async with processor as ep:
+        stale = await ep.enqueue(
+            token, Event.from_event_type(superseding_poll_root_event(ticks))[0]
+        )
+        await asyncio.wait_for(_GATES["poll"].wait(), timeout=10)
+        assert stale.done()
+        assert not stale.all_done()
+        assert list(ep._superseded.values()) == [stale]
+
+        # The next navigation supersedes the running poll loop.
+        _GATES["poll"] = asyncio.Event()
+        current = await ep.enqueue(
+            token, Event.from_event_type(superseding_poll_root_event(0))[0]
+        )
+        # The root already completed, so superseding it cancels the pending leaf.
+        assert stale.all_done()
+        await asyncio.wait_for(_GATES["poll"].wait(), timeout=1)
+        current.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(current.wait_all(), timeout=1)
+        await _drain_superseded(ep)
+
+    assert not [r for r in caplog.records if r.levelno >= logging.ERROR], [
+        r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR
+    ]
+
+
+async def test_no_spans_when_otel_disabled(
+    mock_event_processor: EventProcessor, token: str, monkeypatch
+):
+    """With tracing off the processor never touches the tracer.
+
+    Args:
+        mock_event_processor: The event processor with mock root context.
+        token: The client token.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    assert otel.enabled is False
+    tracer = Mock()
+    # Nothing has bound the tracer yet in a process that never enabled tracing.
+    monkeypatch.setattr(otel, "_tracer", tracer, raising=False)
+    async with mock_event_processor as ep:
+        await ep.enqueue(token, Event.from_event_type(noop_event())[0])
+    tracer.start_as_current_span.assert_not_called()
+
+
+async def test_stream_delta_span_nests_under_caller(token: str, otel_exporter):
+    """enqueue_stream_delta captures the caller's trace context like enqueue().
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        event = Event.from_event_type(delta_event())[0]
+        with active_tracer().start_as_current_span("POST /_upload") as http_span:
+            async for _ in ep.enqueue_stream_delta(token, event):
+                pass
+    spans = {s.name: s for s in otel_exporter.get_finished_spans()}
+    handler = spans[event.name]
+    assert handler.parent is not None
+    assert handler.parent.span_id == http_span.get_span_context().span_id
+    assert handler.kind == SpanKind.INTERNAL
+
+
+async def test_event_spans_chain_parent_child(token: str, otel_exporter):
+    """Each event gets a span; chained events are children of the enqueuing span.
+
+    Args:
+        token: The client token.
+        otel_exporter: In-memory span exporter with tracing enabled.
+    """
+    ep = EventProcessor(graceful_shutdown_timeout=2)
+    ep.configure()
+    async with ep:
+        await ep.enqueue(token, Event.from_event_type(chaining_event())[0])
+    assert _CALL_LOG == [{"value": "chained"}]
+    spans = {s.name.rsplit(".", 1)[-1]: s for s in otel_exporter.get_finished_spans()}
+    parent = spans["_chaining_handler"]
+    child = spans["_logging_handler"]
+    assert parent.parent is None
+    assert parent.kind == SpanKind.CONSUMER
+    assert child.parent is not None
+    assert child.parent.span_id == parent.context.span_id
+    assert child.kind == SpanKind.INTERNAL
+    assert (
+        child.attributes[otel.ATTR_EVENT_PARENT_TXID]
+        == parent.attributes[otel.ATTR_EVENT_TXID]
+    )
+    assert child.attributes[otel.ATTR_SESSION_ID] == otel._session_id(token)

@@ -185,15 +185,23 @@ class DependencyTracker:
         except VarValueError:
             # If the target state is not a BaseState, we cannot track dependencies on it.
             return
+        # Look up the raw descriptor first via inspect.getattr_static so we can detect
+        # property-like descriptors (e.g. HybridProperty) that override __get__ to return
+        # something other than themselves when accessed via the class.
         try:
-            ref_obj = getattr(target_state, instruction.argval)
+            static_obj = inspect.getattr_static(target_state, instruction.argval)
         except AttributeError:
-            # Not found on this state class, maybe it is a dynamic attribute that will be picked up later.
-            ref_obj = None
+            static_obj = None
 
-        if isinstance(ref_obj, property) and not isinstance(ref_obj, ComputedVar):
+        if isinstance(static_obj, property) and not isinstance(static_obj, ComputedVar):
             # recurse into property fget functions
-            ref_obj = ref_obj.fget
+            ref_obj = static_obj.fget
+        else:
+            try:
+                ref_obj = getattr(target_state, instruction.argval)
+            except AttributeError:
+                # Not found on this state class, maybe it is a dynamic attribute that will be picked up later.
+                ref_obj = None
         if callable(ref_obj):
             # recurse into callable attributes
             self._merge_deps(
@@ -446,7 +454,9 @@ class DependencyTracker:
                         tracked_locals=self.tracked_locals,
                     )
                 )
-            elif instruction.opname == "IMPORT_NAME" and instruction.argval is not None:
+            elif instruction.opname == "IMPORT_NAME":
+                if instruction.argval is None:
+                    continue
                 self.scan_status = ScanStatus.GETTING_IMPORT
                 self._last_import_name = instruction.argval
                 importlib.import_module(instruction.argval)

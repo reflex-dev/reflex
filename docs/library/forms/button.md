@@ -38,7 +38,7 @@ def counter():
             color_scheme="red",
             on_click=CountState.decrement,
         ),
-        rx.heading(CountState.count),
+        rx.heading(CountState.count, as_="h2"),
         rx.button(
             "Increment",
             color_scheme="grass",

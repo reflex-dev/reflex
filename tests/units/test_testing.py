@@ -3,18 +3,58 @@
 import sys
 import threading
 from types import ModuleType, SimpleNamespace
+from typing import Any, cast
 from unittest import mock
 
 import pytest
 import reflex_base.config
-from reflex_base.components.component import CUSTOM_COMPONENTS
+from reflex_base.components.memo import MEMOS
 from reflex_base.constants import IS_WINDOWS
+from reflex_base.environment import environment
+from reflex_base.registry import RegistrationContext
 
+import reflex.constants
 import reflex.reflex as reflex_cli
 import reflex.testing as reflex_testing
 import reflex.utils.prerequisites
-from reflex.experimental.memo import EXPERIMENTAL_MEMOS
 from reflex.testing import AppHarness
+from reflex.utils.exec import should_prerender_routes
+
+
+def test_testing_module_does_not_import_uvicorn_at_module_load():
+    """Importing reflex.testing does not require the AppHarness backend runtime."""
+    assert "uvicorn" not in reflex_testing.__dict__
+
+
+def test_legacy_selenium_harness_remains_available(tmp_path, monkeypatch):
+    """Existing harness callers retain browser creation and polling while migrating.
+
+    Args:
+        tmp_path: Temporary app directory.
+        monkeypatch: Fixture for replacing the optional browser runtime.
+    """
+    harness = AppHarness.create(root=tmp_path, app_name="legacy")
+    harness.frontend_url = "http://localhost:3000"
+    driver = mock.Mock()
+    driver_factory = mock.Mock(return_value=driver)
+    options = mock.Mock()
+    monkeypatch.setattr(reflex_testing, "has_selenium", True, raising=False)
+    monkeypatch.setattr(
+        reflex_testing,
+        "webdriver",
+        SimpleNamespace(Chrome=object(), Firefox=object(), Edge=object()),
+        raising=False,
+    )
+    assert (
+        harness.frontend(driver_clz=cast(Any, driver_factory), driver_options=options)
+        is driver
+    )
+    driver.get.assert_called_once_with(harness.frontend_url)
+    assert harness._frontends == [driver]
+    element = mock.Mock(text="ready")
+    element.get_attribute.return_value = "value"
+    assert harness.poll_for_content(element) == "ready"
+    assert harness.poll_for_value(element) == "value"
 
 
 @pytest.mark.skip("Slow test that makes network requests.")
@@ -70,10 +110,10 @@ def harness_mocks(monkeypatch):
         )
     )
 
-    monkeypatch.setattr(reflex_testing, "get_config", lambda reload=False: fake_config)
-    monkeypatch.setattr(
-        reflex_base.config, "get_config", lambda reload=False: fake_config
-    )
+    monkeypatch.setattr(reflex_testing, "get_config", lambda: fake_config)
+    monkeypatch.setattr(reflex_testing, "reload_config", lambda: fake_config)
+    monkeypatch.setattr(reflex_base.config, "get_config", lambda: fake_config)
+    monkeypatch.setattr(reflex_base.config, "reload_config", lambda: fake_config)
     monkeypatch.setattr(
         reflex.utils.prerequisites,
         "get_and_validate_app",
@@ -86,10 +126,58 @@ def harness_mocks(monkeypatch):
     )
 
 
-def test_app_harness_initialize_clears_memo_registries(
+def test_app_harness_initialize_isolates_memo_registries(
+    tmp_path, harness_mocks, monkeypatch
+):
+    """Each AppHarness initialization yields a fresh registration context.
+
+    The global memo registry is also cleared so entries registered by a prior
+    app do not leak into the new harness's registrations.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        harness_mocks: shared AppHarness mock setup
+        monkeypatch: pytest monkeypatch fixture
+    """
+    monkeypatch.setattr(reflex_cli, "_init", lambda **kwargs: None)
+
+    outer = RegistrationContext.ensure_context()
+    # Pin a clean base so pollution on the outer context does not seed new harnesses.
+    base = RegistrationContext()
+    monkeypatch.setattr(AppHarness, "_base_registration_context", base)
+
+    MEMOS["format_value", None] = mock.sentinel.memo
+
+    harness = AppHarness.create(
+        root=tmp_path / "memo_app",
+        app_source="import reflex as rx\napp = rx.App()",
+        app_name="memo_app",
+    )
+    harness.app_module_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        harness._initialize_app()
+
+        new_ctx = RegistrationContext.get()
+        assert new_ctx is not outer
+        assert ("format_value", None) not in MEMOS
+        harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+    finally:
+        # `_initialize_app` attaches a new context without a matching __exit__.
+        # Restore the outer context so other tests do not observe the leaked one.
+        if harness._registry_token is not None:
+            RegistrationContext.reset(harness._registry_token)
+
+
+def test_app_harness_initialize_resets_leaked_prod_env_mode(
     tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
 ):
-    """Ensure app initialization clears leaked memo registries.
+    """A leaked prod REFLEX_ENV_MODE must not affect the next dev harness.
+
+    ``AppHarnessProd`` runs ``export()``, which sets ``REFLEX_ENV_MODE=prod``
+    process-wide and never restores it. A dev ``AppHarness`` compiling later in
+    the same process would then write ``prerender: true`` into its dev
+    react-router config, making the dev server serve prerendered page HTML
+    whose hydration failures break event delivery.
 
     Args:
         tmp_path: pytest tmp_path fixture
@@ -98,31 +186,27 @@ def test_app_harness_initialize_clears_memo_registries(
         monkeypatch: pytest monkeypatch fixture
     """
     monkeypatch.setattr(reflex_cli, "_init", lambda **kwargs: None)
-
-    CUSTOM_COMPONENTS["FooComponent"] = mock.sentinel.component
-    EXPERIMENTAL_MEMOS["format_value"] = mock.sentinel.memo
+    monkeypatch.setenv("REFLEX_ENV_MODE", reflex.constants.Env.PROD.value)
 
     harness = AppHarness.create(
-        root=tmp_path / "memo_app",
+        root=tmp_path / "env_mode_app",
         app_source="import reflex as rx\napp = rx.App()",
-        app_name="memo_app",
+        app_name="env_mode_app",
     )
     harness.app_module_path.parent.mkdir(parents=True, exist_ok=True)
     harness._initialize_app()
 
-    assert "FooComponent" not in CUSTOM_COMPONENTS
-    assert "format_value" not in EXPERIMENTAL_MEMOS
-    harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+    assert environment.REFLEX_ENV_MODE.get() == reflex.constants.Env.DEV
+    assert not should_prerender_routes()
 
 
 def test_app_harness_initialize_reloads_existing_imported_app(
-    tmp_path, preserve_memo_registries, harness_mocks, monkeypatch
+    tmp_path, harness_mocks, monkeypatch
 ):
     """Ensure pre-existing imported apps are reloaded after memo registry reset.
 
     Args:
         tmp_path: pytest tmp_path fixture
-        preserve_memo_registries: restores global memo registries after the test
         harness_mocks: shared AppHarness mock setup
         monkeypatch: pytest monkeypatch fixture
     """
@@ -176,3 +260,39 @@ def test_wait_frontend_times_out_when_stdout_read_blocks(tmp_path, monkeypatch):
     stdout.release()
     assert harness.frontend_output_thread is not None
     harness.frontend_output_thread.join(timeout=1)
+
+
+def test_app_harness_frontend_env_has_development_condition(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, harness_mocks
+) -> None:
+    """The frontend dev server env enables the `development` export condition."""
+    harness = AppHarness(
+        app_name="testapp",
+        app_source=None,
+        app_path=tmp_path,
+        app_module_path=tmp_path / "testapp.py",
+    )
+    monkeypatch.setattr(
+        reflex_testing.js_runtimes,
+        "get_js_package_executor",
+        lambda raise_on_none: [["bun"]],
+    )
+    fake_socket = mock.Mock(getsockname=lambda: ("127.0.0.1", 8000))
+    monkeypatch.setattr(
+        AppHarness, "_poll_for_servers", lambda self, timeout: fake_socket
+    )
+    monkeypatch.setattr(
+        reflex_testing.reflex.utils.build, "setup_frontend", lambda path: None
+    )
+    captured: dict = {}
+
+    def fake_new_process(args, **kwargs):
+        captured.update(kwargs)
+        return mock.Mock()
+
+    monkeypatch.setattr(
+        reflex_testing.reflex.utils.processes, "new_process", fake_new_process
+    )
+    harness._start_frontend()
+    for options_var in ("NODE_OPTIONS", "BUN_OPTIONS"):
+        assert "--conditions=development" in captured["env"][options_var]

@@ -104,12 +104,12 @@ def drawer_sidebar():
     return rx.vstack(
         lateral_menu(),
         rx.section(
-            rx.heading("Test1", size="8"),
+            rx.heading("Test1", as_="h2", size="8"),
             id="test1",
             height="400px",
         ),
         rx.section(
-            rx.heading("Test2", size="8"),
+            rx.heading("Test2", as_="h2", size="8"),
             id="test2",
             height="400px",
         ),

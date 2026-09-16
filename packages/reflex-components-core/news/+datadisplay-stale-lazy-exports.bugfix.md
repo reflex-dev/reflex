@@ -1,0 +1,1 @@
+`reflex_components_core.datadisplay` no longer advertises `code_block`, `data_editor` and friends: those moved to the standalone `reflex-components-code` and `reflex-components-dataeditor` packages, so accessing them here raised `ModuleNotFoundError`. Reach them as before via `rx.code_block` / `rx.data_editor`, or `reflex.components.datadisplay.code`.

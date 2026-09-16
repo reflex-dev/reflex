@@ -16,6 +16,20 @@ from reflex_base.environment import environment
 join = os.linesep.join
 
 
+def write_file(path: str | Path, code: str):
+    """Write the given code to the given path, skipping unchanged contents.
+
+    Args:
+        path: The path to write the code to.
+        code: The code to write.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and path.read_text(encoding="utf-8") == code:
+        return
+    path.write_text(code, encoding="utf-8")
+
+
 def chmod_rm(path: Path):
     """Remove a file or directory with chmod.
 
@@ -224,7 +238,7 @@ def get_bun_path() -> Path | None:
     return bun_path.absolute() if bun_path else None
 
 
-def update_json_file(file_path: str | Path, update_dict: dict[str, int | str]):
+def update_json_file(file_path: str | Path, update_dict: dict[str, object]):
     """Update the contents of a json file.
 
     Args:

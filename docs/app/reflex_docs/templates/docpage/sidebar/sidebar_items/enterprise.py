@@ -28,6 +28,81 @@ def get_sidebar_items_enterprise_usage():
                     names="Single Port Proxy",
                     link=enterprise.single_port_proxy.path,
                 ),
+                SideBarItem(
+                    names="Event Handler API",
+                    link=enterprise.event_handler_api.path,
+                ),
+            ],
+        ),
+        SideBarItem(
+            names="Authentication",
+            children=[
+                SideBarItem(
+                    names="Overview",
+                    link=enterprise.auth.overview.path,
+                ),
+                SideBarItem(
+                    names="Secure by Default",
+                    link=enterprise.auth.secure_by_default.path,
+                ),
+                SideBarItem(
+                    names="Example: A Complete App",
+                    link=enterprise.auth.example_app.path,
+                ),
+                SideBarItem(
+                    names="OIDC Providers",
+                    link=enterprise.auth.providers.path,
+                ),
+                SideBarItem(
+                    names="Customizing the Auth Pages",
+                    link=enterprise.auth.custom_pages.path,
+                ),
+                SideBarItem(
+                    names="Auditing Auth Actions",
+                    link=enterprise.auth.audit.path,
+                ),
+                SideBarItem(
+                    names="Testing Guarded Code",
+                    link=enterprise.auth.testing.path,
+                ),
+                SideBarItem(
+                    names="Deploying to Production",
+                    link=enterprise.auth.deployment.path,
+                ),
+            ],
+        ),
+        SideBarItem(
+            names="Auto MCP",
+            children=[
+                SideBarItem(
+                    names="Overview",
+                    link=enterprise.mcp.index.path,
+                ),
+                SideBarItem(
+                    names="Authentication",
+                    link=enterprise.mcp.authentication.path,
+                ),
+                SideBarItem(
+                    names="Custom Resources",
+                    link=enterprise.mcp.custom_resources.path,
+                ),
+                SideBarItem(
+                    names="Extending the Server",
+                    link=enterprise.mcp.extending.path,
+                ),
+                SideBarItem(
+                    names="Deploying to Production",
+                    link=enterprise.mcp.deployment.path,
+                ),
+            ],
+        ),
+        SideBarItem(
+            names="Testing",
+            children=[
+                SideBarItem(
+                    names="End-to-End Testing",
+                    link=enterprise.testing.path,
+                ),
             ],
         ),
     ]
@@ -60,6 +135,14 @@ def get_sidebar_items_enterprise_components():
                 SideBarItem(
                     names="Pivot Mode",
                     link=enterprise.ag_grid.pivot_mode.path,
+                ),
+                SideBarItem(
+                    names="Tree Data",
+                    link=enterprise.ag_grid.tree_data.path,
+                ),
+                SideBarItem(
+                    names="Master Detail",
+                    link=enterprise.ag_grid.master_detail.path,
                 ),
                 SideBarItem(
                     names="Theme",

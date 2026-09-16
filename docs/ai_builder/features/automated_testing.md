@@ -1,55 +1,53 @@
-# AI Testing Feature
+# Testing
 
-## Overview
-
-The Testing feature allows you to automatically test your generated applications for common issues and functionality problems. The AI will analyze your app and identify potential bugs, broken links, navigation issues, and other problems.
-
+Reflex Build can generate and run tests from plain-language descriptions. Use tests to verify important app behavior after generation and before sharing or deploying.
 
 ```python exec
 import reflex as rx
 ```
 
+## Create a Test
+
+1. Select **Testing** in the app workspace navigation.
+2. Select **Add Test**.
+3. Choose a test type:
+   - **Unit test** for isolated state, calculations, validation, and other logic.
+   - **Browser test** for user workflows that interact with the rendered app.
+4. Describe the behavior and expected result in plain language.
+5. Select **Generate**, review the generated test, and run it.
+
+For example:
+
+```text
+Open the sign-in page, submit an invalid email, and verify that the form shows
+an error without navigating. Then enter valid credentials and verify that the
+dashboard opens.
+```
+
+## Run and Review Tests
+
 ```python eval
-rx.el.div(
-    rx.image(
-        src=rx.color_mode_cond(
-            "https://web.reflex-assets.dev/ai_builder/features/test_light.webp",
-            "https://web.reflex-assets.dev/ai_builder/features/test_dark.webp",
-        ),
-        class_name="rounded-md h-auto",
-        border=f"0.81px solid {rx.color('slate', 5)}",
-    ),
-    class_name="w-full flex flex-col rounded-md",
+rx.image(
+    src="https://web.reflex-assets.dev/docs-preview/ai-builder/platform/testing_browser.webp",
+    alt="Passing tests in the Reflex Build Testing panel",
+    class_name="rounded-md h-auto mb-4",
+    border=f"0.81px solid {rx.color('slate', 5)}",
 )
 ```
 
-## How to Use
+The Testing panel lets you search existing tests, run an individual test, or use **Run All**. Review the status and output of a failed test before asking the agent to change the app.
 
-1. **Start Testing**: Type "test this app" or similar command to activate testing mode
-2. **AI Analysis**: The AI will automatically switch to testing mode and begin analyzing your application
-3. **Review Results**: The preview tab switches to "Testing" mode to show the testing process and results
+A failed test can indicate a problem in the app, an outdated expectation, or an ambiguous test description. Check the tested workflow in **Preview** before deciding which one to change.
 
-## What Gets Tested
+## What to Test
 
-The AI automatically checks for:
+Prioritize behavior that would block a user:
 
-- **Broken Navigation**: Links that don't work or lead to missing pages
-- **Non-functional Buttons**: Buttons that don't respond or trigger errors
-- **Broken Links**: External or internal links that return errors
-- **UI/UX Issues**: Interface elements that don't function as expected
-- **Data Flow Problems**: Issues with forms, inputs, and data handling
-- **Layout Issues**: Visual or structural problems with the interface
+- Navigation and authentication.
+- Forms, validation, and submission.
+- Create, edit, and delete workflows.
+- Filters and search.
+- Data loading, empty states, and error states.
+- Integrations and other external-service boundaries.
 
-## Testing Interface
-
-When testing is active:
-- The preview tab changes to "Testing" mode
-- You can see the AI interact with your application in real-time
-- Issues and results are reported as they're discovered
-- The testing process is visual and interactive
-
-## Benefits
-
-- **Quality Assurance**: Catch issues before deployment
-- **Time Saving**: Automated testing is faster than manual checking
-- **Comprehensive Coverage**: Tests multiple aspects of your application
+Keep each test focused on one workflow. Small tests are easier to understand and maintain than one test that tries to cover the whole app.

@@ -2,6 +2,8 @@
 
 from . import base, color, datetime, function, number, object, sequence
 from .base import (
+    EMPTY_VAR_INT,
+    EMPTY_VAR_STR,
     BaseStateMeta,
     EvenMoreBasicBaseState,
     Field,
@@ -26,8 +28,11 @@ from .sequence import (
     LiteralStringVar,
     StringVar,
 )
+from .special import use_hook_var, use_id
 
 __all__ = [
+    "EMPTY_VAR_INT",
+    "EMPTY_VAR_STR",
     "ArrayVar",
     "BaseStateMeta",
     "BooleanVar",
@@ -62,6 +67,8 @@ __all__ = [
     "number",
     "object",
     "sequence",
+    "use_hook_var",
+    "use_id",
     "var_operation",
     "var_operation_return",
 ]

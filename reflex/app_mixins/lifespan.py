@@ -7,6 +7,7 @@ import contextlib
 import dataclasses
 import functools
 import inspect
+import logging
 import time
 from collections.abc import Callable, Coroutine
 from typing import TYPE_CHECKING, TypeVar, overload
@@ -16,6 +17,8 @@ from reflex_base.utils.exceptions import InvalidLifespanTaskTypeError
 from starlette.applications import Starlette
 
 from .mixin import AppMixin
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from typing_extensions import deprecated
@@ -57,14 +60,14 @@ class LifespanMixin(AppMixin):
         @property
         @deprecated("Use get_lifespan_tasks method instead.")
         def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
-            """Get a copy of registered lifespan tasks (deprecated)."""
+            """A copy of registered lifespan tasks (deprecated)."""
             ...
 
     else:
 
         @property
         def lifespan_tasks(self) -> frozenset[asyncio.Task | Callable]:
-            """Get a copy of registered lifespan tasks.
+            """A copy of registered lifespan tasks.
 
             Returns:
                 A frozenset of registered lifespan tasks.
@@ -87,7 +90,7 @@ class LifespanMixin(AppMixin):
         return tuple(self._lifespan_tasks)
 
     @contextlib.asynccontextmanager
-    async def _run_lifespan_tasks(self, app: Starlette):
+    async def _run_lifespan_tasks(self, starlette_app: Starlette):
         self._lifespan_tasks_started = True
         running_tasks = []
         try:
@@ -100,11 +103,13 @@ class LifespanMixin(AppMixin):
                     else:
                         signature = inspect.signature(task)
                         if "app" in signature.parameters:
-                            task = functools.partial(task, app=app)
+                            task = functools.partial(task, app=self)
+                        if "starlette_app" in signature.parameters:
+                            task = functools.partial(task, starlette_app=starlette_app)
                         t_ = task()
                         if isinstance(t_, contextlib._AsyncGeneratorContextManager):
                             await stack.enter_async_context(t_)
-                            console.debug(run_msg.format(type="asynccontextmanager"))
+                            logger.debug(run_msg.format(type="asynccontextmanager"))
                         elif isinstance(t_, Coroutine):
                             task_ = asyncio.create_task(
                                 t_,
@@ -112,13 +117,13 @@ class LifespanMixin(AppMixin):
                             )
                             task_.add_done_callback(lambda t: t.result())
                             running_tasks.append(task_)
-                            console.debug(run_msg.format(type="coroutine"))
+                            logger.debug(run_msg.format(type="coroutine"))
                         else:
-                            console.debug(run_msg.format(type="function"))
+                            logger.debug(run_msg.format(type="function"))
                 yield
         finally:
             for task in running_tasks:
-                console.debug(f"Canceling lifespan task: {task}")
+                logger.debug(f"Canceling lifespan task: {task}")
                 task.cancel(msg="lifespan_cleanup")
         # Disassociate sid / token pairings so they can be reconnected properly.
         try:
@@ -128,13 +133,16 @@ class LifespanMixin(AppMixin):
         else:
             try:
                 if event_namespace:
-                    await event_namespace._token_manager.disconnect_all()
+                    try:
+                        await event_namespace._token_manager.disconnect_all()
+                    finally:
+                        await event_namespace._token_manager.close()
             except Exception as e:
-                console.error(f"Error during lifespan cleanup: {e}")
+                logger.error(f"Error during lifespan cleanup: {e}")
         # Flush any pending writes from the state manager.
         try:
             state_manager = self.state_manager  # pyright: ignore[reportAttributeAccessIssue]
-        except AttributeError:
+        except (AttributeError, ValueError):
             pass
         else:
             await state_manager.close()
@@ -195,5 +203,5 @@ class LifespanMixin(AppMixin):
             registered_task = functools.partial(task, **task_kwargs)
             functools.update_wrapper(registered_task, task)
         self._lifespan_tasks[registered_task] = None
-        console.debug(f"Registered lifespan task: {task_name}")
+        logger.debug(f"Registered lifespan task: {task_name}")
         return task

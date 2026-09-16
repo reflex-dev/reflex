@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import builtins
 import contextlib
 import sys
@@ -60,14 +59,16 @@ def _collapse_excgroups() -> Generator[None, None, None]:
 
 
 class DisconnectAwareStreamingResponse(StreamingResponse):
-    """Streaming response that cancels its body task on disconnect."""
+    """Streaming response with a guaranteed finish callback."""
 
     _on_finish: Callable[[], Awaitable[None]]
+    _on_disconnect: Callable[[], None] | None
 
     def __init__(
         self,
         *args: Any,
         on_finish: Callable[[], Awaitable[None]],
+        on_disconnect: Callable[[], None] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the response.
@@ -75,17 +76,17 @@ class DisconnectAwareStreamingResponse(StreamingResponse):
         Args:
             args: Positional args forwarded to ``StreamingResponse``.
             on_finish: Cleanup callback to run exactly once when the response ends.
+            on_disconnect: Sync callback invoked when the client disconnects.
             kwargs: Keyword args forwarded to ``StreamingResponse``.
         """
         super().__init__(*args, **kwargs)
         self._on_finish = on_finish
+        self._on_disconnect = on_disconnect
 
-    async def _watch_disconnect(self, receive: Receive) -> None:
-        """Wait for the client connection to close."""
-        while True:
-            message = await receive()
-            if message["type"] == "http.disconnect":
-                return
+    def _notify_disconnect(self) -> None:
+        """Invoke the on_disconnect callback if one was provided."""
+        if self._on_disconnect is not None:
+            self._on_disconnect()
 
     async def _close_body_iterator(self) -> None:
         """Close the body iterator if it supports ``aclose``."""
@@ -94,7 +95,7 @@ class DisconnectAwareStreamingResponse(StreamingResponse):
             await aclose()
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        """Serve the response and cancel the body task on disconnect."""
+        """Serve the response and always run the finish callback."""
         spec_version = _parse_asgi_spec_version(scope)
 
         try:
@@ -107,47 +108,24 @@ class DisconnectAwareStreamingResponse(StreamingResponse):
                             task_group.cancel_scope.cancel()
 
                         task_group.start_soon(wrap, partial(self.stream_response, send))
-                        await wrap(partial(self.listen_for_disconnect, receive))
-            else:
-                # Verified against Starlette 0.52.1: the ASGI >= 2.4 path in
-                # StreamingResponse.__call__ delegates straight to
-                # stream_response(send) and does not read from receive().
-                # Keep calling stream_response(send) directly here so the
-                # disconnect watcher remains the only receive() consumer; if
-                # Starlette changes that contract, re-check this logic.
-                stream_task = asyncio.create_task(self.stream_response(send))
-                disconnect_task = asyncio.create_task(self._watch_disconnect(receive))
-                should_close_body_iterator = False
 
+                        if self._on_disconnect is not None:
+
+                            async def _disconnect_then_notify() -> None:
+                                await self.listen_for_disconnect(receive)
+                                self._notify_disconnect()
+
+                            await wrap(_disconnect_then_notify)
+                        else:
+                            await wrap(partial(self.listen_for_disconnect, receive))
+            else:
                 try:
-                    done, _ = await asyncio.wait(
-                        {stream_task, disconnect_task},
-                        return_when=asyncio.FIRST_COMPLETED,
-                    )
-                    if disconnect_task in done and not stream_task.done():
-                        should_close_body_iterator = True
-                        stream_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await stream_task
-                    else:
-                        try:
-                            await stream_task
-                        except OSError as err:
-                            should_close_body_iterator = True
-                            raise ClientDisconnect from err
-                finally:
-                    if not disconnect_task.done():
-                        disconnect_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await disconnect_task
-                    if not stream_task.done():
-                        should_close_body_iterator = True
-                        stream_task.cancel()
-                        with contextlib.suppress(asyncio.CancelledError):
-                            await stream_task
-                    if should_close_body_iterator:
-                        await self._close_body_iterator()
+                    await self.stream_response(send)
+                except OSError as err:
+                    self._notify_disconnect()
+                    raise ClientDisconnect from err
         finally:
+            await self._close_body_iterator()
             await self._on_finish()
 
         if self.background is not None:

@@ -93,7 +93,7 @@ def test_app(
 def test_frontend_exception_handler_during_runtime(
     test_app: AppHarness,
     page: Page,
-    capsys: pytest.CaptureFixture[str],
+    caplog: pytest.LogCaptureFixture,
 ):
     """Test calling frontend exception handler during runtime.
 
@@ -103,7 +103,7 @@ def test_frontend_exception_handler_during_runtime(
     Args:
         test_app: harness for TestApp app.
         page: Playwright page.
-        capsys: pytest fixture for capturing stdout and stderr.
+        caplog: pytest fixture for capturing log records.
 
     """
     assert test_app.frontend_url is not None
@@ -117,15 +117,14 @@ def test_frontend_exception_handler_during_runtime(
     # Wait for the error to be logged
     time.sleep(2)
 
-    captured_default_handler_output = capsys.readouterr()
-    assert "induce_frontend_error" in captured_default_handler_output.err
-    assert "ReferenceError" in captured_default_handler_output.err
+    assert "induce_frontend_error" in caplog.text
+    assert "ReferenceError" in caplog.text
 
 
 def test_backend_exception_handler_during_runtime(
     test_app: AppHarness,
     page: Page,
-    capsys: pytest.CaptureFixture[str],
+    caplog: pytest.LogCaptureFixture,
 ):
     """Test calling backend exception handler during runtime.
 
@@ -135,7 +134,7 @@ def test_backend_exception_handler_during_runtime(
     Args:
         test_app: harness for TestApp app.
         page: Playwright page.
-        capsys: pytest fixture for capturing stdout and stderr.
+        caplog: pytest fixture for capturing log records.
 
     """
     assert test_app.frontend_url is not None
@@ -149,15 +148,14 @@ def test_backend_exception_handler_during_runtime(
     # Wait for the error to be logged
     time.sleep(2)
 
-    captured_default_handler_output = capsys.readouterr()
-    assert "divide_by_number" in captured_default_handler_output.err
-    assert "ZeroDivisionError" in captured_default_handler_output.err
+    assert "divide_by_number" in caplog.text
+    assert "ZeroDivisionError" in caplog.text
 
 
 def test_frontend_exception_handler_with_react(
     test_app: AppHarness,
     page: Page,
-    capsys: pytest.CaptureFixture[str],
+    caplog: pytest.LogCaptureFixture,
 ):
     """Test calling frontend exception handler during runtime.
 
@@ -166,7 +164,7 @@ def test_frontend_exception_handler_with_react(
     Args:
         test_app: harness for TestApp app
         page: Playwright page.
-        capsys: pytest fixture for capturing stdout and stderr.
+        caplog: pytest fixture for capturing log records.
 
     """
     assert test_app.frontend_url is not None
@@ -180,11 +178,10 @@ def test_frontend_exception_handler_with_react(
     # Wait for the error to be logged
     time.sleep(2)
 
-    captured_default_handler_output = capsys.readouterr()
     if isinstance(test_app, AppHarnessProd):
-        assert "Error: Minified React error #31" in captured_default_handler_output.err
+        assert "Error: Minified React error #31" in caplog.text
     else:
         assert (
-            "Error: Objects are not valid as a React child (found: object with keys \n{invalid})"
-            in captured_default_handler_output.err
+            "Error: Objects are not valid as a React child (found: object with keys {invalid})"
+            in caplog.text
         )

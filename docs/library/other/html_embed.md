@@ -15,7 +15,6 @@ Before you reach for this component, consider using Reflex's raw HTML element su
 
 ```python demo
 rx.vstack(
-    rx.html("<h1>Hello World</h1>"),
     rx.html("<h2>Hello World</h2>"),
     rx.html("<h3>Hello World</h3>"),
     rx.html("<h4>Hello World</h4>"),
@@ -28,11 +27,13 @@ rx.vstack(
 # Missing Styles?
 
 Reflex uses Radix-UI and tailwind for styling, both of which reset default styles for headings.
-If you are using the html component and want pretty default styles, consider setting `class_name='prose'`, adding `@tailwindcss/typography` package to `frontend_packages` and enabling it via `tailwind` config in `rxconfig.py`. See the [Tailwind docs](/docs/styling/overview) for an example of adding this plugin.
+If you are using the html component and want pretty default styles, consider setting `class_name='prose'`, adding `@tailwindcss/typography` package to `frontend_packages` and enabling it via `tailwind` config in `rxconfig.py`. See the [Tailwind docs](/docs/styling/overview/) for an example of adding this plugin.
 ```
 
 In this example, we render an image.
 
 ```python demo
-rx.html("<img src='https://web.reflex-assets.dev/other/reflex_banner.png' />")
+rx.html(
+    "<img src='https://web.reflex-assets.dev/other/reflex_banner.png' alt='Reflex banner' />"
+)
 ```

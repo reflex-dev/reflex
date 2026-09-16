@@ -119,6 +119,7 @@ rx.flex(
     rx.box(
         rx.heading(
             "Without trim",
+            as_="h2",
             margin_bottom="4px",
             size="3",
         ),
@@ -132,7 +133,7 @@ rx.flex(
         padding="16px",
     ),
     rx.box(
-        rx.heading("With trim", margin_bottom="4px", size="3", trim="start"),
+        rx.heading("With trim", as_="h2", margin_bottom="4px", size="3", trim="start"),
         rx.text(
             "The goal of typography is to relate font size, line height, and line width in a proportional way that maximizes beauty and makes reading easier and more pleasant."
         ),

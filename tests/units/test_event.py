@@ -3,6 +3,7 @@ from collections.abc import Callable
 from typing import Any, cast
 
 import pytest
+from reflex_base.constants import LogLevel
 from reflex_base.constants.compiler import Hooks, Imports
 from reflex_base.event import (
     BACKGROUND_TASK_MARKER,
@@ -15,9 +16,17 @@ from reflex_base.event import (
     call_event_handler,
     event,
     fix_events,
+    on_submit_event,
+    on_submit_string_event,
 )
-from reflex_base.utils import format
-from reflex_base.vars.base import Field, LiteralVar, Var, VarData, field
+from reflex_base.utils import format, log
+from reflex_base.utils.exceptions import (
+    EventHandlerArgTypeMismatchError,
+    EventHandlerValueError,
+)
+from reflex_base.vars.base import Field, LiteralVar, Var, field
+from rich.console import Console
+from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.state import BaseState
@@ -105,7 +114,39 @@ def test_call_event_handler():
 
     handler = EventHandler(fn=fn_with_args)
     with pytest.raises(TypeError):
-        handler(test_fn)
+        # Optional packages can register serializers for Python functions.
+        handler(object())
+
+
+def test_format_event_client_handler_name():
+    """client_handler_name must land in the fourth ReflexEvent slot, after event_actions."""
+
+    def handle_upload(files):
+        pass
+
+    handle_upload.__qualname__ = "handle_upload"
+
+    handler = EventHandler(fn=handle_upload)
+    event_spec = EventSpec(
+        handler=handler,
+        client_handler_name="uploadFiles",
+        args=((Var(_js_expr="files"), Var(_js_expr="filesById")),),
+    )
+    assert (
+        format.format_event(event_spec)
+        == 'ReflexEvent("handle_upload", {files:filesById}, {}, "uploadFiles")'
+    )
+
+    event_spec = EventSpec(
+        handler=handler,
+        event_actions={"debounce": 300},
+        client_handler_name="uploadFiles",
+        args=((Var(_js_expr="files"), Var(_js_expr="filesById")),),
+    )
+    assert (
+        format.format_event(event_spec)
+        == 'ReflexEvent("handle_upload", {files:filesById}, {"debounce": 300}, "uploadFiles")'
+    )
 
 
 def test_call_event_handler_partial():
@@ -130,7 +171,6 @@ def test_call_event_handler_partial():
     assert (
         format.format_event(event_spec) == 'ReflexEvent("fn_with_args", {arg1:first})'
     )
-
     assert event_spec2 is not event_spec
     assert event_spec2.handler == handler
     assert len(event_spec2.args) == 2
@@ -142,6 +182,98 @@ def test_call_event_handler_partial():
         format.format_event(event_spec2)
         == 'ReflexEvent("fn_with_args", {arg1:first,arg2:_a2})'
     )
+
+
+_PayloadAlias = TypeAliasType("_PayloadAlias", dict[str, str])
+_NameAlias = TypeAliasType("_NameAlias", str)
+
+
+def test_call_event_handler_alias_annotated_arg():
+    """An uncalled handler with TypeAliasType-annotated args works as a trigger.
+
+    The trigger comparison runs typehint_issubclass on the raw annotations, so
+    a PEP 695 alias must compare like the annotation it stands for instead of
+    failing with an opaque TypeError at page compile; a genuine mismatch still
+    raises the same EventHandlerArgTypeMismatchError a plain annotation does.
+    """
+
+    class AliasTriggerState(BaseState):
+        @event
+        def on_plain(self, payload: dict[str, str], name: str):
+            pass
+
+        @event
+        def on_alias(self, payload: _PayloadAlias, name: _NameAlias):
+            pass
+
+        @event
+        def on_mismatch(self, payload: _NameAlias, name: _NameAlias):
+            pass
+
+    def args_spec(
+        payload: Var[dict[str, str]], name: Var[str]
+    ) -> tuple[Var[dict[str, str]], Var[str]]:
+        return (payload, name)
+
+    plain_spec = call_event_handler(
+        cast(EventHandler, AliasTriggerState.on_plain), args_spec
+    )
+    alias_spec = call_event_handler(
+        cast(EventHandler, AliasTriggerState.on_alias), args_spec
+    )
+    assert len(alias_spec.args) == len(plain_spec.args) == 2
+    for (alias_arg, alias_value), (plain_arg, plain_value) in zip(
+        alias_spec.args, plain_spec.args, strict=True
+    ):
+        assert alias_arg.equals(plain_arg)
+        assert alias_value.equals(plain_value)
+
+    with pytest.raises(EventHandlerArgTypeMismatchError):
+        call_event_handler(cast(EventHandler, AliasTriggerState.on_mismatch), args_spec)
+
+
+def test_state_event_handler_type_hints_are_stable_after_class_patch():
+    """Runtime state-class patches must not change handler annotations."""
+
+    class S(BaseState):
+        @event
+        def on_event(self, event: dict):
+            pass
+
+    handler = cast(EventHandler, S.on_event)
+    assert handler._get_type_hints()["event"] is dict
+
+    # Python 3.14 evaluates deferred method annotations in the owning class
+    # namespace, so this assignment would shadow the builtin ``dict``.
+    type.__setattr__(S, "dict", lambda self: {})
+
+    def args_spec(value: Var[dict]) -> list[Var[dict]]:
+        return [value]
+
+    call_event_handler(handler(), args_spec)
+    assert handler.prevent_default._type_hints is handler._type_hints
+
+
+def test_state_event_handler_caches_unresolved_type_hints():
+    """Unresolved annotations should be retried after their type is defined."""
+
+    class S(BaseState):
+        @event
+        def on_event(
+            self,
+            event: "_LateBoundEventType",  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+        ):
+            pass
+
+    handler = cast(EventHandler, S.on_event)
+    assert handler._type_hints is None
+    assert handler._get_type_hints() == {}
+
+    globals()["_LateBoundEventType"] = dict
+    try:
+        assert handler._get_type_hints()["event"] is dict
+    finally:
+        del globals()["_LateBoundEventType"]
 
 
 @pytest.mark.parametrize(
@@ -170,6 +302,110 @@ def test_fix_events(arg1, arg2):
     event = fix_events([event_spec])[0]
     assert event.name == fn_with_args.__qualname__
     assert event.payload == {"arg1": arg1, "arg2": arg2}
+
+
+class _ProxyPayloadState(BaseState):
+    rows: list[dict[str, int]] = [{"a": 1}]
+
+
+def _payload_for(value: Any) -> Any:
+    """Build an event passing value as the single handler arg.
+
+    Args:
+        value: The value to pass to the handler.
+
+    Returns:
+        The processed payload value delivered to the handler.
+    """
+
+    def fn_with_arg(arg):
+        pass
+
+    fn_with_arg.__qualname__ = "fn_with_arg"
+    event = Event.from_event_type([EventHandler(fn=fn_with_arg)(value)])[0]
+    return event.payload["arg"]
+
+
+def test_from_event_type_shares_plain_payload_values():
+    """Payload values without state-bound proxies pass by reference."""
+    rows = [{"a": 1}, {"b": 2}]
+    assert _payload_for(rows) is rows
+    mapping = {"x": [1, 2], "y": (3, 4)}
+    assert _payload_for(mapping) is mapping
+
+
+def test_from_event_type_detaches_proxied_payload_values():
+    """A MutableProxy payload value is detached from the state by copy."""
+    from reflex.istate.proxy import MutableProxy
+
+    state = _ProxyPayloadState()
+    proxied = state.rows
+    assert isinstance(proxied, MutableProxy)
+
+    detached = _payload_for(proxied)
+    assert not isinstance(detached, MutableProxy)
+    assert detached == [{"a": 1}]
+    # Mutating the payload must not touch (or dirty) the state.
+    detached[0]["a"] = 42
+    assert state.rows == [{"a": 1}]
+    assert "rows" not in state.dirty_vars
+
+
+def test_from_event_type_detaches_nested_proxied_payload_values():
+    """Proxies nested in plain containers are detached; clean parts shared."""
+    from reflex.istate.proxy import MutableProxy
+
+    state = _ProxyPayloadState()
+    plain = [{"z": 9}]
+    # Iterating a proxied list wraps each mutable element in a proxy.
+    listed_rows = list(state.rows)
+    assert any(isinstance(item, MutableProxy) for item in listed_rows)
+
+    value = {"wrapped": listed_rows, "plain": plain}
+    detached = _payload_for(value)
+    assert detached is not value
+    assert detached["plain"] is plain
+    assert not any(isinstance(item, MutableProxy) for item in detached["wrapped"])
+    detached["wrapped"][0]["a"] = 42
+    assert state.rows == [{"a": 1}]
+
+
+def test_from_event_type_copies_opaque_payload_objects():
+    """Non-container mutable objects are still snapshotted by deepcopy."""
+    import dataclasses as dc
+
+    @dc.dataclass
+    class Opaque:
+        items: list[int]
+
+    obj = Opaque(items=[1])
+    detached = _payload_for([obj])
+    assert detached[0] is not obj
+    assert detached[0].items == [1]
+    detached[0].items.append(2)
+    assert obj.items == [1]
+
+
+def test_detach_state_proxies_handles_cyclic_payloads():
+    """Self-referential containers fall back to deepcopy, preserving cycles."""
+    # The reflex_base.event module replaces itself in sys.modules with the
+    # EventNamespace class, so private module names are only reachable
+    # through the globals of a function defined in that module.
+    detach = Event.from_event_type.__func__.__globals__["_detach_state_proxies"]
+
+    cyclic_list: list = [1]
+    cyclic_list.append(cyclic_list)
+    out = detach(cyclic_list)
+    assert out is not cyclic_list
+    assert out[0] == 1
+    assert out[1] is out
+
+    cyclic_dict: dict = {"a": 1}
+    cyclic_dict["self"] = cyclic_dict
+    out = detach(cyclic_dict)
+    assert out is not cyclic_dict
+    assert out["a"] == 1
+    assert out["self"] is out
 
 
 @pytest.mark.parametrize(
@@ -500,10 +736,21 @@ def test_event_var_data():
     )._get_all_var_data()
     assert chain_var_data is not None
 
-    assert chain_var_data == VarData(
-        imports=Imports.EVENTS,
-        hooks={Hooks.EVENTS: None},
-    )
+    # Imports include EVENTS (which now imports module-level ``addEvents``)
+    # and the state/event-loop providers ride along as app_wraps so the
+    # compiler can mount them in the app root. ``addEvents`` reaches its
+    # call sites through the import, not a hoisted hook, so ``hooks`` is
+    # empty here. Compare structurally — providers are fresh instances per
+    # call, so identity-based VarData equality wouldn't match.
+    assert dict(chain_var_data.imports) == {
+        k: tuple(v) for k, v in Imports.EVENTS.items()
+    }
+    assert chain_var_data.hooks == ()
+    assert sorted(p for p, _ in chain_var_data.app_wraps) == [90, 100]
+    assert {wrapper.tag for _, wrapper in chain_var_data.app_wraps} == {
+        "StateProvider",
+        "EventLoopProvider",
+    }
 
 
 def test_event_chain_statement_block_preserves_nested_var_data():
@@ -529,7 +776,11 @@ def test_event_chain_statement_block_preserves_nested_var_data():
     assert chain_var_data.state == x_var_data.state
     assert chain_var_data.field_name == x_var_data.field_name
     assert x_var_data.hooks[0] in chain_var_data.hooks
-    assert Hooks.EVENTS in chain_var_data.hooks
+    # ``addEvents`` is reached via module-level import, so the events hook
+    # is no longer hoisted on event-chain VarData. State/event-loop providers
+    # ride on ``app_wraps`` to surface in the app root when needed.
+    assert Hooks.EVENTS not in chain_var_data.hooks
+    assert sorted(p for p, _ in chain_var_data.app_wraps) == [90, 100]
 
 
 def test_event_bound_method() -> None:
@@ -614,7 +865,7 @@ def test_event_decorator_with_event_actions():
     # Test background + event actions work together
     bg_temporal_handler = MyTestState.handle_background_temporal
     assert bg_temporal_handler.event_actions == {"temporal": True}
-    assert hasattr(bg_temporal_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert hasattr(bg_temporal_handler.fn, BACKGROUND_TASK_MARKER)
 
     # Test no event actions (existing behavior preserved)
     no_actions_handler = MyTestState.handle_no_actions
@@ -689,12 +940,12 @@ def test_event_decorator_backward_compatibility():
     old_handler = MyTestState.handle_old_style
     assert isinstance(old_handler, EventHandler)
     assert old_handler.event_actions == {}
-    assert not hasattr(old_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert not hasattr(old_handler.fn, BACKGROUND_TASK_MARKER)
 
     # Old background parameter should work unchanged
     bg_handler = MyTestState.handle_old_background
     assert bg_handler.event_actions == {}
-    assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)  # pyright: ignore [reportAttributeAccessIssue]
+    assert hasattr(bg_handler.fn, BACKGROUND_TASK_MARKER)
 
 
 def test_event_var_in_rx_cond():
@@ -822,6 +1073,91 @@ def test_event_chain_create_lambda_preserves_explicit_event_chain():
     chain_event = chain.events[0]
     assert isinstance(chain_event, Var)
     assert chain_event.equals(Var.create(inner))
+
+
+def test_event_chain_create_lambda_allows_conditional_mixed_function_and_event():
+    """Lambdas should allow rx.cond returning FunctionVar or EventSpec."""
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self, value: str):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    def return_conditional_mixed(v: Var[Any]) -> Any:
+        return rx.cond(
+            v == "foo",
+            log_after_timeout.partial("Input was foo!"),
+            MixedState.do_a_thing(v.to(str)),
+        )
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_conditional_mixed),
+        args_spec=lambda e: [e],
+    )
+    rendered = str(LiteralVar.create(chain))
+
+    assert isinstance(chain, EventChain)
+    assert "Timeout reached!" in rendered
+    assert "addEvents(" in rendered
+
+
+def test_event_chain_mixed_dispatch_reaches_addevents_via_module_import():
+    """The mixed function/event dispatcher must not emit a stale events hook.
+
+    ``Imports.EVENTS`` no longer imports ``EventLoopContext``; the mixed
+    dispatcher reaches the module-level ``addEvents`` instead. Emitting the
+    legacy ``const [addEvents, connectErrors] = useContext(EventLoopContext)``
+    hook here would render a component that throws ``ReferenceError:
+    EventLoopContext is not defined``. State/event-loop providers ride along
+    on ``app_wraps``.
+    """
+
+    class MixedState(BaseState):
+        @event
+        def do_a_thing(self, value: str):
+            pass
+
+    log_after_timeout = make_timeout_logger()
+
+    def return_conditional_mixed(v: Var[Any]) -> Any:
+        return rx.cond(
+            v == "foo",
+            log_after_timeout.partial("Input was foo!"),
+            MixedState.do_a_thing(v.to(str)),
+        )
+
+    chain = EventChain.create(
+        cast(LambdaEventCallback[Any], return_conditional_mixed),
+        args_spec=lambda e: [e],
+    )
+    var_data = LiteralVar.create(chain)._get_all_var_data()
+    assert var_data is not None
+
+    hook_text = "\n".join(str(hook) for hook in var_data.hooks)
+    assert "EventLoopContext" not in hook_text
+
+    imported = {tag.tag for _lib, tags in var_data.imports for tag in tags}
+    assert "addEvents" in imported
+
+    assert {wrapper.tag for _, wrapper in var_data.app_wraps} >= {
+        "StateProvider",
+        "EventLoopProvider",
+    }
+
+
+def test_event_chain_create_lambda_rejects_non_union_callable_var():
+    """Plain callable Vars should remain invalid event-lambda return values."""
+
+    def return_plain_callable_var(_v: Var[Any]) -> Any:
+        return Var(_js_expr="notAnEventLikeCallable", _var_type=Callable)
+
+    with pytest.raises(EventHandlerValueError, match="Invalid event chain"):
+        EventChain.create(
+            cast(LambdaEventCallback[Any], return_plain_callable_var),
+            args_spec=lambda e: [e],
+        )
 
 
 def test_event_chain_create_wraps_plain_function_var_kwargs():
@@ -1033,3 +1369,33 @@ def test_decentralized_event_global_state():
     """Test the decentralized event with a global state."""
     _ = rx.input(on_change=f("foo"))
     _ = rx.input(on_change=f)
+
+
+def test_arg_mismatch_warning_renders_brackets_verbatim(capsys, monkeypatch):
+    """The arg-mismatch warning renders bracketed type names without escapes.
+
+    The rich console sink prints records with markup disabled, so the message
+    must not carry rich-markup escapes: the backslashes would print literally.
+    """
+
+    def handle_submit(form_data: dict[str, str]):
+        pass
+
+    handle_submit.__qualname__ = "handle_submit"
+
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    monkeypatch.setattr(log, "_log_level", LogLevel.INFO)
+    # A wide console so the long warning is not line-wrapped mid-assertion.
+    monkeypatch.setattr(log, "_console", Console(highlight=False, width=1000))
+    log.configure()
+    try:
+        call_event_handler(
+            EventHandler(fn=handle_submit),
+            (on_submit_event, on_submit_string_event),
+            key="on_submit",
+        )
+        out, _ = capsys.readouterr()
+    finally:
+        log._reset()
+    assert "expects (dict[str, typing.Any]) -> () but got (dict[str, str]) -> ()" in out
+    assert "\\" not in out

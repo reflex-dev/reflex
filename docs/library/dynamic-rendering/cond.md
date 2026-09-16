@@ -1,3 +1,8 @@
+---
+components:
+  - rx.cond
+---
+
 ```python exec
 import reflex as rx
 ```

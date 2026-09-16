@@ -30,7 +30,7 @@ If the type is known, it can be any of the following:
 - `BooleanVar` represents a boolean expression. For example: `false`, `3 > 2`.
 - `StringVar` represents an expression that evaluates to a string. For example: `'hello'`, `(2).toString()`.
 - `ArrayVar` represents an expression that evaluates to an array object. For example: `[1, 2, 3]`, `'words'.split()`.
-- `ObjectVar` represents an expression that evaluates to an object. For example: `\{a: 2, b: 3}`, `\{deeply: \{nested: \{value: false}}}`.
+- `ObjectVar` represents an expression that evaluates to an object. For example: `{a: 2, b: 3}`, `{deeply: {nested: {value: false}}}`.
 - `NoneVar` represent null values. These can be either `undefined` or `null`.
 
 ## Creating Vars
@@ -67,7 +67,7 @@ from reflex.vars import var_operation, var_operation_return, ArrayVar, NumberVar
 @var_operation
 def multiply_array_values(a: ArrayVar):
     return var_operation_return(
-        js_expression=f"\{a}.reduce((p, c) => p * c, 1)",
+        js_expression=f"{a}.reduce((p, c) => p * c, 1)",
         var_type=int,
     )
 
@@ -78,3 +78,39 @@ def factorial(value: NumberVar):
 
 Use `js_expression` to pass explicit JavaScript expressions; in the `multiply_array_values` example, we pass in a JavaScript expression that calculates the product of all elements in an array called `a` by using the reduce method to multiply each element with the accumulated result, starting from an initial value of 1.
 Later, we leverage `rx.cond` in the' factorial' function, we instantiate an array using the `range` function, and pass this array to `multiply_array_values`.
+
+## Hook Vars
+
+Some values only exist on the frontend and are exposed through React hooks.
+`rx.vars.use_hook_var()` binds the return value of a no-argument hook to a unique variable name and returns it as a `Var`.
+The hook call and the import of the hook are automatically included in any component that uses the var, so the value reflects the context of the component it is rendered in.
+
+```py
+chart_width = rx.vars.use_hook_var(
+    library="recharts@3.8.1",
+    hook="useChartWidth",
+    _var_type=int | None,
+)
+```
+
+A component using `chart_width` will import `useChartWidth` from `recharts` and render `const <unique_name> = useChartWidth();` in its body, so `chart_width` can be used like any other `Var[int | None]`.
+
+A hook var is evaluated once per compiled component, so every element that reads it must render inside the same one. An `rx.el.svg` root, an `@rx.memo` body, and a custom renderer body each compile into a single component and satisfy this.
+
+For the common case of React's built-in [`useId`](https://react.dev/reference/react/useId), `rx.vars.use_id()` returns a `Var[str]` containing a stable unique id for the rendered component.
+This is useful for linking SVG elements to `defs` such as gradients or filters:
+
+```py
+def gradient_rect() -> rx.Component:
+    gradient_id = rx.vars.use_id()
+    return rx.el.svg(
+        rx.el.svg.linear_gradient(
+            rx.el.svg.stop(offset="0%", stop_color="gold"),
+            rx.el.svg.stop(offset="100%", stop_color="tomato"),
+            id=gradient_id,
+        ),
+        rx.el.svg.rect(fill=f"url(#{gradient_id})", width=64, height=64),
+        width=64,
+        height=64,
+    )
+```

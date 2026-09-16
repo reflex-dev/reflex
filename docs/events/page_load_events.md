@@ -40,3 +40,42 @@ class State(rx.State):
 def index():
     return rx.text("A Beautiful App")
 ```
+
+## Handling Loading and Errors
+
+Avoid heavy synchronous work directly in an `on_load` handler — the page renders before the handler finishes, so a slow handler leaves the user staring at stale or empty data with no feedback. Instead:
+
+- Use an async handler for network or database calls so the event loop is not blocked.
+- Set a loading flag and `yield` to send it to the frontend immediately, then render a spinner or placeholder with `rx.cond`.
+- Wrap the work in `try`/`except` so a failure surfaces as an error message instead of a page that never finishes loading.
+
+```python
+class DataState(rx.State):
+    data: dict = {}
+    loading: bool = False
+    error: str = ""
+
+    @rx.event
+    async def load_initial_data(self):
+        self.loading = True
+        yield  # Send the loading state to the frontend immediately.
+        try:
+            self.data = await fetch_data()
+        except Exception as e:
+            self.error = str(e)
+        finally:
+            self.loading = False
+
+
+@rx.page(on_load=DataState.load_initial_data)
+def index():
+    return rx.cond(
+        DataState.loading,
+        rx.spinner(),
+        rx.cond(
+            DataState.error != "",
+            rx.text(f"Error: {DataState.error}"),
+            rx.text(f"Data loaded: {DataState.data}"),
+        ),
+    )
+```

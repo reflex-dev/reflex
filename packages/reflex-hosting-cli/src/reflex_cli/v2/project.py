@@ -1,12 +1,16 @@
 """Project commands for the Reflex Cloud CLI."""
 
 import json
+import logging
 
 import click
 
 from reflex_cli import constants
-from reflex_cli.utils import console
+from reflex_cli.utils import console, log
 from reflex_cli.utils.exceptions import NotAuthenticatedError
+from reflex_cli.utils.output import interactive_option, json_option, print_json
+
+logger = logging.getLogger(__name__)
 
 
 @click.group()
@@ -23,20 +27,8 @@ def project_cli():
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def create_project(
     name: str,
     token: str | None,
@@ -54,14 +46,14 @@ def create_project(
         )
         project = hosting.create_project(name=name, client=authenticated_client)
     except ValueError as err:
-        console.error(str(err))
+        logger.error(str(err))
         raise click.exceptions.Exit(1) from err
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
     if as_json:
-        console.print(json.dumps(project))
+        print_json(project)
         return
     if project:
         project = [project]
@@ -85,18 +77,14 @@ def create_project(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def invite_user_to_project(
     role: str,
     user: str,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Invite a user to a project."""
@@ -111,13 +99,16 @@ def invite_user_to_project(
             role_id=role, user_id=user, client=authenticated_client
         )
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
     if "failed" in result:
-        console.error(f"Unable to invite user to project: {result}")
+        logger.error(f"Unable to invite user to project: {result}")
         raise click.exceptions.Exit(1)
-    console.success("Successfully invited user to project.")
+    if as_json:
+        print_json({"role_id": role, "user_id": user, "invited": True})
+        return
+    logger.log(log.SUCCESS, "Successfully invited user to project.")
 
 
 @project_cli.command(name="select")
@@ -130,17 +121,14 @@ def invite_user_to_project(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@json_option
+@interactive_option
 def select_project(
     project_id: str | None,
     project_name: str | None,
     token: str | None,
     loglevel: str,
+    as_json: bool,
     interactive: bool,
 ):
     """Select a project."""
@@ -156,13 +144,13 @@ def select_project(
         if project_id:
             hosting.get_project(project_id, client=authenticated_client)
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
     except httpx.HTTPStatusError as ex:
         try:
-            console.error(ex.response.json().get("detail"))
+            logger.error(ex.response.json().get("detail"))
         except json.JSONDecodeError:
-            console.error(ex.response.text)
+            logger.error(ex.response.text)
         raise click.exceptions.Exit(1) from ex
 
     if project_name and not project_id:
@@ -172,15 +160,18 @@ def select_project(
         project_id = result.get("id") if result else None
 
     if not project_id:
-        console.error("No project selected. Please provide a valid project ID or name.")
+        logger.error("No project selected. Please provide a valid project ID or name.")
         raise click.exceptions.Exit(1)
 
     console.set_log_level(loglevel)
     result = hosting.select_project(project=project_id, token=token)
     if "failed" in result:
-        console.error(result)
+        logger.error(result)
         raise click.exceptions.Exit(1)
-    console.success(result)
+    if as_json:
+        print_json({"project_id": project_id, "selected": True, "message": result})
+        return
+    logger.log(log.SUCCESS, result)
 
 
 @project_cli.command(name="selected")
@@ -191,16 +182,12 @@ def select_project(
     help="The log level to use.",
 )
 @click.option("--token", help="The authentication token.")
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def get_select_project(
     loglevel: str,
     token: str | None,
+    as_json: bool,
     interactive: bool,
 ):
     """Get the currently selected project."""
@@ -216,19 +203,34 @@ def get_select_project(
             project_details = hosting.get_project(
                 project_id=project, client=authenticated_client
             )
+            if as_json:
+                print_json({
+                    "project_id": project,
+                    "name": project_details["name"],
+                    "error": None,
+                })
+                return
             console.print_table(
                 [[project, project_details["name"]]],
                 headers=["Selected Project ID", "Project Name"],
             )
         except NotAuthenticatedError:
-            console.error(
+            logger.error(
                 "You are not authenticated. Run `reflex login` to authenticate."
             )
             raise click.exceptions.Exit(1) from None
         except Exception as e:
-            console.error(f"Unable to get the currently selected project: {e}")
+            logger.error(f"Unable to get the currently selected project: {e}")
+            if as_json:
+                # Not the empty-selection document below: silence on stdout
+                # with a zero exit reads as "nothing is selected", which is a
+                # different answer from "the lookup failed".
+                print_json({"project_id": project, "name": None, "error": str(e)})
+            raise click.exceptions.Exit(1) from None
+    elif as_json:
+        print_json({"project_id": None, "name": None, "error": None})
     else:
-        console.warn(
+        logger.warning(
             "no selected project. run `reflex cloud project select` to set one."
         )
 
@@ -241,20 +243,8 @@ def get_select_project(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    "-i",
-    is_flag=True,
-    default=True,
-    help="Whether to use interactive mode.",
-)
+@json_option
+@interactive_option
 def get_projects(
     token: str | None,
     loglevel: str,
@@ -272,7 +262,7 @@ def get_projects(
         )
         projects = hosting.get_projects(client=authenticated_client)
         if as_json:
-            console.print(json.dumps(projects))
+            print_json(projects)
             return
         if projects:
             headers = list(projects[0].keys())
@@ -290,10 +280,10 @@ def get_projects(
             # If returned empty list, print the empty
             console.print(str(projects))
     except NotAuthenticatedError:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from None
     except Exception as e:
-        console.error(f"Unable to get projects: {e}")
+        logger.error(f"Unable to get projects: {e}")
         raise click.exceptions.Exit(1) from e
 
 
@@ -310,19 +300,8 @@ def get_projects(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@json_option
+@interactive_option
 def get_project_roles(
     project_id: str | None,
     project_name: str | None,
@@ -348,7 +327,7 @@ def get_project_roles(
         if project_id is None:
             project_id = hosting.get_selected_project()
         if project_id is None:
-            console.error(
+            logger.error(
                 "no project_id provided or selected. Set it with `reflex cloud project roles --project-id \\[project_id]`"
             )
             raise click.exceptions.Exit(1)
@@ -358,7 +337,7 @@ def get_project_roles(
         )
 
         if as_json:
-            console.print(json.dumps(roles))
+            print_json(roles)
             return
         if roles:
             headers = list(roles[0].keys())
@@ -371,7 +350,7 @@ def get_project_roles(
             # If returned empty list, print the empty
             console.print(str(roles))
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -389,19 +368,8 @@ def get_project_roles(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@json_option
+@interactive_option
 def get_project_role_permissions(
     role_id: str,
     project_id: str | None,
@@ -427,7 +395,7 @@ def get_project_role_permissions(
         if project_id is None:
             project_id = hosting.get_selected_project()
         if project_id is None:
-            console.error(
+            logger.error(
                 "no project_id provided or selected. Set it with `reflex cloud project role-permissions --project-id \\[project_id]`."
             )
             raise click.exceptions.Exit(1)
@@ -437,7 +405,7 @@ def get_project_role_permissions(
         )
 
         if as_json:
-            console.print(json.dumps(permissions))
+            print_json(permissions)
             return
         if permissions:
             headers = list(permissions[0].keys())
@@ -453,7 +421,7 @@ def get_project_role_permissions(
             # If returned empty list, print the empty
             console.print(str(permissions))
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
 
 
@@ -470,19 +438,8 @@ def get_project_role_permissions(
     default=constants.LogLevel.INFO.value,
     help="The log level to use.",
 )
-@click.option(
-    "--json/--no-json",
-    "-j",
-    "as_json",
-    is_flag=True,
-    help="Whether to output the result in json format.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
+@json_option
+@interactive_option
 def get_project_role_users(
     project_id: str | None,
     project_name: str | None,
@@ -508,7 +465,7 @@ def get_project_role_users(
         if project_id is None:
             project_id = hosting.get_selected_project()
         if project_id is None:
-            console.error(
+            logger.error(
                 "no project_id provided or selected. Set it with `reflex cloud project users --project-id \\[project_id]`"
             )
             raise click.exceptions.Exit(1)
@@ -518,7 +475,7 @@ def get_project_role_users(
         )
 
         if as_json:
-            console.print(json.dumps(users))
+            print_json(users)
             return
         if users:
             headers = list(users[0].keys())
@@ -531,5 +488,5 @@ def get_project_role_users(
             # If returned empty list, print the empty
             console.print(str(users))
     except NotAuthenticatedError as err:
-        console.error("You are not authenticated. Run `reflex login` to authenticate.")
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err

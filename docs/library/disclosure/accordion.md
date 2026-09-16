@@ -5,22 +5,32 @@ components:
 
 AccordionRoot: |
   lambda **props: rx.accordion.root(
-      rx.accordion.item(header="First Item", content="The first accordion item's content"),
       rx.accordion.item(
-          header="Second Item", content="The second accordion item's content",
+          header="First Item",
+          content="The first accordion item's content",
+          **props,
       ),
-      rx.accordion.item(header="Third item", content="The third accordion item's content"),
+      rx.accordion.item(
+          header="Second Item",
+          content="The second accordion item's content",
+          **props,
+      ),
+      rx.accordion.item(
+          header="Third item",
+          content="The third accordion item's content",
+          **props,
+      ),
       width="300px",
       **props,
   )
 
 AccordionItem: |
   lambda **props: rx.accordion.root(
-      rx.accordion.item(header="First Item", content="The first accordion item's content", **props),
       rx.accordion.item(
-          header="Second Item", content="The second accordion item's content", **props,
+          header="Single Item",
+          content="The accordion item's content",
+          **props,
       ),
-      rx.accordion.item(header="Third item", content="The third accordion item's content", **props),
       width="300px",
   )
 ---

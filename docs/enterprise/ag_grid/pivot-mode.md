@@ -1,3 +1,7 @@
+---
+meta_description: "Enable pivot mode in AG Grid with Reflex. Build pivot tables in Python — group rows, pivot columns, and aggregate values in an interactive data grid, no JavaScript required."
+---
+
 ```python exec
 import reflex as rx
 import reflex_enterprise as rxe
@@ -10,8 +14,6 @@ Pivot mode allows you to visualize your data in a different way than how they ar
 To enable pivot mode, set the `pivot_mode` property to `True` in the grid props. Once pivot mode is enabled, you can define which column to pivot on by setting the `pivot` property in a column definition. In addition to the pivot column, at least one column definition must have `row_group` property set to `True` to define the row grouping.
 
 You can also define how rows are aggregated by passing the `agg_func` property in the column definition. The `agg_func` property should be set to a string that represents the aggregation function to use. The built-in aggregation functions are `sum`, `min`, `max`, `count`, `avg`, `first`, and `last`.
-
-You can find a live example here: [Pivot Mode Example](https://aggrid.reflex.run/pivot).
 
 ```python demo exec
 import pandas as pd
@@ -55,7 +57,7 @@ def pivot_page():
     )
 ```
 
-# Pivot using State
+## Pivot using State
 
 ```python demo exec
 import pandas as pd

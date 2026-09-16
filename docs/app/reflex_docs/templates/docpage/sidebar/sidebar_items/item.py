@@ -13,7 +13,17 @@ def create_item(route: Route, children=None):
         # For "Overview", we want to keep the qualifier prefix ("Components overview")
         alt_name_for_next_prev = name if name.endswith("Overview") else ""
         # Capitalize acronyms
-        acronyms = {"Api": "API", "Cli": "CLI", "Ide": "IDE", "Mcp": "MCP", "Ai": "AI"}
+        acronyms = {
+            "Api": "API",
+            "Apis": "APIs",
+            "Urls": "URLs",
+            "Cli": "CLI",
+            "Ide": "IDE",
+            "Mcp": "MCP",
+            "Ai": "AI",
+            "Gcp": "GCP",
+            "Sso": "SSO",
+        }
         name = re.sub(
             r"\b(" + "|".join(acronyms.keys()) + r")\b",
             lambda m: acronyms[m.group(0)],

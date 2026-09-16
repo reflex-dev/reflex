@@ -1,13 +1,12 @@
 ---
 title: "AgGrid Overview"
 order: 3
+meta_description: "Use AG Grid in Python with Reflex. Build interactive, enterprise-grade data grids with sorting, filtering, pagination, and pivoting — all in pure Python."
 ---
 
 # AG Grid
 
-AG Grid is a powerful, feature-rich data grid component that brings enterprise-grade table functionality to your Reflex applications. With support for sorting, filtering, pagination, row selection, and much more, AG Grid transforms how you display and interact with tabular data.
-
-[Explore the full AG Grid showcase and examples](https://aggrid.reflex.run/)
+AG Grid (also written **ag-grid** or **aggrid**) is a powerful, feature-rich React data grid, and Reflex lets you use it entirely in Python — no JavaScript required. It brings enterprise-grade table functionality to your Reflex applications: with support for sorting, filtering, pagination, row selection, pivoting, and much more, AG Grid transforms how you display and interact with tabular data, whether it comes from a pandas DataFrame or your app's state.
 
 ## Your First Reflex AG Grid
 
@@ -45,9 +44,9 @@ The format of the data passed to the `row_data` prop is a list of dictionaries. 
 
 ```python
 [
-   \{"direction": "N", "strength": "0-1", "frequency": 0.5\},
-   \{"direction": "NNE", "strength": "0-1", "frequency": 0.6\},
-   \{"direction": "NE", "strength": "0-1", "frequency": 0.5\},
+    {"direction": "N", "strength": "0-1", "frequency": 0.5},
+    {"direction": "NNE", "strength": "0-1", "frequency": 0.6},
+    {"direction": "NE", "strength": "0-1", "frequency": 0.5},
 ]
 ```
 
@@ -169,6 +168,29 @@ def ag_grid_column_filter_types():
 
 📊 **Dataset source:** [GanttChart-updated.csv](https://raw.githubusercontent.com/plotly/datasets/master/GanttChart-updated.csv)
 
+To show an inline filter input below the column headers, set `floating_filter: True` in the column definition (or in `default_col_def` to apply it to every column).
+
+### Multi-Column Filter (Enterprise)
+
+The enterprise `agMultiColumnFilter` combines several filter types on a single column:
+
+```python
+column_defs = [
+    {
+        "field": "athlete",
+        "filter": "agMultiColumnFilter",
+        "filter_params": {
+            "filters": [
+                {"filter": "agTextColumnFilter"},
+                {"filter": "agSetColumnFilter"},
+            ],
+        },
+    },
+]
+```
+
+Enterprise filters may require loading their modules explicitly via the `enterprise_modules` prop — for example `SetFilterModule` for `agSetColumnFilter`, `MultiFilterModule` for `agMultiColumnFilter`, and `FiltersToolPanelModule` for the filter tool panel (shown with `side_bar=True`). See [Functionality you need is not available/working in Reflex](#functionality-you-need-is-not-available/working-in-reflex) below.
+
 ## Row Sorting
 
 By default, the rows can be sorted by any column by clicking on the column header. You can disable sorting of the rows for a column by setting the `sortable` key to `False` in the column definition.
@@ -234,6 +256,34 @@ def ag_grid_simple_row_selection():
 
 📊 **Dataset source:** [gapminder2007.csv](https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv)
 
+### Handling Selection Changes
+
+Use the `on_selection_changed` event trigger to react to selection changes. The event handler receives the selected rows directly as a `list[dict]` — not an event object, so don't try to read the rows from `event["rows"]` or through the grid API:
+
+```python
+class GridSelectionState(rx.State):
+    selected_rows: list[dict] = []
+
+    @rx.event
+    def handle_selection_changed(self, selected_rows: list[dict]):
+        self.selected_rows = selected_rows
+        return rx.toast(f"Selected {len(selected_rows)} rows")
+
+
+def grid_with_selection():
+    return rxe.ag_grid(
+        id="selection_grid",
+        row_data=df.to_dict("records"),
+        column_defs=column_defs,
+        row_selection={"mode": "multiRow"},
+        on_selection_changed=GridSelectionState.handle_selection_changed,
+        width="100%",
+        height="40vh",
+    )
+```
+
+An event handler annotated as `def handle(self, event: dict)` raises an `EventHandlerArgTypeMismatchError`, since the trigger passes a `list[dict]`.
+
 ## Editing
 
 Enable Editing by setting the `editable` attribute to `True`. The cell editor is inferred from the cell data type. Set the cell editor type using the `cell_editor` attribute.
@@ -257,6 +307,7 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
+
 class AGGridEditingState(rx.State):
     data: list[dict] = []
     _data_df: pd.DataFrame
@@ -270,14 +321,29 @@ class AGGridEditingState(rx.State):
     def cell_value_changed(self, row, col_field, new_value):
         self._data_df.at[row, col_field] = new_value
         self.data = self._data_df.to_dict("records")
-        yield rx.toast(f"Cell value changed, Row: {row}, Column: {col_field}, New Value: {new_value}")
+        yield rx.toast(
+            f"Cell value changed, Row: {row}, Column: {col_field}, New Value: {new_value}"
+        )
 
 
 column_defs = [
-    \{"field": "country"\},
-    \{"field": "pop", "headerName": "Population", "editable": True, "cellEditor": rxe.ag_grid.editors.number\},
-    \{"field": "continent", "editable": True, "cellEditor": rxe.ag_grid.editors.select, "cellEditorParams": \{"values": ['Asia', 'Europe', 'Africa', 'Americas', 'Oceania']\}\},
+    {"field": "country"},
+    {
+        "field": "pop",
+        "headerName": "Population",
+        "editable": True,
+        "cellEditor": rxe.ag_grid.editors.number,
+    },
+    {
+        "field": "continent",
+        "editable": True,
+        "cellEditor": rxe.ag_grid.editors.select,
+        "cellEditorParams": {
+            "values": ["Asia", "Europe", "Africa", "Americas", "Oceania"]
+        },
+    },
 ]
+
 
 def ag_grid_simple_editing():
     return rxe.ag_grid(
@@ -336,6 +402,7 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
+
 class AGGridState2(rx.State):
     data: list[dict] = []
 
@@ -344,11 +411,13 @@ class AGGridState2(rx.State):
         _df = pd.read_csv("data/gapminder2007.csv")
         self.data = _df.to_dict("records")
 
+
 column_defs = [
-    \{"field": "country"\},
-    \{"field": "pop", "headerName": "Population"\},
-    \{"field": "continent"\},
+    {"field": "country"},
+    {"field": "pop", "headerName": "Population"},
+    {"field": "continent"},
 ]
+
 
 def ag_grid_state_2():
     return rxe.ag_grid(
@@ -370,8 +439,10 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
+
 class AgGridState(rx.State):
     """The app state."""
+
     all_columns: list = []
 
     two_columns: list = []
@@ -381,15 +452,15 @@ class AgGridState(rx.State):
     @rx.event
     def init_columns(self):
         self.all_columns = [
-            \{"field": "country"\},
-            \{"field": "pop"\},
-            \{"field": "continent"\},
-            \{"field": "lifeExp"\},
-            \{"field": "gdpPercap"\},
+            {"field": "country"},
+            {"field": "pop"},
+            {"field": "continent"},
+            {"field": "lifeExp"},
+            {"field": "gdpPercap"},
         ]
         self.two_columns = [
-            \{"field": "country"\},
-            \{"field": "pop"\},
+            {"field": "country"},
+            {"field": "pop"},
         ]
         self.column_defs = self.all_columns
 
@@ -436,6 +507,7 @@ import reflex_enterprise as rxe
 import pandas as pd
 from sqlmodel import select
 
+
 class Country(rx.Model, table=True):
     country: str
     population: int
@@ -443,7 +515,6 @@ class Country(rx.Model, table=True):
 
 
 class AGGridDatabaseState(rx.State):
-
     countries: list[Country]
 
     # Insert data from a csv loaded dataframe to the database (Do this on the page load)
@@ -453,9 +524,9 @@ class AGGridDatabaseState(rx.State):
         with rx.session() as session:
             for _, row in data.iterrows():
                 db_record = Country(
-                    country=row['country'],
-                    population=row['pop'],
-                    continent=row['continent'],
+                    country=row["country"],
+                    population=row["pop"],
+                    continent=row["continent"],
                 )
                 session.add(db_record)
             session.commit()
@@ -476,14 +547,29 @@ class AGGridDatabaseState(rx.State):
             country = Country(**self.countries[row])
             session.merge(country)
             session.commit()
-        yield rx.toast(f"Cell value changed, Row: \{row}, Column: \{col_field}, New Value: \{new_value}")
+        yield rx.toast(
+            f"Cell value changed, Row: {row}, Column: {col_field}, New Value: {new_value}"
+        )
 
 
 column_defs = [
-    \{"field": "country"\},
-    \{"field": "population", "headerName": "Population", "editable": True, "cellEditor": rxe.ag_grid.editors.number\},
-    \{"field": "continent", "editable": True, "cellEditor": rxe.ag_grid.editors.select, "cellEditorParams": \{"values": ['Asia', 'Europe', 'Africa', 'Americas', 'Oceania']\}\},
+    {"field": "country"},
+    {
+        "field": "population",
+        "headerName": "Population",
+        "editable": True,
+        "cellEditor": rxe.ag_grid.editors.number,
+    },
+    {
+        "field": "continent",
+        "editable": True,
+        "cellEditor": rxe.ag_grid.editors.select,
+        "cellEditorParams": {
+            "values": ["Asia", "Europe", "Africa", "Americas", "Oceania"]
+        },
+    },
 ]
+
 
 def index():
     return rxe.ag_grid(
@@ -494,6 +580,7 @@ def index():
         width="100%",
         height="40vh",
     )
+
 
 # Add state and page to the app.
 app = rx.App()
@@ -592,6 +679,7 @@ It is also possible to use the AG Grid API directly with the event trigger (`on_
 ```python
 rx.button("Select all", on_click=rxe.ag_grid.api(id="ag_grid_basic_row_selection").select_all()),
 ```
+```
 
 ### More examples
 
@@ -603,9 +691,7 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
-df = pd.read_csv(
-    "data/gapminder2007.csv"
-)
+df = pd.read_csv("data/gapminder2007.csv")
 
 column_defs = [
     {"field": "country", "checkboxSelection": True},
@@ -613,10 +699,11 @@ column_defs = [
     {"field": "continent"},
 ]
 
+
 def ag_grid_api_simple2():
     my_api = rxe.ag_grid.api(id="ag_grid_export_and_resize")
     return rx.vstack(
-            rxe.ag_grid(
+        rxe.ag_grid(
             id="ag_grid_export_and_resize",
             row_data=df.to_dict("records"),
             column_defs=column_defs,
@@ -648,19 +735,20 @@ import reflex as rx
 import reflex_enterprise as rxe
 import pandas as pd
 
+
 class AGGridStateAPI(rx.State):
     def handle_get_data(self, data: str):
         yield rx.toast(f"Got CSV data: {data}")
 
-df = pd.read_csv(
-    "data/gapminder2007.csv"
-)
+
+df = pd.read_csv("data/gapminder2007.csv")
 
 column_defs = [
-    \{"field": "country", "checkboxSelection": True\},
-    \{"field": "pop"\},
-    \{"field": "continent"\},
+    {"field": "country", "checkboxSelection": True},
+    {"field": "pop"},
+    {"field": "continent"},
 ]
+
 
 def ag_grid_api_argument():
     my_api = rxe.ag_grid.api(id="ag_grid_get_data_as_csv")
@@ -672,7 +760,10 @@ def ag_grid_api_argument():
             width="100%",
             height="40vh",
         ),
-        rx.button("Get CSV data on backend", on_click=my_api.get_data_as_csv(callback=AGGridStateAPI.handle_get_data)),
+        rx.button(
+            "Get CSV data on backend",
+            on_click=my_api.get_data_as_csv(callback=AGGridStateAPI.handle_get_data),
+        ),
         spacing="4",
         width="100%",
     )

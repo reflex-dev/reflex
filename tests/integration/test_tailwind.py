@@ -41,7 +41,9 @@ def TailwindApp(
             id="p-content",
         )
 
-    assets = Path(__file__).resolve().parent.parent / "assets"
+    # Write next to the compiled app (Path.cwd() inside the harness) so reruns
+    # don't end up with a stale __file__ from a previous tmp_path's importlib.reload.
+    assets = Path.cwd() / "assets"
     assets.mkdir(exist_ok=True)
     stylesheet = assets / "test_styles.css"
     stylesheet.write_text(".external { color: rgba(0, 0, 255, 0.5) }")

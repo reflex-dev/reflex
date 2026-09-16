@@ -1,611 +1,710 @@
-"""Marketing Navbar module."""
+"""Marketing navbar for reflex.dev, with the site-wide announcement banner."""
 
 import reflex_components_internal as ui
-from reflex_components_internal.blocks.demo_form import demo_form_dialog
 
 import reflex as rx
 from reflex_site_shared.backend.get_blogs import BlogPostDict, RecentBlogsState
 from reflex_site_shared.components.icons import get_icon
-from reflex_site_shared.components.marketing_button import button as marketing_button
-from reflex_site_shared.components.marquee import marquee
+from reflex_site_shared.components.marketing_button import Button, button
+from reflex_site_shared.components.marketing_date import marketing_date
 from reflex_site_shared.constants import (
-    CHANGELOG_URL,
-    CONTRIBUTING_URL,
-    DISCUSSIONS_URL,
+    DISCORD_URL,
+    GITHUB_ORG_URL,
     GITHUB_STARS,
     GITHUB_URL,
     JOBS_BOARD_URL,
     REFLEX_ASSETS_CDN,
-    REFLEX_BUILD_URL,
+    REFLEX_BUILD_LOGIN_URL,
+    XY_GITHUB_STARS,
+    XY_GITHUB_URL,
 )
-from reflex_site_shared.views.sidebar import navbar_sidebar_button
+from reflex_site_shared.views.announcement_banner import announcement_banner
+
+FOCUS_RING = (
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+)
 
 
-def social_proof_card(image: str) -> rx.Component:
-    """Social proof card.
+def site_anchor(href: str):
+    """Resolve marketing destinations independently of a consuming app's base path.
 
     Returns:
-        The component.
+        The rendered component.
+    """
+    return rx.el.elements.a, f"https://reflex.dev{href}" if href.startswith(
+        "/"
+    ) else href
+
+
+def button_link(*children, href: str, **props) -> rx.Component:
+    """Render a marketing action as a native navigation link.
+
+    Returns:
+        The rendered component.
+    """
+    anchor, href = site_anchor(href)
+    return anchor(button(*children, native_button=False, **props), href=href)
+
+
+def demo_link(*children, **props) -> rx.Component:
+    """Open the marketing booking page.
+
+    Returns:
+        The rendered component.
+    """
+    return button_link(*children, href="/demo/", **props)
+
+
+_MCP_DOCS_URL = "/docs/ai/integrations/mcp-overview/"
+
+# Public repository counts checked on 2026-09-08.
+_REFLEX_GITHUB_STARS = GITHUB_STARS
+_XY_GITHUB_STARS = XY_GITHUB_STARS
+_TOTAL_GITHUB_STARS = _REFLEX_GITHUB_STARS + _XY_GITHUB_STARS
+_TOTAL_GITHUB_STARS_LABEL = f"{(_TOTAL_GITHUB_STARS + 999) // 1000}K"
+_REFLEX_GITHUB_STARS_LABEL = f"{round(_REFLEX_GITHUB_STARS / 1000)}K"
+_XY_GITHUB_STARS_LABEL = f"{_XY_GITHUB_STARS / 1000:.1f}K"
+
+_FRAMEWORK_OVERVIEW_ITEM = (
+    "Framework Overview",
+    "The open-source Python framework behind your apps.",
+    "/open-source/",
+)
+
+_DEVELOPER_TOOL_ITEMS = (
+    (
+        "Documentation",
+        "Explore guides, components, APIs, and examples.",
+        "/docs/",
+    ),
+    (
+        "MCP",
+        "Connect coding agents to current documentation and components.",
+        _MCP_DOCS_URL,
+    ),
+    (
+        "Skills",
+        "Give coding agents reusable guidance and workflows.",
+        "/docs/ai/integrations/skills/",
+    ),
+)
+
+_ENTERPRISE_DEVELOPER_ITEMS = (
+    (
+        "Auto MCP",
+        "Turn your application's workflows into tools for AI agents.",
+        "/docs/enterprise/mcp/",
+    ),
+    (
+        "Authentication",
+        "Add secure OIDC authentication and authorization.",
+        "/docs/enterprise/auth/overview/",
+    ),
+    (
+        "End-to-End Testing",
+        "Run browser tests against a live Reflex app.",
+        "/docs/enterprise/testing/",
+    ),
+)
+
+_PLATFORM_ITEMS = (
+    (
+        "Platform Overview",
+        "See how the Reflex platform fits together.",
+        "/platform/",
+    ),
+    (
+        "AI Builder",
+        "Build and test production software with AI.",
+        "/ai-builder/",
+    ),
+    (
+        "Integrations",
+        "Connect your data, APIs, models, and services.",
+        "/integrations/",
+    ),
+    (
+        "App Management",
+        "Deploy, Monitor and govern your apps.",
+        "/hosting/",
+    ),
+    (
+        "Workflows",
+        "Automate business processes with AI agents. Join the waitlist.",
+        "/workflows/",
+    ),
+    (
+        "Implementation",
+        "Enterprise controls and hands-on engineering from discovery to rollout.",
+        "/enterprise/",
+    ),
+)
+
+_SOLUTION_INDUSTRIES = (
+    (
+        "Financial Services",
+        "Put trusted analysis next to every decision.",
+        "/use-cases/finance/",
+    ),
+    (
+        "Public Sector",
+        "Modernize essential services without losing control.",
+        "/use-cases/government/",
+    ),
+    (
+        "Healthcare",
+        "Turn complex care workflows into clear next actions.",
+        "/use-cases/healthcare/",
+    ),
+    (
+        "Technology",
+        "Ship differentiated products from one Python stack.",
+        "/use-cases/technology/",
+    ),
+    (
+        "Manufacturing",
+        "Connect factory operations to faster, safer decisions.",
+        "/use-cases/manufacturing/",
+    ),
+    (
+        "Consulting",
+        "Turn expert analysis into client-ready software.",
+        "/use-cases/consulting/",
+    ),
+)
+
+
+# These primitives are shared by desktop menus and the mobile disclosure panel.
+_LINK = "flex w-full flex-col gap-1 rounded-xl px-3 py-2.5 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+_LINK_COMPACT = "flex w-full flex-col gap-0.5 rounded-xl px-4 py-2 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+_LINK_SPACIOUS = "flex w-full flex-col gap-1 rounded-xl px-3 py-3 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+_LINK_COMPACT_SPACIOUS = "flex w-full flex-col gap-0.5 rounded-xl px-4 py-3 text-left hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2"
+_HEADING = "mx-4 border-b border-border pb-3 text-sm font-book text-subtle-foreground"
+
+
+def _link(
+    title: str,
+    description: str,
+    href: str,
+    *,
+    compact: bool = False,
+    spacious: bool = False,
+    stars: str | None = None,
+) -> rx.Component:
+    """Render link.
+
+    Returns:
+        The rendered component.
+    """
+    if compact:
+        link_class = _LINK_COMPACT_SPACIOUS if spacious else _LINK_COMPACT
+    else:
+        link_class = _LINK_SPACIOUS if spacious else _LINK
+    content = [
+        rx.el.span(title, class_name="text-sm font-medium leading-5 text-foreground")
+    ]
+    if title == "Workflows":
+        content[0] = rx.el.span(
+            content[0],
+            rx.el.span(
+                "Coming soon",
+                class_name="inline-flex shrink-0 items-center whitespace-nowrap rounded-full border border-border-subtle bg-subtle px-2.5 py-1 text-micro font-medium leading-3 text-muted-foreground",
+            ),
+            class_name="flex flex-wrap items-center gap-2",
+        )
+    if description:
+        content.append(
+            rx.el.span(
+                description, class_name="text-xs leading-4 text-muted-foreground"
+            )
+        )
+    if stars:
+        content = [
+            rx.el.span(*content, class_name="flex min-w-0 flex-col gap-1"),
+            rx.el.span(
+                get_icon(
+                    "github_navbar",
+                    class_name="size-3.5 shrink-0 [&>svg]:block [&>svg]:size-full",
+                ),
+                rx.el.span(stars, class_name="leading-none"),
+                aria_label=f"{stars} GitHub stars",
+                class_name="inline-flex h-7 w-16 shrink-0 items-center justify-center gap-1.5 rounded-full border border-border bg-background px-2 text-xs font-book tabular-nums text-muted-foreground",
+            ),
+        ]
+        link_class = link_class.replace(
+            "flex-col", "flex-row items-center justify-between"
+        ).replace("gap-1 ", "gap-3 ")
+    if not href:
+        return rx.el.div(
+            *content,
+            aria_disabled="true",
+            class_name=f"{link_class.replace(' hover:bg-accent', '')} cursor-default",
+        )
+    anchor, href = site_anchor(href)
+    return anchor(*content, href=href, class_name=link_class)
+
+
+def _column(title: str, items: tuple, class_name: str = "") -> rx.Component:
+    """Render column.
+
+    Returns:
+        The rendered component.
     """
     return rx.el.div(
-        rx.image(
-            f"{REFLEX_ASSETS_CDN}companies/{rx.color_mode_cond('light', 'dark')}/{image}_small.svg",
+        rx.el.div(title, class_name=_HEADING),
+        rx.el.div(
+            *[
+                _link(*item[:3], stars=item[3] if len(item) > 3 else None)
+                for item in items
+            ],
+            class_name="grid gap-1 pt-3",
+        ),
+        class_name=f"flex min-w-0 flex-col px-3 pb-3 pt-6 {class_name}",
+    )
+
+
+def _platform_content() -> rx.Component:
+    """Render platform content.
+
+    Returns:
+        The rendered component.
+    """
+    return rx.el.div(
+        rx.el.div(
+            *[_link(*item, compact=True) for item in _PLATFORM_ITEMS],
+            class_name="grid grid-flow-col grid-cols-2 grid-rows-3",
+        ),
+        class_name="w-[38rem] p-4",
+    )
+
+
+def _developers_content() -> rx.Component:
+    """Render developers content.
+
+    Returns:
+        The rendered component.
+    """
+    return rx.el.div(
+        _column(
+            "Open source",
+            (
+                _FRAMEWORK_OVERVIEW_ITEM,
+                (
+                    "Reflex",
+                    "Web apps in pure Python",
+                    GITHUB_URL,
+                    _REFLEX_GITHUB_STARS_LABEL,
+                ),
+                (
+                    "XY",
+                    "Fast and composable charts",
+                    XY_GITHUB_URL,
+                    _XY_GITHUB_STARS_LABEL,
+                ),
+            ),
+        ),
+        _column("Resources", _DEVELOPER_TOOL_ITEMS, "border-l border-border"),
+        _column(
+            "Enterprise Package",
+            _ENTERPRISE_DEVELOPER_ITEMS,
+            "border-l border-border",
+        ),
+        class_name="grid w-[60.75rem] grid-cols-3 gap-x-4",
+    )
+
+
+def _resources_items() -> tuple:
+    """Render resources items.
+
+    Returns:
+        The rendered component.
+    """
+    return (
+        (
+            "Learn",
+            (
+                ("Docs", "", "/docs/"),
+                ("Templates", "", "/templates/"),
+                ("MCP", "", _MCP_DOCS_URL),
+                ("Skills", "", "/docs/ai/integrations/skills/"),
+            ),
+        ),
+        (
+            "Company",
+            (
+                ("About", "", "/about/"),
+                ("Careers", "", JOBS_BOARD_URL),
+                ("Press", "", "/press/"),
+                ("Discord", "", DISCORD_URL),
+            ),
+        ),
+    )
+
+
+def _blog_item(post: BlogPostDict) -> rx.Component:
+    """Render blog item.
+
+    Returns:
+        The rendered component.
+    """
+    cover = rx.el.div(
+        rx.el.img(
+            src=rx.cond(
+                post["image"] != "",
+                post["image"],
+                "https://reflex.dev/homepage/news/yellow-pixel-art.avif",
+            ),
+            alt="",
             loading="lazy",
-            alt=f"{image} logo",
-            class_name="w-auto h-fit pointer-events-none",
+            decoding="async",
+            class_name="absolute inset-0 size-full object-cover",
         ),
-        class_name="flex justify-center items-center px-3",
+        class_name="order-1 mt-2 relative w-full aspect-video overflow-hidden rounded-xl",
     )
-
-
-def logos_carousel() -> rx.Component:
-    """Logos carousel.
-
-    Returns:
-        The component.
-    """
-    logos = [
-        "agricole",
-        "man",
-        "shell",
-        "red_hat",
-        "accenture",
-        "dell",
-        "microsoft",
-        "world",
-        "ford",
-        "unicef",
-        "nike",
-    ]
-    return marquee(
-        *[social_proof_card(logo) for logo in logos],
-        direction="left",
-        gradient_color="light-dark(var(--c-white-1), var(--c-m-slate-11))",
-        class_name="h-[1.625rem] w-full overflow-hidden mt-auto",
-        gradient_width=65,
-        speed=25,
-        pause_on_hover=False,
-    )
-
-
-def github() -> rx.Component:
-    """Github.
-
-    Returns:
-        The component.
-    """
     return rx.el.elements.a(
-        marketing_button(
-            get_icon(icon="github_navbar", class_name="shrink-0"),
-            f"{GITHUB_STARS // 1000}K",
-            custom_attrs={
-                "aria-label": f"View Reflex on GitHub - {GITHUB_STARS // 1000}K stars"
-            },
-            size="sm",
-            variant="ghost",
+        cover,
+        marketing_date(
+            value=post["date"],
+            compact=True,
+            class_name="text-xs text-muted-foreground",
         ),
-        href=GITHUB_URL,
-        custom_attrs={
-            "aria-label": f"View Reflex on GitHub - {GITHUB_STARS // 1000}K stars"
-        },
+        rx.el.span(
+            post["title"], class_name="text-sm font-medium leading-5 text-foreground"
+        ),
+        href=rx.cond(
+            post["url"].startswith("/"), "https://reflex.dev" + post["url"], post["url"]
+        ),
+        class_name="flex flex-col gap-2",
     )
 
 
-def logo() -> rx.Component:
-    """Logo.
+def _resources_content() -> rx.Component:
+    """Render resources content.
 
     Returns:
-        The component.
+        The rendered component.
     """
-    return rx.el.elements.a(
-        rx.image(
-            src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
-            alt="Reflex Logo",
-            class_name="shrink-0 block dark:hidden",
+    return rx.el.div(
+        rx.el.div(
+            *[
+                rx.el.div(
+                    rx.el.div(
+                        title,
+                        class_name=_HEADING,
+                    ),
+                    rx.el.div(
+                        *[_link(*item, compact=True, spacious=True) for item in items],
+                        class_name="flex flex-col",
+                    ),
+                    class_name="flex min-w-0 flex-col gap-3",
+                )
+                for title, items in _resources_items()
+            ],
+            class_name="grid w-[31rem] grid-cols-2 gap-2 border-r border-border px-3 pb-3 pt-6",
         ),
-        rx.image(
-            src=f"{REFLEX_ASSETS_CDN}logos/dark/reflex.svg",
-            alt="Reflex Logo",
-            class_name="shrink-0 hidden dark:block",
+        rx.el.div(
+            rx.foreach(RecentBlogsState.posts[:1], _blog_item),
+            rx.el.elements.a(
+                "Read All in Blog",
+                ui.icon("ArrowRight01Icon", class_name="size-4"),
+                href="https://reflex.dev/blog/",
+                class_name="mt-auto flex items-center gap-2 pt-3 text-xs text-muted-foreground hover:text-foreground",
+            ),
+            on_mount=RecentBlogsState.fetch_recent_blogs,
+            class_name="flex w-[18rem] shrink-0 flex-col justify-between gap-4 bg-subtle p-6",
         ),
-        href="/",
-        class_name="block shrink-0 lg:mr-9",
+        class_name="flex",
     )
 
 
-def menu_trigger(title: str, content: rx.Component) -> rx.Component:
-    """Menu trigger.
+def _solutions_content() -> rx.Component:
+    """Render solutions content.
 
     Returns:
-        The component.
+        The rendered component.
+    """
+    return rx.el.div(
+        rx.el.div(
+            _link(
+                "Explore solutions",
+                "Find a workflow, customer example, and starting point.",
+                "/use-cases/",
+                compact=True,
+            ),
+            rx.el.div(
+                *[
+                    _link(*item, compact=True, spacious=True)
+                    for item in _SOLUTION_INDUSTRIES
+                ],
+                class_name="grid grid-cols-2",
+            ),
+            class_name="w-[35rem] p-3",
+        ),
+        rx.el.div(
+            rx.el.elements.a(
+                rx.image(
+                    src=f"{REFLEX_ASSETS_CDN}case_studies/logos/light/autodesk_top.svg",
+                    alt="Autodesk",
+                    loading="lazy",
+                    class_name="h-4 w-auto self-start",
+                ),
+                rx.el.span(
+                    "How Autodesk saved 25% of their development time",
+                    class_name="text-xl font-medium leading-7 tracking-tight text-balance",
+                ),
+                href="https://reflex.dev/customers/autodesk/",
+                class_name="-mx-3 flex flex-col gap-4 rounded-xl p-3 hover:bg-accent",
+            ),
+            button_link(
+                "Case studies",
+                ui.icon("ArrowRight01Icon", class_name="size-4", aria_hidden=True),
+                href="/customers/",
+                variant="outline",
+                size="md",
+                class_name="w-full justify-center text-center",
+            ),
+            class_name="flex w-[18rem] shrink-0 flex-col justify-between gap-5 border-l border-border bg-accent p-6 text-foreground",
+        ),
+        class_name="flex",
+    )
+
+
+_IGNORE_CLICK_WHEN_HOVER_OPEN = rx.Var(
+    "(event) => { if (event.detail > 0 && event.pointerType !== 'touch' "
+    "&& event.currentTarget.getAttribute('aria-expanded') === 'true') "
+    "{ event.preventBaseUIHandler(); } }"
+)
+
+
+def _menu_trigger(title: str, content: rx.Component) -> rx.Component:
+    """Render menu trigger.
+
+    Returns:
+        The rendered component.
     """
     return ui.navigation_menu.item(
         ui.navigation_menu.trigger(
-            marketing_button(
-                title,
-                ui.icon(
-                    "ArrowDown01Icon", class_name="chevron transition-all ease-out"
-                ),
-                size="sm",
-                variant="ghost",
-                class_name="font-[550] menu-button",
-                native_button=False,
-            ),
-            style={
-                "&[data-popup-open] .chevron": {
-                    "transform": "rotate(180deg)",
-                },
-                "&[data-popup-open] .menu-button": {
-                    "color": "light-dark(var(--primary-10), var(--primary-9))",
-                },
-            },
-            class_name="px-1",
-            aria_label=f"{title} menu",
+            title,
             unstyled=True,
+            class_name="cursor-pointer rounded-full px-3 py-2 text-sm font-book text-muted-foreground hover:text-foreground data-[popup-open]:text-foreground focus-visible:outline-2 focus-visible:outline-ring",
+            aria_label=f"{title} menu",
+            # A mouse click on an already hover-opened trigger would switch Base UI
+            # into click mode, where the menu ignores hover-out and looks stuck.
+            # Keyboard clicks (detail 0) and touch still go through.
+            custom_attrs={"onClick": _IGNORE_CLICK_WHEN_HOVER_OPEN},
         ),
-        content,
+        ui.navigation_menu.content(
+            content,
+            unstyled=True,
+            keep_mounted=True,
+            class_name=(
+                "flex w-max overflow-hidden rounded-[inherit] bg-background font-sans text-foreground "
+                # Base UI absolutely positions the outgoing panel while it exits;
+                # fade and slide it so it does not snap over the incoming one.
+                "transition-[opacity,translate] duration-150 ease-out motion-reduce:transition-none "
+                "data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 "
+                "data-[activation-direction=left]:data-[starting-style]:-translate-x-1/4 "
+                "data-[activation-direction=left]:data-[ending-style]:translate-x-1/4 "
+                "data-[activation-direction=right]:data-[starting-style]:translate-x-1/4 "
+                "data-[activation-direction=right]:data-[ending-style]:-translate-x-1/4"
+            ),
+        ),
         value=title,
-        class_name="cursor-pointer xl:flex hidden h-full items-center justify-center",
         unstyled=True,
-        custom_attrs={"role": "menuitem"},
+        class_name="hidden h-full items-center xl:flex",
     )
 
 
-def menu_content(content: rx.Component, class_name: str = "") -> rx.Component:
-    """Menu content.
+def marketing_mobile_drawer() -> rx.Component:
+    """Render marketing mobile drawer.
 
     Returns:
-        The component.
+        The rendered component.
     """
-    return ui.navigation_menu.content(
-        content,
-        unstyled=True,
-        class_name=ui.cn(
-            "data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[viewport=false]/navigation-menu:data-open:zoom-in-95 group-data-[viewport=false]/navigation-menu:data-closed:zoom-out-95 group-data-[viewport=false]/navigation-menu:data-open:fade-in-0 group-data-[viewport=false]/navigation-menu:data-closed:fade-out-0 group-data-[viewport=false]/navigation-menu:duration-300 data-[ending-style]:data-[activation-direction=left]:translate-x-[50%] data-[ending-style]:data-[activation-direction=right]:translate-x-[-50%] data-[starting-style]:data-[activation-direction=left]:translate-x-[-50%] data-[starting-style]:data-[activation-direction=right]:translate-x-[50%] w-max transition-[opacity,transform,translate] duration-[0.35s] data-[ending-style]:opacity-0 data-[starting-style]:opacity-0 **:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none",
-            "flex flex-row rounded-xl font-sans p-0",
-            class_name,
+    sections = (
+        ("Platform", _PLATFORM_ITEMS),
+        *_resources_items(),
+        (
+            "Solutions",
+            (
+                (
+                    "Explore solutions",
+                    "Find a workflow and starting point.",
+                    "/use-cases/",
+                ),
+                *_SOLUTION_INDUSTRIES,
+            ),
         ),
-        keep_mounted=True,
+        (
+            "Developers",
+            (
+                _FRAMEWORK_OVERVIEW_ITEM,
+                ("Reflex", "Web apps in pure Python", GITHUB_URL),
+                ("XY", "Fast and composable charts", XY_GITHUB_URL),
+                *_DEVELOPER_TOOL_ITEMS,
+                *_ENTERPRISE_DEVELOPER_ITEMS,
+            ),
+        ),
     )
-
-
-def platform_item(image: str, title: str, description: str, href: str) -> rx.Component:
-    """Platform item.
-
-    Returns:
-        The component.
-    """
-    return rx.el.div(
-        rx.image(
-            src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/{image}",
-            alt=title,
-            class_name="size-18",
+    return rx.el.details(
+        rx.el.summary(
+            ui.icon("Menu01Icon", class_name="size-5 group-open/mobile:hidden"),
+            ui.icon("Cancel01Icon", class_name="hidden size-5 group-open/mobile:block"),
+            aria_label="Toggle navigation menu",
+            class_name=f"flex size-9 cursor-pointer list-none items-center justify-center rounded-full text-foreground hover:bg-accent {FOCUS_RING} [&::-webkit-details-marker]:hidden",
         ),
         rx.el.div(
-            rx.el.span(
-                title,
-                class_name="dark:text-m-slate-3 text-m-slate-12 text-sm font-[525]",
-            ),
-            rx.el.span(
-                description,
-                class_name="dark:text-m-slate-6 text-m-slate-7 text-sm font-[475]",
-            ),
-            class_name="flex flex-col",
-        ),
-        rx.el.elements.a(class_name="absolute inset-0", href=href),
-        class_name="p-4 flex flex-row gap-6 relative cursor-pointer rounded-sm hover-card-shadow",
-    )
-
-
-def platform_content() -> rx.Component:
-    """Platform content.
-
-    Returns:
-        The component.
-    """
-    return menu_content(
-        rx.el.div(
-            rx.el.div(
-                rx.el.div(
+            *[
+                rx.el.details(
+                    rx.el.summary(
+                        title,
+                        ui.icon(
+                            "ArrowDown01Icon",
+                            aria_hidden=True,
+                            class_name="size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-open/nav-section:rotate-180 motion-reduce:transition-none",
+                        ),
+                        class_name="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-border px-4 py-4 text-base font-medium [&::-webkit-details-marker]:hidden",
+                    ),
                     rx.el.div(
-                        rx.el.span(
-                            "AI Builder",
-                            class_name="dark:text-m-slate-3 text-m-slate-12 text-lg font-semibold mb-2",
-                        ),
-                        rx.el.span(
-                            "Build production-ready web apps for your team in seconds with AI-powered code generation.",
-                            class_name="dark:text-m-slate-6 text-m-slate-7 text-sm font-medium",
-                        ),
-                        class_name="p-4 flex flex-col relative hover-card-shadow rounded-md",
+                        *[_link(*item) for item in items], class_name="px-2 py-3"
                     ),
-                    rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/ai_builder_pattern.svg",
-                        alt="AI Builder Navbar Pattern",
-                        class_name="pointer-events-none",
-                    ),
-                    rx.el.elements.a(
-                        class_name="absolute inset-0",
-                        href=REFLEX_BUILD_URL,
-                        target="_blank",
-                    ),
-                    class_name="relative flex flex-col hover-card-shadow rounded-md",
-                ),
-                class_name="p-4 flex flex-col rounded-xl bg-white-1 dark:bg-m-slate-11 h-full shadow-card dark:shadow-card-dark dark:border-r dark:border-m-slate-9",
-            ),
+                    class_name="group/nav-section",
+                )
+                for title, items in sections
+            ],
+            _link("Pricing", "", "/pricing/"),
+            _link("Sign In", "", REFLEX_BUILD_LOGIN_URL),
             rx.el.div(
-                platform_item(
-                    "framework_pixel.svg",
-                    "Reflex Framework",
-                    "Iterate on full-stack apps in pure Python. No JavaScript required.",
-                    "/docs/getting-started/introduction/",
+                demo_link(
+                    "Book a Demo", variant="primary", size="lg", class_name="w-full"
                 ),
-                platform_item(
-                    "cloud_pixel.svg",
-                    "Cloud Hosting",
-                    "Deploy your app with a single command to Reflex Cloud.",
-                    "/hosting/",
-                ),
-                rx.el.div(
-                    rx.el.span(
-                        "Reflex Is The Operating System ",
-                        rx.el.br(),
-                        " for Enterprise Apps",
-                        class_name="dark:text-m-slate-6 text-m-slate-7 font-mono font-[415] text-[0.75rem] leading-4.5 uppercase",
-                    ),
-                    rx.image(
-                        src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_navbar.svg",
-                        alt="Squares Navbar",
-                        class_name="absolute bottom-4 right-4 pointer-events-none",
-                    ),
-                    class_name="relative p-4",
-                ),
-                class_name="p-4 flex flex-col h-full",
+                class_name="px-4 pt-2",
             ),
-            class_name="w-[46.5rem] grid grid-cols-2",
+            class_name="absolute inset-x-0 top-full max-h-[calc(100dvh-6rem)] overflow-y-auto border-b border-border bg-background pb-4 text-foreground shadow-medium",
         ),
+        class_name="group/mobile xl:hidden",
+        custom_attrs={"data-navbar-mobile-menu": ""},
     )
 
 
-def solutions_item(title: str, icon: str, href: str) -> rx.Component:
-    """Solutions item.
+def _search_item() -> rx.Component:
+    """Restore the shared search dialog with an icon-only desktop trigger.
 
     Returns:
-        The component.
+        The rendered component.
     """
-    return rx.el.elements.a(
-        ui.icon(
-            icon,
-            class_name="shrink-0 text-m-slate-7 dark:text-m-slate-6 size-4.5",
-        ),
-        title,
-        href=href,
-        class_name="flex flex-row px-4 py-2 rounded-sm text-sm font-[525] text-m-slate-12 dark:text-m-slate-3 gap-3 items-center justify-start cursor-pointer hover-card-shadow",
-    )
+    from reflex_site_shared.components.algolia import algolia_search
 
-
-def solutions_column(title: str, items: list[tuple[str, str, str]]) -> rx.Component:
-    """Solutions column.
-
-    Returns:
-        The component.
-    """
-    return rx.el.div(
+    return ui.navigation_menu.item(
         rx.el.div(
-            rx.el.span(
-                title,
-                class_name="font-mono font-[415] text-[0.75rem] leading-4 uppercase pb-4 border-b border-dashed dark:border-m-slate-8 border-m-slate-6 dark:text-m-slate-6 text-m-slate-7",
-            ),
-            class_name="px-4 pt-4 flex flex-col",
-        ),
-        rx.el.div(
-            *[solutions_item(item[0], item[1], item[2]) for item in items],
-            class_name="flex flex-col",
-        ),
-        class_name="flex flex-col gap-4",
-    )
-
-
-def blog_item(post: BlogPostDict) -> rx.Component:
-    """Blog item.
-
-    Returns:
-        The component.
-    """
-    return rx.el.div(
-        rx.el.div(
-            rx.moment(
-                post["date"],
-                format="MMM DD YYYY",
-                class_name="text-m-slate-7 dark:text-m-slate-6 text-xs font-[415] font-mono uppercase text-nowrap",
-            ),
-            rx.image(
-                src=f"{REFLEX_ASSETS_CDN}common/{rx.color_mode_cond('light', 'dark')}/squares_blog.svg",
-                class_name="pointer-events-none",
-                alt="Squares Blog",
-            ),
-            class_name="flex flex-row items-center justify-start gap-6",
-        ),
-        rx.el.span(
-            post["title"],
-            class_name="dark:text-m-slate-3 text-m-slate-12 text-sm font-[525] group-hover:text-primary-10 dark:group-hover:text-primary-9 line-clamp-3",
-        ),
-        rx.el.elements.a(
-            href=post["url"],
-            class_name="absolute inset-0",
-        ),
-        class_name="relative group flex flex-col gap-2 mb-2",
-    )
-
-
-def blog_column() -> rx.Component:
-    """Blog column.
-
-    Returns:
-        The component.
-    """
-    return rx.el.div(
-        rx.foreach(
-            RecentBlogsState.posts[:2],
-            blog_item,
-        ),
-        rx.el.elements.a(
-            "Read All in Blog",
-            ui.icon("ArrowRight01Icon", class_name="ml-auto"),
-            href="/blog",
-            class_name="dark:text-m-slate-3 text-m-slate-12 text-sm font-[525] h-10 flex items-center justify-start gap-2 hover:text-primary-10 dark:hover:text-primary-9 mt-auto",
-        ),
-        on_mount=RecentBlogsState.fetch_recent_blogs,
-        class_name="flex flex-col gap-6 p-4 h-full",
-    )
-
-
-def customers_column() -> rx.Component:
-    """Customers column.
-
-    Returns:
-        The component.
-    """
-    return rx.el.div(
-        rx.el.div(
-            rx.el.div(
-                rx.el.span(
-                    "Customers",
-                    class_name="font-mono font-[415] text-[0.75rem] leading-4 uppercase pb-4 border-b border-dashed dark:border-m-slate-8 border-m-slate-6 dark:text-m-slate-6 text-m-slate-7",
+            Button.create(
+                ui.icon(
+                    "Search01Icon",
+                    class_name="size-4",
+                    stroke_width=1.5,
+                    aria_hidden=True,
                 ),
-                class_name="px-4 pt-4 flex flex-col",
+                variant="ghost",
+                size="icon-sm",
+                type="button",
+                aria_label="Search (loading)",
+                aria_disabled=True,
+                aria_busy=True,
+                tab_index=-1,
+                class_name="ReflexSearch-button group-has-[.ReflexSearch-root]/search:!hidden",
             ),
-            rx.el.div(
-                rx.el.span(
-                    "Read Stories How Teams Use Reflex",
-                    class_name="text-m-slate-12 dark:text-m-slate-3 text-lg font-[575]",
-                ),
-                rx.el.span(
-                    "Discover how companies build internal tools, AI apps, and production dashboards in pure Python.",
-                    class_name="text-m-slate-7 dark:text-m-slate-6 text-sm font-[475]",
-                ),
-                logos_carousel(),
-                class_name="flex flex-col gap-2 px-4 pb-4 h-full",
+            algolia_search(),
+            class_name=(
+                "group/search flex size-9 items-center justify-center "
+                "[&_.ReflexSearch-root]:!w-auto "
+                "[&_.ReflexSearch-button]:!size-9 [&_.ReflexSearch-button]:!min-w-0 "
+                "[&_.ReflexSearch-button]:!justify-center [&_.ReflexSearch-button]:!p-0 "
+                "[&_.ReflexSearch-button]:!rounded-full [&_.ReflexSearch-button]:!border-0 "
+                "[&_.ReflexSearch-button]:!bg-transparent [&_.ReflexSearch-button]:!shadow-none "
+                "[&_.ReflexSearch-button]:!text-[var(--navbar-search-color,var(--muted-foreground))] "
+                "[&_.ReflexSearch-button:hover]:!bg-[var(--navbar-search-hover,var(--accent))] "
+                "[&_.ReflexSearch-button:focus-visible]:!outline-2 "
+                "[&_.ReflexSearch-button:focus-visible]:!outline-offset-2 "
+                "[&_.ReflexSearch-button:focus-visible]:!outline-ring "
+                "[&_.ReflexSearch-button>svg]:!size-4 [&_.ReflexSearch-button>svg]:!m-0 "
+                "[&_.ReflexSearch-buttonText]:!hidden [&_.ReflexSearch-shortcut]:!hidden"
             ),
-            rx.el.elements.a(class_name="absolute inset-0", href="/customers/"),
-            class_name="flex flex-col gap-6 hover-card-shadow rounded-lg relative h-full hover:[--m-slate-11:var(--m-slate-10)] hover:shadow-card dark:hover:shadow-card-dark",
         ),
-        class_name="p-4 block rounded-lg shadow-card dark:shadow-card-dark z-[1] bg-white-1 dark:bg-m-slate-11 dark:border-x dark:border-m-slate-9",
+        unstyled=True,
+        class_name="hidden items-center justify-center xl:flex",
     )
 
 
-def solutions_content() -> rx.Component:
-    """Solutions content.
+def _navigation_menu() -> rx.Component:
+    """Render navigation menu.
 
     Returns:
-        The component.
+        The rendered component.
     """
-    return menu_content(
-        rx.el.div(
-            rx.el.div(
-                rx.el.div(
-                    solutions_column(
-                        "Who's It For",
-                        [
-                            ("Executives", "LocationUser01Icon", "/use-cases/"),
-                            ("Developers", "SourceCodeSquareIcon", "/use-cases/"),
-                            ("Data Teams", "DatabaseIcon", "/use-cases/"),
-                            (
-                                "Non Technical",
-                                "CursorCircleSelection02Icon",
-                                "/use-cases/",
-                            ),
-                        ],
-                    ),
-                    solutions_column(
-                        "Industries",
-                        [
-                            ("Enterprise", "OfficeIcon", "/use-cases/"),
-                            ("Finance", "Wallet05Icon", "/use-cases/finance/"),
-                            ("Healthcare", "HealthIcon", "/use-cases/healthcare/"),
-                            (
-                                "Consulting",
-                                "DocumentValidationIcon",
-                                "/use-cases/consulting/",
-                            ),
-                            (
-                                "Government",
-                                "BankIcon",
-                                "/use-cases/government/",
-                            ),
-                        ],
-                    ),
-                    class_name="grid grid-cols-2",
-                ),
-                class_name="p-4 flex flex-col rounded-xl bg-white-1 dark:bg-m-slate-11 h-full w-[28rem] shadow-card dark:shadow-card-dark dark:border-r dark:border-m-slate-9",
-            ),
-            rx.el.div(
-                solutions_column(
-                    "Migration",
-                    [
-                        (
-                            "Switch from No Code",
-                            "WebDesign01Icon",
-                            "/migration/no-code/",
-                        ),
-                        (
-                            "Switch from Low Code",
-                            "SourceCodeSquareIcon",
-                            "/migration/low-code/",
-                        ),
-                        (
-                            "Switch from Other Frameworks",
-                            "CodeIcon",
-                            "/migration/other-frameworks/",
-                        ),
-                        (
-                            "Switch from Other AI tools",
-                            "ArtificialIntelligence04Icon",
-                            "/migration/other-ai-tools/",
-                        ),
-                    ],
-                ),
-                class_name="p-4 flex flex-col h-full",
-            ),
-            class_name="flex flex-row",
-        ),
-    )
-
-
-def resources_content() -> rx.Component:
-    """Resources content.
-
-    Returns:
-        The component.
-    """
-    return menu_content(
-        rx.el.div(
-            rx.el.div(
-                solutions_column(
-                    "Developers",
-                    [
-                        ("Templates", "Layout02Icon", "/templates/"),
-                        (
-                            "Integrations",
-                            "PlugSocketIcon",
-                            "/docs/ai-builder/integrations/overview/",
-                        ),
-                        ("Changelog", "Clock02Icon", CHANGELOG_URL),
-                        ("Contributing", "GitCommitIcon", CONTRIBUTING_URL),
-                        ("Discussion", "BubbleChatIcon", DISCUSSIONS_URL),
-                        ("FAQ", "HelpSquareIcon", "/faq/"),
-                    ],
-                ),
-                class_name="p-4 flex flex-col rounded-xl bg-m-slate-1 dark:bg-m-slate-12 h-full",
-            ),
-            customers_column(),
-            rx.el.div(
-                blog_column(),
-                class_name="p-4 flex flex-col h-full bg-m-slate-1 dark:bg-m-slate-12",
-            ),
-            class_name="w-[52.5rem] grid grid-cols-3",
-        ),
-    )
-
-
-def about_content() -> rx.Component:
-    """About content.
-
-    Returns:
-        The component.
-    """
-    return menu_content(
-        rx.el.div(
-            rx.el.div(
-                solutions_item("Company", "Profile02Icon", "/about/"),
-                solutions_item("Careers", "WorkIcon", JOBS_BOARD_URL),
-                class_name="p-4 flex flex-col rounded-xl bg-white-1 h-full dark:shadow-none dark:border dark:border-m-slate-9 dark:bg-m-slate-11 shadow-card",
-            ),
-            class_name="w-[12.5rem]",
-        ),
-    )
-
-
-def navigation_menu() -> rx.Component:
-    """Navigation menu.
-
-    Returns:
-        The component.
-    """
+    nav_link = "inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-book text-foreground hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring"
+    action_link = "inline-flex items-center justify-center gap-2 rounded-full h-10 px-0 text-sm font-book text-foreground hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring"
     return ui.navigation_menu.root(
         ui.navigation_menu.list(
-            menu_trigger("Platform", platform_content()),
-            menu_trigger("Solutions", solutions_content()),
-            menu_trigger("Resources", resources_content()),
+            _menu_trigger("Platform", _platform_content()),
+            _menu_trigger("Resources", _resources_content()),
+            _menu_trigger("Solutions", _solutions_content()),
+            _menu_trigger("Developers", _developers_content()),
             ui.navigation_menu.item(
                 rx.el.elements.a(
-                    marketing_button(
-                        "Pricing",
-                        size="sm",
-                        variant="ghost",
-                        native_button=False,
+                    "Pricing",
+                    href="https://reflex.dev/pricing/",
+                    class_name=nav_link.replace(
+                        "text-foreground hover:text-muted-foreground",
+                        "text-muted-foreground hover:text-foreground",
                     ),
-                    href="/pricing",
                 ),
-                class_name="xl:flex hidden px-1",
-                custom_attrs={"role": "menuitem"},
+                unstyled=True,
+                class_name="hidden xl:flex",
             ),
-            ui.navigation_menu.item(
-                rx.el.elements.a(
-                    marketing_button(
-                        "Docs",
-                        size="sm",
-                        variant="ghost",
-                    ),
-                    href="/docs",
-                ),
-                class_name="xl:flex hidden px-1",
-                custom_attrs={"role": "menuitem"},
-            ),
-            menu_trigger("About", about_content()),
-            class_name="flex flex-row items-center m-0 h-full list-none",
-            custom_attrs={"role": "menubar"},
+            _search_item(),
+            unstyled=True,
+            class_name="m-0 flex h-full list-none items-center",
+            custom_attrs={"data-navbar-links": ""},
         ),
         ui.navigation_menu.list(
             ui.navigation_menu.item(
-                github(),
-                custom_attrs={"role": "menuitem"},
+                rx.el.elements.a(
+                    get_icon("github_navbar", class_name="size-4"),
+                    _TOTAL_GITHUB_STARS_LABEL,
+                    # The count spans Reflex and XY, so it points at the org.
+                    href=GITHUB_ORG_URL,
+                    aria_label=(
+                        f"{_TOTAL_GITHUB_STARS_LABEL} GitHub stars — {_TOTAL_GITHUB_STARS:,} combined across Reflex and XY"
+                    ),
+                    title=f"Reflex + XY: {_TOTAL_GITHUB_STARS:,} stars (rounded up)",
+                    class_name=action_link,
+                ),
+                unstyled=True,
             ),
             ui.navigation_menu.item(
                 rx.el.elements.a(
-                    marketing_button(
-                        "Sign In",
-                        ui.icon("Login01Icon", class_name="scale-x-[-1]"),
-                        size="sm",
-                        variant="outline",
-                        native_button=False,
-                    ),
-                    href=REFLEX_BUILD_URL,
+                    "Sign In",
+                    href=REFLEX_BUILD_LOGIN_URL,
                     target="_blank",
-                ),
-                custom_attrs={"role": "menuitem"},
-            ),
-            ui.navigation_menu.item(
-                demo_form_dialog(
-                    trigger=marketing_button(
-                        "Book a Demo",
-                        size="sm",
-                        variant="primary",
-                        class_name=" whitespace-nowrap max-xl:hidden",
-                        native_button=False,
-                    ),
+                    rel="noopener noreferrer",
+                    class_name=action_link,
                 ),
                 unstyled=True,
-                class_name="xl:flex hidden",
-                custom_attrs={"role": "menuitem"},
+                class_name="hidden min-[480px]:flex",
             ),
             ui.navigation_menu.item(
-                navbar_sidebar_button(),
-                class_name="xl:hidden flex",
+                demo_link(
+                    "Book a Demo", variant="primary", size="sm", class_name="text-sm"
+                ),
                 unstyled=True,
-                custom_attrs={"role": "menuitem"},
+                class_name="hidden xl:flex",
             ),
-            class_name="flex flex-row lg:gap-4 gap-2 m-0 h-full list-none items-center",
-            custom_attrs={"role": "menubar"},
+            ui.navigation_menu.item(
+                marketing_mobile_drawer(), unstyled=True, class_name="flex xl:hidden"
+            ),
+            unstyled=True,
+            class_name="m-0 flex h-full list-none items-center gap-4 sm:gap-6",
+            custom_attrs={"data-navbar-actions": ""},
         ),
         ui.navigation_menu.portal(
             ui.navigation_menu.positioner(
@@ -615,36 +714,115 @@ def navigation_menu() -> rx.Component:
                         class_name="relative h-full w-full overflow-hidden rounded-[inherit]",
                     ),
                     unstyled=True,
-                    class_name="relative h-[var(--popup-height)] w-[var(--popup-width)] origin-[var(--transform-origin)] rounded-xl bg-m-slate-1 dark:bg-m-slate-12 navbar-shadow transition-[opacity,transform,width,height,scale,translate] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] data-[ending-style]:ease-[ease] data-[ending-style]:scale-90 data-[ending-style]:opacity-0 data-[ending-style]:duration-150 data-[starting-style]:scale-90 data-[starting-style]:opacity-0",
+                    class_name="relative h-[var(--popup-height)] w-[var(--popup-width)] origin-[var(--transform-origin)] overflow-hidden rounded-panel border border-border bg-background shadow-medium transition-[opacity,translate,width,height] duration-150 data-[starting-style]:-translate-y-1 data-[starting-style]:opacity-0 data-[ending-style]:-translate-y-1 data-[ending-style]:opacity-0 motion-reduce:transition-none",
                 ),
                 unstyled=True,
-                class_name="safari-nav-positioner box-border h-[var(--positioner-height)] w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-[0.35s] ease-[cubic-bezier(0.22,1,0.36,1)] data-[instant]:transition-none",
-                side_offset=30,
+                side_offset=2,
                 align="start",
-                align_offset=-20,
+                align_offset=-109,
                 position_method="fixed",
+                class_name="z-[10000] box-border h-[var(--positioner-height)] w-[var(--positioner-width)] max-w-[var(--available-width)] transition-[top,left,right,bottom] duration-150 ease-out data-[instant]:transition-none motion-reduce:transition-none",
             ),
         ),
+        delay=0,
+        close_delay=150,
         unstyled=True,
-        class_name="group/navigation-menu relative flex w-full items-center h-full justify-between gap-6 mx-auto flex-row",
+        class_name="flex h-full w-full items-center justify-between gap-2",
+    )
+
+
+def _marketing_navbar(
+    expanded_banner: bool,
+    *,
+    include_announcement: bool = True,
+    split_demo: bool = False,
+    banner: rx.Component | None = None,
+) -> rx.Component:
+    """Render marketing navbar.
+
+    Returns:
+        The rendered component.
+    """
+    return rx.el.div(
+        (banner if banner is not None else announcement_banner())
+        if include_announcement
+        else rx.fragment(),
+        rx.el.header(
+            rx.el.div(
+                rx.el.elements.a(
+                    rx.image(
+                        src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
+                        alt="Reflex",
+                        class_name="h-auto w-[5.5rem] brightness-0 dark:invert",
+                    ),
+                    href="https://reflex.dev/",
+                    class_name="mr-4 shrink-0 lg:mr-9",
+                    custom_attrs={"data-navbar-logo": ""},
+                ),
+                _navigation_menu(),
+                class_name="mx-auto flex h-full w-full max-w-[90rem] items-center px-4 min-[55rem]:px-8 lg:px-12",
+                custom_attrs={"data-navbar-inner": ""},
+            ),
+            class_name="relative [&_nav]:!static [&_ul]:!static h-16 w-full border-b border-transparent transition-[border-color,background-color,backdrop-filter] duration-200 group-data-[scrolled=true]/navbar:border-border-subtle bg-transparent group-data-[scrolled=true]/navbar:bg-background/95 group-data-[scrolled=true]/navbar:backdrop-blur-sm"
+            if expanded_banner
+            else "relative [&_nav]:!static [&_ul]:!static h-16 w-full border-b border-transparent bg-background transition-[border-color] duration-200 group-data-[scrolled=true]/navbar:border-border-subtle motion-reduce:transition-none",
+        ),
+        class_name="group/navbar fixed top-0 z-[9999] flex w-full flex-col self-center",
+        custom_attrs={
+            "data-navbar": "demo"
+            if split_demo
+            else "landing"
+            if expanded_banner
+            else "standard",
+            "data-scrolled": "false",
+        },
+    )
+
+
+def marketing_navbar(
+    banner: rx.Component | None = None, *, show_banner: bool = True
+) -> rx.Component:
+    """Render shared marketing navigation with an optional announcement.
+
+    Args:
+        banner: Optional replacement announcement component.
+        show_banner: Whether to include an announcement.
+
+    Returns:
+        Fixed navbar with desktop menus and mobile navigation.
+    """
+    return _marketing_navbar(
+        expanded_banner=False, include_announcement=show_banner, banner=banner
     )
 
 
 @rx.memo
-def marketing_navbar() -> rx.Component:
-    """Marketing navbar.
+def landing_marketing_navbar() -> rx.Component:
+    """Render landing marketing navbar.
 
     Returns:
-        The component.
+        The rendered component.
     """
-    from reflex_site_shared.views.hosting_banner import hosting_banner
+    return _marketing_navbar(expanded_banner=True)
 
-    return rx.el.div(
-        hosting_banner(),
-        rx.el.header(
-            logo(),
-            navigation_menu(),
-            class_name="w-full max-w-[71.5rem] h-[4.5rem] mx-auto flex flex-row items-center p-5 rounded-b-xl backdrop-blur-[16px] shadow-[0_-2px_2px_1px_rgba(0,0,0,0.02),0_1px_1px_0_rgba(0,0,0,0.08),0_4px_8px_0_rgba(0,0,0,0.03),0_0_0_1px_#FFF_inset] dark:shadow-none dark:border-x dark:border-b dark:border-m-slate-10 bg-gradient-to-b from-white to-m-slate-1 dark:from-m-slate-11 dark:to-m-slate-12",
-        ),
-        class_name="flex flex-col w-full top-0 z-[9999] fixed self-center",
+
+@rx.memo
+def marketing_navbar_without_announcement() -> rx.Component:
+    """Standard navigation for pages that omit the announcement.
+
+    Returns:
+        The rendered component.
+    """
+    return _marketing_navbar(expanded_banner=False, include_announcement=False)
+
+
+@rx.memo
+def demo_marketing_navbar() -> rx.Component:
+    """Navigation that continues the booking page photo and form split.
+
+    Returns:
+        The rendered component.
+    """
+    return _marketing_navbar(
+        expanded_banner=False, include_announcement=False, split_demo=True
     )

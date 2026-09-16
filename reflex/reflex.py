@@ -2,62 +2,263 @@
 
 from __future__ import annotations
 
+import logging
+from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import click
 from reflex_base import constants
-from reflex_base.config import get_config
+from reflex_base.config import get_config, reload_config
 from reflex_base.environment import environment
-from reflex_base.utils import console
-from reflex_cli.v2.deployments import hosting_cli
+from reflex_base.utils import console, log
 
-from reflex.custom_components.custom_components import custom_components_cli
+from reflex.utils.cli_options import log_options
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from typing import Literal
+
+    from click.shell_completion import CompletionItem
     from reflex_base.constants.base import LITERAL_ENV
-    from reflex_cli.constants.base import LogLevel as HostingLogLevel
-
-
-def set_loglevel(ctx: click.Context, self: click.Parameter, value: str | None):
-    """Set the log level.
-
-    Args:
-        ctx: The click context.
-        self: The click command.
-        value: The log level to set.
-    """
-    if value is not None:
-        loglevel = constants.LogLevel.from_string(value)
-        console.set_log_level(loglevel)
 
 
 @click.group
 @click.version_option(constants.Reflex.VERSION, message="%(version)s")
 def cli():
     """Reflex CLI to create, run, and deploy apps."""
+    # The CLI owns log rendering: attach the reflex sinks here and in every
+    # worker subprocess (they inherit the marker through the environment).
+    log.enable_managed_logging()
 
 
-loglevel_option = click.option(
-    "--loglevel",
-    "--log-level",
-    "loglevel",
-    type=click.Choice(
-        [loglevel.value for loglevel in constants.LogLevel],
-        case_sensitive=False,
-    ),
-    is_eager=True,
-    callback=set_loglevel,
-    expose_value=False,
-    help="The log level to use.",
-)
+def raise_missing_package(name: str) -> NoReturn:
+    """Report that the hosting CLI is not installed.
+
+    Args:
+        name: The `reflex` subcommand the user ran.
+
+    Raises:
+        Exit: Always, after reporting what to install.
+    """
+    package = constants.ReflexHostingCLI.MODULE_NAME
+    logger.error(
+        f"`reflex {name}` requires the {package} package, which is not "
+        f"installed.\nInstall it with: pip install {package}"
+    )
+    raise click.exceptions.Exit(1)
+
+
+def _missing_command(name: str) -> click.Command:
+    """Build a stand-in for a cloud command whose package is unusable.
+
+    The stand-in accepts any flags, so the user sees what to install rather than
+    a usage error about an option the real command would have understood.
+
+    Args:
+        name: The command name to register.
+
+    Returns:
+        A command that reports how to install the hosting CLI.
+    """
+    package = constants.ReflexHostingCLI.MODULE_NAME
+
+    @click.command(
+        name=name,
+        context_settings={"ignore_unknown_options": True},
+        help=f"Requires the {package} package.",
+    )
+    @click.argument("args", nargs=-1, type=click.UNPROCESSED)
+    def placeholder(args: tuple[str, ...]):
+        raise_missing_package(name)
+
+    return placeholder
+
+
+def _as_click_command(command: object) -> click.Command:
+    """Convert an optional Typer command tree to a Click command.
+
+    Args:
+        command: The command object exported by the hosting CLI.
+
+    Returns:
+        A Click-compatible command.
+    """
+    if find_spec("typer") and find_spec("typer.main"):
+        import typer  # pyright: ignore[reportMissingImports]
+
+        if isinstance(command, typer.Typer):
+            # typer >=0.27 vendors click, so its commands are structurally but
+            # not nominally click commands.
+            return cast("click.Command", typer.main.get_command(command))
+    return cast("click.Command", command)
+
+
+class _LazyCommand(click.Command):
+    """A lightweight command placeholder that imports its implementation on use."""
+
+    def __getattribute__(self, name: str) -> Any:
+        """Resolve public command metadata when it is read directly.
+
+        Returns:
+            The requested proxy or resolved-command attribute.
+        """
+        if name in ("callback", "no_args_is_help", "params"):
+            attributes = object.__getattribute__(self, "__dict__")
+            if "_import_path" in attributes:
+                command = object.__getattribute__(self, "_resolve")()
+                return getattr(command, name)
+        return super().__getattribute__(name)
+
+    def __init__(
+        self,
+        name: str,
+        import_path: str,
+        *,
+        help: str,
+        optional: bool = False,
+        convert_typer: bool = False,
+    ) -> None:
+        """Initialize a lazy command.
+
+        Args:
+            name: The command name exposed by the parent group.
+            import_path: The ``module:attribute`` containing the real command.
+            help: The short help rendered by the parent without importing it.
+            optional: Whether an import failure should produce an install hint.
+            convert_typer: Whether to adapt a Typer command tree to Click.
+        """
+        if optional:
+            module_name = import_path.split(":", 1)[0]
+            try:
+                module_available = find_spec(module_name) is not None
+            except (AttributeError, ImportError, ValueError):
+                module_available = False
+            if not module_available:
+                help = f"Requires the {constants.ReflexHostingCLI.MODULE_NAME} package."
+        super().__init__(name=name, help=help)
+        self._import_path = import_path
+        self._optional = optional
+        self._convert_typer = convert_typer
+        self._resolved_command: click.Command | None = None
+
+    def _resolve(self) -> click.Command:
+        """Import and cache the real command implementation.
+
+        Returns:
+            The resolved command.
+        """
+        if self._resolved_command is not None:
+            return self._resolved_command
+
+        module_name, attribute = self._import_path.split(":", 1)
+        try:
+            module = import_module(module_name)
+        except ImportError:
+            if not self._optional:
+                raise
+            command = _missing_command(self.name or attribute)
+        else:
+            try:
+                command = getattr(module, attribute)
+            except AttributeError:
+                if not self._optional:
+                    raise
+                command = _missing_command(self.name or attribute)
+
+        if self._convert_typer:
+            command = _as_click_command(command)
+        self._resolved_command = cast("click.Command", command)
+        return self._resolved_command
+
+    def main(self, *args, **kwargs):
+        """Resolve the command before a direct standalone invocation.
+
+        Returns:
+            The result of the resolved command.
+        """
+        return self._resolve().main(*args, **kwargs)
+
+    def get_help(self, ctx: click.Context) -> str:
+        """Return help from the resolved command.
+
+        Returns:
+            The resolved command's formatted help.
+        """
+        return self._resolve().get_help(ctx)
+
+    def format_help(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        """Write help from the resolved command to a formatter."""
+        self._resolve().format_help(ctx, formatter)
+
+    def get_usage(self, ctx: click.Context) -> str:
+        """Return usage from the resolved command.
+
+        Returns:
+            The resolved command's formatted usage.
+        """
+        return self._resolve().get_usage(ctx)
+
+    def format_usage(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        """Write usage from the resolved command to a formatter."""
+        self._resolve().format_usage(ctx, formatter)
+
+    def get_params(self, ctx: click.Context) -> list[click.Parameter]:
+        """Return parameters from the resolved command.
+
+        Returns:
+            The resolved command's parameters.
+        """
+        return self._resolve().get_params(ctx)
+
+    def invoke(self, ctx: click.Context):
+        """Invoke the resolved command through Click's public API.
+
+        Returns:
+            The resolved command's callback result.
+        """
+        return self._resolve().invoke(ctx)
+
+    def make_context(
+        self,
+        info_name: str | None,
+        args: list[str],
+        parent: click.Context | None = None,
+        **extra,
+    ) -> click.Context:
+        """Resolve the command before Click parses its arguments.
+
+        Returns:
+            The context created by the resolved command.
+        """
+        return self._resolve().make_context(info_name, args, parent=parent, **extra)
+
+    def shell_complete(
+        self, ctx: click.Context, incomplete: str
+    ) -> list[CompletionItem]:
+        """Resolve the command before completing its arguments.
+
+        Returns:
+            Completion items from the resolved command.
+        """
+        return self._resolve().shell_complete(ctx, incomplete)
+
+    def to_info_dict(self, ctx: click.Context) -> dict[str, object]:
+        """Resolve the command before exporting its metadata.
+
+        Returns:
+            Metadata from the resolved command.
+        """
+        return self._resolve().to_info_dict(ctx)
 
 
 def _init(
     name: str,
     template: str | None = None,
     ai: bool = False,
+    agents: bool = False,
 ):
     """Initialize a new Reflex app in the given directory."""
     from reflex.utils import exec, frontend_skeleton, prerequisites, templates
@@ -76,18 +277,22 @@ def _init(
     console.rule(f"[bold]Initializing {app_name}")
 
     # Check prerequisites.
-    prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
     prerequisites.initialize_reflex_user_directory()
     prerequisites.ensure_reflex_installation_id()
 
     # Set up the web project.
     prerequisites.initialize_frontend_dependencies()
+    prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
     # Initialize the app.
     template = templates.initialize_app(app_name, template)
 
     # Initialize the .gitignore.
     frontend_skeleton.initialize_gitignore()
+
+    # Write or refresh the AGENTS.md for AI coding agents.
+    if agents:
+        frontend_skeleton.initialize_agents_md()
 
     template_msg = f" using the {template} template" if template else ""
     if Path(constants.PyprojectToml.FILE).exists():
@@ -103,11 +308,14 @@ def _init(
     )
 
     # Finish initializing the app.
-    console.success(f"Initialized {app_name}{template_msg}.{manual_update}{next_steps}")
+    logger.log(
+        log.SUCCESS,
+        f"Initialized {app_name}{template_msg}.{manual_update}{next_steps}",
+    )
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.option(
     "--name",
     metavar="APP_NAME",
@@ -122,13 +330,19 @@ def _init(
     is_flag=True,
     help="Use AI to create the initial template. Cannot be used with existing app or `--template` option.",
 )
+@click.option(
+    "--agents/--no-agents",
+    default=True,
+    help="Write an AGENTS.md to guide AI coding agents working in the app (enabled by default).",
+)
 def init(
     name: str,
     template: str | None,
     ai: bool,
+    agents: bool,
 ):
     """Initialize a new Reflex app in the current directory."""
-    _init(name, template, ai)
+    _init(name, template, ai, agents)
 
 
 def _compile_app(*, avoid_dirty_check: bool = True):
@@ -139,6 +353,7 @@ def _compile_app(*, avoid_dirty_check: bool = True):
     kwargs = {
         "check_if_schema_up_to_date": True,
         "prerender_routes": exec.should_prerender_routes(),
+        "trigger": "initial",
     }
 
     # Granian fails if the app is already imported.
@@ -212,6 +427,52 @@ def _run_dev(
                 exec.kill(exec.frontend_process.pid)
 
 
+def _run_preview(running_mode: constants.RunningMode, port: int, host: str):
+    """Run the app in preview mode.
+
+    Like dev mode, but instead of running the Vite dev server it serves a freshly
+    built (un-minified) frontend bundle mounted into the backend on a single port.
+    The backend still hot reloads, and each reload re-runs the frontend build
+    against the newly compiled output, so a manual browser refresh shows changes.
+    """
+    import atexit
+
+    from reflex.utils import build, exec, processes, telemetry
+
+    config = get_config()
+
+    config._set_persistent(frontend_port=port, backend_port=port)
+
+    # Mount the compiled frontend into the dev backend so no Vite server is needed.
+    environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.set(
+        running_mode.has_frontend() and running_mode.has_backend()
+    )
+
+    if running_mode.has_frontend():
+        # Compile the app and produce the initial frontend build.
+        _compile_app()
+        build.setup_frontend_prod(Path.cwd())
+
+    # Post a telemetry event.
+    telemetry.send("run-preview")
+
+    # Display custom message when there is a keyboard interrupt.
+    atexit.register(processes.atexit_handler)
+
+    exec.notify_app_running()
+    exec.notify_frontend(
+        f"http://{host}:{port}",
+        backend_present=running_mode.has_backend(),
+    )
+
+    if running_mode.has_backend():
+        exec.run_backend(
+            host, port, config.loglevel.subprocess_level(), running_mode.has_frontend()
+        )
+    else:
+        exec.run_frontend_prod(host, port)
+
+
 def _run_prod(running_mode: constants.RunningMode, port: int, host: str):
     import atexit
 
@@ -260,18 +521,20 @@ def _run(
     from reflex.utils import exec, prerequisites, processes
 
     if frontend_port and not running_mode.has_frontend():
-        console.error("Cannot specify --frontend-port when not running frontend.")
+        logger.error("Cannot specify --frontend-port when not running frontend.")
         raise SystemExit(1)
     if backend_port and not running_mode.has_backend():
-        console.error("Cannot specify --backend-port when not running backend.")
+        logger.error("Cannot specify --backend-port when not running backend.")
         raise SystemExit(1)
     if (
-        env == constants.Env.PROD
+        env in (constants.Env.PROD, constants.Env.PREVIEW)
         and frontend_port
         and backend_port
         and frontend_port != backend_port
     ):
-        console.error("In production, frontend and backend must run on the same port.")
+        logger.error(
+            f"In {env.value} mode, frontend and backend must run on the same port."
+        )
         raise SystemExit(1)
 
     config = get_config()
@@ -280,6 +543,17 @@ def _run(
 
     # Set env mode in the environment
     environment.REFLEX_ENV_MODE.set(env)
+
+    # Preview serves a real (but readable) frontend bundle: disable JS/CSS
+    # minification by default for readable output and to speed up rebuilds.
+    # Sourcemaps are left off (the default) since un-minified output is already
+    # debuggable, and autoprefixer is skipped (vendor prefixes are unnecessary for
+    # local dev). All remain overridable via the corresponding env vars.
+    if env == constants.Env.PREVIEW:
+        if not environment.VITE_MINIFY.is_set():
+            environment.VITE_MINIFY.set(False)
+        if not environment.REFLEX_NO_AUTOPREFIXER.is_set():
+            environment.REFLEX_NO_AUTOPREFIXER.set(True)
 
     # Show system info
     exec.output_system_info()
@@ -296,14 +570,16 @@ def _run(
     # Delete the states folder if it exists.
     reset_disk_state_manager()
 
-    # Apply the new ports to the config.
+    # Apply the new ports and host to the config.
     if frontend_port != config.frontend_port:
         config._set_persistent(frontend_port=frontend_port)
     if backend_port != config.backend_port:
         config._set_persistent(backend_port=backend_port)
+    if backend_host != config.backend_host:
+        config._set_persistent(backend_host=backend_host)
 
     # Reload the config to make sure the env vars are persistent.
-    get_config(reload=True)
+    reload_config()
 
     console.rule("[bold]Starting Reflex App")
 
@@ -359,16 +635,22 @@ def _run(
             auto_increment=requested_port is None,
         )
 
-        _run_prod(running_mode, port, backend_host)
+        if env == constants.Env.PREVIEW:
+            _run_preview(running_mode, port, backend_host)
+        else:
+            _run_prod(running_mode, port, backend_host)
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.option(
     "--env",
     type=click.Choice([e.value for e in constants.Env], case_sensitive=False),
     default=constants.Env.DEV.value,
-    help="The environment to run the app in.",
+    help=(
+        "The environment to run the app in. 'preview' hot reloads like 'dev' but "
+        "serves a freshly built, un-minified frontend bundle instead of the Vite dev server."
+    ),
 )
 @click.option(
     "--frontend-only",
@@ -419,20 +701,20 @@ def run(
     from reflex.utils import prerequisites
 
     if frontend_only and backend_only:
-        console.error("Cannot use both --frontend-only and --backend-only options.")
+        logger.error("Cannot use both --frontend-only and --backend-only options.")
         raise SystemExit(1)
 
     if single_port:
         if env != constants.Env.PROD:
-            console.error("--single-port can only be used with --env=PROD.")
+            logger.error("--single-port can only be used with --env=PROD.")
             raise SystemExit(1)
         if frontend_only or backend_only:
-            console.error(
+            logger.error(
                 "Cannot use --single-port with --frontend-only or --backend-only."
             )
             raise SystemExit(1)
         if frontend_port and backend_port and frontend_port != backend_port:
-            console.error(
+            logger.error(
                 "Cannot specify different ports for frontend and backend when using --single-port."
             )
             raise SystemExit(1)
@@ -450,7 +732,7 @@ def run(
     running_mode = prerequisites.check_running_mode(frontend_only, backend_only)
 
     _run(
-        env=constants.Env.DEV if env == constants.Env.DEV else constants.Env.PROD,
+        env=constants.Env(env),
         running_mode=running_mode,
         frontend_port=frontend_port,
         backend_port=backend_port,
@@ -459,7 +741,7 @@ def run(
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.option(
     "--dry",
     is_flag=True,
@@ -481,15 +763,15 @@ def compile(dry: bool, rich: bool):
     # Check the app.
     if prerequisites.needs_reinit():
         _init(name=get_config().app_name)
-    get_config(reload=True)
+    reload_config()
     starting_time = time.monotonic()
-    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich)
+    prerequisites.get_compiled_app(dry_run=dry, use_rich=rich, trigger="cli_compile")
     elapsed_time = time.monotonic() - starting_time
-    console.success(f"App compiled successfully in {elapsed_time:.3f} seconds.")
+    logger.log(log.SUCCESS, f"App compiled successfully in {elapsed_time:.3f} seconds.")
 
 
 @cli.command()
-@loglevel_option
+@log_options
 @click.option(
     "--zip/--no-zip",
     default=True,
@@ -524,7 +806,9 @@ def compile(dry: bool, rich: bool):
 )
 @click.option(
     "--env",
-    type=click.Choice([e.value for e in constants.Env], case_sensitive=False),
+    type=click.Choice(
+        [constants.Env.DEV.value, constants.Env.PROD.value], case_sensitive=False
+    ),
     default=constants.Env.PROD.value,
     help="The environment to export the app in.",
 )
@@ -549,18 +833,16 @@ def export(
     backend_only: bool,
     zip_dest_dir: str,
     upload_db_file: bool,
-    env: LITERAL_ENV,
+    env: Literal["dev", "prod"],
     backend_excluded_dirs: tuple[Path, ...] = (),
     ssr: bool = True,
 ):
     """Export the app to a zip file."""
     from reflex.utils import export as export_utils
     from reflex.utils import prerequisites
+    from reflex.utils.exec import arbitrate_ssr
 
-    if not environment.REFLEX_SSR.is_set():
-        environment.REFLEX_SSR.set(ssr)
-    elif environment.REFLEX_SSR.get() != ssr:
-        ssr = environment.REFLEX_SSR.get()
+    ssr = arbitrate_ssr(ssr)
 
     environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.EXPORT)
 
@@ -587,32 +869,50 @@ def export(
 
 
 @cli.command()
-@loglevel_option
+@log_options
 def login():
     """Authenticate with experimental Reflex hosting service."""
-    from reflex_cli.v2 import cli as hosting_cli
-    from reflex_cli.v2.deployments import check_version
+    try:
+        from reflex_cli.v2 import cli as hosting_cli
+        from reflex_cli.v2.deployments import check_version
+    except ImportError:
+        raise_missing_package("login")
 
     check_version()
 
-    validated_info = hosting_cli.login()
-    if validated_info is not None:
+    if (validated_info := hosting_cli.login()) and (
+        user_uuid := validated_info.get("user_id")
+    ):
         _skip_compile()  # Allow running outside of an app dir
         from reflex.utils import telemetry
 
-        telemetry.send("login", user_uuid=validated_info.get("user_id"))
+        set_props = {}
+        if user_email := validated_info.get("email"):
+            set_props["email"] = user_email
+        if user_tier := validated_info.get("tier"):
+            set_props["tier"] = user_tier
+        telemetry.send(
+            "login",
+            properties={
+                "$set": set_props,
+                "user_uuid": user_uuid,
+            },
+        )
 
 
 @cli.command()
-@loglevel_option
+@log_options
 def logout():
     """Log out of access to Reflex hosting service."""
-    from reflex_cli.v2.cli import logout
-    from reflex_cli.v2.deployments import check_version
+    try:
+        from reflex_cli.v2.cli import logout
+        from reflex_cli.v2.deployments import check_version
+    except ImportError:
+        raise_missing_package("logout")
 
     check_version()
 
-    logout(_convert_reflex_loglevel_to_reflex_cli_loglevel(get_config().loglevel))
+    logout(get_config().loglevel)
 
 
 @click.group
@@ -640,24 +940,25 @@ def db_init():
 
     # Check the database url.
     if config.db_url is None:
-        console.error("db_url is not configured, cannot initialize.")
+        logger.error("db_url is not configured, cannot initialize.")
         return
 
     # Check the alembic config.
     if environment.ALEMBIC_CONFIG.get().exists():
-        console.error(
+        logger.error(
             "Database is already initialized. Use "
             "[bold]reflex db makemigrations[/bold] to create schema change "
             "scripts and [bold]reflex db migrate[/bold] to apply migrations "
             "to a new or existing database.",
+            extra={"rich": True},
         )
         return
 
     # Initialize the database.
     _skip_compile()
     prerequisites.get_compiled_app()
-    model.Model.alembic_init()
-    model.Model.migrate(autogenerate=True)
+    model.alembic_init()
+    model.migrate(autogenerate=True)
 
 
 @db_cli.command()
@@ -669,20 +970,21 @@ def migrate():
     prerequisites.get_app()
     if not prerequisites.check_db_initialized():
         return
-    model.Model.migrate()
+    model.migrate()
     prerequisites.check_schema_up_to_date()
 
 
 @db_cli.command()
 def status():
     """Check the status of the database schema."""
-    from reflex.model import Model, format_revision
+    from reflex.model import format_revision, get_migration_history
     from reflex.utils import prerequisites
 
     prerequisites.get_app()
     if not prerequisites.check_db_initialized():
-        console.info(
-            "Database is not initialized. Run [bold]reflex db init[/bold] to initialize."
+        logger.info(
+            "Database is not initialized. Run [bold]reflex db init[/bold] to initialize.",
+            extra={"rich": True},
         )
         return
 
@@ -693,7 +995,7 @@ def status():
     console.print(f"[bold]\\[{config.db_url}][/bold]")
 
     # Get migration history using Model method
-    current_rev, revisions = Model.get_migration_history()
+    current_rev, revisions = get_migration_history()
     if current_rev is None and not revisions:
         return
 
@@ -723,172 +1025,19 @@ def makemigrations(message: str | None):
     prerequisites.get_compiled_app()
     if not prerequisites.check_db_initialized():
         return
-    with model.Model.get_db_engine().connect() as connection:
+    with model.get_engine().connect() as connection:
         try:
-            model.Model.alembic_autogenerate(connection=connection, message=message)
+            model.alembic_autogenerate(connection=connection, message=message)
         except CommandError as command_error:
             if "Target database is not up to date." not in str(command_error):
                 raise
-            console.error(
+            logger.error(
                 f"{command_error} Run [bold]reflex db migrate[/bold] to update database."
             )
 
 
 @cli.command()
-@loglevel_option
-@click.option(
-    "--app-name",
-    help="The name of the app to deploy.",
-)
-@click.option(
-    "--app-id",
-    help="The ID of the app to deploy.",
-)
-@click.option(
-    "-r",
-    "--region",
-    multiple=True,
-    help="The regions to deploy to. `reflex cloud regions` For multiple envs, repeat this option, e.g. --region sjc --region iad",
-)
-@click.option(
-    "--env",
-    multiple=True,
-    help="The environment variables to set: <key>=<value>. For multiple envs, repeat this option, e.g. --env k1=v2 --env k2=v2.",
-)
-@click.option(
-    "--vmtype",
-    help="Vm type id. Run `reflex cloud vmtypes` to get options.",
-)
-@click.option(
-    "--hostname",
-    help="The hostname of the frontend.",
-)
-@click.option(
-    "--interactive/--no-interactive",
-    is_flag=True,
-    default=True,
-    help="Whether to list configuration options and ask for confirmation.",
-)
-@click.option(
-    "--envfile",
-    help="The path to an env file to use. Will override any envs set manually.",
-)
-@click.option(
-    "--project",
-    help="project id to deploy to",
-)
-@click.option(
-    "--project-name",
-    help="The name of the project to deploy to.",
-)
-@click.option(
-    "--token",
-    help="token to use for auth",
-)
-@click.option(
-    "--config-path",
-    "--config",
-    help="path to the config file",
-)
-@click.option(
-    "--exclude-from-backend",
-    "backend_excluded_dirs",
-    multiple=True,
-    type=click.Path(exists=True, path_type=Path, resolve_path=True),
-    help="Files or directories to exclude from the backend zip. Can be used multiple times.",
-)
-@click.option(
-    "--server-side-rendering/--no-server-side-rendering",
-    "--ssr/--no-ssr",
-    "ssr",
-    default=True,
-    is_flag=True,
-    help="Whether to enable server side rendering for the frontend.",
-)
-def deploy(
-    app_name: str | None,
-    app_id: str | None,
-    region: tuple[str, ...],
-    env: tuple[str],
-    vmtype: str | None,
-    hostname: str | None,
-    interactive: bool,
-    envfile: str | None,
-    project: str | None,
-    project_name: str | None,
-    token: str | None,
-    config_path: str | None,
-    backend_excluded_dirs: tuple[Path, ...] = (),
-    ssr: bool = True,
-):
-    """Deploy the app to the Reflex hosting service."""
-    from reflex_cli.utils import dependency
-    from reflex_cli.v2 import cli as hosting_cli
-    from reflex_cli.v2.deployments import check_version
-
-    from reflex.utils import export as export_utils
-    from reflex.utils import prerequisites
-
-    config = get_config()
-
-    app_name = app_name or config.app_name
-
-    check_version()
-
-    environment.REFLEX_COMPILE_CONTEXT.set(constants.CompileContext.DEPLOY)
-
-    if not environment.REFLEX_SSR.is_set():
-        environment.REFLEX_SSR.set(ssr)
-    elif environment.REFLEX_SSR.get() != ssr:
-        ssr = environment.REFLEX_SSR.get()
-
-    # Only check requirements if interactive.
-    # There is user interaction for requirements update.
-    if interactive:
-        dependency.check_requirements()
-
-    prerequisites.assert_in_reflex_dir()
-
-    # Check if we are set up.
-    if prerequisites.needs_reinit():
-        _init(name=config.app_name)
-    prerequisites.check_latest_package_version(constants.ReflexHostingCLI.MODULE_NAME)
-
-    hosting_cli.deploy(
-        app_name=app_name,
-        app_id=app_id,
-        export_fn=(
-            lambda zip_dest_dir, api_url, deploy_url, frontend, backend, upload_db, zipping: (
-                export_utils.export(
-                    zip_dest_dir=zip_dest_dir,
-                    api_url=api_url,
-                    deploy_url=deploy_url,
-                    frontend=frontend,
-                    backend=backend,
-                    zipping=zipping,
-                    loglevel=config.loglevel.subprocess_level(),
-                    upload_db_file=upload_db,
-                    backend_excluded_dirs=backend_excluded_dirs,
-                    prerender_routes=ssr,
-                )
-            )
-        ),
-        regions=list(region),
-        envs=list(env),
-        vmtype=vmtype,
-        envfile=envfile,
-        hostname=hostname,
-        interactive=interactive,
-        loglevel=_convert_reflex_loglevel_to_reflex_cli_loglevel(config.loglevel),
-        token=token,
-        project=project,
-        project_name=project_name,
-        **({"config_path": config_path} if config_path is not None else {}),
-    )
-
-
-@cli.command()
-@loglevel_option
+@log_options
 @click.argument("new_name")
 def rename(new_name: str):
     """Rename the app in the current directory."""
@@ -896,49 +1045,38 @@ def rename(new_name: str):
     from reflex.utils.rename import rename_app
 
     prerequisites.validate_app_name(new_name)
+    # Reload so we read rxconfig.py from the current directory, not a cached one.
+    reload_config()
     rename_app(new_name, get_config().loglevel)
 
 
-def _convert_reflex_loglevel_to_reflex_cli_loglevel(
-    loglevel: constants.LogLevel,
-) -> HostingLogLevel:
-    """Convert a Reflex log level to a Reflex CLI log level.
+cli.add_command(
+    _LazyCommand(
+        "deploy",
+        "reflex_cli.v2.deploy:deploy",
+        help="Deploy the app to the Reflex hosting service.",
+        optional=True,
+    )
+)
+cli.add_command(
+    _LazyCommand(
+        "cloud",
+        "reflex_cli.v2.deployments:hosting_cli",
+        help="The Hosting CLI.",
+        optional=True,
+        convert_typer=True,
+    )
+)
 
-    Args:
-        loglevel: The Reflex log level to convert.
-
-    Returns:
-        The converted Reflex CLI log level.
-    """
-    from reflex_cli.constants.base import LogLevel as HostingLogLevel
-
-    if loglevel == constants.LogLevel.DEBUG:
-        return HostingLogLevel.DEBUG
-    if loglevel == constants.LogLevel.INFO:
-        return HostingLogLevel.INFO
-    if loglevel == constants.LogLevel.WARNING:
-        return HostingLogLevel.WARNING
-    if loglevel == constants.LogLevel.ERROR:
-        return HostingLogLevel.ERROR
-    if loglevel == constants.LogLevel.CRITICAL:
-        return HostingLogLevel.CRITICAL
-    return HostingLogLevel.INFO
-
-
-if find_spec("typer") and find_spec("typer.main"):
-    import typer  # pyright: ignore[reportMissingImports]
-
-    if isinstance(hosting_cli, typer.Typer):
-        hosting_cli_command = typer.main.get_command(hosting_cli)
-    else:
-        hosting_cli_command = hosting_cli
-else:
-    hosting_cli_command = hosting_cli
-
-cli.add_command(hosting_cli_command, name="cloud")
 cli.add_command(db_cli, name="db")
 cli.add_command(script_cli, name="script")
-cli.add_command(custom_components_cli, name="component")
+cli.add_command(
+    _LazyCommand(
+        "component",
+        "reflex.custom_components.custom_components:custom_components_cli",
+        help="CLI for creating custom components.",
+    )
+)
 
 if __name__ == "__main__":
     cli()

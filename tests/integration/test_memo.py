@@ -1,4 +1,4 @@
-"""Integration tests for rx.memo components."""
+"""Integration tests for the ``rx._x.memo`` deprecation shim."""
 
 from collections.abc import Generator
 
@@ -9,7 +9,7 @@ from reflex.testing import AppHarness
 
 
 def MemoApp():
-    """Reflex app with memo components."""
+    """Reflex app that exercises memo functions and components via ``rx._x.memo``."""
     import reflex as rx
 
     class FooComponent(rx.Fragment):
@@ -18,39 +18,63 @@ def MemoApp():
                 "const foo = 'bar'",
             ]
 
-    @rx.memo
-    def foo_component(t: str):
-        return FooComponent.create(t, rx.Var("foo"))
+    @rx._x.memo
+    def foo_component(label: rx.Var[str]) -> rx.Component:
+        return FooComponent.create(label, rx.Var("foo"))
 
-    @rx.memo
-    def foo_component2(t: str):
-        return FooComponent.create(t, rx.Var("foo"))
+    @rx._x.memo
+    def format_price(amount: rx.Var[int], currency: rx.Var[str]) -> rx.Var[str]:
+        return currency.to(str) + ": $" + amount.to(str)
 
-    class MemoState(rx.State):
-        last_value: str = ""
-
-        @rx.event
-        def set_last_value(self, value: str):
-            self.last_value = value
-
-    @rx.memo
-    def my_memoed_component(
-        some_value: str,
-        event: rx.EventHandler[rx.event.passthrough_event_spec(str)],
+    @rx._x.memo
+    def summary_card(
+        children: rx.Var[rx.Component],
+        rest: rx.RestProp,
+        *,
+        title: rx.Var[str],
+        value: rx.Var[str],
     ) -> rx.Component:
-        return rx.vstack(
-            rx.button(some_value, id="memo-button", on_click=event(some_value)),
-            rx.input(id="memo-input", on_change=event),
+        return rx.box(
+            rx.heading(title, id="summary-title"),
+            rx.text(value, id="summary-value"),
+            children,
+            rest,
         )
 
+    class MemoState(rx.State):
+        amount: int = 125
+        currency: str = "USD"
+        title: str = "Current Price"
+
+        @rx.event
+        def increment_amount(self):
+            self.amount += 5
+
     def index() -> rx.Component:
+        formatted_price = format_price(
+            amount=MemoState.amount,
+            currency=MemoState.currency,
+        )
         return rx.vstack(
             rx.vstack(
-                foo_component(t="foo"), foo_component2(t="bar"), id="memo-custom-code"
+                foo_component(label="foo"),
+                foo_component(label="bar"),
+                id="experimental-memo-custom-code",
             ),
-            rx.text(MemoState.last_value, id="memo-last-value"),
-            my_memoed_component(
-                some_value="memod_some_value", event=MemoState.set_last_value
+            rx.text(formatted_price, id="formatted-price"),
+            rx.button(
+                "Increment",
+                id="increment-price",
+                on_click=MemoState.increment_amount,
+            ),
+            summary_card(
+                rx.text("Children are passed positionally.", id="summary-child"),
+                title=MemoState.title,
+                value=formatted_price,
+                id="summary-card",
+                class_name="forwarded-summary-card",
+                font_weight="bold",
+                style={"padding": "10px"},
             ),
         )
 
@@ -63,10 +87,10 @@ def memo_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start MemoApp app at tmp_path via AppHarness.
 
     Args:
-        tmp_path_factory: pytest tmp_path_factory fixture
+        tmp_path_factory: pytest temporary directory factory.
 
     Yields:
-        running AppHarness instance
+        Running AppHarness instance.
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("memo_app"),
@@ -76,25 +100,25 @@ def memo_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
 
 
 def test_memo_app(memo_app: AppHarness, page: Page):
-    """Render various memo'd components and assert on the output.
+    """Render deprecated experimental memos and verify forwarded props.
 
     Args:
-        memo_app: harness for MemoApp app
-        page: Playwright Page fixture
+        memo_app: Harness for MemoApp.
+        page: Playwright page.
     """
-    assert memo_app.app_instance is not None, "app is not running"
     assert memo_app.frontend_url is not None
     page.goto(memo_app.frontend_url)
-
-    # check that the output matches
-    memo_custom_code_stack = page.locator("#memo-custom-code")
-    expect(memo_custom_code_stack).to_have_text("foobarbarbar")
-
-    # click the button to trigger partial event application
-    page.locator("#memo-button").click()
-    last_value = page.locator("#memo-last-value")
-    expect(last_value).to_have_text("memod_some_value")
-
-    # enter text to trigger passed argument to event handler
-    page.locator("#memo-input").fill("new_value")
-    expect(last_value).to_have_text("new_value")
+    expect(page.locator("#experimental-memo-custom-code")).to_have_text("foobarbarbar")
+    expect(page.locator("#formatted-price")).to_have_text("USD: $125")
+    summary_card = page.locator("#summary-card")
+    assert "forwarded-summary-card" in (summary_card.get_attribute("class") or "")
+    expect(summary_card).to_have_css("font-weight", "700")
+    expect(summary_card).to_have_css("padding", "10px")
+    expect(page.locator("#summary-title")).to_have_text("Current Price")
+    expect(page.locator("#summary-child")).to_have_text(
+        "Children are passed positionally."
+    )
+    expect(page.locator("#summary-value")).to_have_text("USD: $125")
+    page.locator("#increment-price").click()
+    expect(page.locator("#formatted-price")).to_have_text("USD: $130")
+    expect(page.locator("#summary-value")).to_have_text("USD: $130")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import time
 from collections.abc import Generator
 from pathlib import Path
@@ -34,8 +35,10 @@ def UploadFile():
         disabled: rx.Field[bool] = rx.field(False)
         large_data: rx.Field[str] = rx.field("")
         quaternary_names: rx.Field[list[str]] = rx.field([])
+        quaternary_field: rx.Field[str] = rx.field("")
         stream_chunk_records: rx.Field[list[str]] = rx.field([])
         stream_completed_files: rx.Field[list[str]] = rx.field([])
+        stream_field: rx.Field[str] = rx.field("")
 
         @rx.event
         async def handle_upload(self, files: list[rx.UploadFile]):
@@ -91,15 +94,21 @@ def UploadFile():
             self.upload_done = True
 
         @rx.event
-        async def handle_upload_quaternary(self, files: list[rx.UploadFile]):
+        async def handle_upload_quaternary(
+            self, files: list[rx.UploadFile], field: str
+        ):
             self.upload_done = False
             self.quaternary_names = [file.name for file in files if file.name]
+            self.quaternary_field = field
             self.upload_done = True
 
         @rx.event(background=True)
-        async def handle_upload_stream(self, chunk_iter: rx.UploadChunkIterator):
+        async def handle_upload_stream(
+            self, chunk_iter: rx.UploadChunkIterator, field: str
+        ):
             async with self:
                 self.upload_done = False
+                self.stream_field = field
             upload_dir = rx.get_upload_dir() / "streaming"
             file_handles: dict[str, Any] = {}
 
@@ -257,12 +266,18 @@ def UploadFile():
                     rx.upload_files(  # pyright: ignore [reportArgumentType]
                         upload_id="quaternary",
                     ),
+                    "resume-field",
                 ),
                 id="quaternary",
             ),
             rx.text(
                 UploadState.quaternary_names.to_string(),
                 id="quaternary_files",
+            ),
+            rx.input(
+                value=UploadState.quaternary_field,
+                read_only=True,
+                id="quaternary_field",
             ),
             rx.heading("Streaming Upload"),
             rx.upload.root(
@@ -278,7 +293,8 @@ def UploadFile():
                     rx.upload_files_chunk(  # pyright: ignore [reportArgumentType]
                         upload_id="streaming",
                         on_upload_progress=UploadState.stream_upload_progress,
-                    )
+                    ),
+                    "stream-field",
                 ),
                 id="upload_button_streaming",
             ),
@@ -302,6 +318,11 @@ def UploadFile():
                 UploadState.stream_completed_files.to_string(),
                 id="stream_completed_files",
             ),
+            rx.input(
+                value=UploadState.stream_field,
+                read_only=True,
+                id="stream_field",
+            ),
             rx.vstack(
                 rx.foreach(
                     UploadState.stream_progress_dicts,
@@ -317,18 +338,35 @@ def UploadFile():
 
 
 @pytest.fixture(scope="module")
-def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
+def uploaded_files_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Create and return a temporary directory for uploaded files.
+
+    Args:
+        tmp_path_factory: pytest fixture for creating temporary directories
+
+    Returns:
+        dir where uploaded files will be saved in the test (rx.get_upload_dir())
+    """
+    return tmp_path_factory.mktemp("uploaded_files")
+
+
+@pytest.fixture(scope="module")
+def upload_file(
+    tmp_path_factory: pytest.TempPathFactory, uploaded_files_dir: Path
+) -> Generator[AppHarness, None, None]:
     """Start UploadFile app at tmp_path via AppHarness.
 
     Args:
         tmp_path_factory: pytest tmp_path_factory fixture
+        uploaded_files_dir: dir where uploaded files will be saved in the test (rx.get_upload_dir())
 
     Yields:
         running AppHarness instance
     """
     monkeypatch = pytest.MonkeyPatch()
     monkeypatch.setenv(
-        "REFLEX_UPLOADED_FILES_DIR", str(tmp_path_factory.mktemp("uploaded_files"))
+        "REFLEX_UPLOADED_FILES_DIR",
+        str(uploaded_files_dir),
     )
     try:
         with AppHarness.create(
@@ -338,6 +376,25 @@ def upload_file(tmp_path_factory) -> Generator[AppHarness, None, None]:
             yield harness
     finally:
         monkeypatch.undo()
+
+
+@pytest.fixture(autouse=True)
+def clear_uploaded_files(uploaded_files_dir: Path):
+    """Clear the reflex uploaded files directory before and after each test.
+
+    Args:
+        uploaded_files_dir: dir where uploaded files will be saved in the test (rx.get_upload_dir())
+    """
+
+    def _clear_contents():
+        if not uploaded_files_dir.exists():
+            return
+        for child in uploaded_files_dir.iterdir():
+            shutil.rmtree(child) if child.is_dir() else child.unlink()
+
+    _clear_contents()
+    yield
+    _clear_contents()
 
 
 def _goto_app(upload_file: AppHarness, page: Page) -> None:
@@ -843,3 +900,21 @@ def test_on_drop(
     AppHarness._poll_for(exp_name_in_quaternary)
 
     assert exp_name_in_quaternary()
+
+
+def test_upload_file_with_bound_arg(tmp_path, upload_file: AppHarness, page: Page):
+    """Preserve bound handler arguments when uploading from on_drop.
+
+    Args:
+        tmp_path: Temporary directory for the upload.
+        upload_file: The running upload app.
+        page: Playwright page.
+    """
+    _goto_app(upload_file, page)
+    page.locator("#clear_uploads").click()
+    target = tmp_path / "bound_arg.txt"
+    target.write_text("bound arg upload contents!")
+    page.locator("#quaternary input[type=file]").set_input_files(target)
+    expect(page.locator("#upload_done")).to_have_value("true")
+    expect(page.locator("#quaternary_field")).to_have_value("resume-field")
+    expect(page.locator("#quaternary_files")).to_contain_text(target.name)

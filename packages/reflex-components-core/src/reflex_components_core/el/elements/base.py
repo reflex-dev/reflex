@@ -3,6 +3,7 @@
 from typing import Literal
 
 from reflex_base.components.component import field
+from reflex_base.constants.compiler import MemoizationMode
 from reflex_base.vars.base import Var
 
 from reflex_components_core.el.element import Element
@@ -140,3 +141,29 @@ class BaseHTML(Element):
     )
 
     title: Var[str] = field(doc="Defines a tooltip for the element.")
+
+
+class RawTextBaseHTML(BaseHTML):
+    """Base class for HTML elements with raw-text (RCDATA) content models.
+
+    Raw-text elements (``<title>``, ``<style>``, ``<textarea>``, ``<script>``,
+    ``<noscript>``) parse their content as text rather than child markup. A
+    JSX component child stringifies as ``[object Object]``, so a stateful
+    ``Bare`` child must be captured inside the element's snapshot body
+    rather than being independently memoized as a sibling JSX call.
+    """
+
+    _memoization_mode = MemoizationMode(recursive=False)
+
+
+class VoidBaseHTML(BaseHTML):
+    """Base class for void HTML elements (no children allowed).
+
+    Void elements (``<area>``, ``<base>``, ``<br>``, ``<col>``, ``<embed>``,
+    ``<hr>``, ``<img>``, ``<input>``, ``<link>``, ``<meta>``, ``<source>``,
+    ``<track>``, ``<wbr>``) cannot have children. A stateful ``Bare`` child
+    must stay inside the element's snapshot body rather than being
+    independently memoized into an invalid JSX call.
+    """
+
+    _memoization_mode = MemoizationMode(recursive=False)

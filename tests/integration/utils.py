@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
+from http.client import HTTPConnection
+from urllib.parse import urlsplit
 
 from playwright.sync_api import Page
 
@@ -29,6 +31,34 @@ def poll_for_token(page: Page, timeout: TimeoutType = None) -> str:
     token = AppHarness.poll_for_or_raise_timeout(_get_token, timeout=timeout)
     assert token is not None
     return token
+
+
+def request_raw(
+    url: str,
+    path: str,
+    headers: dict[str, str] | None = None,
+) -> tuple[int, dict[str, str], bytes]:
+    """Send a raw HTTP request without client-side decompression.
+
+    Args:
+        url: The base URL to connect to.
+        path: The request path.
+        headers: Optional request headers.
+
+    Returns:
+        The status code, response headers, and raw body.
+    """
+    parsed = urlsplit(url)
+    assert parsed.hostname is not None
+    assert parsed.port is not None
+    conn = HTTPConnection(parsed.hostname, parsed.port, timeout=10)
+    conn.request("GET", path, headers=headers or {})
+    resp = conn.getresponse()
+    body = resp.read()
+    hdrs = {k.lower(): v for k, v in resp.getheaders()}
+    status = resp.status
+    conn.close()
+    return status, hdrs, body
 
 
 @contextmanager

@@ -4,27 +4,65 @@ import reflex as rx
 
 # Self Hosting
 
-We recommend using `reflex deploy`, but if this does not fit your use case then you can also host your apps yourself.
+Use `reflex deploy` for the managed workflow. Follow this page when you need to run the frontend and backend on your own infrastructure.
 
 Clone your code to a server and install the [requirements](/docs/getting-started/installation/).
 
+## Production Mode
+
+Run your app in production mode:
+
+```bash
+reflex run --env prod
+```
+
+Production mode compiles the app, builds an optimized static frontend, and
+serves it together with the backend (event websocket, `/ping`, `/_upload`)
+from a single server on port `3000`. Pass `--frontend-port` or
+`--backend-port` to listen on a different port. When redis is configured,
+the server runs `2 * cpu_count + 1` worker processes; set `GRANIAN_WORKERS`
+to override this.
+
+The frontend and backend can also run as separate processes, for example to
+serve the frontend from a CDN and scale the backend independently. The
+frontend-only server only serves static files, so tell it where the backend
+is when compiling the frontend — otherwise it assumes its own port:
+
+```bash
+reflex run --env prod --backend-only --backend-port 8000
+REFLEX_API_URL=http://localhost:8000 reflex run --env prod --frontend-only --frontend-port 3000
+```
+
+Alternatively, put a reverse proxy in front of both processes and route the
+backend routes (`/_event`, `/ping`, `/_upload`, `/_health`) to the backend
+port, as the `Caddyfile`s in the container examples below do.
+
+```md alert warning
+# Reverse Proxy and Websockets
+Because the backend uses websockets, some reverse proxy servers, like [nginx](https://nginx.org/en/docs/http/websocket.html) or [apache](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#protoupgrade), must be configured to pass the `Upgrade` header to allow backend connectivity.
+```
+
 ## API URL
 
-Edit your `rxconfig.py` file and set `api_url` to the publicly accessible IP
-address or hostname of your server, with the port `:8000` at the end. Setting
-this correctly is essential for the frontend to interact with the backend state.
+The frontend connects to the backend at `api_url`. When `api_url` points at
+`localhost` (the default), the frontend substitutes the hostname it was loaded
+from, and when the page is served over HTTPS it also drops the port and
+connects to its own origin. So a single-port production deployment behind a
+TLS-terminating proxy needs no `api_url` configuration at all.
 
-For example if your server is at `app.example.com`, your config would look like this:
+Set `api_url` explicitly when the backend is reachable at a different address
+than the frontend, for example when the frontend is exported to a static host
+and the backend runs elsewhere:
 
 ```python
 config = rx.Config(
     app_name="your_app_name",
-    api_url="http://app.example.com:8000",
+    api_url="https://api.example.com",
 )
 ```
 
-It is also possible to set the environment variable `API_URL` at run time or
-export time to retain the default for local development.
+It is also possible to set the environment variable `REFLEX_API_URL` at run
+time or export time to retain the default for local development.
 
 ## Proxying to a Subpath
 
@@ -50,37 +88,20 @@ Note: changing `backend_path` (or `frontend_path`) requires a full restart of
 `reflex run` — routes and mount points are registered at startup, so hot
 reload alone will not move them.
 
-## Production Mode
-
-Then run your app in production mode:
-
-```bash
-reflex run --env prod
-```
-
-Production mode creates an optimized build of your app.  By default, the static
-frontend of the app (HTML, Javascript, CSS) will be exposed on port `3000` and
-the backend (event handlers) will be listening on port `8000`.
-
-```md alert warning
-# Reverse Proxy and Websockets
-Because the backend uses websockets, some reverse proxy servers, like [nginx](https://nginx.org/en/docs/http/websocket.html) or [apache](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#protoupgrade), must be configured to pass the `Upgrade` header to allow backend connectivity.
-```
-
 ## Exporting a Static Build
 
 Exporting a static build of the frontend allows the app to be served using a
-static hosting provider, like Netlify or Github Pages. Be sure `api_url` is set
+static hosting provider, such as Netlify or GitHub Pages. Make sure `api_url` is set
 to an accessible backend URL when the frontend is exported.
 
 ```bash
-API_URL=http://app.example.com:8000 reflex export
+REFLEX_API_URL=https://api.example.com reflex export
 ```
 
 This will create a `frontend.zip` file with your app's minified HTML,
 Javascript, and CSS build that can be uploaded to your static hosting service.
 
-It also creates a `backend.zip` file with your app's backend python code to
+It also creates a `backend.zip` file with your app's backend Python code to
 upload to your server and run.
 
 You can export only the frontend or backend by passing in the `--frontend-only`
@@ -91,40 +112,37 @@ this, use the `--no-zip` parameter. This provides the frontend in the
 `.web/build/client/` directory and the backend can be found in the root directory of
 the project.
 
+The export also writes a pre-compressed `.gz` copy of the compressible text
+assets (JS, CSS, HTML, JSON, SVG, and similar), so configure the static host
+to serve those directly where it supports it. Set the
+`frontend_compression_formats` config option to also generate `brotli` or
+`zstd` copies.
+
 ## Reflex Container Service
 
-Another option is to run your Reflex service in a container. For this
-purpose, a `Dockerfile` and additional documentation is available in the Reflex
-project in the directory `docker-example`.
+Another option is to run your Reflex service in a container. Several
+`Dockerfile`s with additional documentation are available in the Reflex
+project in the directory
+[`docker-example`](https://github.com/reflex-dev/reflex/tree/main/docker-example),
+ranging from a single container serving everything on one port to a full
+compose stack with a TLS-terminating webserver, redis, and postgres. The
+`production` example is the place to start.
 
-For the build of the container image it is necessary to edit the `rxconfig.py`
-and the add the `requirements.txt`
-to your project folder. The following changes are necessary in `rxconfig.py`:
+Before building the image, add a `requirements.txt` to the project folder
+that includes `reflex` and commit the `reflex.lock/` directory so the frontend
+dependencies installed in the image match the ones you developed against.
 
-```python
-config = rx.Config(
-    app_name="app",
-    api_url="http://app.example.com:8000",
-)
-```
-
-Notice that the `api_url` should be set to the externally accessible hostname or
-IP, as the client browser must be able to connect to it directly to establish
-interactivity.
-
-You can find the `requirements.txt` in the `docker-example` folder of the
-project too.
-
-The project structure should looks like this:
+The project structure should look like this:
 
 ```bash
 hello
-├── .web
 ├── assets
 ├── hello
 │   ├── __init__.py
 │   └── hello.py
+├── reflex.lock
 ├── rxconfig.py
+├── Caddyfile
 ├── Dockerfile
 └── requirements.txt
 ```
@@ -138,5 +156,5 @@ docker build -t reflex-project:latest .
 Finally, you can start your Reflex container service as follows.
 
 ```bash
-docker run -d -p 3000:3000 -p 8000:8000 --name app reflex-project:latest
+docker run -d -p 8080:8080 --name app reflex-project:latest
 ```

@@ -17,7 +17,6 @@ class StrictComponent(Component):
     def create(
         cls,
         *children,
-        _internal_counter: int | None = None,
         visible_prop: Var[str] | str | None = None,
         size: Var[int] | int | None = None,
         style: Sequence[Mapping[str, Any]]
@@ -52,7 +51,6 @@ class StrictComponent(Component):
 
         Args:
             *children: The children of the component.
-            _internal_counter: no description
             visible_prop: A prop visible in the stub.
             size: The size of the component.
             style: The style of the component.

@@ -8,7 +8,7 @@ cell_style = {
     "font_size": "14px",
     "line_height": "1.5",
     "letter_spacing": "-0.0125em",
-    "color": "var(--c-slate-11)",
+    "color": "var(--muted-foreground)",
 }
 ```
 
@@ -252,7 +252,7 @@ rx.table.root(
 )
 ```
 
-Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs](/docs/library/other/theme).
+Additionally you can modify the theme of your app through using the `Theme Panel` component which can be found in the [Theme Panel docs](/docs/library/other/theme/).
 
 ## Colors
 

@@ -40,7 +40,7 @@ Now let's take a look at a more complex component, which has other components ne
 
 ```python demo
 rx.vstack(
-    rx.heading("Sample Form"),
+    rx.heading("Sample Form", as_="h2"),
     rx.input(placeholder="Name"),
     rx.checkbox("Subscribe to Newsletter"),
 )
@@ -51,7 +51,7 @@ Some props are specific to a component. For example, the `header` and `content` 
 Styling props like `color` are shared across many components.
 
 ```md alert info
-# You can find all the props for a component by checking its documentation page in the [component library](/docs/library).
+# You can find all the props for a component by checking its documentation page in the [component library](/docs/library/).
 ```
 
 ## Pages

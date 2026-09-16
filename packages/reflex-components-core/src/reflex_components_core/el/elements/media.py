@@ -4,14 +4,15 @@ from typing import Any, Literal
 
 from reflex_base.components.component import Component, ComponentNamespace, field
 from reflex_base.constants.colors import Color
+from reflex_base.constants.compiler import MemoizationMode
 from reflex_base.vars.base import Var
 
 from reflex_components_core.el.elements.inline import ReferrerPolicy
 
-from .base import BaseHTML
+from .base import BaseHTML, RawTextBaseHTML, VoidBaseHTML
 
 
-class Area(BaseHTML):
+class Area(VoidBaseHTML):
     """Display the area element."""
 
     tag = "area"
@@ -78,7 +79,7 @@ ImageDecoding = Literal["async", "auto", "sync"]
 ImageLoading = Literal["eager", "lazy"]
 
 
-class Img(BaseHTML):
+class Img(VoidBaseHTML):
     """Display the img element."""
 
     tag = "img"
@@ -135,7 +136,7 @@ class Map(BaseHTML):
     )
 
 
-class Track(BaseHTML):
+class Track(VoidBaseHTML):
     """Display the track element."""
 
     tag = "track"
@@ -187,7 +188,7 @@ class Video(BaseHTML):
     src: Var[str] = field(doc="URL of the video to play")
 
 
-class Embed(BaseHTML):
+class Embed(VoidBaseHTML):
     """Display the embed element."""
 
     tag = "embed"
@@ -251,7 +252,7 @@ class Portal(BaseHTML):
     tag = "portal"
 
 
-class Source(BaseHTML):
+class Source(VoidBaseHTML):
     """Display the source element."""
 
     tag = "source"
@@ -274,9 +275,15 @@ class Source(BaseHTML):
 
 
 class Svg(BaseHTML):
-    """Display the svg element."""
+    """Display the svg element.
+
+    The svg root and its descendants render as a single memoized component,
+    so ``defs`` and the elements that reference them by id share one render
+    scope and hook vars such as ``rx.vars.use_id()`` resolve to one value.
+    """
 
     tag = "svg"
+    _memoization_mode = MemoizationMode(recursive=False)
     width: Var[str | int] = field(doc="The width of the svg.")
     height: Var[str | int] = field(doc="The height of the svg.")
     xmlns: Var[str] = field(doc="The XML namespace declaration.")
@@ -870,13 +877,13 @@ class MPath(BaseHTML):
     href: Var[str] = field(doc="Reference to a path element.")
 
 
-class Desc(BaseHTML):
+class Desc(RawTextBaseHTML):
     """The SVG desc component for descriptions."""
 
     tag = "desc"
 
 
-class Title(BaseHTML):
+class Title(RawTextBaseHTML):
     """The SVG title component for titles."""
 
     tag = "title"
@@ -888,7 +895,7 @@ class Metadata(BaseHTML):
     tag = "metadata"
 
 
-class Script(BaseHTML):
+class Script(RawTextBaseHTML):
     """The SVG script component for scripts."""
 
     tag = "script"
@@ -900,7 +907,7 @@ class Script(BaseHTML):
     crossorigin: Var[str] = field(doc="CORS settings for the script.")
 
 
-class SvgStyle(BaseHTML):
+class SvgStyle(RawTextBaseHTML):
     """The SVG style component for stylesheets."""
 
     tag = "style"
