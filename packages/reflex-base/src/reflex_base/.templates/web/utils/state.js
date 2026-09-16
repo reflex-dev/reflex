@@ -217,10 +217,8 @@ function urlFrom(string) {
  * Invoke an event's result callback, if it declared one.
  *
  * The callback arrives as a string built by ``format_queue_events``, which
- * references ``queueEvents``/``processEvent`` (module-level here) plus ``socket``,
- * ``navigate`` and ``params``. Those three MUST stay the parameter names below:
- * the ``eval`` resolves them from this function's scope, so renaming them breaks
- * every callback.
+ * references ``addEvents`` and ``ReflexEvent``. Keep the dispatcher late-bound
+ * so callbacks pick up a remounted EventLoopProvider.
  * @param event The event whose callback to run.
  * @param eval_result The value to pass to the callback, awaited if thenable.
  * @param socket The socket object to send events on.
@@ -237,6 +235,7 @@ const applyResultCallback = async (
   if (!event.payload.callback) {
     return;
   }
+  const addEvents = (...args) => eventLoop.addEvents(...args);
   const final_result =
     !!eval_result && typeof eval_result.then === "function"
       ? await eval_result
