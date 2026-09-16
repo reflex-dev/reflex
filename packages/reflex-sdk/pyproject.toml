@@ -24,8 +24,8 @@ fallback-version = "0.0.0dev0"
 packages = ["src/reflex_sdk"]
 
 [tool.hatch.build.targets.sdist]
-# The API schema snapshot is test data for the monorepo.
-exclude = ["/openapi.json"]
+# The API schema snapshot and its maintenance scripts are for the monorepo.
+exclude = ["/openapi.json", "/scripts"]
 
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]

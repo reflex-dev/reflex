@@ -1,4 +1,4 @@
-# Generated from packages/reflex-sdk/src/reflex_sdk/_async/_client.py by scripts/unasync_reflex_sdk.py. Do not edit.
+# Generated from packages/reflex-sdk/src/reflex_sdk/_async/_client.py by packages/reflex-sdk/scripts/unasync.py. Do not edit.
 """The synchronous Reflex Cloud client."""
 
 from __future__ import annotations

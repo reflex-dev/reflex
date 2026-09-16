@@ -283,9 +283,9 @@ preview = true
 "*/.templates/apps/blank/code/*" = ["INP001"]
 "*/blank.py" = ["I001"]
 "docs/package/scripts/*.py" = ["INP001"]
+"packages/reflex-sdk/scripts/*.py" = ["INP001", "T201"]
 "scripts/check_min_deps.py" = ["T201"]
 "scripts/check_outdated_deps.py" = ["T201"]
-"scripts/unasync_reflex_sdk.py" = ["T201"]
 "scripts/verify_pyi.py" = ["T201"]
 # Skill helper scripts are CLIs whose whole job is printing a report.
 ".claude/skills/*/scripts/*.py" = ["T201"]
