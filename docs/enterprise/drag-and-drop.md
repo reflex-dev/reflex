@@ -14,6 +14,8 @@ Reflex Enterprise provides comprehensive drag and drop functionality for creatin
 ```md alert warning
 # Important: Always decorate functions defining `rxe.dnd.draggable` components with `@rx.memo` to avoid compilation errors.
 
+Return the `draggable` or `drop_target` as the memo's outermost component. When it is nested deeper inside the memo, the drag and drop provider is not added automatically — see [When the automatic provider is missing](#when-the-automatic-provider-is-missing).
+
 See [memo](/docs/library/other/memo) for how `@rx.memo` components handle parameters.
 ```
 
@@ -596,28 +598,97 @@ def custom_collect_example():
 
 ## Provider
 
-Drag and drop functionality requires the `rxe.dnd.provider` component to wrap your app. The provider is automatically added when using `draggable` or `drop_target` components.
+Drag and drop needs a provider (`rxe.dnd.provider`, react-dnd's `DndProvider`)
+above every `draggable` and `drop_target` in the rendered React tree. Reflex
+Enterprise adds one to the app root automatically, but
+[not in every case](#when-the-automatic-provider-is-missing). The low-level
+`rxe.dnd.use_drag` and `rxe.dnd.use_drop` hooks never add it — with those, add
+the provider yourself.
 
-For manual control:
+### Choosing a backend
+
+`backend` takes a react-dnd backend object, not a string. Use
+`rxe.dnd.HTML5Backend` (the default) or `rxe.dnd.TouchBackend`; each one pulls
+in the npm package it needs. `options` is passed through to the backend.
 
 ```python
-def app():
+def index():
     return rxe.dnd.provider(
         # Your app content
         your_app_content(),
-        backend="HTML5",  # or "Touch" for mobile
+        backend=rxe.dnd.TouchBackend,  # or rxe.dnd.HTML5Backend, the default
+        options={"enableMouseEvents": True},
     )
 ```
 
-```md alert warning
-# Do not add a second provider
+Passing a string compiles to `<DndProvider backend={"HTML5"}>`, and the page
+fails to render with `TypeError: backendFactory is not a function`:
 
-Because the provider is added automatically when `draggable` or `drop_target` components are used, wrapping the app in an additional `rxe.dnd.provider` results in duplicate providers and breaks drag and drop. Only use manual control when the automatic provider does not fit (e.g. to select the touch backend), and make sure it is the only provider in the tree.
+```python
+# Wrong: "HTML5" is a string, not a backend.
+rxe.dnd.provider(your_app_content(), backend="HTML5")
+```
+
+### When the automatic provider is missing
+
+The automatic provider is added when a `draggable` or `drop_target` is reachable
+from a page, but an `@rx.memo` component only contributes the app wraps of the
+component it returns — anything deeper inside its body is invisible to that
+scan. So a memo supplies the provider only when the `draggable` or
+`drop_target` **is the component the memo function returns**:
+
+```python
+@rx.memo
+def provider_is_added() -> rx.Component:
+    # The draggable is the outermost component.
+    return rxe.dnd.draggable(rx.text("drag me"), type="Card")
+
+
+@rx.memo
+def provider_is_not_added() -> rx.Component:
+    # The draggable is nested, so nothing requests the provider and the page
+    # fails to render with `Invariant Violation: Expected drag drop context`.
+    return rx.box(
+        rx.text("header"),
+        rxe.dnd.draggable(rx.text("drag me"), type="Card"),
+    )
+```
+
+The same applies to an `rx.cond` at the top of the memo and to a memo that
+renders another memo. When you can't keep the `draggable` or `drop_target`
+outermost, add the provider yourself — around the page content:
+
+```python
+def index():
+    return rxe.dnd.provider(provider_is_not_added())
+```
+
+Or, to cover the whole app in one place, register it as an app wrap under the
+key the automatic provider uses, which replaces it rather than adding a second
+one:
+
+```python
+app = rxe.App()
+app.extra_app_wraps[(30, "DnDProvider")] = lambda _: rxe.dnd.provider(
+    backend=rxe.dnd.HTML5Backend
+)
+```
+
+```md alert warning
+# Only the outermost provider's backend applies
+
+react-dnd caches its drag-drop manager on the window, so the first provider to
+render creates it and any provider nested inside reuses that same manager. A
+nested provider is therefore harmless but inert: its `backend` and `options`
+have no effect, so a page-level
+`rxe.dnd.provider(backend=rxe.dnd.TouchBackend)` does nothing once the
+automatic provider sits at the app root. To choose a backend for the whole app,
+set it through `app.extra_app_wraps` as shown above.
 ```
 
 ## Best Practices
 
-1. **Always use `@rx.memo`** on functions containing draggable components
+1. **Always use `@rx.memo`** on functions containing draggable components, and return the `draggable` or `drop_target` as the memo's outermost component so the [provider is added automatically](#when-the-automatic-provider-is-missing)
 2. **Use descriptive type names** for better debugging
 3. **Handle edge cases** in drop handlers (invalid items, etc.)
 4. **Provide visual feedback** using collected parameters
