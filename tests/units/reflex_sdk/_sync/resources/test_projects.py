@@ -1,4 +1,4 @@
-# Generated from tests/units/reflex_sdk/_async/resources/test_projects.py by scripts/unasync_reflex_sdk.py. Do not edit.
+# Generated from tests/units/reflex_sdk/_async/resources/test_projects.py by packages/reflex-sdk/scripts/unasync.py. Do not edit.
 from __future__ import annotations
 
 import uuid

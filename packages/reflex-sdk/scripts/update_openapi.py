@@ -9,7 +9,7 @@ from pathlib import Path
 import httpx
 from reflex_sdk._base import DEFAULT_BASE_URL
 
-SNAPSHOT = Path(__file__).resolve().parent.parent / "packages/reflex-sdk/openapi.json"
+SNAPSHOT = Path(__file__).resolve().parent.parent / "openapi.json"
 # Where the control plane serves its schema, relative to the Reflex Cloud URL.
 OPENAPI_PATH = "/api/openapi.json"
 

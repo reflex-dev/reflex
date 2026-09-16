@@ -37,9 +37,9 @@ repos:
   - id: unasync-reflex-sdk
     name: unasync-reflex-sdk
     description: Regenerate the synchronous reflex-sdk client and tests from the asynchronous source
-    entry: uv run --no-sync python scripts/unasync_reflex_sdk.py
+    entry: uv run --no-sync python packages/reflex-sdk/scripts/unasync.py
     language: system
-    files: ^(packages/reflex-sdk/src/reflex_sdk/|tests/units/reflex_sdk/|scripts/unasync_reflex_sdk\.py$)
+    files: ^(packages/reflex-sdk/src/reflex_sdk/|packages/reflex-sdk/scripts/unasync\.py$|tests/units/reflex_sdk/)
     pass_filenames: false
     require_serial: true
 - repo: local

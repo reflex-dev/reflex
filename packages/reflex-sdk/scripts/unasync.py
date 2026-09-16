@@ -14,7 +14,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+# The repository root: this script lives in packages/reflex-sdk/scripts.
+ROOT = Path(__file__).resolve().parents[3]
 
 # Source directory -> generated directory.
 DIRECTORIES = {
@@ -83,7 +84,7 @@ def generate(source_path: Path) -> str:
     """
     header = (
         f"# Generated from {source_path.relative_to(ROOT).as_posix()} by "
-        "scripts/unasync_reflex_sdk.py. Do not edit.\n"
+        "packages/reflex-sdk/scripts/unasync.py. Do not edit.\n"
     )
     source = header + unasync_source(source_path.read_text())
     # Renamed imports can fall out of sort order and shortened lines can fit
