@@ -12,7 +12,9 @@ import reflex_enterprise as rxe
 Reflex Enterprise provides comprehensive drag and drop functionality for creating interactive UI elements using the `rxe.dnd` module. Built on top of react-dnd, it offers both high-level components for common use cases and low-level hooks for advanced scenarios.
 
 ```md alert warning
-# Important: Always decorate functions defining `rxe.dnd.draggable` components with `@rx.memo` to avoid compilation errors.
+# Important: Decorate functions defining `rxe.dnd.draggable` or `rxe.dnd.drop_target` with `@rx.memo`.
+
+Each drop target needs its own hook and ref. Pass dynamic destinations as `rx.Var` props using keyword arguments, especially inside `rx.foreach`. Place these memoized components below a shared [provider](#provider).
 
 See [memo](/docs/library/other/memo) for how `@rx.memo` components handle parameters.
 ```
@@ -293,7 +295,10 @@ def draggable_list_item(item: rx.Var[ListItem]) -> rx.Component:
     )
 
 
-def droppable_list(title: str, items: list[ListItem], list_id: str):
+@rx.memo
+def droppable_list(
+    title: rx.Var[str], items: rx.Var[list[ListItem]], list_id: rx.Var[str]
+):
     return rxe.dnd.drop_target(
         rx.vstack(
             rx.text(title, weight="bold", size="5"),
@@ -318,11 +323,13 @@ def droppable_list(title: str, items: list[ListItem], list_id: str):
 
 
 def dynamic_list_example():
-    return rx.hstack(
-        droppable_list("List A", DynamicListState.list_a, "A"),
-        droppable_list("List B", DynamicListState.list_b, "B"),
-        spacing="6",
-        align="start",
+    return rxe.dnd.provider(
+        rx.hstack(
+            droppable_list(title="List A", items=DynamicListState.list_a, list_id="A"),
+            droppable_list(title="List B", items=DynamicListState.list_b, list_id="B"),
+            spacing="6",
+            align="start",
+        ),
     )
 ```
 
@@ -596,7 +603,7 @@ def custom_collect_example():
 
 ## Provider
 
-Drag and drop functionality requires the `rxe.dnd.provider` component to wrap your app. The provider is automatically added when using `draggable` or `drop_target` components.
+Drag and drop requires `rxe.dnd.provider` above the components that own its hooks. High-level components register it automatically, but discovery can miss components inside `@rx.memo` boundaries (observed with Reflex `0.9.11.post1` and Reflex Enterprise `0.9.5`). Use a shared parent provider for memoized boards, as in the dynamic-list example, to avoid `Expected drag drop context` in the browser.
 
 For manual control:
 
@@ -605,19 +612,20 @@ def app():
     return rxe.dnd.provider(
         # Your app content
         your_app_content(),
-        backend="HTML5",  # or "Touch" for mobile
     )
 ```
 
 ```md alert warning
-# Do not add a second provider
+# Keep hook-owning components below the provider
 
-Because the provider is added automatically when `draggable` or `drop_target` components are used, wrapping the app in an additional `rxe.dnd.provider` results in duplicate providers and breaks drag and drop. Only use manual control when the automatic provider does not fit (e.g. to select the touch backend), and make sure it is the only provider in the tree.
+A provider returned inside the same memoized function cannot supply context to hooks called by that function. Put the provider in a parent of the memoized draggable and drop-target components. Share it across the board instead of adding one per card or column.
 ```
+
+The default backend is `rxe.dnd.HTML5Backend`. To select a backend explicitly, pass `backend=rxe.dnd.HTML5Backend` or `backend=rxe.dnd.TouchBackend`, not a string such as `"HTML5"` or `"Touch"`. Strings can cause `backendFactory is not a function`.
 
 ## Best Practices
 
-1. **Always use `@rx.memo`** on functions containing draggable components
+1. **Always use `@rx.memo`** on functions containing draggable or drop-target components
 2. **Use descriptive type names** for better debugging
 3. **Handle edge cases** in drop handlers (invalid items, etc.)
 4. **Provide visual feedback** using collected parameters
