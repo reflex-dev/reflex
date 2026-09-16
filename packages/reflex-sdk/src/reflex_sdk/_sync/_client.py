@@ -20,6 +20,8 @@ from reflex_sdk._sync.resources.apps import Apps
 from reflex_sdk._sync.resources.auth import Auth
 from reflex_sdk._sync.resources.deployments import Deployments
 from reflex_sdk._sync.resources.projects import Projects
+from reflex_sdk._sync.resources.providers import Providers
+from reflex_sdk._sync.resources.security_reviews import SecurityReviews
 from reflex_sdk.transports._base import Transport, TransportError
 from reflex_sdk.transports._defaults import DefaultTransport
 
@@ -40,6 +42,10 @@ class ReflexCloud(BaseClient):
     deployments: Deployments
     # Manage projects and who has access to them.
     projects: Projects
+    # Read the cloud providers an organization deploys apps to.
+    providers: Providers
+    # Review an app's source code for security and logic issues.
+    security_reviews: SecurityReviews
 
     def __init__(
         self,
@@ -79,6 +85,8 @@ class ReflexCloud(BaseClient):
         self.auth = Auth(self)
         self.deployments = Deployments(self)
         self.projects = Projects(self)
+        self.providers = Providers(self)
+        self.security_reviews = SecurityReviews(self)
 
     def __enter__(self) -> ReflexCloud:
         """Enter the client's context.

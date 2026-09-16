@@ -16,7 +16,6 @@ from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 from urllib.parse import quote, urlencode
 
-from reflex_sdk._credentials import load_stored_token
 from reflex_sdk._decode import decode
 from reflex_sdk._errors import (
     APIConnectionError,
@@ -24,6 +23,7 @@ from reflex_sdk._errors import (
     APITimeoutError,
     MissingTokenError,
 )
+from reflex_sdk.credentials import load_token
 from reflex_sdk.transports._base import Request, Response, TransportError
 
 logger = logging.getLogger(__name__)
@@ -151,9 +151,7 @@ class BaseClient:
                 transport's defaults.
             max_retries: How many times a failed request that is safe to repeat is retried.
         """
-        self._token = (
-            token or os.environ.get("REFLEX_ACCESS_TOKEN") or load_stored_token()
-        )
+        self._token = token or os.environ.get("REFLEX_ACCESS_TOKEN") or load_token()
         self._base_url = (
             base_url or os.environ.get("REFLEX_CLOUD_BACKEND_URL") or DEFAULT_BASE_URL
         ).rstrip("/")

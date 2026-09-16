@@ -11,6 +11,8 @@ from reflex_sdk._async.resources.apps import AsyncApps
 from reflex_sdk._async.resources.auth import AsyncAuth
 from reflex_sdk._async.resources.deployments import AsyncDeployments
 from reflex_sdk._async.resources.projects import AsyncProjects
+from reflex_sdk._async.resources.providers import AsyncProviders
+from reflex_sdk._async.resources.security_reviews import AsyncSecurityReviews
 from reflex_sdk._base import (
     DEFAULT_MAX_RETRIES,
     BaseClient,
@@ -39,6 +41,10 @@ class AsyncReflexCloud(BaseClient):
     deployments: AsyncDeployments
     # Manage projects and who has access to them.
     projects: AsyncProjects
+    # Read the cloud providers an organization deploys apps to.
+    providers: AsyncProviders
+    # Review an app's source code for security and logic issues.
+    security_reviews: AsyncSecurityReviews
 
     def __init__(
         self,
@@ -78,6 +84,8 @@ class AsyncReflexCloud(BaseClient):
         self.auth = AsyncAuth(self)
         self.deployments = AsyncDeployments(self)
         self.projects = AsyncProjects(self)
+        self.providers = AsyncProviders(self)
+        self.security_reviews = AsyncSecurityReviews(self)
 
     async def __aenter__(self) -> AsyncReflexCloud:
         """Enter the client's context.

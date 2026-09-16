@@ -37,6 +37,9 @@ SCHEMA_MODELS: dict[type, tuple[str, ...]] = {
     types.DeploymentReport: ("DeploymentFailureResponse",),
     UploadReservation: ("ReserveUploadResponse",),
     UploadTarget: ("UploadTargetResponse",),
+    types.SecurityViolation: ("SecurityViolation",),
+    types.SecurityReviewResult: ("SecurityReviewResult",),
+    types.SecurityReviewJob: ("SecurityReviewJobResult",),
 }
 
 # Models of responses the schema leaves untyped; their shapes come from the
@@ -50,6 +53,15 @@ UNTYPED_MODELS = {
     types.HostnameReservation,
     types.Region,
     types.MachineSize,
+    types.GcpConnection,
+    types.GcpStatus,
+    types.ProviderAccount,
+    types.CloudRunManifest,
+    types.ProviderChange,
+    types.FullDeployChange,
+    types.InstanceBoundsChange,
+    # Built by the client rather than decoded from a response.
+    types.LoginRequest,
 }
 
 
