@@ -72,6 +72,7 @@ from reflex.app import (
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
+    _read_stateful_pages_marker,
     _resolve_app_wrap_components,
 )
 from reflex.compiler.plugins import default_page_plugins
@@ -5021,7 +5022,7 @@ def test_write_stateful_pages_marker_closes_descriptor_on_open_failure(
     assert list(tmp_path.iterdir()) == []
 
 
-@pytest.mark.parametrize("windows, failures", [(True, 1), (True, 100), (False, 1)])
+@pytest.mark.parametrize(("windows", "failures"), [(True, 1), (True, 100), (False, 1)])
 def test_write_stateful_pages_marker_sharing_violation(
     tmp_path, mocker, windows, failures
 ):
@@ -5033,11 +5034,23 @@ def test_write_stateful_pages_marker_sharing_violation(
     attempts = 0
 
     def replace(path, target):
-        """Simulate a reader holding the Windows marker open."""
+        """Simulate a reader holding the Windows marker open.
+
+        Args:
+            path: The temporary marker.
+            target: The final marker.
+
+        Returns:
+            The replacement path.
+
+        Raises:
+            PermissionError: While the simulated reader has the marker open.
+        """
         nonlocal attempts
         attempts += 1
         if attempts <= failures:
-            raise PermissionError("marker is open")
+            msg = "marker is open"
+            raise PermissionError(msg)
         return original_replace(path, target)
 
     mocker.patch.object(Path, "replace", replace)
@@ -5089,11 +5102,10 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
     def reader():
         """Check that every observed marker is complete."""
         while not stop.is_set():
-            try:
-                content = marker.read_text()
-            except FileNotFoundError:
+            content = _read_stateful_pages_marker()
+            if content is None:
                 continue
-            assert json.loads(content) == routes
+            assert content == routes
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         readers = [pool.submit(reader) for _ in range(4)]

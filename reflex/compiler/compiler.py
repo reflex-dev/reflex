@@ -1220,6 +1220,11 @@ def _read_stateful_pages_marker() -> list[str] | None:
         return json.loads(marker.read_text())
     except (FileNotFoundError, json.JSONDecodeError):
         return None
+    except PermissionError:
+        if constants.IS_WINDOWS:
+            # A concurrent atomic replacement can temporarily block Windows readers.
+            return None
+        raise
 
 
 def compile_app(

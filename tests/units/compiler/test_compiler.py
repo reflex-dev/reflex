@@ -41,6 +41,18 @@ def test_read_stateful_pages_marker_recovers_legacy_corruption(
     assert compiler._read_stateful_pages_marker() is None
 
 
+@pytest.mark.parametrize("windows", [False, True])
+def test_read_stateful_pages_marker_sharing_violation(mocker, windows):
+    """An unavailable Windows marker requests evaluation without hiding POSIX errors."""
+    mocker.patch.object(constants, "IS_WINDOWS", windows)
+    mocker.patch.object(Path, "read_text", side_effect=PermissionError)
+    if windows:
+        assert compiler._read_stateful_pages_marker() is None
+    else:
+        with pytest.raises(PermissionError):
+            compiler._read_stateful_pages_marker()
+
+
 @pytest.mark.parametrize(
     ("fields", "test_default", "test_rest"),
     [
