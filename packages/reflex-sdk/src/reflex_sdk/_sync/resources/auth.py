@@ -168,6 +168,9 @@ class Auth:
                     dict[str, str],
                     params={"request_id": login.request_id},
                     authenticated=False,
+                    # The token is handed out once: a retry after a lost response
+                    # would find it gone and wait for an approval already given.
+                    retry=False,
                 )
             except NotFoundError:
                 # Not approved yet.

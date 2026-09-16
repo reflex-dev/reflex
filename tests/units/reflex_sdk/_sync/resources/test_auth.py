@@ -8,11 +8,13 @@ from collections.abc import Iterator
 
 import pytest
 from reflex_sdk import (
+    APIConnectionError,
     AuthenticationError,
     LoginDeniedError,
     LoginTimeoutError,
     ReflexCloud,
 )
+from reflex_sdk.transports import Request, Response, TransportError
 from reflex_sdk.types import AccessScope, LoginRequest, Me, Token, TokenAccess
 
 from tests.units.reflex_sdk.conftest import MockAPI, MockTransport, json_body, reply
@@ -217,6 +219,20 @@ def test_finish_login_waits_for_approval(mock_api: MockAPI):
     for request in mock_api.requests:
         assert request.url.endswith("/cli/token?request_id=abc123")
         assert "X-API-TOKEN" not in request.headers
+
+
+def test_finish_login_does_not_retry_a_lost_response(
+    client: ReflexCloud, mock_api: MockAPI
+):
+    def lose_response(request: Request) -> Response:
+        msg = "connection reset after the token was handed out"
+        raise TransportError(msg, request=request, sent=True)
+
+    mock_api.add("GET", "/api/v1/cli/token", lose_response)
+    # A retry would find the token gone and keep waiting for a done approval.
+    with pytest.raises(APIConnectionError, match="connection reset"):
+        client.auth.finish_login(LOGIN, poll_interval=0)
+    assert len(mock_api.requests) == 1
 
 
 def test_finish_login_denied(client: ReflexCloud, mock_api: MockAPI):

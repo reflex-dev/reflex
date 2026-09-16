@@ -113,14 +113,19 @@ class SecurityReviews:
             What the review found.
 
         Raises:
-            SecurityReviewFailedError: If the review could not be completed.
+            SecurityReviewFailedError: If the review could not be completed, or
+                completed without a result.
             SecurityReviewTimeoutError: If the review was still running when
                 ``timeout`` passed.
         """
         deadline = None if timeout is None else monotonic() + timeout
         while True:
             job = self.get(job_id)
-            if job.status == "complete" and job.result is not None:
+            if job.status == "complete":
+                if job.result is None:
+                    raise SecurityReviewFailedError(
+                        job_id, "completed without a result"
+                    )
                 return job.result
             if job.status == "error":
                 raise SecurityReviewFailedError(job_id, job.error)

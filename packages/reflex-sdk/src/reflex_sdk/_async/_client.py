@@ -126,6 +126,7 @@ class AsyncReflexCloud(BaseClient):
         json: Any = None,
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
+        retry: bool = True,
     ) -> T: ...
 
     @overload
@@ -139,6 +140,7 @@ class AsyncReflexCloud(BaseClient):
         json: Any = None,
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
+        retry: bool = True,
     ) -> None: ...
 
     async def _request(
@@ -151,6 +153,7 @@ class AsyncReflexCloud(BaseClient):
         json: Any = None,
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
+        retry: bool = True,
     ) -> Any:
         """Send an API request, retrying transient failures that are safe to retry.
 
@@ -163,6 +166,9 @@ class AsyncReflexCloud(BaseClient):
             json: The JSON body, if any.
             form: A form-encoded body, sent instead of ``json``.
             authenticated: Whether to send the access token.
+            retry: Whether a failure that is safe to retry may be retried. Turn it off
+                for a request whose response can be read only once, since a retry after
+                a lost response cannot get it back.
 
         Returns:
             The decoded response body.
@@ -185,13 +191,15 @@ class AsyncReflexCloud(BaseClient):
             try:
                 response = await self._transport.send(request)
             except TransportError as ex:
-                delay = self._retry_delay(request, attempt, sent=ex.sent)
+                delay = (
+                    self._retry_delay(request, attempt, sent=ex.sent) if retry else None
+                )
                 if delay is None:
                     raise connection_error(ex) from ex
             else:
                 if response.is_success:
                     return decode_response(response, cast)
-                delay = self._retry_delay(request, attempt, response)
+                delay = self._retry_delay(request, attempt, response) if retry else None
                 if delay is None:
                     raise status_error_from_response(response)
             attempt += 1

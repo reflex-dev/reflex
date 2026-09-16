@@ -128,6 +128,15 @@ def test_wait_raises_when_the_review_fails(client: ReflexCloud, mock_api: MockAP
     assert exc.value.job_id == JOB_ID
 
 
+def test_wait_raises_when_a_review_completes_without_a_result(
+    client: ReflexCloud, mock_api: MockAPI
+):
+    mock_api.add("GET", JOB_PATH, reply(200, json=_job("complete")))
+    with pytest.raises(SecurityReviewFailedError, match="without a result"):
+        client.security_reviews.wait(JOB_ID, poll_interval=0)
+    assert len(mock_api.requests) == 1
+
+
 def test_wait_timeout(client: ReflexCloud, mock_api: MockAPI):
     mock_api.add("GET", JOB_PATH, reply(200, json=_job("pending")))
     with pytest.raises(SecurityReviewTimeoutError):

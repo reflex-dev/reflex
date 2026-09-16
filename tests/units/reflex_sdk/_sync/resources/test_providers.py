@@ -81,9 +81,13 @@ def test_gcp_status_unconfigured(client: ReflexCloud, mock_api: MockAPI):
         f"/api/v1/orgs/{ORG_ID}/provider-accounts/gcp/status",
         reply(200, json=body),
     )
-    status = client.providers.gcp_status(uuid.UUID(ORG_ID))
-    assert not status.configured
-    assert status.connections == []
+    assert client.providers.gcp_status(uuid.UUID(ORG_ID)) == GcpStatus(
+        configured=False,
+        allowed=False,
+        project_id=None,
+        region=None,
+        connections=[],
+    )
 
 
 def test_accounts(client: ReflexCloud, mock_api: MockAPI):

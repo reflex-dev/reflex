@@ -136,6 +136,15 @@ async def test_wait_raises_when_the_review_fails(
     assert exc.value.job_id == JOB_ID
 
 
+async def test_wait_raises_when_a_review_completes_without_a_result(
+    client: AsyncReflexCloud, mock_api: MockAPI
+):
+    mock_api.add("GET", JOB_PATH, reply(200, json=_job("complete")))
+    with pytest.raises(SecurityReviewFailedError, match="without a result"):
+        await client.security_reviews.wait(JOB_ID, poll_interval=0)
+    assert len(mock_api.requests) == 1
+
+
 async def test_wait_timeout(client: AsyncReflexCloud, mock_api: MockAPI):
     mock_api.add("GET", JOB_PATH, reply(200, json=_job("pending")))
     with pytest.raises(SecurityReviewTimeoutError):
