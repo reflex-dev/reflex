@@ -3137,6 +3137,24 @@ def test_upload_root_collects_upload_and_event_providers() -> None:
     assert (90, "EventLoopProvider") in page_ctx.app_wrap_components
 
 
+def test_memo_body_collects_app_wraps_from_nested_children() -> None:
+    """A page reaches the app wraps buried inside an ``@rx.memo`` body.
+
+    The body compiles into its own module and never enters the page tree, so
+    the wrapper standing in for it has to report what the body requires --
+    otherwise an upload (or any other provider-backed component) inside a memo
+    silently loses its provider.
+    """
+
+    @rx.memo
+    def memoized_upload() -> Component:
+        return rx.box(rx.upload.root(rx.button("Select file")))
+
+    page_ctx = compile_page_context_for_app_wraps(rx.box(memoized_upload()))
+
+    assert (5, "UploadFilesProvider") in page_ctx.app_wrap_components
+
+
 @pytest.mark.parametrize(
     "react_strict_mode",
     [True, False],

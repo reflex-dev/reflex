@@ -40,6 +40,7 @@ from reflex_base.vars.base import Var
 from reflex_base.vars.function import FunctionStringVar, FunctionVar
 from reflex_base.vars.object import ObjectVar
 from reflex_components_core.base.bare import Bare
+from reflex_components_core.core.upload import UploadFilesProvider
 from reflex_components_radix.themes.layout.box import Box
 
 import reflex as rx
@@ -2338,3 +2339,102 @@ def test_custom_wrapper_named_memo_is_not_treated_as_react_memo():
     files, _ = compiler.compile_memo_components((definition,))
     code = "\n".join(content for _, content in files)
     assert "/*#__PURE__*/" not in code
+
+
+class _ProviderProbe(Component):
+    """A component that requests an app wrap via the class-level hook."""
+
+    library = "provider-probe"
+    tag = "ProviderProbe"
+
+    @staticmethod
+    def _get_app_wrap_components() -> dict[tuple[int, str], Component]:
+        """Request the probe provider at the app root.
+
+        Returns:
+            The app wrap components.
+        """
+        return {(60, "ProbeProvider"): Bare.create("probe-provider")}
+
+
+def test_memo_collects_app_wraps_from_nested_body_children():
+    """A memo body's descendants contribute their app wraps, not just its root.
+
+    The body compiles into its own module, so nothing else in the compile tree
+    ever sees those descendants -- the wrapper has to stand in for them.
+    """
+
+    @rx.memo
+    def nested_provider_memo() -> rx.Component:
+        return rx.box(rx.box(_ProviderProbe.create()))
+
+    assert (60, "ProbeProvider") in nested_provider_memo()._get_app_wrap_components()
+
+
+def test_memo_collects_app_wraps_from_body_root():
+    """A memo body whose root requests an app wrap still contributes it."""
+
+    @rx.memo
+    def root_provider_memo() -> rx.Component:
+        return _ProviderProbe.create()
+
+    assert (60, "ProbeProvider") in root_provider_memo()._get_app_wrap_components()
+
+
+def test_memo_collects_var_declared_app_wraps_from_body():
+    """``VarData.app_wraps`` inside a memo body reach the app root too.
+
+    ``rx.upload`` requests ``UploadFilesProvider`` through the var data on the
+    upload-context hook rather than a class-level hook, so a class-only copy
+    drops it at every depth -- including the body root.
+    """
+
+    @rx.memo
+    def upload_memo() -> rx.Component:
+        return rx.box(rx.upload(rx.text("drop"), id="memo-upload"))
+
+    wraps = upload_memo()._get_app_wrap_components()
+    assert any(
+        isinstance(wrapper, UploadFilesProvider) for wrapper in wraps.values()
+    ), wraps
+
+
+def test_memo_app_wraps_are_distinct_per_wrapper_class():
+    """Two memos must not share one ``_get_app_wrap_components`` function.
+
+    The page collector dedupes by ``type(comp)._get_app_wrap_components``
+    identity, so a single shared function would make only the first memo on a
+    page contribute its wraps.
+    """
+
+    @rx.memo
+    def first_provider_memo() -> rx.Component:
+        return rx.box(_ProviderProbe.create())
+
+    @rx.memo
+    def second_provider_memo() -> rx.Component:
+        return rx.box(rx.text("no provider here"))
+
+    first, second = first_provider_memo(), second_provider_memo()
+    assert (
+        type(first)._get_app_wrap_components
+        is not type(second)._get_app_wrap_components
+    )
+    assert (60, "ProbeProvider") in first._get_app_wrap_components()
+    assert (60, "ProbeProvider") not in second._get_app_wrap_components()
+
+
+def test_memo_app_wraps_reach_all_app_wrap_components():
+    """``_get_all_app_wrap_components`` sees a memo's body wraps.
+
+    ``App._app_root`` expands the app-wrap chain through this method, and that
+    chain contains memo components (the toaster provider, the sticky badge).
+    """
+
+    @rx.memo
+    def chained_provider_memo() -> rx.Component:
+        return rx.box(_ProviderProbe.create())
+
+    assert (60, "ProbeProvider") in rx.box(
+        chained_provider_memo()
+    )._get_all_app_wrap_components()
