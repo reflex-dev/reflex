@@ -1,12 +1,29 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
+import dataclasses
+import gc
+import pickle
 import threading
+import traceback
 import typing
+import weakref
 from typing import Any, Literal, TypeVar
 
 import pytest
+from reflex_base.utils import serializers
+from reflex_base.utils.exceptions import ReflexRuntimeError
 from reflex_base.utils.types import get_field_type
-from reflex_base.vars.base import EvenMoreBasicBaseState, Var, field
+from reflex_base.vars.base import (
+    GLOBAL_CACHE,
+    CachedVarOperation,
+    EvenMoreBasicBaseState,
+    LiteralVar,
+    Var,
+    _linearize_bases,
+    cached_property,
+    cached_property_no_lock,
+    field,
+)
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
@@ -181,3 +198,237 @@ def test_state_var_type_alias(alias_cls: type) -> None:
 
     assert isinstance(TypeAliasState.key, StringVar)
     assert TypeAliasState.key._var_type == Literal["day", "week"]
+
+
+@pytest.mark.parametrize(
+    "shape",
+    [
+        "single",
+        "diamond",
+        "shared_via_two_bases",
+        "base_of_a_base",
+        "three_bases",
+        "ancestor_listed_after_descendant",
+    ],
+)
+def test_linearize_bases_matches_real_mro(shape: str) -> None:
+    """The pre-creation linearization equals the MRO `type` builds.
+
+    Args:
+        shape: The inheritance shape to build.
+    """
+    a = type("A", (), {})
+    b = type("B", (a,), {})
+    c = type("C", (a,), {})
+    d = type("D", (), {})
+    bases: tuple[type, ...] = {
+        "single": (b,),
+        "diamond": (b, c),
+        "shared_via_two_bases": (type("E", (b,), {}), type("F", (c,), {})),
+        "base_of_a_base": (b, a),
+        "three_bases": (b, c, d),
+        # C3 keeps `a` ahead of `d` here, though `d` sits earlier in the first
+        # base's own MRO
+        "ancestor_listed_after_descendant": (type("G", (a, d), {}), a),
+    }[shape]
+
+    created = type("Created", bases, {})
+    assert _linearize_bases(bases) == list(created.__mro__[1:])
+
+
+def test_linearize_bases_without_bases() -> None:
+    """A class with no bases has nothing to inherit from."""
+    assert _linearize_bases(()) == []
+
+
+def test_linearize_bases_compares_by_identity() -> None:
+    """A metaclass defining __eq__ must not confuse the linearization."""
+
+    class EqMeta(type):
+        def __eq__(cls, other: object) -> bool:
+            return True
+
+        def __hash__(cls) -> int:
+            return 1
+
+    a = EqMeta("A", (), {})
+    b = EqMeta("B", (a,), {})
+    c = EqMeta("C", (a,), {})
+    created = EqMeta("Created", (b, c), {})
+
+    # `==` between these classes is always True, so compare element identities
+    assert all(
+        left is right
+        for left, right in zip(
+            _linearize_bases((b, c)), created.__mro__[1:], strict=True
+        )
+    )
+
+
+def test_serializer_attribute_error_is_not_masked() -> None:
+    """An AttributeError raised inside a serializer surfaces chained, with its own frame."""
+
+    class Point:
+        pass
+
+    def serialize_point(value: Point) -> str:
+        return value.label  # pyright: ignore[reportAttributeAccessIssue]
+
+    serializers.serializer(serialize_point)
+    try:
+        with pytest.raises(ReflexRuntimeError, match=r"_cached_var_name") as exc_info:
+            str(LiteralVar.create([Point()]))
+    finally:
+        serializers.SERIALIZERS.pop(Point)
+        serializers.SERIALIZER_TYPES.pop(Point)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+    cause = exc_info.value.__cause__
+    assert isinstance(cause, AttributeError)
+    assert "'label'" in str(cause)
+    assert traceback.extract_tb(cause.__traceback__)[-1].name == "serialize_point"
+
+
+def test_cached_var_attribute_error_is_chained() -> None:
+    """An AttributeError raised in a cached var computation surfaces as the cause."""
+
+    @dataclasses.dataclass(eq=False, frozen=True, slots=True)
+    class BrokenVar(CachedVarOperation, Var):
+        @cached_property_no_lock
+        def _cached_var_name(self) -> str:
+            return "broken"
+
+        @cached_property_no_lock
+        def _cached_get_all_var_data(self):
+            msg = "the real error message"
+            raise AttributeError(msg)
+
+    with pytest.raises(ReflexRuntimeError, match="the real error message") as exc_info:
+        BrokenVar(_js_expr="")._get_all_var_data()
+    assert isinstance(exc_info.value.__cause__, AttributeError)
+    assert str(exc_info.value.__cause__) == "the real error message"
+
+
+class _CachedValue:
+    """A mutable input with an explicitly resettable derived value."""
+
+    _reflex_cache_result: object
+
+    def __init__(self, value: str):
+        """Store the input.
+
+        Args:
+            value: The value to cache.
+        """
+        self.value = value
+
+    @cached_property
+    def result(self) -> list[str]:
+        """Return the derived value.
+
+        Returns:
+            A fresh list containing the input.
+        """
+        return [self.value]
+
+
+def test_cached_property_identity_and_reset():
+    """Local keys isolate instances and survive explicit cache resets."""
+    first = _CachedValue("first")
+    second = _CachedValue("second")
+    result = first.result
+    assert first.result is result
+    assert second.result == ["second"]
+    first.value = "changed"
+    assert first.result is result
+    GLOBAL_CACHE.clear()
+    assert first.result == ["changed"]
+    assert first.result is not result
+
+
+def test_cached_property_pickle_does_not_reuse_another_instances_key():
+    """Deserialized keys must not collide with live cache entries."""
+    original = _CachedValue("original")
+    assert original.result == ["original"]
+    restored = pickle.loads(pickle.dumps(original))
+    restored.value = "restored"
+    assert restored.result == ["restored"]
+    assert original.result == ["original"]
+
+
+def test_cached_property_releases_entry_with_instance():
+    """Destroying an instance removes its cached value."""
+    value = _CachedValue("temporary")
+    assert value.result == ["temporary"]
+    key = value._reflex_cache_result
+    reference = weakref.ref(value)
+    del value
+    gc.collect()
+    assert reference() is None
+    assert key not in GLOBAL_CACHE
+
+
+def test_literal_var_dispatch_follows_later_registrations():
+    """A literal class registered after a lookup wins the next lookup for its type."""
+
+    class Coordinate:
+        """A value no literal Var claims yet."""
+
+        def __init__(self, x: int):
+            """Store the coordinate.
+
+            Args:
+                x: The coordinate value.
+            """
+            self.x = x
+
+    from reflex_base.utils import serializers
+    from reflex_base.vars import base
+
+    var_subclasses = len(base._var_subclasses)
+    literal_subclasses = len(base._var_literal_subclasses)
+    try:
+
+        @serializers.serializer
+        def serialize_coordinate(value: Coordinate) -> str:
+            """Serialize a coordinate.
+
+            Args:
+                value: The coordinate.
+
+            Returns:
+                Its string form.
+            """
+            return f"coordinate-{value.x}"
+
+        assert str(LiteralVar.create(Coordinate(1))) == '"coordinate-1"'
+
+        class CoordinateVar(Var[Coordinate], python_types=Coordinate):
+            """A Var holding a coordinate."""
+
+        class LiteralCoordinateVar(LiteralVar, CoordinateVar):
+            """A literal coordinate Var."""
+
+            @classmethod
+            def create(cls, value: Coordinate, _var_data=None):
+                """Create the literal.
+
+                Args:
+                    value: The coordinate.
+                    _var_data: Unused metadata.
+
+                Returns:
+                    A Var with the coordinate's expression.
+                """
+                return Var(_js_expr=f"[{value.x}]", _var_type=Coordinate)
+
+        assert str(LiteralVar.create(Coordinate(2))) == "[2]"
+    finally:
+        serializers.SERIALIZERS.pop(Coordinate)
+        serializers.SERIALIZER_TYPES.pop(Coordinate)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+        del base._var_subclasses[var_subclasses:]
+        del base._var_literal_subclasses[literal_subclasses:]
+        base._clear_var_subclass_lookup_caches()
+        base._literal_var_by_type.clear()

@@ -1,5 +1,7 @@
 """Integration tests for var operations."""
 
+import os
+import sys
 from collections.abc import Generator
 from typing import TypeVar
 
@@ -14,10 +16,16 @@ from reflex.testing import AppHarness
 def DynamicComponents():
     """App with var operations."""
     import reflex as rx
+    from reflex.components.dynamic import bundle_library
+
+    bundle_library(rx.text())
+    bundle_library(rx.hstack(rx.el.div(rx.icon("banana"))))
 
     class DynamicComponentsState(rx.State):
         value: int = 10
         count: int = 0
+        icon_name: str = "apple"
+        activated: bool = False
 
         button: rx.Component = rx.button(
             "Click me",
@@ -43,6 +51,11 @@ def DynamicComponents():
                 count: The new counter value.
             """
             self.count = count
+
+        @rx.event
+        def toggle_activated(self):
+            """Show or hide a component absent from the initial state."""
+            self.activated = not self.activated
 
         @rx.var
         def client_token_component(self) -> rx.Component:
@@ -84,6 +97,42 @@ def DynamicComponents():
                 ),
             )
 
+        @rx.var
+        def icon_component(self) -> rx.Component:
+            """Get icons with default and named bundled subpath imports.
+
+            Returns:
+                Static and reactive Lucide icons rendered dynamically.
+            """
+            return rx.hstack(
+                rx.icon("apple", id="dynamic-icon"),
+                rx.icon(DynamicComponentsState.icon_name, id="dynamic-named-icon"),
+            )
+
+        @rx.var
+        def delayed_counter(self) -> rx.Component:
+            """Render an explicitly bundled icon only after activation.
+
+            Returns:
+                A delayed counter with working event handlers, or an initial icon.
+            """
+            if not self.activated:
+                return rx.icon("tag", color="red", id="initial-icon")
+            return rx.hstack(
+                rx.icon("banana", color="green", id="delayed-icon"),
+                rx.button(
+                    "-",
+                    id="delayed-decrement",
+                    on_click=DynamicComponentsState.set_count(self.count - 1),
+                ),
+                rx.text(self.count, id="delayed-count"),
+                rx.button(
+                    "+",
+                    id="delayed-increment",
+                    on_click=DynamicComponentsState.set_count(self.count + 1),
+                ),
+            )
+
     app = rx.App()
 
     def factorial(n: int) -> int:
@@ -97,6 +146,13 @@ def DynamicComponents():
             DynamicComponentsState.client_token_component,
             DynamicComponentsState.button,
             DynamicComponentsState.counter_component,
+            DynamicComponentsState.icon_component,
+            rx.button(
+                "Activate",
+                id="activate",
+                on_click=DynamicComponentsState.toggle_activated,
+            ),
+            DynamicComponentsState.delayed_counter,
             rx.text(
                 DynamicComponentsState._evaluate(
                     lambda state: factorial(state.value), of_type=int
@@ -151,6 +207,12 @@ def driver(dynamic_components: AppHarness):
         driver.quit()
 
 
+# TODO: drop the skip once the dill release fixing
+# https://github.com/uqfoundation/dill/issues/753 lands in uv.lock
+@pytest.mark.skipif(
+    sys.version_info >= (3, 15) and bool(os.environ.get("REFLEX_REDIS_URL")),
+    reason="dill <= 0.4.1 cannot serialize functions on Python 3.15",
+)
 def test_dynamic_components(driver, dynamic_components: AppHarness):
     """Test that the var operations produce the right results.
 
@@ -176,6 +238,11 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
     )
     assert factorial.text == "3628800"
 
+    for icon_id in ("dynamic-icon", "dynamic-named-icon"):
+        AppHarness.poll_for_or_raise_timeout(
+            lambda icon_id=icon_id: driver.find_element(By.ID, icon_id)
+        )
+
     count = AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "count")
     )
@@ -191,4 +258,24 @@ def test_dynamic_components(driver, dynamic_components: AppHarness):
     decrement.click()
     assert AppHarness.poll_for_or_raise_timeout(
         lambda: driver.find_element(By.ID, "count").text == "0"
+    )
+
+    assert not driver.find_elements(By.ID, "delayed-icon")
+    assert driver.find_element(By.ID, "initial-icon")
+    driver.find_element(By.ID, "activate").click()
+    AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "delayed-icon")
+    )
+    driver.find_element(By.ID, "delayed-increment").click()
+    AppHarness.expect(lambda: driver.find_element(By.ID, "delayed-count").text == "1")
+    driver.find_element(By.ID, "delayed-decrement").click()
+    AppHarness.expect(lambda: driver.find_element(By.ID, "delayed-count").text == "0")
+    driver.find_element(By.ID, "activate").click()
+    AppHarness.expect(lambda: not driver.find_elements(By.ID, "delayed-icon"))
+    AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "initial-icon")
+    )
+    driver.find_element(By.ID, "activate").click()
+    AppHarness.poll_for_or_raise_timeout(
+        lambda: driver.find_element(By.ID, "delayed-icon")
     )

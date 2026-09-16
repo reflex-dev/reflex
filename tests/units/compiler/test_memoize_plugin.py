@@ -22,6 +22,7 @@ from reflex_base.components.memoize_helpers import (
 from reflex_base.constants.compiler import MemoizationDisposition, MemoizationMode
 from reflex_base.plugins import CompileContext, CompilerHooks, PageContext
 from reflex_base.utils import memo_paths
+from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Field, LiteralVar, Var, field
 from reflex_components_core.base.bare import Bare
@@ -963,8 +964,8 @@ def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
     matched_b = find_emitted("memo_collision_test/module_b.jsx")
     assert matched_a is not None, f"missing module_a memo file in {sorted(emitted)}"
     assert matched_b is not None, f"missing module_b memo file in {sorted(emitted)}"
-    assert f"export const {symbol_a} = memo" in matched_a
-    assert f"export const {symbol_b} = memo" in matched_b
+    assert f"const {symbol_a} = memo" in matched_a
+    assert f"const {symbol_b} = memo" in matched_b
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:
@@ -1841,6 +1842,32 @@ def test_moment_with_stateful_var_child_does_not_wrap_bare_independently() -> No
     )
 
 
+def test_moment_uses_react_moment_2_props_and_dependencies() -> None:
+    """The wrapper exposes the react-moment 2.x props and dependencies."""
+    assert Moment.library == "react-moment@2.0.2"
+    assert Moment.lib_dependencies == [
+        "moment@2.30.1",
+    ]
+
+    moment = Moment.create(
+        "2026-08-30",
+        trim="large",
+        parse=["YYYY-MM-DD"],
+    )
+    props = moment.render()["props"]
+    assert 'trim:"large"' in props
+    assert 'parse:["YYYY-MM-DD"]' in props
+
+    duration_from_now = Moment.create(
+        "2026-08-30",
+        duration_from_now=True,
+    )
+    assert duration_from_now.add_imports()["moment-duration-format@2.2.2"] == ImportVar(
+        tag=None
+    )
+    assert "moment-duration-format@2.2.2" not in moment.add_imports()
+
+
 def test_moment_memo_body_renders_text_interpolation_not_bare_component() -> None:
     """The moment's memo body must interpolate the state Var as text, not a Bare wrapper."""
     ctx, _page_ctx = _compile_single_page(
@@ -2593,3 +2620,28 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         "for Plain, one for WithProp, and one snapshot wrapper for the "
         f"LeafComponent boundary. Got: {sorted(ctx.memoize_wrappers)}"
     )
+
+
+def test_svg_boundary_shares_hook_var_between_children() -> None:
+    """Elements under one ``rx.el.svg`` read a hook var from a single hook call."""
+    from reflex_base.vars.special import use_id
+    from reflex_components_core.el.elements.media import LinearGradient, Rect, Svg
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    def page() -> Component:
+        gradient_id = use_id()
+        return Svg.create(
+            LinearGradient.create(id=gradient_id),
+            Rect.create(fill=f"url(#{gradient_id})"),
+        )
+
+    ctx, page_ctx = _compile_single_page(page)
+    memo_files, _ = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values())
+    )
+    memo_code = "\n".join(code for _, code in memo_files)
+
+    assert len(ctx.memoize_wrappers) == 1
+    assert len(re.findall(r"= useId_\w+\(\);", memo_code)) == 1
+    assert not any("useId" in hook for hook in page_ctx.hooks)

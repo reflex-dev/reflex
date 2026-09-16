@@ -150,7 +150,7 @@ def form_input1():
     )
 ```
 
-To learn more about how to use forms in the [Form](/docs/library/forms/form) docs.
+To learn more about how to use forms in the [Form](/docs/library/forms/form/) docs.
 
 ## Setting a value without using a State var
 

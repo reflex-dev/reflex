@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import sys
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from copy import copy
 from enum import Enum
 from functools import cache, partial, update_wrapper
@@ -42,6 +42,7 @@ from reflex_base.constants.state import CAMEL_CASE_MEMO_MARKER
 from reflex_base.event import EventChain, EventHandler, no_args_event_spec, run_script
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils import console, format, memo_paths
+from reflex_base.utils.deterministic_hash import deterministic_hash
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import safe_issubclass, typehint_issubclass
 from reflex_base.vars import VarData
@@ -1834,6 +1835,91 @@ def _create_component_wrapper(
     return _MemoComponentWrapper(definition)
 
 
+def _component_artifacts(component: Component, *, recursive: bool) -> Iterator[Any]:
+    """Yield everything besides the render that identifies a memo body.
+
+    Two components can render identical JSX and still compile to different
+    modules -- the classic case is a differing ``on_mount``, which ``_render``
+    omits but which shows up as a lifecycle hook -- so everything else
+    :func:`~reflex.compiler.utils.compile_experimental_component_memo` puts in
+    the body has to be part of the hash too: imports, hooks, custom code,
+    dynamic imports, and app-wrap components.
+
+
+    Args:
+        component: The component whose memo body is being hashed.
+        recursive: Whether descendants' artifacts belong to this memo body.
+            False for a passthrough memo, whose descendants render at the call
+            site behind the ``{children}`` hole, so only the component's own
+            artifacts identify the body.
+
+    Yields:
+        Each artifact, in a fixed order.
+    """
+    # The tag prefix carries the qualname but not the module, and a dotted
+    # module path in the prefix would stretch every generated filename.
+    cls = type(component)
+    yield f"{cls.__module__}.{cls.__qualname__}"
+    if recursive:
+        yield component._get_all_imports()
+        yield component._get_all_hooks_internal()
+        yield component._get_all_hooks()
+        yield component._get_all_custom_code()
+        # A set: sort it so the encoding does not ride on iteration order.
+        yield sorted(component._get_all_dynamic_imports())
+        yield component._get_all_app_wrap_components()
+    else:
+        yield component._get_imports()
+        yield component._get_hooks_internal()
+        yield component._get_hooks()
+        yield component._get_added_hooks()
+        yield component._get_custom_code()
+        # ``_get_all_custom_code`` folds in ``add_custom_code`` on the
+        # recursive side; the own-node side has to ask for it explicitly.
+        for clz in component._iter_parent_classes_with_method("add_custom_code"):
+            yield clz.add_custom_code(component)
+        yield component._get_dynamic_imports()
+        yield component._get_app_wrap_components()
+
+
+def component_hash(component: Component, *, recursive: bool) -> str:
+    """Get a stable content hash for a component's memo body.
+
+    Args:
+        component: The component being memoized.
+        recursive: Whether the memo body carries the component's whole subtree
+            (a snapshot memo) rather than a ``{children}`` hole.
+
+    Returns:
+        The hex digest content hash.
+    """
+    return deterministic_hash(
+        component.render(), *_component_artifacts(component, recursive=recursive)
+    )
+
+
+def memo_tag(component: Component) -> str:
+    """Compute a stable tag name for the memo wrapping ``component``.
+
+    The class qualname is in the tag prefix so distinct classes that render
+    identically never share a tag. Sharing one would reuse a single cached memo
+    wrapper across classes and drop the later class's class-level metadata,
+    such as the ``_get_app_wrap_components`` providers that must reach the app
+    root.
+
+    Args:
+        component: The component being memoized.
+
+    Returns:
+        The stable tag name.
+    """
+    recursive = get_memoization_strategy(component) is MemoizationStrategy.SNAPSHOT
+    return format.format_state_name(
+        f"{type(component).__qualname__}_{component.tag or 'Comp'}_"
+        f"{component_hash(component, recursive=recursive)}"
+    ).capitalize()
+
+
 def create_passthrough_component_memo(
     component: Component,
     source_module: str | None = None,
@@ -1847,7 +1933,7 @@ def create_passthrough_component_memo(
     through the memo pipeline instead of emitting ad-hoc page-local
     ``React.memo`` declarations.
 
-    The exported memo name is derived from ``component._compute_memo_tag()``
+    The exported memo name is derived from :func:`memo_tag`
     after the ``{children}`` hole has been substituted into the wrapped
     component's children (passthrough mode), so two call-sites differing only
     in their children — whose generated memo bodies are identical — collapse
@@ -1918,7 +2004,7 @@ def create_passthrough_component_memo(
             "normalizes to `rx.Component`."
         )
         raise TypeError(msg)
-    tag = preview._compute_memo_tag()
+    tag = memo_tag(preview)
 
     passthrough.__name__ = format.to_snake_case(tag)
     passthrough.__qualname__ = passthrough.__name__

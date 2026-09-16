@@ -6,7 +6,6 @@ import builtins
 import contextlib
 import copy
 import dataclasses
-import enum
 import functools
 import json
 import logging
@@ -14,8 +13,7 @@ import operator
 import typing
 from abc import ABC, ABCMeta, abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from dataclasses import _MISSING_TYPE, MISSING
-from hashlib import md5
+from dataclasses import MISSING
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
@@ -25,7 +23,7 @@ from reflex_base import constants
 from reflex_base.breakpoints import Breakpoints
 from reflex_base.components.dynamic import load_dynamic_serializer
 from reflex_base.components.field import BaseField, FieldBasedMeta
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import Dirs, EventTriggers, Hooks, Imports, MemoizationMode
 from reflex_base.constants.compiler import SpecialAttributes
 from reflex_base.event import (
@@ -38,6 +36,7 @@ from reflex_base.event import (
 )
 from reflex_base.style import Style, format_as_emotion
 from reflex_base.utils import format, imports, types
+from reflex_base.utils.compat import MISSING_TYPE
 from reflex_base.utils.imports import ImportDict, ImportVar, ParsedImportDict
 from reflex_base.vars import VarData
 from reflex_base.vars.base import (
@@ -66,10 +65,10 @@ class ComponentField(BaseField[FIELD_TYPE]):
 
     def __init__(
         self,
-        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_javascript: bool | None = None,
-        annotated_type: type[Any] | _MISSING_TYPE = MISSING,
+        annotated_type: type[Any] | MISSING_TYPE = MISSING,
         doc: str | None = None,
     ) -> None:
         """Initialize the field.
@@ -131,7 +130,7 @@ class ComponentField(BaseField[FIELD_TYPE]):
 
 
 def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: FIELD_TYPE | MISSING_TYPE = MISSING,
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_javascript_property: bool | None = None,
     doc: str | None = None,
@@ -608,88 +607,6 @@ def _components_from(
     if isinstance(component_or_var, BaseComponent):
         return (component_or_var,)
     return ()
-
-
-def _hash_str(value: str) -> str:
-    return md5(f'"{value}"'.encode(), usedforsecurity=False).hexdigest()
-
-
-def _update_deterministic_hash(hasher: Any, value: object) -> None:
-    """Feed ``value`` into ``hasher`` using a self-delimiting, type-tagged encoding.
-
-    Each branch writes a distinct type tag plus length-prefixed payload, which
-    keeps the encoding injective without building intermediate strings — the
-    nested ``str([...])`` approach this replaces was the dominant cost of
-    ``_deterministic_hash`` (~4x speedup on synthetic, ~2x on real renders).
-
-    Args:
-        hasher: A ``hashlib`` hasher (must accept ``.update(bytes)``).
-        value: The value to fold into the hasher.
-
-    Raises:
-        TypeError: If the value is not hashable.
-    """
-    if value is None:
-        hasher.update(b"N")
-    elif isinstance(value, bool):
-        hasher.update(b"T" if value else b"F")
-    elif isinstance(value, (int, float, enum.Enum)):
-        hasher.update(b"n")
-        hasher.update(str(value).encode())
-    elif isinstance(value, str):
-        encoded = value.encode()
-        hasher.update(b"s")
-        hasher.update(len(encoded).to_bytes(8, "little"))
-        hasher.update(encoded)
-    elif isinstance(value, dict):
-        items = sorted(value.items(), key=operator.itemgetter(0))
-        hasher.update(b"d")
-        hasher.update(len(items).to_bytes(8, "little"))
-        for k, v in items:
-            _update_deterministic_hash(hasher, k)
-            _update_deterministic_hash(hasher, v)
-    elif isinstance(value, (tuple, list)):
-        hasher.update(b"l")
-        hasher.update(len(value).to_bytes(8, "little"))
-        for item in value:
-            _update_deterministic_hash(hasher, item)
-    elif isinstance(value, Var):
-        hasher.update(b"v")
-        _update_deterministic_hash(hasher, value._js_expr)
-        _update_deterministic_hash(hasher, value._get_all_var_data())
-    elif dataclasses.is_dataclass(value):
-        fields = dataclasses.fields(value)
-        hasher.update(b"D")
-        hasher.update(len(fields).to_bytes(8, "little"))
-        for field in fields:
-            hasher.update(field.name.encode())
-            _update_deterministic_hash(hasher, getattr(value, field.name))
-    elif isinstance(value, BaseComponent):
-        hasher.update(b"C")
-        _update_deterministic_hash(hasher, value.render())
-    else:
-        msg = (
-            f"Cannot hash value `{value}` of type `{type(value).__name__}`. "
-            "Only BaseComponent, Var, VarData, dict, str, tuple, and enum.Enum are supported."
-        )
-        raise TypeError(msg)
-
-
-def _deterministic_hash(value: object) -> str:
-    """Hash a rendered dictionary.
-
-    Args:
-        value: The dictionary to hash.
-
-    Returns:
-        The hash of the dictionary.
-
-    Raises:
-        TypeError: If the value is not hashable.
-    """
-    hasher = md5(usedforsecurity=False)
-    _update_deterministic_hash(hasher, value)
-    return hasher.hexdigest()
 
 
 PROHIBITED_LIBRARY_IMPORTS: dict[str, str] = {
@@ -1227,7 +1144,7 @@ class Component(BaseComponent, ABC):
             name = '"' + name + '"'
         return name
 
-    def _render(self, props: dict[str, Any] | None = None) -> Tag:
+    def _render(self, props: dict[str, Any] | None = None) -> CommonTag:
         """Define how to render the component in React.
 
         Args:
@@ -1245,7 +1162,7 @@ class Component(BaseComponent, ABC):
         if props is None:
             # Add component props to the tag.
             props = {
-                attr.removesuffix("_"): getattr(self, attr) for attr in self.get_props()
+                prop.removesuffix("_"): value for prop, value in self._iter_set_props()
             }
 
             # Add ref to element if `ref` is None and `id` is not None.
@@ -1287,6 +1204,39 @@ class Component(BaseComponent, ABC):
 
     @classmethod
     @functools.cache
+    def _get_defaulted_props(cls) -> frozenset[str]:
+        """Get the props whose field supplies a value when unset.
+
+        Returns:
+            The props with a default other than ``None`` or a default factory.
+        """
+        return frozenset(
+            prop
+            for prop, field_ in cls.get_js_fields().items()
+            if field_.default_factory is not None
+            or (field_.default is not MISSING and field_.default is not None)
+        )
+
+    def _iter_set_props(self) -> Iterator[tuple[str, Any]]:
+        """Walk the props that carry a value, in declaration order.
+
+        An unset prop resolves to ``None`` through its field descriptor and
+        every consumer drops ``None``, so only props present on the instance
+        or backed by a class default are read.
+
+        Yields:
+            Each prop name with its value.
+        """
+        values = self.__dict__
+        defaulted = self._get_defaulted_props()
+        for prop in self.get_props():
+            if prop in values:
+                yield prop, values[prop]
+            elif prop in defaulted:
+                yield prop, getattr(self, prop)
+
+    @classmethod
+    @functools.cache
     def get_initial_props(cls) -> set[str]:
         """Get the initial props to set for the component.
 
@@ -1299,9 +1249,8 @@ class Component(BaseComponent, ABC):
     def _get_component_prop_property(self) -> Sequence[BaseComponent]:
         return [
             component
-            for prop in self.get_props()
-            if (value := getattr(self, prop)) is not None
-            and isinstance(value, (BaseComponent, Var))
+            for _, value in self._iter_set_props()
+            if isinstance(value, (BaseComponent, Var))
             for component in _components_from(value)
         ]
 
@@ -1522,79 +1471,11 @@ class Component(BaseComponent, ABC):
         except AttributeError:
             pass
         tag = self._render()
-        rendered_dict = dict(
-            tag.set(
-                children=[child.render() for child in self.children],
-            )
-        )
+        children = [child.render() for child in self.children]
+        rendered_dict = tag.render(children)
         self._replace_prop_names(rendered_dict)
         self._cached_render_result = rendered_dict
         return rendered_dict
-
-    def _get_component_hash(self, shallow: bool = False) -> str:
-        """Get a stable content hash for this component.
-
-        The hash incorporates the rendered JSX dict plus the component's
-        recursive imports, hooks (including internal lifecycle hooks),
-        custom code, and app-wrap components, so two components that
-        compile to semantically distinct JS modules hash differently
-        even when their ``render()`` output happens to match (e.g. two
-        components differing only in ``on_mount``, which is excluded
-        from ``_render`` props but lives in the lifecycle hook).
-
-        Args:
-            shallow: If True, only hash the component's own render output and
-                directly defined hooks, imports, custom code, and app-wrap
-                components, excluding any of those from child components.
-
-        Returns:
-            The hex digest content hash.
-        """
-        hasher = md5(usedforsecurity=False)
-        _update_deterministic_hash(hasher, self.render())
-        if shallow:
-            # For non-snapshot strategies, we only hash the component's own hooks, imports, custom code, and app-wrap components
-            _update_deterministic_hash(hasher, dict(self._get_imports()))
-            _update_deterministic_hash(hasher, dict(self._get_hooks_internal()))
-            _update_deterministic_hash(hasher, dict(self._get_added_hooks()))
-            _update_deterministic_hash(hasher, self._get_hooks())
-            _update_deterministic_hash(hasher, self._get_custom_code())
-            _update_deterministic_hash(hasher, dict(self._get_app_wrap_components()))
-        else:
-            _update_deterministic_hash(hasher, dict(self._get_all_imports()))
-            _update_deterministic_hash(hasher, dict(self._get_all_hooks_internal()))
-            _update_deterministic_hash(hasher, dict(self._get_all_hooks()))
-            _update_deterministic_hash(hasher, dict(self._get_all_custom_code()))
-            _update_deterministic_hash(
-                hasher, dict(self._get_all_app_wrap_components())
-            )
-        return hasher.hexdigest()
-
-    def _compute_memo_tag(self) -> str:
-        """Compute a stable tag name for memoizing this component.
-
-        The class qualname is encoded directly in the tag prefix so that
-        distinct classes which happen to render identically never collide
-        on a tag. Tag collision would silently share a single cached memo
-        wrapper across classes and drop the later class's class-level
-        metadata (e.g. ``_get_app_wrap_components``, which carries
-        providers like ``UploadFilesProvider`` that must reach the app
-        root).
-
-        Returns:
-            The stable tag name.
-        """
-        from reflex_base.components.memoize_helpers import (
-            MemoizationStrategy,
-            get_memoization_strategy,
-        )
-
-        comp_hash = self._get_component_hash(
-            shallow=get_memoization_strategy(self) == MemoizationStrategy.PASSTHROUGH
-        )
-        return format.format_state_name(
-            f"{type(self).__qualname__}_{self.tag or 'Comp'}_{comp_hash}"
-        ).capitalize()
 
     def _replace_prop_names(self, rendered_dict: dict) -> None:
         """Replace the prop names in the render dictionary.
@@ -1730,8 +1611,7 @@ class Component(BaseComponent, ABC):
             vars.extend(event_vars)
 
         # Get Vars associated with component props.
-        for prop in self.get_props():
-            prop_var = getattr(self, prop)
+        for _, prop_var in self._iter_set_props():
             if isinstance(prop_var, Var):
                 vars.append(prop_var)
 
