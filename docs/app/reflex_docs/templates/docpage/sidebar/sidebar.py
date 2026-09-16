@@ -246,6 +246,7 @@ def create_sidebar_section(
     index: rx.vars.ArrayVar[list[int]],
     url: rx.vars.StringVar[str],
     connected_line: bool = False,
+    guide_margin_class: str = "ml-[2.5rem]",
 ) -> rx.Component:
     """Render a titled section of the sidebar."""
     return docs_sidebar_section(
@@ -257,6 +258,7 @@ def create_sidebar_section(
                 item=item,
                 index=index,
                 url=url,
+                guide_margin_class=guide_margin_class,
             )
             for item_index, item in enumerate(items)
         ),
@@ -473,6 +475,7 @@ def sidebar_comp(
             api_reference,
             api_reference_index,
             url,
+            guide_margin_class="ml-[1.5rem] [&_.pointer-events-none]:hidden",
         ),
         create_sidebar_section(
             "Changelog",
@@ -480,7 +483,7 @@ def sidebar_comp(
             changelog_items,
             changelog_index,
             url,
-            connected_line=True,
+            guide_margin_class="ml-[1.5rem] [&_.pointer-events-none]:hidden",
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
     )

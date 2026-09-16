@@ -494,7 +494,18 @@ def docpage(
                             ),
                         ),
                         rx.box(
-                            rx.el.article(comp, class_name="[&>div]:!p-0"),
+                            rx.el.article(
+                                comp,
+                                class_name="[&>div]:!p-0"
+                                + (
+                                    " [&_.rt-TableRoot]:!border-0 [&_.rt-TableRoot]:!rounded-none"
+                                    " [&_.rt-TableCell]:!shadow-none [&_.rt-TableCell]:!border-b [&_.rt-TableCell]:!border-border"
+                                    " [&_.rt-TableCell]:!text-sm [&_.rt-TableCell]:!leading-6 [&_.rt-TableCell]:!text-foreground"
+                                    " [&_.rt-TableCell_p]:!text-sm [&_.rt-TableCell_p]:!leading-6 [&_.rt-TableCell_p]:!my-0"
+                                    if path.startswith("/api-reference/")
+                                    else ""
+                                ),
+                            ),
                             rx.el.nav(
                                 *links,
                                 class_name="flex flex-row gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",

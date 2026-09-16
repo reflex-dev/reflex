@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 import inspect
-import itertools
-from functools import partial
 from typing import Any, List, Optional, Tuple
 
 import reflex as rx
 from reflex.config import EnvironmentVariables
+from reflex_docgen import FieldDocumentation
 
 from reflex_docs.docgen_pipeline import render_markdown
 from reflex_docs.templates.docpage import docpage, h1_comp, h2_comp
 
-from .source import stacked_description_header, stacked_description_rows
+from .api_reference_layout import field_row
 
 
 class EnvVarDocs:
@@ -58,61 +57,19 @@ class EnvVarDocs:
         return None
 
     @classmethod
-    def generate_env_var_table(cls, include_internal: bool = False) -> rx.Component:
-        """Generate a table of environment variables.
-
-        Args:
-            include_internal: Whether to include internal environment variables.
-
-        Returns:
-            A Reflex component containing the table.
-        """
-        env_vars = cls.get_all_env_vars()
-
-        if not include_internal:
-            env_vars = [
-                (name, var)
-                for name, var in env_vars
-                if not getattr(var, "name", "").startswith("__")
-            ]
-
-        env_vars.sort(key=lambda x: x[0])
-
-        def env_var_rows(name: str, var: Any) -> tuple[rx.Component, rx.Component]:
-            type_name = str(
-                var.type_.__name__ if hasattr(var.type_, "__name__") else str(var.type_)
+    def get_documented_fields(cls) -> list[FieldDocumentation]:
+        """Represent public environment variables using the shared reference metadata."""
+        return [
+            FieldDocumentation(
+                name=var.name,
+                type=var.type_,
+                type_display=str(getattr(var.type_, "__name__", var.type_)),
+                default=str(var.default),
+                description=cls.get_env_var_docstring(name),
             )
-            return stacked_description_rows(
-                [
-                    (rx.code(var.name, class_name="code-style"), "@4xl:w-[20%]"),
-                    (rx.code(type_name, class_name="code-style"), "@4xl:w-[15%]"),
-                    (
-                        rx.code(str(var.default), class_name="code-style"),
-                        "@4xl:w-[15%]",
-                    ),
-                ],
-                partial(render_markdown, cls.get_env_var_docstring(name) or ""),
-                "4xl",
-                description_cell_class="@4xl:w-[50%]",
-            )
-
-        return rx.box(
-            rx.table.root(
-                stacked_description_header(
-                    ["Name", "Type", "Default", "Description"],
-                    "4xl",
-                ),
-                rx.table.body(
-                    *itertools.chain.from_iterable(
-                        env_var_rows(name, var) for name, var in env_vars
-                    ),
-                ),
-                width="100%",
-                overflow_x="visible",
-                class_name="w-full",
-            ),
-            class_name="@container",
-        )
+            for name, var in sorted(cls.get_all_env_vars())
+            if not var.name.startswith("__")
+        ]
 
 
 def env_vars_page():
@@ -121,12 +78,14 @@ def env_vars_page():
     Returns:
         A Reflex component containing the documentation.
     """
-    return rx.box(
+    fields = EnvVarDocs.get_documented_fields()
+    toc = [(2, "Variables"), *((3, field.name) for field in fields)]
+    return toc, rx.el.div(
         h1_comp(text="Environment Variables"),
-        rx.code(
-            "reflex.config.EnvironmentVariables", class_name="code-style text-[18px]"
+        rx.el.p(
+            "reflex.config.EnvironmentVariables",
+            class_name="mb-5 font-mono text-sm text-muted-foreground",
         ),
-        rx.divider(),
         render_markdown(
             """
             Reflex provides a number of environment variables that can be used to configure the behavior of your application.
@@ -135,14 +94,16 @@ def env_vars_page():
             This page documents the environment variables that are not config parameters. Environment variables that override `rx.Config` parameters (e.g. `REFLEX_FRONTEND_PORT`) are listed in the [config reference](/docs/api-reference/config/).
             """
         ),
-        h2_comp(text="Environment Variables"),
-        EnvVarDocs.generate_env_var_table(include_internal=False),
+        h2_comp(text="Variables"),
+        rx.el.div(
+            *(field_row(field) for field in fields), class_name="border-t border-border"
+        ),
+        class_name="min-w-0 api-reference-detail",
     )
 
 
 env_vars_doc = docpage(
     "/api-reference/environment-variables/",
     "Environment Variables",
-    right_sidebar=False,
 )(env_vars_page)
 env_vars_doc.title = "Environment Variables"
