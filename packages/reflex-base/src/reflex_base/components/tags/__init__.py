@@ -3,6 +3,6 @@
 from .cond_tag import CondTag
 from .iter_tag import IterTag
 from .match_tag import MatchTag
-from .tag import Tag
+from .tag import CommonTag, Tag
 
-__all__ = ["CondTag", "IterTag", "MatchTag", "Tag"]
+__all__ = ["CommonTag", "CondTag", "IterTag", "MatchTag", "Tag"]
