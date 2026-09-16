@@ -148,12 +148,15 @@ def _retry_delay(
     headers: dict[str, str] | None = None,
     *,
     sent: bool = True,
+    idempotent: bool | None = None,
 ) -> float | None:
     request = _request(method)
     response = (
         None if status_code is None else reply(status_code, headers=headers)(request)
     )
-    return _client(max_retries=2)._retry_delay(request, attempt, response, sent=sent)
+    return _client(max_retries=2)._retry_delay(
+        request, attempt, response, sent=sent, idempotent=idempotent
+    )
 
 
 @pytest.mark.parametrize("method", ["GET", "HEAD", "OPTIONS", "PUT"])
@@ -177,6 +180,23 @@ def test_retry_any_method_the_server_did_not_process(method: str):
     assert _retry_delay(method, sent=False) is not None
     assert _retry_delay(method, status_code=408) is not None
     assert _retry_delay(method, status_code=429) is not None
+
+
+@pytest.mark.parametrize("status_code", [None, 500, 502, 503, 504])
+def test_no_retry_a_non_idempotent_get_after_ambiguous_failures(
+    status_code: int | None,
+):
+    assert _retry_delay("GET", status_code=status_code, idempotent=False) is None
+
+
+def test_retry_a_non_idempotent_get_the_server_did_not_process():
+    assert _retry_delay("GET", sent=False, idempotent=False) is not None
+    assert _retry_delay("GET", status_code=429, idempotent=False) is not None
+
+
+@pytest.mark.parametrize("status_code", [None, 503])
+def test_retry_an_idempotent_post_after_ambiguous_failures(status_code: int | None):
+    assert _retry_delay("POST", status_code=status_code, idempotent=True) is not None
 
 
 def test_no_retry_after_max_retries():
