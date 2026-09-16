@@ -77,6 +77,10 @@ auto-memoized independently. This is useful when the explicit memo provides a
 reusable module boundary but state reads should still re-render as close to
 their use as possible:
 
+Memo bodies with parameters stay in one scope so extracted components cannot
+lose access to those parameters. Children passed by the caller can still be
+auto-memoized independently.
+
 ```python
 class MetricsState(rx.State):
     request_count: int = 0

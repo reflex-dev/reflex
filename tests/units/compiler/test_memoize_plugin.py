@@ -703,9 +703,24 @@ def test_recursive_user_memo_auto_memoizes_stateful_body_descendant() -> None:
     files, _imports = compile_memo_components((definition,))
     code = "\n".join(content for _, content in files)
     outer_symbol = memo_paths.mirrored_symbol("RecursiveDashboard", __name__)
-    assert f"export const {outer_symbol} = memo(" in code
+    assert f"const {outer_symbol} = memo(" in code
     assert code.count("export const ") == 2
     assert '.displayName = "WithProp";' in code
+
+
+def test_recursive_user_memo_keeps_captured_parameters_in_scope() -> None:
+    """Extraction must not move local memo parameters into an unbound scope."""
+    from reflex.compiler.compiler import compile_memo_components
+
+    @rx.memo(recursive=True)
+    def parameterized_dashboard(label: rx.Var[str]) -> Component:
+        return Plain.create(WithProp.create(label=label.to(str) + STATE_VAR))
+
+    definition = MEMOS["ParameterizedDashboard", __name__]
+    files, _imports = compile_memo_components((definition,))
+    code = "\n".join(content for _, content in files)
+    assert code.count("export const ") == 1
+    assert "labelRxMemo" in code
 
 
 def test_user_memo_event_trigger_usecallback_leaves_page_scope() -> None:

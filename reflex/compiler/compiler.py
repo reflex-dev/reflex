@@ -555,6 +555,9 @@ def _prepare_recursive_memos(
                 isinstance(memo, MemoComponentDefinition)
                 and memo.recursive
                 and not memo.auto_memo_wrapper
+                # Auto wrappers cannot capture the enclosing memo's locals yet.
+                # Keep parameterized bodies together to preserve lexical scope.
+                and not memo.params
             ):
                 page_context = PageContext(
                     name=memo.python_name,

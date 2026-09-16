@@ -82,15 +82,34 @@ BY_VALUE_MEMO_WRAPPER: FunctionVar = FunctionStringVar.create(
     _var_data=VarData(imports={"react": [ImportVar(tag="memo")]}),
 )
 
+
 # Function memos share one module-level cache. Identity mode uses a Map trie so
 # multiple call sites with different argument tuples remain cached concurrently.
-_DEFAULT_FUNCTION_MEMO_WRAPPER: FunctionVar = FunctionStringVar.create(
-    "(fn) => { const resultKey = Symbol(); const cache = new Map(); "
-    "return (...args) => { let node = cache; for (const arg of args) { "
-    "if (!node.has(arg)) node.set(arg, new Map()); node = node.get(arg); } "
-    "if (!node.has(resultKey)) node.set(resultKey, fn(...args)); "
-    "return node.get(resultKey); }; }"
-)
+def _function_memo_wrapper(*, packed: bool) -> FunctionVar:
+    """Create an identity cache keyed by logical function arguments.
+
+    Args:
+        packed: Whether the arguments arrive in a fresh props object.
+
+    Returns:
+        The JavaScript memo wrapper.
+    """
+    keys = (
+        "Object.keys(args[0]).sort().flatMap(key => [key, args[0][key]])"
+        if packed
+        else "args"
+    )
+    return FunctionStringVar.create(
+        "(fn) => { const resultKey = Symbol(); const cache = new Map(); "
+        f"return (...args) => {{ let node = cache; for (const arg of {keys}) {{ "
+        "if (!node.has(arg)) node.set(arg, new Map()); node = node.get(arg); } "
+        "if (!node.has(resultKey)) node.set(resultKey, fn(...args)); "
+        "return node.get(resultKey); }; }"
+    )
+
+
+_DEFAULT_FUNCTION_MEMO_WRAPPER: FunctionVar = _function_memo_wrapper(packed=False)
+_PACKED_FUNCTION_MEMO_WRAPPER: FunctionVar = _function_memo_wrapper(packed=True)
 
 # Value mode uses serialized argument tuples as cache keys.
 _BY_VALUE_FUNCTION_MEMO_WRAPPER: FunctionVar = FunctionStringVar.create(
@@ -109,14 +128,7 @@ def _is_valid_js_identifier(name: str) -> bool:
     Returns:
         Whether ``name`` is structurally valid as a JavaScript identifier.
     """
-    if name.isidentifier():
-        return True
-    if not name or name[0] not in "_$":
-        return False
-    return all(
-        char in "_$" or "a" <= char <= "z" or "A" <= char <= "Z" or "0" <= char <= "9"
-        for char in name[1:]
-    )
+    return name.replace("$", "_").isidentifier()
 
 
 def _validate_memo_name(name: str) -> None:
@@ -2292,6 +2304,10 @@ def _memo_impl(
         defaulted_params=defaulted_params,
         missing_params=missing_params,
     )
+    if wrapper is _DEFAULT_FUNCTION_MEMO_WRAPPER and any(
+        param.kind in (MemoParamKind.CHILDREN, MemoParamKind.REST) for param in params
+    ):
+        wrapper = _PACKED_FUNCTION_MEMO_WRAPPER
 
     source_module = memo_paths.capture_source_module(fn)
 

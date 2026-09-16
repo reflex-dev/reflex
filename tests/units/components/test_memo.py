@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import inspect
 import re
+import shutil
+import subprocess
 from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any, cast
@@ -1231,7 +1233,7 @@ def test_component_memo_name_overrides_lambda_name():
     files, _imports = compiler.compile_memo_components((definition,))
     code = "\n".join(c for _, c in files)
     sym = memo_paths.mirrored_symbol("NamedLambdaRxMemo", __name__)
-    assert f"export const {sym} = memo(" in code
+    assert f"const {sym} = memo(" in code
 
 
 @pytest.mark.parametrize("memo_name", ["bad name", "bad;name", "1bad"])
@@ -1260,6 +1262,53 @@ def test_function_memo_name_appends_marker_to_js_keyword():
     code = "\n".join(c for _, c in files)
     sym = memo_paths.mirrored_symbol("awaitRxMemo", __name__)
     assert f"export const {sym} = " in code
+
+
+def test_function_memo_name_accepts_interior_dollar():
+    """JavaScript identifiers can contain dollar signs after a letter."""
+
+    @rx.memo(name="format$total")
+    def dollar_named(value: rx.Var[int]) -> rx.Var[str]:
+        return value.to(str)
+
+    assert "format$totalRxMemo" in str(dollar_named(value=1))
+
+
+def test_function_memo_packed_arguments_reuse_cached_results():
+    """Fresh transport objects reuse entries for the same logical props."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is needed to execute the memo cache")
+
+    @rx.memo
+    def packed_styles(base: rx.Var[dict[str, str]], rest: rx.RestProp) -> rx.Var[Any]:
+        return base.to(dict).merge(rest)
+
+    definition = MEMOS["packed_styles", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    subprocess.run(
+        [
+            node,
+            "--input-type=module",
+            "--eval",
+            f"""
+import assert from 'node:assert/strict';
+let calls = 0;
+const cached = ({definition.wrapper!s})((props) => ({{...props, call: ++calls}}));
+const base = {{}};
+const child = {{}};
+const first = cached({{base, color: 'red', children: child}});
+assert.equal(cached({{children: child, color: 'red', base}}), first);
+assert.notEqual(cached({{base, color: 'blue', children: child}}), first);
+assert.notEqual(cached({{base: {{}}, color: 'red', children: child}}), first);
+assert.equal(calls, 3);
+assert.equal(cached({{base, color: 'red', children: child}}), first);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
 
 
 def test_component_memo_wrapper_none_emits_bare_function():
