@@ -57,6 +57,7 @@ from reflex_site_shared.components.blocks.headings import (
     img_comp_xd,
 )
 from reflex_site_shared.components.blocks.typography import (
+    DOCS_BODY_CLASS,
     code_comp,
     doclink2,
     list_comp,
@@ -272,7 +273,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             return text_comp(text=children[0])
         return rx.text(
             *children,
-            class_name="font-[475] text-muted-foreground mb-4 leading-7",
+            class_name=DOCS_BODY_CLASS,
         )
 
     def code_block(self, block: CodeBlock) -> rx.Component:
@@ -331,7 +332,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             return list_comp(text=_spans_to_plaintext(spans))
         return rx.list_item(
             *_render_spans(spans),
-            class_name="font-[475] text-muted-foreground mb-4",
+            class_name=DOCS_BODY_CLASS,
         )
 
     def transform_list_item(self, item: ListItem) -> rx.Component:

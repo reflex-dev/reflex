@@ -66,6 +66,15 @@ The docs config enables `frontend_lazy_bundled_libraries`. Optional libraries re
 
 Run the imported functional browser checks against a running preview with `REFLEX_DOCS_PREVIEW_URL=http://localhost:3000 uv run pytest tests/test_docs_features_browser.py`.
 
+## Editing a page's source
+
+"Edit this page" opens the Markdown source, documented Python class, or CLI
+callback that supplies the page content. Packaged content without an editable
+source in this repository omits this action and retains "Raise an issue".
+Links target `main` by default. For a PR preview containing files that are not on
+`main` yet, set `DOCS_GITHUB_REF` to the PR branch when building and running the
+preview, for example `DOCS_GITHUB_REF=codex/docs-editorial-refresh`.
+
 ## Agent-readable exports
 
 The deployed app is mounted at `/docs/`. Its indexes are `/docs/llms.txt` and

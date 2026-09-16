@@ -8,6 +8,7 @@ from collections.abc import Callable, Collection, Mapping, Sequence
 from typing import Any
 
 import reflex as rx
+from reflex_site_shared.components.blocks.typography import DOCS_BODY_CLASS
 
 DOCS_API_CELL_CLASS = "min-w-0 px-4 py-3 align-top"
 DOCS_API_HEADER_CLASS = (
@@ -285,7 +286,7 @@ def callable_api_reference(
         ),
         rx.text(
             _summary(docstring),
-            class_name="font-[475] text-muted-foreground mb-4 leading-7",
+            class_name=DOCS_BODY_CLASS,
         )
         if docstring
         else rx.fragment(),

@@ -4,7 +4,14 @@ from pathlib import PurePosixPath
 from urllib.parse import urlsplit
 
 import reflex as rx
-from reflex_site_shared.styles import fonts
+
+DOCS_BODY_CLASS = "font-[450] text-foreground mb-4 leading-7"
+DOCS_LINK_STYLE = {
+    "font_size": "inherit",
+    "font_weight": "inherit",
+    "line_height": "inherit",
+    "letter_spacing": "inherit",
+}
 
 
 def definition(title: str, *children) -> rx.Component:
@@ -46,7 +53,7 @@ def text_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.text(text, class_name="font-normal text-muted-foreground mb-4 leading-7")
+    return rx.text(text, class_name=DOCS_BODY_CLASS)
 
 
 @rx.memo
@@ -58,7 +65,7 @@ def text_comp_2(text: rx.Var[str]) -> rx.Component:
     """
     return rx.text(
         text,
-        class_name="font-normal text-muted-foreground max-w-[80%] mb-10",
+        class_name="font-[450] text-foreground max-w-[80%] mb-10 leading-7",
     )
 
 
@@ -69,7 +76,7 @@ def list_comp(text: rx.Var[str]) -> rx.Component:
     Returns:
         The component.
     """
-    return rx.list_item(text, class_name="font-normal text-muted-foreground mb-4")
+    return rx.list_item(text, class_name=DOCS_BODY_CLASS)
 
 
 @rx.memo
@@ -139,8 +146,9 @@ def doclink(text: str, href: str, **props) -> rx.Component:
     return rx.el.elements.a(
         text,
         href=_canonical_docs_href(href),
+        style={**DOCS_LINK_STYLE, **props.pop("style", {})},
         **props,
-        class_name="text-foreground decoration-foreground underline",
+        class_name="text-foreground decoration-foreground underline underline-offset-4",
     )
 
 
@@ -159,7 +167,7 @@ def doclink2(text: str, **props) -> rx.Component:
         props["href"] = _canonical_docs_href(props["href"])
     return rx.el.elements.a(
         text,
+        style={**DOCS_LINK_STYLE, **props.pop("style", {})},
         **props,
-        style=fonts.base,
-        class_name="text-foreground decoration-foreground underline",
+        class_name="text-foreground decoration-foreground underline underline-offset-4",
     )

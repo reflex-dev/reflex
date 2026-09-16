@@ -1,6 +1,7 @@
 """Browser regressions for imported docs features; set REFLEX_DOCS_PREVIEW_URL."""
 
 import os
+from urllib.parse import quote
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -9,6 +10,97 @@ PREVIEW_URL = os.environ.get("REFLEX_DOCS_PREVIEW_URL", "")
 pytestmark = pytest.mark.skipif(
     not PREVIEW_URL, reason="Requires a running docs preview"
 )
+
+
+@pytest.mark.parametrize("width", [390, 768, 1440])
+def test_docs_reading_typography_is_consistent(page: Page, width: int):
+    """Prose, inline links, and reference headings share the reading styles."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    paragraph = (
+        page.locator("p").filter(has_text="State holds the app's mutable data").first
+    )
+    expect(paragraph).to_have_css("font-weight", "450")
+    expect(paragraph).to_have_css("color", "rgb(24, 24, 24)")
+    link = paragraph.locator("a").first
+    for property_name in ("font-size", "font-weight", "line-height", "letter-spacing"):
+        expected = link.evaluate(
+            "(el, name) => getComputedStyle(el.parentElement).getPropertyValue(name)",
+            property_name,
+        )
+        expect(link).to_have_css(property_name, expected)
+    heading_size = "32px" if width >= 1024 else "24px"
+    expect(page.get_by_role("heading", name="Goals", exact=True)).to_have_css(
+        "font-size", heading_size
+    )
+    page.goto(f"{PREVIEW_URL}/docs/api-reference/app/")
+    expect(page.get_by_role("heading", name="Fields", exact=True)).to_have_css(
+        "font-size", heading_size
+    )
+
+
+def test_sidebar_labels_match_reading_text_color(page: Page):
+    """Navigation labels share the body foreground while section captions recede."""
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/getting-started/introduction/")
+    expect(
+        page.get_by_role("link", name="Navigate to Components").locator("h3")
+    ).to_have_css("color", "rgb(24, 24, 24)")
+    expect(page.locator("summary").filter(has_text="Getting Started")).to_have_css(
+        "color", "rgb(24, 24, 24)"
+    )
+    expect(
+        page.get_by_role("link", name="Installation", exact=True).locator("p")
+    ).to_have_css("color", "rgb(24, 24, 24)")
+    expect(page.get_by_role("heading", name="Onboarding", exact=True)).to_have_css(
+        "color", "rgb(89, 89, 89)"
+    )
+
+
+@pytest.mark.parametrize(
+    ("path", "source"),
+    [
+        ("/getting-started/introduction/", "docs/getting_started/introduction.md"),
+        ("/getting-started/installation/", "docs/getting_started/installation.md"),
+        ("/library/data-display/avatar/", "docs/library/data-display/avatar.md"),
+        ("/library/", "docs/app/reflex_docs/pages/docs/library.py"),
+        ("/api-reference/app/", "reflex/app.py"),
+        ("/api-reference/config/", "packages/reflex-base/src/reflex_base/config.py"),
+        (
+            "/hosting/cli/deploy/",
+            "packages/reflex-hosting-cli/src/reflex_cli/v2/deploy.py",
+        ),
+        ("/hosting/cli/apps/", "packages/reflex-hosting-cli/src/reflex_cli/v2/apps.py"),
+        ("/ai/", "docs/app/reflex_docs/pages/ai_landing.py"),
+        ("/ai/overview/best-practices/", "docs/ai_builder/overview/best_practices.md"),
+        ("/enterprise/components/", "docs/enterprise/components.md"),
+        ("/changelog/", "CHANGELOG.md"),
+        ("/overview/", "docs/app/reflex_docs/pages/docs/cloud.py"),
+    ],
+)
+def test_edit_page_navigates_to_source(page: Page, path: str, source: str):
+    """Footer actions navigate to the exact source without the docs basename."""
+    ref = quote(os.environ.get("DOCS_GITHUB_REF") or "main", safe="")
+    expected = f"https://github.com/reflex-dev/reflex/edit/{ref}/{source}"
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs{path}")
+    edit = page.get_by_role("link", name="Edit this page", exact=True)
+    expect(edit).to_have_attribute("href", expected)
+    # Verify browser navigation without depending on GitHub login or rate limits.
+    page.route("https://github.com/**", lambda route: route.fulfill(body="GitHub"))
+    edit.click()
+    expect(page).to_have_url(expected)
+
+
+def test_packaged_changelog_has_no_misleading_edit_link(page: Page):
+    """An installed changelog without public source retains its issue action."""
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/changelog/reflex-enterprise/")
+    expect(
+        page.get_by_role("heading", name="reflex-enterprise Changelog", exact=True)
+    ).to_be_visible()
+    expect(page.get_by_role("link", name="Edit this page", exact=True)).to_have_count(0)
+    expect(page.get_by_role("link", name="Raise an issue", exact=True)).to_have_count(1)
 
 
 def test_agent_file_links_respect_docs_mount(page: Page):

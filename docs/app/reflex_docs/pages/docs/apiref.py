@@ -1,3 +1,5 @@
+import inspect
+
 import reflex as rx
 from reflex.istate.manager import StateManager
 from reflex.utils.imports import ImportVar
@@ -34,7 +36,9 @@ for module in modules:
     name = module.__name__.lower()
     docs = generate_docs(name, module, env_var_prefix=env_var_prefixes.get(module))
     title = name.replace("_", " ").title()
-    page_data = docpage(f"/api-reference/{name}/", title)(docs)
+    page_data = docpage(
+        f"/api-reference/{name}/", title, source_path=inspect.getsourcefile(module)
+    )(docs)
     # Keep the short sidebar/nav label (e.g. "App"), but emit a descriptive HTML
     # <title> for SEO. Use the real class name (e.g. "ComponentState") so it
     # reads as a proper API symbol.

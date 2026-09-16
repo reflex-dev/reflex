@@ -30,33 +30,6 @@ from .sidebar_items.recipes import recipes
 from .sidebar_items.reference import api_reference, changelog_items
 from .state import SideBarBase, SideBarItem
 
-SIDEBAR_ICON_MAP = {
-    "Getting Started": "rocket",
-    "Tutorials": "graduation-cap",
-    "Advanced Onboarding": "newspaper",
-    "Components": "layers",
-    "Pages": "sticky-note",
-    "Styling": "palette",
-    "Assets": "folder-open-dot",
-    "Wrapping React": "atom",
-    "Vars": "variable",
-    "Events": "arrow-left-right",
-    "State Structure": "boxes",
-    "API Routes": "route",
-    "Client Storage": "package-open",
-    "Database": "database",
-    "Authentication": "lock-keyhole",
-    "Utility Methods": "cog",
-    "Deploy Quick Start": "earth",
-    "CLI Reference": "square-terminal",
-    "App": "blocks",
-    "Project": "server",
-    "Self Hosting": "server",
-    "Custom Components": "blocks",
-    "Usage": "chart-column",
-    "Testing": "beaker",
-}
-
 Scrollable_SideBar = """
 function scrollToActiveSidebarLink() {
   const sidebarContainer = document.getElementById('sidebar-container');
@@ -147,7 +120,7 @@ def sidebar_item_comp(
     item: SideBarItem,
     index: rx.vars.ArrayVar[list[int]],
     url: rx.vars.StringVar[str],
-    guide_margin_class: str = "ml-[3rem]",
+    guide_margin_class: str = "ml-[2.5rem]",
 ) -> rx.Component:
     """Render an item in the sidebar, recursing into its children."""
     if not item.children:
@@ -168,9 +141,6 @@ def sidebar_item_comp(
 
     is_open = (index.length() > 0) & (index[0] == item_index)
     nested_index = rx.cond(is_open, index[1:], []).to(list[int])
-    child_guide_margin_class = (
-        "ml-[3rem]" if has_sidebar_icon(item.names) else "ml-[2.5rem]"
-    )
     return docs_sidebar_group(
         item.names,
         *(
@@ -179,17 +149,12 @@ def sidebar_item_comp(
                 item=child,
                 index=nested_index,
                 url=url,
-                guide_margin_class=child_guide_margin_class,
+                guide_margin_class="ml-[2.5rem]",
             )
             for child_index, child in enumerate(item.children)
         ),
-        icon=SIDEBAR_ICON_MAP.get(item.names),
         open_=is_open,
     )
-
-
-def has_sidebar_icon(name):
-    return name in SIDEBAR_ICON_MAP
 
 
 def calculate_index(sidebar_items, url: str) -> list[int]:
@@ -363,7 +328,7 @@ def sidebar_comp(
         sidebar_category(
             "Cloud",
             hosting_page.deploy_quick_start.path,
-            "cloud",
+            None,
             True,
         ),
         class_name="flex flex-col items-start gap-2 w-full list-none",
@@ -380,17 +345,17 @@ def sidebar_comp(
     )
 
     ai_builder_categories = rx.el.ul(
-        sidebar_category("Build with AI", "/ai/", "sparkles", url == "/ai/"),
+        sidebar_category("Build with AI", "/ai/", None, url == "/ai/"),
         sidebar_category(
             "AI Builder",
             ai_builder_pages.overview.best_practices.path,
-            "bot",
+            None,
             ~is_ai_mcp_or_skills & (url != "/ai/"),
         ),
         sidebar_category(
             "Agent Toolkit",
             ai_builder_pages.integrations.agent_toolkit.path,
-            "plug",
+            None,
             is_ai_mcp_or_skills,
         ),
         class_name="flex flex-col items-start gap-2 w-full list-none",
@@ -448,25 +413,25 @@ def sidebar_comp(
         sidebar_category(
             "Learn",
             getting_started.introduction.path,
-            "graduation-cap",
+            None,
             is_default_docs,
         ),
         sidebar_category(
             "Components",
             library.path,
-            "layout-panel-left",
+            None,
             is_library,
         ),
         sidebar_category(
             "API Reference",
             pages[0].path,
-            "book-text",
+            None,
             ~is_library & is_api_reference,
         ),
         sidebar_category(
             "Enterprise",
             enterprise.overview.path,
-            "building-2",
+            None,
             ~is_library & ~is_api_reference & is_enterprise,
         ),
         class_name="flex flex-col items-start gap-2 w-full list-none",

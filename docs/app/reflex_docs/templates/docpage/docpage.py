@@ -1,9 +1,11 @@
 """Template for documentation pages."""
 
 import functools
+import os
 import sys
 from collections.abc import Callable, Collection
 from pathlib import Path
+from urllib.parse import quote
 
 import reflex as rx
 import reflex_components_internal as ui
@@ -36,7 +38,6 @@ REPO_ROOT = Path(__file__).resolve().parents[5]
 # editable on GitHub.
 _SYS_PREFIX = Path(sys.prefix).resolve()
 GITHUB_REPO_URL = "https://github.com/reflex-dev/reflex"
-GITHUB_DOCS_TREE_URL = f"{GITHUB_REPO_URL}/tree/main/docs"
 
 # Normalized route -> GitHub edit URL used by the page footer.
 doc_edit_hrefs: dict[str, str] = {}
@@ -69,15 +70,18 @@ def github_edit_url(source_path: str | None) -> str:
         source_path: Path of the markdown or Python source of the page.
 
     Returns:
-        The edit URL of the file, or the docs tree when the file is not part of
-        this checkout (e.g. docs shipped inside an installed package).
+        The edit URL of the file, or an empty string when there is no editable
+        source in this checkout (e.g. docs shipped inside an installed package).
+        Preview builds can select their source branch with ``DOCS_GITHUB_REF``.
     """
     if source_path is None:
-        return GITHUB_DOCS_TREE_URL
+        return ""
     resolved = Path(source_path).resolve()
     if not resolved.is_relative_to(REPO_ROOT) or resolved.is_relative_to(_SYS_PREFIX):
-        return GITHUB_DOCS_TREE_URL
-    return f"{GITHUB_REPO_URL}/edit/main/{resolved.relative_to(REPO_ROOT).as_posix()}"
+        return ""
+    ref = quote(os.environ.get("DOCS_GITHUB_REF") or "main", safe="")
+    relative_path = quote(resolved.relative_to(REPO_ROOT).as_posix())
+    return f"{GITHUB_REPO_URL}/edit/{ref}/{relative_path}"
 
 
 def _resolve_breadcrumb_href(

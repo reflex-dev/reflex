@@ -143,8 +143,8 @@ def docs_sidebar_leaf(
                     title,
                     class_name=rx.cond(
                         active,
-                        "m-0 pl-4 text-sm font-[475] text-primary-hover transition-color",
-                        "m-0 w-full text-sm font-[475] text-muted-foreground transition-color hover:text-foreground",
+                        "m-0 pl-4 text-sm font-[475] text-foreground transition-color",
+                        "m-0 w-full text-sm font-[475] text-foreground transition-color",
                     ),
                 ),
                 class_name=rx.cond(
@@ -187,7 +187,7 @@ def docs_sidebar_section(
         rx.link(
             rx.el.h2(
                 title,
-                class_name="m-0 font-mono text-[0.8125rem] font-[450] uppercase leading-6 text-foreground hover:text-primary-hover dark:hover:text-primary",
+                class_name="m-0 font-mono text-[0.8125rem] font-[450] uppercase leading-6 text-muted-foreground hover:text-foreground",
             ),
             underline="none",
             href=href,
@@ -216,7 +216,7 @@ def docs_sidebar_section(
 def docs_sidebar_category(
     name: str,
     href: str,
-    icon: str,
+    icon: str | None,
     active: rx.Var[bool] | bool,
 ) -> rx.Component:
     """Render an official top-level documentation category row.
@@ -224,7 +224,7 @@ def docs_sidebar_category(
     Args:
         name: Visible category label.
         href: Category landing route.
-        icon: Lucide icon identifier.
+        icon: Lucide icon identifier, or None for a text-only row.
         active: Whether the category is selected.
 
     Returns:
@@ -240,12 +240,9 @@ def docs_sidebar_category(
                 rx.fragment(),
             ),
             rx.box(
-                rx.icon(tag=icon, size=16),
+                rx.icon(tag=icon, size=16) if icon is not None else rx.fragment(),
                 rx.el.h3(name, class_name="m-0 w-full font-[475]"),
-                class_name=ui.cn(
-                    "cursor-pointer flex flex-row justify-start items-center gap-2.5 ml-[2.5rem] text-sm text-muted-foreground hover:text-foreground h-8",
-                    rx.cond(active, "text-primary-hover hover:text-primary-hover", ""),
-                ),
+                class_name="cursor-pointer flex flex-row justify-start items-center gap-2.5 ml-[2.5rem] text-sm text-foreground h-8",
             ),
             href=href,
             underline="none",
@@ -288,7 +285,7 @@ def docs_sidebar_group(
                     "ArrowDown01Icon",
                     class_name="size-4 group-open/details:rotate-180 transition-transform",
                 ),
-                class_name="!px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-muted-foreground hover:!text-foreground transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
+                class_name="!px-0 m-0 flex items-center justify-start !ml-[2.5rem] !bg-transparent !hover:bg-transparent !py-1 !pr-0 w-[calc(100%-2.5rem)] !text-foreground transition-color group xl:max-w-[14rem] cursor-pointer list-none [&::-webkit-details-marker]:hidden [&::marker]:hidden",
             ),
             rx.el.ul(
                 rx.el.li(
@@ -699,7 +696,7 @@ def _docs_page_footer_content(
     )
     actions = rx.box(
         _docs_footer_action("Raise an issue", issue_href),
-        _docs_footer_action("Edit this page", edit_href),
+        rx.cond(edit_href, _docs_footer_action("Edit this page", edit_href)),
         class_name="hidden w-auto flex-row items-center gap-2 lg:flex",
     )
     docs_prefix = "https://reflex.dev/docs" if external_docs_links else ""

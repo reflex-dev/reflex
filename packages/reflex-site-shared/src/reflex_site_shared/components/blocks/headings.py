@@ -124,7 +124,11 @@ class HeadingLink(rx.link.__self__):
                 text,
                 id=id_,
                 as_=heading,
-                style=style if style is not None else {},
+                style={
+                    "letter_spacing": "-0.03em" if heading == "h1" else "-0.025em",
+                    "line_height": "1.2" if heading == "h1" else "1.25",
+                    **(style or {}),
+                },
                 class_name=class_name + " " + scroll_margin + " mt-" + mt,
             ),
             rx.icon(
@@ -197,7 +201,7 @@ def h2_comp_xd(text: rx.Var[str]) -> rx.Component:
         text=text,
         heading="h2",
         mt="12",
-        class_name="lg:text-2xl text-xl font-medium",
+        class_name="lg:text-3xl text-2xl font-medium",
     )
 
 
@@ -212,7 +216,7 @@ def h3_comp(text: rx.Var[str]) -> rx.Component:
         text=text,
         heading="h3",
         mt="8",
-        class_name="lg:text-xl text-lg font-semibold",
+        class_name="lg:text-2xl text-xl font-medium",
     )
 
 
@@ -227,7 +231,7 @@ def h3_comp_xd(text: rx.Var[str]) -> rx.Component:
         text=text,
         heading="h3",
         mt="8",
-        class_name="lg:text-xl text-lg font-semibold",
+        class_name="lg:text-2xl text-xl font-medium",
     )
 
 
