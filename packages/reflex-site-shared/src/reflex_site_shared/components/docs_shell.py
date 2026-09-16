@@ -158,8 +158,8 @@ def docs_sidebar_leaf(
             aria_current=rx.cond(active, "page", "false"),
             class_name=rx.cond(
                 active,
-                "relative block w-full",
-                f"block w-full {guide_margin_class}",
+                "relative block w-full rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                f"block w-full {guide_margin_class} rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
             ),
         ),
         class_name="relative m-0 w-full list-none p-0 !overflow-visible",

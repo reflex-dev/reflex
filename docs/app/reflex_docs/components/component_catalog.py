@@ -22,12 +22,12 @@ def component_category(
     """
     return rx.el.section(
         rx.link(
-            rx.box(
+            rx.el.div(
                 rx.el.h2(
                     title,
                     class_name="text-lg font-book leading-6 tracking-tight text-foreground transition-colors group-hover:text-muted-foreground",
                 ),
-                rx.text(
+                rx.el.p(
                     description,
                     class_name="text-xs font-normal leading-5 text-muted-foreground",
                 ),

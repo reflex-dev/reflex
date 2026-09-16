@@ -8,9 +8,12 @@ from reflex_site_shared.components.marketing_button import button
 
 from reflex_docs.templates.docpage import docpage, h1_comp, text_comp_2
 
+SORT_RECENT = "Recent"
+SORT_DOWNLOADS = "Downloads"
+
 SORTING_CRITERIA = {
-    "Recent": lambda x: x["updated_at"],
-    "Downloads": lambda x: x["downloads"]["last_month"],
+    SORT_RECENT: lambda x: x["updated_at"],
+    SORT_DOWNLOADS: lambda x: x["downloads"]["last_month"],
 }
 
 
@@ -156,8 +159,8 @@ def sorting_filters_dropdown_menu() -> rx.Component:
                     class_name="flex items-center gap-2 rounded-compact px-3 py-2 text-sm font-book text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
                 )
                 for label, icon in (
-                    ("Recent", "history"),
-                    ("Downloads", "arrow_down_big"),
+                    (SORT_RECENT, "history"),
+                    (SORT_DOWNLOADS, "arrow_down_big"),
                 )
             ],
             align="end",
@@ -195,10 +198,9 @@ def table_rows(category: dict):
         rx.table.cell(name),
         rx.table.cell(updated_at),
         rx.table.cell(
-            rx.box(
-                rx.text(
+            rx.el.div(
+                rx.el.p(
                     "pip install " + category["package_name"],
-                    as_="p",
                     class_name="font-small truncate flex-1 min-w-0",
                 ),
                 get_icon(icon="copy", class_name="p-[5px]"),
