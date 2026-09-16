@@ -48,6 +48,23 @@ else:
 _StreamItemT = TypeVar("_StreamItemT")
 
 
+def _is_future_ancestor(ancestor: EventFuture, future: EventFuture) -> bool:
+    """Check whether one future is an ancestor of another.
+
+    Args:
+        ancestor: The future to look for in the parent chain.
+        future: The future whose ancestors should be checked.
+
+    Returns:
+        True if ``ancestor`` is in ``future``'s parent chain.
+    """
+    while future.parent is not None:
+        future = future.parent
+        if future is ancestor:
+            return True
+    return False
+
+
 async def _stream_queue_until_done(
     queue: asyncio.Queue[_StreamItemT],
     done_when: Coroutine[Any, Any, Any],
@@ -573,7 +590,8 @@ class EventProcessor:
             return
         key = (event.name, token)
         previous = self._superseded.get(key)
-        if previous is not None and not previous.all_done():
+        is_ancestor = previous is not None and _is_future_ancestor(previous, tracked)
+        if previous is not None and not is_ancestor and not previous.all_done():
             logger.debug(
                 f"Cancelling the previous unfinished {event.name} chain for token "
                 f"{token}, superseded by a newer invocation."
