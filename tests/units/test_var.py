@@ -720,16 +720,16 @@ def test_str_var_slicing():
     assert str_var[:1]._var_type is str
 
     # Test basic slicing.
-    assert str(str_var[:1]) == 'str.split("").slice(undefined, 1).join("")'
-    assert str(str_var[1:]) == 'str.split("").slice(1, undefined).join("")'
-    assert str(str_var[:]) == 'str.split("").slice(undefined, undefined).join("")'
-    assert str(str_var[1:2]) == 'str.split("").slice(1, 2).join("")'
+    assert str(str_var[:1]) == "str.slice(undefined, 1)"
+    assert str(str_var[1:]) == "str.slice(1, undefined)"
+    assert str(str_var[:]) == "str.slice(undefined, undefined)"
+    assert str(str_var[1:2]) == "str.slice(1, 2)"
 
     # Test negative slicing.
-    assert str(str_var[:-1]) == 'str.split("").slice(undefined, -1).join("")'
-    assert str(str_var[-1:]) == 'str.split("").slice(-1, undefined).join("")'
-    assert str(str_var[:-2]) == 'str.split("").slice(undefined, -2).join("")'
-    assert str(str_var[-2:]) == 'str.split("").slice(-2, undefined).join("")'
+    assert str(str_var[:-1]) == "str.slice(undefined, -1)"
+    assert str(str_var[-1:]) == "str.slice(-1, undefined)"
+    assert str(str_var[:-2]) == "str.slice(undefined, -2)"
+    assert str(str_var[-2:]) == "str.slice(-2, undefined)"
 
 
 def test_dict_indexing():
@@ -1060,7 +1060,7 @@ def test_var_operation():
 def test_string_operations():
     basic_string = LiteralStringVar.create("Hello, World!")
 
-    assert str(basic_string.length()) == '"Hello, World!".split("").length'
+    assert str(basic_string.length()) == '"Hello, World!".length'
     assert str(basic_string.lower()) == '"Hello, World!".toLowerCase()'
     assert str(basic_string.lstrip()) == 'pyLstrip("Hello, World!", null)'
     assert str(basic_string.upper()) == '"Hello, World!".toUpperCase()'
