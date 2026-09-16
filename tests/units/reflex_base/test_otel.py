@@ -401,9 +401,11 @@ def test_flush_resolves_provider_configured_after_enable(
     provider.add_span_processor(
         BatchSpanProcessor(exporter, schedule_delay_millis=60_000)
     )
+    from opentelemetry.trace import ProxyTracerProvider
     from opentelemetry.util._once import Once
 
     monkeypatch.setattr(trace, "_TRACER_PROVIDER", None)
+    monkeypatch.setattr(trace, "_PROXY_TRACER_PROVIDER", ProxyTracerProvider())
     monkeypatch.setattr(trace, "_TRACER_PROVIDER_SET_ONCE", Once())
     otel.enable()
     try:
