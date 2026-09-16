@@ -793,44 +793,41 @@ const SEARCH_STYLES = `
     align-items: center;
     display: flex;
     justify-content: center;
-    max-height: 2rem;
+    max-height: 2.25rem;
     max-width: 10rem;
-    min-height: 2rem;
+    min-height: 2.25rem;
     min-width: 0;
     width: 10rem;
   }
 
   .ReflexSearch-button {
     align-items: center;
-    background: var(--secondary-1, #fff);
-    border: 0;
-    border-radius: 0.5rem;
-    box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.08) inset,
-      0 0 0 1px rgba(0, 0, 0, 0.08) inset,
-      0 1px 2px 0 rgba(0, 0, 0, 0.02),
-      0 1px 4px 0 rgba(0, 0, 0, 0.02);
-    color: var(--secondary-11, #646464);
+    background: var(--card, #fff);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    box-shadow: var(--shadow-small);
+    color: var(--muted-foreground, #646464);
     cursor: pointer;
     display: flex;
     font: 500 0.875rem/1.5rem var(--font-instrument-sans, system-ui, sans-serif);
     gap: 0.5rem;
-    height: 2rem;
+    height: 2.25rem;
     justify-content: flex-start;
     max-width: 10rem;
     min-width: 0;
-    padding: 0.375rem 0.5rem;
+    padding: 0.375rem 0.75rem;
     transition: none;
     width: 100%;
   }
 
   .ReflexSearch-button:hover {
-    background: var(--secondary-2, #f8f8f8);
+    background: var(--accent, #f8f8f8);
   }
 
   .ReflexSearch-button:focus-visible,
   .ReflexSearch-escape:focus-visible,
   .ReflexSearch-hit:focus-visible {
-    outline: 2px solid var(--primary-9, #6e56cf);
+    outline: 2px solid var(--primary, #6e56cf);
     outline-offset: 2px;
   }
 
@@ -842,9 +839,9 @@ const SEARCH_STYLES = `
 
   .ReflexSearch-shortcut {
     align-items: center;
-    background: var(--secondary-3, #f0f0f3);
+    background: var(--accent, #f0f0f3);
     border: 0;
-    color: var(--secondary-9, #8a8a8a);
+    color: var(--subtle-foreground, #8a8a8a);
     box-shadow: none;
     display: inline-flex;
     border-radius: 0.25rem;
@@ -875,13 +872,13 @@ const SEARCH_STYLES = `
   .ReflexSearch-dialog {
     animation: ReflexSearch-dialog-enter 180ms
       cubic-bezier(0.32, 0.72, 0, 1) both;
-    background: var(--secondary-1, #fff);
-    border: 1px solid var(--secondary-a4, rgba(0, 0, 0, 0.08));
+    background: var(--background, #fff);
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
     border-radius: 0.75rem;
     box-shadow: 0 24px 64px rgba(18, 17, 19, 0.18),
       0 8px 24px rgba(18, 17, 19, 0.1),
       0 2px 8px rgba(18, 17, 19, 0.08);
-    color: var(--secondary-12, #202020);
+    color: var(--foreground, #202020);
     display: flex;
     flex-direction: column;
     font-family: var(--font-instrument-sans, system-ui, sans-serif);
@@ -893,7 +890,7 @@ const SEARCH_STYLES = `
 
   .ReflexSearch-inputRow {
     align-items: center;
-    border-bottom: 1px solid var(--secondary-4, #e8e8e8);
+    border-bottom: 1px solid var(--border-subtle, #e8e8e8);
     box-sizing: border-box;
     display: flex;
     gap: 0.75rem;
@@ -907,7 +904,7 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-inputIcon {
-    color: var(--secondary-11, #646464);
+    color: var(--muted-foreground, #646464);
     display: flex;
     flex: 0 0 auto;
   }
@@ -916,7 +913,7 @@ const SEARCH_STYLES = `
     appearance: none;
     background: transparent;
     border: 0;
-    color: var(--secondary-12, #202020);
+    color: var(--foreground, #202020);
     flex: 1 1 0%;
     font: 500 1rem/1.5rem var(--font-instrument-sans, system-ui, sans-serif);
     min-width: 0;
@@ -926,7 +923,7 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-input::placeholder {
-    color: var(--secondary-9, #8a8a8a);
+    color: var(--subtle-foreground, #8a8a8a);
     font-weight: 500;
   }
 
@@ -958,9 +955,9 @@ const SEARCH_STYLES = `
   .ReflexSearch-escape {
     align-items: center;
     background: var(--c-white-1, #fff);
-    border: 1px solid var(--secondary-4, #e8e8e8);
+    border: 1px solid var(--border-subtle, #e8e8e8);
     border-radius: 0.375rem;
-    color: var(--secondary-11, #646464);
+    color: var(--muted-foreground, #646464);
     cursor: pointer;
     display: flex;
     flex-shrink: 0;
@@ -995,7 +992,7 @@ const SEARCH_STYLES = `
 
   .ReflexSearch-emptyState {
     align-items: center;
-    color: var(--secondary-10, #7b7b7b);
+    color: var(--subtle-foreground, #7b7b7b);
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
@@ -1006,7 +1003,7 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-emptyState strong {
-    color: var(--secondary-12, #202020);
+    color: var(--foreground, #202020);
     font-size: 1.125rem;
     font-weight: 500;
     line-height: 1.5rem;
@@ -1026,11 +1023,11 @@ const SEARCH_STYLES = `
 
   .ReflexSearch-emptyIcon {
     align-items: center;
-    background: var(--primary-3, #f3f0ff);
-    border: 1px solid var(--primary-a5, rgba(110, 86, 207, 0.16));
+    background: var(--accent, #f3f0ff);
+    border: 1px solid var(--border, rgba(110, 86, 207, 0.16));
     border-radius: 999px;
     box-shadow: 0 1px 2px rgba(18, 17, 19, 0.04);
-    color: var(--primary-9, #6e56cf);
+    color: var(--primary, #6e56cf);
     display: flex;
     height: 2.5rem;
     justify-content: center;
@@ -1059,10 +1056,10 @@ const SEARCH_STYLES = `
 
   .ReflexSearch-hit {
     align-items: stretch;
-    background: var(--secondary-1, #fff);
-    border: 1px solid var(--secondary-a4, rgba(0, 0, 0, 0.08));
+    background: var(--background, #fff);
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
     border-radius: 0.75rem;
-    color: var(--secondary-12, #202020);
+    color: var(--foreground, #202020);
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -1075,17 +1072,17 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-hit[data-selected="true"] {
-    background: var(--primary-2, #fbfaff);
-    border-color: var(--primary-7, #c9bfff);
+    background: var(--muted, #fbfaff);
+    border-color: var(--border-strong, #c9bfff);
   }
 
   .ReflexSearch-hit:active {
-    background: var(--primary-3, #f3f0ff);
+    background: var(--accent, #f3f0ff);
   }
 
   .ReflexSearch-hitBreadcrumbs {
     align-items: center;
-    color: var(--secondary-10, #7b7b7b);
+    color: var(--subtle-foreground, #7b7b7b);
     display: flex;
     font-size: 0.75rem;
     gap: 0.375rem;
@@ -1108,7 +1105,7 @@ const SEARCH_STYLES = `
 
   .ReflexSearch-hitIcon {
     align-items: center;
-    color: var(--secondary-11, #646464);
+    color: var(--muted-foreground, #646464);
     display: flex;
     flex: 0 0 auto;
     height: 1.25rem;
@@ -1128,7 +1125,7 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-hitDescription {
-    color: var(--secondary-10, #7b7b7b);
+    color: var(--subtle-foreground, #7b7b7b);
     display: block;
     font-size: 0.875rem;
     line-height: 1.25rem;
@@ -1138,7 +1135,7 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-hitArrow {
-    color: var(--secondary-10, #7b7b7b);
+    color: var(--subtle-foreground, #7b7b7b);
     display: flex;
     flex: 0 0 auto;
     margin-left: auto;
@@ -1147,14 +1144,14 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-hit[data-selected="true"] .ReflexSearch-hitArrow {
-    color: var(--primary-9, #6e56cf);
+    color: var(--primary, #6e56cf);
     opacity: 1;
   }
 
   .ReflexSearch-footer {
     align-items: center;
-    border-top: 1px solid var(--secondary-4, #e8e8e8);
-    color: var(--secondary-9, #8a8a8a);
+    border-top: 1px solid var(--border-subtle, #e8e8e8);
+    color: var(--subtle-foreground, #8a8a8a);
     display: flex;
     font-size: 0.75rem;
     font-variant-numeric: tabular-nums;
@@ -1166,13 +1163,13 @@ const SEARCH_STYLES = `
   }
 
   .ReflexSearch-footer a {
-    color: var(--secondary-10, #7b7b7b);
+    color: var(--subtle-foreground, #7b7b7b);
     margin-left: auto;
     text-decoration: none;
   }
 
   .ReflexSearch-loadingState {
-    color: var(--secondary-11, #646464);
+    color: var(--muted-foreground, #646464);
     display: grid;
     flex: 0 0 auto;
     gap: 2px;
@@ -1203,30 +1200,18 @@ const SEARCH_STYLES = `
 
   .dark .ReflexSearch-dialog,
   [data-theme="dark"] .ReflexSearch-dialog {
-    background: var(--secondary-4, #1e2025);
-    border-color: var(--secondary-7, #363c44);
+    background: var(--border-subtle, #1e2025);
+    border-color: var(--border-strong, #363c44);
   }
 
   .dark .ReflexSearch-dialog[data-results-visible="true"] .ReflexSearch-inputRow,
   [data-theme="dark"] .ReflexSearch-dialog[data-results-visible="true"] .ReflexSearch-inputRow {
-    border-bottom-color: var(--secondary-7, #363c44);
+    border-bottom-color: var(--border-strong, #363c44);
   }
 
   .dark .ReflexSearch-footer,
   [data-theme="dark"] .ReflexSearch-footer {
-    border-top-color: var(--secondary-7, #363c44);
-  }
-
-  .dark .ReflexSearch-button,
-  [data-theme="dark"] .ReflexSearch-button {
-    background: var(--secondary-2, #242424);
-    box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.06) inset,
-      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
-  }
-
-  .dark .ReflexSearch-button:hover,
-  [data-theme="dark"] .ReflexSearch-button:hover {
-    background: var(--secondary-3, #2c2c2c);
+    border-top-color: var(--border-strong, #363c44);
   }
 
   @keyframes loading-state-pixel-on {
@@ -1266,9 +1251,9 @@ const SEARCH_STYLES = `
 
     .ReflexSearch-button > svg {
       flex-shrink: 0;
-      height: 1.25rem;
+      height: 1rem;
       margin-right: 0;
-      width: 1.25rem;
+      width: 1rem;
     }
 
     .ReflexSearch-buttonText,
@@ -1284,7 +1269,7 @@ const SEARCH_STYLES = `
     }
 
     .ReflexSearch-dialog {
-      border: 1px solid var(--secondary-a4, rgba(0, 0, 0, 0.08));
+      border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
       border-radius: 0.75rem;
       height: calc(100dvh - env(safe-area-inset-top, 0px) - 2.5rem);
       max-height: none;

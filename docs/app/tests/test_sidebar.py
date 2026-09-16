@@ -33,3 +33,58 @@ def test_cross_reference_excluded_from_prev_next_chain():
     prev, next_ = get_prev_next("/enterprise/auth/overview/")
     assert prev is not None and prev.link == "/enterprise/event-handler-api/"
     assert next_ is not None and next_.link == "/enterprise/auth/secure-by-default/"
+
+
+@pytest.mark.parametrize("active", [False, True])
+def test_single_page_group_is_a_direct_link(active):
+    """Single-page groups navigate directly and announce the selected page."""
+    import reflex as rx
+
+    from reflex_docs.templates.docpage.sidebar.sidebar import sidebar_item_comp
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem
+
+    group = SideBarItem(
+        names="Webhooks",
+        children=[SideBarItem(names="Webhooks", link="/ai/webhooks/")],
+    )
+    rendered = str(
+        sidebar_item_comp(
+            0,
+            group,
+            rx.Var.create([0, 0]),
+            rx.Var.create("/ai/webhooks/" if active else "/ai/files/"),
+        )
+    )
+    assert 'jsx("details"' not in rendered
+    assert 'jsx("summary"' not in rendered
+    assert rendered.count('"Webhooks"') == 1
+    assert 'to:"/ai/webhooks/"' in rendered
+    assert '"aria-current":' in rendered
+    assert '"page"' in rendered and '"false"' in rendered
+
+
+def test_group_with_nested_pages_remains_expandable():
+    """One nested group must not hide its multiple destination pages."""
+    import reflex as rx
+
+    from reflex_docs.templates.docpage.sidebar.sidebar import sidebar_item_comp
+    from reflex_docs.templates.docpage.sidebar.state import SideBarItem
+
+    group = SideBarItem(
+        names="Data",
+        children=[
+            SideBarItem(
+                names="Databases",
+                children=[
+                    SideBarItem(names="Postgres", link="/postgres/"),
+                    SideBarItem(names="SQLite", link="/sqlite/"),
+                ],
+            )
+        ],
+    )
+    rendered = str(
+        sidebar_item_comp(0, group, rx.Var.create([0, 0]), rx.Var.create("/postgres/"))
+    )
+    assert rendered.count('jsx("details"') == 2
+    assert 'href:"/postgres/"' in rendered
+    assert 'href:"/sqlite/"' in rendered
