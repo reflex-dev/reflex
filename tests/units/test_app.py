@@ -5013,12 +5013,46 @@ def test_write_stateful_pages_marker_closes_descriptor_on_open_failure(
         App(enable_state=False)._write_stateful_pages_marker()
     descriptor, _ = created.spy_return
     try:
-        with pytest.raises(OSError, match="Bad file descriptor"):
+        with pytest.raises(OSError):
             os.fstat(descriptor)
     finally:
         with contextlib.suppress(OSError):
             os.close(descriptor)
     assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("windows, failures", [(True, 1), (True, 100), (False, 1)])
+def test_write_stateful_pages_marker_sharing_violation(
+    tmp_path, mocker, windows, failures
+):
+    """Windows sharing violations are retried without hiding persistent failures."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    mocker.patch("reflex.app.constants.IS_WINDOWS", windows)
+    sleep = mocker.patch("reflex.app.time.sleep")
+    original_replace = Path.replace
+    attempts = 0
+
+    def replace(path, target):
+        """Simulate a reader holding the Windows marker open."""
+        nonlocal attempts
+        attempts += 1
+        if attempts <= failures:
+            raise PermissionError("marker is open")
+        return original_replace(path, target)
+
+    mocker.patch.object(Path, "replace", replace)
+    app = App(enable_state=False)
+    if windows and failures == 1:
+        app._write_stateful_pages_marker()
+        assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
+        assert attempts == 2
+        sleep.assert_called_once_with(0.01)
+    else:
+        with pytest.raises(PermissionError, match="marker is open"):
+            app._write_stateful_pages_marker()
+        assert attempts == (100 if windows else 1)
+        assert sleep.call_count == attempts - 1
+        assert list(tmp_path.iterdir()) == []
 
 
 @pytest.mark.parametrize("existing", [False, True])

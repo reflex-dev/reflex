@@ -1767,7 +1767,15 @@ class App(MiddlewareMixin, LifespanMixin):
             with tmp_marker.open("w", encoding="utf-8") as f:
                 json.dump(list(self._stateful_pages), f)
             tmp_marker.chmod(0o644)
-            tmp_marker.replace(stateful_pages_marker)
+            for attempt in range(100):
+                try:
+                    tmp_marker.replace(stateful_pages_marker)
+                    break
+                except PermissionError:
+                    if not constants.IS_WINDOWS or attempt == 99:
+                        raise
+                    # Windows readers temporarily prevent replacing their open file.
+                    time.sleep(0.01)
         except BaseException:
             tmp_marker.unlink(missing_ok=True)
             raise
