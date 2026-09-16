@@ -240,3 +240,62 @@ def test_sidebar_announces_current_page(page: Page, width: int):
     expect(
         sidebar.get_by_role("link", name="Introduction", exact=True)
     ).not_to_have_attribute("aria-current", "page")
+
+
+def test_single_page_sidebar_links_keep_neutral_hover_color(page: Page):
+    """Direct sidebar links must not inherit the old purple anchor hover color."""
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/ai/integrations/database/")
+    page.add_style_tag(content="* { transition: none !important; }")
+    sidebar = page.locator("#sidebar-container")
+    for label in ("Databases", "Webhooks", "Files"):
+        link = sidebar.get_by_role("link", name=label, exact=True)
+        link.hover()
+        expect(link.locator("p")).to_have_css("color", "rgb(24, 24, 24)")
+
+
+@pytest.mark.parametrize("width", [390, 1440])
+def test_single_page_sidebar_link_has_selected_background(page: Page, width: int):
+    """The active direct link has a neutral highlight that follows navigation."""
+    page.set_viewport_size({"width": width, "height": 1000})
+    page.goto(f"{PREVIEW_URL}/docs/ai/webhooks/")
+    if width < 1024:
+        page.get_by_role("button", name="Open documentation navigation").click()
+        sidebar = page.get_by_role("dialog")
+    else:
+        sidebar = page.locator("#sidebar-container")
+    selected = sidebar.get_by_role("link", name="Webhooks", exact=True)
+    expect(selected).to_have_attribute("aria-current", "page")
+    expect(selected).to_have_css("background-color", "rgb(246, 246, 246)")
+    expect(selected.locator("p")).to_have_css("color", "rgb(24, 24, 24)")
+    inactive = sidebar.get_by_role("link", name="Files", exact=True)
+    expect(inactive).to_have_css("background-color", "rgba(0, 0, 0, 0)")
+    inactive.click()
+    if width < 1024:
+        page.get_by_role("button", name="Open documentation navigation").click()
+    expect(sidebar.get_by_role("link", name="Files", exact=True)).to_have_css(
+        "background-color", "rgb(246, 246, 246)"
+    )
+    expect(sidebar.get_by_role("link", name="Webhooks", exact=True)).to_have_css(
+        "background-color", "rgba(0, 0, 0, 0)"
+    )
+
+
+def test_sidebar_click_preserves_scroll_position(page: Page):
+    """Selecting a visible page must not recenter the scrollable sidebar."""
+    page.set_viewport_size({"width": 1440, "height": 700})
+    page.goto(f"{PREVIEW_URL}/docs/ai/files/", wait_until="networkidle")
+    sidebar = page.locator("#sidebar-container")
+    target = sidebar.get_by_role("link", name="Webhooks", exact=True)
+    before = target.evaluate("""el => {
+        const scroller = el.closest('[class*="overflow-y-scroll"]');
+        scroller.scrollTop = 0;
+        return scroller.scrollTop;
+    }""")
+    target.click()
+    expect(target).to_have_attribute("aria-current", "page")
+    page.wait_for_timeout(500)
+    after = target.evaluate(
+        "el => el.closest('[class*=\"overflow-y-scroll\"]').scrollTop"
+    )
+    assert abs(after - before) <= 1

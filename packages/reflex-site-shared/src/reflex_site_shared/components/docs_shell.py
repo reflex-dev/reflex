@@ -19,7 +19,6 @@ from reflex_site_shared.constants import (
     FORUM_URL,
     GITHUB_URL,
     LINKEDIN_URL,
-    ROADMAP_URL,
     TWITTER_URL,
 )
 from reflex_site_shared.views.footer import dark_mode_toggle
@@ -700,50 +699,50 @@ def _docs_page_footer_content(
         class_name="hidden w-auto flex-row items-center gap-2 lg:flex",
     )
     docs_prefix = "https://reflex.dev/docs" if external_docs_links else ""
-    root_prefix = "https://reflex.dev" if external_docs_links else ""
     link_columns = rx.box(
-        _docs_footer_link_column(
-            "Links",
-            _docs_footer_link(
-                "Home",
-                f"{docs_prefix}/" if external_docs_links else "/",
-                root_site=external_docs_links,
-            ),
-            _docs_footer_link("Blog", f"{root_prefix}/blog/", root_site=True),
-            _docs_footer_link(
-                "Changelog",
-                f"{docs_prefix}/changelog/" if external_docs_links else "/changelog/",
-                root_site=external_docs_links,
-            ),
-        ),
-        _docs_footer_link_column(
-            "Documentation",
-            _docs_footer_link(
-                "Introduction",
-                f"{docs_prefix}/getting-started/introduction/",
-                root_site=external_docs_links,
-            ),
-            _docs_footer_link(
-                "Installation",
-                f"{docs_prefix}/getting-started/installation/",
-                root_site=external_docs_links,
-            ),
-            _docs_footer_link(
-                "Components",
-                f"{docs_prefix}/library/",
-                root_site=external_docs_links,
-            ),
-            _docs_footer_link(
-                "Hosting",
-                f"{docs_prefix}/hosting/deploy-quick-start/",
-                root_site=external_docs_links,
-            ),
+        *(
+            _docs_footer_link_column(
+                heading,
+                *(
+                    _docs_footer_link(
+                        label,
+                        f"{docs_prefix}{path}",
+                        root_site=external_docs_links,
+                    )
+                    for label, path in links
+                ),
+            )
+            for heading, links in (
+                (
+                    "Get started",
+                    (
+                        ("Docs overview", "/"),
+                        ("Build with AI", "/ai/"),
+                        ("Explore framework", "/getting-started/introduction/"),
+                        ("Deploy your app", "/hosting/deploy-quick-start/"),
+                    ),
+                ),
+                (
+                    "Documentation",
+                    (
+                        ("Components", "/library/"),
+                        ("API reference", "/api-reference/app/"),
+                        ("Agent Toolkit", "/ai/integrations/agent-toolkit/"),
+                        ("Enterprise", "/enterprise/overview/"),
+                    ),
+                ),
+            )
         ),
         _docs_footer_link_column(
             "Resources",
-            _docs_footer_link("FAQ", f"{root_prefix}/faq/", root_site=True),
-            _docs_footer_link("Roadmap", ROADMAP_URL),
-            _docs_footer_link("Forum", FORUM_URL),
+            _docs_footer_link("Home", "https://reflex.dev/", root_site=True),
+            _docs_footer_link("Blog", "https://reflex.dev/blog/", root_site=True),
+            _docs_footer_link(
+                "Changelog",
+                f"{docs_prefix}/changelog/",
+                root_site=external_docs_links,
+            ),
+            _docs_footer_link("FAQ", "https://reflex.dev/faq/", root_site=True),
         ),
         class_name="flex w-full flex-wrap justify-between gap-12",
     )

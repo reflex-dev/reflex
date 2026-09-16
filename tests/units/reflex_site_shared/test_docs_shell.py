@@ -165,7 +165,7 @@ def test_official_docs_footer_content_is_shared() -> None:
     assert "https://github.com/example/project/issues/new" in str(component)
     assert "Raise an issue" in rendered
     assert "Edit this page" in rendered
-    assert "Links" in rendered
+    assert "Get started" in rendered
     assert "Documentation" in rendered
     assert "Resources" in rendered
     assert "Social link for Github" in rendered
@@ -176,6 +176,17 @@ def test_official_docs_footer_content_is_shared() -> None:
 
     external_rendered = str(_docs_external_page_footer_memo._definition.component)
     assert "https://reflex.dev/docs/getting-started/introduction/" in external_rendered
+    for path in (
+        "/ai/",
+        "/api-reference/app/",
+        "/ai/integrations/agent-toolkit/",
+        "/enterprise/overview/",
+    ):
+        assert f"https://reflex.dev/docs{path}" in external_rendered
+        assert f"https://reflex.dev/docs{path}" not in rendered
+        assert path in rendered
+    for path in ("/", "/blog/", "/faq/"):
+        assert f'href:"https://reflex.dev{path}"' in rendered
 
 
 def test_docs_layout_uses_page_aware_footer_renderer() -> None:

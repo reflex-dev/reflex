@@ -52,13 +52,15 @@ function scrollToActiveSidebarLink() {
     const linkRect = activeLink.getBoundingClientRect();
     const containerRect = scrollableParent.getBoundingClientRect();
 
-    // Calculate the scroll position to center the link
-    const scrollTop = scrollableParent.scrollTop + (linkRect.top - containerRect.top) - (containerRect.height / 2) + (linkRect.height / 2);
-
-    scrollableParent.scrollTo({
-      top: scrollTop,
-      behavior: 'instant'
-    });
+    let offset = 0;
+    if (linkRect.top < containerRect.top) {
+      offset = linkRect.top - containerRect.top;
+    } else if (linkRect.bottom > containerRect.bottom) {
+      offset = linkRect.bottom - containerRect.bottom;
+    }
+    if (offset !== 0) {
+      scrollableParent.scrollBy({ top: offset, behavior: 'instant' });
+    }
   }
 }
 
@@ -66,13 +68,6 @@ setTimeout(scrollToActiveSidebarLink, 100);
 
 window.addEventListener("popstate", () => {
   setTimeout(scrollToActiveSidebarLink, 100);
-});
-
-document.addEventListener('click', (e) => {
-  const link = e.target.closest('#sidebar-container a[href]');
-  if (link && !link.getAttribute('href')?.startsWith('http')) {
-    setTimeout(scrollToActiveSidebarLink, 200);
-  }
 });
 """
 
@@ -138,6 +133,18 @@ def sidebar_item_comp(
                 active=(url == item.link),
                 guide_margin_class=guide_margin_class,
             )
+
+    if len(item.children) == 1 and not item.children[0].children:
+        child = item.children[0]
+        return rx.el.li(
+            sidebar_link(
+                rx.text(item.names, class_name="m-0 text-sm font-[475]"),
+                href=child.link,
+                aria_current=rx.cond(url == child.link, "page", "false"),
+                class_name="flex min-h-8 w-full items-center rounded-lg py-1 pl-[2.5rem] text-foreground hover:!text-foreground transition-colors [&[aria-current=page]]:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+            ),
+            class_name="m-0 p-0 w-full list-none",
+        )
 
     is_open = (index.length() > 0) & (index[0] == item_index)
     nested_index = rx.cond(is_open, index[1:], []).to(list[int])
@@ -306,7 +313,6 @@ def sidebar_comp(
     from reflex_docs.pages.docs import enterprise, getting_started, state, ui
     from reflex_docs.pages.docs import hosting as hosting_page
     from reflex_docs.pages.docs.apiref import pages
-    from reflex_docs.pages.docs.custom_components import custom_components
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
@@ -457,26 +463,6 @@ def sidebar_comp(
             html_lib,
             html_lib_index,
             url,
-        ),
-        rx.link(  # pyright: ignore [reportCallIssue]
-            rx.box(  # pyright: ignore [reportCallIssue]
-                rx.box(  # pyright: ignore [reportCallIssue]
-                    rx.icon("atom", size=16),  # pyright: ignore [reportCallIssue]
-                    rx.el.h5(
-                        "Custom Components",
-                        class_name="font-smbold text-[0.875rem] text-foreground leading-5 tracking-[-0.01313rem] transition-color",
-                    ),
-                    class_name="flex flex-row items-center gap-3 text-foreground",
-                ),
-                rx.text(  # pyright: ignore [reportCallIssue]
-                    "See what components people have made with Reflex!",
-                    class_name="font-small text-muted-foreground",
-                ),
-                class_name="flex flex-col gap-2 border-border bg-background hover:bg-accent shadow-large px-3.5 py-2 border rounded-xl transition-bg",
-            ),
-            underline="none",
-            href=custom_components.path,
-            class_name="w-fit lg:ml-[2.5rem]",
         ),
         class_name="m-0 p-0 flex flex-col items-start gap-8  w-full list-none list-style-none",
     )
