@@ -237,6 +237,10 @@ const applyResultCallback = async (
   if (!event.payload.callback) {
     return;
   }
+  // Eval'd callback strings (format_queue_events) dispatch through addEvents
+  // like compiled event triggers do; late-bound so a remounted
+  // EventLoopProvider is picked up.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
   const final_result =
     !!eval_result && typeof eval_result.then === "function"
       ? await eval_result
@@ -256,10 +260,6 @@ const applyResultCallback = async (
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
-  // Eval'd callback strings (format_queue_events) dispatch through addEvents
-  // like compiled event triggers do; late-bound so a remounted
-  // EventLoopProvider is picked up.
-  const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
