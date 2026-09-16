@@ -97,7 +97,7 @@ from reflex.utils.exec import (
     is_testing_env,
     should_prerender_routes,
 )
-from reflex.utils.misc import run_in_thread
+from reflex.utils.misc import is_page_meta_set, run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 logger = logging.getLogger(__name__)
@@ -330,6 +330,48 @@ def _route_arg_label(arg_type: str) -> str:
         ``"list"`` for catch-all arguments, otherwise ``"single"``.
     """
     return "list" if arg_type == constants.RouteArgType.LIST else "single"
+
+
+class _ContextMiddleware:
+    """Ensure Reflex contexts are attached for each ASGI request.
+
+    Many ASGI servers start each request with a fresh contextvars scope, so this
+    middleware re-applies the RegistrationContext and EventContext that are
+    needed for Reflex state and event processing.
+    """
+
+    def __init__(self, app: ASGIApp, reflex_app: App):
+        """Wrap an ASGI app so that it runs with the Reflex contexts set.
+
+        Args:
+            app: The next ASGI app in the middleware stack.
+            reflex_app: The Reflex app owning the contexts to attach.
+        """
+        self.app = app
+        self.reflex_app = reflex_app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        self.reflex_app._set_contexts_internal()
+        await self.app(scope, receive, send)
+
+
+def _is_location_specifier(specifier: str) -> bool:
+    """Check whether a dependency specifier points at a location.
+
+    A location specifier names where a package comes from (a local path, a
+    protocol like ``file:``/``github:``/``git+ssh:``, or a git ref) instead of
+    naming a version. Its slashes belong to the location, so it must be kept
+    whole rather than split into a version and a package subpath.
+
+    Args:
+        specifier: The part of an import name following ``package@``.
+
+    Returns:
+        Whether the specifier is a location rather than a version or dist-tag.
+    """
+    return (
+        ":" in specifier or "#" in specifier or specifier.startswith((".", "/", "~/"))
+    )
 
 
 @dataclasses.dataclass()
@@ -696,26 +738,6 @@ class App(MiddlewareMixin, LifespanMixin):
             stack.callback(ctx_cls.reset, tok)
         return stack
 
-    def _context_middleware(self, app: ASGIApp) -> ASGIApp:
-        """Ensure Reflex contexts are attached for each ASGI request.
-
-        Many ASGI servers start each request with a fresh contextvars scope,
-        so this middleware re-applies the RegistrationContext and EventContext
-        that are needed for Reflex state and event processing.
-
-        Args:
-            app: The ASGI app to attach the middleware to.
-
-        Returns:
-            The ASGI app with the middleware attached.
-        """
-
-        async def context_middleware(scope: Scope, receive: Receive, send: Send):
-            self._set_contexts_internal()
-            await app(scope, receive, send)
-
-        return context_middleware
-
     @contextlib.asynccontextmanager
     async def _setup_event_processor(self) -> AsyncIterator[None]:
         """Configure event processing with a fresh worker socket identity.
@@ -820,7 +842,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
         # Make sure Reflex contexts are attached for each request.
-        top_asgi_app.add_middleware(self._context_middleware)
+        top_asgi_app.add_middleware(_ContextMiddleware, reflex_app=self)
         top_asgi_app.mount("", asgi_app)
         App._add_cors(top_asgi_app)
         if otel.asgi_middleware is not None:
@@ -1033,8 +1055,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
-            title = title or constants.Page404.TITLE
-            description = description or constants.Page404.DESCRIPTION
+            if not is_page_meta_set(title):
+                title = constants.Page404.TITLE
+            if not is_page_meta_set(description):
+                description = constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
         else:
             if component is None:
@@ -1348,6 +1372,13 @@ class App(MiddlewareMixin, LifespanMixin):
             The load events for the route.
         """
         four_oh_four_load_events = self._load_events.get("404", [])
+        # The path is the browser URL path, which includes frontend_path, while the
+        # router matches paths relative to it. A URL outside frontend_path is not a page.
+        frontend_path = get_config().frontend_path.rstrip("/")
+        if frontend_path:
+            if path != frontend_path and not path.startswith(frontend_path + "/"):
+                return four_oh_four_load_events
+            path = path.removeprefix(frontend_path)
         route = self.router(path)
         if not route:
             # If the path is not a valid route, return the 404 page load events.
@@ -1527,13 +1558,11 @@ class App(MiddlewareMixin, LifespanMixin):
             package_name = library_name.split("/", maxsplit=1)[0]
 
         if import_name.startswith(f"{library_name}@"):
-            version_and_maybe_subpath = import_name[len(library_name) + 1 :]
-            version, slash, _ = version_and_maybe_subpath.partition("/")
-            if slash and ":" not in version:
+            specifier = import_name[len(library_name) + 1 :]
+            version, slash, _ = specifier.partition("/")
+            if slash and not _is_location_specifier(specifier):
                 return f"{package_name}@{version}"
-            if package_name == library_name:
-                return import_name
-            return f"{package_name}@{version_and_maybe_subpath}"
+            return f"{package_name}@{specifier}"
 
         if package_name == library_name:
             return import_name
