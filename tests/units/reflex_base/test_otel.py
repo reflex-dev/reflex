@@ -376,3 +376,37 @@ def test_compile_span_attributes(otel_exporter: InMemorySpanExporter):
         otel.ATTR_COMPILE_DRY_RUN: False,
         otel.ATTR_COMPILE_TRIGGER: "backend_startup",
     }
+
+
+def test_flushes_finished_spans(mocker, otel_exporter: InMemorySpanExporter):
+    """Flush the provider used by the framework's trace points."""
+    force_flush = mocker.patch.object(otel._tracer_provider, "force_flush")
+    with active_tracer().start_as_current_span("compile"):
+        pass
+
+    assert otel.flush() is True
+    force_flush.assert_called_once_with(timeout_millis=5000)
+    assert len(otel_exporter.get_finished_spans()) == 1
+
+
+def test_flush_resolves_provider_configured_after_enable():
+    """Flush the provider configured after tracing was enabled."""
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(
+        BatchSpanProcessor(exporter, schedule_delay_millis=60_000)
+    )
+    otel.enable()
+    try:
+        trace.set_tracer_provider(provider)
+        with otel._tracer.start_as_current_span("compile"):
+            pass
+
+        assert exporter.get_finished_spans() == ()
+        assert otel.flush() is True
+        assert len(exporter.get_finished_spans()) == 1
+    finally:
+        otel.disable()
