@@ -11,6 +11,8 @@ from reflex_sdk._async.resources.apps import AsyncApps
 from reflex_sdk._async.resources.auth import AsyncAuth
 from reflex_sdk._async.resources.deployments import AsyncDeployments
 from reflex_sdk._async.resources.projects import AsyncProjects
+from reflex_sdk._async.resources.providers import AsyncProviders
+from reflex_sdk._async.resources.security_reviews import AsyncSecurityReviews
 from reflex_sdk._base import (
     DEFAULT_MAX_RETRIES,
     BaseClient,
@@ -39,6 +41,10 @@ class AsyncReflexCloud(BaseClient):
     deployments: AsyncDeployments
     # Manage projects and who has access to them.
     projects: AsyncProjects
+    # Read the cloud providers an organization deploys apps to.
+    providers: AsyncProviders
+    # Review an app's source code for security and logic issues.
+    security_reviews: AsyncSecurityReviews
 
     def __init__(
         self,
@@ -78,6 +84,8 @@ class AsyncReflexCloud(BaseClient):
         self.auth = AsyncAuth(self)
         self.deployments = AsyncDeployments(self)
         self.projects = AsyncProjects(self)
+        self.providers = AsyncProviders(self)
+        self.security_reviews = AsyncSecurityReviews(self)
 
     async def __aenter__(self) -> AsyncReflexCloud:
         """Enter the client's context.
@@ -118,6 +126,7 @@ class AsyncReflexCloud(BaseClient):
         json: Any = None,
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
+        idempotent: bool | None = None,
     ) -> T: ...
 
     @overload
@@ -131,6 +140,7 @@ class AsyncReflexCloud(BaseClient):
         json: Any = None,
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
+        idempotent: bool | None = None,
     ) -> None: ...
 
     async def _request(
@@ -143,6 +153,7 @@ class AsyncReflexCloud(BaseClient):
         json: Any = None,
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
+        idempotent: bool | None = None,
     ) -> Any:
         """Send an API request, retrying transient failures that are safe to retry.
 
@@ -155,6 +166,9 @@ class AsyncReflexCloud(BaseClient):
             json: The JSON body, if any.
             form: A form-encoded body, sent instead of ``json``.
             authenticated: Whether to send the access token.
+            idempotent: Whether repeating the request is harmless, which decides
+                whether it is retried after it may have reached the server. Defaults
+                to whether the method is idempotent.
 
         Returns:
             The decoded response body.
@@ -177,13 +191,17 @@ class AsyncReflexCloud(BaseClient):
             try:
                 response = await self._transport.send(request)
             except TransportError as ex:
-                delay = self._retry_delay(request, attempt, sent=ex.sent)
+                delay = self._retry_delay(
+                    request, attempt, sent=ex.sent, idempotent=idempotent
+                )
                 if delay is None:
                     raise connection_error(ex) from ex
             else:
                 if response.is_success:
                     return decode_response(response, cast)
-                delay = self._retry_delay(request, attempt, response)
+                delay = self._retry_delay(
+                    request, attempt, response, idempotent=idempotent
+                )
                 if delay is None:
                     raise status_error_from_response(response)
             attempt += 1
