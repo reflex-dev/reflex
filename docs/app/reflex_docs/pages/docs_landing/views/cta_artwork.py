@@ -112,7 +112,7 @@ def _chart_line(points: tuple[tuple[float, float], ...]) -> rx.Component:
             stroke_linejoin="round",
         ),
         view_box="0 0 596 380",
-        class_name="absolute inset-0 size-full text-muted-foreground",
+        class_name="absolute inset-0 size-full text-subtle-foreground",
     )
 
 
@@ -295,7 +295,7 @@ def cta_artwork() -> rx.Component:
         style={
             "container_type": "inline-size",
             "--cta-surface": "color-mix(in srgb, var(--muted) 80%, var(--background))",
-            "--cta-border": "var(--border-strong)",
+            "--cta-border": "color-mix(in srgb, var(--border) 70%, var(--border-strong))",
             "mask_image": "linear-gradient(to bottom, transparent, black 14%, black 85%, transparent), linear-gradient(to right, black 92%, transparent)",
             "mask_composite": "intersect",
         },

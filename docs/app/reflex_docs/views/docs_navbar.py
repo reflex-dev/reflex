@@ -73,7 +73,6 @@ def menu_item(
     text: str, href: str, active_str: str = "", external: bool = False
 ) -> rx.Component:
     router_path = rx.State.router.page.path
-    active_cn = "shadow-[inset_0_-1px_0_0_var(--primary-hover)]"
 
     # For paths starting with "/" (like Start), use exact match
     # For "framework", it's the default - active when in /docs but not matching other sections
@@ -113,12 +112,16 @@ def menu_item(
             text,
             href=href,
             aria_current=rx.cond(active, "page", None),
-            class_name="inline-flex h-9 items-center justify-center whitespace-nowrap px-4 text-sm font-book leading-none text-foreground transition-colors hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+            class_name=ui.cn(
+                "inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-book leading-none transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                rx.cond(
+                    active,
+                    "bg-accent text-foreground",
+                    "text-muted-foreground hover:text-foreground",
+                ),
+            ),
         ),
-        class_name=ui.cn(
-            "flex h-full items-center justify-center",
-            rx.cond(active, active_cn, ""),
-        ),
+        class_name="flex h-full items-center justify-center",
         custom_attrs={"role": "menuitem"},
     )
 

@@ -79,7 +79,7 @@ def dark_mode_toggle() -> rx.Component:
         tab_item("system", "computer_footer"),
         tab_item("light", "sun_footer"),
         tab_item("dark", "moon_footer"),
-        class_name="flex flex-row gap-0.5 items-center px-0.5 py-0 w-fit shrink-0 bg-card rounded-full border border-border shadow-none",
+        class_name="flex flex-row gap-0.5 items-center p-0.5 w-fit shrink-0 bg-card rounded-full border border-border shadow-none",
         role="group",
         aria_label="Color theme",
     )

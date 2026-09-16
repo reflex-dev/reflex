@@ -508,9 +508,8 @@ def docpage(
                             ),
                         ),
                         class_name=ui.cn(
-                            "flex-1 h-auto mx-auto lg:max-w-[52rem] px-4 overflow-y-auto",
-                            "lg:max-w-[64rem]" if not show_right_sidebar else "",
-                            "lg:px-8 xl:px-12" if not show_breadcrumb else "",
+                            "flex-1 min-w-0 h-auto mx-auto lg:max-w-[56rem] px-4 lg:px-8 xl:px-12 overflow-y-auto",
+                            "lg:max-w-[68rem]" if not show_right_sidebar else "",
                         ),
                     ),
                     docs_right_sidebar(

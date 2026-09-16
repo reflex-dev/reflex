@@ -74,7 +74,7 @@ def docs_navbar_frame(
                 navigation,
                 class_name="mx-auto flex h-full w-full max-w-[108rem] flex-row items-center justify-between gap-6",
             ),
-            class_name="relative [&_nav]:!static [&_ul]:!static mx-auto flex h-16 w-full max-w-full flex-row items-center border-b border-border-subtle bg-background px-6 shadow-none 3xl:px-16",
+            class_name="relative [&_nav]:!static [&_ul]:!static mx-auto flex h-16 w-full max-w-full flex-row items-center border-b border-border-subtle bg-background px-6 shadow-[0_2px_6px_-2px_rgba(0,0,0,0.08)] 3xl:px-16",
         ),
         class_name="fixed top-0 z-[9999] flex w-full flex-col self-center",
     )

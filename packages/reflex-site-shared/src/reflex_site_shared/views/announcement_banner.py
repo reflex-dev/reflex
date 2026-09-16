@@ -27,7 +27,7 @@ def announcement_banner() -> rx.Component:
                             aria_hidden=True,
                             class_name=(
                                 "inline-flex h-5 shrink-0 items-center justify-center rounded-full "
-                                "border border-gray-white/20 bg-gray-white/10 px-2 "
+                                "border border-white/20 bg-white/10 dark:border-black/10 dark:bg-black/[0.02] px-2 "
                                 "text-micro font-medium uppercase leading-none "
                                 "tracking-[0.04em] text-primary-foreground/85"
                             ),
@@ -76,7 +76,7 @@ def announcement_banner() -> rx.Component:
                     aria_label="Dismiss announcement",
                     on_click=HostingBannerState.hide_banner,
                     class_name=(
-                        "bg-transparent text-primary-foreground hover:bg-gray-white/15 focus-visible:outline-2 focus-visible:outline-primary-foreground focus-visible:outline-offset-2 absolute right-2 top-1/2 "
+                        "bg-transparent text-primary-foreground hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-primary-foreground focus-visible:outline-offset-2 absolute right-2 top-1/2 "
                         "-translate-y-1/2 inline-flex size-7 items-center justify-center "
                         "rounded-full sm:right-4"
                     ),
