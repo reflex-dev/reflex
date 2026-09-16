@@ -253,6 +253,15 @@ async def _self_chaining_superseding_handler(value: int = 0, limit: int = 2):
 _self_chaining_superseding_handler._reflex_supersedes = True  # type: ignore[attr-defined]
 
 
+async def _sibling_superseding_handler(value: str):
+    """Record a superseding sibling invocation."""
+    await asyncio.sleep(0)
+    _CALL_LOG.append({"value": value})
+
+
+_sibling_superseding_handler._reflex_supersedes = True  # type: ignore[attr-defined]
+
+
 async def _polling_handler(tick: int = 0, ticks: int = 0):
     """Re-chain itself ``ticks`` times, then signal the ``poll`` gate and block.
 
@@ -305,6 +314,7 @@ update_stuff_event = EventHandler(fn=_update_stuff_handler)
 event_a_event = EventHandler(fn=_event_a_handler)
 event_b_event = EventHandler(fn=_event_b_handler)
 self_chaining_superseding_event = EventHandler(fn=_self_chaining_superseding_handler)
+sibling_superseding_event = EventHandler(fn=_sibling_superseding_handler)
 polling_event = EventHandler(fn=_polling_handler)
 superseding_poll_root_event = EventHandler(fn=_superseding_poll_root_handler)
 
@@ -340,6 +350,7 @@ def _register_handlers(forked_registration_context: RegistrationContext):
         event_a_event,
         event_b_event,
         self_chaining_superseding_event,
+        sibling_superseding_event,
         polling_event,
         superseding_poll_root_event,
     ):
@@ -1217,6 +1228,27 @@ async def test_self_chaining_superseding_handler_continues(
         await asyncio.wait_for(event_future.wait_all(), timeout=1)
 
     assert {"value": "2"} in _CALL_LOG
+
+
+async def test_sibling_superseding_events_use_latest_invocation(
+    processor: EventProcessor,
+    token: str,
+):
+    """A later superseding sibling cancels an earlier queued invocation."""
+    processor.configure()
+    async with processor as ep:
+        first = await ep.enqueue(
+            token,
+            Event.from_event_type(sibling_superseding_event("first"))[0],
+        )
+        second = await ep.enqueue(
+            token,
+            Event.from_event_type(sibling_superseding_event("second"))[0],
+        )
+        await asyncio.wait_for(second.wait_all(), timeout=1)
+
+    assert first.cancelled()
+    assert _CALL_LOG == [{"value": "second"}]
 
 
 async def test_deep_self_chaining_poll_loop_under_superseding_root(

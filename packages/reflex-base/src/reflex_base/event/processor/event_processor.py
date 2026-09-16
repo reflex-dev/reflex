@@ -591,7 +591,9 @@ class EventProcessor:
         key = (event.name, token)
         previous = self._superseded.get(key)
         is_ancestor = previous is not None and _is_future_ancestor(previous, tracked)
-        if previous is not None and not is_ancestor and not previous.all_done():
+        if is_ancestor:
+            return
+        if previous is not None and not previous.all_done():
             logger.debug(
                 f"Cancelling the previous unfinished {event.name} chain for token "
                 f"{token}, superseded by a newer invocation."
