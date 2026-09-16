@@ -161,3 +161,34 @@ def test_sentinel_lookalike_string_survives(tmp_path: Path) -> None:
     (result,) = _parse_json([payload], tmp_path)
 
     assert result == {"ok": {"text": "__reflex_nan__", "value": {"nonFinite": "NaN"}}}
+
+
+@requires_node
+def test_bare_tokens_outside_value_positions_are_rejected(tmp_path: Path) -> None:
+    """A bare token where JSON allows no value leaves the payload malformed.
+
+    Rewriting by token alone would turn ``{NaN: 1}`` into a valid object with a
+    sentinel key, so malformed payloads have to stay rejected.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    results = _parse_json(["{NaN: 1}", "{Infinity: 2}", '{"a": 1} NaN'], tmp_path)
+
+    assert all("error" in result for result in results), results
+
+
+@requires_node
+def test_non_finite_floats_in_every_value_position(tmp_path: Path) -> None:
+    """Bare tokens parse at document start and after ':', ',' and '['.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    results = _parse_json(["NaN", "[NaN, 1]", '{"a":-Infinity}'], tmp_path)
+
+    assert results == [
+        {"ok": {"nonFinite": "NaN"}},
+        {"ok": [{"nonFinite": "NaN"}, 1]},
+        {"ok": {"a": {"nonFinite": "-Infinity"}}},
+    ]

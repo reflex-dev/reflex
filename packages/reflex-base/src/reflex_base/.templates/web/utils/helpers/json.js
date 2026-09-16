@@ -1,11 +1,15 @@
 // Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
-// Rewrite them outside string literals so JSON.parse accepts the payload.
-// 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal, so it is
-// swapped for a sentinel string and revived back to NaN after parsing.
-// The alternation matches whole string literals first (passed through unchanged),
-// guaranteeing bare-token matches only land in numeric positions.
+// Rewrite them so JSON.parse accepts the payload: 1e999 / -1e999 overflow to
+// ±Infinity, while NaN, which has no JSON literal, becomes a sentinel string
+// revived back to NaN after parsing.
+// The alternation consumes whole string literals first, so tokens inside them
+// are left alone, and a bare token is only rewritten where JSON permits a value
+// (document start, or after ':', ',' or '['). A token anywhere else leaves the
+// payload malformed for JSON.parse to reject, which the streaming upload parser
+// relies on to tell a partial chunk from a complete one.
 const NAN_SENTINEL = "__reflex_nan__";
-const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
+const NON_FINITE_FLOAT_RE =
+  /"(?:[^"\\]|\\.)*"|(^\s*|[:,[]\s*)(-?Infinity|NaN)\b/g;
 
 // Reviving by string value would also convert a genuine string equal to the
 // sentinel, so lengthen it until the payload no longer contains it. Only the
@@ -26,8 +30,10 @@ const parseNonFiniteFloats = (str) => {
     NaN: `"${sentinel}"`,
   };
   return JSON.parse(
-    str.replace(NON_FINITE_FLOAT_RE, (match) =>
-      match[0] === '"' ? match : replacements[match],
+    // A string literal match leaves both groups undefined; note that `prefix`
+    // is legitimately empty at the start of the document.
+    str.replace(NON_FINITE_FLOAT_RE, (match, prefix, token) =>
+      prefix === undefined ? match : prefix + replacements[token],
     ),
     (_k, v) => (v === sentinel ? NaN : v),
   );
