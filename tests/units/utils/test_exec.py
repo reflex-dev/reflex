@@ -289,7 +289,17 @@ def test_run_granian_backend_binds_listen_socket_in_supervisor(
         with socket.create_connection(listener.getsockname(), timeout=1):
             pass
     finally:
-        listener.close()
+        # granian's SocketHolder in _shd co-owns the listener's OS handle: on
+        # Windows dropping it closes the handle, elsewhere its Drop forgets it.
+        # Settle ownership here so the handle is closed exactly once. Left to
+        # the cyclic GC (FakeGranian sits in a reference cycle via `servers`),
+        # the holder's late close would land on a reused handle in whatever
+        # test happens to be running, e.g. an event loop's self-pipe socket.
+        server._shd = None  # pyright: ignore[reportAttributeAccessIssue]
+        if sys.platform == "win32":
+            listener.detach()
+        else:
+            listener.close()
 
 
 @pytest.mark.skipif(sys.platform != "linux", reason="Granian uses this path on Linux")
