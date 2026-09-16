@@ -27,6 +27,15 @@ async def _echo(request: web.Request) -> web.Response:
     )
 
 
+async def _echo_upload(request: web.Request) -> web.Response:
+    return web.json_response({
+        "body": (await request.read()).decode(),
+        "content_length": request.headers.get("Content-Length"),
+        "transfer_encoding": request.headers.get("Transfer-Encoding"),
+        "content_type": request.headers.get("Content-Type"),
+    })
+
+
 async def _slow(request: web.Request) -> web.Response:
     await asyncio.sleep(5)
     return web.Response()
@@ -50,6 +59,7 @@ async def server() -> AsyncIterator[TestServer]:
     app = web.Application()
     app.router.add_route("*", "/echo/{name}", _echo)
     app.router.add_get("/slow", _slow)
+    app.router.add_put("/upload", _echo_upload)
     app.router.add_get("/redirect", _redirect)
     app.router.add_get("/error", _error)
     server = TestServer(app)
@@ -82,6 +92,47 @@ async def test_send(server: TestServer):
         "request_id": "abc",
         "body": '{"a":1}',
     }
+
+
+@pytest.mark.parametrize("streamed", [True, False])
+async def test_send_upload(server: TestServer, streamed: bool):
+    async def chunks():
+        yield b"abc"
+        # Hand control back between chunks, as reading a file would.
+        await asyncio.sleep(0)
+        yield b"def"
+
+    transport = AiohttpTransport()
+    response = await transport.send(
+        Request(
+            method="PUT",
+            url=str(server.make_url("/upload")),
+            headers={"Content-Length": "6"},
+            content=chunks() if streamed else b"abcdef",
+        )
+    )
+    await transport.aclose()
+    # The signed length is sent as is, without chunked encoding or a content type.
+    assert response.json() == {
+        "body": "abcdef",
+        "content_length": "6",
+        "transfer_encoding": None,
+        "content_type": None,
+    }
+
+
+async def test_json_content_type_is_kept(server: TestServer):
+    transport = AiohttpTransport()
+    response = await transport.send(
+        Request(
+            method="PUT",
+            url=str(server.make_url("/upload")),
+            headers={"Content-Type": "application/json"},
+            content=b"{}",
+        )
+    )
+    await transport.aclose()
+    assert response.json()["content_type"] == "application/json"
 
 
 async def test_redirects_are_not_followed(server: TestServer):

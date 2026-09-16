@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import datetime
-import json
 import uuid
 from collections.abc import Iterator
 
@@ -10,7 +9,7 @@ import pytest
 from reflex_sdk import AuthenticationError, ReflexCloud
 from reflex_sdk.types import AccessScope, Me, Token
 
-from tests.units.reflex_sdk.conftest import MockAPI, MockTransport, reply
+from tests.units.reflex_sdk.conftest import MockAPI, MockTransport, json_body, reply
 
 USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
 ORG_ID = "1f6c1d0e-6f59-4d2b-a0f1-0f4e4a3b2c19"
@@ -78,7 +77,7 @@ def test_create_token(client: ReflexCloud, mock_api: MockAPI):
     token_id = str(uuid.uuid4())
     mock_api.add("POST", "/api/v1/user/token", reply(200, json=token_id))
     assert client.auth.tokens.create("ci") == token_id
-    assert json.loads(mock_api.requests[0].content or b"") == {
+    assert json_body(mock_api.requests[0]) == {
         "name": "ci",
         "expiration": None,
     }
@@ -91,7 +90,7 @@ def test_create_scoped_token(client: ReflexCloud, mock_api: MockAPI):
         expires_in_days=7,
         access=AccessScope(permissions={"apps": "write"}, projects=["p1"]),
     )
-    assert json.loads(mock_api.requests[0].content or b"") == {
+    assert json_body(mock_api.requests[0]) == {
         "name": "deploy",
         "expiration": 7,
         "access": {"permissions": {"apps": "write"}, "projects": ["p1"]},

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-import json
 import uuid
 from collections.abc import AsyncIterator
 from typing import Any
@@ -15,12 +14,18 @@ from reflex_sdk.types import (
     AppDeployment,
     AppSummary,
     DeploymentRecord,
+    HostnameReservation,
     LogRecord,
     User,
     VmType,
 )
 
-from tests.units.reflex_sdk.conftest import AsyncMockTransport, MockAPI, reply
+from tests.units.reflex_sdk.conftest import (
+    AsyncMockTransport,
+    MockAPI,
+    json_body,
+    reply,
+)
 
 APP_ID = "5f0c5e0e-8f6a-4d57-9a55-3c1c1d7b6a01"
 PROJECT_ID = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
@@ -96,10 +101,6 @@ def _query(request: Request) -> dict[str, list[str]]:
     return parse_qs(urlsplit(request.url).query)
 
 
-def _body(request: Request) -> Any:
-    return json.loads(request.content or b"")
-
-
 async def test_list(client: AsyncReflexCloud, mock_api: MockAPI):
     mock_api.add("GET", "/api/v1/apps", reply(200, json=[APP_SUMMARY]))
     assert await client.apps.list(project_id=uuid.UUID(PROJECT_ID)) == [
@@ -165,7 +166,7 @@ async def test_create(client: AsyncReflexCloud, mock_api: MockAPI):
     app = await client.apps.create("dashboard", project_id=uuid.UUID(PROJECT_ID))
     assert app.id == uuid.UUID(APP_ID)
     create_request, get_request = mock_api.requests
-    assert _body(create_request) == {"name": "dashboard", "project": PROJECT_ID}
+    assert json_body(create_request) == {"name": "dashboard", "project": PROJECT_ID}
     assert get_request.method == "GET"
 
 
@@ -209,7 +210,7 @@ async def test_scale(
 ):
     mock_api.add("POST", f"{APP_PATH}/scale", reply(200, json=None))
     await client.apps.scale(APP_ID, **kwargs)
-    assert _body(mock_api.requests[0]) == body
+    assert json_body(mock_api.requests[0]) == body
 
 
 @pytest.mark.parametrize(
@@ -229,6 +230,31 @@ async def test_scale_rejects_ambiguous_arguments(
     with pytest.raises(ValueError, match="exactly one of"):
         await client.apps.scale(APP_ID, **kwargs)
     assert not mock_api.requests
+
+
+async def test_reserve_hostname(client: AsyncReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "POST",
+        "/api/v1/apps/reserve",
+        reply(
+            200,
+            json={
+                "hostname": "https://dashboard.reflex.run",
+                "server": "https://dashboard-api.reflex.run",
+            },
+        ),
+    )
+    assert await client.apps.reserve_hostname(
+        APP_ID, "dashboard", hostname="dashboard"
+    ) == HostnameReservation(
+        frontend_url="https://dashboard.reflex.run",
+        backend_url="https://dashboard-api.reflex.run",
+    )
+    assert json_body(mock_api.requests[0]) == {
+        "app_id": APP_ID,
+        "app_name": "dashboard",
+        "hostname": "dashboard",
+    }
 
 
 async def test_rollback(client: AsyncReflexCloud, mock_api: MockAPI):
@@ -415,7 +441,7 @@ async def test_secrets_set(client: AsyncReflexCloud, mock_api: MockAPI):
     mock_api.add("POST", f"{APP_PATH}/secrets", reply(200, json=None))
     await client.apps.secrets.set(APP_ID, {"API_KEY": "value"}, reboot=True)
     (request,) = mock_api.requests
-    assert _body(request) == {"secrets": {"API_KEY": "value"}}
+    assert json_body(request) == {"secrets": {"API_KEY": "value"}}
     assert _query(request) == {"reboot": ["true"]}
 
 

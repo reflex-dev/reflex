@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import email.utils
-import json
 import uuid
 from pathlib import Path
 from typing import Any
@@ -19,7 +18,7 @@ from reflex_sdk._errors import APIResponseValidationError, MissingTokenError
 from reflex_sdk.transports import Request
 from reflex_sdk.types import Me
 
-from tests.units.reflex_sdk.conftest import reply
+from tests.units.reflex_sdk.conftest import json_body, reply
 
 
 def _client(**kwargs: Any) -> BaseClient:
@@ -126,8 +125,7 @@ def test_build_unauthenticated_request_without_token():
     )
     assert "X-API-TOKEN" not in request.headers
     assert request.headers["Content-Type"] == "application/json"
-    assert request.content is not None
-    assert json.loads(request.content) == {"a": 1}
+    assert json_body(request) == {"a": 1}
 
 
 def test_build_authenticated_request_without_token():

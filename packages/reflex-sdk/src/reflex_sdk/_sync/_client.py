@@ -4,17 +4,21 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Mapping
 from types import TracebackType
 from typing import Any, TypeVar, overload
 
-from reflex_sdk._base import DEFAULT_MAX_RETRIES, BaseClient, decode_response, logger
-from reflex_sdk._errors import (
-    APIConnectionError,
-    APITimeoutError,
-    status_error_from_response,
+from reflex_sdk._base import (
+    DEFAULT_MAX_RETRIES,
+    BaseClient,
+    connection_error,
+    decode_response,
+    logger,
 )
+from reflex_sdk._errors import status_error_from_response
 from reflex_sdk._sync.resources.apps import Apps
 from reflex_sdk._sync.resources.auth import Auth
+from reflex_sdk._sync.resources.deployments import Deployments
 from reflex_sdk._sync.resources.projects import Projects
 from reflex_sdk.transports._base import Transport, TransportError
 from reflex_sdk.transports._defaults import DefaultTransport
@@ -32,6 +36,8 @@ class ReflexCloud(BaseClient):
     apps: Apps
     # The identity of the access token, and the token management endpoints.
     auth: Auth
+    # Deploy apps and follow their deployments.
+    deployments: Deployments
     # Manage projects and who has access to them.
     projects: Projects
 
@@ -51,9 +57,10 @@ class ReflexCloud(BaseClient):
                 variable, then to the token saved by ``reflex login``.
             base_url: The Reflex Cloud URL. Defaults to the ``REFLEX_CLOUD_BACKEND_URL``
                 environment variable, then to ``https://build.reflex.dev``.
-            timeout: The timeout of each request attempt, in seconds. Defaults to the
-                transport's timeout, 60 seconds (10 of them to connect) for the
-                transports the SDK creates.
+            timeout: The timeout of each network operation (connecting, or any single
+                read or write), in seconds. Defaults to the transport's timeouts: 10
+                seconds to connect and 60 for a read or write for the transports the
+                SDK creates.
             max_retries: How many times a failed request is retried. Only requests that
                 cannot be applied twice are retried: those the server never received or
                 turned away with 408 or 429, and ``GET``, ``HEAD``, ``OPTIONS`` and ``PUT``
@@ -70,6 +77,7 @@ class ReflexCloud(BaseClient):
         self._transport = DefaultTransport() if transport is None else transport
         self.apps = Apps(self)
         self.auth = Auth(self)
+        self.deployments = Deployments(self)
         self.projects = Projects(self)
 
     def __enter__(self) -> ReflexCloud:
@@ -109,6 +117,7 @@ class ReflexCloud(BaseClient):
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,
+        form: Mapping[str, str] | None = None,
         authenticated: bool = True,
     ) -> T: ...
 
@@ -121,6 +130,7 @@ class ReflexCloud(BaseClient):
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,
+        form: Mapping[str, str] | None = None,
         authenticated: bool = True,
     ) -> None: ...
 
@@ -132,6 +142,7 @@ class ReflexCloud(BaseClient):
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,
+        form: Mapping[str, str] | None = None,
         authenticated: bool = True,
     ) -> Any:
         """Send an API request, retrying transient failures that are safe to retry.
@@ -143,6 +154,7 @@ class ReflexCloud(BaseClient):
             cast: The type to decode the JSON response into, or None to ignore it.
             params: The query parameters; None values are left out.
             json: The JSON body, if any.
+            form: A form-encoded body, sent instead of ``json``.
             authenticated: Whether to send the access token.
 
         Returns:
@@ -154,7 +166,12 @@ class ReflexCloud(BaseClient):
             APIStatusError: If the API responded with an error status.
         """
         request = self._build_request(
-            method, path, params=params, json=json, authenticated=authenticated
+            method,
+            path,
+            params=params,
+            json=json,
+            form=form,
+            authenticated=authenticated,
         )
         attempt = 0
         while True:
@@ -163,9 +180,7 @@ class ReflexCloud(BaseClient):
             except TransportError as ex:
                 delay = self._retry_delay(request, attempt, sent=ex.sent)
                 if delay is None:
-                    error_type = APITimeoutError if ex.timed_out else APIConnectionError
-                    msg = f"{method} {request.url} failed: {ex}"
-                    raise error_type(msg, request=request) from ex
+                    raise connection_error(ex) from ex
             else:
                 if response.is_success:
                     return decode_response(response, cast)

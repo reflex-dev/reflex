@@ -153,6 +153,60 @@ class DeploymentRecord:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class DeploymentReport:
+    """The state of a deployment and, once it has failed, why."""
+
+    # E.g. ``"Pending"``, ``"AwaitingApproval"``, ``"Running"`` or ``"Failed"``.
+    status: str
+    # A stable identifier of the failure, e.g. ``"build_failed"``.
+    code: str | None
+    # Whose to fix: ``"customer"``, ``"platform"`` or ``"transient"``.
+    fault: str | None
+    # Why the deployment failed; empty until it has.
+    reason: str
+    # What to do about it; empty when there is nothing specific to suggest.
+    guidance: str
+    # The end of the build log, for a failed build.
+    build_log_excerpt: str | None
+    # Whether the build log exists but could not be read.
+    build_log_unreadable: bool = False
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class HostnameReservation:
+    """The URLs reserved for an app's next deployment, to export its build with."""
+
+    # The URL the frontend will be served at.
+    frontend_url: str = field(metadata=json_name("hostname"))
+    # The URL the backend will be served at.
+    backend_url: str = field(metadata=json_name("server"))
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Region:
+    """A region apps can be deployed to."""
+
+    id: uuid.UUID
+    name: str
+    # The code to deploy with, e.g. ``"sjc"``.
+    code: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class MachineSize:
+    """A machine size apps can be deployed with."""
+
+    # The id to deploy with, e.g. ``"c1m1"``.
+    id: str
+    name: str
+    cpu: float
+    # Memory, in GB.
+    ram: float
+    # E.g. ``"SHARED"`` or ``"PERFORMANCE"``.
+    cpu_kind: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class LogRecord:
     """A line of an app's runtime logs."""
 

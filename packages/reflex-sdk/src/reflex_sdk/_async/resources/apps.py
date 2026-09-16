@@ -9,7 +9,13 @@ from collections.abc import AsyncIterator, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_sdk._base import path_segment
-from reflex_sdk.types import App, AppSummary, DeploymentRecord, LogRecord
+from reflex_sdk.types import (
+    App,
+    AppSummary,
+    DeploymentRecord,
+    HostnameReservation,
+    LogRecord,
+)
 
 if TYPE_CHECKING:
     from reflex_sdk._async._client import AsyncReflexCloud
@@ -329,6 +335,34 @@ class AsyncApps:
         )
         await self._client._request(
             "POST", f"apps/{path_segment(app_id)}/scale", None, json=body
+        )
+
+    async def reserve_hostname(
+        self,
+        app_id: uuid.UUID | str,
+        app_name: str,
+        *,
+        hostname: str | None = None,
+    ) -> HostnameReservation:
+        """Reserve the URLs an app's next deployment is served at, for 10 minutes.
+
+        The frontend is exported against these URLs, so reserve them before building
+        the archives for ``deployments.create``.
+
+        Args:
+            app_id: The app.
+            app_name: The app's name.
+            hostname: The subdomain to serve the app at, e.g. ``"my-app"``. Defaults
+                to the app's current or generated hostname.
+
+        Returns:
+            The frontend and backend URLs.
+        """
+        return await self._client._request(
+            "POST",
+            "apps/reserve",
+            HostnameReservation,
+            json={"app_id": str(app_id), "app_name": app_name, "hostname": hostname},
         )
 
     async def rollback(

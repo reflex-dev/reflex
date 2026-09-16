@@ -43,7 +43,9 @@ class AiohttpTransport:
 
             self._session = aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(
-                    total=DEFAULT_TIMEOUT, sock_connect=DEFAULT_CONNECT_TIMEOUT
+                    total=None,
+                    sock_connect=DEFAULT_CONNECT_TIMEOUT,
+                    sock_read=DEFAULT_TIMEOUT,
                 )
             )
         return self._session
@@ -65,7 +67,14 @@ class AiohttpTransport:
         session = self._get_session()
         options: dict[str, Any] = {}
         if request.timeout is not None:
-            options["timeout"] = aiohttp.ClientTimeout(total=request.timeout)
+            # Per operation, like httpx: a total would cut off long uploads.
+            options["timeout"] = aiohttp.ClientTimeout(
+                total=None, sock_connect=request.timeout, sock_read=request.timeout
+            )
+        if not any(name.lower() == "content-type" for name in request.headers):
+            # aiohttp labels any body application/octet-stream; httpx sends none,
+            # and a presigned upload may be signed without one.
+            options["skip_auto_headers"] = ("Content-Type",)
         try:
             async with session.request(
                 request.method,

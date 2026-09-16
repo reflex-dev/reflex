@@ -11,14 +11,20 @@ import os
 import platform
 import random
 import uuid
+from collections.abc import Mapping
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 from urllib.parse import quote, urlencode
 
 from reflex_sdk._credentials import load_stored_token
 from reflex_sdk._decode import decode
-from reflex_sdk._errors import APIResponseValidationError, MissingTokenError
-from reflex_sdk.transports._base import Request, Response
+from reflex_sdk._errors import (
+    APIConnectionError,
+    APIResponseValidationError,
+    APITimeoutError,
+    MissingTokenError,
+)
+from reflex_sdk.transports._base import Request, Response, TransportError
 
 logger = logging.getLogger(__name__)
 
@@ -55,12 +61,42 @@ def path_segment(value: str | uuid.UUID) -> str:
 
 
 @functools.cache
-def _user_agent() -> str:
+def sdk_version() -> str:
+    """Get the installed version of the SDK.
+
+    Returns:
+        The version, or ``"unknown"`` when the package metadata is missing.
+    """
     try:
-        sdk_version = version("reflex-sdk")
+        return version("reflex-sdk")
     except PackageNotFoundError:
-        sdk_version = "unknown"
-    return f"reflex-sdk/{sdk_version} python/{platform.python_version()}"
+        return "unknown"
+
+
+@functools.cache
+def user_agent() -> str:
+    """Get the ``User-Agent`` the SDK sends.
+
+    Returns:
+        The SDK and Python versions.
+    """
+    return f"reflex-sdk/{sdk_version()} python/{platform.python_version()}"
+
+
+def connection_error(error: TransportError) -> APIConnectionError:
+    """Convert a transport failure into the error the SDK raises for it.
+
+    Args:
+        error: The failure, raised by a transport.
+
+    Returns:
+        An ``APITimeoutError`` for a timeout, an ``APIConnectionError`` otherwise.
+    """
+    request = error.request
+    error_type = APITimeoutError if error.timed_out else APIConnectionError
+    return error_type(
+        f"{request.method} {request.url} failed: {error}", request=request
+    )
 
 
 def _retry_after(response: Response) -> float | None:
@@ -111,8 +147,8 @@ class BaseClient:
                 variable, then to the token saved by ``reflex login``.
             base_url: The Reflex Cloud URL. Defaults to the ``REFLEX_CLOUD_BACKEND_URL``
                 environment variable, then to ``https://build.reflex.dev``.
-            timeout: The timeout of each request attempt in seconds, or None for the
-                transport's default.
+            timeout: The timeout of each network operation in seconds, or None for the
+                transport's defaults.
             max_retries: How many times a failed request that is safe to repeat is retried.
         """
         self._token = (
@@ -160,6 +196,7 @@ class BaseClient:
         params: dict[str, Any] | None,
         json: Any,
         authenticated: bool,
+        form: Mapping[str, str] | None = None,
     ) -> Request:
         """Build an API request.
 
@@ -171,6 +208,7 @@ class BaseClient:
                 sent as ``true`` or ``false``.
             json: The JSON body, if any.
             authenticated: Whether to send the access token.
+            form: A form-encoded body, sent instead of ``json``.
 
         Returns:
             The request, carrying a fresh ``X-Request-ID``.
@@ -180,7 +218,7 @@ class BaseClient:
         """
         headers = {
             "Accept": "application/json",
-            "User-Agent": _user_agent(),
+            "User-Agent": user_agent(),
             "X-Request-ID": uuid.uuid4().hex,
         }
         if authenticated:
@@ -203,7 +241,10 @@ class BaseClient:
             if query:
                 url = f"{url}?{query}"
         content = None
-        if json is not None:
+        if form is not None:
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+            content = urlencode(form).encode()
+        elif json is not None:
             headers["Content-Type"] = "application/json"
             content = json_module.dumps(json, separators=(",", ":")).encode()
         return Request(
