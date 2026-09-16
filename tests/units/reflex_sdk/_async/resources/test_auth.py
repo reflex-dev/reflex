@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import inspect
 import uuid
 from collections.abc import AsyncIterator
 
@@ -232,6 +233,12 @@ async def test_finish_login_denied(client: AsyncReflexCloud, mock_api: MockAPI):
     )
     with pytest.raises(LoginDeniedError):
         await client.auth.finish_login(LOGIN, poll_interval=0)
+
+
+def test_finish_login_waits_ten_minutes_by_default(mock_api: MockAPI):
+    client = AsyncReflexCloud(transport=AsyncMockTransport(mock_api))
+    timeout = inspect.signature(client.auth.finish_login).parameters["timeout"]
+    assert timeout.default == pytest.approx(600.0)
 
 
 async def test_finish_login_timeout(client: AsyncReflexCloud, mock_api: MockAPI):

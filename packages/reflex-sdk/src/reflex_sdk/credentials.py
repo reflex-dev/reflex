@@ -88,6 +88,9 @@ def save_token(token: str) -> None:
 
     Args:
         token: The access token.
+
+    Raises:
+        OSError: If the file cannot be written; the previous file is left intact.
     """
     # An unreadable file holds no usable token, so it is started over.
     config = _read() or {}
@@ -96,7 +99,11 @@ def save_token(token: str) -> None:
 
 
 def delete_token() -> None:
-    """Delete the saved access token, keeping the file's other settings."""
+    """Delete the saved access token, keeping the file's other settings.
+
+    Raises:
+        OSError: If the file cannot be written; the previous file is left intact.
+    """
     config = _read()
     if config and _TOKEN_KEY in config:
         del config[_TOKEN_KEY]

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime
+import inspect
 import uuid
 from collections.abc import Iterator
 
@@ -226,6 +227,12 @@ def test_finish_login_denied(client: ReflexCloud, mock_api: MockAPI):
     )
     with pytest.raises(LoginDeniedError):
         client.auth.finish_login(LOGIN, poll_interval=0)
+
+
+def test_finish_login_waits_ten_minutes_by_default(mock_api: MockAPI):
+    client = ReflexCloud(transport=MockTransport(mock_api))
+    timeout = inspect.signature(client.auth.finish_login).parameters["timeout"]
+    assert timeout.default == pytest.approx(600.0)
 
 
 def test_finish_login_timeout(client: ReflexCloud, mock_api: MockAPI):

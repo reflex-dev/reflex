@@ -25,6 +25,9 @@ if TYPE_CHECKING:
 
 # How often finish_login() checks whether a login was approved, in seconds.
 _LOGIN_POLL_INTERVAL = 1.0
+# How long finish_login() waits for approval by default, in seconds (10 minutes):
+# a person may never approve, and a login left waiting holds up its caller.
+_LOGIN_TIMEOUT = 600.0
 
 
 class AsyncTokens:
@@ -134,7 +137,7 @@ class AsyncAuth:
         self,
         login: LoginRequest,
         *,
-        timeout: float | None = None,
+        timeout: float | None = _LOGIN_TIMEOUT,
         poll_interval: float = _LOGIN_POLL_INTERVAL,
     ) -> str:
         """Wait for the user to approve a browser login, then collect its token.
@@ -144,7 +147,8 @@ class AsyncAuth:
 
         Args:
             login: The login from ``begin_login``.
-            timeout: How long to wait for approval, in seconds. Defaults to no limit.
+            timeout: How long to wait for approval, in seconds, or None for no limit.
+                Defaults to 10 minutes.
             poll_interval: How long to wait between checks, in seconds.
 
         Returns:
