@@ -29,6 +29,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
+    BaseVarShadowsInheritedVarError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
@@ -1923,62 +1924,71 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     """
     from unittest.mock import patch
 
-    from reflex_base.utils import console as _base_console
+    from reflex_base.utils import log as _base_log
 
     from reflex.state import State
     from reflex.utils import console
 
     legacy_token = f"{token}_{OnLoadState.get_full_name()}"
+    dedupe_state = _base_log._dedupe_filter().seen.copy()
 
-    def _clear_dedupe():
-        # console.deprecate keeps its own emitted-warnings set; clear the
-        # entries for this feature so every block below re-emits.
-        _base_console._EMITTED_DEPRECATION_WARNINGS -= {
-            k
-            for k in _base_console._EMITTED_DEPRECATION_WARNINGS
-            if "Passing a string to modify_state" in k
-        }
+    try:
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            # The legacy modify_state token path emits the deprecation.
+            async with state_manager.modify_state(legacy_token) as state:
+                assert isinstance(state, State)
+                assert OnLoadState.get_name() in state.substates
+            mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
 
-    _clear_dedupe()
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            # The legacy get_state token path emits the same deprecation.
+            retrieved = await state_manager.get_state(legacy_token)
+            assert isinstance(retrieved, State)
+            assert OnLoadState.get_name() in retrieved.substates
+            mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
 
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        # modify_state should accept a legacy string token and emit a deprecation warning.
-        async with state_manager.modify_state(legacy_token) as state:
-            assert isinstance(state, State)
-            # The substate targeted by the token should be prepopulated.
-            assert OnLoadState.get_name() in state.substates
-        mock_deprecate.assert_called()
-        assert (
-            mock_deprecate.call_args.kwargs["feature_name"]
-            == "Passing a string to modify_state"
-        )
-        mock_deprecate.reset_mock()
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            # The legacy set_state token path emits the same deprecation.
+            await state_manager.set_state(legacy_token, retrieved)
+            mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
 
-    _clear_dedupe()
-
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        # get_state should also accept a legacy string token.
-        retrieved = await state_manager.get_state(legacy_token)
-        assert isinstance(retrieved, State)
-        assert OnLoadState.get_name() in retrieved.substates
-        mock_deprecate.assert_called()
-        mock_deprecate.reset_mock()
-
-    _clear_dedupe()
-
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        # set_state should also accept a legacy string token.
-        await state_manager.set_state(legacy_token, retrieved)
-        mock_deprecate.assert_called()
-        mock_deprecate.reset_mock()
-
-    _clear_dedupe()
-
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        final = await state_manager.get_state(legacy_token)
-        assert isinstance(final, State)
-        assert OnLoadState.get_name() in final.substates
-        mock_deprecate.assert_called()
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            # A final legacy get_state lookup remains supported.
+            final = await state_manager.get_state(legacy_token)
+            assert isinstance(final, State)
+            assert OnLoadState.get_name() in final.substates
+            mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
+    finally:
+        _base_log._dedupe_filter().seen.clear()
+        _base_log._dedupe_filter().seen.update(dedupe_state)
 
 
 @pytest_asyncio.fixture(loop_scope="function")
@@ -4546,6 +4556,13 @@ class Obj(Base):
     f: Callable
 
 
+# TODO: drop the xfail once the dill release fixing
+# https://github.com/uqfoundation/dill/issues/753 lands in uv.lock
+@pytest.mark.xfail(
+    sys.version_info >= (3, 15),
+    reason="dill <= 0.4.1 uses code.co_lnotab, removed in Python 3.15",
+    raises=StateSerializationError,
+)
 def test_fallback_pickle():
     """Test that state serialization will fall back to dill."""
 
@@ -5434,3 +5451,84 @@ def test_setattr_alias_annotated_var(mocker: MockerFixture):
     state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
     assert state.key == 1
     error_mock.assert_called_once()
+
+
+def test_base_var_shadowing_inherited_var_raises() -> None:
+    """A base var shadowing an inherited var raises instead of being dropped silently."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="shadowed_value"):
+
+        class ShadowChild(ShadowParent):
+            shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+
+def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
+    """Re-annotating to win over a descriptor from a non-state base is not a shadow."""
+    from reflex_base.vars.hybrid_property import hybrid_property
+
+    class SharedMixin:
+        @hybrid_property
+        def descriptor_value(self) -> int:
+            return 1
+
+    class PlainBase(SharedMixin):
+        pass
+
+    class OverridingState(SharedMixin, BaseState):
+        descriptor_value: int = 5  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    class DescriptorChild(PlainBase, OverridingState):
+        descriptor_value: int  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
+
+    assert isinstance(DescriptorChild.descriptor_value, Var)
+
+
+def test_base_var_shadowing_raises_when_descriptor_outranks_state_field() -> None:
+    """A descriptor closer than the state field does not exempt a dropped declaration."""
+    from reflex_base.vars.hybrid_property import hybrid_property
+
+    class CloserMixin:
+        @hybrid_property
+        def outranked_value(self) -> int:
+            return 1
+
+    class OutrankedParent(BaseState):
+        outranked_value: int = 1  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="outranked_value"):
+
+        class OutrankedChild(CloserMixin, OutrankedParent):
+            outranked_value: str = "x"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+
+def test_base_var_shadowing_raises_despite_state_field_outranking_descriptor() -> None:
+    """A dropped redeclaration raises even where a state field outranks a descriptor."""
+    from reflex_base.vars.hybrid_property import hybrid_property
+
+    class OutrankedMixin:
+        @hybrid_property
+        def redeclared_value(self) -> int:
+            return 1
+
+    class DescriptorOwningParent(OutrankedMixin, BaseState):
+        redeclared_value: int = 5  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="redeclared_value"):
+
+        class RedeclaringChild(DescriptorOwningParent):
+            redeclared_value: str = "shadowed"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+
+def test_base_var_bare_reannotation_does_not_raise() -> None:
+    """A bare re-annotation of an inherited var is inert and stays allowed."""
+
+    class ReannotatedParent(BaseState):
+        reannotated_value: int = 1
+
+    class ReannotatingChild(ReannotatedParent):
+        reannotated_value: int  # pyright: ignore[reportGeneralTypeIssues]
+
+    assert isinstance(ReannotatingChild.reannotated_value, Var)
