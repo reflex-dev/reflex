@@ -1,7 +1,6 @@
 # Generated from tests/units/reflex_sdk/_async/resources/test_projects.py by packages/reflex-sdk/scripts/unasync.py. Do not edit.
 from __future__ import annotations
 
-import json
 import uuid
 from collections.abc import Iterator
 from typing import Any
@@ -18,7 +17,7 @@ from reflex_sdk.types import (
     Role,
 )
 
-from tests.units.reflex_sdk.conftest import MockAPI, MockTransport, reply
+from tests.units.reflex_sdk.conftest import MockAPI, MockTransport, json_body, reply
 
 PROJECT_ID = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
 ROLE_ID = "3a9d7c1e-0b4f-4e2a-9c8d-1f2e3d4c5b6a"
@@ -139,7 +138,7 @@ def test_create(client: ReflexCloud, mock_api: MockAPI):
     assert client.projects.create("staging") == ProjectRef(
         id=uuid.UUID(PROJECT_ID), name="staging"
     )
-    assert json.loads(mock_api.requests[0].content or b"") == {"name": "staging"}
+    assert json_body(mock_api.requests[0]) == {"name": "staging"}
 
 
 def test_roles_list(client: ReflexCloud, mock_api: MockAPI):
@@ -229,7 +228,7 @@ def test_members_set_role(
         client.projects.members.set_role(user_id=uuid.UUID(USER_ID), role_id=ROLE_ID)
         == result
     )
-    assert json.loads(mock_api.requests[0].content or b"") == {
+    assert json_body(mock_api.requests[0]) == {
         "user_id": USER_ID,
         "role_id": ROLE_ID,
     }

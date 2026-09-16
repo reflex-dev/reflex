@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 import pytest
 from reflex_sdk.transports import (
@@ -50,6 +52,61 @@ def test_send():
     assert body["method"] == "POST"
     assert body["request_id"] == "abc"
     assert body["body"] == '{"a":1}'
+
+
+def _echo_upload(request: httpx.Request) -> httpx.Response:
+    return httpx.Response(
+        200,
+        json={
+            "body": request.content.decode(),
+            "content_length": request.headers.get("Content-Length"),
+            "transfer_encoding": request.headers.get("Transfer-Encoding"),
+            "content_type": request.headers.get("Content-Type"),
+        },
+    )
+
+
+def _upload(content: object) -> Request:
+    return Request(
+        method="PUT",
+        url="https://storage.example.com/bucket/backend.zip?signature=x",
+        headers={"Content-Length": "6"},
+        content=content,  # pyright: ignore[reportArgumentType]
+    )
+
+
+def test_send_streamed_body():
+    transport = HttpxTransport(
+        httpx.Client(transport=httpx.MockTransport(_echo_upload))
+    )
+    response = transport.send(_upload(iter([b"abc", b"def"])))
+    # The signed length is sent as is, without chunked encoding or a content type.
+    assert response.json() == {
+        "body": "abcdef",
+        "content_length": "6",
+        "transfer_encoding": None,
+        "content_type": None,
+    }
+
+
+async def test_async_send_streamed_body():
+    async def chunks():
+        yield b"abc"
+        # Hand control back between chunks, as reading a file would.
+        await asyncio.sleep(0)
+        yield b"def"
+
+    transport = AsyncHttpxTransport(
+        httpx.AsyncClient(transport=httpx.MockTransport(_echo_upload))
+    )
+    response = await transport.send(_upload(chunks()))
+    assert response.json() == {
+        "body": "abcdef",
+        "content_length": "6",
+        "transfer_encoding": None,
+        "content_type": None,
+    }
+    await transport.aclose()
 
 
 def test_request_timeout():

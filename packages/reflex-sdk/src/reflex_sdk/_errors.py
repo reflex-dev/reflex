@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+import uuid
+from typing import TYPE_CHECKING, Any
 
 from reflex_sdk.transports._base import Request, Response
+
+if TYPE_CHECKING:
+    from reflex_sdk.types import DeploymentReport
 
 
 class ReflexCloudError(Exception):
@@ -13,6 +17,36 @@ class ReflexCloudError(Exception):
 
 class MissingTokenError(ReflexCloudError):
     """Raised when an authenticated endpoint is called without an access token."""
+
+
+class DeploymentFailedError(ReflexCloudError):
+    """A deployment ended without going live: it failed, or was rejected, cancelled
+    or replaced before it did.
+    """
+
+    deployment_id: uuid.UUID
+    # Why it failed: ``reason``, ``guidance`` and, for a failed build, the end of
+    # the build log.
+    report: DeploymentReport
+
+    def __init__(self, deployment_id: uuid.UUID, report: DeploymentReport) -> None:
+        """Initialize the error.
+
+        Args:
+            deployment_id: The deployment.
+            report: The deployment's final report.
+        """
+        super().__init__(
+            f"deployment {deployment_id} {report.status.lower()}: {report.reason}"
+            if report.reason
+            else f"deployment {deployment_id} {report.status.lower()}"
+        )
+        self.deployment_id = deployment_id
+        self.report = report
+
+
+class DeploymentTimeoutError(ReflexCloudError, TimeoutError):
+    """A deployment was still in progress when waiting for it timed out."""
 
 
 class APIError(ReflexCloudError):

@@ -9,6 +9,7 @@ from typing import Any, Literal
 import pytest
 from reflex_sdk import types
 from reflex_sdk._decode import json_name
+from reflex_sdk._deploy import UploadReservation, UploadTarget
 
 from tests.units.reflex_sdk.schema_check import load_components, model_problems
 
@@ -33,6 +34,9 @@ SCHEMA_MODELS: dict[type, tuple[str, ...]] = {
     types.Project: ("GetProjectInfoResponse",),
     types.Role: ("ProjectRoleResponse",),
     types.ProjectMember: ("ProjectUserResult",),
+    types.DeploymentReport: ("DeploymentFailureResponse",),
+    UploadReservation: ("ReserveUploadResponse",),
+    UploadTarget: ("UploadTargetResponse",),
 }
 
 # Models of responses the schema leaves untyped; their shapes come from the
@@ -43,6 +47,9 @@ UNTYPED_MODELS = {
     types.Token,
     types.AppSummary,
     types.LogRecord,
+    types.HostnameReservation,
+    types.Region,
+    types.MachineSize,
 }
 
 
@@ -54,7 +61,11 @@ def test_every_model_is_checked_or_listed_as_untyped():
         and dataclasses.is_dataclass(value)
         and value.__module__ == types.__name__
     }
-    assert models == set(SCHEMA_MODELS) | UNTYPED_MODELS
+    assert (
+        models
+        == {model for model in SCHEMA_MODELS if model.__module__ == types.__name__}
+        | UNTYPED_MODELS
+    )
 
 
 @pytest.mark.parametrize(
