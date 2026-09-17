@@ -161,7 +161,8 @@ class AsyncReflexCloud(BaseClient):
             method: The HTTP method.
             path: The endpoint path relative to ``/api/v1/``, with path parameters
                 already quoted.
-            cast: The type to decode the JSON response into, or None to ignore it.
+            cast: The type to decode the JSON response into, None to ignore it, or
+                ``Response`` for the response itself.
             params: The query parameters; None values are left out.
             json: The JSON body, if any.
             form: A form-encoded body, sent instead of ``json``.

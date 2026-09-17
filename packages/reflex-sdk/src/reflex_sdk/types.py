@@ -393,6 +393,120 @@ class ManagedDatabase:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class SignInStatus:
+    """Whether an app signs its users in with their Reflex accounts."""
+
+    # Whether sign-in is set up: its settings are in the app's secrets.
+    enabled: bool = field(metadata=json_name("has_auth"))
+    # The OpenID Connect issuer the app signs users in with, while enabled.
+    issuer: str | None = None
+    # The app's OpenID Connect client id, which is the app's id, while enabled.
+    client_id: str | None = None
+    # Whether sign-ins are accepted. False while enabled means setting sign-in up
+    # did not finish; enabling it again repairs it.
+    client_enabled: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class EndUser:
+    """A Reflex account that has agreed to sign in to an app."""
+
+    user_id: uuid.UUID
+    # Empty unless the user shared their email address with the app.
+    email: str
+    # None unless the user shared their profile with the app.
+    name: str | None
+    first_consented_at: datetime.datetime
+    # When the user last agreed to sign in.
+    consented_at: datetime.datetime
+    # When the user last signed in or refreshed their session, if they still have one.
+    last_active_at: datetime.datetime | None
+    blocked: bool
+    # When the user was first blocked, while they are.
+    blocked_at: datetime.datetime | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class EndUserPage:
+    """A page of an app's users."""
+
+    # The users, most recently consented first.
+    users: list[EndUser]
+    # How many users match the search.
+    total: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class EndUserExport:
+    """Every user of an app, as a CSV file."""
+
+    # The CSV, with a header row: ``Email``, ``Name``, ``First consented``,
+    # ``Last active``, ``Consent last given``, ``Blocked since`` and ``User ID``.
+    csv: str
+    # Whether the file stops at its limit of 20,000 users.
+    truncated: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class EndUserBlock:
+    """Whether a user is blocked from signing in to an app."""
+
+    user_id: uuid.UUID
+    blocked: bool
+    blocked_at: datetime.datetime | None
+    # How many of the user's sessions were ended, or None if ending them failed;
+    # the rest end when they next refresh, or when the change is made again.
+    revoked_sessions: int | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SignInInvite:
+    """An email address invited to sign in to an app."""
+
+    # The address, normalized: lowercase, and without dots in a Gmail address.
+    email: str
+    created_at: datetime.datetime
+    # When an account with the address first signed in.
+    redeemed_at: datetime.datetime | None
+    redeemed: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Audience:
+    """Who may sign in to an app."""
+
+    # ``"public"``: anyone with a Reflex account; ``"members"``: members of the app's
+    # project; ``"invited"``: invited addresses and the app's editors;
+    # ``"owner_only"``: the app's editors. None for a setting this SDK does not know,
+    # which refuses every sign-in.
+    audience: str | None
+    # The invited addresses, newest first. None for callers who cannot edit the app.
+    invites: list[SignInInvite] | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AudienceChange:
+    """The result of changing who may sign in to an app."""
+
+    audience: str
+    # Whether the setting was different before.
+    changed: bool
+    # How many sessions were ended, or None if ending them failed; the rest end when
+    # they next refresh, or when the same setting is made again.
+    revoked_sessions: int | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class InviteRemoval:
+    """The result of withdrawing an invitation to sign in to an app."""
+
+    # The address, normalized.
+    email: str
+    # How many of the address's sessions were ended, or None if ending them failed.
+    revoked_sessions: int | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class HostnameReservation:
     """The URLs reserved for an app's next deployment, to export its build with."""
 

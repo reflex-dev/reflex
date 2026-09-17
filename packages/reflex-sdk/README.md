@@ -113,6 +113,16 @@ print(database.masked_connection_string)
 
 `client.apps.database` creates a Postgres database for an app, shared by all of its environments, and sets its connection strings as secrets, `DATABASE_URL` among them, which each environment picks up on its next deployment. Creating or deleting a database needs a token with full access, which `reflex login` tokens are not, and an app with its own `DATABASE_URL` secret is refused.
 
+### Signing users in
+
+```python
+client.apps.sign_in.enable(app.id)
+client.apps.sign_in.set_audience(app.id, "invited")
+client.apps.sign_in.invite(app.id, "someone@example.com")
+```
+
+`client.apps.sign_in` lets an app's users sign in with their Reflex accounts, through `rxe.AuthPlugin` from `reflex-enterprise`. It sets the app's sign-in settings as secrets, which take effect when the app is next deployed with `rxe.AuthPlugin`, chooses who may sign in, and lists, exports and blocks the app's users. Restricting who may sign in and inviting addresses need the Pro or Enterprise plan. Changing sign-in needs a token with full access; tokens from `reflex login` are refused.
+
 ## Authentication
 
 The client uses the first access token it finds:

@@ -304,16 +304,20 @@ def decode_response(response: Response, cast: Any) -> Any:
 
     Args:
         response: The successful response.
-        cast: The type to decode the JSON body into, or None to ignore the body.
+        cast: The type to decode the JSON body into, None to ignore the body, or
+            ``Response`` for the response itself, e.g. for a body that is not JSON.
 
     Returns:
-        The decoded body, or None when ``cast`` is None.
+        The decoded body, None when ``cast`` is None, or the response when ``cast`` is
+        ``Response``.
 
     Raises:
         APIResponseValidationError: If the body is not JSON of the expected type.
     """
     if cast is None:
         return None
+    if cast is Response:
+        return response
     try:
         return decode(cast, response.json())
     except ValueError as ex:
