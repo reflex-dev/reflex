@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import functools
 import importlib
 import importlib.metadata
 import inspect
@@ -502,7 +501,10 @@ def parse_redis_url() -> str | None:
     return config.redis_url
 
 
-@functools.cache
+# The long-lived redis client shared by health checks, closed on app shutdown.
+_health_redis: Redis | None = None
+
+
 def _get_health_redis() -> Redis | None:
     """Get the long-lived redis client used by health checks.
 
@@ -512,7 +514,18 @@ def _get_health_redis() -> Redis | None:
     Returns:
         The asynchronous redis client, or None if redis is not configured.
     """
-    return get_redis()
+    global _health_redis
+    if _health_redis is None:
+        _health_redis = get_redis()
+    return _health_redis
+
+
+async def close_health_redis() -> None:
+    """Close the cached health-check redis client, if one was created."""
+    global _health_redis
+    if _health_redis is not None:
+        await _health_redis.aclose(close_connection_pool=True)
+        _health_redis = None
 
 
 async def get_redis_status() -> dict[str, bool | None]:
