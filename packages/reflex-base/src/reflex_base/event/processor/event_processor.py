@@ -7,6 +7,7 @@ import collections
 import contextlib
 import dataclasses
 import inspect
+import itertools
 import logging
 import sys
 import time
@@ -125,9 +126,14 @@ class EventProcessor:
         default_factory=dict, init=False
     )
     # Latest-wins tracking for superseding handlers: (event name, token) -> the
-    # currently active chain root future.
-    _superseded: dict[tuple[str, str], EventFuture] = dataclasses.field(
+    # live invocation futures of the newest root generation, keyed by txid.
+    _superseded: dict[tuple[str, str], dict[str, EventFuture]] = dataclasses.field(
         default_factory=dict, init=False
+    )
+    # Monotonic stamp handed to each root enqueue; a global counter keeps
+    # per-token ordering without per-token state.
+    _root_gen_counter: itertools.count = dataclasses.field(
+        default_factory=lambda: itertools.count(1), init=False, repr=False
     )
     _token_queues: dict[
         str,
@@ -389,8 +395,10 @@ class EventProcessor:
 
         Returns:
             An EventFuture that resolves to the result of the associated task.
-            If the event was chained from an already-cancelled chain, the
-            returned future is already cancelled and the event is dropped.
+            If the event was chained from an already-cancelled chain, or is a
+            superseding handler enqueued by a chain older than one that
+            already enqueued it, the returned future is already cancelled and
+            the event is dropped.
         """
         if ev_ctx is None:
             try:
@@ -412,7 +420,23 @@ class EventProcessor:
             if ev_ctx.parent_txid is not None
             else None
         )
-        tracked = EventFuture(parent=parent_future, txid=txid)
+        tracked = EventFuture(
+            parent=parent_future,
+            txid=txid,
+            root_gen=(
+                parent_future.root_gen
+                if parent_future is not None
+                else next(self._root_gen_counter)
+            ),
+            # A late-chained event (done parent) is not attached to the
+            # parent's cancellation tree, so it must not count as covered by
+            # a registered ancestor or a newer generation could not cancel it.
+            covered_supersede_keys=(
+                parent_future.covered_supersede_keys
+                if parent_future is not None and not parent_future.done()
+                else frozenset()
+            ),
+        )
         self._futures[txid] = tracked
         tracked.add_done_callback(self._try_clean_future)
         tracked.add_done_callback(self._on_future_done)
@@ -427,8 +451,8 @@ class EventProcessor:
             # event) so the child runs instead of crashing.
             if not parent_future.done():
                 parent_future.add_child(tracked)
-        if parent_future is None:
-            self._supersede_previous(token=token, event=event, tracked=tracked)
+        if not self._supersede_previous(token=token, event=event, tracked=tracked):
+            return tracked
         await queue.put(EventQueueEntry(event=event, ctx=ev_ctx))
         return tracked
 
@@ -544,44 +568,75 @@ class EventProcessor:
             self._futures.pop(future.txid, None)
             if (
                 (key := future.supersede_key) is not None
-                and self._superseded.get(key) is future
+                and (slot := self._superseded.get(key)) is not None
+                and slot.get(future.txid) is future
                 and future.all_done()
             ):
-                del self._superseded[key]
+                del slot[future.txid]
+                if not slot:
+                    del self._superseded[key]
             if parent is None or not parent.txid:
                 return
             future = parent
 
     def _supersede_previous(
         self, *, token: str, event: Event, tracked: EventFuture
-    ) -> None:
-        """Cancel the previous unfinished chain of a superseding event handler.
+    ) -> bool:
+        """Apply latest-wins supersession for a superseding event handler.
 
-        Root handlers marked with ``supersedes`` (e.g. ``on_load_internal``)
-        use latest-wins semantics: enqueuing a new invocation cancels the
-        previous unfinished event chain for the same handler and client token.
+        Handlers marked with ``supersedes`` use latest-wins semantics ordered
+        by root generation: the invocation belonging to the newest
+        user-initiated chain wins. Enqueuing from a newer chain cancels every
+        live invocation of an older chain, invocations of the same chain
+        (self-chains and sibling fan-out from one parent) coexist, and an
+        older chain enqueuing after a newer chain already has is dropped
+        instead of cancelling the newer work.
 
         Args:
             token: The client token associated with the event.
             event: The event being enqueued.
             tracked: The future of the event being enqueued.
+
+        Returns:
+            True if the event should be queued, False if it was dropped as a
+            stale invocation (``tracked`` is cancelled in that case).
         """
         try:
             registered = RegistrationContext.get().event_handlers.get(event.name)
         except LookupError:
-            return
+            return True
         if registered is None or not registered.handler.supersedes:
-            return
+            return True
         key = (event.name, token)
-        previous = self._superseded.get(key)
-        if previous is not None and not previous.all_done():
-            logger.debug(
-                f"Cancelling the previous unfinished {event.name} chain for token "
-                f"{token}, superseded by a newer invocation."
-            )
-            previous.cancel()
-        self._superseded[key] = tracked
+        slot = self._superseded.get(key)
+        if slot:
+            current_gen = next(iter(slot.values())).root_gen
+            if tracked.root_gen < current_gen:
+                logger.debug(
+                    f"Dropping stale {event.name} invocation for token {token}, "
+                    f"already superseded by a newer chain."
+                )
+                tracked.cancel()
+                return False
+            if tracked.root_gen > current_gen:
+                logger.debug(
+                    f"Cancelling the previous unfinished {event.name} chain for "
+                    f"token {token}, superseded by a newer invocation."
+                )
+                for previous in slot.values():
+                    previous.cancel()
+                slot.clear()
+            elif key in tracked.covered_supersede_keys:
+                # Same chain, and an ancestor invocation is already
+                # registered: cancelling that ancestor cascades here, so
+                # re-registering would only grow the slot per self-chain tick.
+                return True
+        elif slot is None:
+            slot = self._superseded[key] = {}
+        slot[tracked.txid] = tracked
         tracked.supersede_key = key
+        tracked.covered_supersede_keys |= {key}
+        return True
 
     def _on_future_done(self, future: EventFuture) -> None:  # type: ignore[override]
         """Callback invoked when an enqueued future completes.

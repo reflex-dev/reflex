@@ -45,10 +45,10 @@ from .conftest import active_tracer, metric_points
 
 _DISCONNECT = object()
 
-WEBSOCKET_JS_TEMPLATE = (
-    Path(__file__).parents[2]
-    / "packages/reflex-base/src/reflex_base/.templates/web/utils/helpers/websocket.js"
+WEB_TEMPLATE_ROOT = (
+    Path(__file__).parents[2] / "packages/reflex-base/src/reflex_base/.templates/web"
 )
+WEBSOCKET_JS_TEMPLATE = WEB_TEMPLATE_ROOT / "utils/helpers/websocket.js"
 
 
 class FakeWebSocket:
@@ -890,10 +890,27 @@ async def test_channel_frame_with_non_string_name_closes_connection(
 
 NODE = shutil.which("node") or ""
 
-# The client template as a JS string literal. A file URL, not a path: an
-# absolute Windows path is neither a valid ESM specifier nor a valid JS string
-# literal (its separators are escapes).
-CLIENT_MODULE = json.dumps(WEBSOCKET_JS_TEMPLATE.as_uri())
+# The client template is copied next to each script, so it is imported by a
+# relative specifier. Its "$/" specifiers are a vite alias node cannot resolve,
+# so they become file URLs: an absolute Windows path is neither a valid ESM
+# specifier nor a valid JS string literal (its separators are escapes).
+CLIENT_MODULE = json.dumps("./websocket.mjs")
+ALIAS_SPECIFIER_RE = re.compile(r'"\$/([^"]+)"')
+
+
+def _resolve_alias(match: re.Match[str]) -> str:
+    """Rewrite one "$/" specifier to a file URL, adding the extension vite infers.
+
+    Args:
+        match: The matched specifier, with the path after "$/" as group 1.
+
+    Returns:
+        The file URL as a JS string literal.
+    """
+    target = WEB_TEMPLATE_ROOT / match[1]
+    if not target.suffix:
+        target = target.with_suffix(".js")
+    return json.dumps(target.as_uri())
 
 
 def _run_client_script(tmp_path: Path, source: str, *args: str) -> Any:
@@ -907,6 +924,9 @@ def _run_client_script(tmp_path: Path, source: str, *args: str) -> Any:
     Returns:
         The parsed JSON the script wrote to stdout.
     """
+    (tmp_path / "websocket.mjs").write_text(
+        ALIAS_SPECIFIER_RE.sub(_resolve_alias, WEBSOCKET_JS_TEMPLATE.read_text())
+    )
     script = tmp_path / "client.mjs"
     script.write_text(source)
     result = subprocess.run(

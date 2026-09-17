@@ -2,6 +2,7 @@
 // frame is a JSON array `[event_name, payload]`. Mirrors the socket.io-client
 // surface that state.js and upload.js rely on: connected, connect(),
 // disconnect(), emit(), on(), io.opts.query, and _callbacks.
+import { parseJson } from "$/utils/helpers/json";
 
 // Protocol-level message names (must match reflex/event_namespace.py).
 const HANDSHAKE_MESSAGE = "_handshake";
@@ -38,25 +39,6 @@ const MAX_MESSAGE_BUFFERS = 64;
 // may not use them (must match reflex.channels.RESERVED_EVENTS).
 const LIFECYCLE_EVENTS = new Set(["connect", "disconnect", "error"]);
 
-// Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
-// Rewrite them outside string literals so JSON.parse accepts the payload.
-// 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal, so it is
-// swapped for a sentinel string and revived back to NaN after parsing.
-// The alternation matches whole string literals first (passed through unchanged),
-// guaranteeing bare-token matches only land in numeric positions.
-const NAN_SENTINEL = "__reflex_nan__";
-const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
-const NON_FINITE_REPLACEMENTS = {
-  Infinity: "1e999",
-  "-Infinity": "-1e999",
-  NaN: `"${NAN_SENTINEL}"`,
-};
-const rewriteBareNonFiniteFloats = (str) =>
-  str.replace(NON_FINITE_FLOAT_RE, (match) =>
-    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
-  );
-const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
-
 /**
  * JSON.stringify replacer that sends undefined fields as null instead of
  * removing them. Also assigned as the socket.io encoder replacer.
@@ -74,16 +56,9 @@ export const undefinedToNull = (_k, v) => (v === undefined ? null : v);
  */
 export const parseJsonLenient = (text, fallback) => {
   try {
-    return JSON.parse(text);
-  } catch (e) {
-    try {
-      return JSON.parse(
-        rewriteBareNonFiniteFloats(text),
-        reviveNonFiniteFloats,
-      );
-    } catch (e2) {
-      return fallback;
-    }
+    return parseJson(text);
+  } catch {
+    return fallback;
   }
 };
 

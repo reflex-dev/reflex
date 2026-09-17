@@ -66,6 +66,7 @@ members = [
     "reflex-integrations-docs",
     "reflex-otel",
     "reflex-release",
+    "reflex-sdk",
     "reflex-site-shared",
 ]
 
@@ -3970,6 +3971,7 @@ dev = [
     { name = "reflex-docgen" },
     { name = "reflex-otel" },
     { name = "reflex-release" },
+    { name = "reflex-sdk" },
     { name = "reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
@@ -4061,6 +4063,7 @@ dev = [
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-otel", editable = "packages/reflex-otel" },
     { name = "reflex-release", editable = "packages/reflex-release" },
+    { name = "reflex-sdk", editable = "packages/reflex-sdk" },
     { name = "reflex-site-shared", editable = "packages/reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
@@ -4310,6 +4313,7 @@ dependencies = [
     { name = "alembic" },
     { name = "email-validator" },
     { name = "fastapi" },
+    { name = "griffelib" },
     { name = "openai" },
     { name = "orjson" },
     { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -4347,6 +4351,7 @@ requires-dist = [
     { name = "alembic" },
     { name = "email-validator" },
     { name = "fastapi" },
+    { name = "griffelib", specifier = ">=2.0.1" },
     { name = "openai" },
     { name = "orjson" },
     { name = "pandas" },
@@ -4469,6 +4474,22 @@ requires-dist = [
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.1" },
     { name = "towncrier", specifier = ">=24.8.0,<26" },
     { name = "tzdata", marker = "sys_platform == 'win32'", specifier = ">=2024.1" },
+]
+
+[[package]]
+name = "reflex-sdk"
+source = { editable = "packages/reflex-sdk" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "httpx" },
+    { name = "platformdirs" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiohttp", specifier = ">=3.10.0,<4.0" },
+    { name = "httpx", specifier = ">=0.25.1,<1.0" },
+    { name = "platformdirs", specifier = ">=3.10.0,<5.0" },
 ]
 
 [[package]]
@@ -4948,9 +4969,12 @@ name = "starlette-admin"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
