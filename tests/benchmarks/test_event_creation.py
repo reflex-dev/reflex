@@ -60,7 +60,6 @@ def increment_event(increment_spec: EventSpec) -> Event:
     params=(
         "event",
         "event_spec",
-        "event_handler",
         "lambda_event",
         "lambda_event_spec",
         "lambda_event_handler",
@@ -89,7 +88,6 @@ def event_input(
     inputs: dict[str, Any] = {
         "event": increment_event,
         "event_spec": increment_spec,
-        "event_handler": increment_handler,
         "lambda_event": lambda: increment_event,
         "lambda_event_spec": lambda: increment_spec,
         "lambda_event_handler": lambda: increment_handler,
@@ -100,8 +98,8 @@ def event_input(
 def test_from_event_type(event_input: Any, benchmark: BenchmarkFixture):
     """Benchmark ``Event.from_event_type`` for each supported input shape.
 
-    Covers existing Event, EventSpec (from calling EventHandler), EventHandler,
-    and lambdas returning each of those — the common shapes encountered
+    Covers existing Event, EventSpec (from calling EventHandler), and lambdas
+    returning an Event, EventSpec, or EventHandler — the common shapes encountered
     when normalizing user-returned event values.
 
     Args:
