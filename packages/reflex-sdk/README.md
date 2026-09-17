@@ -79,7 +79,7 @@ with ReflexCloud() as client:
 
 ```python
 pipeline = client.apps.environments.enable(app.id)
-# Deployments now go to dev. Once one is running there, promote it to production.
+# Deployments now go to dev: deploy as above, then promote the version to production.
 client.deployments.wait(deployment_id)
 promotion = client.apps.environments.promote(app.id, pipeline.production_environment_id)
 client.deployments.wait(promotion.deployment_id)
