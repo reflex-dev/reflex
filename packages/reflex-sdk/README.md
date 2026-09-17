@@ -75,6 +75,18 @@ with ReflexCloud() as client:
 
 `deployments.create` streams the archives straight to storage, then submits the deployment. `deployments.wait` returns the deployment's report once it is running, or awaiting approval (`report.status == "AwaitingApproval"`), and raises `DeploymentFailedError` if it fails. `deployments.status`, `report` and `build_logs` read a deployment's progress, and `regions` and `vm_types` list what can be deployed to.
 
+### Environments and databases
+
+```python
+dev, production = client.apps.environments.list(app.id)
+promotion = client.apps.environments.promote(app.id, production.id)
+client.deployments.wait(promotion.deployment_id)
+
+database = client.apps.database.create(app.id)
+```
+
+`client.apps.environments` gives an app a pipeline of environments, such as dev and production: deployments go to the first, and each later environment runs a version promoted from the one before it, with its own secrets and URL. Pipelines need the Enterprise plan. `client.apps.database` creates a Postgres database for an app, shared by its environments, and sets its connection strings as secrets.
+
 ## Authentication
 
 The client uses the first access token it finds:

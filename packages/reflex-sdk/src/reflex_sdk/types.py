@@ -282,6 +282,117 @@ class CustomDomain:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class EnvironmentDeployment:
+    """The deployment serving an environment."""
+
+    id: uuid.UUID = field(metadata=json_name("deployment_id"))
+    # The hostname the environment is served at, or occasionally a full URL.
+    url: str | None
+    # ``"Running"``, ``"Paused"`` or ``"Error: Out of Memory"``.
+    status: str
+    created_at: datetime.datetime | None = field(metadata=json_name("deployment_ts"))
+    description: str | None
+    # The deployment this one was promoted from, for a promoted deployment.
+    promoted_from_id: uuid.UUID | None = field(
+        metadata=json_name("promoted_from_deployment_id")
+    )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Environment:
+    """A stage of an app's deployment pipeline, such as dev or production."""
+
+    # The production environment's id is the app's id.
+    id: uuid.UUID
+    name: str
+    # The environment's place in the pipeline. The first environment receives new
+    # deployments, and each later one is promoted from the one before it.
+    position: int
+    # Whether promoting to this environment needs approval.
+    requires_approval: bool
+    # The subdomain to serve the environment at when it has no URL yet, as a single
+    # label such as ``"my-app-staging"``.
+    default_hostname: str | None
+    # None while nothing is serving the environment.
+    running: EnvironmentDeployment | None
+    # Whether a deployment is in progress or awaiting approval.
+    has_in_flight: bool
+    # Whether a promotion to this environment is awaiting approval.
+    has_pending_promotion: bool
+    # Whether a deployment to this environment is awaiting approval.
+    has_pending_deploy: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class EnvironmentsEnabled:
+    """The environments an app got when it was given a deployment pipeline."""
+
+    # The new first environment, which receives new deployments.
+    dev_environment_id: uuid.UUID
+    # The environment serving the app as before, whose id is the app's id.
+    production_environment_id: uuid.UUID = field(
+        metadata=json_name("prod_environment_id")
+    )
+    # How many of the app's earlier deployments were assigned to production.
+    backfilled_deployments: int
+    # Whether production's secrets were copied to dev.
+    secrets_copied: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NewEnvironment:
+    """An environment added to an app's pipeline."""
+
+    id: uuid.UUID
+    # Whether the requested secrets were copied; True when none were requested.
+    secrets_copied: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Promotion:
+    """A deployment promoting a version to the next environment of a pipeline."""
+
+    deployment_id: uuid.UUID
+    environment_id: uuid.UUID
+    # The deployment whose build was promoted.
+    source_deployment_id: uuid.UUID
+    # The hostname the environment is served at.
+    url: str
+    # ``"Pending"``, or ``"AwaitingApproval"`` when the promotion needs approval.
+    status: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CopiedSecrets:
+    """The secrets copied into an environment from the one before it."""
+
+    # The name of the environment they were copied from.
+    source: str
+    # The names of the copied secrets, or None for callers who cannot see secret
+    # names.
+    names: list[str] | None
+    count: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ManagedDatabase:
+    """The Postgres database Reflex Cloud hosts for an app."""
+
+    # The id of the database's project at the database provider, Neon.
+    provider_project_id: str = field(metadata=json_name("project_id"))
+    # E.g. ``"aws-us-east-2"``.
+    region: str
+    created_at: datetime.datetime
+    # The database name.
+    database: str
+    # The database user.
+    role: str
+    # The production connection string with its credentials masked. The unmasked
+    # one is in the app's ``DATABASE_URL`` secret.
+    masked_connection_string: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class HostnameReservation:
     """The URLs reserved for an app's next deployment, to export its build with."""
 
