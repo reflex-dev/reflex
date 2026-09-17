@@ -189,6 +189,99 @@ class DeploymentReport:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class RunningDeployment:
+    """The deployment running an app, or one of its environments."""
+
+    id: uuid.UUID
+    app_id: uuid.UUID
+    # None for an app without environments.
+    environment_id: uuid.UUID | None
+    # The deployment this one was promoted from, for a promoted deployment.
+    promoted_from_id: uuid.UUID | None = field(
+        metadata=json_name("promoted_from_deployment_id")
+    )
+    # The URL the app is served at.
+    url: str | None
+    # The URL the app's backend is served at.
+    backend_url: str
+    reflex_version: str | None
+    python_version: str | None
+    # The machine size, e.g. ``"c1m1"``.
+    vm_type_id: str | None = field(metadata=json_name("vmtype_id"))
+    # How new instances replace old ones: ``"immediate"``, ``"rolling"``,
+    # ``"bluegreen"`` or ``"canary"``.
+    strategy: str
+    # Whether the app's machines keep running when idle instead of pausing.
+    persistent: bool = field(metadata=json_name("persist"))
+    description: str | None
+    created_at: datetime.datetime = field(metadata=json_name("deployment_ts"))
+    # The id of the user who deployed it.
+    deployed_by_id: uuid.UUID = field(metadata=json_name("deployment_user"))
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AppMove:
+    """The result of moving an app to another project."""
+
+    project_id: uuid.UUID
+    # The names of the integrations copied into the destination project.
+    copied_integrations: list[str]
+    # The builder threads whose repository access tokens were not moved, because
+    # the caller cannot read them. Their repositories stay connected but cannot be
+    # pushed to until they are reconnected.
+    repo_tokens_withheld: list[uuid.UUID]
+    # The builder threads whose repository access tokens failed to move.
+    repo_tokens_failed: list[uuid.UUID]
+    # What to tell the user about withheld or failed repository tokens.
+    repo_token_notices: list[str]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ServiceNameChange:
+    """The result of renaming a Google Cloud app's Cloud Run service."""
+
+    service_name: str
+    # Whether the app was stopped and its old service deleted; it runs under the new
+    # name from its next deployment.
+    stopped: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DnsRecord:
+    """A DNS record a custom domain needs."""
+
+    # E.g. ``"A"``, ``"CNAME"`` or ``"TXT"``.
+    type: str
+    name: str
+    value: str
+    # Whether the record is in DNS: ``"found"``, ``"missing"``, ``"wrong"`` or
+    # ``"unknown"``. None when adding a domain, and for callers who cannot manage
+    # the app's domains.
+    status: str | None = None
+    # What DNS holds for the record instead, when it is wrong.
+    observed: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CustomDomain:
+    """An app's custom domain and whether it is ready to serve the app."""
+
+    domain: str
+    # Whether ownership of the domain has been verified.
+    verified: bool
+    # The records the domain needs, by purpose, e.g. ``"DNS_RECORD_CNAME"``. Empty for
+    # callers who cannot manage the app's domains.
+    dns_records: dict[str, DnsRecord]
+    # E.g. ``"active"``, ``"no_records"``, ``"propagating"``,
+    # ``"awaiting_certificate"``, or ``"unchecked"`` for callers who cannot manage
+    # the app's domains.
+    status: str
+    # The status, explained.
+    status_detail: str
+    checked_at: datetime.datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class HostnameReservation:
     """The URLs reserved for an app's next deployment, to export its build with."""
 

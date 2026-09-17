@@ -35,7 +35,19 @@ with ReflexCloud() as client:
         print(record.timestamp, record.message)
 ```
 
-`client.apps` lists, creates, starts, stops, pauses, scales, rolls back and deletes apps, and reads their deployment history and runtime logs; `client.apps.secrets` manages their secrets. `client.projects` lists, searches and creates projects, with `projects.roles` and `projects.members` for access control. `AsyncReflexCloud` has the same methods as coroutines, with `logs` as an async iterator.
+`client.apps` lists, creates, renames, moves, starts, stops, pauses, scales, rolls back and deletes apps, changes their settings, and reads their status, running deployment, deployment history and runtime logs; `client.apps.secrets` manages their secrets. `client.projects` lists, searches and creates projects, with `projects.roles` and `projects.members` for access control. `AsyncReflexCloud` has the same methods as coroutines, with `logs` as an async iterator.
+
+### Custom domains
+
+```python
+for record in client.apps.domains.add(app.id, "app.example.com").values():
+    print(record.type, record.name, record.value)
+
+domain = client.apps.domains.get(app.id)
+print(domain.status, domain.status_detail)
+```
+
+`domains.add` returns the DNS records to create, and `domains.get` checks them and reports whether the domain is ready to serve the app. Custom domains need the Pro or Enterprise plan.
 
 ## Deploying
 
