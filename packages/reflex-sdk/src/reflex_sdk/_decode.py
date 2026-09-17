@@ -120,6 +120,10 @@ def _decode_any(value: Any) -> Any:
     return value
 
 
+def _decode_never(value: Any) -> NoReturn:
+    _mismatch("no value", value)
+
+
 def _decode_none(value: Any) -> None:
     if value is not None:
         _mismatch("null", value)
@@ -184,8 +188,8 @@ _PRIMITIVES: dict[Any, Decoder] = {
     Any: _decode_any,
     object: _decode_any,
     type(None): _decode_none,
-    # Builtin generics keep None as given, e.g. the value type of dict[str, None].
-    None: _decode_none,
+    # Matches nothing, so dict[str, NoReturn] only accepts an empty object.
+    NoReturn: _decode_never,
     str: _decode_str,
     bool: _decode_bool,
     int: _decode_int,

@@ -8,7 +8,7 @@ import datetime
 import uuid
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 from reflex_sdk._base import path_segment
 from reflex_sdk.types import (
@@ -51,7 +51,17 @@ class _AddedCustomDomain:
 
 
 def _epoch_seconds(dt: datetime.datetime | None) -> int | None:
-    # The logs endpoint takes whole seconds since the Unix epoch.
+    """Convert a log window bound to the whole seconds since the Unix epoch the logs endpoint takes.
+
+    Args:
+        dt: The bound, timezone-aware, or None for no bound.
+
+    Returns:
+        The seconds, or None for no bound.
+
+    Raises:
+        ValueError: If ``dt`` is naive.
+    """
     if dt is None:
         return None
     # timestamp() reads a naive datetime as local time, which would shift the log
@@ -220,12 +230,12 @@ class Domains:
         Returns:
             The domain, or None if the app has none.
         """
-        # An app without a custom domain answers with an empty object, which only
-        # an empty dict of any value type matches.
+        # An app without a custom domain answers with an empty object, the only
+        # value a dict that can hold no values matches.
         domain = self._client._request(
             "GET",
             f"apps/{path_segment(app_id)}/custom_domain",
-            CustomDomain | dict[str, None],
+            CustomDomain | dict[str, NoReturn],
         )
         return domain if isinstance(domain, CustomDomain) else None
 
@@ -464,6 +474,14 @@ class Apps:
         persist: bool | None = None,
         strategy: str | None = None,
     ) -> None:
+        """Change an app's settings through the route that takes all of them at once.
+
+        Args:
+            app_id: The app.
+            persist: Whether the app's machines keep running when idle, or None to
+                leave it unchanged.
+            strategy: The rollout strategy, or None to leave it unchanged.
+        """
         # Every setting must be sent; null leaves one unchanged.
         self._client._request(
             "POST",

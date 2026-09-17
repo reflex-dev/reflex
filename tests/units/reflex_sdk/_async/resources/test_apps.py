@@ -736,12 +736,11 @@ async def test_domains_get_without_a_domain(
     assert await client.apps.domains.get(APP_ID) is None
 
 
+@pytest.mark.parametrize("body", [{"domain": "example.com"}, {"domain": None}])
 async def test_domains_get_rejects_an_unexpected_domain(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexCloud, mock_api: MockAPI, body: dict
 ):
-    mock_api.add(
-        "GET", f"{APP_PATH}/custom_domain", reply(200, json={"domain": "example.com"})
-    )
+    mock_api.add("GET", f"{APP_PATH}/custom_domain", reply(200, json=body))
     with pytest.raises(APIResponseValidationError):
         await client.apps.domains.get(APP_ID)
 
