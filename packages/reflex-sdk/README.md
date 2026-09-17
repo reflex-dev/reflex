@@ -145,7 +145,9 @@ with ReflexCloud() as client:
     credentials.save_token(client.auth.finish_login(login, timeout=600))
 ```
 
-`credentials.delete_token()` removes the saved token. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`.
+`credentials.delete_token()` removes the saved token. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`, and rotate or revoke one with `tokens.refresh(token)` and `tokens.revoke(token)`. Managing tokens needs a token with full access, which `reflex login` tokens are not.
+
+`client.usage.balance()` reports how much of the organization's plan allowance is used, and `client.usage.history()` iterates over its charges and credits.
 
 ## Security reviews
 
@@ -171,9 +173,23 @@ if status.configured and status.allowed:
 
 Running on Google Cloud needs the Enterprise plan. `client.apps.set_full_deploy` also serves an app's frontend from Google Cloud, and `client.providers.cloud_run_manifest()` returns the Dockerfile and script to deploy to Cloud Run yourself.
 
+Organization admins connect Google Cloud projects with a service account key:
+
+```python
+with open("key.json") as key_file:
+    client.providers.connect_gcp(
+        org_id,
+        service_account_key=key_file.read(),
+        project_number="123456789012",
+        region="us-central1",
+    )
+```
+
+`client.providers.gcp_connections` adds, updates, verifies and removes further projects, rotates their keys and chooses the default, and `providers.disconnect_gcp` removes them all. These need a token with full access.
+
 ## Errors
 
-Every exception derives from `reflex_sdk.ReflexCloudError`. Error responses raise a subclass of `APIStatusError` matching the status code (`AuthenticationError`, `NotFoundError`, ...), carrying `status_code`, the server's `detail`, and the `request_id` to quote to support. Failed requests are retried up to `max_retries` times when repeating them cannot apply them twice: requests that never reached the server or were turned away with 408 or 429, and `GET`, `HEAD`, `OPTIONS` and `PUT` requests that timed out, lost their connection, or got a 500, 502, 503 or 504 response.
+Every exception derives from `reflex_sdk.ReflexCloudError`. Error responses raise a subclass of `APIStatusError` matching the status code (`AuthenticationError`, `NotFoundError`, ...), carrying `status_code`, the server's `detail`, and the `request_id` to quote to support. Failed requests are retried up to `max_retries` times when repeating them cannot apply them twice: requests that never reached the server or were turned away with 408 or 429, and requests that are harmless to repeat (`GET`, `HEAD`, `OPTIONS` and `PUT` requests, and calls such as `apps.environments.update` that settle on the same result) that timed out, lost their connection, or got a 500, 502, 503 or 504 response.
 
 ## Transports
 

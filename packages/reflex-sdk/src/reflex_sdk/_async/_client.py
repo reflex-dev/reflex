@@ -13,6 +13,7 @@ from reflex_sdk._async.resources.deployments import AsyncDeployments
 from reflex_sdk._async.resources.projects import AsyncProjects
 from reflex_sdk._async.resources.providers import AsyncProviders
 from reflex_sdk._async.resources.security_reviews import AsyncSecurityReviews
+from reflex_sdk._async.resources.usage import AsyncUsage
 from reflex_sdk._base import (
     DEFAULT_MAX_RETRIES,
     BaseClient,
@@ -45,6 +46,8 @@ class AsyncReflexCloud(BaseClient):
     providers: AsyncProviders
     # Review an app's source code for security and logic issues.
     security_reviews: AsyncSecurityReviews
+    # Read an organization's use of its plan allowance.
+    usage: AsyncUsage
 
     def __init__(
         self,
@@ -68,9 +71,11 @@ class AsyncReflexCloud(BaseClient):
                 SDK creates.
             max_retries: How many times a failed request is retried. Only requests that
                 cannot be applied twice are retried: those the server never received or
-                turned away with 408 or 429, and ``GET``, ``HEAD``, ``OPTIONS`` and ``PUT``
-                requests that timed out, lost their connection, or got a 500, 502, 503
-                or 504 response.
+                turned away with 408 or 429, and requests that are harmless to repeat
+                (``GET``, ``HEAD``, ``OPTIONS`` and ``PUT`` requests, and calls such as
+                ``apps.environments.update`` that settle on the same result) that
+                timed out, lost their connection, or got a 500, 502, 503 or 504
+                response.
             transport: Sends the requests, e.g. a transport wrapping a preconfigured
                 HTTP client. The caller keeps ownership of it: closing this client
                 leaves it open. Defaults to a transport the client creates and closes.
@@ -86,6 +91,7 @@ class AsyncReflexCloud(BaseClient):
         self.projects = AsyncProjects(self)
         self.providers = AsyncProviders(self)
         self.security_reviews = AsyncSecurityReviews(self)
+        self.usage = AsyncUsage(self)
 
     async def __aenter__(self) -> AsyncReflexCloud:
         """Enter the client's context.

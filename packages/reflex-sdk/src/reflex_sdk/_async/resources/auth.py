@@ -31,7 +31,11 @@ _LOGIN_TIMEOUT = 600.0
 
 
 class AsyncTokens:
-    """Manage the caller's access tokens."""
+    """Manage the caller's access tokens.
+
+    Needs a token with full access: tokens from ``reflex login`` and service
+    account tokens are refused with ``PermissionDeniedError``.
+    """
 
     def __init__(self, client: AsyncReflexCloud) -> None:
         """Bind the resource to a client.
@@ -79,6 +83,60 @@ class AsyncTokens:
             name: The name of the token.
         """
         await self._client._request("DELETE", f"user/token/{path_segment(name)}", None)
+
+    async def revoke(self, token: str) -> None:
+        """Revoke an access token, live or expired, by its value.
+
+        A token can revoke itself, e.g. to log out.
+
+        Args:
+            token: The token, one of the caller's.
+        """
+        await self._client._request(
+            "POST", "user/token/revoke", None, json={"token_id": token}
+        )
+
+    async def refresh(self, token: str) -> str:
+        """Replace an access token, live or expired, with a new one.
+
+        The new token has the same name, access and lifetime, from now; the old one
+        is revoked. A token can refresh itself, after which the client must use the
+        new one.
+
+        Args:
+            token: The token, one of the caller's.
+
+        Returns:
+            The new token. It is only returned once, so store it securely.
+        """
+        return await self._client._request(
+            "POST", "user/token/refresh", str, json={"token_id": token}
+        )
+
+    async def assign_to_service_account(
+        self, name: str, service_account_id: uuid.UUID | str
+    ) -> str:
+        """Make one of the caller's live tokens act as an organization service account.
+
+        The token keeps its value but takes the service account's access, and stops
+        being the caller's, so it keeps working if they leave the organization. This
+        cannot be undone. Needs the Enterprise plan and admin access to the
+        organization.
+
+        Args:
+            name: The name of the token.
+            service_account_id: The service account.
+
+        Returns:
+            The service account's name.
+        """
+        result = await self._client._request(
+            "POST",
+            f"user/token/{path_segment(name)}/service-account",
+            dict[str, str],
+            json={"service_account_id": str(service_account_id)},
+        )
+        return result["service_account_name"]
 
 
 class AsyncAuth:
