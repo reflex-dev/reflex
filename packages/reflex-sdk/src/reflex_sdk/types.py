@@ -663,6 +663,106 @@ class ProjectMember:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class RolePreviewMember:
+    """A member who holds a role directly."""
+
+    user_id: uuid.UUID
+    email: str
+    is_service_account: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RolePreviewTeam:
+    """A team that holds a role."""
+
+    team_id: uuid.UUID
+    team_name: str
+    member_count: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class RoleUpdatePreview:
+    """What changing a role would change for the people holding it."""
+
+    # The permissions the role would gain, sorted.
+    gained: list[str]
+    # The permissions the role would lose, sorted.
+    lost: list[str]
+    # The members holding the role directly.
+    members: list[RolePreviewMember]
+    # The teams holding the role, whose members are affected too.
+    teams: list[RolePreviewTeam]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TeamGrant:
+    """A role an organization team holds on a project."""
+
+    team_id: uuid.UUID
+    team_name: str
+    # The name of the role.
+    role: str
+    # ``"editor"`` or ``"viewer"``; teams cannot hold admin roles.
+    base_tier: str
+    # The permissions the role adds to its base tier.
+    permissions: list[str]
+    member_count: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PendingTeamChange:
+    """A change to a team's access to a project that awaits approval."""
+
+    team_id: uuid.UUID
+    team_name: str
+    # ``"grant"`` or ``"revoke"``.
+    action: str
+    # The name of the role to grant; None for a revocation.
+    role: str | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class TeamGrants:
+    """The teams with access to a project."""
+
+    # The roles teams hold, by team name.
+    grants: list[TeamGrant]
+    # The changes awaiting approval.
+    pending: list[PendingTeamChange]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class AuditLogEntry:
+    """An event in a project's audit log."""
+
+    id: uuid.UUID
+    timestamp: datetime.datetime
+    # E.g. ``"ADD_USER"`` or ``"DEPLOY_APP"``.
+    action: str
+    # The action, readable, e.g. ``"Add User"``.
+    action_label: str
+    # The event, as a sentence.
+    summary: str
+    # The project, app or deployment the event is about.
+    resource_id: uuid.UUID | None
+    # ``"project"``, ``"app"``, ``"deployment"`` or ``"unknown"``.
+    resource_type: str
+    # The resource's name, or its id when it has none.
+    resource_display: str
+    actor_user_id: uuid.UUID
+    # The actor's email address or name.
+    actor_display: str
+    actor_email: str | None
+    actor_is_service_account: bool
+    # The event's raw details.
+    content: str
+    # The user the event is about, such as a member who was added.
+    target_user_id: uuid.UUID | None
+    target_display: str | None
+    target_is_service_account: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class LoginRequest:
     """A browser login waiting for the user to approve it."""
 
