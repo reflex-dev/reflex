@@ -847,7 +847,8 @@ def sync(config: Config, check: bool = False, force: bool = False) -> None:
                     )
                 ):
                     fail(
-                        f"app workflow {workflow} input {name!r} must be a required string"
+                        f"app workflow {workflow} input {name!r} must be a required string "
+                        "using block-style type and required keys"
                     )
     else:
         check_title_format(config)

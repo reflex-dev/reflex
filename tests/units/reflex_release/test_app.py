@@ -317,6 +317,10 @@ def test_app_changelog_workflow_guards_release_headings(app_repo: Config):
     assert "startsWith(github.head_ref, 'release/')" in guard["if"]
     assert "version_edit" in guard["if"]
     assert workflow["permissions"]["pull-requests"] == "read"
+    assert workflow["concurrency"] == {
+        "group": "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}",
+        "cancel-in-progress": True,
+    }
 
 
 def test_app_cli_materialize_and_detect(app_repo: Config, outputs):

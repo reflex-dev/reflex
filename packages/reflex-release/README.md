@@ -1111,6 +1111,11 @@ inside its own hooks.
 
 ### Repository-owned hook contract
 
+Declare input metadata in block style (`type: string` and `required: true` on
+separate indented lines). The release tool checks this deliberately limited
+format without loading a YAML parser on the privileged release path; flow-style
+mappings such as `version: {type: string, required: true}` are not supported.
+
 Both hooks are local reusable workflows under `.github/workflows`, with the
 following `workflow_call` string inputs:
 
