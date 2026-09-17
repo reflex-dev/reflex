@@ -273,6 +273,33 @@ def _compile_initial_state(
     )
 
 
+def _compile_bundled_libraries() -> tuple[str, str]:
+    """Return the bundled-library registry as a frontend build artifact.
+
+    Returns:
+        The output path and serialized registry.
+    """
+    bundled_libraries = RegistrationContext.ensure_context().bundled_libraries
+    return constants.Dirs.BUNDLED_LIBRARIES, format.json_dumps(bundled_libraries)
+
+
+def _restore_bundled_libraries() -> None:
+    """Restore the registry emitted by the most recent frontend compile."""
+    path = get_web_dir() / constants.Dirs.BUNDLED_LIBRARIES
+    try:
+        bundled_libraries = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return
+    if not isinstance(bundled_libraries, list) or not all(
+        isinstance(library, str) for library in bundled_libraries
+    ):
+        return
+    context = RegistrationContext.ensure_context()
+    context.bundled_libraries[:] = list(
+        dict.fromkeys([*bundled_libraries, *context.bundled_libraries])
+    )
+
+
 def _compile_client_storage_field(
     field: Field,
 ) -> (
@@ -869,10 +896,10 @@ def get_memo_module_path(segments: tuple[str, ...]) -> str:
 
 def add_meta(
     page: Component,
-    title: str,
+    title: str | Var,
     image: str,
     meta: Sequence[Mapping[str, Any] | Component],
-    description: str | None = None,
+    description: str | Var | None = None,
 ) -> Component:
     """Add metadata to a page.
 
@@ -886,12 +913,14 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
+    from reflex.utils.misc import is_page_meta_set
+
     meta_tags = [
         item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
 
     children: list[Any] = [Title.create(title)]
-    if description:
+    if is_page_meta_set(description):
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 

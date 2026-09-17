@@ -9,14 +9,13 @@ import reflex as rx
 import reflex_enterprise as rxe
 from reflex_site_shared import styles
 from reflex_site_shared.backend.status import monitor_checkly_status
-from reflex_site_shared.constants import REFLEX_ASSETS_CDN
+from reflex_site_shared.constants import OG_IMAGE_URL, REFLEX_DOMAIN_URL
 from reflex_site_shared.meta.meta import (
     ONE_LINE_DESCRIPTION,
     create_meta_tags,
     favicons_links,
     to_cdn_image_url,
 )
-from reflex_site_shared.utils.url import public_url
 
 from reflex_docs.pages import page404, routes
 from reflex_docs.redirects import DocsRedirectMiddleware
@@ -35,9 +34,11 @@ def _llms_txt_directive() -> rx.Component:
         rx.el.span("For AI agents: the complete documentation index is at "),
         rx.el.a("llms.txt", href=LLMS_TXT_PATH),
         rx.el.span(
-            ". Markdown versions are available by appending .md or sending "
-            "Accept: text/markdown."
+            ". Remove the trailing slash from a page URL and append .md "
+            "to read its Markdown version. For the docs home, use "
         ),
+        rx.el.a("index.md", href="/index.md"),
+        ".",
         class_name="sr-only",
     )
 
@@ -86,12 +87,12 @@ def _canonical_url(path: str) -> str:
     # "/docsoverview/" instead of "/docs/overview/".
     if not path.startswith("/"):
         path = "/" + path
-    url = public_url(path)
+    url = REFLEX_DOMAIN_URL.rstrip("/") + _FRONTEND_PATH + path
     return url if url.endswith("/") else url + "/"
 
 
 # Add the pages to the app.
-_DEFAULT_PREVIEW = f"{REFLEX_ASSETS_CDN}previews/index_preview.webp"
+_DEFAULT_PREVIEW = OG_IMAGE_URL
 for route in routes:
     # print(f"Adding route: {route}")
     if _check_whitelisted_path(route.path):
@@ -140,6 +141,15 @@ for route in routes:
             canonical = None
             meta = list(route.meta) if route.meta is not None else []
         if canonical is not None:
+            meta.append(
+                rx.el.link(
+                    rel="alternate",
+                    type="text/markdown",
+                    href=canonical + "index.md"
+                    if route.path.strip("/") == ""
+                    else canonical.rstrip("/") + ".md",
+                )
+            )
             meta.append(
                 rx.el.script(
                     json.dumps(
@@ -235,7 +245,13 @@ for source, target in redirects:
             ],
         )
 
-app.add_page(page404.component, route=page404.path)
+app.add_page(
+    page404.component,
+    route=page404.path,
+    title=page404.title,
+    description=page404.description,
+    meta=page404.meta,
+)
 
 
 # HTTP 301 applies when page requests reach this backend. Separate frontend

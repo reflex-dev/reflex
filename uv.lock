@@ -2,9 +2,12 @@ version = 1
 revision = 3
 requires-python = ">=3.10, <4.0"
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
@@ -19,23 +22,23 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P7D"
 
 [options.exclude-newer-package]
-reflex-components-plotly = false
-reflex-components-radix = false
-reflex-components-moment = false
-reflex-components-sonner = false
 hatch-reflex-pyi = false
-reflex-components-gridjs = false
 reflex = false
-reflex-enterprise = false
+reflex-base = false
 reflex-components-code = false
-reflex-components-recharts = false
 reflex-components-core = false
 reflex-components-dataeditor = false
-reflex-base = false
-reflex-components-markdown = false
+reflex-components-gridjs = false
 reflex-components-internal = false
 reflex-components-lucide = false
+reflex-components-markdown = false
+reflex-components-moment = false
+reflex-components-plotly = false
+reflex-components-radix = false
 reflex-components-react-player = false
+reflex-components-recharts = false
+reflex-components-sonner = false
+reflex-enterprise = false
 reflex-hosting-cli = false
 
 [manifest]
@@ -63,6 +66,7 @@ members = [
     "reflex-integrations-docs",
     "reflex-otel",
     "reflex-release",
+    "reflex-sdk",
     "reflex-site-shared",
 ]
 
@@ -739,9 +743,12 @@ name = "contourpy"
 version = "1.3.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
@@ -2079,9 +2086,12 @@ name = "matplotlib"
 version = "3.11.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
@@ -2478,9 +2488,12 @@ name = "numpy"
 version = "2.5.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
@@ -2812,9 +2825,12 @@ name = "pandas"
 version = "3.0.5"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
@@ -3920,7 +3936,8 @@ dev = [
     { name = "plotly" },
     { name = "pre-commit" },
     { name = "psutil" },
-    { name = "psycopg", extra = ["binary"] },
+    { name = "psycopg" },
+    { name = "psycopg", extra = ["binary"], marker = "python_full_version < '3.15'" },
     { name = "pydantic" },
     { name = "pyright" },
     { name = "pytest" },
@@ -3937,6 +3954,7 @@ dev = [
     { name = "reflex-docgen" },
     { name = "reflex-otel" },
     { name = "reflex-release" },
+    { name = "reflex-sdk" },
     { name = "reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
@@ -4007,7 +4025,8 @@ dev = [
     { name = "plotly" },
     { name = "pre-commit" },
     { name = "psutil" },
-    { name = "psycopg", extras = ["binary"] },
+    { name = "psycopg", marker = "python_full_version >= '3.15'" },
+    { name = "psycopg", extras = ["binary"], marker = "python_full_version < '3.15'" },
     { name = "pydantic" },
     { name = "pyright" },
     { name = "pytest" },
@@ -4024,6 +4043,7 @@ dev = [
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-otel", editable = "packages/reflex-otel" },
     { name = "reflex-release", editable = "packages/reflex-release" },
+    { name = "reflex-sdk", editable = "packages/reflex-sdk" },
     { name = "reflex-site-shared", editable = "packages/reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
@@ -4223,10 +4243,14 @@ name = "reflex-components-recharts"
 source = { editable = "packages/reflex-components-recharts" }
 dependencies = [
     { name = "reflex-base" },
+    { name = "reflex-components-core" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "reflex-base", editable = "packages/reflex-base" }]
+requires-dist = [
+    { name = "reflex-base", editable = "packages/reflex-base" },
+    { name = "reflex-components-core", editable = "packages/reflex-components-core" },
+]
 
 [[package]]
 name = "reflex-components-sonner"
@@ -4269,12 +4293,14 @@ dependencies = [
     { name = "alembic" },
     { name = "email-validator" },
     { name = "fastapi" },
+    { name = "griffelib" },
     { name = "openai" },
     { name = "orjson" },
     { name = "pandas", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "pandas", version = "3.0.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "plotly-express" },
-    { name = "psycopg", extra = ["binary"] },
+    { name = "psycopg" },
+    { name = "psycopg", extra = ["binary"], marker = "python_full_version < '3.15'" },
     { name = "python-frontmatter" },
     { name = "reflex" },
     { name = "reflex-components-internal" },
@@ -4305,11 +4331,13 @@ requires-dist = [
     { name = "alembic" },
     { name = "email-validator" },
     { name = "fastapi" },
+    { name = "griffelib", specifier = ">=2.0.1" },
     { name = "openai" },
     { name = "orjson" },
     { name = "pandas" },
     { name = "plotly-express" },
-    { name = "psycopg", extras = ["binary"] },
+    { name = "psycopg", marker = "python_full_version >= '3.15'" },
+    { name = "psycopg", extras = ["binary"], marker = "python_full_version < '3.15'" },
     { name = "python-frontmatter" },
     { name = "reflex", editable = "." },
     { name = "reflex-components-internal", editable = "packages/reflex-components-internal" },
@@ -4426,6 +4454,22 @@ requires-dist = [
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.1" },
     { name = "towncrier", specifier = ">=24.8.0,<26" },
     { name = "tzdata", marker = "sys_platform == 'win32'", specifier = ">=2024.1" },
+]
+
+[[package]]
+name = "reflex-sdk"
+source = { editable = "packages/reflex-sdk" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "httpx" },
+    { name = "platformdirs" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiohttp", specifier = ">=3.10.0,<4.0" },
+    { name = "httpx", specifier = ">=0.25.1,<1.0" },
+    { name = "platformdirs", specifier = ">=3.10.0,<5.0" },
 ]
 
 [[package]]
@@ -4685,9 +4729,12 @@ name = "scipy"
 version = "1.18.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
@@ -4902,9 +4949,12 @@ name = "starlette-admin"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
@@ -5483,9 +5533,12 @@ name = "websockets"
 version = "17.0.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
