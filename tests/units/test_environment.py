@@ -1,22 +1,23 @@
 """Tests for the environment module."""
 
 import enum
+import logging
 import os
 import tempfile
+from datetime import timedelta
 from pathlib import Path
 from typing import Annotated
 from unittest.mock import patch
 
 import pytest
-
-from reflex import constants
-from reflex.environment import (
+from reflex_base import constants
+from reflex_base.environment import (
     EnvironmentVariables,
     EnvVar,
-    ExecutorType,
     ExistingPath,
     PerformanceMode,
     SequenceOptions,
+    _InvalidPlugin,
     _load_dotenv_from_files,
     _paths_from_env_files,
     _paths_from_environment,
@@ -30,14 +31,28 @@ from reflex.environment import (
     interpret_existing_path_env,
     interpret_int_env,
     interpret_path_env,
+    interpret_plugin_class_env,
     interpret_plugin_env,
+    interpret_timedelta_env,
 )
-from reflex.plugins import Plugin
-from reflex.utils.exceptions import EnvironmentVarValueError
+from reflex_base.plugins import Plugin
+from reflex_base.utils.exceptions import EnvironmentVarValueError
 
 
 class TestPlugin(Plugin):
     """Test plugin for testing purposes."""
+
+
+class NeedsArgsPlugin(Plugin):
+    """Test plugin whose constructor requires arguments (cannot auto-instantiate)."""
+
+    def __init__(self, required):
+        """Initialize, requiring an argument.
+
+        Args:
+            required: A required positional argument.
+        """
+        self.required = required
 
 
 class _TestEnum(enum.Enum):
@@ -104,26 +119,73 @@ class TestInterpretFunctions:
         assert isinstance(result, TestPlugin)
 
     def test_interpret_plugin_env_invalid_format(self):
-        """Test plugin interpretation with invalid format."""
-        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin value"):
-            interpret_plugin_env("invalid_format", "TEST_FIELD")
+        """Test plugin interpretation with invalid format returns an _InvalidPlugin."""
+        result = interpret_plugin_env("invalid_format", "TEST_FIELD")
+        assert isinstance(result, _InvalidPlugin)
+        assert result.spec == "invalid_format"
+        assert "Invalid plugin value" in result.error
 
     def test_interpret_plugin_env_import_error(self):
-        """Test plugin interpretation with import error."""
-        with pytest.raises(EnvironmentVarValueError, match="Failed to import module"):
-            interpret_plugin_env("non.existent.module.Plugin", "TEST_FIELD")
+        """Test plugin interpretation with import error returns an _InvalidPlugin."""
+        result = interpret_plugin_env("non.existent.module.Plugin", "TEST_FIELD")
+        assert isinstance(result, _InvalidPlugin)
+        assert "Failed to import module" in result.error
 
     def test_interpret_plugin_env_missing_class(self):
-        """Test plugin interpretation with missing class."""
-        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin class"):
-            interpret_plugin_env(
-                "tests.units.test_environment.NonExistentPlugin", "TEST_FIELD"
-            )
+        """A missing attribute returns an _InvalidPlugin recording the lookup failure."""
+        result = interpret_plugin_env(
+            "tests.units.test_environment.NonExistentPlugin", "TEST_FIELD"
+        )
+        assert isinstance(result, _InvalidPlugin)
+        assert "Failed to get plugin class" in result.error
 
     def test_interpret_plugin_env_invalid_class(self):
-        """Test plugin interpretation with invalid class."""
+        """An existing non-Plugin class returns an _InvalidPlugin."""
+        result = interpret_plugin_env(
+            "tests.units.test_environment._TestEnum", "TEST_FIELD"
+        )
+        assert isinstance(result, _InvalidPlugin)
+        assert "Invalid plugin class" in result.error
+
+    def test_interpret_plugin_env_instantiation_error(self):
+        """A plugin whose constructor fails returns an _InvalidPlugin, not a raise."""
+        result = interpret_plugin_env(
+            "tests.units.test_environment.NeedsArgsPlugin", "TEST_FIELD"
+        )
+        assert isinstance(result, _InvalidPlugin)
+        assert "failed to instantiate" in result.error
+
+    def test_interpret_plugin_env_valid_does_not_return_invalid(self):
+        """A valid plugin spec still returns a real instance, never an _InvalidPlugin."""
+        result = interpret_plugin_env(
+            "tests.units.test_environment.TestPlugin", "TEST_FIELD"
+        )
+        assert isinstance(result, TestPlugin)
+        assert not isinstance(result, _InvalidPlugin)
+
+    def test_interpret_plugin_class_env_valid(self):
+        """Test plugin class interpretation returns the class, not an instance."""
+        result = interpret_plugin_class_env(
+            "tests.units.test_environment.TestPlugin", "TEST_FIELD"
+        )
+        assert result is TestPlugin
+
+    def test_interpret_plugin_class_env_invalid_format(self):
+        """Test plugin class interpretation with invalid format."""
+        with pytest.raises(EnvironmentVarValueError, match="Invalid plugin value"):
+            interpret_plugin_class_env("invalid_format", "TEST_FIELD")
+
+    def test_interpret_plugin_class_env_import_error(self):
+        """Test plugin class interpretation with import error."""
+        with pytest.raises(EnvironmentVarValueError, match="Failed to import module"):
+            interpret_plugin_class_env("non.existent.module.Plugin", "TEST_FIELD")
+
+    def test_interpret_plugin_class_env_invalid_class(self):
+        """Test plugin class interpretation with an existing non-Plugin class."""
         with pytest.raises(EnvironmentVarValueError, match="Invalid plugin class"):
-            interpret_plugin_env("tests.units.test_environment.TestEnum", "TEST_FIELD")
+            interpret_plugin_class_env(
+                "tests.units.test_environment._TestEnum", "TEST_FIELD"
+            )
 
     def test_interpret_enum_env_valid(self):
         """Test enum interpretation with valid values."""
@@ -172,6 +234,35 @@ class TestInterpretEnvVarValue:
         )
         assert isinstance(result, TestPlugin)
 
+    def test_interpret_plugin_class(self):
+        """Test type[Plugin] interpretation returns the class."""
+        result = interpret_env_var_value(
+            "tests.units.test_environment.TestPlugin",
+            type[Plugin],
+            "TEST_FIELD",
+        )
+        assert result is TestPlugin
+
+    def test_interpret_plugin_class_invalid_returns_invalid_plugin(self):
+        """Test type[Plugin] interpretation returns _InvalidPlugin on a bad path."""
+        result = interpret_env_var_value(
+            "non.existent.module.Plugin",
+            type[Plugin],
+            "TEST_FIELD",
+        )
+        assert isinstance(result, _InvalidPlugin)
+        assert "Failed to import module" in result.error
+
+    def test_interpret_plugin_list_collects_invalid_per_entry(self):
+        """A bad entry in a list[type[Plugin]] becomes _InvalidPlugin, not a raise."""
+        result = interpret_env_var_value(
+            "tests.units.test_environment.TestPlugin:bad.path.Plugin",
+            list[type[Plugin]],
+            "TEST_FIELD",
+        )
+        assert result[0] is TestPlugin
+        assert isinstance(result[1], _InvalidPlugin)
+
     def test_interpret_list(self):
         """Test list interpretation."""
         result = interpret_env_var_value("1:2:3", list[int], "TEST_FIELD")
@@ -190,10 +281,19 @@ class TestInterpretEnvVarValue:
         result = interpret_env_var_value("value1", _TestEnum, "TEST_FIELD")
         assert result == _TestEnum.VALUE1
 
-    def test_interpret_union_error(self):
-        """Test that union types raise an error."""
-        with pytest.raises(ValueError, match="Union types are not supported"):
-            interpret_env_var_value("test", int | str, "TEST_FIELD")
+    def test_interpret_union_tries_each_type(self):
+        """Test that union types try each type in order."""
+        # str matches first
+        assert interpret_env_var_value("hello", int | str, "TEST_FIELD") == "hello"
+        # int matches first
+        assert interpret_env_var_value("42", int | str, "TEST_FIELD") == 42
+        # bool matches before str
+        assert interpret_env_var_value("true", bool | str, "TEST_FIELD") is True
+
+    def test_interpret_union_no_match(self):
+        """Test that union types raise an error if no type matches."""
+        with pytest.raises(EnvironmentVarValueError, match="Could not interpret"):
+            interpret_env_var_value("not_a_number", int | bool, "TEST_FIELD")
 
     def test_interpret_unsupported_type(self):
         """Test unsupported type raises an error."""
@@ -366,47 +466,6 @@ class TestEnvVarDescriptor:
         assert env_var_instance.default == "default"
 
 
-class TestExecutorType:
-    """Test the ExecutorType enum and related functionality."""
-
-    def test_executor_type_values(self):
-        """Test ExecutorType enum values."""
-        assert ExecutorType.THREAD.value == "thread"
-        assert ExecutorType.PROCESS.value == "process"
-        assert ExecutorType.MAIN_THREAD.value == "main_thread"
-
-    def test_get_executor_main_thread_mode(self):
-        """Test executor selection in main thread mode."""
-        with (
-            patch.object(
-                environment.REFLEX_COMPILE_EXECUTOR,
-                "get",
-                return_value=ExecutorType.MAIN_THREAD,
-            ),
-            patch.object(
-                environment.REFLEX_COMPILE_PROCESSES, "get", return_value=None
-            ),
-            patch.object(environment.REFLEX_COMPILE_THREADS, "get", return_value=None),
-        ):
-            executor = ExecutorType.get_executor_from_environment()
-
-            # Test the main thread executor functionality
-            with executor:
-                future = executor.submit(lambda x: x * 2, 5)
-                assert future.result() == 10
-
-    def test_get_executor_returns_executor(self):
-        """Test that get_executor_from_environment returns an executor."""
-        # Test with default values - should return some kind of executor
-        executor = ExecutorType.get_executor_from_environment()
-        assert executor is not None
-
-        # Test that we can use it as a context manager
-        with executor:
-            future = executor.submit(lambda: "test")
-            assert future.result() == "test"
-
-
 class TestUtilityFunctions:
     """Test utility functions."""
 
@@ -467,7 +526,7 @@ class TestUtilityFunctions:
         result = _paths_from_environment()
         assert result == []
 
-    @patch("reflex.environment.load_dotenv")
+    @patch("reflex_base.environment.load_dotenv")
     def test_load_dotenv_from_files_with_dotenv(self, mock_load_dotenv):
         """Test _load_dotenv_from_files when dotenv is available.
 
@@ -486,27 +545,27 @@ class TestUtilityFunctions:
             mock_load_dotenv.assert_any_call(file1, override=True)
             mock_load_dotenv.assert_any_call(file2, override=True)
 
-    @patch("reflex.environment.load_dotenv", None)
-    @patch("reflex.utils.console")
-    def test_load_dotenv_from_files_without_dotenv(self, mock_console):
+    @patch("reflex_base.environment.load_dotenv", None)
+    def test_load_dotenv_from_files_without_dotenv(self, caplog):
         """Test _load_dotenv_from_files when dotenv is not available.
 
         Args:
-            mock_console: Mock for the console object.
+            caplog: Pytest log capture fixture.
         """
         with tempfile.TemporaryDirectory() as temp_dir:
             file1 = Path(temp_dir) / "file1.env"
             file1.touch()
 
             _load_dotenv_from_files([file1])
-            mock_console.error.assert_called_once()
+            errors = [r for r in caplog.records if r.levelno == logging.ERROR]
+            assert len(errors) == 1
 
     def test_load_dotenv_from_files_empty_list(self):
         """Test _load_dotenv_from_files with empty file list."""
         # Should not raise any errors
         _load_dotenv_from_files([])
 
-    @patch("reflex.environment.load_dotenv")
+    @patch("reflex_base.environment.load_dotenv")
     def test_load_dotenv_from_files_nonexistent_file(self, mock_load_dotenv):
         """Test _load_dotenv_from_files with non-existent file.
 
@@ -548,6 +607,10 @@ class TestEnvironmentVariables:
         """Test internal environment variables have correct names."""
         assert environment.REFLEX_COMPILE_CONTEXT.name == "__REFLEX_COMPILE_CONTEXT"
         assert environment.REFLEX_SKIP_COMPILE.name == "__REFLEX_SKIP_COMPILE"
+        assert (
+            environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
+            == "__REFLEX_DEV_BACKEND_RELOAD_ACTIVE"
+        )
 
     def test_performance_mode_enum(self):
         """Test PerformanceMode enum."""
@@ -614,6 +677,8 @@ def cleanup_env_vars():
         "BOOLEAN",
         "LIST",
         "__INTERNAL_VAR",
+        # `EnvVar.set` writes `os.environ` directly, so monkeypatch never sees it
+        "TEST_TIMEOUT_ROUNDTRIP",
     ]
 
     yield
@@ -622,3 +687,107 @@ def cleanup_env_vars():
         if var in os.environ:
             print(var)
             del os.environ[var]
+
+
+def test_interpret_timedelta_env_defaults_to_seconds() -> None:
+    """A bare number is read as seconds."""
+    assert interpret_timedelta_env("30", "TEST_FIELD") == timedelta(seconds=30)
+    assert interpret_timedelta_env("1.5", "TEST_FIELD") == timedelta(seconds=1.5)
+    assert interpret_timedelta_env("0", "TEST_FIELD") == timedelta(0)
+
+
+def test_interpret_timedelta_env_units() -> None:
+    """A suffix overrides the default unit."""
+    assert interpret_timedelta_env("1us", "TEST_FIELD") == timedelta(microseconds=1)
+    assert interpret_timedelta_env("500ms", "TEST_FIELD") == timedelta(milliseconds=500)
+    assert interpret_timedelta_env("30s", "TEST_FIELD") == timedelta(seconds=30)
+    assert interpret_timedelta_env("5m", "TEST_FIELD") == timedelta(minutes=5)
+    assert interpret_timedelta_env("2h", "TEST_FIELD") == timedelta(hours=2)
+    assert interpret_timedelta_env("1d", "TEST_FIELD") == timedelta(days=1)
+
+
+def test_interpret_timedelta_env_tolerates_spacing_and_case() -> None:
+    """Values come from a shell, where spacing and case are easily off."""
+    assert interpret_timedelta_env(" 5 M ", "TEST_FIELD") == timedelta(minutes=5)
+
+
+def test_interpret_timedelta_env_negative() -> None:
+    """``timedelta`` is signed, so a negative offset is a legitimate value."""
+    assert interpret_timedelta_env("-5m", "TEST_FIELD") == timedelta(minutes=-5)
+
+
+def test_interpret_timedelta_env_invalid() -> None:
+    """Test duration interpretation with invalid values."""
+    for value in ("not_a_number", "30 weeks", "30y", "", "s"):
+        with pytest.raises(EnvironmentVarValueError, match="Invalid duration value"):
+            interpret_timedelta_env(value, "TEST_FIELD")
+
+
+def test_interpret_timedelta_env_out_of_range() -> None:
+    """A well-formed value can still be more than a timedelta holds.
+
+    ``timedelta`` raises ``OverflowError``, which is not a ``ValueError``, so
+    letting it out would escape both this function's contract and the union
+    fallback in ``interpret_env_var_value``.
+    """
+    for value in ("999999999999d", "9" * 400):
+        with pytest.raises(EnvironmentVarValueError, match="out of range"):
+            interpret_timedelta_env(value, "TEST_FIELD")
+
+
+def test_timedelta_env_var_reads_a_duration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A duration setting reads like any other typed environment variable.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.setenv("TEST_TIMEOUT", "90s")
+    env_var_instance = EnvVar("TEST_TIMEOUT", timedelta(seconds=30), timedelta)
+
+    assert env_var_instance.getenv() == timedelta(seconds=90)
+
+
+def test_timedelta_env_var_falls_back_to_its_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unset duration keeps the default the app declared.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("TEST_TIMEOUT_UNSET", raising=False)
+    env_var_instance = EnvVar("TEST_TIMEOUT_UNSET", timedelta(minutes=3), timedelta)
+
+    assert env_var_instance.get() == timedelta(minutes=3)
+
+
+def test_timedelta_env_var_round_trips_through_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``set`` has to write a form the interpreter reads back.
+
+    ``str(timedelta)`` renders ``0:01:30``, and ``-1 day, 23:58:30`` below zero,
+    neither of which is valid input.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("TEST_TIMEOUT_ROUNDTRIP", raising=False)
+    env_var_instance = EnvVar("TEST_TIMEOUT_ROUNDTRIP", timedelta(0), timedelta)
+
+    for value in (
+        timedelta(minutes=1, seconds=30),
+        timedelta(days=1, seconds=30),
+        timedelta(seconds=-90),
+        # sub-second and boundary values are where a float round trip loses the
+        # microseconds or rounds past what a timedelta holds
+        timedelta(microseconds=1),
+        timedelta(seconds=90, microseconds=500000),
+        timedelta(days=999999998, microseconds=1),
+        timedelta.max,
+        timedelta.min,
+    ):
+        # `EnvVar` binds its type var to the class object, so a value argument
+        # never matches - the same quirk the other `set` tests here work around.
+        env_var_instance.set(value)  # type: ignore[arg-type]
+        assert env_var_instance.get() == value

@@ -1,0 +1,802 @@
+"""Template for documentation pages."""
+
+import functools
+import os
+import sys
+from collections.abc import Callable, Collection
+from pathlib import Path
+from urllib.parse import quote
+
+import reflex as rx
+import reflex_components_internal as ui
+from reflex.components.radix.themes.base import LiteralAccentColor
+from reflex.experimental.client_state import ClientStateVar
+from reflex.utils.format import to_snake_case, to_title_case
+from reflex_site_shared.components.blocks.code import *
+from reflex_site_shared.components.blocks.demo import *
+from reflex_site_shared.components.blocks.headings import *
+from reflex_site_shared.components.blocks.typography import *
+from reflex_site_shared.components.docs_page_actions import docs_page_actions
+from reflex_site_shared.components.docs_shell import (
+    docs_feedback_button_toc,
+    docs_left_sidebar,
+    docs_page_footer,
+    docs_right_sidebar,
+)
+from reflex_site_shared.components.icons import get_icon
+from reflex_site_shared.components.marketing_button import button as marketing_button
+from reflex_site_shared.route import Route, get_path
+from reflex_site_shared.templates.docs import docs_layout_shell
+from reflex_site_shared.utils.docpage import right_sidebar_item_highlight
+from reflex_site_shared.utils.url import public_url
+
+_REGISTERED_DOC_ROUTES: set[str] = set()
+
+# The docs app lives at <repo>/docs/app; source files are linked relative to <repo>.
+REPO_ROOT = Path(__file__).resolve().parents[5]
+# Installed packages may live in a venv inside the checkout; their files are not
+# editable on GitHub.
+_SYS_PREFIX = Path(sys.prefix).resolve()
+GITHUB_REPO_URL = "https://github.com/reflex-dev/reflex"
+
+# Normalized route -> GitHub edit URL used by the page footer.
+doc_edit_hrefs: dict[str, str] = {}
+
+# Title-cased breadcrumb labels that should be displayed as acronyms.
+_BREADCRUMB_LABEL_OVERRIDES: dict[str, str] = {
+    "Ai": "AI",
+    "Api": "API",
+    "Sdk": "SDK",
+    "Cli": "CLI",
+    "Css": "CSS",
+}
+
+
+def _normalize_doc_route(path: str) -> str:
+    """Normalize a docs route to use leading and trailing slashes."""
+    route = f"/{path.strip('/')}"
+    return "/" if route == "/" else f"{route}/"
+
+
+def _register_doc_route(path: str) -> None:
+    """Track a route registered through the docpage template."""
+    _REGISTERED_DOC_ROUTES.add(_normalize_doc_route(path))
+
+
+def github_edit_url(source_path: str | None) -> str:
+    """Build the GitHub edit URL for the file a docs page is generated from.
+
+    Args:
+        source_path: Path of the markdown or Python source of the page.
+
+    Returns:
+        The edit URL of the file, or an empty string when there is no editable
+        source in this checkout (e.g. docs shipped inside an installed package).
+        Preview builds can select their source branch with ``DOCS_GITHUB_REF``.
+    """
+    if source_path is None:
+        return ""
+    resolved = Path(source_path).resolve()
+    if not resolved.is_relative_to(REPO_ROOT) or resolved.is_relative_to(_SYS_PREFIX):
+        return ""
+    ref = quote(os.environ.get("DOCS_GITHUB_REF") or "main", safe="")
+    relative_path = quote(resolved.relative_to(REPO_ROOT).as_posix())
+    return f"{GITHUB_REPO_URL}/edit/{ref}/{relative_path}"
+
+
+def _resolve_breadcrumb_href(
+    href: str, registered_routes: Collection[str] | None = None
+) -> str | None:
+    """Resolve a generated breadcrumb href to a registered docs route.
+
+    Breadcrumbs are built from path segments, but intermediate segments (e.g.
+    ``/ai`` or ``/hosting``) are often just categories with no page of their
+    own. This returns the matching route, preferring an ``overview`` child when
+    the bare path is not itself a page, or ``None`` when no registered route
+    exists so the caller can render the segment as non-clickable text instead of
+    a broken link.
+
+    Args:
+        href: The generated, app-relative breadcrumb href (no ``/docs`` prefix).
+        registered_routes: Routes to match against. Defaults to the routes
+            registered through the docpage template.
+
+    Returns:
+        The resolved route, or ``None`` if no registered route matches.
+    """
+    routes = _REGISTERED_DOC_ROUTES if registered_routes is None else registered_routes
+    route = _normalize_doc_route(href)
+    if route in routes:
+        return route
+
+    overview_route = _normalize_doc_route(f"{route}overview")
+    if overview_route in routes:
+        return overview_route
+
+    return None
+
+
+def feedback_button_toc() -> rx.Component:
+    return docs_feedback_button_toc()
+
+
+@rx.memo
+def copy_to_markdown(text: rx.Var[str]) -> rx.Component:
+    copied = ClientStateVar.create("is_copied", default=False, global_ref=False)
+    return marketing_button(
+        rx.cond(
+            copied.value,
+            ui.icon(
+                "CheckmarkCircle02Icon",
+            ),
+            get_icon("markdown", class_name="[&_svg]:h-4 [&_svg]:w-auto"),
+        ),
+        "Copy to markdown",
+        type="button",
+        size="sm",
+        variant="ghost",
+        class_name="justify-start pl-0 text-muted-foreground",
+        on_click=[
+            rx.call_function(copied.set_value(True)),
+            rx.set_clipboard(text),
+        ],
+        on_mouse_down=rx.call_function(copied.set_value(False)).debounce(1500),
+    )
+
+
+def ask_ai_chat() -> rx.Component:
+    return rx.el.a(
+        marketing_button(
+            ui.icon("AiChat02Icon"),
+            "Ask AI about this page",
+            size="sm",
+            variant="ghost",
+            class_name="justify-start pl-0 text-muted-foreground",
+            native_button=False,
+        ),
+        to="/ai/integrations/mcp-overview/",
+    )
+
+
+DOCS_PROD_BASE = "https://reflex.dev/docs"
+
+
+@rx.memo
+def docpage_footer(path: rx.Var[str], edit_href: rx.Var[str]) -> rx.Component:
+    """Render the shared official footer for a Reflex docs route.
+
+    Args:
+        path: The route of the current page, without a trailing slash.
+        edit_href: GitHub edit URL of the page's source file.
+
+    Returns:
+        The footer component.
+    """
+    return docs_page_footer(
+        issue_href=(
+            f"{GITHUB_REPO_URL}/issues/new"
+            "?template=documentation.md"
+            "&labels=documentation"
+            f"&title=Issue%20with%20{DOCS_PROD_BASE}{path}"
+            f"&body=Path:%20{DOCS_PROD_BASE}{path}%0A%0A"
+        ),
+        edit_href=edit_href,
+    )
+
+
+LLMS_FULL_TXT_PATH = "/llms-full.txt"
+
+
+def breadcrumb_data(path: str, title: str) -> dict:
+    """Build structured breadcrumbs using the visible navigation's route resolver.
+
+    Args:
+        path: The app-relative documentation path.
+        title: The current page's name.
+
+    Returns:
+        A schema.org BreadcrumbList with canonical public URLs.
+    """
+    base = public_url()
+    canonical = base + _normalize_doc_route(path)
+    items = [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Documentation",
+            "item": base + "/",
+        }
+    ]
+    seen = {base + "/", canonical}
+    segments = path.strip("/").split("/")
+    for index, segment in enumerate(segments[:-1], 1):
+        href = _resolve_breadcrumb_href("/" + "/".join(segments[:index]))
+        if href is None or base + href in seen:
+            continue
+        label = to_title_case(to_snake_case(segment), sep=" ")
+        items.append({
+            "@type": "ListItem",
+            "position": len(items) + 1,
+            "name": _BREADCRUMB_LABEL_OVERRIDES.get(label, label),
+            "item": base + href,
+        })
+        seen.add(base + href)
+    if canonical != base + "/":
+        items.append({
+            "@type": "ListItem",
+            "position": len(items) + 1,
+            "name": title,
+            "item": canonical,
+        })
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": items,
+    }
+
+
+def breadcrumb(path: str, nav_sidebar: rx.Component, doc_content: str | None = None):
+    from reflex_docs.components.docpage.navbar.buttons.sidebar import (
+        docs_sidebar_drawer,
+    )
+
+    # Split the path into segments, removing 'docs'.
+    segments = [segment for segment in path.split("/") if segment and segment != "docs"]
+
+    # Initialize an empty list to store the breadcrumbs and their separators
+    breadcrumbs = []
+
+    # Iteratively build the href for each segment (paths are app-relative, no /docs prefix)
+    current_path = ""
+    for i, segment in enumerate(segments):
+        current_path += f"/{segment}"
+
+        label = to_title_case(to_snake_case(segment), sep=" ")
+        label = _BREADCRUMB_LABEL_OVERRIDES.get(label, label)
+        base_class = ui.cn(
+            "min-h-8 flex items-center text-sm font-[525] text-foreground last:text-muted-foreground",
+            "truncate" if i == len(segments) - 1 else "",
+        )
+
+        # Category segments (e.g. /ai, /hosting) often have no page of their own.
+        # Render those as plain text so the breadcrumb doesn't link to a 404.
+        href = _resolve_breadcrumb_href(current_path)
+        if href is None:
+            breadcrumbs.append(rx.el.span(label, class_name=base_class))
+        else:
+            breadcrumbs.append(
+                rx.el.a(
+                    label,
+                    class_name=ui.cn(
+                        base_class,
+                        "hover:text-primary-hover dark:hover:text-primary",
+                    ),
+                    underline="none",
+                    href=href,
+                )
+            )
+
+        # If it's not the last segment, add a separator
+        if i < len(segments) - 1:
+            breadcrumbs.append(
+                ui.icon(
+                    "ArrowRight01Icon",
+                    class_name="lg:flex hidden text-muted-foreground size-4",
+                ),
+            )
+            breadcrumbs.append(
+                rx.text(
+                    "/",
+                    class_name="font-sm text-muted-foreground lg:hidden flex",
+                )
+            )
+
+    # Return the list of breadcrumb items with separators
+    return rx.box(
+        docs_sidebar_drawer(
+            nav_sidebar,
+            trigger=rx.el.button(
+                type="button",
+                aria_label="Open documentation navigation",
+                class_name="absolute inset-0 bg-transparent z-[1] lg:hidden flex focus-visible:outline-2 focus-visible:outline-primary",
+            ),
+        ),
+        rx.el.nav(
+            *breadcrumbs,
+            aria_label="Breadcrumb",
+            class_name="flex flex-row items-center gap-[5px] lg:gap-4 overflow-hidden",
+        ),
+        rx.box(
+            docs_page_actions(
+                markdown_url=f"{DOCS_PROD_BASE}{path.rstrip('/')}.md",
+                llms_full_txt_url=LLMS_FULL_TXT_PATH,
+            )
+            if doc_content
+            else rx.fragment(),
+            ui.icon(
+                "ArrowDown01Icon",
+                size=14,
+                class_name="!text-subtle-foreground lg:hidden flex",
+            ),
+            class_name="flex flex-row items-center gap-2 lg:p-0 p-[0.563rem]",
+        ),
+        class_name=ui.cn(
+            "relative z-10 flex flex-row justify-between items-center gap-4 lg:gap-0 border-border-subtle lg:p-0 border-b lg:border-none w-full max-lg:py-2",
+            "mt-[var(--docs-header-height)] lg:mt-[calc(var(--docs-header-height)+2rem)]",
+        ),
+    )
+
+
+def page_navigation_link(title: str, href: str, *, forward: bool) -> rx.Component:
+    """Render the entire adjacent-page block as a single link.
+
+    Args:
+        title: Destination page title.
+        href: Destination route.
+        forward: Whether this is the next page rather than the previous page.
+
+    Returns:
+        Padded link containing the direction and destination title.
+    """
+    arrow = get_icon(
+        icon="arrow_right", transform="none" if forward else "rotate(180deg)"
+    )
+    label = rx.el.span("Next" if forward else "Back")
+    return rx.el.a(
+        rx.el.span(
+            *([label, arrow] if forward else [arrow, label]),
+            class_name="flex items-center gap-2 font-small text-subtle-foreground group-hover:text-foreground",
+        ),
+        rx.el.span(
+            title,
+            class_name="text-base font-[500] leading-6 tracking-[-0.015rem] text-foreground",
+        ),
+        href=href,
+        class_name=(
+            "group flex min-w-0 flex-col gap-1 rounded-lg p-3 no-underline "
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring "
+            + ("items-end text-right" if forward else "items-start text-left")
+        ),
+    )
+
+
+def docpage(
+    set_path: str | None = None,
+    t: str | None = None,
+    right_sidebar: bool = True,
+    page_title: str | None = None,
+    pseudo_right_bar: bool = False,
+    description: str | None = None,
+    image: str | None = None,
+    source_path: str | None = None,
+    show_breadcrumb: bool = True,
+):
+    """A template that most pages on the reflex.dev site should use.
+
+    This template wraps the webpage with the navbar and footer.
+
+    Args:
+        set_path: The path to set for the sidebar.
+        t: The title to set for the page.
+        right_sidebar: Whether to show the right sidebar.
+        page_title: The full title to set for the page. If None, defaults to `{title} · Reflex Docs`.
+        pseudo_right_bar: Whether to show a pseudo right sidebar (empty space).
+        description: The meta description for the page. If None, a descriptive
+            fallback derived from the page title is used so the page always has
+            a non-empty, page-specific meta description.
+        image: Social-preview image (relative path or absolute URL).
+        source_path: File the page is generated from, used for the footer's
+            "Edit this page" link. Defaults to the Python file defining the page.
+        show_breadcrumb: Whether to display the page breadcrumb. Mobile sidebar
+            access remains available when the breadcrumb is hidden.
+
+    Returns:
+        A wrapper function that returns the full webpage.
+    """
+
+    def docpage(contents: Callable[[], Route]) -> Route:
+        """Wrap a component in a docpage template.
+
+        Args:
+            contents: A function that returns a page route.
+
+        Returns:
+            The final route with the template applied.
+        """
+        path = get_path(contents, "reflex-docs/pages") if set_path is None else set_path
+        _register_doc_route(path)
+        # Pages built in Python are edited in the module that defines them.
+        edit_href = github_edit_url(
+            source_path
+            if source_path is not None
+            else getattr(getattr(contents, "__code__", None), "co_filename", None)
+        )
+        doc_edit_hrefs[_normalize_doc_route(path)] = edit_href
+
+        title = contents.__name__.replace("_", " ").title() if t is None else t
+
+        @functools.wraps(contents)
+        def wrapper(*args, **kwargs) -> rx.Component:
+            """The actual function wrapper.
+
+            Args:
+                *args: Args to pass to the contents function.
+                **kwargs: Kwargs to pass to the contents function.
+
+            Returns:
+                The page with the template applied.
+            """
+            from reflex_docs.templates.docpage.sidebar import get_prev_next
+            from reflex_docs.templates.docpage.sidebar import sidebar as sb
+            from reflex_docs.views.docs_navbar import docs_navbar
+
+            sidebar = sb(url=path, width="300px")
+
+            nav_sidebar = sb(url=path, width="100%")
+
+            prev, next = get_prev_next(path)
+            links = []
+
+            if prev:
+                links.append(
+                    page_navigation_link(
+                        prev.alt_name_for_next_prev or prev.names,
+                        prev.link,
+                        forward=False,
+                    )
+                )
+            else:
+                links.append(rx.fragment())
+            links.append(rx.spacer())
+            if next:
+                links.append(
+                    page_navigation_link(
+                        next.alt_name_for_next_prev or next.names,
+                        next.link,
+                        forward=True,
+                    )
+                )
+            else:
+                links.append(rx.fragment())
+
+            toc = []
+            doc_content = None
+            if not isinstance(contents, rx.Component):
+                comp = contents(*args, **kwargs)
+            else:
+                comp = contents
+
+            if isinstance(comp, tuple) and len(comp) == 2:
+                first, second = comp
+                # Check if first is (toc, doc_content) from get_toc
+                if isinstance(first, tuple) and len(first) == 2:
+                    toc, doc_content = first
+                    comp = second
+                else:
+                    # Legacy format: (toc, comp)
+                    toc, comp = first, second
+
+            show_right_sidebar = right_sidebar and len(toc) >= 2
+            return docs_layout_shell(
+                docs_navbar(),
+                rx.el.main(
+                    docs_left_sidebar(sidebar),
+                    rx.box(
+                        rx.box(
+                            breadcrumb(
+                                path=path if show_breadcrumb else "",
+                                nav_sidebar=nav_sidebar,
+                                doc_content=doc_content,
+                            ),
+                            class_name=(
+                                "px-0 pt-0 mb-[2rem]"
+                                + ("" if show_breadcrumb else " lg:hidden")
+                            ),
+                        ),
+                        rx.box(
+                            rx.el.article(
+                                comp,
+                                class_name="[&>div]:!p-0"
+                                + (
+                                    " [&_.rt-TableRoot]:!border-0 [&_.rt-TableRoot]:!rounded-none"
+                                    " [&_.rt-TableCell]:!shadow-none [&_.rt-TableCell]:!border-b [&_.rt-TableCell]:!border-border"
+                                    " [&_.rt-TableCell]:!text-sm [&_.rt-TableCell]:!leading-6 [&_.rt-TableCell]:!text-foreground"
+                                    " [&_.rt-TableCell_p]:!text-sm [&_.rt-TableCell_p]:!leading-6 [&_.rt-TableCell_p]:!my-0"
+                                    if path.startswith("/api-reference/")
+                                    else ""
+                                ),
+                            ),
+                            rx.el.nav(
+                                *links,
+                                class_name="flex flex-row gap-2 mt-8 lg:mt-10 mb-6 lg:mb-12",
+                            ),
+                            docpage_footer(path=path.rstrip("/"), edit_href=edit_href),
+                            class_name="lg:mt-0 h-auto"
+                            + (
+                                ""
+                                if show_breadcrumb
+                                else " lg:pt-[calc(var(--docs-header-height)+2rem)]"
+                            ),
+                        ),
+                        class_name=ui.cn(
+                            "flex-1 min-w-0 h-auto mx-auto lg:max-w-[56rem] px-4 lg:px-8 xl:px-12 overflow-y-auto",
+                            "lg:max-w-[68rem]" if not show_right_sidebar else "",
+                        ),
+                    ),
+                    docs_right_sidebar(
+                        toc,
+                        path=path,
+                        feedback=feedback_button_toc(),
+                    )
+                    if show_right_sidebar and not pseudo_right_bar
+                    else rx.box(
+                        class_name="w-[180px] h-screen sticky top-0 shrink-0 hidden xl:block"
+                    ),
+                    class_name="flex justify-center mx-auto mt-0 max-w-[108rem] h-full min-h-screen w-full",
+                ),
+                on_mount=rx.call_script(right_sidebar_item_highlight()),
+            )
+
+        from reflex_docs.pages.docs.metadata import docs_metadata
+
+        seo_title, seo_description = docs_metadata(path, title, description)
+        if page_title:
+            seo_title = page_title
+
+        return Route(
+            path=path,
+            title=seo_title,
+            description=seo_description,
+            image=image,
+            component=wrapper,
+        )
+
+    return docpage
+
+
+class RadixDocState(rx.State):
+    """The app state."""
+
+    color: str = "tomato"
+
+    @rx.event
+    def set_color(self, color: str):
+        self.color = color
+
+
+def hover_item(component: rx.Component, component_str: str) -> rx.Component:
+    return rx.hover_card.root(
+        rx.hover_card.trigger(rx.flex(component)),
+        rx.hover_card.content(
+            rx.el.button(
+                get_icon(icon="copy", class_name="p-[5px]"),
+                rx.text(
+                    component_str,
+                    class_name="flex-1 font-small truncate",
+                ),
+                on_click=rx.set_clipboard(component_str),
+                class_name="flex flex-row items-center gap-1.5 border-border bg-background hover:bg-accent shadow-small pr-1.5 border rounded-md w-full max-w-[300px] text-muted-foreground transition-bg cursor-pointer",
+            ),
+        ),
+    )
+
+
+def dict_to_formatted_string(input_dict):
+    # List to hold formatted string parts
+    formatted_parts = []
+
+    # Iterate over dictionary items
+    for key, value in input_dict.items():
+        # Format each key-value pair
+        if isinstance(value, str):
+            formatted_part = f'{key}="{value}"'  # Enclose string values in quotes
+        else:
+            formatted_part = f"{key}={value}"  # Non-string values as is
+
+        # Append the formatted part to the list
+        formatted_parts.append(formatted_part)
+
+    # Join all parts with a comma and a space
+    return ", ".join(formatted_parts)
+
+
+def used_component(
+    component_used: rx.Component,
+    components_passed: rx.Component | str | None,
+    color_scheme: str,
+    variant: str,
+    high_contrast: bool,
+    disabled: bool = False,
+    **kwargs,
+) -> rx.Component:
+    if components_passed is None and disabled is False:
+        return component_used(
+            color_scheme=color_scheme,
+            variant=variant,
+            high_contrast=high_contrast,
+            **kwargs,
+        )
+
+    elif components_passed is not None and disabled is False:
+        return component_used(
+            components_passed,
+            color_scheme=color_scheme,
+            variant=variant,
+            high_contrast=high_contrast,
+            **kwargs,
+        )
+
+    elif components_passed is None and disabled is True:
+        return component_used(
+            color_scheme=color_scheme,
+            variant=variant,
+            high_contrast=high_contrast,
+            disabled=True,
+            **kwargs,
+        )
+
+    else:
+        return component_used(
+            components_passed,
+            color_scheme=color_scheme,
+            variant=variant,
+            high_contrast=high_contrast,
+            disabled=True,
+            **kwargs,
+        )
+
+
+def style_grid(
+    component_used: rx.Component,
+    component_used_str: str,
+    variants: list,
+    components_passed: rx.Component | str | None = None,
+    disabled: bool = False,
+    **kwargs,
+) -> rx.Component:
+    text_cn = "text-nowrap font-md flex items-center"
+    return rx.box(
+        rx.grid(
+            rx.text("", size="5"),
+            *[
+                rx.text(variant, class_name=text_cn + " text-muted-foreground")
+                for variant in variants
+            ],
+            rx.text(
+                "Accent",
+                color=f"var(--{RadixDocState.color}-10)",
+                class_name=text_cn,
+            ),
+            *[
+                hover_item(
+                    component=used_component(
+                        component_used=component_used,
+                        components_passed=components_passed,
+                        color_scheme=RadixDocState.color,
+                        variant=variant,
+                        high_contrast=False,
+                        **kwargs,
+                    ),
+                    component_str=f"{component_used_str}(color_scheme={RadixDocState.color}, variant={variant}, high_contrast=False, {dict_to_formatted_string(kwargs)})",
+                )
+                for variant in variants
+            ],
+            rx.text("", size="5"),
+            *[
+                hover_item(
+                    component=used_component(
+                        component_used=component_used,
+                        components_passed=components_passed,
+                        color_scheme=RadixDocState.color,
+                        variant=variant,
+                        high_contrast=True,
+                        **kwargs,
+                    ),
+                    component_str=f"{component_used_str}(color_scheme={RadixDocState.color}, variant={variant}, high_contrast=True, {dict_to_formatted_string(kwargs)})",
+                )
+                for variant in variants
+            ],
+            rx.text("Gray", class_name=text_cn + " text-muted-foreground"),
+            *[
+                hover_item(
+                    component=used_component(
+                        component_used=component_used,
+                        components_passed=components_passed,
+                        color_scheme="gray",
+                        variant=variant,
+                        high_contrast=False,
+                        **kwargs,
+                    ),
+                    component_str=f"{component_used_str}(color_scheme={RadixDocState.color}, variant={variant}, high_contrast=False, {dict_to_formatted_string(kwargs)})",
+                )
+                for variant in variants
+            ],
+            rx.text("", size="5"),
+            *[
+                hover_item(
+                    component=used_component(
+                        component_used=component_used,
+                        components_passed=components_passed,
+                        color_scheme="gray",
+                        variant=variant,
+                        high_contrast=True,
+                        **kwargs,
+                    ),
+                    component_str=f"{component_used_str}(color_scheme={RadixDocState.color}, variant={variant}, high_contrast=True, {dict_to_formatted_string(kwargs)})",
+                )
+                for variant in variants
+            ],
+            (
+                rx.fragment(
+                    rx.text("Disabled", class_name=text_cn + " text-muted-foreground"),
+                    *[
+                        hover_item(
+                            component=used_component(
+                                component_used=component_used,
+                                components_passed=components_passed,
+                                color_scheme="gray",
+                                variant=variant,
+                                high_contrast=True,
+                                disabled=disabled,
+                                **kwargs,
+                            ),
+                            component_str=f"{component_used_str}(color_scheme={RadixDocState.color}, variant={variant}, disabled=True, {dict_to_formatted_string(kwargs)})",
+                        )
+                        for variant in variants
+                    ],
+                )
+                if disabled
+                else ""
+            ),
+            flow="column",
+            columns="5",
+            rows=str(len(variants) + 1),
+            spacing="3",
+        ),
+        rx.popover.root(
+            rx.popover.trigger(
+                rx.box(
+                    rx.button(
+                        rx.text(RadixDocState.color, class_name="font-small"),
+                        # Match the select.trigger svg icon
+                        rx.html(
+                            """<svg width="9" height="9" viewBox="0 0 9 9" fill="currentcolor" xmlns="http://www.w3.org/2000/svg" class="rt-SelectIcon" aria-hidden="true"><path d="M0.135232 3.15803C0.324102 2.95657 0.640521 2.94637 0.841971 3.13523L4.5 6.56464L8.158 3.13523C8.3595 2.94637 8.6759 2.95657 8.8648 3.15803C9.0536 3.35949 9.0434 3.67591 8.842 3.86477L4.84197 7.6148C4.64964 7.7951 4.35036 7.7951 4.15803 7.6148L0.158031 3.86477C-0.0434285 3.67591 -0.0536285 3.35949 0.135232 3.15803Z"></path></svg>"""
+                        ),
+                        color_scheme=RadixDocState.color,
+                        variant="surface",
+                        class_name="justify-between w-32",
+                    ),
+                ),
+            ),
+            rx.popover.content(
+                rx.grid(
+                    *[
+                        rx.box(
+                            rx.icon(
+                                "check",
+                                size=15,
+                                class_name="top-1/2 left-1/2 absolute text-foreground transform -translate-x-1/2 -translate-y-1/2"
+                                + rx.cond(
+                                    RadixDocState.color == color,
+                                    " block",
+                                    " hidden",
+                                ),
+                            ),
+                            on_click=RadixDocState.set_color(color),
+                            background_color=f"var(--{color}-9)",
+                            class_name="relative rounded-md cursor-pointer shrink-0 size-[30px]"
+                            + rx.cond(
+                                RadixDocState.color == color,
+                                " border-2 border-foreground",
+                                "",
+                            ),
+                        )
+                        for color in list(map(str, LiteralAccentColor.__args__))
+                    ],
+                    columns="6",
+                    spacing="3",
+                ),
+            ),
+        ),
+        class_name="flex flex-col justify-center items-center gap-6 border-border-subtle bg-muted mb-4 p-6 border rounded-xl",
+    )

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import functools
 import re
 from collections.abc import Callable
 
-from reflex import constants
-from reflex.config import get_config
+from reflex_base import constants
 
 
 def verify_route_validity(route: str) -> None:
@@ -172,7 +172,9 @@ def get_route_regex(keyworded_route: str) -> re.Pattern:
             # Match a single optional segment (/slug or nothing)
             regex_parts.append(r"(/[^/]+)?")
         elif part == constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT:
-            regex_parts.append(".*")
+            # The frontend compiles this to React Router's `*`, which matches the
+            # route and its descendants only, so the segment separator is required.
+            regex_parts.append("(/.*)?")
         else:
             regex_parts.append(re.escape("/" + part))
     # Join the regex parts and compile the regex
@@ -203,8 +205,15 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
         for keyworded_route, original_route in sorted_routes_by_specificity
     ]
 
+    @functools.lru_cache(maxsize=4096)
     def get_route(path: str) -> str | None:
-        """Get the first matching route for a given path.
+        """Get the first route matching a path.
+
+        Memoized per path: matching is a linear regex scan over every route,
+        paid on every event otherwise.
+
+        The path must be relative to ``frontend_path``, which is how the
+        frontend reports it.
 
         Args:
             path: The path to match against the routes.
@@ -212,9 +221,6 @@ def get_router(routes: list[str]) -> Callable[[str], str | None]:
         Returns:
             The first matching route, or None if no match is found.
         """
-        config = get_config()
-        if config.frontend_path:
-            path = path.removeprefix(config.frontend_path)
         path = "/" + path.removeprefix("/").removesuffix("/")
         if path == "/index":
             path = "/"

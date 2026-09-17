@@ -1,6 +1,6 @@
 import pytest
+from reflex_components_core.core.html import Html
 
-from reflex.components.core.html import Html
 from reflex.state import State
 
 

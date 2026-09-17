@@ -1,15 +1,17 @@
 import json
-from typing import Any
+from typing import Any, Literal, cast
 
 import pytest
+from reflex_base.components.component import Component
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.utils.format import format_state_name
+from reflex_base.vars.base import LiteralVar, Var, computed_var
+from reflex_components_core.base.fragment import Fragment
+from reflex_components_core.core.cond import Cond, cond
+from reflex_components_radix.themes.typography.text import Text
+from typing_extensions import assert_type
 
-from reflex.components.base.fragment import Fragment
-from reflex.components.core.cond import Cond, cond
-from reflex.components.radix.themes.typography.text import Text
-from reflex.constants.state import FIELD_MARKER
 from reflex.state import BaseState
-from reflex.utils.format import format_state_name
-from reflex.vars.base import LiteralVar, Var, computed_var
 
 
 @pytest.fixture
@@ -121,6 +123,19 @@ def test_cond_no_else():
         cond(True, "hello")  # pyright: ignore [reportArgumentType]
 
 
+def test_cond_render_missing_false_child_defaults_to_fragment() -> None:
+    """Test Cond renders missing false branch as empty Fragment."""
+    comp = Cond._create(
+        cond=LiteralVar.create(True).bool(),
+        children=[Fragment.create(Text.create("hello"))],
+    )
+
+    rendered = comp.render()
+
+    assert rendered["true_value"] == Fragment.create(Text.create("hello")).render()
+    assert rendered["false_value"] == Fragment.create().render()
+
+
 def test_cond_computed_var():
     """Test if cond works with computed vars."""
 
@@ -145,3 +160,54 @@ def test_cond_computed_var():
     )
 
     assert comp._var_type == int | str
+
+
+def test_cond_assert_types() -> None:
+    """Test that pyright infers the correct return types for cond overloads."""
+    text_comp = Text.create("hello")
+    text_comp2 = Text.create("world")
+    var_int: Var[int] = LiteralVar.create(1)
+    literal_var_str = LiteralVar.create("a")
+    widened_var_str = cast(Var[str], literal_var_str)
+
+    # Component, Component -> Component
+    _ = assert_type(cond(True, text_comp, text_comp2), Component)
+
+    # Component, non-component -> Component
+    _ = assert_type(cond(True, text_comp, "fallback"), Component)
+
+    # Component only (no else) -> Component
+    _ = assert_type(cond(True, text_comp), Component)
+
+    # non-component, Component -> Component
+    _ = assert_type(cond(True, "hello", text_comp), Component)
+
+    # literal str, literal str -> Var[Literal[...]]
+    _ = assert_type(cond(True, "hello", "world"), Var[Literal["hello", "world"]])
+
+    # non-string T, T -> Var[T] (only literal strings get the narrowing overloads)
+    _ = assert_type(cond(True, 1, 2), Var[int])
+
+    # T, U -> Var[T | U]
+    _ = assert_type(cond(True, "hello", 3), Var[str | int])
+
+    # literal str, Var[Literal[...]] -> Var[Literal[...]]
+    _ = assert_type(cond(True, "hello", literal_var_str), Var[Literal["hello", "a"]])
+
+    # Var[Literal[...]], literal str -> Var[Literal[...]]
+    _ = assert_type(cond(True, literal_var_str, "world"), Var[Literal["a", "world"]])
+
+    # literal str, Var[U] -> Var[Literal[...] | U]
+    _ = assert_type(cond(True, "hello", var_int), Var[int | Literal["hello"]])
+
+    # Var[T], literal str -> Var[T]
+    _ = assert_type(cond(True, widened_var_str, "world"), Var[str])
+
+    # literal str, Var[U] -> Var[U]
+    _ = assert_type(cond(True, "hello", widened_var_str), Var[str])
+
+    # Var[T], U -> Var[T | U]
+    _ = assert_type(cond(True, widened_var_str, 3), Var[str | int])
+
+    # Var[T], Var[U] -> Var[T | U]
+    _ = assert_type(cond(True, var_int, widened_var_str), Var[int | str])

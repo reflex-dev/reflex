@@ -7,7 +7,7 @@ from reflex.testing import AppHarness
 
 
 def DatetimeOperationsApp():
-    from datetime import datetime
+    from datetime import date, datetime, timedelta, timezone
 
     import reflex as rx
 
@@ -15,6 +15,28 @@ def DatetimeOperationsApp():
         date1: datetime = datetime(2021, 1, 1)
         date2: datetime = datetime(2031, 1, 1)
         date3: datetime = datetime(2021, 1, 1)
+        date4: datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
+        date5: datetime = datetime(2021, 1, 1, 1, tzinfo=timezone(timedelta(hours=1)))
+        date6: datetime = datetime(2021, 1, 1, 1, tzinfo=timezone(timedelta(hours=2)))
+        date7: datetime = datetime(
+            1890,
+            1,
+            1,
+            tzinfo=timezone(timedelta(minutes=9, seconds=21)),
+        )
+        date8: datetime = datetime(
+            1889,
+            12,
+            31,
+            23,
+            50,
+            39,
+            tzinfo=timezone.utc,
+        )
+        date9: date = date(2021, 1, 1)
+        date10: date = date(2031, 1, 1)
+        unset1: datetime | None = None
+        unset2: datetime | None = None
 
     app = rx.App(_state=DtOperationsState)
 
@@ -38,6 +60,58 @@ def DatetimeOperationsApp():
             rx.text(DtOperationsState.date1 <= DtOperationsState.date3, id="1_le_3"),
             rx.text(DtOperationsState.date1 > DtOperationsState.date3, id="1_gt_3"),
             rx.text(DtOperationsState.date1 >= DtOperationsState.date3, id="1_ge_3"),
+            rx.text("Operations with timezone offsets"),
+            rx.text(DtOperationsState.date4 == DtOperationsState.date5, id="4_eq_5"),
+            rx.text(DtOperationsState.date4 != DtOperationsState.date5, id="4_neq_5"),
+            rx.text(DtOperationsState.date6 < DtOperationsState.date4, id="6_lt_4"),
+            rx.text(DtOperationsState.date4 <= DtOperationsState.date5, id="4_le_5"),
+            rx.text(DtOperationsState.date4 > DtOperationsState.date6, id="4_gt_6"),
+            rx.text(DtOperationsState.date4 >= DtOperationsState.date5, id="4_ge_5"),
+            rx.text("Operations with second-level timezone offsets"),
+            rx.text(DtOperationsState.date7 == DtOperationsState.date8, id="7_eq_8"),
+            rx.text(DtOperationsState.date7 <= DtOperationsState.date8, id="7_le_8"),
+            rx.text("Operations mixing naive and timezone-aware datetimes"),
+            rx.text(DtOperationsState.date1 == DtOperationsState.date4, id="1_eq_4"),
+            rx.text(DtOperationsState.date1 != DtOperationsState.date4, id="1_neq_4"),
+            rx.text(DtOperationsState.date1 < DtOperationsState.date4, id="1_lt_4"),
+            rx.text(DtOperationsState.date1 <= DtOperationsState.date4, id="1_le_4"),
+            rx.text(DtOperationsState.date1 > DtOperationsState.date4, id="1_gt_4"),
+            rx.text(DtOperationsState.date1 >= DtOperationsState.date4, id="1_ge_4"),
+            rx.text("Operations between dates"),
+            rx.text(DtOperationsState.date9 == DtOperationsState.date10, id="9_eq_10"),
+            rx.text(DtOperationsState.date9 != DtOperationsState.date10, id="9_neq_10"),
+            rx.text(DtOperationsState.date9 < DtOperationsState.date10, id="9_lt_10"),
+            rx.text(DtOperationsState.date9 <= DtOperationsState.date10, id="9_le_10"),
+            rx.text("Operations mixing dates and naive datetimes"),
+            rx.text(DtOperationsState.date9 == DtOperationsState.date1, id="9_eq_1"),
+            rx.text(DtOperationsState.date9 != DtOperationsState.date1, id="9_neq_1"),
+            rx.text(DtOperationsState.date9 < DtOperationsState.date1, id="9_lt_1"),
+            rx.text(DtOperationsState.date9 >= DtOperationsState.date1, id="9_ge_1"),
+            rx.text("Operations with unset optional datetimes"),
+            rx.text(DtOperationsState.unset1 == DtOperationsState.date1, id="u1_eq_1"),
+            rx.text(DtOperationsState.unset1 != DtOperationsState.date1, id="u1_neq_1"),
+            rx.text(
+                DtOperationsState.unset1 < DtOperationsState.date1,  # pyright: ignore[reportOptionalOperand]
+                id="u1_lt_1",
+            ),
+            rx.text(
+                DtOperationsState.unset1 <= DtOperationsState.date1,  # pyright: ignore[reportOptionalOperand]
+                id="u1_le_1",
+            ),
+            rx.text(
+                DtOperationsState.unset1 > DtOperationsState.date1,  # pyright: ignore[reportOptionalOperand]
+                id="u1_gt_1",
+            ),
+            rx.text(
+                DtOperationsState.unset1 >= DtOperationsState.date1,  # pyright: ignore[reportOptionalOperand]
+                id="u1_ge_1",
+            ),
+            rx.text(
+                DtOperationsState.unset1 == DtOperationsState.unset2, id="u1_eq_u2"
+            ),
+            rx.text(
+                DtOperationsState.unset1 != DtOperationsState.unset2, id="u1_neq_u2"
+            ),
         )
 
 
@@ -85,3 +159,45 @@ def test_datetime_operations(datetime_operations_app: AppHarness, page: Page):
     expect(page.locator("id=1_le_3")).to_have_text("true")
     expect(page.locator("id=1_gt_3")).to_have_text("false")
     expect(page.locator("id=1_ge_3")).to_have_text("true")
+
+    # Check comparisons normalize timezone offsets
+    expect(page.locator("id=4_eq_5")).to_have_text("true")
+    expect(page.locator("id=4_neq_5")).to_have_text("false")
+    expect(page.locator("id=6_lt_4")).to_have_text("true")
+    expect(page.locator("id=4_le_5")).to_have_text("true")
+    expect(page.locator("id=4_gt_6")).to_have_text("true")
+    expect(page.locator("id=4_ge_5")).to_have_text("true")
+
+    # Check comparisons support valid second-level UTC offsets
+    expect(page.locator("id=7_eq_8")).to_have_text("true")
+    expect(page.locator("id=7_le_8")).to_have_text("true")
+
+    # Check mixed naive and timezone-aware values are deterministically incomparable
+    expect(page.locator("id=1_eq_4")).to_have_text("false")
+    expect(page.locator("id=1_neq_4")).to_have_text("true")
+    expect(page.locator("id=1_lt_4")).to_have_text("false")
+    expect(page.locator("id=1_le_4")).to_have_text("false")
+    expect(page.locator("id=1_gt_4")).to_have_text("false")
+    expect(page.locator("id=1_ge_4")).to_have_text("false")
+
+    # Check date values compare chronologically
+    expect(page.locator("id=9_eq_10")).to_have_text("false")
+    expect(page.locator("id=9_neq_10")).to_have_text("true")
+    expect(page.locator("id=9_lt_10")).to_have_text("true")
+    expect(page.locator("id=9_le_10")).to_have_text("true")
+
+    # Check dates and naive datetimes are deterministically incomparable
+    expect(page.locator("id=9_eq_1")).to_have_text("false")
+    expect(page.locator("id=9_neq_1")).to_have_text("true")
+    expect(page.locator("id=9_lt_1")).to_have_text("false")
+    expect(page.locator("id=9_ge_1")).to_have_text("false")
+
+    # Check unset optional datetimes do not crash the render
+    expect(page.locator("id=u1_eq_1")).to_have_text("false")
+    expect(page.locator("id=u1_neq_1")).to_have_text("true")
+    expect(page.locator("id=u1_lt_1")).to_have_text("false")
+    expect(page.locator("id=u1_le_1")).to_have_text("false")
+    expect(page.locator("id=u1_gt_1")).to_have_text("false")
+    expect(page.locator("id=u1_ge_1")).to_have_text("false")
+    expect(page.locator("id=u1_eq_u2")).to_have_text("true")
+    expect(page.locator("id=u1_neq_u2")).to_have_text("false")

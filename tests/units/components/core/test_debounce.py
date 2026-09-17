@@ -1,11 +1,11 @@
 """Test that DebounceInput collapses nested forms."""
 
 import pytest
+from reflex_base.vars.base import LiteralVar, Var
+from reflex_components_core.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
 
 import reflex as rx
-from reflex.components.core.debounce import DEFAULT_DEBOUNCE_TIMEOUT
 from reflex.state import BaseState
-from reflex.vars.base import LiteralVar, Var
 
 
 def test_create_no_child():
@@ -110,6 +110,21 @@ def test_render_with_special_props():
     )._render()
     assert len(tag.special_props) == 1
     assert next(iter(tag.special_props)).equals(special_prop)
+
+
+def test_render_native_element_child():
+    """DebounceInput quotes the element prop for native DOM element children."""
+    tag = rx.debounce_input(rx.el.input(on_change=S.on_change))._render()
+    assert tag.props["element"]._js_expr == '"input"'
+
+    tag = rx.debounce_input(rx.el.textarea(on_change=S.on_change))._render()
+    assert tag.props["element"]._js_expr == '"textarea"'
+
+
+def test_render_library_element_child():
+    """DebounceInput references a library component child by its identifier."""
+    tag = rx.debounce_input(rx.input(on_change=S.on_change))._render()
+    assert tag.props["element"]._js_expr == "RadixThemesTextField.Root"
 
 
 def test_event_triggers():

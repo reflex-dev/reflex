@@ -1,6 +1,4 @@
-"""Representations for React tags."""
+# pyright: reportWildcardImportFromLibrary=false
+"""Re-export from reflex_base."""
 
-from .cond_tag import CondTag
-from .iter_tag import IterTag
-from .match_tag import MatchTag
-from .tag import Tag
+from reflex_base.components.tags import *  # pragma: no cover

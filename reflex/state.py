@@ -7,61 +7,45 @@ import builtins
 import contextlib
 import copy
 import dataclasses
-import datetime
 import functools
 import inspect
+import logging
 import pickle
 import re
 import sys
 import time
-import typing
-import uuid
-import warnings
-from collections.abc import AsyncIterator, Callable, Iterator, Sequence
-from enum import Enum
+from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
+from contextvars import ContextVar
 from hashlib import md5
-from importlib.util import find_spec
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
     BinaryIO,
     ClassVar,
+    Final,
     ParamSpec,
     TypeVar,
-    cast,
     get_type_hints,
 )
 
-from rich.markup import escape
-from typing_extensions import Self
-
-import reflex.istate.dynamic
-from reflex import constants, event
-from reflex.constants.state import FIELD_MARKER
-from reflex.environment import PerformanceMode, environment
-from reflex.event import (
-    BACKGROUND_TASK_MARKER,
+from reflex_base import constants
+from reflex_base.constants.state import FIELD_MARKER
+from reflex_base.environment import PerformanceMode, environment
+from reflex_base.event import (
     EVENT_ACTIONS_MARKER,
     Event,
     EventHandler,
     EventSpec,
     call_script,
-    fix_events,
 )
-from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
-from reflex.istate.data import RouterData
-from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
-from reflex.istate.proxy import MutableProxy, StateProxy, is_mutable_type
-from reflex.istate.storage import ClientStorageBase
-from reflex.model import Model
-from reflex.utils import console, format, prerequisites, types
-from reflex.utils.exceptions import (
+from reflex_base.registry import RegistrationContext
+from reflex_base.utils.exceptions import (
+    BaseVarShadowsInheritedVarError,
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
     DynamicRouteArgShadowsStateVarError,
-    EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateMismatchError,
@@ -70,26 +54,42 @@ from reflex.utils.exceptions import (
     StateTooLargeError,
     UnretrievableVarValueError,
 )
-from reflex.utils.exceptions import ImmutableStateError as ImmutableStateError
-from reflex.utils.exec import is_testing_env
-from reflex.utils.monitoring import is_pyleak_enabled, monitor_loopblocks
-from reflex.utils.types import _isinstance, is_union, value_inside_optional
-from reflex.vars import Field, VarData, field
-from reflex.vars.base import (
+from reflex_base.utils.exceptions import ImmutableStateError as ImmutableStateError
+from reflex_base.utils.serializers import serializer
+from reflex_base.utils.types import _isinstance
+from reflex_base.vars import Field, VarData, field
+from reflex_base.vars.base import (
     ComputedVar,
     DynamicRouteVar,
     EvenMoreBasicBaseState,
+    ToOperation,
     Var,
     computed_var,
     dispatch,
     is_computed_var,
 )
+from rich.markup import escape
+from typing_extensions import Self
+
+import reflex.istate.dynamic
+from reflex import event
+from reflex.istate import HANDLED_PICKLE_ERRORS, debug_failed_pickles
+from reflex.istate.data import RouterData
+from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
+from reflex.istate.proxy import MutableProxy, is_mutable_type
+from reflex.istate.storage import ClientStorageBase
+from reflex.istate.validation import _StateMeta, _validate_state_name
+from reflex.utils import console, format, types
+from reflex.utils.exec import is_testing_env
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from reflex.components.component import Component
+    from reflex_base.components.component import Component
 
 
-Delta = dict[str, Any]
+Delta = dict[str, dict[str, Any]]
+DeltaMapping = Mapping[str, Mapping[str, Any]]
 var = computed_var
 
 
@@ -180,8 +180,6 @@ def _split_substate_key(substate_key: str) -> tuple[str, str]:
 class EventHandlerSetVar(EventHandler):
     """A special event handler to wrap setvar functionality."""
 
-    state_cls: type[BaseState] = dataclasses.field(init=False)
-
     def __init__(self, state_cls: type[BaseState]):
         """Initialize the EventHandlerSetVar.
 
@@ -190,9 +188,8 @@ class EventHandlerSetVar(EventHandler):
         """
         super().__init__(
             fn=type(self).setvar,
-            state_full_name=state_cls.get_full_name(),
+            state=state_cls,
         )
-        object.__setattr__(self, "state_cls", state_cls)
 
     def __hash__(self):
         """Get the hash of the event handler.
@@ -204,7 +201,7 @@ class EventHandlerSetVar(EventHandler):
             tuple(self.event_actions.items()),
             self.fn,
             self.state_full_name,
-            self.state_cls,
+            self.state,
         ))
 
     def setvar(self, var_name: str, value: Any):
@@ -232,30 +229,18 @@ class EventHandlerSetVar(EventHandler):
             EventHandlerValueError: If the given Var name is not a str
             NotImplementedError: If the setter for the given Var is async
         """
-        from reflex.config import get_config
-        from reflex.utils.exceptions import EventHandlerValueError
-
-        config = get_config()
-        if config.state_auto_setters is None:
-            console.deprecate(
-                feature_name="state_auto_setters defaulting to True",
-                reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
-                f"Used {self.state_cls.__name__}.setvar without defining it.",
-                deprecation_version="0.8.9",
-                removal_version="0.9.0",
-                dedupe=True,
-            )
+        from reflex_base.utils.exceptions import EventHandlerValueError
 
         if args:
             if not isinstance(args[0], str):
                 msg = f"Var name must be passed as a string, got {args[0]!r}"
                 raise EventHandlerValueError(msg)
 
-            handler = getattr(self.state_cls, constants.SETTER_PREFIX + args[0], None)
+            handler = getattr(self.state, constants.SETTER_PREFIX + args[0], None)
 
             # Check that the requested Var setter exists on the State at compile time.
             if handler is None:
-                msg = f"Variable `{args[0]}` cannot be set on `{self.state_cls.get_full_name()}`"
+                msg = f"Variable `{args[0]}` cannot be set on `{self.state_full_name}`"
                 raise AttributeError(msg)
 
             if inspect.iscoroutinefunction(handler.fn):
@@ -287,14 +272,53 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
     )
 
 
+# Sentinel a delta-value coroutine may resolve to in order to suppress its key:
+# when ``_resolve_delta`` awaits a coroutine value and gets this object back, it
+# drops the key from the delta instead of writing it. Lets a value whose
+# inclusion can only be decided asynchronously be deferred into the delta as a
+# coroutine and then omitted post-hoc. Compared by identity (the object itself is
+# the contract); never serialized into a delta sent to the client.
+_DROP_FROM_DELTA: Final = object()
+
+# Whether uncached computed var values may be recorded as sent to the client for
+# the delta currently being built. Carried out of band rather than as an argument
+# so that every internal call stays ``get_delta()``: downstream packages patch
+# that method with a signature taking no arguments, and the flag describes the
+# whole traversal rather than any single state in it. A ContextVar, not a global:
+# deltas for different clients are built in concurrent tasks, and leaking a
+# discarded traversal's flag into one of those would suppress a real update.
+_record_delta_values: ContextVar[bool] = ContextVar(
+    "_record_delta_values", default=True
+)
+
+
+@contextlib.contextmanager
+def _suppress_delta_recording() -> Iterator[None]:
+    """Stop delta values built in this block from counting as sent to the client.
+
+    For a delta that is computed for its side effects and then discarded, whose
+    values the client never receives.
+
+    Yields:
+        None, with recording suppressed.
+    """
+    token = _record_delta_values.set(False)
+    try:
+        yield
+    finally:
+        _record_delta_values.reset(token)
+
+
 async def _resolve_delta(delta: Delta) -> Delta:
-    """Await all coroutines in the delta.
+    """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
 
     Args:
         delta: The delta to process.
 
     Returns:
-        The same delta dict with all coroutines resolved to their return value.
+        The same delta dict with all coroutines resolved to their return value,
+        and any key whose coroutine resolved to ``_DROP_FROM_DELTA`` removed
+        (along with any state subdict left empty by such removals).
     """
     tasks = {}
     for state_name, state_delta in delta.items():
@@ -305,8 +329,38 @@ async def _resolve_delta(delta: Delta) -> Delta:
                     name=f"reflex_resolve_delta|{state_name}|{var_name}|{time.time()}",
                 )
     for (state_name, var_name), task in tasks.items():
-        delta[state_name][var_name] = await task
+        resolved = await task
+        if resolved is _DROP_FROM_DELTA:
+            del delta[state_name][var_name]
+            if not delta[state_name]:
+                del delta[state_name]
+        else:
+            delta[state_name][var_name] = resolved
     return delta
+
+
+async def _drop_unchanged_delta_value(
+    cvar: ComputedVar,
+    instance: BaseState,
+    value: Coroutine[None, None, Any],
+    token: str,
+) -> Any:
+    """Await an async uncached computed var, dropping it if the value did not change.
+
+    Args:
+        cvar: The computed var that produced the coroutine.
+        instance: The state instance the computed var is attached to.
+        value: The coroutine returned by the computed var.
+        token: The client token the delta is being produced for.
+
+    Returns:
+        The resolved value, or ``_DROP_FROM_DELTA`` when it matches the last
+        value that was sent to the client.
+    """
+    resolved = await value
+    if not cvar._record_delta_value(instance, resolved, token):
+        return _DROP_FROM_DELTA
+    return resolved
 
 
 RETURN = TypeVar("RETURN")
@@ -326,18 +380,92 @@ def _override_base_method(fn: Callable[PARAMS, RETURN]) -> Callable[PARAMS, RETU
     return fn
 
 
-_deserializers = {
-    int: int,
-    float: float,
-    datetime.datetime: datetime.datetime.fromisoformat,
-    datetime.date: datetime.date.fromisoformat,
-    datetime.time: datetime.time.fromisoformat,
-    uuid.UUID: uuid.UUID,
-}
+def _has_data_descriptor(cls: type, name: str) -> bool:
+    """Whether the class provides a descriptor that handles assignment for `name`.
+
+    Reads the class dicts directly; `getattr` would run the descriptor.
+
+    Args:
+        cls: The class to look the name up on.
+        name: The attribute name.
+
+    Returns:
+        True if the first class defining the name binds it to a data descriptor.
+    """
+    for klass in cls.__mro__:
+        if name in klass.__dict__:
+            return hasattr(type(klass.__dict__[name]), "__set__")
+    return False
+
+
+def _is_user_descriptor(value: Any) -> bool:
+    """Whether a class attribute is a user-defined descriptor.
+
+    Excludes framework-recognized callables and var types so user-defined
+    descriptors (with __get__/__set__) are surfaced for computed-var dependency
+    tracking without being shadowed by backend-var storage.
+
+    Args:
+        value: The class attribute value to check.
+
+    Returns:
+        True if the value is a custom descriptor.
+    """
+    if not hasattr(type(value), "__get__"):
+        return False
+    if isinstance(
+        value,
+        (
+            FunctionType,
+            classmethod,
+            staticmethod,
+            property,
+            functools.cached_property,
+            EventHandler,
+            Var,
+            Field,
+        ),
+    ):
+        return False
+    return not is_computed_var(value)
+
 
 all_base_state_classes: dict[str, None] = {}
 
+# Instance bookkeeping fields and framework methods read on every event. They
+# bypass the var-resolution logic below, so nothing stored in `_backend_vars`
+# (e.g. `_reflex_internal_links`) or delegated to the parent (`router_data`)
+# may appear here. A subclass that overrides one of these methods drops the
+# name from its own `_fast_attr_names`.
+_FRAMEWORK_ATTR_NAMES = frozenset({
+    "dirty_vars",
+    "dirty_substates",
+    "parent_state",
+    "substates",
+    "_backend_vars",
+    "_was_touched",
+    "get_fields",
+    "get_skip_vars",
+    "get_name",
+    "get_full_name",
+    "get_substate",
+    "get_value",
+    "get_delta",
+    "get_state",
+    "_get_resolved_delta",
+    "_get_root_state",
+    "_get_state_from_cache",
+    "_mark_dirty",
+    "_mark_dirty_computed_vars",
+    "_expired_computed_vars",
+    "_dirty_computed_vars",
+    "_clean",
+    "_update_was_touched",
+    "_get_was_touched",
+})
+
 CLASS_VAR_NAMES = frozenset({
+    "_fast_attr_names",
     "vars",
     "base_vars",
     "computed_vars",
@@ -345,7 +473,6 @@ CLASS_VAR_NAMES = frozenset({
     "backend_vars",
     "inherited_backend_vars",
     "event_handlers",
-    "class_subclasses",
     "_var_dependencies",
     "_always_dirty_computed_vars",
     "_always_dirty_substates",
@@ -353,7 +480,7 @@ CLASS_VAR_NAMES = frozenset({
 })
 
 
-class BaseState(EvenMoreBasicBaseState):
+class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -377,9 +504,6 @@ class BaseState(EvenMoreBasicBaseState):
     # The event handlers.
     event_handlers: ClassVar[builtins.dict[str, EventHandler]] = {}
 
-    # A set of subclassses of this class.
-    class_subclasses: ClassVar[set[type[BaseState]]] = set()
-
     # Mapping of var name to set of (state_full_name, var_name) that depend on it.
     _var_dependencies: ClassVar[builtins.dict[str, set[tuple[str, str]]]] = {}
 
@@ -391,6 +515,14 @@ class BaseState(EvenMoreBasicBaseState):
 
     # Set of states which might need to be recomputed if vars in this state change.
     _potentially_dirty_states: ClassVar[set[str]] = set()
+
+    # Framework attributes this class reads through the fast path; a subclass
+    # that defines one of these names itself drops it (see __init_subclass__).
+    _fast_attr_names: ClassVar[frozenset[str]] = _FRAMEWORK_ATTR_NAMES
+
+    # Computed vars on this class that expire on an interval; recomputed with
+    # the dependency dicts, i.e. at class creation and after any var is added.
+    _interval_computed_var_names: ClassVar[frozenset[str]] = frozenset()
 
     # The parent state.
     parent_state: BaseState | None = field(default=None, is_var=False)
@@ -445,7 +577,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ReflexRuntimeError: If the state is instantiated directly by end user.
         """
-        from reflex.utils.exceptions import ReflexRuntimeError
+        from reflex_base.utils.exceptions import ReflexRuntimeError
 
         if not _reflex_internal_init and not is_testing_env():
             msg = (
@@ -467,8 +599,13 @@ class BaseState(EvenMoreBasicBaseState):
                     _reflex_internal_init=True,
                 )
 
-        # Create a fresh copy of the backend variables for this instance
-        self._backend_vars = copy.deepcopy(self.backend_vars)
+        # Create a fresh copy of only the non-inherited backend variables for this instance.
+        # Inherited backend vars are stored in the parent state, not in this instance.
+        self._backend_vars = {
+            k: copy.deepcopy(v)
+            for k, v in self.backend_vars.items()
+            if k not in self.inherited_backend_vars
+        }
 
     def __repr__(self) -> str:
         """Get the string representation of the state.
@@ -487,7 +624,7 @@ class BaseState(EvenMoreBasicBaseState):
         """
         return [
             (name, v)
-            for mixin in [*cls._mixins(), cls]
+            for mixin in (*cls._mixins(), cls)
             for name, v in mixin.__dict__.items()
             if is_computed_var(v) and name not in cls.inherited_vars
         ]
@@ -519,7 +656,7 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             StateValueError: If a substate class shadows another.
         """
-        from reflex.utils.exceptions import StateValueError
+        from reflex_base.utils.exceptions import StateValueError
 
         super().__init_subclass__(**kwargs)
 
@@ -533,14 +670,8 @@ class BaseState(EvenMoreBasicBaseState):
         # Validate the module name.
         cls._validate_module_name()
 
-        # Event handlers should not shadow builtin state methods.
-        cls._check_overridden_methods()
-
         # Computed vars should not shadow builtin state props.
         cls._check_overridden_basevars()
-
-        # Reset subclass tracking for this class.
-        cls.class_subclasses = set()
 
         # Reset dirty substate tracking for this class.
         cls._always_dirty_substates = set()
@@ -553,15 +684,38 @@ class BaseState(EvenMoreBasicBaseState):
             cls.inherited_backend_vars = parent_state.backend_vars
 
             # Check if another substate class with the same name has already been defined.
-            if cls.get_name() in {c.get_name() for c in parent_state.class_subclasses}:
+            if cls.get_name() in {c.get_name() for c in parent_state.get_substates()}:
                 # This should not happen, since we have added module prefix to state names in #3214
                 msg = (
                     f"The substate class '{cls.get_name()}' has been defined multiple times. "
                     "Shadowing substate classes is not allowed."
                 )
                 raise StateValueError(msg)
-            # Track this new subclass in the parent state's subclasses set.
-            parent_state.class_subclasses.add(cls)
+
+        # A descriptor defined directly on this class overrides any same-named
+        # entry inherited from a parent state. Drop those names from the
+        # inherited maps so backend var assembly, dependency tracking, and the
+        # __setattr__ routing all resolve to the descriptor on this class.
+        hints = cls._get_type_hints()
+        own_descriptor_names = {
+            name
+            for name, value in cls.__dict__.items()
+            if name in hints and _is_user_descriptor(value)
+        }
+        if own_descriptor_names:
+            cls.inherited_vars = {
+                k: v
+                for k, v in cls.inherited_vars.items()
+                if k not in own_descriptor_names
+            }
+            cls.inherited_backend_vars = {
+                k: v
+                for k, v in cls.inherited_backend_vars.items()
+                if k not in own_descriptor_names
+            }
+
+        # Base vars silently lose to an inherited var of the same name; warn about it.
+        cls._check_overridden_inherited_vars()
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
@@ -569,14 +723,14 @@ class BaseState(EvenMoreBasicBaseState):
 
         new_backend_vars = {
             name: value if not isinstance(value, Field) else value.default_value()
-            for mixin_cls in [*cls._mixins(), cls]
+            for mixin_cls in (*cls._mixins(), cls)
             for name, value in list(mixin_cls.__dict__.items())
             if types.is_backend_base_variable(name, mixin_cls)
         }
         # Add annotated backend vars that may not have a default value.
         new_backend_vars.update({
             name: cls._get_var_default(name, annotation_value)
-            for mixin_cls in [*cls._mixins(), cls]
+            for mixin_cls in (*cls._mixins(), cls)
             for name, annotation_value in mixin_cls._get_type_hints().items()
             if name not in new_backend_vars
             and types.is_backend_base_variable(name, mixin_cls)
@@ -593,11 +747,40 @@ class BaseState(EvenMoreBasicBaseState):
             for name, f in cls.get_fields().items()
             if name not in cls.get_skip_vars() and f.is_var and not name.startswith("_")
         }
+        # Surface user-defined descriptors as vars so computed vars can declare
+        # dependencies on them. Descriptors on this class always win over
+        # inherited or mixin-provided entries with the same name; mixin entries
+        # are skipped if already recorded.
+        descriptor_vars: dict[str, Var] = {}
+        for source_cls in (*cls._mixins(), cls):
+            is_self = source_cls is cls
+            for dname, dvalue in source_cls.__dict__.items():
+                if (
+                    dname not in hints
+                    or dname in cls.base_vars
+                    or not _is_user_descriptor(dvalue)
+                ):
+                    continue
+                if not is_self and (
+                    dname in descriptor_vars
+                    or dname in cls.inherited_vars
+                    or dname in cls.inherited_backend_vars
+                ):
+                    continue
+                descriptor_vars[dname] = dispatch(
+                    field_name=format.format_state_name(cls.get_full_name())
+                    + "."
+                    + dname
+                    + FIELD_MARKER,
+                    var_data=VarData.from_state(cls, dname),
+                    result_var_type=hints[dname],
+                )
         cls.computed_vars = {
             name: v._replace(merge_var_data=VarData.from_state(cls))
             for name, v in computed_vars
         }
         cls.vars = {
+            **descriptor_vars,
             **cls.inherited_vars,
             **cls.base_vars,
             **cls.computed_vars,
@@ -645,9 +828,19 @@ class BaseState(EvenMoreBasicBaseState):
             cls.event_handlers[name] = handler
             setattr(cls, name, handler)
 
+        RegistrationContext.register_base_state(cls)
+
         # Initialize per-class var dependency tracking.
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
+
+        # A marked override of a framework method must keep the full lookup.
+        parent_state = cls.get_parent_state()
+        cls._fast_attr_names = (
+            parent_state._fast_attr_names
+            if parent_state is not None
+            else _FRAMEWORK_ATTR_NAMES
+        ) - cls.__dict__.keys()
 
         all_base_state_classes[cls.get_full_name()] = None
 
@@ -663,6 +856,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
         """
+        _validate_state_name(name)
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
@@ -685,11 +879,8 @@ class BaseState(EvenMoreBasicBaseState):
             closure=fn.__closure__,
         )
         newfn.__annotations__ = fn.__annotations__
-        if mark := getattr(fn, BACKGROUND_TASK_MARKER, None):
-            setattr(newfn, BACKGROUND_TASK_MARKER, mark)
-        # Preserve event_actions from @rx.event decorator
-        if event_actions := getattr(fn, EVENT_ACTIONS_MARKER, None):
-            object.__setattr__(newfn, EVENT_ACTIONS_MARKER, event_actions)
+        newfn.__kwdefaults__ = fn.__kwdefaults__
+        newfn.__dict__.update(fn.__dict__)
         return newfn
 
     @staticmethod
@@ -707,6 +898,7 @@ class BaseState(EvenMoreBasicBaseState):
             not name.startswith("_")
             and isinstance(value, Callable)
             and not isinstance(value, EventHandler)
+            and not getattr(value, "__override_base_method__", False)
             and hasattr(value, "__code__")
         )
 
@@ -721,10 +913,10 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The ComputedVar.
         """
-        console.warn(
+        logger.warning(
             "The _evaluate method is experimental and may be removed in future versions."
         )
-        from reflex.components.component import Component
+        from reflex_base.components.component import Component
 
         of_type = of_type or Component
 
@@ -742,8 +934,8 @@ class BaseState(EvenMoreBasicBaseState):
             result = f(state)
 
             if not _isinstance(result, of_type, nested=1, treat_var_as_type=False):
-                console.warn(
-                    f"Inline ComputedVar {f} expected type {escape(str(of_type))}, got {type(result)}. "
+                logger.warning(
+                    f"Inline ComputedVar {f} expected type {of_type}, got {type(result)}. "
                     "You can specify expected type with `of_type` argument."
                 )
 
@@ -764,13 +956,13 @@ class BaseState(EvenMoreBasicBaseState):
         return getattr(cls, unique_var_name)
 
     @classmethod
-    def _mixins(cls) -> list[type]:
+    def _mixins(cls) -> tuple[type[BaseState], ...]:
         """Get the mixin classes of the state.
 
         Returns:
             The mixin classes of the state.
         """
-        return [
+        return tuple(
             mixin
             for mixin in cls.__mro__
             if (
@@ -778,7 +970,7 @@ class BaseState(EvenMoreBasicBaseState):
                 and issubclass(mixin, BaseState)
                 and mixin._mixin is True
             )
-        ]
+        )
 
     @classmethod
     def _handle_local_def(cls):
@@ -796,7 +988,8 @@ class BaseState(EvenMoreBasicBaseState):
         cls.__module__ = reflex.istate.dynamic.__name__
 
     @classmethod
-    def _get_type_hints(cls) -> dict[str, Any]:
+    @functools.cache
+    def _get_type_hints(cls) -> builtins.dict[str, Any]:
         """Get the type hints for this class.
 
         If the class is dynamic, evaluate the type hints with the original
@@ -823,6 +1016,11 @@ class BaseState(EvenMoreBasicBaseState):
         Additional updates tracking dicts for vars and substates that always
         need to be recomputed.
         """
+        cls._interval_computed_var_names = frozenset(
+            name
+            for name, cvar in cls.computed_vars.items()
+            if cvar._update_interval is not None
+        )
         for cvar_name, cvar in cls.computed_vars.items():
             if not cvar._cache:
                 # Do not perform dep calculation when cache=False (these are always dirty).
@@ -869,27 +1067,28 @@ class BaseState(EvenMoreBasicBaseState):
         cls._to_schema.cache_clear()
 
     @classmethod
-    def _check_overridden_methods(cls):
-        """Check for shadow methods and raise error if any.
+    def _iter_functions(cls) -> Iterator[tuple[str, FunctionType]]:
+        """Iterate over the functions defined on the class and its bases.
 
-        Raises:
-            EventHandlerShadowsBuiltInStateMethodError: When an event handler shadows an inbuilt state method.
+        Equivalent to `inspect.getmembers(cls, inspect.isfunction)`, except that
+        the class dicts are read directly instead of going through `getattr`, so
+        descriptors are not evaluated. Evaluating them here would run user code
+        (e.g. a hybrid property building its frontend var) while the class is
+        still being constructed.
+
+        Yields:
+            The name and function of each function defined on the class or its bases.
         """
-        overridden_methods = set()
-        state_base_functions = cls._get_base_functions()
-        for name, method in inspect.getmembers(cls, inspect.isfunction):
-            # Check if the method is overridden and not a dunder method
-            if (
-                not name.startswith("__")
-                and method.__name__ in state_base_functions
-                and state_base_functions[method.__name__] != method
-                and not getattr(method, "__override_base_method__", False)
-            ):
-                overridden_methods.add(method.__name__)
-
-        for method_name in overridden_methods:
-            msg = f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
-            raise EventHandlerShadowsBuiltInStateMethodError(msg)
+        seen: set[str] = set()
+        for klass in cls.__mro__:
+            for name, value in klass.__dict__.items():
+                if name in seen:
+                    continue
+                seen.add(name)
+                if isinstance(value, staticmethod):
+                    value = value.__func__
+                if isinstance(value, FunctionType):
+                    yield name, value
 
     @classmethod
     def _check_overridden_basevars(cls):
@@ -898,8 +1097,9 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             ComputedVarShadowsBaseVarsError: When a computed var shadows a base var.
         """
+        hints = cls._get_type_hints()
         for name, computed_var_ in cls._get_computed_vars():
-            if name in get_type_hints(cls):
+            if name in hints:
                 msg = f"The computed var name `{computed_var_._js_expr}` shadows a base var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsBaseVarsError(msg)
 
@@ -917,6 +1117,44 @@ class BaseState(EvenMoreBasicBaseState):
             if name in cls.inherited_vars or name in cls.inherited_backend_vars:
                 msg = f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsStateVarError(msg)
+
+    @classmethod
+    def _check_overridden_inherited_vars(cls) -> None:
+        """Reject base vars that shadow a var inherited from a parent state.
+
+        Such a redeclaration is dropped: the field never becomes a base var,
+        so reads and writes resolve to the parent's var, and the raw default left in
+        the class dict makes class-level access return it instead of a Var.
+
+        A bare re-annotation leaves no class attribute, so the name keeps resolving
+        to the inherited Var and stays reactive — that form is inert, not a shadow.
+
+        Raises:
+            BaseVarShadowsInheritedVarError: When a base var shadows an inherited var.
+        """
+        parent_state = cls.get_parent_state()
+        if parent_state is None:
+            return
+        parent_fields = parent_state.get_fields()
+        for name, own_field in cls.get_fields().items():
+            if (
+                name.startswith("_")
+                or not own_field.is_var
+                or name not in cls.inherited_vars
+                or name not in cls.__dict__
+            ):
+                continue
+            # A field redeclared on this class is a distinct object from the parent's;
+            # a merely inherited one is the same object.
+            parent_field = parent_fields.get(name)
+            if parent_field is None or parent_field is own_field:
+                continue
+            msg = (
+                f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
+                f"inherited from {parent_state.__module__}.{parent_state.__name__}; "
+                "use a different name instead"
+            )
+            raise BaseVarShadowsInheritedVarError(msg)
 
     @classmethod
     def get_skip_vars(cls) -> set[str]:
@@ -942,11 +1180,11 @@ class BaseState(EvenMoreBasicBaseState):
     def get_parent_state(cls) -> type[BaseState] | None:
         """Get the parent state.
 
-        Raises:
-            ValueError: If more than one parent state is found.
-
         Returns:
             The parent state.
+
+        Raises:
+            ValueError: If more than one parent state is found.
         """
         parent_states = [
             base
@@ -983,7 +1221,7 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The substates of the state.
         """
-        return cls.class_subclasses
+        return RegistrationContext.get().get_substates(cls)
 
     @classmethod
     @functools.lru_cache
@@ -1082,8 +1320,8 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             VarTypeError: if the variable has an incorrect type
         """
-        from reflex.config import get_config
-        from reflex.utils.exceptions import VarTypeError
+        from reflex_base.config import get_state_auto_setters
+        from reflex_base.utils.exceptions import VarTypeError
 
         if not types.is_valid_var_type(prop._var_type):
             msg = (
@@ -1094,9 +1332,21 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise VarTypeError(msg)
         cls._set_var(name, prop)
-        if cls.is_user_defined() and get_config().state_auto_setters is not False:
+        if cls.is_user_defined() and get_state_auto_setters() is True:
             cls._create_setter(name, prop)
         cls._set_default_value(name, prop)
+
+    @classmethod
+    def add_field(cls, name: str, var: Var, default_value: Any):
+        """Validate a dynamically added field before updating the field map.
+
+        Args:
+            name: The name of the field to add.
+            var: The variable to add a field for.
+            default_value: The default value of the field.
+        """
+        _validate_state_name(name)
+        super().add_field(name, var, default_value)
 
     @classmethod
     def add_var(cls, name: str, type_: Any, default_value: Any = None):
@@ -1137,7 +1387,7 @@ class BaseState(EvenMoreBasicBaseState):
         cls.vars.update({name: var})
 
         # let substates know about the new variable
-        for substate_class in cls.class_subclasses:
+        for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
 
         # Reinitialize dependency tracking dicts.
@@ -1169,9 +1419,12 @@ class BaseState(EvenMoreBasicBaseState):
         # Check if function has stored event_actions from decorator
         event_actions = getattr(fn, EVENT_ACTIONS_MARKER, {})
 
-        return event_handler_cls(
-            fn=fn, state_full_name=cls.get_full_name(), event_actions=event_actions
-        )
+        handler = event_handler_cls(fn=fn, state=cls, event_actions=event_actions)
+        if cls.get_full_name() in all_base_state_classes:
+            # Register handlers created after the class was registered.
+            reg_ctx = RegistrationContext.get()
+            reg_ctx.register_event_handler(handler, states=(cls,))
+        return handler
 
     @classmethod
     def _create_setvar(cls):
@@ -1186,28 +1439,7 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the var.
             prop: The var to create a setter for.
         """
-        from reflex.config import get_config
-
-        config = get_config()
         create_event_handler_kwargs = {}
-
-        if config.state_auto_setters is None:
-
-            class EventHandlerDeprecatedSetter(EventHandler):
-                def __call__(self, *args, **kwargs):
-                    console.deprecate(
-                        feature_name="state_auto_setters defaulting to True",
-                        reason="The default value will be changed to False in a future release. Set state_auto_setters explicitly or define setters explicitly. "
-                        f"Used {setter_name} in {cls.__name__} without defining it.",
-                        deprecation_version="0.8.9",
-                        removal_version="0.9.0",
-                        dedupe=True,
-                    )
-                    return super().__call__(*args, **kwargs)
-
-            create_event_handler_kwargs["event_handler_cls"] = (
-                EventHandlerDeprecatedSetter
-            )
 
         setter_name = Var._get_setter_name_for_name(name)
         if setter_name not in cls.__dict__:
@@ -1236,6 +1468,9 @@ class BaseState(EvenMoreBasicBaseState):
     def _get_var_default(cls, name: str, annotation_value: Any) -> Any:
         """Get the default value of a (backend) var.
 
+        Reads class dicts directly; `getattr` would run descriptors (e.g. a
+        hybrid property getter) against the half-built class.
+
         Args:
             name: The name of the var.
             annotation_value: The annotation value of the var.
@@ -1243,31 +1478,29 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The default value of the var or None.
         """
+        for klass in cls.__mro__:
+            if name not in klass.__dict__:
+                continue
+            value = klass.__dict__[name]
+            if isinstance(value, Field):
+                if (
+                    value.default is not dataclasses.MISSING
+                    or value.default_factory is not None
+                ):
+                    return value.default_value()
+                # the field declares no default; use the annotation's
+                break
+            if hasattr(type(value), "__get__"):
+                # A descriptor provides behavior, not a stored default.
+                break
+            return value
         try:
-            value = getattr(cls, name)
-            return value if not isinstance(value, Field) else value.default_value()
-        except AttributeError:
-            try:
-                return types.get_default_value_for_type(annotation_value)
-            except TypeError:
-                pass
-        return None
-
-    @staticmethod
-    def _get_base_functions() -> dict[str, FunctionType]:
-        """Get all functions of the state class excluding dunder methods.
-
-        Returns:
-            The functions of rx.State class as a dict.
-        """
-        return {
-            func[0]: func[1]
-            for func in inspect.getmembers(BaseState, predicate=inspect.isfunction)
-            if not func[0].startswith("__")
-        }
+            return types.get_default_value_for_type(annotation_value)
+        except TypeError:
+            return None
 
     @classmethod
-    def _update_substate_inherited_vars(cls, vars_to_add: dict[str, Var]):
+    def _update_substate_inherited_vars(cls, vars_to_add: builtins.dict[str, Var]):
         """Update the inherited vars of substates recursively when new vars are added.
 
         Also updates the var dependency tracking dicts after adding vars.
@@ -1275,7 +1508,7 @@ class BaseState(EvenMoreBasicBaseState):
         Args:
             vars_to_add: names to Var instances to add to substates
         """
-        for substate_class in cls.class_subclasses:
+        for substate_class in cls.get_substates():
             for name, var in vars_to_add.items():
                 if types.is_backend_base_variable(name, cls):
                     substate_class.backend_vars.setdefault(name, var)
@@ -1288,15 +1521,37 @@ class BaseState(EvenMoreBasicBaseState):
         cls._init_var_dependency_dicts()
 
     @classmethod
-    def setup_dynamic_args(cls, args: dict[str, str]):
+    def _dynamic_route_arg_types(cls) -> builtins.dict[str, str]:
+        """Map installed dynamic route argument names to their route arg type.
+
+        Returns:
+            A mapping of dynamic route argument name to ``RouteArgType`` value.
+        """
+        return {
+            name: (
+                constants.RouteArgType.LIST
+                if computed_var._var_type == list[str]
+                else constants.RouteArgType.SINGLE
+            )
+            for name, computed_var in cls.computed_vars.items()
+            if isinstance(computed_var, DynamicRouteVar)
+        }
+
+    @classmethod
+    def setup_dynamic_args(cls, args: builtins.dict[str, str]):
         """Set up args for easy access in renderer.
 
         Args:
             args: a dict of args
         """
+        # Skip dynamic args that have already been registered by a previous route.
+        installed = cls._dynamic_route_arg_types()
+        args = {k: v for k, v in args.items() if k not in installed}
         if not args:
             return
 
+        for name in args:
+            _validate_state_name(name)
         cls._check_overwritten_dynamic_args(list(args.keys()))
 
         def argsingle_factory(param: str):
@@ -1367,8 +1622,18 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             The value of the var.
         """
-        # Fast path for dunder
-        if name.startswith("__") or name in CLASS_VAR_NAMES:
+        # Fast path for dunder, class-level tracking dicts, and the
+        # framework's own instance bookkeeping and methods.
+        if (
+            name.startswith("__")
+            or name in CLASS_VAR_NAMES
+            or (
+                # Global set first: a user var must not pay the per-class
+                # lookup just to be rejected by it.
+                name in _FRAMEWORK_ATTR_NAMES
+                and name in super().__getattribute__("_fast_attr_names")
+            )
+        ):
             return super().__getattribute__(name)
 
         # For now, handle router_data updates as a special case.
@@ -1456,6 +1721,9 @@ class BaseState(EvenMoreBasicBaseState):
             and not name.startswith(
                 f"_{getattr(type(self), '__original_name__', type(self).__name__)}__"
             )
+            # A property (or other data descriptor) defines what assigning means,
+            # so let it run; only names backed by nothing at all are a mistake.
+            and not _has_data_descriptor(type(self), name)
         ):
             msg = (
                 f"The state variable '{name}' has not been defined in '{type(self).__name__}'. "
@@ -1468,8 +1736,8 @@ class BaseState(EvenMoreBasicBaseState):
         if (field := fields.get(name)) is not None and field.is_var:
             field_type = field.outer_type_
             if not _isinstance(value, field_type, nested=1, treat_var_as_type=False):
-                console.error(
-                    f"Expected field '{type(self).__name__}.{name}' to receive type '{escape(str(field_type))}',"
+                logger.error(
+                    f"Expected field '{type(self).__name__}.{name}' to receive type '{field_type}',"
                     f" but got '{value}' of type '{type(value)}'."
                 )
 
@@ -1500,9 +1768,10 @@ class BaseState(EvenMoreBasicBaseState):
                 default = copy.deepcopy(field.default)
             setattr(self, prop_name, default)
 
-        # Reset the backend vars.
+        # Reset the backend vars that are not inherited from parent states.
         for prop_name, value in self.backend_vars.items():
-            setattr(self, prop_name, copy.deepcopy(value))
+            if prop_name not in self.inherited_backend_vars:
+                setattr(self, prop_name, copy.deepcopy(value))
 
         # Recursively reset the substates.
         for substate in self.substates.values():
@@ -1607,7 +1876,9 @@ class BaseState(EvenMoreBasicBaseState):
             RuntimeError: If redis is not used in this backend process.
             StateMismatchError: If the state instance is not of the expected type.
         """
+        from reflex.istate.manager import get_state_manager
         from reflex.istate.manager.redis import StateManagerRedis
+        from reflex.istate.manager.token import BaseStateToken
 
         # Then get the target state and all its substates.
         state_manager = get_state_manager()
@@ -1618,7 +1889,7 @@ class BaseState(EvenMoreBasicBaseState):
             )
             raise RuntimeError(msg)
         state_in_redis = await state_manager.get_state(
-            token=_substate_key(self.router.session.client_token, state_cls),
+            token=BaseStateToken(ident=self.router.session.client_token, cls=state_cls),
             top_level=False,
             for_state_instance=self,
         )
@@ -1695,310 +1966,35 @@ class BaseState(EvenMoreBasicBaseState):
         ) is not unset and not isinstance(var_value, Var):
             return var_value  # pyright: ignore [reportReturnType]
 
-        var_data = var._get_all_var_data()
-        if var_data is None or not var_data.state:
+        # Unwrap any cast wrappers and resolve via the underlying var's *own*
+        # var data, not the recursive _get_all_var_data(). For an operation or
+        # derived var (e.g. State.a + State.b or State.items[0]), the recursive
+        # merge back-fills state/field_name from the first operand, which would
+        # make us silently return that operand's value instead of the operation's
+        # result. Only a plain field or computed var reference carries
+        # state + field_name on its own var data.
+        inner_var = var
+        while isinstance(inner_var, ToOperation):
+            inner_var = inner_var._original
+        var_data = inner_var._var_data
+        if var_data is None or not var_data.state or not var_data.field_name:
             msg = f"Unable to retrieve value for {var._js_expr}: not associated with any state."
             raise UnretrievableVarValueError(msg)
         # Fastish case: this var belongs to this state
         if var_data.state == self.get_full_name():
-            return getattr(self, var_data.field_name)
+            value = getattr(self, var_data.field_name)
+            if inspect.isawaitable(value):
+                return await value
+            return value
 
         # Slow case: this var belongs to another state
         other_state = await self.get_state(
             self._get_root_state().get_class_substate(var_data.state)
         )
-        return getattr(other_state, var_data.field_name)
-
-    def _get_event_handler(
-        self, event: Event
-    ) -> tuple[BaseState | StateProxy, EventHandler]:
-        """Get the event handler for the given event.
-
-        Args:
-            event: The event to get the handler for.
-
-
-        Returns:
-            The event handler.
-
-        Raises:
-            ValueError: If the event handler or substate is not found.
-        """
-        # Get the event handler.
-        path = event.name.split(".")
-        path, name = path[:-1], path[-1]
-        substate = self.get_substate(path)
-        if not substate:
-            msg = "The value of state cannot be None when processing an event."
-            raise ValueError(msg)
-        handler = substate.event_handlers[name]
-
-        # For background tasks, proxy the state
-        if handler.is_background:
-            substate = StateProxy(substate)
-
-        return substate, handler
-
-    async def _process(self, event: Event) -> AsyncIterator[StateUpdate]:
-        """Obtain event info and process event.
-
-        Args:
-            event: The event to process.
-
-        Yields:
-            The state update after processing the event.
-        """
-        # Get the event handler.
-        substate, handler = self._get_event_handler(event)
-
-        # Run the event generator and yield state updates.
-        async for update in self._process_event(
-            handler=handler,
-            state=substate,
-            payload=event.payload,
-        ):
-            yield update
-
-    def _check_valid(self, handler: EventHandler, events: Any) -> Any:
-        """Check if the events yielded are valid. They must be EventHandlers or EventSpecs.
-
-        Args:
-            handler: EventHandler.
-            events: The events to be checked.
-
-        Raises:
-            TypeError: If any of the events are not valid.
-
-        Returns:
-            The events as they are if valid.
-        """
-
-        def _is_valid_type(events: Any) -> bool:
-            return isinstance(events, (Event, EventHandler, EventSpec))
-
-        if events is None or _is_valid_type(events):
-            return events
-
-        if not (isinstance(events, Sequence) and not isinstance(events, (str, bytes))):
-            events = [events]
-
-        try:
-            if all(_is_valid_type(e) for e in events):
-                return events
-        except TypeError:
-            pass
-
-        coroutines = [e for e in events if inspect.iscoroutine(e)]
-
-        for coroutine in coroutines:
-            coroutine_name = coroutine.__qualname__
-            warnings.filterwarnings(
-                "ignore", message=f"coroutine '{coroutine_name}' was never awaited"
-            )
-
-        msg = (
-            f"Your handler {handler.fn.__qualname__} must only return/yield: None, Events or other EventHandlers referenced by their class (i.e. using `type(self)` or other class references)."
-            f" Returned events of types {', '.join(map(str, map(type, events)))!s}."
-        )
-        raise TypeError(msg)
-
-    async def _as_state_update(
-        self,
-        handler: EventHandler,
-        events: EventSpec | list[EventSpec] | None,
-        final: bool,
-    ) -> StateUpdate:
-        """Convert the events to a StateUpdate.
-
-        Fixes the events and checks for validity before converting.
-
-        Args:
-            handler: The handler where the events originated from.
-            events: The events to queue with the update.
-            final: Whether the handler is done processing.
-
-        Returns:
-            The valid StateUpdate containing the events and final flag.
-        """
-        # get the delta from the root of the state tree
-        state = self._get_root_state()
-
-        token = self.router.session.client_token
-
-        # Convert valid EventHandler and EventSpec into Event
-        fixed_events = fix_events(self._check_valid(handler, events), token)
-
-        try:
-            # Get the delta after processing the event.
-            delta = await state._get_resolved_delta()
-            state._clean()
-
-            return StateUpdate(
-                delta=delta,
-                events=fixed_events,
-                final=final if not handler.is_background else None,
-            )
-        except Exception as ex:
-            state._clean()
-
-            event_specs = (
-                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
-            )
-
-            if event_specs is None:
-                return StateUpdate()
-
-            event_specs_correct_type = cast(
-                list[EventSpec | EventHandler] | None,
-                [event_specs] if isinstance(event_specs, EventSpec) else event_specs,
-            )
-            fixed_events = fix_events(
-                event_specs_correct_type,
-                token,
-                router_data=state.router_data,
-            )
-            return StateUpdate(
-                events=fixed_events,
-                final=True,
-            )
-
-    async def _process_event(
-        self,
-        handler: EventHandler,
-        state: BaseState | StateProxy,
-        payload: builtins.dict,
-    ) -> AsyncIterator[StateUpdate]:
-        """Process event.
-
-        Args:
-            handler: EventHandler to process.
-            state: State to process the handler.
-            payload: The event payload.
-
-        Yields:
-            StateUpdate object
-
-        Raises:
-            ValueError: If a string value is received for an int or float type and cannot be converted.
-        """
-        from reflex.utils import telemetry
-
-        # Get the function to process the event.
-        if is_pyleak_enabled():
-            console.debug(f"Monitoring leaks for handler: {handler.fn.__qualname__}")
-            fn = functools.partial(monitor_loopblocks(handler.fn), state)
-        else:
-            fn = functools.partial(handler.fn, state)
-
-        try:
-            type_hints = typing.get_type_hints(handler.fn)
-        except Exception:
-            type_hints = {}
-
-        for arg, value in list(payload.items()):
-            hinted_args = type_hints.get(arg, Any)
-            if hinted_args is Any:
-                continue
-            if is_union(hinted_args):
-                if value is None:
-                    continue
-                hinted_args = value_inside_optional(hinted_args)
-            if (
-                isinstance(value, dict)
-                and isinstance(hinted_args, type)
-                and not types.is_generic_alias(hinted_args)  # py3.10
-            ):
-                if issubclass(hinted_args, Model):
-                    # Remove non-fields from the payload
-                    payload[arg] = hinted_args(**{
-                        key: value
-                        for key, value in value.items()
-                        if key in hinted_args.__fields__
-                    })
-                elif dataclasses.is_dataclass(hinted_args):
-                    payload[arg] = hinted_args(**value)
-                elif find_spec("pydantic"):
-                    from pydantic import BaseModel as BaseModelV2
-                    from pydantic.v1 import BaseModel as BaseModelV1
-
-                    if issubclass(hinted_args, BaseModelV1):
-                        payload[arg] = hinted_args.parse_obj(value)
-                    elif issubclass(hinted_args, BaseModelV2):
-                        payload[arg] = hinted_args.model_validate(value)
-            elif isinstance(value, list) and (hinted_args is set or hinted_args is set):
-                payload[arg] = set(value)
-            elif isinstance(value, list) and (
-                hinted_args is tuple or hinted_args is tuple
-            ):
-                payload[arg] = tuple(value)
-            elif isinstance(hinted_args, type) and issubclass(hinted_args, Enum):
-                try:
-                    payload[arg] = hinted_args(value)
-                except ValueError:
-                    msg = f"Received an invalid enum value ({value}) for {arg} of type {hinted_args}"
-                    raise ValueError(msg) from None
-            elif (
-                isinstance(value, str)
-                and (deserializer := _deserializers.get(hinted_args)) is not None
-            ):
-                try:
-                    payload[arg] = deserializer(value)
-                except ValueError:
-                    msg = f"Received a string value ({value}) for {arg} but expected a {hinted_args}"
-                    raise ValueError(msg) from None
-                else:
-                    console.warn(
-                        f"Received a string value ({value}) for {arg} but expected a {hinted_args}. A simple conversion was successful."
-                    )
-
-        # Wrap the function in a try/except block.
-        try:
-            # Handle async functions.
-            if inspect.iscoroutinefunction(fn.func):
-                events = await fn(**payload)
-
-            # Handle regular functions.
-            else:
-                events = fn(**payload)
-            # Handle async generators.
-            if inspect.isasyncgen(events):
-                async for event in events:
-                    yield await state._as_state_update(handler, event, final=False)
-                yield await state._as_state_update(handler, events=None, final=True)
-
-            # Handle regular generators.
-            elif inspect.isgenerator(events):
-                try:
-                    while True:
-                        yield await state._as_state_update(
-                            handler, next(events), final=False
-                        )
-                except StopIteration as si:
-                    # the "return" value of the generator is not available
-                    # in the loop, we must catch StopIteration to access it
-                    if si.value is not None:
-                        yield await state._as_state_update(
-                            handler, si.value, final=False
-                        )
-                yield await state._as_state_update(handler, events=None, final=True)
-
-            # Handle regular event chains.
-            else:
-                yield await state._as_state_update(handler, events, final=True)
-
-        # If an error occurs, throw a window alert.
-        except Exception as ex:
-            telemetry.send_error(ex, context="backend")
-
-            event_specs = (
-                prerequisites.get_and_validate_app().app.backend_exception_handler(ex)
-            )
-
-            yield await state._as_state_update(
-                handler,
-                event_specs,
-                final=True,
-            )
+        value = getattr(other_state, var_data.field_name)
+        if inspect.isawaitable(value):
+            return await value
+        return value
 
     def _mark_dirty_computed_vars(self) -> None:
         """Mark ComputedVars that need to be recalculated based on dirty_vars."""
@@ -2033,10 +2029,14 @@ class BaseState(EvenMoreBasicBaseState):
         Returns:
             Set of computed vars to include in the delta.
         """
+        # Only computed vars declared with an interval can expire; the class
+        # keeps that subset so this stays O(interval vars), not O(all vars).
+        computed_vars = self.computed_vars
+        # __class__, not type(): a StateProxy reports the wrapped state's class.
         return {
             cvar
-            for cvar, cvar_obj in self.computed_vars.items()
-            if cvar_obj.needs_update(instance=self)
+            for cvar in self.__class__._interval_computed_var_names
+            if computed_vars[cvar].needs_update(instance=self)
         }
 
     def _dirty_computed_vars(
@@ -2061,9 +2061,15 @@ class BaseState(EvenMoreBasicBaseState):
     def get_delta(self) -> Delta:
         """Get the delta for the state.
 
+        Takes no arguments, and no internal caller passes any: the method is
+        monkeypatched downstream with a signature accepting only `self`. Whether
+        the uncached computed var values it computes count as sent to the client
+        is carried by `_suppress_delta_recording` instead.
+
         Returns:
             The delta for the state.
         """
+        record_values = _record_delta_values.get()
         delta = {}
 
         self._mark_dirty_computed_vars()
@@ -2077,11 +2083,23 @@ class BaseState(EvenMoreBasicBaseState):
             self.dirty_vars.intersection(frontend_computed_vars)
         )
 
-        subdelta: dict[str, Any] = {
-            prop + FIELD_MARKER: self.get_value(prop)
-            for prop in delta_vars
-            if not types.is_backend_base_variable(prop, type(self))
-        }
+        always_dirty_computed_vars = self._always_dirty_computed_vars
+        # Token of the client this delta is for, used to know which values it has.
+        token = self.router.session.client_token if always_dirty_computed_vars else ""
+        subdelta: dict[str, Any] = {}
+        for prop in delta_vars:
+            if types.is_backend_base_variable(prop, type(self)):
+                continue
+            value = self.get_value(prop)
+            if record_values and prop in always_dirty_computed_vars:
+                # Uncached computed vars are recomputed for every delta; only
+                # send them when the recomputed value actually changed.
+                cvar = self.computed_vars[prop]
+                if inspect.iscoroutine(value):
+                    value = _drop_unchanged_delta_value(cvar, self, value, token)
+                elif not cvar._record_delta_value(self, value, token):
+                    continue
+            subdelta[prop + FIELD_MARKER] = value
 
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
@@ -2120,6 +2138,7 @@ class BaseState(EvenMoreBasicBaseState):
         """Update the _was_touched flag based on dirty_vars."""
         if self.dirty_vars and not self._was_touched:
             for var in self.dirty_vars:
+                # Mark touched if a base var or owned backend var (not inherited) changed.
                 if var in self.base_vars or var in self._backend_vars:
                     self._was_touched = True
                     break
@@ -2170,28 +2189,17 @@ class BaseState(EvenMoreBasicBaseState):
         Raises:
             TypeError: If the key is not a string or MutableProxy.
         """
-        if isinstance(key, MutableProxy):
-            # Legacy behavior from v0.7.14: handle non-string keys with deprecation warning
-            from reflex.utils import console
-
-            console.deprecate(
-                feature_name="Non-string keys in get_value",
-                reason="Passing non-string keys to get_value is deprecated and will no longer be supported",
-                deprecation_version="0.8.0",
-                removal_version="0.9.0",
-            )
-
-            return key.__wrapped__
-
         if isinstance(key, str):
-            return getattr(self, key)
+            if isinstance(val := getattr(self, key), MutableProxy):
+                return val.__wrapped__
+            return val
 
         msg = f"Invalid key type: {type(key)}. Expected str."
         raise TypeError(msg)
 
     def dict(
         self, include_computed: bool = True, initial: bool = False, **kwargs
-    ) -> dict[str, Any]:
+    ) -> builtins.dict[str, Any]:
         """Convert the object to a dictionary.
 
         Args:
@@ -2288,7 +2296,7 @@ class BaseState(EvenMoreBasicBaseState):
             state.pop(inherited_var_name, None)
         return state
 
-    def __setstate__(self, state: dict[str, Any]):
+    def __setstate__(self, state: builtins.dict[str, Any]):
         """Set the state from redis deserialization.
 
         This method is called by pickle to deserialize the object.
@@ -2324,7 +2332,7 @@ class BaseState(EvenMoreBasicBaseState):
                 + "which may present performance issues. Consider reducing the size of this state."
             )
             if environment.REFLEX_PERF_MODE.get() == PerformanceMode.WARN:
-                console.warn(msg)
+                logger.warning(msg)
             elif environment.REFLEX_PERF_MODE.get() == PerformanceMode.RAISE:
                 raise StateTooLargeError(msg)
             _WARNED_ABOUT_STATE_SIZE.add(state_full_name)
@@ -2486,7 +2494,6 @@ class State(BaseState):
         Returns:
             The instance of state_cls associated with this state's client_token.
         """
-        state_instance = await super()._get_state_from_redis(state_cls)
         if (
             self._reflex_internal_links
             and (
@@ -2495,15 +2502,31 @@ class State(BaseState):
                 )
             )
             is not None
-            and (
-                internal_patch_linked_state := getattr(
-                    state_instance, "_internal_patch_linked_state", None
-                )
-            )
-            is not None
         ):
-            return await internal_patch_linked_state(linked_token)
-        return state_instance
+            from reflex.istate.shared import SharedStateBaseInternal
+
+            shared_base = await self.get_state(SharedStateBaseInternal)
+            return await shared_base._resolve_linked_state(state_cls, linked_token)  # type: ignore[return-value]
+        return await super()._get_state_from_redis(state_cls)
+
+    @event
+    async def hydrate(self) -> None:
+        """Send the full state to the frontend to synchronize it with the backend."""
+        from reflex_base.event.context import EventContext
+
+        # Clear client storage, to respect clearing cookies
+        self._reset_client_storage()
+
+        # Mark state as not hydrated (until on_loads are complete)
+        self.is_hydrated = False
+
+        # Get the initial state if needed.
+        ctx = EventContext.get()
+        if ctx.emit_delta_impl is not None:
+            await ctx.emit_delta(delta=await _resolve_delta(self.dict()))
+
+        # since a full dict was captured, clean any dirtiness
+        self._clean()
 
     @event
     def set_is_hydrated(self, value: bool) -> None:
@@ -2550,7 +2573,7 @@ def dynamic(func: Callable[[T], Component]):
     state_class: type[T] = values[0]
 
     def wrapper() -> Component:
-        from reflex.components.base.fragment import fragment
+        from reflex_components_core.base.fragment import fragment
 
         return fragment(state_class._evaluate(lambda state: func(state)))
 
@@ -2609,8 +2632,13 @@ class FrontendEventExceptionState(State):
                 "window.location.reload();"
                 "}"
             )
-        prerequisites.get_and_validate_app().app.frontend_exception_handler(
-            Exception(info)
+        # Escape rich markup so a JS error message containing square brackets
+        # (e.g. "x[/bold]y is not a function") cannot style backend logs or
+        # raise MarkupError when printed through the console helpers. The text
+        # is not otherwise sanitized: stack traces are multi-line by nature and
+        # truncating them would lose the information this handler exists for.
+        RegistrationContext.get().app.frontend_exception_handler(
+            Exception(escape(info))
         )
 
 
@@ -2644,38 +2672,25 @@ class OnLoadInternalState(State):
     This is a separate substate to avoid deserializing the entire state tree for every page navigation.
     """
 
-    # Cannot properly annotate this as `App` due to circular import issues.
-    _app_ref: ClassVar[Any] = None
-
+    # A newer navigation supersedes the previous unfinished on_load chain for
+    # the same client token, cancelling its stale work (#6593).
+    @event(supersedes=True)
     def on_load_internal(self) -> list[Event | EventSpec | event.EventCallback] | None:
         """Queue on_load handlers for the current page.
 
         Returns:
             The list of events to queue for on load handling.
-
-        Raises:
-            TypeError: If the app reference is not of type App.
         """
-        from reflex.app import App
-
-        app = type(self)._app_ref or prerequisites.get_and_validate_app().app
-        if not isinstance(app, App):
-            msg = (
-                f"Expected app to be of type {App.__name__}, got {type(app).__name__}."
-            )
-            raise TypeError(msg)
-        # Cache the app reference for subsequent calls.
-        if type(self)._app_ref is None:
-            type(self)._app_ref = app
-        load_events = app.get_load_events(self.router.url.path)
+        load_events = RegistrationContext.get().app.get_load_events(
+            self.router.url.path
+        )
         if not load_events:
             self.is_hydrated = True
             return None  # Fast path for navigation with no on_load events defined.
         self.is_hydrated = False
         return [
-            *fix_events(
-                cast(list[EventSpec | EventHandler], load_events),
-                self.router.session.client_token,
+            *Event.from_event_type(
+                load_events,
                 router_data=self.router_data,
             ),
             State.set_is_hydrated(True),
@@ -2798,24 +2813,47 @@ class ComponentState(State, mixin=True):
     frozen=True,
 )
 class StateUpdate:
-    """A state update sent to the frontend."""
+    """A state update sent to the frontend.
+
+    Each substate key in the delta must have a dispatch function registered in
+    the frontend; otherwise the frontend reports a fatal ``client_error`` back
+    to the backend (see ``EventNamespace.on_client_error``), since this
+    indicates mismatched frontend and backend state definitions.
+    """
 
     # The state delta.
-    delta: Delta = dataclasses.field(default_factory=dict)
+    delta: DeltaMapping = dataclasses.field(default_factory=dict)
 
     # Events to be added to the event queue.
     events: list[Event] = dataclasses.field(default_factory=list)
 
-    # Whether this is the final state update for the event.
-    final: bool | None = True
+    # Deprecated: previously indicated whether the event processing is complete.
+    final: bool | None = dataclasses.field(default=None, repr=False)
 
-    def json(self) -> str:
-        """Convert the state update to a JSON string.
+    def __post_init__(self):
+        """Warn if the deprecated `final` attribute is supplied."""
+        if self.final is not None:
+            console.deprecate(
+                feature_name="StateUpdate.final",
+                reason="The final attribute is no longer used.",
+                deprecation_version="0.9.0",
+                removal_version="1.0",
+            )
 
-        Returns:
-            The state update as a JSON string.
-        """
-        return format.json_dumps(self)
+
+@serializer(to=dict)
+def serialize_state_update(update: StateUpdate) -> dict:
+    """Serialize a StateUpdate to a dictionary.
+
+    Args:
+        update: The StateUpdate to serialize.
+
+    Returns:
+        The serialized StateUpdate.
+    """
+    return {
+        k.name: v for k in dataclasses.fields(update) if (v := getattr(update, k.name))
+    }
 
 
 def code_uses_state_contexts(javascript_code: str) -> bool:
@@ -2841,9 +2879,6 @@ def reload_state_module(
         state: Recursive argument for the state class to reload.
 
     """
-    # Reset the _app_ref of OnLoadInternalState to avoid stale references.
-    if state is OnLoadInternalState:
-        state._app_ref = None
     # Clean out all potentially dirty states of reloaded modules.
     for pd_state in tuple(state._potentially_dirty_states):
         with contextlib.suppress(ValueError):
@@ -2852,19 +2887,14 @@ def reload_state_module(
                 and module is not None
             ):
                 state._potentially_dirty_states.remove(pd_state)
-    for subclass in tuple(state.class_subclasses):
+    reg_ctx = RegistrationContext.get()
+    substates = reg_ctx.get_substates(state)
+    for subclass in tuple(substates):
         reload_state_module(module=module, state=subclass)
         if subclass.__module__ == module and module is not None:
             all_base_state_classes.pop(subclass.get_full_name(), None)
-            state.class_subclasses.remove(subclass)
+            substates.remove(subclass)
             state._always_dirty_substates.discard(subclass.get_name())
             state._var_dependencies = {}
             state._init_var_dependency_dicts()
     state.get_class_substate.cache_clear()
-
-
-from reflex.istate.manager import StateManager as StateManager  # noqa: E402
-from reflex.istate.manager import get_state_manager as get_state_manager  # noqa: E402
-from reflex.istate.manager import (  # noqa: E402
-    reset_disk_state_manager as reset_disk_state_manager,
-)

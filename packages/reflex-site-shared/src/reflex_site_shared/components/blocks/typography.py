@@ -1,0 +1,183 @@
+"""Typography blocks for doc pages."""
+
+from pathlib import PurePosixPath
+from urllib.parse import urlsplit
+
+import reflex as rx
+
+DOCS_BODY_CLASS = "font-[450] text-foreground mb-4 leading-7"
+DOCS_LINK_STYLE = {
+    "font_size": "inherit",
+    "font_weight": "inherit",
+    "line_height": "inherit",
+    "letter_spacing": "inherit",
+}
+
+
+def definition(title: str, *children) -> rx.Component:
+    """Create a definition for a doc page.
+
+    Args:
+        title: The title of the definition.
+        children: The children to display.
+
+    Returns:
+        The styled definition.
+    """
+    return rx.vstack(
+        rx.heading(
+            title,
+            as_="h3",
+            font_size="1em",
+            font_weight="bold",
+            color=rx.color("mauve", 12),
+        ),
+        *children,
+        color=rx.color("mauve", 10),
+        padding="1em",
+        border=f"1px solid {rx.color('mauve', 4)}",
+        background_color=rx.color("mauve", 2),
+        border_radius="8px",
+        _hover={
+            "border": f"1px solid {rx.color('mauve', 5)}",
+            "background_color": rx.color("mauve", 3),
+        },
+        align_items="start",
+    )
+
+
+@rx.memo
+def text_comp(text: rx.Var[str]) -> rx.Component:
+    """Text comp.
+
+    Returns:
+        The component.
+    """
+    return rx.text(text, class_name=DOCS_BODY_CLASS)
+
+
+@rx.memo
+def text_comp_2(text: rx.Var[str]) -> rx.Component:
+    """Text comp 2.
+
+    Returns:
+        The component.
+    """
+    return rx.text(
+        text,
+        class_name="font-[450] text-foreground max-w-[80%] mb-10 leading-7",
+    )
+
+
+@rx.memo
+def list_comp(text: rx.Var[str]) -> rx.Component:
+    """List comp.
+
+    Returns:
+        The component.
+    """
+    return rx.list_item(text, class_name=DOCS_BODY_CLASS)
+
+
+@rx.memo
+def unordered_list_comp(items: rx.Var[list[str]]) -> rx.Component:
+    """Unordered list comp.
+
+    Returns:
+        The component.
+    """
+    return rx.list.unordered(items, class_name="mb-6")
+
+
+@rx.memo
+def ordered_list_comp(items: rx.Var[list[str]]) -> rx.Component:
+    """Ordered list comp.
+
+    Returns:
+        The component.
+    """
+    return rx.list.ordered(items, class_name="mb-6")
+
+
+@rx.memo
+def code_comp(text: rx.Var[str]) -> rx.Component:
+    """Code comp.
+
+    Returns:
+        The component.
+    """
+    return rx.code(text, class_name="code-style")
+
+
+def _canonical_docs_href(href: str | rx.Var[str] | None):
+    """Add the docs page slash while preserving assets, queries and fragments.
+
+    Args:
+        href: Literal or reactive link destination.
+
+    Returns:
+        The canonical docs destination, or the original non-docs link.
+    """
+    if not isinstance(href, str):
+        return href
+    url = urlsplit(href)
+    if (
+        url.netloc in {"", "reflex.dev", "www.reflex.dev"}
+        and url.scheme in {"", "http", "https"}
+        and (url.path == "/docs" or url.path.startswith("/docs/"))
+        and not url.path.endswith("/")
+        and not PurePosixPath(url.path).suffix
+    ):
+        return url._replace(path=url.path + "/").geturl()
+    return href
+
+
+def doclink(text: str, href: str, **props) -> rx.Component:
+    """Create a styled link for doc pages.
+
+    Args:
+        text: The text to display.
+        href: The link to go to.
+        props: Props to apply to the link.
+
+    Returns:
+        The styled link.
+    """
+    custom_style = props.pop("style", {})
+    return rx.el.elements.a(
+        text,
+        href=_canonical_docs_href(href),
+        style=custom_style
+        if isinstance(custom_style, rx.Var)
+        else [DOCS_LINK_STYLE, *custom_style]
+        if isinstance(custom_style, list)
+        else [DOCS_LINK_STYLE, custom_style],
+        **props,
+        class_name="text-foreground decoration-foreground underline underline-offset-4",
+    )
+
+
+def doclink2(text: str, **props) -> rx.Component:
+    """Create a styled link for doc pages.
+
+    Args:
+        text: The text to display.
+        href: The link to go to.
+        props: Props to apply to the link.
+
+    Returns:
+        The styled link.
+    """
+    custom_style = props.pop("style", {})
+    if "href" in props:
+        props["href"] = _canonical_docs_href(props["href"])
+    return rx.el.elements.a(
+        text,
+        style=custom_style
+        if isinstance(custom_style, rx.Var)
+        else [DOCS_LINK_STYLE, *custom_style]
+        if isinstance(custom_style, list)
+        else [DOCS_LINK_STYLE, custom_style],
+        **props,
+        class_name="text-foreground decoration-foreground underline underline-offset-4",
+    )

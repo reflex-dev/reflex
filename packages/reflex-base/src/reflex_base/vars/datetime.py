@@ -1,0 +1,266 @@
+"""Immutable datetime and date vars."""
+
+from __future__ import annotations
+
+import dataclasses
+from datetime import date, datetime
+from typing import Any, Literal, TypeVar
+
+from reflex_base.utils.exceptions import VarTypeError
+from reflex_base.utils.imports import ImportVar
+from reflex_base.vars.number import BooleanVar
+
+from .base import (
+    CustomVarOperationReturn,
+    LiteralVar,
+    Var,
+    VarData,
+    var_operation,
+    var_operation_return,
+)
+
+DATETIME_T = TypeVar("DATETIME_T", datetime, date)
+
+datetime_types = datetime | date
+
+_COMPARE_DATETIME_IMPORT = {
+    "$/utils/helpers/datetime.js": [
+        ImportVar(tag="compareDatetime", is_default=True, install=False)
+    ],
+}
+
+
+def raise_var_type_error():
+    """Raise a VarTypeError.
+
+    Raises:
+        VarTypeError: Cannot compare a datetime object with a non-datetime object.
+    """
+    msg = "Cannot compare a datetime object with a non-datetime object."
+    raise VarTypeError(msg)
+
+
+class DateTimeVar(Var[DATETIME_T], python_types=(datetime, date)):
+    """A variable that holds a datetime or date object."""
+
+    __hash__ = Var.__hash__
+
+    def __eq__(self, other: Any) -> BooleanVar:
+        """Equal comparison.
+
+        Args:
+            other: The other datetime to compare.
+
+        Returns:
+            The result of the comparison.
+        """
+        if not isinstance(other, DATETIME_TYPES):
+            return super().__eq__(other)
+        return date_eq_operation(self, other)
+
+    def __ne__(self, other: Any) -> BooleanVar:
+        """Not equal comparison.
+
+        Args:
+            other: The other datetime to compare.
+
+        Returns:
+            The result of the comparison.
+        """
+        if not isinstance(other, DATETIME_TYPES):
+            return super().__ne__(other)
+        return date_ne_operation(self, other)
+
+    def __lt__(self, other: datetime_types | DateTimeVar) -> BooleanVar:
+        """Less than comparison.
+
+        Args:
+            other: The other datetime to compare.
+
+        Returns:
+            The result of the comparison.
+        """
+        if not isinstance(other, DATETIME_TYPES):
+            raise_var_type_error()
+        return date_lt_operation(self, other)
+
+    def __le__(self, other: datetime_types | DateTimeVar) -> BooleanVar:
+        """Less than or equal comparison.
+
+        Args:
+            other: The other datetime to compare.
+
+        Returns:
+            The result of the comparison.
+        """
+        if not isinstance(other, DATETIME_TYPES):
+            raise_var_type_error()
+        return date_le_operation(self, other)
+
+    def __gt__(self, other: datetime_types | DateTimeVar) -> BooleanVar:
+        """Greater than comparison.
+
+        Args:
+            other: The other datetime to compare.
+
+        Returns:
+            The result of the comparison.
+        """
+        if not isinstance(other, DATETIME_TYPES):
+            raise_var_type_error()
+        return date_gt_operation(self, other)
+
+    def __ge__(self, other: datetime_types | DateTimeVar) -> BooleanVar:
+        """Greater than or equal comparison.
+
+        Args:
+            other: The other datetime to compare.
+
+        Returns:
+            The result of the comparison.
+        """
+        if not isinstance(other, DATETIME_TYPES):
+            raise_var_type_error()
+        return date_ge_operation(self, other)
+
+
+@var_operation
+def date_eq_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
+    """Equal comparison.
+
+    Args:
+        lhs: The left-hand side of the operation.
+        rhs: The right-hand side of the operation.
+
+    Returns:
+        The result of the operation.
+    """
+    return date_compare_operation(lhs, rhs, "===")
+
+
+@var_operation
+def date_ne_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
+    """Not equal comparison.
+
+    Args:
+        lhs: The left-hand side of the operation.
+        rhs: The right-hand side of the operation.
+
+    Returns:
+        The result of the operation.
+    """
+    return date_compare_operation(lhs, rhs, "!==")
+
+
+@var_operation
+def date_gt_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
+    """Greater than comparison.
+
+    Args:
+        lhs: The left-hand side of the operation.
+        rhs: The right-hand side of the operation.
+
+    Returns:
+        The result of the operation.
+    """
+    return date_compare_operation(lhs, rhs, ">")
+
+
+@var_operation
+def date_lt_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
+    """Less than comparison.
+
+    Args:
+        lhs: The left-hand side of the operation.
+        rhs: The right-hand side of the operation.
+
+    Returns:
+        The result of the operation.
+    """
+    return date_compare_operation(lhs, rhs, "<")
+
+
+@var_operation
+def date_le_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
+    """Less than or equal comparison.
+
+    Args:
+        lhs: The left-hand side of the operation.
+        rhs: The right-hand side of the operation.
+
+    Returns:
+        The result of the operation.
+    """
+    return date_compare_operation(lhs, rhs, "<=")
+
+
+@var_operation
+def date_ge_operation(lhs: DateTimeVar | Any, rhs: DateTimeVar | Any):
+    """Greater than or equal comparison.
+
+    Args:
+        lhs: The left-hand side of the operation.
+        rhs: The right-hand side of the operation.
+
+    Returns:
+        The result of the operation.
+    """
+    return date_compare_operation(lhs, rhs, ">=")
+
+
+def date_compare_operation(
+    lhs: DateTimeVar[DATETIME_T] | Any,
+    rhs: DateTimeVar[DATETIME_T] | Any,
+    operator: Literal["===", "!==", "<", "<=", ">", ">="],
+) -> CustomVarOperationReturn[bool]:
+    """Compare datetime values by their timestamps.
+
+    Args:
+        lhs: The left-hand side of the operation.
+        rhs: The right-hand side of the operation.
+        operator: The comparison operator.
+
+    Returns:
+        The result of the operation.
+    """
+    return var_operation_return(
+        f"(compareDatetime({lhs}, {rhs}) {operator} 0)",
+        bool,
+        VarData(imports=_COMPARE_DATETIME_IMPORT),
+    )
+
+
+@dataclasses.dataclass(
+    eq=False,
+    frozen=True,
+    slots=True,
+)
+class LiteralDatetimeVar(LiteralVar[DATETIME_T], DateTimeVar[DATETIME_T]):
+    """Base class for immutable datetime and date vars."""
+
+    _var_value: date = dataclasses.field(default=datetime.now())
+
+    @classmethod
+    def _get_all_var_data_without_creating_var(cls, value: date) -> VarData | None:
+        return None
+
+    @classmethod
+    def create(cls, value: date, _var_data: VarData | None = None):
+        """Create a new instance of the class.
+
+        Args:
+            value: The value to set.
+
+        Returns:
+            LiteralDatetimeVar: The new instance of the class.
+        """
+        js_expr = f'"{value!s}"'
+        return cls(
+            _js_expr=js_expr,
+            _var_type=type(value),
+            _var_value=value,
+            _var_data=_var_data,
+        )
+
+
+DATETIME_TYPES = (datetime, date, DateTimeVar)
