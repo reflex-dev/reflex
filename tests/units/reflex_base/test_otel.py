@@ -384,7 +384,7 @@ def test_flushes_finished_spans(mocker, otel_exporter: InMemorySpanExporter):
     with active_tracer().start_as_current_span("compile"):
         pass
 
-    assert otel.flush() is True
+    otel.flush()
     force_flush.assert_called_once_with(timeout_millis=5000)
     assert len(otel_exporter.get_finished_spans()) == 1
 
@@ -414,7 +414,7 @@ def test_flush_resolves_provider_configured_after_enable(
             pass
 
         assert exporter.get_finished_spans() == ()
-        assert otel.flush() is True
+        otel.flush()
         assert len(exporter.get_finished_spans()) == 1
     finally:
         otel.disable()

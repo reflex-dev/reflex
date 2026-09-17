@@ -239,7 +239,7 @@ def disable() -> None:
     _message_size = _ws_connections = _NOOP_INSTRUMENT
 
 
-def flush(timeout_millis: int = 5000) -> bool:
+def flush(timeout_millis: int = 5000) -> None:
     """Flush spans already ended by the current process.
 
     This is needed before a compile worker exits: on Python <= 3.12,
@@ -248,21 +248,17 @@ def flush(timeout_millis: int = 5000) -> bool:
 
     Args:
         timeout_millis: Maximum time to wait for exporters to flush.
-
-    Returns:
-        Whether the provider accepted and completed the flush.
     """
     if not enabled:
-        return True
+        return
     provider = _tracer_provider or trace.get_tracer_provider()
     force_flush = getattr(provider, "force_flush", None)
     if force_flush is None:
-        return True
+        return
     try:
-        return bool(force_flush(timeout_millis=timeout_millis))
+        force_flush(timeout_millis=timeout_millis)
     except Exception:
         logger.debug("OpenTelemetry span flush failed", exc_info=True)
-        return False
 
 
 def capture_context() -> Context | None:
