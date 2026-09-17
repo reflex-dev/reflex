@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 from reflex_sdk._base import path_segment
+from reflex_sdk._sync.resources.databases import Database
+from reflex_sdk._sync.resources.environments import Environments
 from reflex_sdk.types import (
     App,
     AppMove,
@@ -283,6 +285,10 @@ class Apps:
     secrets: Secrets
     # Serve apps at custom domains.
     domains: Domains
+    # Deploy apps through a pipeline of environments, such as dev and production.
+    environments: Environments
+    # Give apps a Postgres database hosted by Reflex Cloud.
+    database: Database
 
     def __init__(self, client: ReflexCloud) -> None:
         """Bind the resource to a client.
@@ -293,6 +299,8 @@ class Apps:
         self._client = client
         self.secrets = Secrets(client)
         self.domains = Domains(client)
+        self.environments = Environments(client)
+        self.database = Database(client)
 
     def list(
         self, *, project_id: uuid.UUID | str | None = None

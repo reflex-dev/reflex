@@ -9,6 +9,8 @@ from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
+from reflex_sdk._async.resources.databases import AsyncDatabase
+from reflex_sdk._async.resources.environments import AsyncEnvironments
 from reflex_sdk._base import path_segment
 from reflex_sdk.types import (
     App,
@@ -282,6 +284,10 @@ class AsyncApps:
     secrets: AsyncSecrets
     # Serve apps at custom domains.
     domains: AsyncDomains
+    # Deploy apps through a pipeline of environments, such as dev and production.
+    environments: AsyncEnvironments
+    # Give apps a Postgres database hosted by Reflex Cloud.
+    database: AsyncDatabase
 
     def __init__(self, client: AsyncReflexCloud) -> None:
         """Bind the resource to a client.
@@ -292,6 +298,8 @@ class AsyncApps:
         self._client = client
         self.secrets = AsyncSecrets(client)
         self.domains = AsyncDomains(client)
+        self.environments = AsyncEnvironments(client)
+        self.database = AsyncDatabase(client)
 
     async def list(
         self, *, project_id: uuid.UUID | str | None = None
