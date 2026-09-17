@@ -243,6 +243,28 @@ def test_custom_auth_admin() -> type[AuthProvider]:
     return TestAuthProvider
 
 
+def test_app_warns_about_a_deprecated_duration_name_at_startup(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """The auto-reload cooldown is only consulted on a frontend error.
+
+    Reading it while the app is set up surfaces the deprecation when the app
+    starts, where a developer will actually see it.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv("REFLEX_AUTO_RELOAD_COOLDOWN", raising=False)
+    monkeypatch.setenv("REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS", "5000")
+    monkeypatch.setattr("reflex_base.environment._WARNED_SUPERSEDED", set())
+
+    with unittest.mock.patch("reflex_base.utils.console.deprecate") as deprecate:
+        App(_state=EmptyState)
+
+    feature_names = [call.kwargs["feature_name"] for call in deprecate.call_args_list]
+    assert "REFLEX_AUTO_RELOAD_COOLDOWN_TIME_MS" in feature_names
+
+
 def test_default_app(app: App):
     """Test creating an app with no args.
 
