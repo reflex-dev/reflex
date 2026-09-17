@@ -39,7 +39,7 @@ def logo() -> rx.Component:
     """Link each wordmark to its respective site overview."""
     focus_class = "rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
     return rx.el.div(
-        rx.el.elements.a(
+        rx.el.a(
             rx.image(
                 src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
                 alt="Reflex Logo",
