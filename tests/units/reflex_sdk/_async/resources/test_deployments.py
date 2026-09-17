@@ -4,7 +4,7 @@ import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
 from time import monotonic
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from reflex_sdk import (
@@ -266,6 +266,53 @@ async def test_create_upload_connection_error(
 
     with pytest.raises(APIConnectionError, match="connection reset"):
         await client.deployments.create(APP_ID, backend=backend, frontend=frontend)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "query"),
+    [
+        (
+            {},
+            {
+                "app_name": ["dashboard"],
+                "regions": [""],
+                "vmtype": [""],
+                "hostname": [""],
+            },
+        ),
+        (
+            {"regions": {"sjc": 2}, "vm_type": "c2m4", "hostname": "dash.reflex.run"},
+            {
+                "app_name": ["dashboard"],
+                "regions": ['{"sjc": 2}'],
+                "vmtype": ["c2m4"],
+                "hostname": ["dash.reflex.run"],
+            },
+        ),
+        (
+            {"cpu": 2.0, "ram_mb": 4096},
+            {
+                "app_name": ["dashboard"],
+                "regions": [""],
+                "vmtype": [""],
+                "hostname": [""],
+                "cpu": ["2.0"],
+                "ram_mb": ["4096"],
+            },
+        ),
+    ],
+)
+async def test_check(
+    client: AsyncReflexCloud, mock_api: MockAPI, kwargs: dict, query: dict
+):
+    project_id = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
+    mock_api.add("GET", "/api/v1/deployments/validate_cli", reply(200, json=None))
+    await client.deployments.check(
+        APP_ID, app_name="dashboard", project_id=project_id, **kwargs
+    )
+    (request,) = mock_api.requests
+    sent = parse_qs(urlsplit(request.url).query, keep_blank_values=True)
+    assert sent == {"app_id": [APP_ID], "project_id": [project_id], **query}
 
 
 async def test_status(client: AsyncReflexCloud, mock_api: MockAPI):

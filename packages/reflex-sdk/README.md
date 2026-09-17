@@ -69,9 +69,47 @@ The client uses the first access token it finds:
 
 1. The `token` argument.
 2. The `REFLEX_ACCESS_TOKEN` environment variable.
-3. The token saved by `reflex login`.
+3. The token saved on this machine, shared with `reflex login`.
 
-Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`.
+To log in through the browser and save the token for later clients:
+
+```python
+import webbrowser
+
+from reflex_sdk import ReflexCloud, credentials
+
+with ReflexCloud() as client:
+    login = client.auth.begin_login()
+    print(f"Approve the login at {login.url}")
+    webbrowser.open(login.url)
+    credentials.save_token(client.auth.finish_login(login, timeout=600))
+```
+
+`credentials.delete_token()` removes the saved token. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`.
+
+## Security reviews
+
+```python
+review_id = client.security_reviews.submit("source.zip")
+result = client.security_reviews.wait(review_id, timeout=600)
+for violation in result.violations:
+    print(violation.severity, violation.file_path, violation.line, violation.message)
+```
+
+Security reviews need the Pro or Enterprise plan.
+
+## Google Cloud
+
+Apps can run on an organization's own Google Cloud instead of Reflex Cloud:
+
+```python
+status = client.providers.gcp_status(client.auth.me().org_id)
+if status.configured and status.allowed:
+    client.apps.set_provider(app.id, "gcp")
+    client.apps.set_instance_bounds(app.id, min_instances=1, max_instances=10)
+```
+
+Running on Google Cloud needs the Enterprise plan. `client.apps.set_full_deploy` also serves an app's frontend from Google Cloud, and `client.providers.cloud_run_manifest()` returns the Dockerfile and script to deploy to Cloud Run yourself.
 
 ## Errors
 
