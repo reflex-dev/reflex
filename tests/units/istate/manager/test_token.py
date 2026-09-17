@@ -138,13 +138,15 @@ def test_base_state_token_get_and_reset_touched(clean_registration_context):
 
 
 def test_base_state_token_get_and_reset_touched_shadowed_by_var(
-    clean_registration_context,
+    clean_registration_context, monkeypatch: pytest.MonkeyPatch
 ):
     """A state var named like the touched-state method does not break persistence.
 
     Args:
         clean_registration_context: A fresh, empty registration context.
+        monkeypatch: Enable legacy reserved names for this persistence regression.
     """
+    monkeypatch.setenv("REFLEX_STATE_ALLOW_RESERVED_NAMES", "1")
     from reflex.state import BaseState
 
     TouchState = type(

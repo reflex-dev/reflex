@@ -1308,7 +1308,6 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         cls._set_default_value(name, prop)
 
     @classmethod
-    @_override_base_method
     def add_field(cls, name: str, var: Var, default_value: Any):
         """Validate a dynamically added field before updating the field map.
 

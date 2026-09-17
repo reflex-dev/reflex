@@ -131,6 +131,8 @@ async def test_shared_updates_with_shadowed_touched_method(
         State, "_always_dirty_substates", State._always_dirty_substates.copy()
     )
 
+    monkeypatch.setenv("REFLEX_STATE_ALLOW_RESERVED_NAMES", "1")
+
     class ShadowState(SharedState):
         """State with an intentional framework-method collision."""
 

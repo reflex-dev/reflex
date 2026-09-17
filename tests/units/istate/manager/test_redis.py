@@ -115,12 +115,16 @@ async def test_basic_get_set(
     )
 
 
-async def test_set_state_with_shadowed_touched_method(clean_registration_context):
+async def test_set_state_with_shadowed_touched_method(
+    clean_registration_context, monkeypatch: pytest.MonkeyPatch
+):
     """Persist a backend var that shadows the touched-state method.
 
     Args:
         clean_registration_context: A fresh, empty registration context.
+        monkeypatch: Enable legacy reserved names for this persistence regression.
     """
+    monkeypatch.setenv("REFLEX_STATE_ALLOW_RESERVED_NAMES", "1")
 
     class ShadowState(BaseState):
         """State with an intentional framework-method collision."""

@@ -69,14 +69,35 @@ def _validate_state_name(name: str, value: Any = None) -> None:
     )
     if environment.REFLEX_STATE_ALLOW_RESERVED_NAMES.get():
         console.deprecate(
-            feature_name="REFLEX_STATE_ALLOW_RESERVED_NAMES",
+            feature_name=f"REFLEX_STATE_ALLOW_RESERVED_NAMES for `{name}`",
             reason=reason,
-            deprecation_version="0.9.12",
+            deprecation_version="0.9.11",
             removal_version="1.0",
         )
         return
     msg = f"{reason} Set REFLEX_STATE_ALLOW_RESERVED_NAMES=1 temporarily to retain legacy behavior."
     raise StateValueError(msg)
+
+
+def _validate_inherited_members(base: type, seen: set[str]) -> None:
+    """Check the members a Python mixin or model base adds to a state.
+
+    Args:
+        base: A base class that is not itself a validated state.
+        seen: Names an earlier base already provides in the MRO.
+    """
+    is_model = isinstance(base, BaseStateMeta)
+    if is_model:
+        # Model fields are inherited even when an earlier base masks their
+        # class attributes in the MRO.
+        for member in base.__own_fields__:
+            _validate_state_name(member)
+        seen.update(base.__own_fields__)
+    for member, value in vars(base).items():
+        if member not in seen and not (
+            is_model and (member in _FIELD_MAP_NAMES or member == "_mixin")
+        ):
+            _validate_state_name(member, value)
 
 
 class _StateMeta(BaseStateMeta):
@@ -109,17 +130,6 @@ class _StateMeta(BaseStateMeta):
                     EvenMoreBasicBaseState,
                     object,
                 ):
-                    if isinstance(base, BaseStateMeta):
-                        # Model fields are inherited even when an earlier base
-                        # masks their class attributes in the MRO.
-                        for member in base.__own_fields__:
-                            _validate_state_name(member)
-                        seen.update(base.__own_fields__)
-                    for member, value in vars(base).items():
-                        if member not in seen and not (
-                            isinstance(base, BaseStateMeta)
-                            and (member in _FIELD_MAP_NAMES or member == "_mixin")
-                        ):
-                            _validate_state_name(member, value)
+                    _validate_inherited_members(base, seen)
                 seen.update(vars(base))
         return super().__new__(cls, name, bases, namespace, mixin=mixin)
