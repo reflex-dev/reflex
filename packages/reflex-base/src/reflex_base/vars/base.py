@@ -354,13 +354,13 @@ class VarData:
         state: str = "",
         field_name: str = "",
         field_names: Sequence[str] | None = None,
-        field_dependencies: Mapping[str, Sequence[str]] | None = None,
         imports: ImmutableImportDict | ImmutableParsedImportDict | None = None,
         hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
         position: Hooks.HookPosition | None = None,
         components: Iterable[BaseComponent] | None = None,
         app_wraps: Iterable[tuple[int, BaseComponent]] | None = None,
+        field_dependencies: Mapping[str, Sequence[str]] | None = None,
     ):
         """Initialize the var data.
 
@@ -371,15 +371,17 @@ class VarData:
                 single-entry ``field_names``; ignored when that is given.
             field_names: The names of the ``state`` fields this var is built
                 from. Ignored when ``field_dependencies`` is given.
-            field_dependencies: Every state field this var is built from,
-                grouped by owning state. The canonical form; the three
-                arguments above are shorthands for a single state.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
             deps: Dependencies of the var for useCallback.
             position: Position of the hook in the component.
             components: Components that are part of this var.
             app_wraps: App-level wrapper components this var requires when used.
+            field_dependencies: Every state field this var is built from,
+                grouped by owning state. The canonical form; ``state``,
+                ``field_name`` and ``field_names`` are shorthands for a single
+                state. Keyword-only in practice: it trails the older
+                parameters so positional callers of those are unaffected.
         """
         if isinstance(hooks, str):
             hooks = [hooks]

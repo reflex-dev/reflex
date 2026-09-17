@@ -5825,3 +5825,13 @@ def test_composite_var_dep_tracks_fields_in_every_state():
     static_deps = _CompositeDepConsumer.__dict__["combined"]._static_deps
     assert "a_field" in static_deps.get(a_name, set())
     assert "b_field" in static_deps.get(b_name, set())
+
+    # The consumer registered itself in both source states' class-level
+    # dependency maps, which outlive this test. Left behind, a later test that
+    # dirties a_field or b_field resolves the stale entry and raises on the
+    # missing substate. Drop them.
+    consumer_name = _CompositeDepConsumer.get_full_name()
+    for state_cls in (_CompositeDepStateA, _CompositeDepStateB):
+        for dep_set in state_cls._var_dependencies.values():
+            dep_set.difference_update({(consumer_name, "combined")})
+        state_cls._potentially_dirty_states.discard(consumer_name)
