@@ -51,7 +51,14 @@ from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import MutableProxy, StateProxy
-from reflex.state import BaseState, ImmutableStateError, OnLoadInternalState, State
+from reflex.state import (
+    BaseState,
+    Delta,
+    ImmutableStateError,
+    OnLoadInternalState,
+    State,
+    _recording_delta_values,
+)
 from reflex.testing import chdir
 from reflex.utils import prerequisites
 from tests.units.mock_redis import mock_redis
@@ -1696,6 +1703,76 @@ async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
     }
     aus._clean()
     assert await aus._get_resolved_delta() == {}
+
+
+def test_get_delta_tolerates_zero_argument_override(test_state: TestState, monkeypatch):
+    """A `get_delta` override taking only `self` still serves the whole state tree.
+
+    Downstream packages monkeypatch `get_delta` with a function that accepts no
+    arguments, so no internal caller may pass it one -- including the recursion
+    into substates, which reaches the override for every state in the tree.
+
+    Args:
+        test_state: A test state.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    original_get_delta = TestState.get_delta
+    seen: list[str] = []
+
+    def patched_get_delta(self: TestState) -> Delta:
+        seen.append(self.get_full_name())
+        return original_get_delta(self)
+
+    monkeypatch.setattr(TestState, "get_delta", patched_get_delta)
+
+    child_state = test_state.get_substate([ChildState.get_name()])
+    assert child_state is not None
+    child_state.value = "hi"
+
+    delta = test_state.get_delta()
+    assert delta[ChildState.get_full_name()]["value" + FIELD_MARKER] == "hi"
+    # The override is reached for substates, not only for the root.
+    assert ChildState.get_full_name() in seen
+
+
+def test_discarded_delta_does_not_record_values_of_substates():
+    """A delta built only for its side effects does not count as sent, at any depth."""
+
+    class DiscardedParentState(BaseState):
+        pass
+
+    class DiscardedChildState(DiscardedParentState):
+        v: int = 0
+
+        @rx.var(cache=False)
+        def no_cache_v(self) -> int:
+            return self.v
+
+    dps = DiscardedParentState()
+    expected = {DiscardedChildState.get_full_name(): {"no_cache_v" + FIELD_MARKER: 0}}
+
+    # A discarded traversal must not record the values it computed...
+    with _recording_delta_values(False):
+        assert dps.get_delta() == expected
+    dps._clean()
+
+    # ...so the client still receives them on the next real delta.
+    assert dps.get_delta() == expected
+    dps._clean()
+    assert dps.get_delta() == {}
+
+
+def test_get_delta_record_values_is_keyword_only():
+    """`record_values` cannot be passed positionally."""
+
+    class KeywordOnlyState(BaseState):
+        @rx.var(cache=False)
+        def v(self) -> int:
+            return 0
+
+    kos = KeywordOnlyState()
+    with pytest.raises(TypeError):
+        kos.get_delta(False)  # pyright: ignore[reportCallIssue]
 
 
 def test_computed_var_depends_on_parent_non_cached():

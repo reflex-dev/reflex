@@ -15,6 +15,7 @@ import re
 import sys
 import time
 from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
+from contextvars import ContextVar
 from hashlib import md5
 from types import FunctionType
 from typing import (
@@ -278,6 +279,37 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
 # coroutine and then omitted post-hoc. Compared by identity (the object itself is
 # the contract); never serialized into a delta sent to the client.
 _DROP_FROM_DELTA: Final = object()
+
+# Whether uncached computed var values may be recorded as sent to the client for
+# the delta currently being built. Carried out of band rather than as an argument
+# so that every internal call stays ``get_delta()``: downstream packages patch
+# that method with a signature taking no arguments, and the flag describes the
+# whole traversal rather than any single state in it. A ContextVar, not a global:
+# deltas for different clients are built in concurrent tasks, and leaking a
+# discarded traversal's flag into one of those would suppress a real update.
+_record_delta_values: ContextVar[bool] = ContextVar(
+    "_record_delta_values", default=True
+)
+
+
+@contextlib.contextmanager
+def _recording_delta_values(enabled: bool) -> Iterator[None]:
+    """Set whether delta values may be recorded for the duration of the block.
+
+    Narrowing only: a nested block cannot re-enable recording that an enclosing
+    block turned off.
+
+    Args:
+        enabled: Whether values may be recorded.
+
+    Yields:
+        None, with the flag applied.
+    """
+    token = _record_delta_values.set(enabled and _record_delta_values.get())
+    try:
+        yield
+    finally:
+        _record_delta_values.reset(token)
 
 
 async def _resolve_delta(delta: Delta) -> Delta:
@@ -2079,18 +2111,21 @@ class BaseState(EvenMoreBasicBaseState):
             if include_backend or not self.computed_vars[cvar]._backend
         }
 
-    def get_delta(self, record_values: bool = True) -> Delta:
+    def get_delta(self, *, record_values: bool = True) -> Delta:
         """Get the delta for the state.
 
         Args:
-            record_values: Whether the values of uncached computed vars should be
+            record_values: Whether the values of uncached computed vars may be
                 recorded as sent to the client. Pass False when the delta is
                 computed for its side effects and then discarded, otherwise the
-                unsent values would be omitted from the next delta.
+                unsent values would be omitted from the next delta. Recording is
+                also suppressed while an enclosing `_recording_delta_values(False)`
+                block is active, which is how the flag reaches substates.
 
         Returns:
             The delta for the state.
         """
+        record_values = record_values and _record_delta_values.get()
         delta = {}
 
         self._mark_dirty_computed_vars()
@@ -2128,22 +2163,24 @@ class BaseState(EvenMoreBasicBaseState):
         # Recursively find the substate deltas.
         substates = self.substates
         for substate in self.dirty_substates.union(self._always_dirty_substates):
-            delta.update(substates[substate].get_delta(record_values=record_values))
+            delta.update(substates[substate].get_delta())
 
         # Return the delta.
         return delta
 
-    async def _get_resolved_delta(self, record_values: bool = True) -> Delta:
+    async def _get_resolved_delta(self, *, record_values: bool = True) -> Delta:
         """Get the delta for the state after resolving all coroutines.
 
         Args:
-            record_values: Whether the values of uncached computed vars should be
+            record_values: Whether the values of uncached computed vars may be
                 recorded as sent to the client. See `get_delta`.
 
         Returns:
             The resolved delta for the state.
         """
-        return await _resolve_delta(self.get_delta(record_values=record_values))
+        with _recording_delta_values(record_values):
+            delta = self.get_delta()
+        return await _resolve_delta(delta)
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
