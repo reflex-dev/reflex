@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 
 import pytest
 import reflex_sdk._base
-import reflex_sdk._credentials
+import reflex_sdk.credentials
 from reflex_sdk.transports import Request, Response
 
 OPENAPI_SNAPSHOT = Path(__file__).parents[3] / "packages/reflex-sdk/openapi.json"
@@ -211,10 +211,10 @@ def isolated_settings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         monkeypatch: The pytest monkeypatch fixture.
         tmp_path: A temporary directory standing in for the Reflex data directory.
     """
-    for name in ("REFLEX_ACCESS_TOKEN", "REFLEX_CLOUD_BACKEND_URL"):
+    for name in ("REFLEX_ACCESS_TOKEN", "REFLEX_CLOUD_BACKEND_URL", "REFLEX_CLOUD_URL"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(
-        reflex_sdk._credentials,
+        reflex_sdk.credentials,
         "credentials_path",
         lambda: tmp_path / "hosting_v1.json",
     )

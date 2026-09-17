@@ -342,3 +342,140 @@ class ProjectMember:
     # Every permission the member has on the project, including inherited ones.
     permissions: list[str]
     is_service_account: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class LoginRequest:
+    """A browser login waiting for the user to approve it."""
+
+    # Identifies the login; the approved token is collected with it.
+    request_id: str
+    # The page the user approves the login on.
+    url: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class GcpConnection:
+    """A Google Cloud project an organization deploys apps to."""
+
+    id: uuid.UUID
+    name: str
+    # Whether new apps deploy to this connection unless told otherwise.
+    is_default: bool
+    # The Google Cloud project id.
+    project_id: str
+    # The Cloud Run region, e.g. ``"us-central1"``.
+    region: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class GcpStatus:
+    """Whether an organization can deploy apps to its own Google Cloud."""
+
+    # Whether a usable default connection exists.
+    configured: bool
+    # Whether the organization's plan and this deployment allow it.
+    allowed: bool
+    # The default connection's Google Cloud project id, if any.
+    project_id: str | None
+    # The default connection's region, if any.
+    region: str | None
+    # The usable connections, the default first.
+    connections: list[GcpConnection]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ProviderAccount:
+    """A cloud provider account connected to an organization."""
+
+    id: uuid.UUID
+    # E.g. ``"gcp"``.
+    provider: str
+    name: str
+    is_default: bool
+    # The account's settings, e.g. ``project_id`` and ``region``. Never secrets.
+    config: dict[str, Any]
+    created_by: uuid.UUID
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CloudRunManifest:
+    """What deploying a Reflex app to Google Cloud Run yourself takes."""
+
+    # The Dockerfile to build the app's image with.
+    dockerfile: str
+    # A bash script that builds and deploys the image, configured through
+    # environment variables such as ``GCP_PROJECT``.
+    deploy_command: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ProviderChange:
+    """The result of moving an app to another hosting provider."""
+
+    provider: str
+    # Whether the previous provider's resources were torn down; None when the
+    # provider did not change.
+    released: bool | None = None
+    # The previous provider, while its teardown is unfinished.
+    unreleased_provider: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class FullDeployChange:
+    """The result of changing where an app's frontend is served from."""
+
+    full_deploy: bool
+    # Whether the app was stopped to make the change.
+    stopped: bool
+    # Whether the stop was confirmed; the app may still be stopping otherwise.
+    stop_confirmed: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class InstanceBoundsChange:
+    """The result of setting an app's instance bounds."""
+
+    # ``"ok"``, or ``"unchanged"`` when the bounds were already set.
+    status: str
+    # Whether the running instances were restarted to apply the bounds.
+    applied_now: bool = False
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SecurityViolation:
+    """A security or logic issue found by a security review."""
+
+    rule_id: str
+    # ``"security"`` or ``"logic"``.
+    category: str
+    file_path: str
+    # The 1-based line the issue is on, if it is on one.
+    line: int | None = None
+    # ``"low"``, ``"medium"``, ``"high"`` or ``"critical"``.
+    severity: str
+    snippet: str
+    message: str
+    recommendation: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SecurityReviewResult:
+    """What a security review found."""
+
+    summary: str
+    violations: list[SecurityViolation] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SecurityReviewJob:
+    """A security review and, once it has finished, its result."""
+
+    job_id: str
+    # ``"pending"`` while queued or running, then ``"complete"`` or ``"error"``.
+    status: str
+    result: SecurityReviewResult | None = None
+    # Why the review failed, when it did.
+    error: str | None = None
