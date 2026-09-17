@@ -13,7 +13,7 @@ import contextlib
 from reflex_base.event.processor.scope import register_event_scope_provider
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import Var, VarData, computed_var
-from reflex_base.vars.function import FunctionVar
+from reflex_base.vars.function import FunctionStringVar, ReflexCallable
 
 from reflex.event import EventType, event, run_script
 from reflex.istate.storage import Cookie
@@ -21,6 +21,13 @@ from reflex.state import BaseState, State
 
 from .config import LOCALE_COOKIE_NAME, get_active_i18n_config
 from .runtime import negotiate_locale, use_locale
+
+# Switches the client-side locale, without a round trip to the server.
+_SWITCH_LOCALE = FunctionStringVar.create(
+    "switchLocale",
+    _var_type=ReflexCallable[[str], None],
+    _var_data=VarData(imports={"$/utils/i18n": [ImportVar(tag="switchLocale")]}),
+)
 
 
 def _resolve_locale(locale_cookie: str, accept_language: str) -> str:
@@ -99,17 +106,10 @@ def set_locale(locale: str | Var[str]) -> EventType:
     Returns:
         The client-side and server-side switch events.
     """
-    switch_client = run_script(
-        Var(
-            _js_expr="switchLocale",
-            _var_data=VarData(
-                imports={"$/utils/i18n": [ImportVar(tag="switchLocale")]}
-            ),
-        )
-        .to(FunctionVar)
-        .call(locale)
-    )
-    return [switch_client, I18nState.set_locale(locale)]
+    return [
+        run_script(_SWITCH_LOCALE.call(locale)),
+        I18nState.set_locale(locale),
+    ]
 
 
 async def _locale_scope(

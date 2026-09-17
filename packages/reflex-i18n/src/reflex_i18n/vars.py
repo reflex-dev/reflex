@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import functools
+from collections.abc import Mapping
 from typing import Any
 
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var, VarData
-from reflex_base.vars.function import FunctionVar
+from reflex_base.vars.function import FunctionStringVar, FunctionVar, ReflexCallable
 from reflex_base.vars.sequence import StringVar
 
 from .component import I18nProvider
@@ -32,6 +33,37 @@ def _i18n_var_data() -> VarData:
         imports={"$/utils/i18n": [ImportVar(tag="useTranslation")]},
         hooks={"const [ t_, tp_ ] = useTranslation()": None},
         app_wraps=((_PROVIDER_PRIORITY, I18nProvider.create()),),
+    )
+
+
+# ``useTranslation`` destructures to ``[t_, tp_]``; both take the catalog key
+# and the ``{name}`` interpolation params, the plural form also taking the
+# default-locale plural message and the count selecting it.
+_Translate = ReflexCallable[[str, Mapping[str, Any]], str]
+_TranslatePlural = ReflexCallable[[str, str, Any, Mapping[str, Any]], str]
+
+
+@functools.cache
+def _translate() -> FunctionVar[_Translate]:
+    """The client-side message translator.
+
+    Returns:
+        The ``t_`` hook function as a callable Var.
+    """
+    return FunctionStringVar.create(
+        "t_", _var_type=_Translate, _var_data=_i18n_var_data()
+    )
+
+
+@functools.cache
+def _translate_plural() -> FunctionVar[_TranslatePlural]:
+    """The client-side plural message translator.
+
+    Returns:
+        The ``tp_`` hook function as a callable Var.
+    """
+    return FunctionStringVar.create(
+        "tp_", _var_type=_TranslatePlural, _var_data=_i18n_var_data()
     )
 
 
@@ -98,11 +130,8 @@ def t(
     if plural is not None:
         params.setdefault("count", count)
     params_var = LiteralVar.create(params)
-    var_data = _i18n_var_data()
 
     if plural is None:
-        translate = Var(_js_expr="t_", _var_data=var_data).to(FunctionVar)
-        return translate.call(key.catalog_key, params_var).to(str)
+        return _translate().call(key.catalog_key, params_var).to(str)
 
-    translate_plural = Var(_js_expr="tp_", _var_data=var_data).to(FunctionVar)
-    return translate_plural.call(key.catalog_key, plural, count, params_var).to(str)
+    return _translate_plural().call(key.catalog_key, plural, count, params_var).to(str)

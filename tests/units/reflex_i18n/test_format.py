@@ -86,6 +86,13 @@ def test_format_var_data_injects_hook_and_provider():
     assert isinstance(provider, I18nProvider)
 
 
+def test_format_var_is_hashable():
+    # Vars get hashed when their var data is merged, so the Intl options must
+    # reach the formatter call as a Var rather than a raw dict.
+    hash(number(_num()))
+    hash(date(Var(_js_expr="state.day")))
+
+
 def test_number_and_date_share_one_hook():
     combined = Var.create([number(_num()), date(Var(_js_expr="state.day"))])
     var_data = combined._get_all_var_data()

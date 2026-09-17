@@ -9,11 +9,12 @@ reactively reformatting when the locale changes. To format inside state
 from __future__ import annotations
 
 import functools
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars.base import LiteralVar, Var, VarData
-from reflex_base.vars.function import FunctionVar
+from reflex_base.vars.function import FunctionStringVar, FunctionVar, ReflexCallable
 from reflex_base.vars.sequence import StringVar
 
 from .component import I18nProvider
@@ -67,6 +68,35 @@ def _locale_var_data() -> VarData:
     )
 
 
+# ``useFormat`` destructures to ``[fmtNumber, fmtDate]``; each takes the value
+# to format and an ``Intl`` options object, and returns the formatted string.
+_Formatter = ReflexCallable[[Any, Mapping[str, Any]], str]
+
+
+@functools.cache
+def _fmt_number() -> FunctionVar[_Formatter]:
+    """The client-side number formatter for the active locale.
+
+    Returns:
+        The ``fmtNumber`` hook function as a callable Var.
+    """
+    return FunctionStringVar.create(
+        "fmtNumber", _var_type=_Formatter, _var_data=_format_var_data()
+    )
+
+
+@functools.cache
+def _fmt_date() -> FunctionVar[_Formatter]:
+    """The client-side date formatter for the active locale.
+
+    Returns:
+        The ``fmtDate`` hook function as a callable Var.
+    """
+    return FunctionStringVar.create(
+        "fmtDate", _var_type=_Formatter, _var_data=_format_var_data()
+    )
+
+
 def _number_options(
     *,
     style: str | None = None,
@@ -76,8 +106,8 @@ def _number_options(
     grouping: bool | None = None,
     compact: bool = False,
     options: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Build ``Intl.NumberFormat`` options from curated kwargs.
+) -> Var[Mapping[str, Any]]:
+    """Build the ``Intl.NumberFormat`` options object from curated kwargs.
 
     Args:
         style: The Intl number style (``decimal``/``currency``/``percent``).
@@ -89,7 +119,7 @@ def _number_options(
         options: Raw ``Intl.NumberFormat`` options, merged last.
 
     Returns:
-        The Intl options object.
+        The Intl options object as a Var.
     """
     opts: dict[str, Any] = {}
     if style is not None:
@@ -106,23 +136,7 @@ def _number_options(
         opts["notation"] = "compact"
     if options:
         opts.update(options)
-    return opts
-
-
-def _call(fn_name: str, value: Any, options: dict[str, Any]) -> StringVar:
-    """Call a client formatter hook function with a value and options.
-
-    Args:
-        fn_name: The hook function (``fmtNumber`` or ``fmtDate``).
-        value: The value to format (may be a Var).
-        options: The Intl options object.
-
-    Returns:
-        A StringVar resolving to the formatted value.
-    """
-    var_data = _format_var_data()
-    formatter = Var(_js_expr=fn_name, _var_data=var_data).to(FunctionVar)
-    return formatter.call(value, LiteralVar.create(options)).to(str)
+    return LiteralVar.create(opts)
 
 
 def number(
@@ -148,17 +162,14 @@ def number(
         A StringVar resolving to the localized number.
     """
     _require_config()
-    return _call(
-        "fmtNumber",
-        value,
-        _number_options(
-            min_fraction_digits=min_fraction_digits,
-            max_fraction_digits=max_fraction_digits,
-            grouping=grouping,
-            compact=compact,
-            options=options,
-        ),
+    opts = _number_options(
+        min_fraction_digits=min_fraction_digits,
+        max_fraction_digits=max_fraction_digits,
+        grouping=grouping,
+        compact=compact,
+        options=options,
     )
+    return _fmt_number().call(value, opts).to(str)
 
 
 def currency(
@@ -186,19 +197,16 @@ def currency(
         A StringVar resolving to the localized currency amount.
     """
     _require_config()
-    return _call(
-        "fmtNumber",
-        value,
-        _number_options(
-            style="currency",
-            currency=currency,
-            min_fraction_digits=min_fraction_digits,
-            max_fraction_digits=max_fraction_digits,
-            grouping=grouping,
-            compact=compact,
-            options=options,
-        ),
+    opts = _number_options(
+        style="currency",
+        currency=currency,
+        min_fraction_digits=min_fraction_digits,
+        max_fraction_digits=max_fraction_digits,
+        grouping=grouping,
+        compact=compact,
+        options=options,
     )
+    return _fmt_number().call(value, opts).to(str)
 
 
 def percent(
@@ -222,17 +230,14 @@ def percent(
         A StringVar resolving to the localized percentage.
     """
     _require_config()
-    return _call(
-        "fmtNumber",
-        value,
-        _number_options(
-            style="percent",
-            min_fraction_digits=min_fraction_digits,
-            max_fraction_digits=max_fraction_digits,
-            grouping=grouping,
-            options=options,
-        ),
+    opts = _number_options(
+        style="percent",
+        min_fraction_digits=min_fraction_digits,
+        max_fraction_digits=max_fraction_digits,
+        grouping=grouping,
+        options=options,
     )
+    return _fmt_number().call(value, opts).to(str)
 
 
 def _date_options(
@@ -240,8 +245,8 @@ def _date_options(
     date_style: str | None = None,
     time_style: str | None = None,
     options: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Build ``Intl.DateTimeFormat`` options from curated kwargs.
+) -> Var[Mapping[str, Any]]:
+    """Build the ``Intl.DateTimeFormat`` options object from curated kwargs.
 
     Args:
         date_style: The Intl ``dateStyle`` (``short``/``medium``/``long``/``full``).
@@ -249,7 +254,7 @@ def _date_options(
         options: Raw ``Intl.DateTimeFormat`` options, merged last.
 
     Returns:
-        The Intl options object.
+        The Intl options object as a Var.
     """
     opts: dict[str, Any] = {}
     if date_style is not None:
@@ -258,7 +263,7 @@ def _date_options(
         opts["timeStyle"] = time_style
     if options:
         opts.update(options)
-    return opts
+    return LiteralVar.create(opts)
 
 
 def date(
@@ -278,7 +283,8 @@ def date(
         A StringVar resolving to the localized date.
     """
     _require_config()
-    return _call("fmtDate", value, _date_options(date_style=length, options=options))
+    opts = _date_options(date_style=length, options=options)
+    return _fmt_date().call(value, opts).to(str)
 
 
 def time(
@@ -298,7 +304,8 @@ def time(
         A StringVar resolving to the localized time.
     """
     _require_config()
-    return _call("fmtDate", value, _date_options(time_style=length, options=options))
+    opts = _date_options(time_style=length, options=options)
+    return _fmt_date().call(value, opts).to(str)
 
 
 def datetime(
@@ -318,11 +325,8 @@ def datetime(
         A StringVar resolving to the localized date and time.
     """
     _require_config()
-    return _call(
-        "fmtDate",
-        value,
-        _date_options(date_style=length, time_style=length, options=options),
-    )
+    opts = _date_options(date_style=length, time_style=length, options=options)
+    return _fmt_date().call(value, opts).to(str)
 
 
 @functools.cache
