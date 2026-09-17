@@ -275,7 +275,7 @@ def test_var_data_merge_collects_field_names():
     )
 
     assert merged is not None
-    assert merged.field_names == ("a", "b")
+    assert dict(merged.field_dependencies) == {"s": ("a", "b")}
     # `field_name` stays the first, so existing single-field readers are intact.
     assert merged.field_name == "a"
 
@@ -297,21 +297,17 @@ def test_var_data_merge_keeps_field_names_of_every_state():
     assert dict(merged.field_dependencies) == {"s": ("a", "c"), "other": ("b",)}
     # The fallback accessors report the first state and its first field only.
     assert merged.state == "s"
-    assert merged.field_names == ("a", "c")
     assert merged.field_name == "a"
 
 
 def test_var_data_field_dependencies_round_trip():
-    """`state`/`field_name`/`field_names` are shorthands for the mapping."""
+    """`state`/`field_name` are the shorthand for a single-field mapping."""
     assert dict(VarData(state="s", field_name="a").field_dependencies) == {"s": ("a",)}
-    assert dict(VarData(state="s", field_names=["a", "b"]).field_dependencies) == {
-        "s": ("a", "b")
-    }
     # A state with no named field is still recorded: many vars carry only the
     # state, for its imports and hooks, and read no field.
     assert dict(VarData(state="s").field_dependencies) == {"s": ()}
     assert dict(VarData().field_dependencies) == {}
-    # The canonical form wins over the shorthands.
+    # The canonical form wins over the shorthand.
     assert dict(
         VarData(
             state="ignored",
@@ -321,11 +317,10 @@ def test_var_data_field_dependencies_round_trip():
     ) == {"s": ("a",), "other": ("b",)}
 
 
-def test_var_data_field_name_shorthand_round_trips():
-    """`field_name` is shorthand for a single-entry `field_names`."""
-    assert VarData(field_name="a").field_names == ("a",)
-    assert VarData(field_names=["a", "b"]).field_name == "a"
-    assert VarData().field_names == ()
+def test_var_data_field_name_reports_the_first_field():
+    """`field_name` reports the first field of the first state."""
+    assert VarData(field_name="a").field_name == "a"
+    assert VarData(field_dependencies={"s": ("a", "b")}).field_name == "a"
     assert VarData().field_name == ""
 
 

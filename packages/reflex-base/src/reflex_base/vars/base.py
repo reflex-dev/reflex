@@ -280,28 +280,23 @@ def _normalize_field_dependencies(
     field_dependencies: Mapping[str, Sequence[str]] | None,
     state: str,
     field_name: str,
-    field_names: Sequence[str] | None,
 ) -> Mapping[str, tuple[str, ...]]:
     """Build the canonical state -> fields mapping from the accepted shorthands.
 
     Args:
         field_dependencies: The canonical mapping, if the caller gave one.
-        state: The single enclosing state, for the shorthand forms.
+        state: The single enclosing state, for the shorthand form.
         field_name: A single field of `state`.
-        field_names: Several fields of `state`; takes precedence over `field_name`.
 
     Returns:
-        An immutable mapping of state name to its deduped field names.
+        A mapping of state name to its deduped field names.
     """
     if field_dependencies is not None:
         return {
             state_name: tuple(dict.fromkeys(names))
             for state_name, names in field_dependencies.items()
         }
-    if field_names is not None:
-        names = tuple(dict.fromkeys(field_names))
-    else:
-        names = (field_name,) if field_name else ()
+    names = (field_name,) if field_name else ()
     # A state with no named field still has to be recorded: plenty of vars
     # carry only the state (for imports and hooks) and nothing reads a field.
     if not state and not names:
@@ -353,7 +348,6 @@ class VarData:
         self,
         state: str = "",
         field_name: str = "",
-        field_names: Sequence[str] | None = None,
         imports: ImmutableImportDict | ImmutableParsedImportDict | None = None,
         hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
@@ -367,10 +361,8 @@ class VarData:
         Args:
             state: The name of the enclosing state. Shorthand for a
                 single-state ``field_dependencies``; ignored when that is given.
-            field_name: The name of the field in ``state``. Shorthand for a
-                single-entry ``field_names``; ignored when that is given.
-            field_names: The names of the ``state`` fields this var is built
-                from. Ignored when ``field_dependencies`` is given.
+            field_name: The name of the field in ``state``. Ignored when
+                ``field_dependencies`` is given.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
             deps: Dependencies of the var for useCallback.
@@ -379,8 +371,8 @@ class VarData:
             app_wraps: App-level wrapper components this var requires when used.
             field_dependencies: Every state field this var is built from,
                 grouped by owning state. The canonical form; ``state``,
-                ``field_name`` and ``field_names`` are shorthands for a single
-                state. Keyword-only in practice: it trails the older
+                and ``field_name`` are the shorthand for a single state with a
+                single field. Keyword-only in practice: it trails the older
                 parameters so positional callers of those are unaffected.
         """
         if isinstance(hooks, str):
@@ -393,9 +385,7 @@ class VarData:
         object.__setattr__(
             self,
             "field_dependencies",
-            _normalize_field_dependencies(
-                field_dependencies, state, field_name, field_names
-            ),
+            _normalize_field_dependencies(field_dependencies, state, field_name),
         )
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
@@ -434,18 +424,6 @@ class VarData:
         return next(iter(self.field_dependencies), "")
 
     @property
-    def field_names(self) -> tuple[str, ...]:
-        """The names of the fields this var is built from, in ``state``.
-
-        Deprecated fallback accessor: fields owned by any other state are not
-        reported. Read ``field_dependencies`` to see every state's fields.
-
-        Returns:
-            The first state's field names, empty if there are none.
-        """
-        return self.field_dependencies.get(self.state, ())
-
-    @property
     def field_name(self) -> str:
         """The name of the field in the state.
 
@@ -456,7 +434,7 @@ class VarData:
         Returns:
             The first field name, or an empty string if there is none.
         """
-        field_names = self.field_names
+        field_names = self.field_dependencies.get(self.state, ())
         return field_names[0] if field_names else ""
 
     def old_school_imports(self) -> ImportDict:
