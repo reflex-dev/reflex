@@ -1,7 +1,5 @@
 """Tests for reserved state names at class creation and dynamic registration."""
 
-from unittest.mock import patch
-
 import pytest
 from reflex_base.constants import RouteArgType
 from reflex_base.utils.exceptions import StateValueError
@@ -152,26 +150,6 @@ def test_non_state_models_keep_their_namespace():
         get_state: int = 7
 
     assert Model().get_state == 7
-
-
-def test_legacy_state_names(
-    monkeypatch: pytest.MonkeyPatch, clean_registration_context
-):
-    """Preserve the old lookup behavior only with the deprecated legacy opt-in.
-
-    Args:
-        monkeypatch: Set the temporary compatibility environment variable.
-        clean_registration_context: An isolated state registry.
-    """
-    monkeypatch.setenv("REFLEX_STATE_ALLOW_RESERVED_NAMES", "1")
-    with patch("reflex_base.utils.console.deprecate") as deprecate:
-
-        class LegacyState(BaseState):
-            _get_was_touched: int = 7
-
-    assert LegacyState()._get_was_touched == 7
-    deprecate.assert_called_once()
-    assert deprecate.call_args.kwargs["removal_version"] == "1.0"
 
 
 @pytest.mark.parametrize("name", ["get_fields", "_get_was_touched"])

@@ -4,8 +4,6 @@ from functools import cache
 from types import FunctionType
 from typing import Any
 
-from reflex_base.environment import environment
-from reflex_base.utils import console
 from reflex_base.utils.compat import annotations_from_namespace
 from reflex_base.utils.exceptions import (
     EventHandlerShadowsBuiltInStateMethodError,
@@ -64,18 +62,7 @@ def _validate_state_name(name: str, value: Any = None) -> None:
             return
         msg = f"The event handler name `{name}` shadows a builtin State method; use a different name instead"
         raise EventHandlerShadowsBuiltInStateMethodError(msg)
-    reason = (
-        f"State name `{name}` is reserved by BaseState; use a different name instead."
-    )
-    if environment.REFLEX_STATE_ALLOW_RESERVED_NAMES.get():
-        console.deprecate(
-            feature_name=f"REFLEX_STATE_ALLOW_RESERVED_NAMES for `{name}`",
-            reason=reason,
-            deprecation_version="0.9.11",
-            removal_version="1.0",
-        )
-        return
-    msg = f"{reason} Set REFLEX_STATE_ALLOW_RESERVED_NAMES=1 temporarily to retain legacy behavior."
+    msg = f"State name `{name}` is reserved by BaseState; use a different name instead."
     raise StateValueError(msg)
 
 

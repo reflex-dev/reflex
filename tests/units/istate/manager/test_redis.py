@@ -115,33 +115,6 @@ async def test_basic_get_set(
     )
 
 
-async def test_set_state_with_shadowed_touched_method(
-    clean_registration_context, monkeypatch: pytest.MonkeyPatch
-):
-    """Persist a backend var that shadows the touched-state method.
-
-    Args:
-        clean_registration_context: A fresh, empty registration context.
-        monkeypatch: Enable legacy reserved names for this persistence regression.
-    """
-    monkeypatch.setenv("REFLEX_STATE_ALLOW_RESERVED_NAMES", "1")
-
-    class ShadowState(BaseState):
-        """State with an intentional framework-method collision."""
-
-        _get_was_touched: int = 7
-
-    state = ShadowState()
-    state._get_was_touched = 8
-    manager = StateManagerRedis(redis=mock_redis())
-    token = BaseStateToken(ident="shadowed", cls=ShadowState)
-
-    await manager.set_state(token, state)
-
-    restored = BaseState._deserialize(data=await manager.redis.get(str(token)))
-    assert restored._get_was_touched == 8
-
-
 async def test_modify(
     state_manager_redis: StateManagerRedis,
     root_state: type[RedisTestState],

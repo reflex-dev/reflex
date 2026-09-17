@@ -1,1 +1,1 @@
-State vars, event handlers, and dynamic route arguments now reject names reserved by framework methods and bookkeeping before registration. Rename conflicting members; `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` temporarily preserves legacy behavior with a deprecation warning until Reflex 1.0.
+State vars, event handlers, and dynamic route arguments now reject names reserved by framework methods and bookkeeping before registration. Rename conflicting members.
