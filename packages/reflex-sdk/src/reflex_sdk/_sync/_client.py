@@ -20,6 +20,8 @@ from reflex_sdk._sync.resources.apps import Apps
 from reflex_sdk._sync.resources.auth import Auth
 from reflex_sdk._sync.resources.deployments import Deployments
 from reflex_sdk._sync.resources.projects import Projects
+from reflex_sdk._sync.resources.providers import Providers
+from reflex_sdk._sync.resources.security_reviews import SecurityReviews
 from reflex_sdk.transports._base import Transport, TransportError
 from reflex_sdk.transports._defaults import DefaultTransport
 
@@ -40,6 +42,10 @@ class ReflexCloud(BaseClient):
     deployments: Deployments
     # Manage projects and who has access to them.
     projects: Projects
+    # Read the cloud providers an organization deploys apps to.
+    providers: Providers
+    # Review an app's source code for security and logic issues.
+    security_reviews: SecurityReviews
 
     def __init__(
         self,
@@ -79,6 +85,8 @@ class ReflexCloud(BaseClient):
         self.auth = Auth(self)
         self.deployments = Deployments(self)
         self.projects = Projects(self)
+        self.providers = Providers(self)
+        self.security_reviews = SecurityReviews(self)
 
     def __enter__(self) -> ReflexCloud:
         """Enter the client's context.
@@ -119,6 +127,7 @@ class ReflexCloud(BaseClient):
         json: Any = None,
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
+        idempotent: bool | None = None,
     ) -> T: ...
 
     @overload
@@ -132,6 +141,7 @@ class ReflexCloud(BaseClient):
         json: Any = None,
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
+        idempotent: bool | None = None,
     ) -> None: ...
 
     def _request(
@@ -144,6 +154,7 @@ class ReflexCloud(BaseClient):
         json: Any = None,
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
+        idempotent: bool | None = None,
     ) -> Any:
         """Send an API request, retrying transient failures that are safe to retry.
 
@@ -156,6 +167,9 @@ class ReflexCloud(BaseClient):
             json: The JSON body, if any.
             form: A form-encoded body, sent instead of ``json``.
             authenticated: Whether to send the access token.
+            idempotent: Whether repeating the request is harmless, which decides
+                whether it is retried after it may have reached the server. Defaults
+                to whether the method is idempotent.
 
         Returns:
             The decoded response body.
@@ -178,13 +192,17 @@ class ReflexCloud(BaseClient):
             try:
                 response = self._transport.send(request)
             except TransportError as ex:
-                delay = self._retry_delay(request, attempt, sent=ex.sent)
+                delay = self._retry_delay(
+                    request, attempt, sent=ex.sent, idempotent=idempotent
+                )
                 if delay is None:
                     raise connection_error(ex) from ex
             else:
                 if response.is_success:
                     return decode_response(response, cast)
-                delay = self._retry_delay(request, attempt, response)
+                delay = self._retry_delay(
+                    request, attempt, response, idempotent=idempotent
+                )
                 if delay is None:
                     raise status_error_from_response(response)
             attempt += 1
