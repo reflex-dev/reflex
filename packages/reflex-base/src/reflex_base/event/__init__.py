@@ -585,13 +585,20 @@ class EventHandler(EventActionsMixin):
 
     @property
     def supersedes(self) -> bool:
-        """Whether a newer chain-root invocation supersedes an older one.
+        """Whether a newer invocation supersedes an older one.
 
-        When True, enqueuing this handler as a chain root cancels the previous
-        unfinished event chain rooted at the same handler for the same client
-        token. Cancellation is cooperative: a handler that never yields to the
-        event loop runs to completion, and only its not-yet-started chained
-        events are skipped.
+        When True, invocations of this handler use latest-wins semantics per
+        client token, ordered by the user-initiated root enqueue each chain
+        descends from: enqueuing the handler from a newer chain cancels any
+        unfinished invocation from an older chain, whether either was a chain
+        root or yielded by another handler. Invocations belonging to the same
+        chain coexist, so a handler may re-chain itself or be yielded several
+        times by one parent. While the newer chain's invocations are still
+        tracked, an older chain enqueuing the handler is dropped instead of
+        cancelling the newer work.
+        Cancellation is cooperative: a handler that never yields to the event
+        loop runs to completion, and only its not-yet-started chained events
+        are skipped.
 
         Returns:
             True if the event handler is marked as superseding.

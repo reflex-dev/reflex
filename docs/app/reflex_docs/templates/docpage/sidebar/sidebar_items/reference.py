@@ -14,25 +14,12 @@ def get_sidebar_items_changelog():
 def get_sidebar_items_api_reference():
     from reflex_docs.pages.docs import api_reference, apiref
 
-    return [
-        create_item(
-            "API Reference",
-            children=[
-                *apiref.pages,
-                api_reference.var_system,
-                api_reference.cli,
-                api_reference.minification,
-                api_reference.event_triggers,
-                api_reference.special_events,
-                api_reference.browser_storage,
-                api_reference.browser_javascript,
-                api_reference.plugins,
-                api_reference.utils,
-                api_reference.telemetry,
-                api_reference.observability,
-            ],
-        )
-    ]
+    pages = {route.path: route for route in vars(api_reference).values()}
+    routes = [pages.pop(f"/api-reference/{slug}/") for slug in apiref.section_order]
+    # A page added under docs/api-reference/ without a place in section_order
+    # lands at the end rather than dropping out of the sidebar.
+    routes += pages.values()
+    return [create_item(route) for route in routes]
 
 
 api_reference = get_sidebar_items_api_reference()
