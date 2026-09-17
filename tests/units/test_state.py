@@ -13,7 +13,7 @@ import sys
 import threading
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
-from typing import Any, ClassVar, Literal, TypeVar
+from typing import Any, ClassVar, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -5783,3 +5783,45 @@ def test_base_var_bare_reannotation_does_not_raise() -> None:
         reannotated_value: int  # pyright: ignore[reportGeneralTypeIssues]
 
     assert isinstance(ReannotatingChild.reannotated_value, Var)
+
+
+def test_composite_var_dep_tracks_fields_in_every_state():
+    """A dependency on a var spanning two states must track both states' fields.
+
+    `VarData` groups field names by the state that owns them, so merging a var
+    built from `StateA.a_field` with one built from `StateB.b_field` keeps
+    both. Before that grouping the merge kept only the first state's fields and
+    a computed var depending on the composite went stale whenever the other
+    state changed.
+    """
+    from reflex_base.vars.base import Var, VarData
+
+    class _CompositeDepStateA(rx.State):
+        a_field: str = "a"
+
+    class _CompositeDepStateB(rx.State):
+        b_field: str = "b"
+
+    composite = Var(
+        "combo",
+        _var_data=VarData.merge(
+            cast("Var", _CompositeDepStateA.a_field)._get_all_var_data(),
+            cast("Var", _CompositeDepStateB.b_field)._get_all_var_data(),
+        ),
+    )
+
+    a_name = _CompositeDepStateA.get_full_name()
+    b_name = _CompositeDepStateB.get_full_name()
+    assert dict(composite._dependency_fields()) == {
+        a_name: ("a_field",),
+        b_name: ("b_field",),
+    }
+
+    class _CompositeDepConsumer(rx.State):
+        @rx.var(deps=[composite], cache=True)
+        def combined(self) -> str:
+            return "x"
+
+    static_deps = _CompositeDepConsumer.__dict__["combined"]._static_deps
+    assert "a_field" in static_deps.get(a_name, set())
+    assert "b_field" in static_deps.get(b_name, set())

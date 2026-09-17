@@ -276,6 +276,39 @@ def insert_app_wraps(
         target[key] = wrapper
 
 
+def _normalize_field_dependencies(
+    field_dependencies: Mapping[str, Sequence[str]] | None,
+    state: str,
+    field_name: str,
+    field_names: Sequence[str] | None,
+) -> Mapping[str, tuple[str, ...]]:
+    """Build the canonical state -> fields mapping from the accepted shorthands.
+
+    Args:
+        field_dependencies: The canonical mapping, if the caller gave one.
+        state: The single enclosing state, for the shorthand forms.
+        field_name: A single field of `state`.
+        field_names: Several fields of `state`; takes precedence over `field_name`.
+
+    Returns:
+        An immutable mapping of state name to its deduped field names.
+    """
+    if field_dependencies is not None:
+        return {
+            state_name: tuple(dict.fromkeys(names))
+            for state_name, names in field_dependencies.items()
+        }
+    if field_names is not None:
+        names = tuple(dict.fromkeys(field_names))
+    else:
+        names = (field_name,) if field_name else ()
+    # A state with no named field still has to be recorded: plenty of vars
+    # carry only the state (for imports and hooks) and nothing reads a field.
+    if not state and not names:
+        return {}
+    return {state: names}
+
+
 @dataclasses.dataclass(
     eq=True,
     frozen=True,
@@ -283,14 +316,17 @@ def insert_app_wraps(
 class VarData:
     """Metadata associated with a x."""
 
-    # The name of the enclosing state.
-    state: str = dataclasses.field(default="")
-
-    # The names of the state fields this var is built from. A var normally
-    # stands for a single field, but one composed of several (see
-    # `Var._dependency_field_names`) names all of them so a dependency on it
-    # tracks every field it reads.
-    field_names: tuple[str, ...] = dataclasses.field(default_factory=tuple)
+    # Every state field this var is built from, grouped by the state that owns
+    # it. A var normally stands for a single field of a single state, but one
+    # composed of several -- possibly spanning several states -- names all of
+    # them, so a dependency on it tracks each field it actually reads.
+    # Built fresh for every VarData and never mutated afterwards, so it is
+    # effectively frozen like the tuples beside it. A plain dict rather than a
+    # MappingProxyType because VarData is pickled along with the states holding
+    # it, and mappingproxy cannot be pickled.
+    field_dependencies: Mapping[str, tuple[str, ...]] = dataclasses.field(
+        default_factory=dict
+    )
 
     # Imports needed to render this var
     imports: ParsedImportTuple = dataclasses.field(default_factory=tuple)
@@ -318,6 +354,7 @@ class VarData:
         state: str = "",
         field_name: str = "",
         field_names: Sequence[str] | None = None,
+        field_dependencies: Mapping[str, Sequence[str]] | None = None,
         imports: ImmutableImportDict | ImmutableParsedImportDict | None = None,
         hooks: Mapping[str, VarData | None] | Sequence[str] | str | None = None,
         deps: list[Var] | None = None,
@@ -328,10 +365,15 @@ class VarData:
         """Initialize the var data.
 
         Args:
-            state: The name of the enclosing state.
-            field_name: The name of the field in the state. Shorthand for a
+            state: The name of the enclosing state. Shorthand for a
+                single-state ``field_dependencies``; ignored when that is given.
+            field_name: The name of the field in ``state``. Shorthand for a
                 single-entry ``field_names``; ignored when that is given.
-            field_names: The names of every state field this var is built from.
+            field_names: The names of the ``state`` fields this var is built
+                from. Ignored when ``field_dependencies`` is given.
+            field_dependencies: Every state field this var is built from,
+                grouped by owning state. The canonical form; the three
+                arguments above are shorthands for a single state.
             imports: Imports needed to render this var.
             hooks: Hooks that need to be present in the component to render this var.
             deps: Dependencies of the var for useCallback.
@@ -346,13 +388,12 @@ class VarData:
         immutable_imports: ParsedImportTuple = tuple(
             (k, tuple(v)) for k, v in parse_imports(imports or {}).items()
         )
-        object.__setattr__(self, "state", state)
         object.__setattr__(
             self,
-            "field_names",
-            tuple(dict.fromkeys(field_names))
-            if field_names is not None
-            else ((field_name,) if field_name else ()),
+            "field_dependencies",
+            _normalize_field_dependencies(
+                field_dependencies, state, field_name, field_names
+            ),
         )
         object.__setattr__(self, "imports", immutable_imports)
         object.__setattr__(self, "hooks", tuple(hooks or {}))
@@ -365,8 +406,11 @@ class VarData:
             # Merge our dependencies first, so they can be referenced.
             merged_var_data = VarData.merge(*hooks.values(), self)
             if merged_var_data is not None:
-                object.__setattr__(self, "state", merged_var_data.state)
-                object.__setattr__(self, "field_names", merged_var_data.field_names)
+                object.__setattr__(
+                    self,
+                    "field_dependencies",
+                    merged_var_data.field_dependencies,
+                )
                 object.__setattr__(self, "imports", merged_var_data.imports)
                 object.__setattr__(self, "hooks", merged_var_data.hooks)
                 object.__setattr__(self, "deps", merged_var_data.deps)
@@ -375,16 +419,43 @@ class VarData:
                 object.__setattr__(self, "app_wraps", merged_var_data.app_wraps)
 
     @property
+    def state(self) -> str:
+        """The name of the enclosing state.
+
+        Deprecated fallback accessor: a var may be built from fields of more
+        than one state, and this reports only the first. Read
+        ``field_dependencies`` to see every state.
+
+        Returns:
+            The first state name, or an empty string if there is none.
+        """
+        return next(iter(self.field_dependencies), "")
+
+    @property
+    def field_names(self) -> tuple[str, ...]:
+        """The names of the fields this var is built from, in ``state``.
+
+        Deprecated fallback accessor: fields owned by any other state are not
+        reported. Read ``field_dependencies`` to see every state's fields.
+
+        Returns:
+            The first state's field names, empty if there are none.
+        """
+        return self.field_dependencies.get(self.state, ())
+
+    @property
     def field_name(self) -> str:
         """The name of the field in the state.
 
-        A var built from several fields reports the first; use ``field_names``
-        to see all of them.
+        Deprecated fallback accessor: a var built from several fields reports
+        only the first, of the first state. Read ``field_dependencies`` to see
+        all of them.
 
         Returns:
             The first field name, or an empty string if there is none.
         """
-        return self.field_names[0] if self.field_names else ""
+        field_names = self.field_names
+        return field_names[0] if field_names else ""
 
     def old_school_imports(self) -> ImportDict:
         """Return the imports as a mutable dict.
@@ -416,25 +487,15 @@ class VarData:
         if len(all_var_datas) == 1:
             return all_var_datas[0]
 
-        # Get the first non-empty state or default to empty string.
-        state = next(
-            (var_data.state for var_data in all_var_datas if var_data.state), ""
-        )
-
-        # Collect every field name belonging to that state, in order, deduped,
-        # so a var composed of several fields (and therefore a dependency on
-        # it) knows about all of them. Field names carrying a different state
-        # are dropped: callers pair these names with the single `state` above,
-        # so keeping them would register a dependency on a field that state
-        # does not have.
-        field_names = tuple(
-            dict.fromkeys(
-                field_name
-                for var_data in all_var_datas
-                if not var_data.state or var_data.state == state
-                for field_name in var_data.field_names
-            )
-        )
+        # Union every state's fields, in order and deduped, so a var composed
+        # of several fields -- across as many states as it reaches -- carries
+        # all of them and a dependency on it tracks each one.
+        field_dependencies: dict[str, tuple[str, ...]] = {}
+        for var_data in all_var_datas:
+            for state_name, names in var_data.field_dependencies.items():
+                field_dependencies[state_name] = tuple(
+                    dict.fromkeys((*field_dependencies.get(state_name, ()), *names))
+                )
 
         hooks: dict[str, VarData | None] = {
             hook: None for var_data in all_var_datas for hook in var_data.hooks
@@ -470,8 +531,7 @@ class VarData:
             insert_app_wraps(app_wraps, var_data.app_wraps)
 
         return VarData(
-            state=state,
-            field_names=field_names,
+            field_dependencies=field_dependencies,
             imports=imports_,
             hooks=hooks,
             deps=deps,
@@ -489,10 +549,9 @@ class VarData:
             True if any field is set to a non-default value.
         """
         return bool(
-            self.state
+            self.field_dependencies
             or self.imports
             or self.hooks
-            or self.field_names
             or self.deps
             or self.position
             or self.components
@@ -514,8 +573,7 @@ class VarData:
             A hashable tuple uniquely identifying this VarData.
         """
         return (
-            self.state,
-            self.field_names,
+            tuple(self.field_dependencies.items()),
             self.imports,
             self.hooks,
             self.deps,
@@ -784,24 +842,22 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         """
         return self._var_data
 
-    def _dependency_field_names(self) -> tuple[str, ...]:
-        """The state field names a ComputedVar depending on this Var must track.
+    def _dependency_fields(self) -> Mapping[str, tuple[str, ...]]:
+        """The state fields a ComputedVar depending on this Var must track.
 
-        A Var normally stands for a single state field, but one composed of
-        several must name all of them, or a ``deps=[that_var]`` dependency
-        would track only some of the fields it reads and leave the computed var
-        stale when any of the others change. ``VarData.merge`` collects the
-        names as vars combine, so the merged VarData already knows all of them.
-
-        Only fields of the VarData's own state are named; callers pair these
-        names with that single state, so a var spanning two states still
-        reports just the first one's fields.
+        A Var normally stands for a single field of a single state, but one
+        composed of several must name all of them, or a ``deps=[that_var]``
+        dependency would track only some of the fields it reads and leave the
+        computed var stale when any of the others change. A composite var may
+        also span several states, so the fields stay grouped by their owner.
+        ``VarData.merge`` unions them as vars combine, so the merged VarData
+        already knows every one.
 
         Returns:
-            The field names to register the dependency against.
+            The fields to register the dependency against, by state name.
         """
         all_var_data = self._get_all_var_data()
-        return all_var_data.field_names if all_var_data is not None else ()
+        return all_var_data.field_dependencies if all_var_data is not None else {}
 
     def __deepcopy__(self, memo: dict[int, Any]) -> Self:
         """Deepcopy the var.
@@ -2497,17 +2553,17 @@ class ComputedVar(Var[RETURN_TYPE]):
         if deps is None:
             deps = self._static_deps
         if isinstance(dep, Var):
-            state_name = (
-                all_var_data.state
-                if (all_var_data := dep._get_all_var_data()) and all_var_data.state
-                else None
-            )
-            if all_var_data is not None:
-                # A composite Var names every state field it is built from.
-                var_names = dep._dependency_field_names()
+            if (all_var_data := dep._get_all_var_data()) is not None:
+                # A composite Var names every state field it is built from, in
+                # each state that owns them.
+                field_dependencies = all_var_data.field_dependencies
+                if field_dependencies:
+                    for state_name, field_names in field_dependencies.items():
+                        deps.setdefault(state_name or None, set()).update(field_names)
+                else:
+                    deps.setdefault(None, set())
             else:
-                var_names = (dep._js_expr,)
-            deps.setdefault(state_name, set()).update(var_names)
+                deps.setdefault(None, set()).add(dep._js_expr)
         elif isinstance(dep, str) and dep != "":
             deps.setdefault(None, set()).add(dep)
         else:
@@ -2783,26 +2839,30 @@ class ComputedVar(Var[RETURN_TYPE]):
                 state and field name
         """
         if all_var_data := dep._get_all_var_data():
-            state_name = all_var_data.state
-            if state_name:
-                # A composite Var names every state field it is built from.
-                var_names = tuple(filter(None, dep._dependency_field_names()))
-                if var_names:
-                    self._static_deps.setdefault(state_name, set()).update(var_names)
-                    target_state_class = objclass.get_root_state().get_class_substate(
-                        state_name
-                    )
-                    for var_name in var_names:
-                        target_state_class._var_dependencies.setdefault(
-                            var_name, set()
-                        ).add((
-                            objclass.get_full_name(),
-                            self._name,
-                        ))
-                    target_state_class._potentially_dirty_states.add(
-                        objclass.get_full_name()
-                    )
-                    return
+            # A composite Var names every state field it is built from, and may
+            # span several states; register against each of them.
+            registered = False
+            for state_name, field_names in all_var_data.field_dependencies.items():
+                var_names = tuple(filter(None, field_names))
+                if not state_name or not var_names:
+                    continue
+                self._static_deps.setdefault(state_name, set()).update(var_names)
+                target_state_class = objclass.get_root_state().get_class_substate(
+                    state_name
+                )
+                for var_name in var_names:
+                    target_state_class._var_dependencies.setdefault(
+                        var_name, set()
+                    ).add((
+                        objclass.get_full_name(),
+                        self._name,
+                    ))
+                target_state_class._potentially_dirty_states.add(
+                    objclass.get_full_name()
+                )
+                registered = True
+            if registered:
+                return
         msg = (
             "ComputedVar dependencies must be Var instances with a state and "
             f"field name, got {dep!r}."

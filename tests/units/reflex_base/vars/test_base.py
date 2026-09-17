@@ -280,21 +280,45 @@ def test_var_data_merge_collects_field_names():
     assert merged.field_name == "a"
 
 
-def test_var_data_merge_drops_field_names_of_other_states():
-    """Field names are paired with a single state, so foreign ones are dropped.
+def test_var_data_merge_keeps_field_names_of_every_state():
+    """A var spanning several states keeps each state's own fields.
 
-    Callers register these names against `VarData.state`; keeping a name from
-    a different state would declare a dependency on a field that state has no
-    knowledge of.
+    Fields stay grouped by the state that owns them, so a dependency on a
+    composite var tracks every field it reads rather than only those of
+    whichever state happened to merge first.
     """
     merged = VarData.merge(
         VarData(state="s", field_name="a"),
         VarData(state="other", field_name="b"),
+        VarData(state="s", field_name="c"),
     )
 
     assert merged is not None
+    assert dict(merged.field_dependencies) == {"s": ("a", "c"), "other": ("b",)}
+    # The fallback accessors report the first state and its first field only.
     assert merged.state == "s"
-    assert merged.field_names == ("a",)
+    assert merged.field_names == ("a", "c")
+    assert merged.field_name == "a"
+
+
+def test_var_data_field_dependencies_round_trip():
+    """`state`/`field_name`/`field_names` are shorthands for the mapping."""
+    assert dict(VarData(state="s", field_name="a").field_dependencies) == {"s": ("a",)}
+    assert dict(VarData(state="s", field_names=["a", "b"]).field_dependencies) == {
+        "s": ("a", "b")
+    }
+    # A state with no named field is still recorded: many vars carry only the
+    # state, for its imports and hooks, and read no field.
+    assert dict(VarData(state="s").field_dependencies) == {"s": ()}
+    assert dict(VarData().field_dependencies) == {}
+    # The canonical form wins over the shorthands.
+    assert dict(
+        VarData(
+            state="ignored",
+            field_name="ignored",
+            field_dependencies={"s": ("a",), "other": ("b",)},
+        ).field_dependencies
+    ) == {"s": ("a",), "other": ("b",)}
 
 
 def test_var_data_field_name_shorthand_round_trips():
