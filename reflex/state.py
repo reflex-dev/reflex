@@ -382,8 +382,8 @@ all_base_state_classes: dict[str, None] = {}
 # Instance bookkeeping fields and framework methods read on every event. They
 # bypass the var-resolution logic below, so nothing stored in `_backend_vars`
 # (e.g. `_reflex_internal_links`) or delegated to the parent (`router_data`)
-# may appear here. A subclass that defines one of these names itself (as a var
-# or an event handler) drops it from its own `_fast_attr_names`.
+# may appear here. A subclass that overrides one of these methods drops the
+# name from its own `_fast_attr_names`.
 _FRAMEWORK_ATTR_NAMES = frozenset({
     "dirty_vars",
     "dirty_substates",
@@ -781,38 +781,15 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
-        cls._prune_fast_attr_names()
-
-        all_base_state_classes[cls.get_full_name()] = None
-
-    @classmethod
-    def _prune_fast_attr_names(cls) -> None:
-        """Recompute which framework attribute names this state tree may fast-path.
-
-        A name the state defines (as a var, a backend var, an event handler or
-        a marked method override) must keep going through the full lookup in
-        ``_get_attribute``. The set is rebuilt from the parent's current set
-        minus this class's own names, then recomputed for every substate, so a
-        var or handler registered after class creation (dynamic route args,
-        ``add_var``, ...) drops the name for the whole subtree that inherits it.
-        """
+        # A marked override of a framework method must keep the full lookup.
         parent_state = cls.get_parent_state()
-        inherited = (
+        cls._fast_attr_names = (
             parent_state._fast_attr_names
             if parent_state is not None
             else _FRAMEWORK_ATTR_NAMES
-        )
-        cls._fast_attr_names = inherited - (
-            _FRAMEWORK_ATTR_NAMES
-            & (
-                set(cls.__dict__)
-                | set(cls.vars)
-                | set(cls.backend_vars)
-                | set(cls.event_handlers)
-            )
-        )
-        for substate_class in cls.get_substates():
-            substate_class._prune_fast_attr_names()
+        ) - cls.__dict__.keys()
+
+        all_base_state_classes[cls.get_full_name()] = None
 
     @classmethod
     def _add_event_handler(
@@ -830,7 +807,6 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
-        cls._prune_fast_attr_names()
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -1360,7 +1336,6 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         # let substates know about the new variable
         for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
-        cls._prune_fast_attr_names()
 
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
@@ -1491,7 +1466,6 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
                 substate_class._update_substate_inherited_vars(vars_to_add)
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
-        cls._prune_fast_attr_names()
 
     @classmethod
     def _dynamic_route_arg_types(cls) -> builtins.dict[str, str]:
