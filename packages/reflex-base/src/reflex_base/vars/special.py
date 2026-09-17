@@ -277,24 +277,27 @@ def const_fields(
     return tuple(bound)
 
 
-def hook_fn(library: str, hook: str, *, returns: Any = Any) -> FunctionVar:
+def hook_fn(
+    library: str, hook: str, *, alias: str | None = None, returns: Any = Any
+) -> FunctionVar:
     """Get a callable Var for a hook imported from a library.
 
-    The hook is imported under a unique alias, so hooks of the same name from
-    different libraries do not collide. Calling it yields the hook's return
-    value as an expression, which :func:`const` can bind to a name.
+    Calling it yields the hook's return value as an expression, which
+    :func:`const` can bind to a name.
 
     Args:
         library: The library to import the hook from.
         hook: The name of the hook.
+        alias: The name to import the hook under, defaulting to its own name.
+            Pass a unique alias when the same hook name may reach one component
+            from more than one library, which would otherwise collide.
         returns: The type the hook returns.
 
     Returns:
         A callable Var for the hook, carrying its import.
     """
-    alias = f"{hook}_{get_unique_variable_name()}"
     return FunctionStringVar.create(
-        alias,
+        alias or hook,
         _var_type=ReflexCallable[Any, returns],
         _var_data=VarData(imports={library: ImportVar(tag=hook, alias=alias)}),
     )
@@ -325,6 +328,10 @@ def use_hook_var(
     every element sharing one value must render inside the same component, such
     as an ``rx.el.svg`` root, an ``@rx.memo`` body, or a custom renderer body.
 
+    The hook is imported under a unique alias, since the caller does not control
+    which other hooks reach the components the var ends up in. Use
+    :func:`hook_fn` with :func:`const` to import it under its own name.
+
     Args:
         library: The library to import the hook from.
         hook: The name of the hook.
@@ -344,7 +351,12 @@ def use_hook_var(
         )
         raise TypeError(msg)
     return const(
-        hook_fn(library, hook, returns=cast(GenericType, _var_type)).call(*args)
+        hook_fn(
+            library,
+            hook,
+            alias=f"{hook}_{get_unique_variable_name()}",
+            returns=cast(GenericType, _var_type),
+        ).call(*args)
     )
 
 

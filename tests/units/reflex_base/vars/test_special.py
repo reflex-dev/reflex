@@ -116,8 +116,7 @@ def test_const_carries_value_var_data_first():
 def test_const_unwraps_call_parentheses():
     """A call operation is assigned without its embedding parentheses."""
     v = const(hook_fn("some-lib", "useThing").call(), name="thing")
-    alias = alias_of(v, "some-lib")
-    assert hooks_of(v) == (f"const thing = {alias}();",)
+    assert hooks_of(v) == ("const thing = useThing();",)
 
 
 def test_const_unpack_binds_elements_with_types():
@@ -229,17 +228,20 @@ def test_const_fields_resolves_method_named_field():
     assert hooks_of(keys) == (f"const {{ keys: {keys!s} }} = o;",)
 
 
-def test_hook_fn_imports_under_alias():
-    """The hook is imported under a unique alias and is callable."""
-    fn = hook_fn("some-lib", "useThing")
-    call = fn.call()
-    alias = alias_of(call, "some-lib")
-    assert alias.startswith("useThing_")
+def test_hook_fn_imports_under_own_name():
+    """The hook is imported under its own name by default."""
+    call = hook_fn("some-lib", "useThing").call()
+    assert str(call) == "(useThing())"
     var_data = call._get_all_var_data()
     assert var_data is not None
-    assert var_data.imports == (
-        ("some-lib", (ImportVar(tag="useThing", alias=alias),)),
-    )
+    assert var_data.imports == (("some-lib", (ImportVar(tag="useThing"),)),)
+
+
+def test_hook_fn_imports_under_given_alias():
+    """A supplied alias is used for both the import and the call."""
+    call = hook_fn("some-lib", "useThing", alias="useThing_x").call()
+    assert str(call) == "(useThing_x())"
+    assert alias_of(call, "some-lib") == "useThing_x"
 
 
 def test_hook_fn_return_type_flows_through_call():

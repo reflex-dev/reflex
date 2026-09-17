@@ -111,6 +111,9 @@ use_dropzone = rx.vars.hook_fn("react-dropzone", "useDropzone")
 dropzone = rx.vars.const(use_dropzone.call(options), name="dropzone")
 ```
 
+`hook_fn()` imports the hook under its own name; pass `alias` to import it under a different one, which is needed when the same hook name may reach one component from more than one library.
+`use_hook_var()` always aliases, since its caller does not control which other hooks reach the components its var ends up in.
+
 By default each call binds to a fresh unique name.
 Passing `name` uses that identifier verbatim, which also means two calls with the same name and value produce the same declaration and are emitted only once.
 
