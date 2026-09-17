@@ -35,6 +35,18 @@ class EventFuture(asyncio.Future):
     # in the EventProcessor, if any.
     supersede_key: tuple[str, str] | None = dataclasses.field(default=None, repr=False)
 
+    # Generation stamp of the user-initiated root enqueue this future's chain
+    # belongs to; chained futures inherit it from their parent, so comparing
+    # stamps orders invocations by user action rather than enqueue time.
+    root_gen: int = dataclasses.field(default=0, repr=False)
+
+    # Supersession keys for which an ancestor invocation in this chain is
+    # already registered; a covered invocation is not re-registered, keeping
+    # a self-chaining handler's registration at its first invocation.
+    covered_supersede_keys: frozenset[tuple[str, str]] = dataclasses.field(
+        default=frozenset(), repr=False
+    )
+
     def __post_init__(self) -> None:
         """Call Future.__init__ for the EventFuture."""
         super(EventFuture, self).__init__(loop=self.loop)
