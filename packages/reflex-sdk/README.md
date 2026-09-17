@@ -26,7 +26,7 @@ with ReflexCloud() as client:
     projects = client.projects.search("default")
     project = projects[0] if projects else client.projects.create("default")
     app = client.apps.create("dashboard", project_id=project.id)
-    client.apps.secrets.set(app.id, {"DATABASE_URL": "postgresql://..."})
+    client.apps.secrets.set(app.id, {"OPENAI_API_KEY": "sk-..."})
 
     for deployment in client.apps.history(app.id):
         print(deployment.status, deployment.url)
@@ -78,14 +78,16 @@ with ReflexCloud() as client:
 ### Environments and databases
 
 ```python
-dev, production = client.apps.environments.list(app.id)
-promotion = client.apps.environments.promote(app.id, production.id)
+pipeline = client.apps.environments.enable(app.id)
+# Deployments now go to dev. Once one is running there, promote it to production.
+client.deployments.wait(deployment_id)
+promotion = client.apps.environments.promote(app.id, pipeline.production_environment_id)
 client.deployments.wait(promotion.deployment_id)
 
 database = client.apps.database.create(app.id)
 ```
 
-`client.apps.environments` gives an app a pipeline of environments, such as dev and production: deployments go to the first, and each later environment runs a version promoted from the one before it, with its own secrets and URL. Pipelines need the Enterprise plan. `client.apps.database` creates a Postgres database for an app, shared by its environments, and sets its connection strings as secrets.
+`client.apps.environments` gives an app a pipeline of environments, such as dev and production: deployments go to the first, and each later environment runs a version promoted from the one before it, with its own secrets and URL. Pipelines need the Enterprise plan. `client.apps.database` creates a Postgres database for an app, shared by its environments, and sets its connection strings as secrets. Creating or deleting a database needs a token with full access, which `reflex login` tokens are not, and an app with its own `DATABASE_URL` secret is refused.
 
 ## Authentication
 

@@ -162,7 +162,9 @@ def test_update_is_retried(client: ReflexCloud, mock_api: MockAPI):
         reply(200, json={"id": DEV_ID}),
     )
     client.apps.environments.update(APP_ID, DEV_ID, name="qa")
-    assert len(mock_api.requests) == 2
+    first, retry = mock_api.requests
+    # The retry is the same request, identified by the same request id.
+    assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
 def test_reorder(client: ReflexCloud, mock_api: MockAPI):

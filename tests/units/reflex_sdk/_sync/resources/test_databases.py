@@ -72,7 +72,8 @@ def test_create_is_retried(client: ReflexCloud, mock_api: MockAPI):
         reply(201, json={**DATABASE, "created": False}),
     )
     assert client.apps.database.create(APP_ID) == MANAGED_DATABASE
-    assert len(mock_api.requests) == 2
+    first, retry = mock_api.requests
+    assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
 @pytest.mark.parametrize("deleted", [True, False])
