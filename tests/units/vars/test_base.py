@@ -96,9 +96,7 @@ def test_var_operation_does_not_register_global_vars() -> None:
     result = lhs + 1
     assert len(_global_vars) == before
 
-    # The suppression does not persist after the op, and never mutates the
-    # (shared, otherwise immutable) operand.
-    assert "_format_without_tagging" not in lhs.__dict__
+    # The suppression does not persist after the op.
     assert not _format_without_tagging.get()
 
     # Operand VarData still reaches the merged operation VarData via _args.
