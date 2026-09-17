@@ -368,7 +368,9 @@ class VarOperationCall(Generic[P, R], CachedVarOperation, Var[R]):
             _var_type=var_type,
             _var_data=_var_data,
             _func=func,
-            _args=args,
+            # Args are converted eagerly: raw values like dicts and lists are
+            # unhashable, and the fields of a CachedVarOperation are hashed.
+            _args=tuple(LiteralVar.create(arg) for arg in args),
         )
 
 
