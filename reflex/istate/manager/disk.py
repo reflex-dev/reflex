@@ -57,7 +57,7 @@ def _mark_replacement_state_touched(cached_state: object, state: object) -> None
         cached_state: The instance currently cached for the token, if any.
         state: The instance supplied to set_state.
     """
-    if isinstance(state, BaseState) and state is not cached_state:
+    if state is not cached_state and isinstance(state, BaseState):
         _mark_state_tree_touched(state)
 
 
