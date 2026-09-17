@@ -98,7 +98,7 @@ from reflex.utils.exec import (
     is_testing_env,
     should_prerender_routes,
 )
-from reflex.utils.misc import run_in_thread
+from reflex.utils.misc import is_page_meta_set, run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
 
 logger = logging.getLogger(__name__)
@@ -430,6 +430,25 @@ class _ContextMiddleware:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         self.reflex_app._set_contexts_internal()
         await self.app(scope, receive, send)
+
+
+def _is_location_specifier(specifier: str) -> bool:
+    """Check whether a dependency specifier points at a location.
+
+    A location specifier names where a package comes from (a local path, a
+    protocol like ``file:``/``github:``/``git+ssh:``, or a git ref) instead of
+    naming a version. Its slashes belong to the location, so it must be kept
+    whole rather than split into a version and a package subpath.
+
+    Args:
+        specifier: The part of an import name following ``package@``.
+
+    Returns:
+        Whether the specifier is a location rather than a version or dist-tag.
+    """
+    return (
+        ":" in specifier or "#" in specifier or specifier.startswith((".", "/", "~/"))
+    )
 
 
 @dataclasses.dataclass()
@@ -1119,8 +1138,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
-            title = title or constants.Page404.TITLE
-            description = description or constants.Page404.DESCRIPTION
+            if not is_page_meta_set(title):
+                title = constants.Page404.TITLE
+            if not is_page_meta_set(description):
+                description = constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
         else:
             if component is None:
@@ -1434,6 +1455,13 @@ class App(MiddlewareMixin, LifespanMixin):
             The load events for the route.
         """
         four_oh_four_load_events = self._load_events.get("404", [])
+        # The path is the browser URL path, which includes frontend_path, while the
+        # router matches paths relative to it. A URL outside frontend_path is not a page.
+        frontend_path = get_config().frontend_path.rstrip("/")
+        if frontend_path:
+            if path != frontend_path and not path.startswith(frontend_path + "/"):
+                return four_oh_four_load_events
+            path = path.removeprefix(frontend_path)
         route = self.router(path)
         if not route:
             # If the path is not a valid route, return the 404 page load events.
@@ -1613,13 +1641,11 @@ class App(MiddlewareMixin, LifespanMixin):
             package_name = library_name.split("/", maxsplit=1)[0]
 
         if import_name.startswith(f"{library_name}@"):
-            version_and_maybe_subpath = import_name[len(library_name) + 1 :]
-            version, slash, _ = version_and_maybe_subpath.partition("/")
-            if slash and ":" not in version:
+            specifier = import_name[len(library_name) + 1 :]
+            version, slash, _ = specifier.partition("/")
+            if slash and not _is_location_specifier(specifier):
                 return f"{package_name}@{version}"
-            if package_name == library_name:
-                return import_name
-            return f"{package_name}@{version_and_maybe_subpath}"
+            return f"{package_name}@{specifier}"
 
         if package_name == library_name:
             return import_name

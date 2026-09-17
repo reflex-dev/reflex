@@ -4,13 +4,14 @@ import asyncio
 import contextlib
 import json
 import traceback
-from collections.abc import Mapping
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
 from typing import Any
 from unittest import mock
 
 import pytest
 import pytest_asyncio
 from pytest_codspeed import BenchmarkFixture
+from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import Event
 from reflex_base.event.context import EmitDeltaProtocol, EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
@@ -24,10 +25,11 @@ import reflex as rx
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.state import StateUpdate
 
-from .fixtures import BenchmarkState
+from .fixtures import BenchmarkState, TableState
 
 TOKEN = "benchmark-token"
 ROUTER_DATA = {"query": {}, "path": "/"}
+TABLE_STATUSES = ("open", "", "paid")
 
 
 def _make_rows(count: int) -> list[dict[str, str | int | float | bool]]:
@@ -108,73 +110,161 @@ async def _processing_pipeline(emit_delta_impl: EmitDeltaProtocol):
             await state_manager.close()
 
 
-@pytest_asyncio.fixture
-async def event_processing_harness():
-    """Set up the full event processing pipeline for benchmarking.
+def _encode_delta(delta: Mapping[str, Mapping[str, Any]]) -> str:
+    """Serialize a delta the way the socket path does.
 
-    Creates a ``BaseStateEventProcessor`` wired to a real
-    ``StateManagerMemory`` with mock emit callbacks.  Events are
-    enqueued directly and deltas are collected via the emit callback.
+    Args:
+        delta: The state changes emitted by the processor.
+
+    Returns:
+        The delta encoded as a StateUpdate envelope.
+    """
+    return orjson_dumps_socket(StateUpdate(delta=delta), separators=(",", ":"))
+
+
+def _events(handler_name: str, payloads: list[dict[str, Any]]) -> list[Event]:
+    """Build one event per payload for the given handler.
+
+    Args:
+        handler_name: The formatted event handler name.
+        payloads: One payload per event.
+
+    Returns:
+        The events to enqueue.
+    """
+    return [
+        Event(name=handler_name, router_data=ROUTER_DATA, payload=payload)
+        for payload in payloads
+    ]
+
+
+def _counter_events() -> list[Event]:
+    """Two increments followed by two decrements, returning to the start.
+
+    Returns:
+        The counter event batch.
+    """
+    increment = format_event_handler(BenchmarkState.event_handlers["increment"])
+    decrement = format_event_handler(BenchmarkState.event_handlers["decrement"])
+    return _events(increment, [{}] * 2) + _events(decrement, [{}] * 2)
+
+
+def _table_events() -> list[Event]:
+    """Two filter cycles, ending on the starting sort direction.
+
+    Returns:
+        The table event batch.
+    """
+    set_status = format_event_handler(TableState.event_handlers["set_status"])
+    return _events(set_status, [{"status": status} for status in TABLE_STATUSES * 2])
+
+
+@contextlib.asynccontextmanager
+async def _event_pipeline(
+    events: list[Event],
+    on_delta: Callable[[Mapping[str, Mapping[str, Any]]], Any],
+) -> AsyncIterator[Callable[[], Awaitable[None]]]:
+    """Wire the processing pipeline to a fixed batch of events.
+
+    Args:
+        events: The batch to enqueue on each run.
+        on_delta: Called with each emitted delta.
 
     Yields:
-        An async callable that enqueues the given number of events
-        and waits for all expected deltas.
+        An async callable that processes one batch and checks its delta count.
     """
-    emitted_deltas: list[tuple[str, Mapping[str, Mapping[str, Any]]]] = []
+    emitted = 0
 
     async def emit_delta_impl(  # noqa: RUF029
         token: str, delta: Mapping[str, Mapping[str, Any]]
     ) -> None:
-        emitted_deltas.append((token, delta))
+        nonlocal emitted
+        emitted += 1
+        on_delta(delta)
 
     async with _processing_pipeline(emit_delta_impl) as processor:
-        handler_name = format_event_handler(BenchmarkState.event_handlers["increment"])
-        event = Event(
-            name=handler_name,
-            router_data=ROUTER_DATA,
-            payload={},
-        )
 
-        async def run_events(num_events: int, num_expected_deltas: int) -> None:
-            """Enqueue events and wait for all deltas to be emitted.
-
-            Args:
-                num_events: Number of increment events to enqueue.
-                num_expected_deltas: How many deltas to wait for.
-            """
-            emitted_deltas.clear()
-
+        async def run_events() -> None:
+            """Process the batch and verify that each event emitted a delta."""
+            nonlocal emitted
+            emitted = 0
             async with processor as p:
                 async for _ in asyncio.as_completed([
-                    await p.enqueue(TOKEN, event) for _ in range(num_events)
+                    await p.enqueue(TOKEN, event) for event in events
                 ]):
                     pass
-            assert len(emitted_deltas) == num_expected_deltas
+            assert emitted == len(events)
 
         yield run_events
 
 
-def test_process_event(
-    event_processing_harness,
-    benchmark: BenchmarkFixture,
-):
-    """Benchmark processing 3 increment events through the full pipeline.
+@pytest_asyncio.fixture(params=["counter", "table"])
+async def event_processing_harness(request: pytest.FixtureRequest):
+    """Set up a fixed event batch, warming the table before timing.
 
-    The first event creates fresh state (cold path), the next two reuse
-    the existing state (warm path).  Only event processing is timed.
+    Both batches return state to its starting point, so every benchmark
+    sample measures identical work.
 
     Args:
-        event_processing_harness: The run_events async callable.
+        request: Selects the counter or table workload.
+
+    Yields:
+        An async callable that processes one batch and checks its delta count.
+    """
+    table = request.param == "table"
+    events = _table_events() if table else _counter_events()
+    on_delta = _encode_delta if table else (lambda delta: None)
+    async with _event_pipeline(events, on_delta) as run_events:
+        if table:
+            await run_events()
+        yield run_events
+
+
+def test_process_event(event_processing_harness, benchmark: BenchmarkFixture):
+    """Benchmark a batch of four counter events or six table events.
+
+    Args:
+        event_processing_harness: The async batch runner.
         benchmark: The codspeed benchmark fixture.
     """
-    run_events = event_processing_harness
     loop = asyncio.get_event_loop()
 
-    # Each event handler (increment) does a single state mutation with
-    # no yields, so we expect 1 delta per event = 3 total.
     @benchmark
     def _():
-        loop.run_until_complete(run_events(num_events=3, num_expected_deltas=3))
+        loop.run_until_complete(event_processing_harness())
+
+
+@pytest.mark.asyncio
+async def test_table_event_deltas():
+    """Verify filtered rows, sort direction, and totals across repeated batches."""
+    updates: list[str] = []
+
+    async with _event_pipeline(
+        _table_events(), lambda delta: updates.append(_encode_delta(delta))
+    ) as run_events:
+        for _ in range(2):
+            await run_events()
+
+    for index, update in enumerate(updates):
+        status = TABLE_STATUSES[index % len(TABLE_STATUSES)]
+        reverse = index % 2 == 0
+        expected = [
+            {
+                "name": f"order {i}",
+                "customer": f"customer {i % 50}",
+                "amount": i * 1.5,
+                "status": ("open", "paid", "shipped")[i % 3],
+            }
+            for i in sorted(range(1000), reverse=reverse)
+            if not status or ("open", "paid", "shipped")[i % 3] == status
+        ]
+        delta = json.loads(update)["delta"][TableState.get_full_name()]
+        assert delta["status" + FIELD_MARKER] == status
+        assert delta["sort_reverse" + FIELD_MARKER] == reverse
+        assert delta["filtered_orders" + FIELD_MARKER] == expected
+        assert delta["total_amount" + FIELD_MARKER] == sum(
+            row["amount"] for row in expected
+        )
 
 
 @pytest_asyncio.fixture

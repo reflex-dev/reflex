@@ -10,9 +10,9 @@ import {
   useSearchParams,
   useParams,
 } from "react-router";
-import { app } from "$/utils/context-registry";
+import { app, eventLoop } from "$/utils/context-registry";
 import debounce from "$/utils/helpers/debounce";
-import { parseNonFiniteAwareJSON } from "$/utils/helpers/json";
+import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 
@@ -220,6 +220,10 @@ function urlFrom(string) {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
+  // Eval'd callback strings (format_queue_events) dispatch through addEvents
+  // like compiled event triggers do; late-bound so a remounted
+  // EventLoopProvider is picked up.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
@@ -582,7 +586,7 @@ export const connect = async (
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
-      return parseNonFiniteAwareJSON(str);
+      return parseJson(str);
     } catch {
       // socket.io's decoder expects false for an undecodable packet.
       return false;

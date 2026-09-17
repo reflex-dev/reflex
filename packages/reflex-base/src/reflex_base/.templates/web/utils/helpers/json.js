@@ -47,7 +47,7 @@ const rewriteBareNonFiniteFloats = (str) =>
  * @returns the parsed value
  * @throws {SyntaxError} if the payload is not valid JSON either way
  */
-export const parseNonFiniteAwareJSON = (str) => {
+export const parseJson = (str) => {
   try {
     return str.includes(SENTINEL_PREFIX)
       ? JSON.parse(str, reviveNonFiniteFloats)

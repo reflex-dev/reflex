@@ -8,9 +8,12 @@ from collections.abc import Callable, Collection, Mapping, Sequence
 from typing import Any
 
 import reflex as rx
+from reflex_site_shared.components.blocks.typography import DOCS_BODY_CLASS
 
 DOCS_API_CELL_CLASS = "min-w-0 px-4 py-3 align-top"
-DOCS_API_HEADER_CLASS = "px-4 py-3 text-left text-xs font-semibold text-secondary-11"
+DOCS_API_HEADER_CLASS = (
+    "px-4 py-3 text-left text-xs font-semibold text-muted-foreground"
+)
 _DOCS_API_COLUMN_WIDTHS = ("w-[20%]", "w-[25%]", "w-[55%]")
 _NON_ID_CHARACTER = re.compile(r"[^a-z0-9]+")
 
@@ -48,14 +51,17 @@ def docs_api_table(
                         for header, width in zip(headers, widths, strict=True)
                     )
                 ),
-                class_name="border-b border-secondary-4 bg-secondary-2",
+                class_name="border-b border-border-subtle bg-muted",
             ),
-            rx.el.tbody(*rows, class_name="bg-secondary-1"),
-            class_name="w-full table-fixed border-collapse text-left",
+            rx.el.tbody(*rows, class_name="bg-background"),
+            class_name=(
+                "w-full min-w-[40rem] table-fixed border-collapse text-left "
+                "[&_td_code]:min-w-0 [&_td_code]:whitespace-normal [&_td_code]:break-words"
+            ),
         ),
         class_name=(
-            "mb-4 w-full min-w-0 overflow-hidden rounded-xl border "
-            "border-secondary-4 bg-secondary-1 shadow-small"
+            "docs-table mb-4 w-full min-w-0 overflow-x-auto rounded-xl border "
+            "border-border-subtle bg-background shadow-small"
         ),
     )
 
@@ -76,8 +82,7 @@ def docs_api_row(
         Styled table row.
     """
     base_class = (
-        "border-b border-secondary-4 last:border-b-0 transition-colors "
-        "hover:bg-secondary-2"
+        "border-b border-border-subtle last:border-b-0 transition-colors hover:bg-muted"
     )
     return rx.el.tr(
         *cells,
@@ -263,7 +268,7 @@ def callable_api_reference(
                     rx.text(
                         description,
                         class_name=(
-                            "font-small text-secondary-11 whitespace-normal "
+                            "font-small text-muted-foreground whitespace-normal "
                             "leading-snug break-words"
                         ),
                     ),
@@ -277,18 +282,18 @@ def callable_api_reference(
             name,
             as_="h3",
             id=_heading_id(name),
-            class_name="font-large text-secondary-12 mt-8 mb-2",
+            class_name="font-large text-foreground mt-8 mb-2",
         ),
         rx.text(
             _summary(docstring),
-            class_name="font-[475] text-secondary-11 mb-4 leading-7",
+            class_name=DOCS_BODY_CLASS,
         )
         if docstring
         else rx.fragment(),
         rx.heading(
             "Props",
             as_="h4",
-            class_name="font-base text-secondary-12 mt-4 mb-2",
+            class_name="font-base text-foreground mt-4 mb-2",
         ),
         docs_api_table(*rows),
         class_name="w-full",
