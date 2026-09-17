@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from reflex import config
+from reflex import _MAPPING, config
 from reflex.app import EventNamespace
 from reflex.istate.data import RouterData
 from reflex.state import StateUpdate
@@ -413,15 +413,71 @@ async def test_token_iterator_cleanup_with_aclosing(local_manager):
     assert len(local_manager._token_disconnect_events.get("tok10", [])) == 0
 
 
-def test_get_token_manager_callable():
-    """get_token_manager is importable and callable."""
-    assert callable(get_token_manager)
+async def test_disconnect_token_notifies_watchers(local_manager):
+    """disconnect_token wakes token and session watchers after removing the mappings.
+
+    Args:
+        local_manager: LocalTokenManager fixture instance.
+    """
+    await local_manager.link_token_to_sid("tok11", "sid11")
+    token_event = local_manager.when_token_disconnects("tok11")
+    sid_event = local_manager.when_session_disconnects("sid11")
+    await local_manager.disconnect_token("tok11", "sid11")
+    assert token_event.is_set()
+    assert sid_event.is_set()
+    assert "tok11" not in local_manager.token_to_socket
+    assert "sid11" not in local_manager.sid_to_token
+
+
+async def test_on_disconnect_watcher_registered_before_cleanup(
+    event_namespace_factory,
+):
+    """A watcher registered after on_disconnect but before cleanup still wakes.
+
+    Args:
+        event_namespace_factory: EventNamespace factory fixture.
+    """
+    namespace = event_namespace_factory()
+    await namespace.link_token_to_sid("sid_race", "tok_race")
+    task = namespace.on_disconnect("sid_race")
+    assert task is not None
+    event = namespace._token_manager.when_session_disconnects("sid_race")
+    await task
+    assert event.is_set()
+
+
+def test_get_token_manager_returns_namespace_manager(event_namespace_factory):
+    """get_token_manager returns the running app's token manager.
+
+    Args:
+        event_namespace_factory: EventNamespace factory fixture.
+    """
+    namespace = event_namespace_factory()
+    app_info = Mock()
+    app_info.app.event_namespace = namespace
+    with patch(
+        "reflex.utils.token_manager.prerequisites.get_and_validate_app",
+        return_value=app_info,
+    ):
+        assert get_token_manager() is namespace._token_manager
+
+
+def test_get_token_manager_without_namespace():
+    """get_token_manager raises when the event namespace is not initialized."""
+    app_info = Mock()
+    app_info.app.event_namespace = None
+    with (
+        patch(
+            "reflex.utils.token_manager.prerequisites.get_and_validate_app",
+            return_value=app_info,
+        ),
+        pytest.raises(RuntimeError, match="Event namespace is not initialized"),
+    ):
+        get_token_manager()
 
 
 def test_rx_mapping_has_get_token_manager():
     """rx.__init__ has get_token_manager in its lazy mapping."""
-    from reflex import _MAPPING
-
     assert "get_token_manager" in _MAPPING.get("utils.token_manager", [])
 
 

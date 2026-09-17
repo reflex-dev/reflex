@@ -2130,8 +2130,6 @@ class EventNamespace(AsyncNamespace):
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
-            # Notify lifecycle watchers before cleanup removes the mappings.
-            self._token_manager._notify_disconnect(disconnect_token, sid)
             # Use async cleanup through token manager
             task = asyncio.create_task(
                 self._token_manager.disconnect_token(disconnect_token, sid),

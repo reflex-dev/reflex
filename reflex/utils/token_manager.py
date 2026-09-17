@@ -303,9 +303,10 @@ class LocalTokenManager(TokenManager):
             token: The client token.
             sid: The Socket.IO session ID.
         """
-        # Clean up both mappings
+        # Clean up both mappings, then wake watchers that see them gone.
         self.token_to_socket.pop(token, None)
         self.sid_to_token.pop(sid, None)
+        self._notify_disconnect(token, sid)
 
     async def close(self) -> None:
         """Release any resources held by the token manager (no-op)."""
