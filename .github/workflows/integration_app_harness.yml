@@ -20,6 +20,22 @@ permissions:
   contents: read
 
 jobs:
+  integration-app-harness-playwright:
+    # Preserve the required check names while the consolidated matrix runs
+    # all browser tests. Every alias fails if any matrix entry does not pass.
+    needs: integration-app-harness
+    if: ${{ always() }}
+    strategy:
+      matrix:
+        state_manager: ["redis", "memory"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the consolidated browser suite
+        env:
+          HARNESS_RESULT: ${{ needs.integration-app-harness.result }}
+        run: test "$HARNESS_RESULT" = success
+
   integration-app-harness:
     timeout-minutes: 30
     strategy:
