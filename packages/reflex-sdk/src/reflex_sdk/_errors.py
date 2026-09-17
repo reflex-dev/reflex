@@ -49,6 +49,34 @@ class DeploymentTimeoutError(ReflexCloudError, TimeoutError):
     """A deployment was still in progress when waiting for it timed out."""
 
 
+class LoginDeniedError(ReflexCloudError):
+    """The user denied a browser login."""
+
+
+class LoginTimeoutError(ReflexCloudError, TimeoutError):
+    """A browser login was not approved before waiting for it timed out."""
+
+
+class SecurityReviewFailedError(ReflexCloudError):
+    """A security review could not be completed."""
+
+    job_id: str
+
+    def __init__(self, job_id: str, error: str | None) -> None:
+        """Initialize the error.
+
+        Args:
+            job_id: The security review.
+            error: Why it failed, as the API reports it.
+        """
+        super().__init__(f"security review {job_id} failed: {error or 'unknown error'}")
+        self.job_id = job_id
+
+
+class SecurityReviewTimeoutError(ReflexCloudError, TimeoutError):
+    """A security review was still running when waiting for it timed out."""
+
+
 class APIError(ReflexCloudError):
     """An error tied to a request sent to the Reflex Cloud API."""
 
