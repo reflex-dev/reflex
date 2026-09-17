@@ -5835,3 +5835,30 @@ def test_composite_var_dep_tracks_fields_in_every_state():
         for dep_set in state_cls._var_dependencies.values():
             dep_set.difference_update({(consumer_name, "combined")})
         state_cls._potentially_dirty_states.discard(consumer_name)
+
+
+def test_setstate_drops_the_legacy_router_entry():
+    """Unpickling a pre-split state must not route `router` through the setter.
+
+    Older pickles stored the whole `RouterData` under `router`, which is now a
+    descriptor. Restoring it with `object.__setattr__` would shadow that
+    descriptor on the instance; assigning it would decompose into the per-field
+    vars and resurrect stale connection data. The schema check in
+    `_deserialize` discards such states anyway, so the entry is simply dropped.
+    """
+    state = BaseState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    legacy = {
+        "parent_state": None,
+        "substates": {},
+        "router": RouterData.from_router_data({
+            constants.RouteVar.CLIENT_TOKEN: "stale-token",
+        }),
+        "dirty_vars": set(),
+    }
+
+    state.__setstate__(legacy)
+
+    # The entry is gone rather than shadowing the descriptor...
+    assert "router" not in state.__dict__
+    # ...and `router` still resolves through the switchboard to live fields.
+    assert state.router.session.client_token == ""

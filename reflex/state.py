@@ -91,6 +91,12 @@ from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
+# The key a pre-split pickle stored the whole RouterData under. Deliberately
+# not `constants.ROUTER`: that names the public switchboard as it is today,
+# while this is a historical name frozen into payloads already on disk, and
+# renaming the switchboard must not change what those are keyed by.
+_LEGACY_ROUTER_PICKLE_KEY = "router"
+
 # Shared empty router defaults. Each is a frozen dataclass whose members are
 # themselves immutable, so one instance can back every state's field instead
 # of being rebuilt per state.
@@ -2573,10 +2579,10 @@ class BaseState(EvenMoreBasicBaseState):
         """
         state["parent_state"] = None
         state["substates"] = {}
-        # Pre-split pickles stored a RouterData under `router`, which is now a
+        # Pre-split pickles stored a RouterData under this key, which is now a
         # descriptor; drop it so unpickling does not route through the setter.
         # The schema check in _deserialize discards such states anyway.
-        state.pop("router", None)
+        state.pop(_LEGACY_ROUTER_PICKLE_KEY, None)
         for key, value in state.items():
             object.__setattr__(self, key, value)
 
