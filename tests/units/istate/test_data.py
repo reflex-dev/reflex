@@ -1,8 +1,10 @@
 """Tests for ReflexURL parsing, serialization, and Var attribute access."""
 
 from collections.abc import Mapping
+from typing import cast
 from urllib.parse import parse_qsl
 
+import pytest
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import StringVar
 
@@ -234,3 +236,46 @@ def test_router_var_carries_state_var_data():
     var_data = rx.State.router._get_all_var_data()
     assert var_data is not None
     assert var_data.state == rx.State.get_full_name()
+
+
+@pytest.mark.parametrize("attr", ["path", "scheme", "netloc", "query", "fragment"])
+def test_reflex_url_rejects_attribute_assignment(attr: str):
+    """A parsed component must not be assignable.
+
+    `URLData.href` defaults to a class-level `ReflexURL("")`, so the empty URL
+    object is shared by every state that has not navigated yet. If a component
+    could be assigned, writing through one state's `router.url` would rewrite
+    that shared object for all of them.
+    """
+    url = ReflexURL(SAMPLE_URL)
+    before = getattr(url, attr)
+
+    with pytest.raises(AttributeError, match="immutable"):
+        setattr(url, attr, "/mutated")
+    with pytest.raises(AttributeError, match="immutable"):
+        delattr(url, attr)
+
+    assert getattr(url, attr) == before
+
+
+def test_shared_empty_url_default_cannot_be_mutated_through_a_state():
+    """Writing through one state's router.url must not leak into another."""
+    from reflex.istate.data import URLData
+    from reflex.state import BaseState
+
+    # A root state, so the router fields live on the instance under test
+    # rather than being delegated to a parent that is not in a tree here.
+    class _URLIsolationState(BaseState):
+        pass
+
+    one = _URLIsolationState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    two = _URLIsolationState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+    with pytest.raises(AttributeError, match="immutable"):
+        one.router.url.path = "/mutated"
+
+    one.rx_router_url = URLData.from_url(ReflexURL("https://example.com/real"))
+
+    assert one.router.url.path == "/real"
+    assert two.router.url.path == ""
+    assert cast("ReflexURL", URLData().href).path == ""

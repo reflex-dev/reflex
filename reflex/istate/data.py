@@ -3,7 +3,7 @@
 import dataclasses
 from collections.abc import Mapping
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Final
+from typing import TYPE_CHECKING, Any, ClassVar, Final, NoReturn
 from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
 
 from reflex_base import constants
@@ -158,6 +158,37 @@ class ReflexURL(str, _NetlocResultMixinStr):
         )
         object.__setattr__(obj, "fragment", fragment)
         return obj
+
+    def __setattr__(self, name: str, value: Any) -> NoReturn:
+        """Reject attribute assignment.
+
+        A `ReflexURL` is a parsed view of an immutable `str`, and the empty
+        one is the class-level default of `URLData.href`, so it is shared by
+        every state that has not navigated yet. Letting a component assign to
+        a parsed component would rewrite that shared object for every state.
+        `__new__` fills the components with `object.__setattr__`.
+
+        Args:
+            name: The attribute being assigned.
+            value: The value it would take.
+
+        Raises:
+            AttributeError: Always.
+        """
+        msg = f"cannot assign to {name!r}: ReflexURL is immutable"
+        raise AttributeError(msg)
+
+    def __delattr__(self, name: str) -> NoReturn:
+        """Reject attribute deletion.
+
+        Args:
+            name: The attribute being deleted.
+
+        Raises:
+            AttributeError: Always.
+        """
+        msg = f"cannot delete {name!r}: ReflexURL is immutable"
+        raise AttributeError(msg)
 
 
 @serializer(to=dict)
