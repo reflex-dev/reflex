@@ -28,6 +28,7 @@ def DynamicRoute():
             page_data = f"{self.router.page.path}-{self.page_id or 'no page id'}"  # pyright: ignore[reportAttributeAccessIssue]
             print(f"on_load: {page_data}")
             self.order.append(page_data)
+            return rx.console_log(f"loaded:{page_data}")
 
         @rx.event
         def on_load_redir(self):
@@ -209,8 +210,7 @@ def test_on_load_navigate(
         assert urlsplit(page.url).path == f"/page/{ix}"
 
         expect(link).to_have_count(1)
-        expect(page_id_input).not_to_have_value(str(ix - 1))
-        assert page_id_input.input_value() == str(ix)
+        expect(page_id_input).to_have_value(str(ix))
         expect(raw_path_input).to_have_value(f"/page/{ix}")
     poll_assert_event_order(page, exp_order)
 
@@ -241,7 +241,12 @@ def test_on_load_navigate(
 
     # hit a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
-    with poll_for_navigation(page):
+    with (
+        page.expect_console_message(
+            predicate=lambda message: message.text == "loaded:/404-no page id"
+        ),
+        poll_for_navigation(page),
+    ):
         page.goto(f"{frontend_url}/missing")
 
     # browser nav should still trigger hydration
@@ -252,7 +257,12 @@ def test_on_load_navigate(
 
     # next/link to a 404 and ensure we still hydrate
     exp_order += ["/404-no page id"]
-    with poll_for_navigation(page):
+    with (
+        page.expect_console_message(
+            predicate=lambda message: message.text == "loaded:/404-no page id"
+        ),
+        poll_for_navigation(page),
+    ):
         page.locator("#link_missing").click()
 
     # hit a page that redirects back to dynamic page

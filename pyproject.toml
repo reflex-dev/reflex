@@ -124,6 +124,7 @@ dev = [
   "reflex-sdk",
   "reflex-site-shared",
   "ruff",
+  "selenium",
   "sqlalchemy",
   "sqlmodel",
   "starlette-admin",

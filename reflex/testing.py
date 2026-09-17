@@ -63,6 +63,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     import uvicorn
+
 # The timeout (minutes) to check for the port.
 DEFAULT_TIMEOUT = 15
 POLL_INTERVAL = 0.25
@@ -426,6 +427,7 @@ class AppHarness:
             msg = "Frontend process has no stdout."
             raise RuntimeError(msg)
         frontend_ready = threading.Event()
+        config = get_config()
 
         def consume_frontend_output():
             while True:
@@ -448,7 +450,6 @@ class AppHarness:
                 )
                 if m is not None and self.frontend_url is None:
                     self.frontend_url = m.group(1)
-                    config = get_config()
                     config.deploy_url = self.frontend_url
                     frontend_ready.set()
 

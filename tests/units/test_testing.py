@@ -2,6 +2,7 @@
 
 import sys
 import threading
+from io import StringIO
 from types import ModuleType, SimpleNamespace
 from typing import Any, cast
 from unittest import mock
@@ -260,6 +261,34 @@ def test_wait_frontend_times_out_when_stdout_read_blocks(tmp_path, monkeypatch):
     stdout.release()
     assert harness.frontend_output_thread is not None
     harness.frontend_output_thread.join(timeout=1)
+
+
+def test_wait_frontend_updates_calling_context_config(tmp_path, monkeypatch):
+    """The output reader updates the harness config instead of a thread default.
+
+    Args:
+        tmp_path: Temporary app directory.
+        monkeypatch: Fixture for isolating thread-specific configuration.
+    """
+    config = SimpleNamespace(deploy_url=None)
+    thread_config = SimpleNamespace(deploy_url=None)
+    parent_thread = threading.current_thread()
+    monkeypatch.setattr(
+        reflex_testing,
+        "get_config",
+        lambda: (
+            config if threading.current_thread() is parent_thread else thread_config
+        ),
+    )
+    harness = AppHarness.create(root=tmp_path, app_name="config_context")
+    harness.frontend_process = mock.Mock(
+        stdout=StringIO("  ➜  Local:   http://localhost:3456/\n")
+    )
+    harness._wait_frontend()
+    assert harness.frontend_output_thread is not None
+    harness.frontend_output_thread.join(timeout=1)
+    assert config.deploy_url == harness.frontend_url == "http://localhost:3456/"
+    assert thread_config.deploy_url is None
 
 
 def test_app_harness_frontend_env_has_development_condition(

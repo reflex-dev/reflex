@@ -7,6 +7,8 @@ from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
+from .utils import poll_for_token
+
 
 def MomentApp():
     """Create an app that exercises the react-moment 2.x prop changes."""
@@ -98,8 +100,6 @@ def driver(moment_app: AppHarness, page: Page) -> Page:
     Returns:
         The hydrated page.
     """
-    from .utils import poll_for_token
-
     assert moment_app.frontend_url is not None
     page.goto(moment_app.frontend_url)
     poll_for_token(page)

@@ -10,6 +10,8 @@ from reflex_base.utils import format
 
 from reflex.testing import AppHarness
 
+from .utils import poll_for_token
+
 
 def TypedDictFormSubmit(form_component):
     """App with a form using a TypedDict-annotated on_submit handler.
@@ -178,8 +180,6 @@ def test_typeddict_form_submit(page: Page, typeddict_form: tuple[AppHarness, dic
         page: Playwright page.
         typeddict_form: The app harness and its expected form fields.
     """
-    from .utils import poll_for_token
-
     harness, fields = typeddict_form
     assert harness.frontend_url is not None
     page.goto(harness.frontend_url)
