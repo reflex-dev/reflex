@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import functools
 import importlib
 import importlib.metadata
 import inspect
@@ -501,17 +502,30 @@ def parse_redis_url() -> str | None:
     return config.redis_url
 
 
+@functools.cache
+def _get_health_redis() -> Redis | None:
+    """Get the long-lived redis client used by health checks.
+
+    Each health probe pings this one client so it reuses an established
+    connection instead of opening and closing a new TCP connection per probe.
+
+    Returns:
+        The asynchronous redis client, or None if redis is not configured.
+    """
+    return get_redis()
+
+
 async def get_redis_status() -> dict[str, bool | None]:
     """Checks the status of the Redis connection.
 
-    Attempts to connect to Redis and send a ping command to verify connectivity.
+    Sends a ping command over the cached health-check client to verify connectivity.
 
     Returns:
         The status of the Redis connection.
     """
     try:
         status = True
-        redis_client = get_redis()
+        redis_client = _get_health_redis()
         if redis_client is not None:
             ping_command = redis_client.ping()
             if inspect.isawaitable(ping_command):

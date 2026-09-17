@@ -8,11 +8,19 @@ from redis.exceptions import RedisError
 
 from reflex.app import health
 from reflex.model import get_db_status
-from reflex.utils.prerequisites import get_redis_status
+from reflex.utils.prerequisites import _get_health_redis, get_redis_status
 
 pytest.importorskip("sqlalchemy")
 
 import sqlalchemy.exc
+
+
+@pytest.fixture(autouse=True)
+def _reset_health_redis():
+    """Drop the cached health-check client so each test sees its own mock."""
+    _get_health_redis.cache_clear()
+    yield
+    _get_health_redis.cache_clear()
 
 
 def _get_async_function(func):
@@ -50,6 +58,20 @@ async def test_get_redis_status(
 
     # Verify the result
     assert status == expected_status
+    mock_get_redis.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_get_redis_status_reuses_client(mocker: MockerFixture):
+    """Repeated health checks ping one long-lived client instead of dialing Redis each time."""
+    client = Mock(ping=_get_async_function(lambda: None))
+    mock_get_redis = mocker.patch(
+        "reflex.utils.prerequisites.get_redis", return_value=client
+    )
+
+    for _ in range(3):
+        assert await get_redis_status() == {"redis": True}
+
     mock_get_redis.assert_called_once()
 
 
