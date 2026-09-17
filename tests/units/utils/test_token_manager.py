@@ -277,28 +277,6 @@ class TestTokenManagerLifecycle:
         evt = manager.when_session_disconnects("nonexistent")
         assert evt.is_set()
 
-    async def test_when_token_connects_not_yet(self, manager):
-        """Event set after connect.
-
-        Args:
-            manager: LocalTokenManager fixture instance.
-        """
-        evt = manager.when_token_connects("future_tok")
-        assert not evt.is_set()
-        await manager.link_token_to_sid("future_tok", "sid_f")
-        manager._notify_connect("future_tok", "sid_f")
-        assert evt.is_set()
-
-    async def test_when_token_connects_already_connected(self, manager):
-        """Event set immediately for already connected token.
-
-        Args:
-            manager: LocalTokenManager fixture instance.
-        """
-        await manager.link_token_to_sid("tok3", "sid3")
-        evt = manager.when_token_connects("tok3")
-        assert evt.is_set()
-
     async def test_session_is_connected_yields_and_stops(self, manager):
         """Yields token once, then awaits disconnect.
 
@@ -308,9 +286,7 @@ class TestTokenManagerLifecycle:
         import contextlib
 
         await manager.link_token_to_sid("tok4", "sid4")
-        async with contextlib.aclosing(
-            manager.session_is_connected("sid4")
-        ) as gen:
+        async with contextlib.aclosing(manager.session_is_connected("sid4")) as gen:
             token = await gen.__anext__()
             assert token == "tok4"
             # Trigger disconnect so the await inside the iterator completes.
@@ -335,9 +311,7 @@ class TestTokenManagerLifecycle:
         import contextlib
 
         await manager.link_token_to_sid("tok5", "sid5")
-        async with contextlib.aclosing(
-            manager.token_is_connected("tok5")
-        ) as gen:
+        async with contextlib.aclosing(manager.token_is_connected("tok5")) as gen:
             sid = await gen.__anext__()
             assert sid == "sid5"
             # Trigger disconnect so the await inside the iterator completes.
@@ -362,9 +336,11 @@ class TestTokenManagerLifecycle:
         await manager.link_token_to_sid("tok6", "sid6")
         evt1 = manager.when_token_disconnects("tok6")
         evt2 = manager.when_token_disconnects("tok6")
-        assert not evt1.is_set() and not evt2.is_set()
+        assert not evt1.is_set()
+        assert not evt2.is_set()
         manager._notify_disconnect("tok6", "sid6")
-        assert evt1.is_set() and evt2.is_set()
+        assert evt1.is_set()
+        assert evt2.is_set()
 
     async def test_multiple_watchers_session_disconnect(self, manager):
         """Multiple session watchers all get notified.
@@ -376,20 +352,8 @@ class TestTokenManagerLifecycle:
         evt1 = manager.when_session_disconnects("sid7")
         evt2 = manager.when_session_disconnects("sid7")
         manager._notify_disconnect("tok7", "sid7")
-        assert evt1.is_set() and evt2.is_set()
-
-    async def test_notify_connect_only_matching(self, manager):
-        """_notify_connect only fires for matching token.
-
-        Args:
-            manager: LocalTokenManager fixture instance.
-        """
-        evt_a = manager.when_token_connects("tok_a")
-        evt_b = manager.when_token_connects("tok_b")
-        await manager.link_token_to_sid("tok_a", "sid_a")
-        manager._notify_connect("tok_a", "sid_a")
-        assert evt_a.is_set()
-        assert not evt_b.is_set()
+        assert evt1.is_set()
+        assert evt2.is_set()
 
     async def test_notify_disconnect_only_matching(self, manager):
         """_notify_disconnect only fires for matching token.
@@ -426,9 +390,7 @@ class TestTokenManagerLifecycle:
         import contextlib
 
         await manager.link_token_to_sid("tok9", "sid9")
-        async with contextlib.aclosing(
-            manager.session_is_connected("sid9")
-        ) as gen:
+        async with contextlib.aclosing(manager.session_is_connected("sid9")) as gen:
             async for _token in gen:
                 break
         assert len(manager._sid_disconnect_events.get("sid9", [])) == 0
@@ -442,9 +404,7 @@ class TestTokenManagerLifecycle:
         import contextlib
 
         await manager.link_token_to_sid("tok10", "sid10")
-        async with contextlib.aclosing(
-            manager.token_is_connected("tok10")
-        ) as gen:
+        async with contextlib.aclosing(manager.token_is_connected("tok10")) as gen:
             async for _sid in gen:
                 break
         assert len(manager._token_disconnect_events.get("tok10", [])) == 0

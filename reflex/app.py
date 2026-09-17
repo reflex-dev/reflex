@@ -2103,11 +2103,7 @@ class EventNamespace(AsyncNamespace):
         query_params = urllib.parse.parse_qs(environ.get("QUERY_STRING", ""))
         token_list = query_params.get("token", [])
         if token_list:
-            token = token_list[0]
-            await self.link_token_to_sid(sid, token)
-            # Notify lifecycle watchers that this token/sid has connected.
-            actual_token = self._token_manager.sid_to_token.get(sid, token)
-            self._token_manager._notify_connect(actual_token, sid)
+            await self.link_token_to_sid(sid, token_list[0])
         else:
             logger.warning(f"No token provided in connection for session {sid}")
 

@@ -64,10 +64,9 @@ class TokenManager(ABC):
         self.token_to_socket: dict[str, SocketRecord] = {}
         # Keep a mapping between socket ID and client token.
         self.sid_to_token: dict[str, str] = {}
-        # Lifecycle events for connect/disconnect notifications.
+        # Lifecycle events for disconnect notifications.
         self._token_disconnect_events: dict[str, list[asyncio.Event]] = {}
         self._sid_disconnect_events: dict[str, list[asyncio.Event]] = {}
-        self._token_connect_events: dict[str, list[asyncio.Event]] = {}
 
     def _reset_instance_id(self) -> None:
         """Assign a fresh socket-owner identity when a server worker starts."""
@@ -151,16 +150,6 @@ class TokenManager(ABC):
         for token, sid in token_sid_pairs:
             await self.disconnect_token(token, sid)
 
-    def _notify_connect(self, token: str, sid: str) -> None:
-        """Notify lifecycle watchers that a token/sid has connected.
-
-        Args:
-            token: The client token.
-            sid: The Socket.IO session ID.
-        """
-        for event in self._token_connect_events.pop(token, []):
-            event.set()
-
     def _notify_disconnect(self, token: str, sid: str) -> None:
         """Notify lifecycle watchers that a token/sid has disconnected.
 
@@ -190,9 +179,8 @@ class TokenManager(ABC):
         """
         token = self.sid_to_token.get(sid)
         if token is None:
-            raise _TokenNotConnectedError(
-                f"Session {sid!r} is not currently connected."
-            )
+            msg = f"Session {sid!r} is not currently connected."
+            raise _TokenNotConnectedError(msg)
         disconnect_event = asyncio.Event()
         self._sid_disconnect_events.setdefault(sid, []).append(disconnect_event)
         try:
@@ -220,9 +208,8 @@ class TokenManager(ABC):
         """
         socket_record = self.token_to_socket.get(client_token)
         if socket_record is None:
-            raise _TokenNotConnectedError(
-                f"Token {client_token!r} is not currently connected."
-            )
+            msg = f"Token {client_token!r} is not currently connected."
+            raise _TokenNotConnectedError(msg)
         disconnect_event = asyncio.Event()
         self._token_disconnect_events.setdefault(client_token, []).append(
             disconnect_event
@@ -267,23 +254,6 @@ class TokenManager(ABC):
             event.set()
         else:
             self._token_disconnect_events.setdefault(client_token, []).append(event)
-        return event
-
-    def when_token_connects(self, client_token: str) -> asyncio.Event:
-        """Return an asyncio.Event that is set when the token connects.
-
-        Args:
-            client_token: The client token.
-
-        Returns:
-            An asyncio.Event that will be set on connect.
-        """
-        event = asyncio.Event()
-        if client_token in self.token_to_socket:
-            # Already connected, set immediately.
-            event.set()
-        else:
-            self._token_connect_events.setdefault(client_token, []).append(event)
         return event
 
     @abstractmethod
