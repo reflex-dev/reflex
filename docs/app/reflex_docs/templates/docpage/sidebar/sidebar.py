@@ -314,7 +314,6 @@ def sidebar_comp(
     from reflex_docs.pages.docs import ai_builder as ai_builder_pages
     from reflex_docs.pages.docs import enterprise, getting_started, state, ui
     from reflex_docs.pages.docs import hosting as hosting_page
-    from reflex_docs.pages.docs.apiref import pages
     from reflex_docs.pages.docs.library import library
     from reflex_docs.pages.docs.recipes_overview import overview
 
@@ -432,7 +431,7 @@ def sidebar_comp(
         ),
         sidebar_category(
             "API Reference",
-            pages[0].path,
+            api_reference[0].link,
             "book-text",
             ~is_library & is_api_reference,
         ),
@@ -471,7 +470,7 @@ def sidebar_comp(
     api_reference_content = rx.el.ul(
         create_sidebar_section(
             "Reference",
-            pages[0].path,
+            api_reference[0].link,
             api_reference,
             api_reference_index,
             url,

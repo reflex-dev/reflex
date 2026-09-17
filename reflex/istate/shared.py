@@ -13,7 +13,12 @@ from reflex_base.utils.exceptions import ReflexRuntimeError
 from typing_extensions import Self
 
 from reflex.istate.manager.token import BaseStateToken
-from reflex.state import BaseState, State, _override_base_method
+from reflex.state import (
+    BaseState,
+    State,
+    _override_base_method,
+    _suppress_delta_recording,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +117,10 @@ async def _patch_state(
         root_state.dirty_vars.update(ROUTER_VARS)
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
-        await root_state._get_resolved_delta()
+        # The delta is discarded: it is only resolved to refresh computed vars,
+        # so its values must not count as sent to the client.
+        with _suppress_delta_recording():
+            await root_state._get_resolved_delta()
         yield
     finally:
         original_parent_state.substates[state_name] = original_state
