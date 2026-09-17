@@ -12,6 +12,8 @@ from reflex_components_recharts import (
     ZAxis,
 )
 
+import reflex as rx
+
 
 def test_xaxis():
     x_axis = XAxis.create("x").render()
@@ -82,6 +84,12 @@ def test_xaxis_tick_formatter_rejects_python_callable():
         XAxis.create(
             tick_formatter=lambda value: value  # pyright: ignore [reportArgumentType]
         )
+
+
+def test_xaxis_tick_formatter_literal_string_var():
+    x_axis = XAxis.create(tick_formatter=rx.Var.create("(value) => value.toFixed(2)"))
+    props = x_axis.render()["props"]
+    assert "tickFormatter:(value) => value.toFixed(2)" in props
 
 
 def test_xaxis_tick_formatter_accepts_prebuilt_function_var():

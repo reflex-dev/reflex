@@ -4,7 +4,16 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Callable, Sequence
-from typing import Any, Concatenate, Generic, ParamSpec, Protocol, TypeVar, overload
+from typing import (
+    Any,
+    Concatenate,
+    Generic,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+    overload,
+    runtime_checkable,
+)
 
 from reflex_base.utils import format
 from reflex_base.utils.types import GenericType
@@ -21,6 +30,7 @@ V6 = TypeVar("V6")
 R = TypeVar("R")
 
 
+@runtime_checkable
 class ReflexCallable(Protocol[P, R]):
     """Protocol for a callable."""
 
