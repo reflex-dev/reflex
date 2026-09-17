@@ -7,18 +7,24 @@ import builtins
 import datetime
 import uuid
 from collections.abc import Iterator, Mapping
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 from reflex_sdk._base import path_segment
 from reflex_sdk.types import (
     App,
+    AppMove,
     AppSummary,
+    CustomDomain,
     DeploymentRecord,
+    DnsRecord,
     FullDeployChange,
     HostnameReservation,
     InstanceBoundsChange,
     LogRecord,
     ProviderChange,
+    RunningDeployment,
+    ServiceNameChange,
 )
 
 if TYPE_CHECKING:
@@ -28,6 +34,20 @@ if TYPE_CHECKING:
 # The name under which the secrets route reads every secret at once, which a single
 # secret can also have.
 _ALL_SECRETS = "__all__"
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _NoRunningDeployment:
+    """The body the current deployment route answers with when nothing is running."""
+
+    detail: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _AddedCustomDomain:
+    """The body of a newly added custom domain."""
+
+    dns_records: dict[str, DnsRecord]
 
 
 def _epoch_seconds(dt: datetime.datetime | None) -> int | None:
@@ -175,11 +195,84 @@ class Secrets:
         )
 
 
+class Domains:
+    """Serve apps at custom domains."""
+
+    def __init__(self, client: ReflexCloud) -> None:
+        """Bind the resource to a client.
+
+        Args:
+            client: The client that sends the requests.
+        """
+        self._client = client
+
+    def get(self, app_id: uuid.UUID | str) -> CustomDomain | None:
+        """Get an app's custom domain and check whether it is ready to serve the app.
+
+        Checking looks the domain up in DNS and at the CDN, and marks the domain
+        verified once its ownership is, so poll it no more than every few seconds.
+        Only callers who can manage the app's domains get the check; others get
+        whether the domain was verified.
+
+        Args:
+            app_id: The app.
+
+        Returns:
+            The domain, or None if the app has none.
+        """
+        # An app without a custom domain answers with an empty object, which only
+        # an empty dict of any value type matches.
+        domain = self._client._request(
+            "GET",
+            f"apps/{path_segment(app_id)}/custom_domain",
+            CustomDomain | dict[str, None],
+        )
+        return domain if isinstance(domain, CustomDomain) else None
+
+    def add(self, app_id: uuid.UUID | str, domain: str) -> dict[str, DnsRecord]:
+        """Serve an app at a custom domain, once DNS points the domain at it.
+
+        Needs the Pro or Enterprise plan. An app has at most one custom domain, and
+        apps serving their frontend from their own container cannot have one. Follow
+        the domain's progress with ``get``.
+
+        Args:
+            app_id: The app.
+            domain: The domain, e.g. ``"app.example.com"``.
+
+        Returns:
+            The DNS records to create for the domain, by purpose, e.g.
+            ``"DNS_RECORD_CNAME"``.
+        """
+        added = self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/custom_domain",
+            _AddedCustomDomain,
+            json={"domain": domain},
+        )
+        return added.dns_records
+
+    def remove(self, app_id: uuid.UUID | str, domain: str) -> None:
+        """Stop serving an app at its custom domain.
+
+        Args:
+            app_id: The app.
+            domain: The app's custom domain.
+        """
+        self._client._request(
+            "DELETE",
+            f"apps/{path_segment(app_id)}/custom_domain/{path_segment(domain)}",
+            None,
+        )
+
+
 class Apps:
     """Manage apps, their lifecycle, deployment history and logs."""
 
     # Manage the secrets exposed to an app as environment variables.
     secrets: Secrets
+    # Serve apps at custom domains.
+    domains: Domains
 
     def __init__(self, client: ReflexCloud) -> None:
         """Bind the resource to a client.
@@ -189,6 +282,7 @@ class Apps:
         """
         self._client = client
         self.secrets = Secrets(client)
+        self.domains = Domains(client)
 
     def list(
         self, *, project_id: uuid.UUID | str | None = None
@@ -272,6 +366,193 @@ class Apps:
             app_id: The app.
         """
         self._client._request("DELETE", f"apps/{path_segment(app_id)}/delete", None)
+
+    def rename(self, app_id: uuid.UUID | str, name: str) -> None:
+        """Rename an app. Its URL stays the same.
+
+        Args:
+            app_id: The app.
+            name: The new name.
+        """
+        self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/update_name",
+            None,
+            json={"name": name},
+        )
+
+    def set_description(self, app_id: uuid.UUID | str, description: str) -> None:
+        """Set an app's description.
+
+        Args:
+            app_id: The app.
+            description: The description, or ``""`` to clear it.
+        """
+        self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/update_description",
+            None,
+            json={"description": description},
+        )
+
+    def move(
+        self,
+        app_id: uuid.UUID | str,
+        project_id: uuid.UUID | str,
+        *,
+        copy_integrations: bool = False,
+    ) -> AppMove:
+        """Move an app to another project of the same organization.
+
+        The app keeps running, and takes its deployments and this month's usage
+        with it.
+
+        Args:
+            app_id: The app.
+            project_id: The project to move the app to.
+            copy_integrations: Whether to copy the source project's integrations the
+                app uses into the destination project. Needs admin access to the
+                destination project.
+
+        Returns:
+            What was copied, and which repository connections need reconnecting.
+        """
+        return self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/move",
+            AppMove,
+            json={
+                "target_project_id": str(project_id),
+                "copy_integrations": copy_integrations,
+            },
+        )
+
+    def set_persistent(self, app_id: uuid.UUID | str, persistent: bool) -> None:
+        """Choose whether an app's machines keep running when idle instead of pausing.
+
+        Keeping them running needs the Pro or Enterprise plan. A running app's
+        instances are replaced to apply the change, which ``status`` reports on;
+        otherwise it applies from the app's next start or deployment.
+
+        Args:
+            app_id: The app, deployed at least once.
+            persistent: Whether the machines keep running when idle.
+        """
+        self._update_settings(app_id, persist=persistent)
+
+    def set_rollout_strategy(
+        self,
+        app_id: uuid.UUID | str,
+        strategy: Literal["immediate", "rolling", "bluegreen", "canary"],
+    ) -> None:
+        """Choose how an app's new deployments replace its running instances.
+
+        Args:
+            app_id: The app.
+            strategy: ``"immediate"`` replaces every instance at once, ``"rolling"``
+                one at a time, ``"bluegreen"`` switches over once a full set of new
+                instances is healthy, and ``"canary"`` starts one new instance before
+                rolling out the rest. Google Cloud apps support ``"immediate"`` and
+                ``"bluegreen"``.
+        """
+        self._update_settings(app_id, strategy=strategy)
+
+    def _update_settings(
+        self,
+        app_id: uuid.UUID | str,
+        *,
+        persist: bool | None = None,
+        strategy: str | None = None,
+    ) -> None:
+        # Every setting must be sent; null leaves one unchanged.
+        self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/settings",
+            None,
+            json={
+                "name": None,
+                "description": None,
+                "persist": persist,
+                "strategy": strategy,
+            },
+        )
+
+    def set_service_name(
+        self, app_id: uuid.UUID | str, service_name: str
+    ) -> ServiceNameChange:
+        """Rename the Cloud Run service of a Google Cloud app.
+
+        Needs the Enterprise plan, and an app that serves its frontend from Google
+        Cloud. A running app is stopped and its old service deleted, which can take
+        minutes, so use a client with a longer ``timeout``; deploy the app again to
+        run it under the new name.
+
+        Args:
+            app_id: The app.
+            service_name: The service name: lowercase letters, digits and hyphens,
+                starting with a letter, at most 49 characters.
+
+        Returns:
+            The service name, and whether the app was stopped for it.
+        """
+        return self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/service_name",
+            ServiceNameChange,
+            json={"service_name": service_name},
+        )
+
+    def set_weekly_report(self, app_id: uuid.UUID | str, enabled: bool) -> None:
+        """Choose whether an app is in the weekly traffic report emailed to its editors.
+
+        Args:
+            app_id: The app.
+            enabled: Whether to include the app.
+        """
+        self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/weekly_report",
+            None,
+            json={"enabled": enabled},
+        )
+
+    def status(self, app_id: uuid.UUID | str) -> str:
+        """Get the progress of the latest start, stop, pause, rollback or scale of an app.
+
+        Args:
+            app_id: The app.
+
+        Returns:
+            The status message, e.g. ``"Application stopped successfully"``, or one
+            starting with ``"App Stop Failed:"``. Every operation writes the same
+            message, so it can report a different operation than the one polled for.
+        """
+        return self._client._request("GET", f"apps/{path_segment(app_id)}/status", str)
+
+    def current_deployment(
+        self,
+        app_id: uuid.UUID | str,
+        *,
+        environment_id: uuid.UUID | str | None = None,
+    ) -> RunningDeployment | None:
+        """Get the deployment running an app.
+
+        Args:
+            app_id: The app.
+            environment_id: The environment whose deployment to get. Defaults to
+                production.
+
+        Returns:
+            The running deployment, or None if the app is not running, e.g. while it
+            is stopped, paused or deploying.
+        """
+        deployment = self._client._request(
+            "GET",
+            f"apps/{path_segment(app_id)}/deployment",
+            RunningDeployment | _NoRunningDeployment,
+            params={"environment_id": environment_id},
+        )
+        return deployment if isinstance(deployment, RunningDeployment) else None
 
     def start(self, app_id: uuid.UUID | str) -> None:
         """Start every stopped or paused environment of an app.

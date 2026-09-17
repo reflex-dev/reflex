@@ -184,6 +184,8 @@ _PRIMITIVES: dict[Any, Decoder] = {
     Any: _decode_any,
     object: _decode_any,
     type(None): _decode_none,
+    # Builtin generics keep None as given, e.g. the value type of dict[str, None].
+    None: _decode_none,
     str: _decode_str,
     bool: _decode_bool,
     int: _decode_int,

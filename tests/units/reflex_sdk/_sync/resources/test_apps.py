@@ -8,18 +8,23 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_sdk import ReflexCloud
+from reflex_sdk import APIResponseValidationError, ReflexCloud
 from reflex_sdk.transports import Request, Response
 from reflex_sdk.types import (
     App,
     AppDeployment,
+    AppMove,
     AppSummary,
+    CustomDomain,
     DeploymentRecord,
+    DnsRecord,
     FullDeployChange,
     HostnameReservation,
     InstanceBoundsChange,
     LogRecord,
     ProviderChange,
+    RunningDeployment,
+    ServiceNameChange,
     User,
     VmType,
 )
@@ -165,6 +170,165 @@ def test_create(client: ReflexCloud, mock_api: MockAPI):
     create_request, get_request = mock_api.requests
     assert json_body(create_request) == {"name": "dashboard", "project": PROJECT_ID}
     assert get_request.method == "GET"
+
+
+@pytest.mark.parametrize(
+    ("method_name", "value", "suffix", "body"),
+    [
+        ("rename", "analytics", "/update_name", {"name": "analytics"}),
+        ("set_description", "", "/update_description", {"description": ""}),
+        ("set_weekly_report", False, "/weekly_report", {"enabled": False}),
+    ],
+)
+def test_update_field(
+    client: ReflexCloud,
+    mock_api: MockAPI,
+    method_name: str,
+    value: Any,
+    suffix: str,
+    body: dict[str, Any],
+):
+    # update_name and update_description answer null; weekly_report echoes the value.
+    mock_api.add("POST", APP_PATH + suffix, reply(200, json={"ignored": True}))
+    assert getattr(client.apps, method_name)(APP_ID, value) is None
+    assert json_body(mock_api.requests[0]) == body
+
+
+def test_move(client: ReflexCloud, mock_api: MockAPI):
+    thread_id = "6a1d2c3b-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+    mock_api.add(
+        "POST",
+        f"{APP_PATH}/move",
+        reply(
+            200,
+            json={
+                "message": "App moved",
+                "app_id": APP_ID,
+                "project_id": PROJECT_ID,
+                "copied_integrations": ["Supabase"],
+                "repo_tokens_withheld": [thread_id],
+                "repo_tokens_failed": [],
+                "repo_token_notices": ["Reconnect GitHub to push."],
+            },
+        ),
+    )
+    move = client.apps.move(APP_ID, uuid.UUID(PROJECT_ID), copy_integrations=True)
+    assert move == AppMove(
+        project_id=uuid.UUID(PROJECT_ID),
+        copied_integrations=["Supabase"],
+        repo_tokens_withheld=[uuid.UUID(thread_id)],
+        repo_tokens_failed=[],
+        repo_token_notices=["Reconnect GitHub to push."],
+    )
+    assert json_body(mock_api.requests[0]) == {
+        "target_project_id": PROJECT_ID,
+        "copy_integrations": True,
+    }
+
+
+@pytest.mark.parametrize(
+    ("method_name", "value", "changed"),
+    [
+        ("set_persistent", True, {"persist": True}),
+        ("set_rollout_strategy", "bluegreen", {"strategy": "bluegreen"}),
+    ],
+)
+def test_update_settings(
+    client: ReflexCloud,
+    mock_api: MockAPI,
+    method_name: str,
+    value: Any,
+    changed: dict[str, Any],
+):
+    mock_api.add("POST", f"{APP_PATH}/settings", reply(200, json=None))
+    assert getattr(client.apps, method_name)(APP_ID, value) is None
+    # Every setting is sent; null leaves the others unchanged.
+    assert json_body(mock_api.requests[0]) == {
+        "name": None,
+        "description": None,
+        "persist": None,
+        "strategy": None,
+        **changed,
+    }
+
+
+def test_set_service_name(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "POST",
+        f"{APP_PATH}/service_name",
+        reply(200, json={"service_name": "dashboard", "stopped": True}),
+    )
+    assert client.apps.set_service_name(APP_ID, "dashboard") == ServiceNameChange(
+        service_name="dashboard", stopped=True
+    )
+    assert json_body(mock_api.requests[0]) == {"service_name": "dashboard"}
+
+
+def test_status(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "GET",
+        f"{APP_PATH}/status",
+        reply(200, json="Application stopped successfully"),
+    )
+    assert client.apps.status(APP_ID) == "Application stopped successfully"
+
+
+RUNNING_DEPLOYMENT = {
+    "id": DEPLOYMENT_ID,
+    "app_id": APP_ID,
+    "environment_id": None,
+    "promoted_from_deployment_id": None,
+    "hostname": "dashboard",
+    "url": "https://dashboard.reflex.run",
+    "exported_url": "https://dashboard.reflex.run",
+    "backend_url": "https://dashboard-api.reflex.run",
+    "deployment_ts": "2026-09-16T10:00:00+00:00",
+    "backend_image_uri": "registry.fly.io/dashboard:abc",
+    "reflex_version": "0.9.11",
+    "python_version": "3.13",
+    "vmtype_id": "c1m1",
+    "status": "Running",
+    "pause_reason": None,
+    "manually_paused": False,
+    "strategy": "immediate",
+    "persist": False,
+    "deployment_user": USER_ID,
+    "screenshot_uri": None,
+    "description": None,
+}
+
+
+def test_current_deployment(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add("GET", f"{APP_PATH}/deployment", reply(200, json=RUNNING_DEPLOYMENT))
+    assert client.apps.current_deployment(
+        APP_ID, environment_id="env"
+    ) == RunningDeployment(
+        id=uuid.UUID(DEPLOYMENT_ID),
+        app_id=uuid.UUID(APP_ID),
+        environment_id=None,
+        promoted_from_id=None,
+        url="https://dashboard.reflex.run",
+        backend_url="https://dashboard-api.reflex.run",
+        reflex_version="0.9.11",
+        python_version="3.13",
+        vm_type_id="c1m1",
+        strategy="immediate",
+        persistent=False,
+        description=None,
+        created_at=datetime.datetime(2026, 9, 16, 10, tzinfo=UTC),
+        deployed_by_id=uuid.UUID(USER_ID),
+    )
+    assert _query(mock_api.requests[0]) == {"environment_id": ["env"]}
+
+
+def test_current_deployment_when_nothing_runs(client: ReflexCloud, mock_api: MockAPI):
+    # The route answers "not found" with a 200.
+    mock_api.add(
+        "GET",
+        f"{APP_PATH}/deployment",
+        reply(200, json={"detail": "no running deployment found"}),
+    )
+    assert client.apps.current_deployment(APP_ID) is None
 
 
 @pytest.mark.parametrize(
@@ -511,3 +675,92 @@ def test_secrets_delete(client: ReflexCloud, mock_api: MockAPI):
     mock_api.add("DELETE", f"{APP_PATH}/secrets/API_KEY", reply(200, json=None))
     client.apps.secrets.delete(APP_ID, "API_KEY")
     assert _query(mock_api.requests[0]) == {"reboot": ["false"]}
+
+
+def test_domains_get(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "GET",
+        f"{APP_PATH}/custom_domain",
+        reply(
+            200,
+            json={
+                "domain": "app.example.com",
+                "verified": False,
+                "dns_records": {
+                    "DNS_RECORD_CNAME": {
+                        "type": "CNAME",
+                        "name": "app.example.com",
+                        "value": "reflex.run",
+                        "status": "wrong",
+                        "observed": "other.example.net",
+                    }
+                },
+                "status": "pointing_elsewhere",
+                "status_detail": "The domain points somewhere else.",
+                "checked_at": "2026-09-16T10:00:00Z",
+            },
+        ),
+    )
+    assert client.apps.domains.get(APP_ID) == CustomDomain(
+        domain="app.example.com",
+        verified=False,
+        dns_records={
+            "DNS_RECORD_CNAME": DnsRecord(
+                type="CNAME",
+                name="app.example.com",
+                value="reflex.run",
+                status="wrong",
+                observed="other.example.net",
+            )
+        },
+        status="pointing_elsewhere",
+        status_detail="The domain points somewhere else.",
+        checked_at=datetime.datetime(2026, 9, 16, 10, tzinfo=UTC),
+    )
+
+
+def test_domains_get_without_a_domain(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add("GET", f"{APP_PATH}/custom_domain", reply(200, json={}))
+    assert client.apps.domains.get(APP_ID) is None
+
+
+def test_domains_get_rejects_an_unexpected_domain(
+    client: ReflexCloud, mock_api: MockAPI
+):
+    mock_api.add(
+        "GET", f"{APP_PATH}/custom_domain", reply(200, json={"domain": "example.com"})
+    )
+    with pytest.raises(APIResponseValidationError):
+        client.apps.domains.get(APP_ID)
+
+
+def test_domains_add(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "POST",
+        f"{APP_PATH}/custom_domain",
+        reply(
+            200,
+            json={
+                "dns_records": {
+                    "DNS_RECORD_A": {
+                        "type": "A",
+                        "name": "example.com",
+                        "value": "203.0.113.7",
+                    }
+                }
+            },
+        ),
+    )
+    assert client.apps.domains.add(APP_ID, "example.com") == {
+        "DNS_RECORD_A": DnsRecord(type="A", name="example.com", value="203.0.113.7")
+    }
+    assert json_body(mock_api.requests[0]) == {"domain": "example.com"}
+
+
+def test_domains_remove(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "DELETE",
+        f"{APP_PATH}/custom_domain/app.example.com",
+        reply(200, json={"message": "Successfully deleted app.example.com"}),
+    )
+    assert client.apps.domains.remove(APP_ID, "app.example.com") is None
