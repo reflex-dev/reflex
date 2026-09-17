@@ -52,6 +52,16 @@ class _TeamRevokeResult:
 
 
 def _role_body(name: str, base_tier: str, permissions: Sequence[str]) -> dict[str, Any]:
+    """Build the body that defines a custom role.
+
+    Args:
+        name: The role name.
+        base_tier: The built-in tier the role extends.
+        permissions: The permissions the role adds to its base tier.
+
+    Returns:
+        The request body.
+    """
     return {"name": name, "base_tier": base_tier, "permissions": list(permissions)}
 
 

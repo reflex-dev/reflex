@@ -8,7 +8,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_sdk import PermissionDeniedError, ReflexCloud
+from reflex_sdk import InternalServerError, PermissionDeniedError, ReflexCloud
 from reflex_sdk.types import (
     AuditLogEntry,
     PendingTeamChange,
@@ -482,4 +482,71 @@ def test_teams_revoke_is_retried(client: ReflexCloud, mock_api: MockAPI):
         reply(200, json={"status": "not_granted", "team_id": TEAM_ID}),
     )
     assert client.projects.teams.revoke(PROJECT_ID, TEAM_ID) == "not_granted"
+    first, retry = mock_api.requests
+    assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
+
+
+@pytest.mark.parametrize(
+    ("http_method", "suffix", "body", "call"),
+    [
+        (
+            "POST",
+            "/update_name",
+            None,
+            lambda client: client.projects.rename(PROJECT_ID, "staging"),
+        ),
+        (
+            "PATCH",
+            f"/roles/{ROLE_ID}",
+            None,
+            lambda client: client.projects.roles.update(
+                PROJECT_ID, ROLE_ID, **ROLE_BODY
+            ),
+        ),
+        (
+            "POST",
+            f"/roles/{ROLE_ID}/preview",
+            {"gained": [], "lost": [], "members": [], "teams": []},
+            lambda client: client.projects.roles.preview_update(
+                PROJECT_ID, ROLE_ID, **ROLE_BODY
+            ),
+        ),
+        (
+            "PUT",
+            f"/teams/{TEAM_ID}",
+            {"status": "granted", "team_id": TEAM_ID, "role": "editor"},
+            lambda client: client.projects.teams.grant(PROJECT_ID, TEAM_ID, "editor"),
+        ),
+    ],
+)
+def test_repeatable_calls_are_retried(
+    client: ReflexCloud,
+    mock_api: MockAPI,
+    http_method: str,
+    suffix: str,
+    body: Any,
+    call: Any,
+):
+    mock_api.add(http_method, PROJECT_PATH + suffix, reply(503), reply(200, json=body))
+    call(client)
     assert len(mock_api.requests) == 2
+
+
+@pytest.mark.parametrize(
+    ("suffix", "call"),
+    [
+        # Deleting again would start tearing down the project's apps again.
+        ("", lambda client: client.projects.delete(PROJECT_ID)),
+        (
+            f"/user/{USER_ID}",
+            lambda client: client.projects.members.remove(PROJECT_ID, USER_ID),
+        ),
+    ],
+)
+def test_deletions_are_not_retried(
+    client: ReflexCloud, mock_api: MockAPI, suffix: str, call: Any
+):
+    mock_api.add("DELETE", PROJECT_PATH + suffix, reply(503))
+    with pytest.raises(InternalServerError):
+        call(client)
+    assert len(mock_api.requests) == 1
