@@ -386,9 +386,9 @@ def _cache_per_class(
 ) -> Callable[[type[BaseState]], RETURN]:
     """Cache immutable metadata on the class that owns it.
 
-    A small LRU keeps hot lookups fast; evicted values remain on their owning
-    classes so large apps never recompute them. Read the class's own dict so
-    subclasses never inherit their parent's cached result.
+    The value lives in the class's own dict, so subclasses never inherit their
+    parent's cached result, lookups stay O(1) however many state classes an
+    app defines, and the cache dies with its class.
 
     Args:
         fn: The class method to cache.
@@ -398,7 +398,6 @@ def _cache_per_class(
     """
     cache_key = fn.__name__
 
-    @functools.lru_cache
     @functools.wraps(fn)
     def wrapped(cls: type[BaseState]) -> RETURN:
         """Return the metadata owned by this class.
