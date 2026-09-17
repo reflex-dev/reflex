@@ -1,0 +1,1 @@
+Deploy through environments with `reflex-sdk`: `client.apps.environments` enables, lists, creates, updates, reorders and deletes an app's environments, promotes a version to the next one and copies missing secrets. `client.apps.database` creates, reads and deletes an app's managed Postgres database.

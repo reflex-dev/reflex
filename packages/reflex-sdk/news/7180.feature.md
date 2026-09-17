@@ -1,0 +1,1 @@
+Manage more of an app with `reflex-sdk`: `client.apps` renames, describes and moves apps, sets instance persistence, the rollout strategy, the Cloud Run service name and the weekly report, and reads an app's lifecycle status and running deployment. `client.apps.domains` adds, checks and removes custom domains.

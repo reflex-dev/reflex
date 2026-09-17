@@ -95,7 +95,9 @@ class AsyncDeployments:
         The build is the pair of archives ``reflex export`` produces. They are
         uploaded straight to storage, then the deployment is submitted. Follow it
         with ``wait``. Settings left unset keep the app's previous deployment's
-        values, or the platform defaults for a first deployment.
+        values, or the platform defaults for a first deployment. An app with
+        environments deploys to its first one; later ones are reached with
+        ``apps.environments.promote``.
 
         Args:
             app_id: The app to deploy.

@@ -26,7 +26,7 @@ with ReflexCloud() as client:
     projects = client.projects.search("default")
     project = projects[0] if projects else client.projects.create("default")
     app = client.apps.create("dashboard", project_id=project.id)
-    client.apps.secrets.set(app.id, {"DATABASE_URL": "postgresql://..."})
+    client.apps.secrets.set(app.id, {"OPENAI_API_KEY": "sk-..."})
 
     for deployment in client.apps.history(app.id):
         print(deployment.status, deployment.url)
@@ -35,7 +35,19 @@ with ReflexCloud() as client:
         print(record.timestamp, record.message)
 ```
 
-`client.apps` lists, creates, starts, stops, pauses, scales, rolls back and deletes apps, and reads their deployment history and runtime logs; `client.apps.secrets` manages their secrets. `client.projects` lists, searches and creates projects, with `projects.roles` and `projects.members` for access control. `AsyncReflexCloud` has the same methods as coroutines, with `logs` as an async iterator.
+`client.apps` lists, creates, renames, moves, starts, stops, pauses, scales, rolls back and deletes apps, changes their settings, and reads their status, running deployment, deployment history and runtime logs; `client.apps.secrets` manages their secrets. `client.projects` lists, searches and creates projects, with `projects.roles` and `projects.members` for access control. `AsyncReflexCloud` has the same methods as coroutines, with `logs` as an async iterator.
+
+### Custom domains
+
+```python
+for record in client.apps.domains.add(app.id, "app.example.com").values():
+    print(record.type, record.name, record.value)
+
+domain = client.apps.domains.get(app.id)
+print(domain.status, domain.status_detail)
+```
+
+`domains.add` returns the DNS records to create, and `domains.get` checks them and reports whether the domain is ready to serve the app. Custom domains need the Pro or Enterprise plan.
 
 ## Deploying
 
@@ -62,6 +74,44 @@ with ReflexCloud() as client:
 ```
 
 `deployments.create` streams the archives straight to storage, then submits the deployment. `deployments.wait` returns the deployment's report once it is running, or awaiting approval (`report.status == "AwaitingApproval"`), and raises `DeploymentFailedError` if it fails. `deployments.status`, `report` and `build_logs` read a deployment's progress, and `regions` and `vm_types` list what can be deployed to.
+
+### Environments
+
+Give an app a pipeline of a dev and a production environment:
+
+```python
+pipeline = client.apps.environments.enable(app.id)
+production_id = pipeline.production_environment_id
+```
+
+An app that has a pipeline already is read rather than enabled again, which fails:
+
+```python
+dev, production = client.apps.environments.list(app.id)
+production_id = production.id
+```
+
+Deployments go to the first environment, and later ones run a version promoted from the one before:
+
+```python
+deployment_id = client.deployments.create(
+    app.id, backend="backend.zip", frontend="frontend.zip"
+)
+client.deployments.wait(deployment_id)
+promotion = client.apps.environments.promote(app.id, production_id)
+client.deployments.wait(promotion.deployment_id)
+```
+
+Each environment has its own secrets and URL, and production keeps the app's own id and history. `environments.create`, `update`, `reorder`, `copy_missing_secrets` and `delete` manage the rest of the pipeline. Pipelines need the Enterprise plan.
+
+### Managed database
+
+```python
+database = client.apps.database.create(app.id)
+print(database.masked_connection_string)
+```
+
+`client.apps.database` creates a Postgres database for an app, shared by all of its environments, and sets its connection strings as secrets, `DATABASE_URL` among them, which each environment picks up on its next deployment. Creating or deleting a database needs a token with full access, which `reflex login` tokens are not, and an app with its own `DATABASE_URL` secret is refused.
 
 ## Authentication
 
