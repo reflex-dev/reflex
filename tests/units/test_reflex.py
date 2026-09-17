@@ -641,8 +641,49 @@ def test_lookup_reports_ambiguous_final_segment(temp_minify_json, cli_runner):
     text_result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
 
     assert text_result.exit_code == 0, text_result.output
-    assert "is both a substate id and an event handler id" in text_result.output
+    assert "is both a state id and an event handler id" in text_result.output
     assert "AmbiguousParentState.increment" in text_result.output
+
+
+@pytest.mark.parametrize("minified", [True, False])
+def test_lookup_bare_root_segment(temp_minify_json, cli_runner, minified):
+    """A lone root segment is the root state, not a prefix with nothing behind it.
+
+    Args:
+        temp_minify_json: The temporary config fixture.
+        cli_runner: The click CLI runner.
+        minified: Whether to look the root state up by its minified id.
+    """
+    from reflex.reflex import cli
+
+    install_config(include_state_root=True)
+
+    segment = "a" if minified else RegistrationContext.default_state_name(State)
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", segment])
+
+    assert result.exit_code == 0, result.output
+    assert [(entry["kind"], entry["class"]) for entry in json.loads(result.output)] == [
+        ("state", "State")
+    ]
+
+
+def test_lookup_bare_root_segment_also_matches_root_handler(
+    temp_minify_json, cli_runner
+):
+    """The root state id and a root handler id collide; both are reported."""
+    from reflex.reflex import cli
+
+    install_config(
+        events={get_state_full_path(State): {"hydrate": "a"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "a"])
+
+    assert result.exit_code == 0, result.output
+    assert [
+        (entry["kind"], entry.get("handler")) for entry in json.loads(result.output)
+    ] == [("state", None), ("event", "hydrate")]
 
 
 def test_lookup_accepts_unminified_segments(temp_minify_json, cli_runner):

@@ -263,7 +263,8 @@ demo.demo.CartState.clear
 The path is resolved segment by segment from the root state, and the leading
 root state segment is optional and may be given either minified (`a`) or in full
 (`reflex___state____state`) — so a name copied verbatim from the frontend
-resolves as-is. Because states and event handlers are numbered independently,
+resolves as-is. On its own that segment looks the root state itself up. Because
+states and event handlers are numbered independently,
 the last segment is matched against the handlers of the state resolved so far as
 well as against its substates; when a segment is ambiguous, both readings are
 printed. Unminified segments are accepted too, so a partially minified name

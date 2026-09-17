@@ -1406,7 +1406,7 @@ def minify_lookup(output_json: bool, minified_path: str):
     events minify independently, so every segment also matches its unminified
     name. The root state's own name is optional and may be given either way,
     so 'a.bU', 'a.a.bU' and 'reflex___state____state.a.bU' all resolve the
-    same way.
+    same way; given alone it resolves to the root state itself.
     """
     from reflex_base.registry import RegistrationContext
 
@@ -1431,7 +1431,12 @@ def minify_lookup(output_json: bool, minified_path: str):
         RegistrationContext.default_state_name(State),
         path_to_id[get_state_full_path(State)],
     }
-    if parts[0] in root_names:
+    # A lone root segment is a lookup of the root state itself, not a prefix
+    # with nothing behind it; states and events minify independently, so it
+    # may name a root event handler as well.
+    leads_with_root = parts[0] in root_names
+    root_only = leads_with_root and len(parts) == 1
+    if leads_with_root and not root_only:
         parts = parts[1:]
 
     result_parts: list[dict[str, str]] = []
@@ -1441,17 +1446,21 @@ def minify_lookup(output_json: bool, minified_path: str):
     for index, part in enumerate(parts):
         # Find the child of the previous match whose minified id or default
         # name is ``part``.
-        found = next(
-            (
-                c
-                for c in current.get_substates()
-                if part
-                in (
-                    path_to_id.get(get_state_full_path(c)),
-                    RegistrationContext.default_state_name(c),
-                )
-            ),
-            None,
+        found = (
+            State
+            if root_only
+            else next(
+                (
+                    c
+                    for c in current.get_substates()
+                    if part
+                    in (
+                        path_to_id.get(get_state_full_path(c)),
+                        RegistrationContext.default_state_name(c),
+                    )
+                ),
+                None,
+            )
         )
         # An event name copied from the frontend ends in a handler id (or the
         # handler's own name) of the state resolved so far, not a substate id.
@@ -1486,7 +1495,7 @@ def minify_lookup(output_json: bool, minified_path: str):
             # JSON readers see the ambiguity as two entries for one segment.
             if found is not None and not output_json:
                 logger.warning(
-                    f"Segment '{part}' is both a substate id and an event handler id "
+                    f"Segment '{part}' is both a state id and an event handler id "
                     f"of {get_state_module(current)}.{current.__name__}; showing both."
                 )
             result_parts.append({
