@@ -217,6 +217,50 @@ class Deployments:
             },
         )
 
+    def check(
+        self,
+        app_id: uuid.UUID | str,
+        *,
+        app_name: str,
+        project_id: uuid.UUID | str,
+        regions: Mapping[str, int] | None = None,
+        vm_type: str | None = None,
+        cpu: float | None = None,
+        ram_mb: int | None = None,
+        hostname: str | None = None,
+    ) -> None:
+        """Check that a deployment with these settings would be accepted.
+
+        Checks the settings, plan limits and hostname before the build is exported
+        and uploaded; ``create`` checks them again.
+
+        Args:
+            app_id: The app.
+            app_name: The app's name.
+            project_id: The app's project.
+            regions: The number of machines to run in each region, by region code.
+            vm_type: The machine size to run.
+            cpu: The number of CPUs of a custom machine size, with ``ram_mb``.
+            ram_mb: The memory of a custom machine size, in MB, with ``cpu``.
+            hostname: The hostname to serve the app at.
+        """
+        self._client._request(
+            "GET",
+            "deployments/validate_cli",
+            None,
+            params={
+                "app_id": str(app_id),
+                "app_name": app_name,
+                "project_id": str(project_id),
+                # The route requires these; an empty value means unset.
+                "regions": "" if regions is None else json.dumps(dict(regions)),
+                "vmtype": vm_type or "",
+                "hostname": hostname or "",
+                "cpu": cpu,
+                "ram_mb": ram_mb,
+            },
+        )
+
     def status(self, deployment_id: uuid.UUID | str) -> str:
         """Get the latest status message of a deployment.
 
