@@ -308,6 +308,37 @@ def test_add_page_default_route(
     assert app._pages.keys() == {"index", "about"}
 
 
+def test_prepare_404_page_preserves_dynamic_metadata():
+    """404 fallback defaults should not evaluate explicitly supplied Vars."""
+
+    class PageState(rx.State):
+        title: str = "Dynamic title"
+        description: str = "Dynamic description"
+
+    app = App()
+    prepared = app._prepare_page(
+        route=constants.Page404.SLUG,
+        title=PageState.title,
+        description=PageState.description,
+    )
+
+    assert prepared.page.title is PageState.title
+    assert prepared.page.description is PageState.description
+
+
+def test_prepare_404_page_empty_string_metadata_uses_defaults():
+    """Empty-string 404 metadata keeps falling back to the defaults."""
+    app = App()
+    prepared = app._prepare_page(
+        route=constants.Page404.SLUG,
+        title="",
+        description="",
+    )
+
+    assert prepared.page.title == constants.Page404.TITLE
+    assert prepared.page.description == constants.Page404.DESCRIPTION
+
+
 def test_add_page_set_route(app: App, index_page: ComponentCallable):
     """Test adding a page to an app.
 
@@ -1880,7 +1911,6 @@ class DynamicState(State):
         recalculated when the dynamic route var was dirty
     """
 
-    is_hydrated: bool = False
     loaded: int = 0
     counter: int = 0
 
@@ -3107,6 +3137,55 @@ def test_upload_root_collects_upload_and_event_providers() -> None:
     assert (90, "EventLoopProvider") in page_ctx.app_wrap_components
 
 
+def test_memo_body_collects_app_wraps_from_nested_children() -> None:
+    """A page reaches the app wraps buried inside an ``@rx.memo`` body.
+
+    The body compiles into its own module and never enters the page tree, so
+    the wrapper standing in for it has to report what the body requires --
+    otherwise an upload (or any other provider-backed component) inside a memo
+    silently loses its provider.
+    """
+
+    @rx.memo
+    def memoized_upload() -> Component:
+        return rx.box(rx.upload.root(rx.button("Select file")))
+
+    page_ctx = compile_page_context_for_app_wraps(rx.box(memoized_upload()))
+
+    assert (5, "UploadFilesProvider") in page_ctx.app_wrap_components
+
+
+def test_recursive_memo_body_app_wraps_compile(
+    compilable_app: tuple[App, Path],
+) -> None:
+    """A self-referencing memo body compiles and still surfaces its providers.
+
+    The memoize pass hashes a memo call site through ``_component_artifacts``,
+    which asks it for its app wraps. On a memo whose body holds an instance of
+    itself that walk has to terminate -- it blew the stack here before, and the
+    Playwright memo suite was the only thing that caught it.
+    """
+    app, web_dir = compilable_app
+
+    class TreeState(rx.State):
+        nodes: list[int] = [1, 2]
+
+    @rx.memo
+    def tree_node(items: rx.Var[list[int]]) -> Component:
+        return rx.box(
+            rx.foreach(items, lambda _item: tree_node(items=items)),
+            rx.upload(rx.button("pick"), id="in-recursive-memo"),
+        )
+
+    app.add_page(lambda: rx.box(tree_node(items=TreeState.nodes)), route="/tree")
+    app._compile()
+
+    app_root = (
+        web_dir / constants.Dirs.PAGES / constants.PageNames.APP_ROOT
+    ).read_text()
+    assert "UploadFilesProvider" in app_root
+
+
 @pytest.mark.parametrize(
     "react_strict_mode",
     [True, False],
@@ -3264,6 +3343,81 @@ def test_get_frontend_packages_maps_versioned_subpath_imports_to_pinned_base(
     assert "@scope/pkg@2.0.0/subpath" not in install_set
 
 
+def test_get_frontend_packages_keeps_local_and_git_specifiers_intact(
+    mocker: MockerFixture,
+):
+    """Location specifiers must reach the package manager unmodified.
+
+    Local paths, ``file:`` URLs and git references contain slashes that are
+    part of the location, not a package subpath, so they must not be
+    truncated at the first slash (reflex-dev/reflex#7117).
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    specifiers = [
+        "@masenf/hello-react@../hello-react",
+        "@masenf/hello-react@../hello-react.tgz",
+        "@masenf/hello-react@./vendor/hello-react",
+        "@masenf/hello-react@/opt/hello-react",
+        "@masenf/hello-react@~/hello-react",
+        "@masenf/hello-react@file:../hello-react",
+        "@masenf/hello-react@github:masenf/hello-react",
+        "@masenf/hello-react@masenf/hello-react#main",
+        "local-pkg@../local-pkg",
+    ]
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        specifier: {ImportVar(tag="Counter")} for specifier in specifiers
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert install_set == set(specifiers)
+
+
+def test_get_frontend_packages_maps_subpath_of_local_package_to_its_specifier(
+    mocker: MockerFixture,
+):
+    """A subpath import of a locally sourced package installs the local package once."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "@masenf/hello-react@../hello-react": {ImportVar(tag="Counter")},
+        "@masenf/hello-react/dist/style.css": {ImportVar(tag="")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert install_set == {"@masenf/hello-react@../hello-react"}
+
+
+def test_get_frontend_packages_maps_scoped_subpath_import_of_local_package(
+    mocker: MockerFixture,
+):
+    """A library subpath pinned to a local path installs the base package."""
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex.app.get_config", return_value=conf)
+    install_frontend_packages = mocker.patch(
+        "reflex.app.js_runtimes.install_frontend_packages"
+    )
+
+    app = App(theme=None)
+    app._get_frontend_packages({
+        "@scope/pkg/subpath@../pkg": {ImportVar(tag="Widget")},
+    })
+
+    install_set, _ = install_frontend_packages.call_args.args
+    assert install_set == {"@scope/pkg@../pkg"}
+
+
 def test_app_state_determination():
     """Test that the stateless status of an app is determined correctly."""
     a1 = App()
@@ -3341,7 +3495,7 @@ def test_forked_workers_publish_deltas_to_the_socket_owner():
 
     for _ in range(2):
         receiver, sender = workers.Pipe(duplex=False)
-        process = workers.Process(
+        process = workers.Process(  # pyright: ignore[reportAttributeAccessIssue]
             target=_probe_worker_token_identity, args=(app, redis, sender)
         )
         process.start()

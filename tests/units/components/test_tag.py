@@ -1,5 +1,5 @@
 import pytest
-from reflex_base.components.tags import CondTag, Tag, tagless
+from reflex_base.components.tags import CommonTag, CondTag, Tag, tagless
 from reflex_base.components.tags.tag import render_prop
 from reflex_base.vars.base import LiteralVar, Var
 
@@ -153,3 +153,13 @@ def test_render_prop_preserves_plain_values_and_subclass_dispatch():
     assert render_prop(CallableString("text")) is None
     assert render_prop(CallableDict(rendered)) is None
     assert render_prop(("text", rendered)) == ["text", rendered]
+
+
+@pytest.mark.parametrize("name", ["div", "", None])
+def test_tag_render_matches_common_tag_protocol(name):
+    """The direct Tag render matches the generic CommonTag protocol."""
+    tag = Tag(name=name).add_props(title="hello")
+    children = [{"name": "span", "props": [], "children": []}]
+    assert tag.render(children) == CommonTag.render(tag, children)
+    assert tag.render() == CommonTag.render(tag) == dict(tag)
+    assert not tag.children

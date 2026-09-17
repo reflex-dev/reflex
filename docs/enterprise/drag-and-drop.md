@@ -605,7 +605,7 @@ def app():
     return rxe.dnd.provider(
         # Your app content
         your_app_content(),
-        backend="HTML5",  # or "Touch" for mobile
+        backend=rxe.dnd.HTML5Backend,  # or rxe.dnd.TouchBackend for mobile
     )
 ```
 

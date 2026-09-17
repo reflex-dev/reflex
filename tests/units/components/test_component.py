@@ -5,7 +5,7 @@ from typing import Any, ClassVar, TypedDict
 
 import pytest
 from reflex_base.components.component import Component, field
-from reflex_base.components.tags import Tag
+from reflex_base.components.tags import CommonTag, Tag
 from reflex_base.constants import EventTriggers
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.event import (
@@ -59,10 +59,10 @@ def test_plain_tag_render_matches_tag_protocol(name, monkeypatch):
 
 
 def test_custom_tag_render_uses_subclass_protocol(monkeypatch):
-    """Custom tag iteration can depend on its supplied children."""
+    """A custom tag renders through the generic field protocol."""
 
-    class ChildrenTag(Tag):
-        """A tag with custom child-dependent rendering."""
+    class ChildrenTag(CommonTag):
+        """A tag whose iteration depends on its child list."""
 
         def __iter__(self):
             """Yield a value derived from the child list."""
