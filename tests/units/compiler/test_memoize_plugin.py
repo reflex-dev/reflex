@@ -683,6 +683,7 @@ def test_user_memo_recursive_controls_descendant_auto_memoization() -> None:
 
 def test_recursive_user_memo_auto_memoizes_stateful_body_descendant() -> None:
     """A state read authored inside a recursive memo gets a nested boundary."""
+
     @rx.memo
     def non_recursive_dashboard() -> Component:
         return Plain.create(WithProp.create(label=STATE_VAR))
@@ -709,6 +710,7 @@ def test_recursive_user_memo_auto_memoizes_stateful_body_descendant() -> None:
 
 def test_recursive_user_memo_keeps_captured_parameters_in_scope() -> None:
     """Extraction must not move local memo parameters into an unbound scope."""
+
     @rx.memo(recursive=True)
     def parameterized_dashboard(label: rx.Var[str]) -> Component:
         return Plain.create(WithProp.create(label=label.to(str) + STATE_VAR))
