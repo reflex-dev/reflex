@@ -9,6 +9,7 @@ import types
 import warnings
 from base64 import b64encode
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache, partial
 from typing import (
     TYPE_CHECKING,
@@ -295,6 +296,7 @@ def _scan_detach(value: Any, memo: dict[int, Any], active: set[int]) -> Any:
 BACKGROUND_TASK_MARKER = "_reflex_background_task"
 SUPERSEDES_MARKER = "_reflex_supersedes"
 EVENT_ACTIONS_MARKER = "_rx_event_actions"
+EXECUTOR_MARKER = "_reflex_event_executor"
 UPLOAD_FILES_CLIENT_HANDLER = "uploadFiles"
 
 # Payload key listing the names of the extra bound handler args in an upload
@@ -581,6 +583,16 @@ class EventHandler(EventActionsMixin):
             True if the event handler is marked as a background task.
         """
         return getattr(self.fn, BACKGROUND_TASK_MARKER, False)
+
+    @property
+    def executor(self) -> ThreadPoolExecutor | None:
+        """The executor to run a non-async handler in, if any.
+
+        Returns:
+            The executor specified via ``@rx.event(executor=...)`` or
+            ``None`` if no executor was specified.
+        """
+        return getattr(self.fn, EXECUTOR_MARKER, None)
 
     @property
     def supersedes(self) -> bool:
@@ -2959,6 +2971,7 @@ class EventNamespace:
     BACKGROUND_TASK_MARKER = BACKGROUND_TASK_MARKER
     SUPERSEDES_MARKER = SUPERSEDES_MARKER
     EVENT_ACTIONS_MARKER = EVENT_ACTIONS_MARKER
+    EXECUTOR_MARKER = EXECUTOR_MARKER
     _EVENT_FIELDS = _EVENT_FIELDS
     FORM_DATA = FORM_DATA
     FORM_SUBMIT_MAPPING = FORM_SUBMIT_MAPPING
@@ -2989,6 +3002,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
+        executor: ThreadPoolExecutor | None = None,
     ) -> (
         "Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]"
     ): ...
@@ -3005,6 +3019,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
+        executor: ThreadPoolExecutor | None = None,
     ) -> EventCallback[Unpack[P]]: ...
 
     def __new__(
@@ -3018,6 +3033,7 @@ class EventNamespace:
         throttle: int | None = None,
         debounce: int | None = None,
         temporal: bool | None = None,
+        executor: ThreadPoolExecutor | None = None,
     ) -> "EventCallback[Unpack[P]] | Callable[[Callable[[BASE_STATE, Unpack[P]], Any]], EventCallback[Unpack[P]]]":
         """Wrap a function to be used as an event.
 
@@ -3033,6 +3049,9 @@ class EventNamespace:
             throttle: Throttle the event handler to limit calls (in milliseconds).
             debounce: Debounce the event handler to delay calls (in milliseconds).
             temporal: Whether the event should be dropped when the backend is down.
+            executor: The executor to run a non-async handler in. If omitted,
+                the EventProcessor's default thread pool is used. Ignored for
+                async (coroutine or async-generator) handlers.
 
         Returns:
             The wrapped function.
@@ -3079,6 +3098,8 @@ class EventNamespace:
                     msg = "Background task must be async function or generator."
                     raise TypeError(msg)
                 setattr(func, BACKGROUND_TASK_MARKER, True)
+            if executor is not None:
+                setattr(func, EXECUTOR_MARKER, executor)
             if supersedes is True:
                 setattr(func, SUPERSEDES_MARKER, True)
             if getattr(func, "__name__", "").startswith("_"):

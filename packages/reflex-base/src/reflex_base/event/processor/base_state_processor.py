@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import dataclasses
 import functools
 import inspect
 import logging
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import Context, copy_context
 from enum import Enum
 from importlib.util import find_spec
 from time import perf_counter
@@ -264,11 +268,73 @@ def ensure_locked(
     return None
 
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class _GeneratorStep:
+    """One step of advancing a sync generator across the executor boundary.
+
+    ``StopIteration`` cannot be propagated out of an executor — the executor
+    re-raises it as ``RuntimeError`` and ``StopIteration.value`` (the
+    generator's return value) is discarded. This wrapper captures both
+    "yielded a value" and "generator returned" outcomes in a plain result
+    that crosses the boundary cleanly.
+    """
+
+    value: Any = None
+    done: bool = False
+
+
+def _next_or_done(generator: Any) -> _GeneratorStep:
+    """Advance a generator one step.
+
+    Args:
+        generator: The sync generator to advance.
+
+    Returns:
+        A ``_GeneratorStep`` carrying either the next yielded value, or the
+        generator's return value with ``done=True`` when the generator is
+        exhausted.
+    """
+    try:
+        return _GeneratorStep(value=next(generator))
+    except StopIteration as si:
+        return _GeneratorStep(value=si.value, done=True)
+
+
+async def _run_sync_handler(
+    executor: ThreadPoolExecutor, fn: Callable[[], Any], context: Context
+) -> Any:
+    """Run a handler with its context while retaining ownership until it stops.
+
+    Args:
+        executor: The worker pool.
+        fn: The handler call or generator step.
+        context: The context shared by every step of this handler.
+
+    Returns:
+        The handler's result.
+
+    Raises:
+        asyncio.CancelledError: After a cancelled handler's worker has finished.
+    """
+    future = asyncio.get_running_loop().run_in_executor(executor, context.run, fn)
+    try:
+        return await asyncio.shield(future)
+    except asyncio.CancelledError:
+        # A running thread cannot be cancelled. Keep the state lock until it stops.
+        while not future.done():
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await asyncio.shield(future)
+        if not future.cancelled():
+            future.exception()
+        raise
+
+
 async def process_event(
     handler: EventHandler,
     payload: dict,
     state: BaseState | StateProxy,
     root_state: BaseState | None,
+    executor: ThreadPoolExecutor | None = None,
 ):
     """Process event.
 
@@ -282,6 +348,10 @@ async def process_event(
             concurrent events on a shared state tree, and background state
             changes are emitted by the ``async with self`` context exits
             instead.
+        executor: The executor to run a non-async handler in. Async handlers
+            run on the asyncio loop and ignore this argument. If None, sync
+            handlers run inline on the asyncio loop (matching pre-executor
+            behavior).
 
     Raises:
         ValueError: If a string value is received for an int or float type and cannot be converted.
@@ -300,11 +370,24 @@ async def process_event(
             f"Error transforming event payload for handler {handler_name}: {ex}"
         )
 
+    worker_context = copy_context() if executor is not None else None
+
     # Handle async functions.
     if inspect.iscoroutinefunction(fn.func):
         events = await fn(**payload)
 
-    # Handle regular functions.
+    # Handle async generators - the function itself returns synchronously
+    # (yielding an async generator object); only the body iteration is async.
+    elif inspect.isasyncgenfunction(fn.func):
+        events = fn(**payload)
+
+    # Handle regular functions - run off the asyncio loop when an executor
+    # is configured so blocking calls in user code don't stall the loop.
+    elif executor is not None:
+        assert worker_context is not None
+        events = await _run_sync_handler(
+            executor, functools.partial(fn, **payload), worker_context
+        )
     else:
         events = fn(**payload)
     # Handle async generators.
@@ -321,22 +404,27 @@ async def process_event(
 
     # Handle regular generators.
     elif inspect.isgenerator(events):
-        try:
-            while True:
-                await chain_updates(
-                    next(events),
-                    root_state=ensure_locked(state, root_state),
-                    handler_name=handler_name,
+        while True:
+            if executor is not None:
+                assert worker_context is not None
+                step = await _run_sync_handler(
+                    executor, functools.partial(_next_or_done, events), worker_context
                 )
-        except StopIteration as si:
-            # the "return" value of the generator is not available
-            # in the loop, we must catch StopIteration to access it
-            if si.value is not None:
-                await chain_updates(
-                    si.value,
-                    root_state=ensure_locked(state, root_state),
-                    handler_name=handler_name,
-                )
+            else:
+                step = _next_or_done(events)
+            if step.done:
+                if step.value is not None:
+                    await chain_updates(
+                        step.value,
+                        root_state=ensure_locked(state, root_state),
+                        handler_name=handler_name,
+                    )
+                break
+            await chain_updates(
+                step.value,
+                root_state=ensure_locked(state, root_state),
+                handler_name=handler_name,
+            )
         await chain_updates(
             None, root_state=ensure_locked(state, root_state), handler_name=handler_name
         )
@@ -465,6 +553,7 @@ class BaseStateEventProcessor(EventProcessor):
                     payload=event.payload,
                     state=substate,
                     root_state=root_state,
+                    executor=self.get_executor_for(registered_handler),
                 )
                 return
         # Otherwise drop the state lock and start processing the background task

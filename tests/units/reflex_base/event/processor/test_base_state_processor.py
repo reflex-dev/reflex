@@ -4,10 +4,14 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import threading
 import traceback
 from collections.abc import Mapping
+from concurrent.futures import ThreadPoolExecutor
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any, cast
+from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
@@ -18,12 +22,13 @@ from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.environment import environment
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
+from reflex_base.event.processor.base_state_processor import process_event
 from reflex_base.registry import RegistrationContext
 
 import reflex as rx
 from reflex import event
 from reflex.app import App
-from reflex.event import Event, EventSpec
+from reflex.event import Event, EventHandler, EventSpec
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -308,6 +313,104 @@ async def test_rehydrate_sets_is_hydrated_on_fresh_token(
     assert len(hydrated_deltas) >= 1, (
         f"Expected at least one delta with is_hydrated=True, got deltas: {emitted_deltas}"
     )
+
+
+async def test_sync_handler_runs_off_event_loop(
+    app_module_mock,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """A non-async @rx.event handler runs in a thread, not the asyncio loop.
+
+    The handler captures the thread it ran on and asserts the asyncio loop is
+    still responsive while the handler is blocking (it blocks for a short
+    period using a real ``threading.Event``).
+
+    Args:
+        app_module_mock: The mock app module fixture.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex.app import App
+    from reflex.event import Event
+    from reflex.state import State
+
+    handler_threads: list[int] = []
+    release = threading.Event()
+
+    class MyState(State):
+        @event
+        def blocking(self):
+            handler_threads.append(threading.get_ident())
+            # Block the worker thread until the loop signals us.
+            assert release.wait(timeout=5), (
+                "asyncio loop never reached release.set() — sync handler"
+                " is blocking the event loop instead of running in a thread"
+            )
+
+    app = app_module_mock.app = App()
+    assert real_base_state_processor._root_context is not None
+    app._state_manager = real_base_state_processor._root_context.state_manager
+    main_thread = threading.get_ident()
+
+    async with real_base_state_processor as processor:
+        future = await processor.enqueue(
+            token, Event.from_event_type(MyState.blocking())[0]
+        )
+        # While the handler is blocked, the asyncio loop must remain responsive.
+        await asyncio.sleep(0.05)
+        release.set()
+        await future
+
+    assert len(handler_threads) == 1
+    assert handler_threads[0] != main_thread
+
+
+async def test_custom_executor_used_for_sync_handler(
+    app_module_mock,
+    real_base_state_processor: BaseStateEventProcessor,
+    token: str,
+):
+    """Handlers decorated with ``executor=...`` run on that exact pool.
+
+    Args:
+        app_module_mock: The mock app module fixture.
+        real_base_state_processor: The unmocked BaseStateEventProcessor.
+        token: The client token.
+    """
+    from reflex.app import App
+    from reflex.event import Event
+    from reflex.state import State
+
+    custom_executor = ThreadPoolExecutor(
+        max_workers=1, thread_name_prefix="rx_custom_pool"
+    )
+    handler_thread_names: list[str] = []
+    try:
+
+        class MyState(State):
+            @event(executor=custom_executor)
+            def on_custom(self):
+                handler_thread_names.append(threading.current_thread().name)
+
+        app = app_module_mock.app = App()
+
+        assert real_base_state_processor._root_context is not None
+        app._state_manager = real_base_state_processor._root_context.state_manager
+
+        async with real_base_state_processor as processor:
+            await processor.enqueue(
+                token, Event.from_event_type(MyState.on_custom())[0]
+            )
+            await processor.join(1)
+            # When a handler brings its own executor, the processor never falls
+            # back to creating the lazy default.
+            assert processor.default_executor is None
+
+        assert len(handler_thread_names) == 1
+        assert handler_thread_names[0].startswith("rx_custom_pool")
+    finally:
+        custom_executor.shutdown(wait=False)
 
 
 async def test_preprocess_update_routes_frontend_events_to_client(
@@ -1338,3 +1441,82 @@ async def test_execute_event_records_state_acquire_duration(
         for p in metric_points(otel_metrics, otel.METRIC_STATE_ACQUIRE_DURATION)
     }
     assert Event.from_event_type(AcquireState.noop())[0].name in names
+
+
+@pytest.mark.parametrize("generator", [False, True])
+async def test_executor_preserves_context(mocker, generator):
+    """Sync functions and generator steps inherit the event's context variables."""
+    marker = ContextVar("executor_marker", default="missing")
+    seen = []
+
+    def handler(state):
+        """Record the context observed by a synchronous handler."""
+        seen.append(marker.get())
+
+    def yielding_handler(state):
+        """Record the context observed during a generator step.
+
+        Yields:
+            An empty event update.
+        """
+        seen.append(marker.get())
+        marker.set("generator context")
+        yield
+        seen.append(marker.get())
+
+    mocker.patch(
+        "reflex_base.event.processor.base_state_processor.chain_updates",
+        new_callable=AsyncMock,
+    )
+    reset = marker.set("event context")
+    try:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            await process_event(
+                EventHandler(fn=yielding_handler if generator else handler),
+                {},
+                BaseState(_reflex_internal_init=True),
+                None,
+                executor,
+            )
+    finally:
+        marker.reset(reset)
+    assert seen == (
+        ["event context", "generator context"] if generator else ["event context"]
+    )
+
+
+async def test_cancelled_executor_handler_finishes_before_releasing_state(mocker):
+    """Cancellation cannot release the state while a worker still mutates it."""
+    started = asyncio.Event()
+    release = threading.Event()
+    loop = asyncio.get_running_loop()
+
+    def handler(state):
+        """Keep the worker busy until the test permits it to finish."""
+        loop.call_soon_threadsafe(started.set)
+        assert release.wait(5)
+
+    mocker.patch(
+        "reflex_base.event.processor.base_state_processor.chain_updates",
+        new_callable=AsyncMock,
+    )
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        task = asyncio.create_task(
+            process_event(
+                EventHandler(fn=handler),
+                {},
+                BaseState(_reflex_internal_init=True),
+                None,
+                executor,
+            )
+        )
+        try:
+            await asyncio.wait_for(started.wait(), 2)
+            for _ in range(2):
+                task.cancel()
+                await asyncio.sleep(0.01)
+                assert not task.done()
+        finally:
+            release.set()
+            with pytest.raises(asyncio.CancelledError):
+                await task

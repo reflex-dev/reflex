@@ -46,6 +46,18 @@ Whenever the user hovers over the heading, the `next_word` **event handler** wil
 
 Adding the `@rx.event` decorator above the event handler is strongly recommended. This decorator enables proper static type checking, which ensures event handlers receive the correct number and types of arguments.
 
+## Synchronous handlers
+
+Synchronous handlers run in a worker thread, allowing the event loop to serve
+other clients during blocking work. A handler still holds its state lock until
+it finishes. Cancellation waits for a running worker to return before releasing
+that lock.
+
+Use an `async def` handler when code must run on the event loop. To use a pool
+managed by your application, pass a `concurrent.futures.ThreadPoolExecutor` to
+`@rx.event(executor=pool)`; your application is responsible for shutting it down.
+The executor option has no effect on async handlers.
+
 ## What's in this section?
 
 In the event section of the documentation, you will explore the different types of events supported by Reflex, along with the different ways to call them.
