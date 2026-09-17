@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn
 from reflex_sdk._base import path_segment
 from reflex_sdk._sync.resources.databases import Database
 from reflex_sdk._sync.resources.environments import Environments
+from reflex_sdk._sync.resources.sign_in import SignIn
 from reflex_sdk.types import (
     App,
     AppMove,
@@ -289,6 +290,8 @@ class Apps:
     environments: Environments
     # Give apps a Postgres database hosted by Reflex Cloud.
     database: Database
+    # Sign an app's users in with their Reflex accounts.
+    sign_in: SignIn
 
     def __init__(self, client: ReflexCloud) -> None:
         """Bind the resource to a client.
@@ -301,6 +304,7 @@ class Apps:
         self.domains = Domains(client)
         self.environments = Environments(client)
         self.database = Database(client)
+        self.sign_in = SignIn(client)
 
     def list(
         self, *, project_id: uuid.UUID | str | None = None

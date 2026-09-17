@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 from reflex_sdk._async.resources.databases import AsyncDatabase
 from reflex_sdk._async.resources.environments import AsyncEnvironments
+from reflex_sdk._async.resources.sign_in import AsyncSignIn
 from reflex_sdk._base import path_segment
 from reflex_sdk.types import (
     App,
@@ -288,6 +289,8 @@ class AsyncApps:
     environments: AsyncEnvironments
     # Give apps a Postgres database hosted by Reflex Cloud.
     database: AsyncDatabase
+    # Sign an app's users in with their Reflex accounts.
+    sign_in: AsyncSignIn
 
     def __init__(self, client: AsyncReflexCloud) -> None:
         """Bind the resource to a client.
@@ -300,6 +303,7 @@ class AsyncApps:
         self.domains = AsyncDomains(client)
         self.environments = AsyncEnvironments(client)
         self.database = AsyncDatabase(client)
+        self.sign_in = AsyncSignIn(client)
 
     async def list(
         self, *, project_id: uuid.UUID | str | None = None

@@ -61,6 +61,14 @@ UNTYPED_MODELS = {
     types.Promotion,
     types.CopiedSecrets,
     types.ManagedDatabase,
+    types.SignInStatus,
+    types.EndUser,
+    types.EndUserPage,
+    types.EndUserBlock,
+    types.SignInInvite,
+    types.Audience,
+    types.AudienceChange,
+    types.InviteRemoval,
     types.LogRecord,
     types.HostnameReservation,
     types.Region,
@@ -74,6 +82,7 @@ UNTYPED_MODELS = {
     types.InstanceBoundsChange,
     # Built by the client rather than decoded from a response.
     types.LoginRequest,
+    types.EndUserExport,
 }
 
 

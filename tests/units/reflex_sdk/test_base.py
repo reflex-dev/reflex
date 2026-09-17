@@ -21,7 +21,7 @@ from reflex_sdk._errors import (
     APITimeoutError,
     MissingTokenError,
 )
-from reflex_sdk.transports import Request, TransportError
+from reflex_sdk.transports import Request, Response, TransportError
 from reflex_sdk.types import Me
 
 from tests.units.reflex_sdk.conftest import json_body, reply
@@ -284,6 +284,7 @@ def test_decode_response():
     response = reply(200, json=body)(_request("POST"))
     assert decode_response(response, Me).email == "a@b.c"
     assert decode_response(response, None) is None
+    assert decode_response(response, Response) is response
 
 
 @pytest.mark.parametrize("kwargs", [{"text": "<html>"}, {"json": {"email": 1}}])
