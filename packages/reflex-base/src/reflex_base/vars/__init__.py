@@ -28,7 +28,7 @@ from .sequence import (
     LiteralStringVar,
     StringVar,
 )
-from .special import use_hook_var, use_id
+from .special import const, const_fields, const_unpack, hook_fn, use_hook_var, use_id
 
 __all__ = [
     "EMPTY_VAR_INT",
@@ -59,11 +59,15 @@ __all__ = [
     "VarOperationCall",
     "base",
     "color",
+    "const",
+    "const_fields",
+    "const_unpack",
     "datetime",
     "field",
     "function",
     "get_unique_variable_name",
     "get_uuid_string_var",
+    "hook_fn",
     "number",
     "object",
     "sequence",

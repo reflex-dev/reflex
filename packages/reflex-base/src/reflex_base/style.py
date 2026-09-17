@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, TypedDict
 
 from reflex_base import constants
 from reflex_base.breakpoints import Breakpoints, breakpoints_values
@@ -20,6 +20,7 @@ from reflex_base.vars import VarData
 from reflex_base.vars.base import LiteralVar, Var
 from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.object import ObjectVar
+from reflex_base.vars.special import const_fields
 
 # Reference the global ColorModeContext
 color_mode_imports = {
@@ -28,24 +29,33 @@ color_mode_imports = {
 }
 
 
-def _color_mode_var(_js_expr: str, _var_type: type = str) -> Var:
-    """Create a Var that destructs the _js_expr from ColorModeContext.
+class _ColorModeContextValue(TypedDict):
+    """The value carried by ``ColorModeContext`` on the frontend."""
+
+    rawColorMode: str
+    resolvedColorMode: str
+    toggleColorMode: EventChain
+    setColorMode: EventChain
+
+
+_color_mode_context = Var(
+    "useContext(ColorModeContext)",
+    _var_type=_ColorModeContextValue,
+    _var_data=VarData(imports=color_mode_imports),
+)
+
+
+def _color_mode_var(_js_expr: str) -> Var:
+    """Create a Var that destructures the _js_expr from ColorModeContext.
 
     Args:
         _js_expr: The name of the variable to get from ColorModeContext.
-        _var_type: The type of the Var.
 
     Returns:
         The Var that resolves to the color mode.
     """
-    return Var(
-        _js_expr=_js_expr,
-        _var_type=_var_type,
-        _var_data=VarData(
-            imports=color_mode_imports,
-            hooks={f"const {{ {_js_expr} }} = useContext(ColorModeContext)": None},
-        ),
-    ).guess_type()
+    (color_mode_value,) = const_fields(_color_mode_context, _js_expr, names=(_js_expr,))
+    return color_mode_value
 
 
 def set_color_mode(
@@ -76,10 +86,7 @@ color_mode = _color_mode_var(_js_expr=constants.ColorMode.NAME)
 # Var resolves to the resolved color mode for the app ("light" or "dark")
 resolved_color_mode = _color_mode_var(_js_expr=constants.ColorMode.RESOLVED_NAME)
 # Var resolves to a function invocation that toggles the color mode
-toggle_color_mode = _color_mode_var(
-    _js_expr=constants.ColorMode.TOGGLE,
-    _var_type=EventChain,
-)
+toggle_color_mode = _color_mode_var(_js_expr=constants.ColorMode.TOGGLE)
 
 STYLE_PROP_SHORTHAND_MAPPING = {
     "paddingX": ("paddingInlineStart", "paddingInlineEnd"),

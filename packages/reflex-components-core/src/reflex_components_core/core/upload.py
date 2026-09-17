@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypedDict
 
 from reflex_base.components.component import (
     Component,
@@ -37,6 +37,7 @@ from reflex_base.vars.base import Var, get_unique_variable_name
 from reflex_base.vars.function import FunctionVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, LiteralStringVar
+from reflex_base.vars.special import const_fields
 from reflex_components_sonner.toast import toast
 
 from reflex_components_core.base.fragment import Fragment
@@ -241,6 +242,14 @@ class GhostUpload(Fragment):
     )
 
 
+class _DropzoneState(TypedDict):
+    """The parts of react-dropzone's useDropzone return value that are used."""
+
+    getRootProps: Callable
+    getInputProps: Callable
+    isDragActive: bool
+
+
 class Upload(MemoizationLeaf):
     """A file upload component."""
 
@@ -355,24 +364,6 @@ class Upload(MemoizationLeaf):
             # If on_drop_rejected is not provided, show an error toast.
             upload_props["on_drop_rejected"] = _default_drop_rejected
 
-        input_props_unique_name = get_unique_variable_name()
-        root_props_unique_name = get_unique_variable_name()
-        is_drag_active_unique_name = get_unique_variable_name()
-        drag_active_css_class_unique_name = get_unique_variable_name() + "-drag-active"
-
-        # Handle special style when dragging over the drop zone.
-        if "drag_active_style" in props:
-            props.setdefault("style", Style())[
-                f"&:where(.{drag_active_css_class_unique_name})"
-            ] = props.pop("drag_active_style")
-            props["class_name"].append(
-                cond(
-                    Var(is_drag_active_unique_name),
-                    drag_active_css_class_unique_name,
-                    "",
-                ),
-            )
-
         event_triggers = get_memoized_event_triggers(
             GhostUpload.create(
                 on_drop=upload_props["on_drop"],
@@ -387,37 +378,42 @@ class Upload(MemoizationLeaf):
 
         use_dropzone_arguments = Var.create(upload_props)
 
-        left_side = (
-            "const { "
-            f"getRootProps: {root_props_unique_name}, "
-            f"getInputProps: {input_props_unique_name}, "
-            f"isDragActive: {is_drag_active_unique_name}"
-            "}"
+        root_props, input_props, is_drag_active = const_fields(
+            Var(
+                f"useDropzone({use_dropzone_arguments!s})",
+                _var_type=_DropzoneState,
+                _var_data=VarData.merge(
+                    use_dropzone_arguments._get_all_var_data(),
+                    VarData(
+                        imports={
+                            "react-dropzone": "useDropzone",
+                            **Imports.EVENTS,
+                        },
+                        app_wraps=get_event_app_wraps(),
+                    ),
+                ),
+            ),
+            "getRootProps",
+            "getInputProps",
+            "isDragActive",
         )
-        right_side = f"useDropzone({use_dropzone_arguments!s})"
+        var_data = root_props._get_all_var_data()
 
-        var_data = VarData.merge(
-            VarData(
-                imports=Imports.EVENTS,
-                app_wraps=get_event_app_wraps(),
-            ),
-            use_dropzone_arguments._get_all_var_data(),
-            VarData(
-                hooks={
-                    f"{left_side} = {right_side};": None,
-                },
-                imports={
-                    "react-dropzone": "useDropzone",
-                    **Imports.EVENTS,
-                },
-            ),
-        )
+        # Handle special style when dragging over the drop zone.
+        if "drag_active_style" in props:
+            drag_active_css_class = get_unique_variable_name() + "-drag-active"
+            props.setdefault("style", Style())[f"&:where(.{drag_active_css_class})"] = (
+                props.pop("drag_active_style")
+            )
+            props["class_name"].append(
+                cond(is_drag_active, drag_active_css_class, ""),
+            )
 
         # The file input to use.
         upload = Input.create(type="file")
         upload.special_props = [
             Var(
-                _js_expr=f"{input_props_unique_name}()",
+                _js_expr=f"{input_props!s}()",
                 _var_type=None,
                 _var_data=var_data,
             )
@@ -431,7 +427,7 @@ class Upload(MemoizationLeaf):
         )
         zone.special_props = [
             Var(
-                _js_expr=f"{root_props_unique_name}()",
+                _js_expr=f"{root_props!s}()",
                 _var_type=None,
                 _var_data=var_data,
             )

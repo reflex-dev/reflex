@@ -147,11 +147,13 @@ def test_use_chart_width():
     assert width._var_type == (int | None)
     var_data = width._get_all_var_data()
     assert var_data is not None
-    hook_alias = f"useChartWidth_{width!s}"
+    imports = dict(var_data.imports)[Recharts.library or ""]
+    assert len(imports) == 1
+    hook_alias = imports[0].alias
+    assert hook_alias is not None
+    assert hook_alias.startswith("useChartWidth_")
+    assert imports == (rx.ImportVar(tag="useChartWidth", alias=hook_alias),)
     assert var_data.hooks == (f"const {width!s} = {hook_alias}();",)
-    assert dict(var_data.imports)[Recharts.library or ""] == (
-        rx.ImportVar(tag="useChartWidth", alias=hook_alias),
-    )
 
 
 def test_sankey_typed_dicts_exported_from_package():

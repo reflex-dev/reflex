@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from reflex_base.utils import console
 from reflex_base.utils.imports import ImportVar
 from reflex_base.vars import VarData
 from reflex_base.vars.base import Var
@@ -9,6 +10,21 @@ from reflex_base.vars.base import Var
 
 def _compose_react_imports(tags: list[str]) -> dict[str, list[ImportVar]]:
     return {"react": [ImportVar(tag=tag) for tag in tags]}
+
+
+def _const_statement(name: str | list[str], value: str | Var) -> Var:
+    """Create a Var whose expression is a const declaration statement.
+
+    Args:
+        name: The name, or names to destructure, to declare.
+        value: The value of the constant.
+
+    Returns:
+        A Var rendering the whole declaration statement.
+    """
+    if isinstance(name, list):
+        return Var(_js_expr=f"const [{', '.join(name)}] = {value}")
+    return Var(_js_expr=f"const {name} = {value}")
 
 
 def const(name: str | list[str], value: str | Var) -> Var:
@@ -21,9 +37,17 @@ def const(name: str | list[str], value: str | Var) -> Var:
     Returns:
         The constant Var.
     """
-    if isinstance(name, list):
-        return Var(_js_expr=f"const [{', '.join(name)}] = {value}")
-    return Var(_js_expr=f"const {name} = {value}")
+    console.deprecate(
+        feature_name="rx._x.hooks.const",
+        reason=(
+            "Use rx.vars.const() instead, which returns a Var referring to the "
+            "bound name rather than to the declaration statement. Use "
+            "rx.vars.const_unpack() to destructure an array value."
+        ),
+        deprecation_version="0.9.12",
+        removal_version="1.0",
+    )
+    return _const_statement(name, value)
 
 
 def useCallback(func: str, deps: list) -> Var:  # noqa: N802
@@ -82,7 +106,7 @@ def useState(var_name: str, default: str | None = None) -> Var:  # noqa: N802
     Returns:
         A useState hook.
     """
-    return const(
+    return _const_statement(
         [var_name, f"set{var_name.capitalize()}"],
         Var(
             _js_expr=f"useState({default})",

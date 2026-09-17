@@ -1,0 +1,1 @@
+Deprecate `rx._x.hooks.const()`, which returns a `Var` rendering an entire `const` statement. Use `rx.vars.const()` instead, which returns a `Var` referring to the bound name and carries the declaration as a hook, or `rx.vars.const_unpack()` to destructure an array value.

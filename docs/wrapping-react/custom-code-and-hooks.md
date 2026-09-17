@@ -117,7 +117,7 @@ export function Div_7178f430b7b371af8a12d8265d65ab9b() {
 
 ## Using a Hook's Return Value
 
-`add_hooks` inserts hook statements into the component, but the values they define are not directly accessible from Python. When you need the return value of a no-argument hook, use `rx.vars.use_hook_var()`, which binds the hook call to a unique variable name and returns it as a `Var`. The hook statement and its import are automatically included in any component where the var is used, so it composes with regular props and var operations.
+`add_hooks` inserts hook statements into the component, but the values they define are not directly accessible from Python. When you need the return value of a hook, use `rx.vars.use_hook_var()`, which binds the hook call to a unique variable name and returns it as a `Var`. The hook statement and its import are automatically included in any component where the var is used, so it composes with regular props and var operations.
 
 ```python
 import reflex as rx
@@ -129,6 +129,16 @@ def use_chart_width() -> rx.Var[int | None]:
         library="recharts@3.8.1", hook="useChartWidth", _var_type=int | None
     )
 ```
+
+Positional arguments are forwarded to the hook call, so hooks that take arguments work the same way:
+
+```python
+files_by_id, set_files_by_id = rx.vars.const_unpack(
+    rx.vars.use_hook_var("react", "useContext", upload_files_context), 2
+)
+```
+
+`rx.vars.const_unpack()` and `rx.vars.const_fields()` destructure a hook's return value into several vars, so the hook is called once however many of its values you use. See [the var system reference](/docs/api-reference/var_system/) for the full API.
 
 For React's built-in [`useId`](https://react.dev/reference/react/useId), `rx.vars.use_id()` returns a `Var[str]` with a stable unique id for the component being rendered, e.g. for linking SVG elements to gradient or filter definitions.
 

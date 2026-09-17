@@ -82,7 +82,7 @@ Later, we leverage `rx.cond` in the' factorial' function, we instantiate an arra
 ## Hook Vars
 
 Some values only exist on the frontend and are exposed through React hooks.
-`rx.vars.use_hook_var()` binds the return value of a no-argument hook to a unique variable name and returns it as a `Var`.
+`rx.vars.use_hook_var()` binds the return value of a hook to a unique variable name and returns it as a `Var`.
 The hook call and the import of the hook are automatically included in any component that uses the var, so the value reflects the context of the component it is rendered in.
 
 ```py
@@ -94,6 +94,64 @@ chart_width = rx.vars.use_hook_var(
 ```
 
 A component using `chart_width` will import `useChartWidth` from `recharts` and render `const <unique_name> = useChartWidth();` in its body, so `chart_width` can be used like any other `Var[int | None]`.
+
+Any positional arguments are passed to the hook call:
+
+```py
+theme = rx.vars.use_hook_var("react", "useContext", theme_context, _var_type=str)
+```
+
+### Binding Values with `const`
+
+`use_hook_var()` is a thin wrapper over `rx.vars.const()`, which binds any value to a `const` declaration in the component's hook scope and returns a `Var` referring to the bound name.
+Use it directly to name an expression, or to bind a hook built with `rx.vars.hook_fn()`:
+
+```py
+use_dropzone = rx.vars.hook_fn("react-dropzone", "useDropzone")
+dropzone = rx.vars.const(use_dropzone.call(options), name="dropzone")
+```
+
+By default each call binds to a fresh unique name.
+Passing `name` uses that identifier verbatim, which also means two calls with the same name and value produce the same declaration and are emitted only once.
+
+### Destructuring
+
+`rx.vars.const_unpack()` and `rx.vars.const_fields()` bind several values from one hook call by destructuring it, so the hook runs once no matter how many of its values are used.
+
+`const_unpack()` destructures an array, typing each binding by its index:
+
+```py
+use_state = rx.vars.hook_fn("react", "useState", returns=tuple[int, Callable])
+count, set_count = rx.vars.const_unpack(use_state.call(0), 2)
+# const [<count>, <set_count>] = useState(0);
+```
+
+Pass `names` to choose the identifiers, using `None` to skip a position; a skipped position returns no `Var`.
+Pass `rest` to bind the remaining elements, which is returned last:
+
+```py
+(set_count,) = rx.vars.const_unpack(use_state.call(0), 2, names=(None, "setCount"))
+# const [, setCount] = useState(0);
+```
+
+`const_fields()` destructures an object by field name, typing each binding by that field:
+
+```py
+root_props, is_drag_active = rx.vars.const_fields(
+    use_dropzone.call(options), "getRootProps", "isDragActive"
+)
+# const { getRootProps: <root_props>, isDragActive: <is_drag_active> } = useDropzone(options);
+```
+
+When the value is typed as a `TypedDict` or dataclass, each binding gets that field's declared type and an unknown field name raises.
+Binding a field to its own name renders the JavaScript shorthand, and `rest` binds the remaining fields:
+
+```py
+app_id, other_options = rx.vars.const_fields(
+    options, "appId", names=("appId",), rest="otherOptions"
+)
+# const { appId, ...otherOptions } = <options>;
+```
 
 A hook var is evaluated once per compiled component, so every element that reads it must render inside the same one. An `rx.el.svg` root, an `@rx.memo` body, and a custom renderer body each compile into a single component and satisfy this.
 
