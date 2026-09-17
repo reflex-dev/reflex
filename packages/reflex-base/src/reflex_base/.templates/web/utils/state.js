@@ -1335,6 +1335,7 @@ export const mergeRefs =
 // Both levels are weak, so an entry dies with whichever input dies first.
 const composedRefCache = new WeakMap();
 const composedHandlerCache = new WeakMap();
+const composedObjectCache = new WeakMap();
 
 const canWeakKey = (value) =>
   value !== null && (typeof value === "object" || typeof value === "function");
@@ -1362,6 +1363,8 @@ const composeHandlers =
     own(...args);
     injected(...args);
   };
+
+const composeObjects = (own, injected) => mergician(injected, own);
 
 // Props named `on` followed by an uppercase letter are event handlers and get
 // composed rather than overridden. Hoisted because evaluating a regex literal
@@ -1438,7 +1441,12 @@ export const mergeSlotProps = (injectedProps, ownProps) => {
       merged[propName] =
         own && injected ? injected + " " + own : own || injected;
     } else if (isPlainObjectProp(injected) && isPlainObjectProp(own)) {
-      merged[propName] = mergician(injected, own);
+      merged[propName] = composeCached(
+        composedObjectCache,
+        own,
+        injected,
+        composeObjects,
+      );
     }
   }
   return merged;

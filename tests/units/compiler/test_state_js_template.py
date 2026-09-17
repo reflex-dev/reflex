@@ -82,6 +82,14 @@ const first = mergeSlotProps(injected, own);
 assert.equal(first.onClick, mergeSlotProps(injected, own).onClick);
 first.onClick();
 assert.deepEqual(calls, ['own', 'injected']);
+const mergician = (injected, own) => ({...injected, ...own});
+const injectedStyle = {color: 'red', margin: 4};
+const ownStyle = {color: 'blue'};
+const firstStyle = mergeSlotProps({style: injectedStyle}, {style: ownStyle}).style;
+assert.deepEqual(firstStyle, {color: 'blue', margin: 4});
+assert.equal(firstStyle, mergeSlotProps({style: injectedStyle}, {style: ownStyle}).style);
+assert.notEqual(firstStyle, mergeSlotProps({style: {...injectedStyle}}, {style: ownStyle}).style);
+assert.notEqual(firstStyle, mergeSlotProps({style: injectedStyle}, {style: {...ownStyle}}).style);
 """,
         ],
         check=True,

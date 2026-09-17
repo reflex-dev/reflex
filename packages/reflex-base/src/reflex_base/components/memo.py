@@ -2041,7 +2041,11 @@ def create_passthrough_component_memo(
     # render no element to attach to; an empty tag (``Upload``) and
     # ``Fragment`` both render a ``Fragment``, which accepts neither props nor
     # refs.
-    if component.tag and not isinstance(component, Fragment):
+    if (
+        component.tag
+        and not isinstance(component, Fragment)
+        and component._render().name
+    ):
         replacements["forward_root_props"] = True
     definition = dataclasses.replace(definition, **replacements)
 

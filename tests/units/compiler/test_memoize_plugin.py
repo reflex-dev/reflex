@@ -2835,6 +2835,29 @@ def test_empty_tag_memo_root_does_not_forward_props() -> None:
     )
 
 
+def test_rendered_empty_tag_memo_root_does_not_forward_props() -> None:
+    """An overridden render tag controls forwarding instead of the class tag."""
+
+    class RenderedFragment(Plain):
+        """A nominally tagged component whose rendered root is a fragment."""
+
+        def _render(self, props=None):
+            """Render the root without an element name.
+
+            Args:
+                props: The root props.
+
+            Returns:
+                The tagless root.
+            """
+            return dataclasses.replace(super()._render(props), name="")
+
+    _factory, definition = create_passthrough_component_memo(
+        RenderedFragment.create(Bare.create(STATE_VAR))
+    )
+    assert not definition.forward_root_props
+
+
 def test_forwarded_props_use_the_definitions_rest_param_name() -> None:
     """The merge call and the signature always name the same rest binding.
 
