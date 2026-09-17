@@ -91,6 +91,13 @@ from reflex.istate.storage import ClientStorageBase
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
+# Shared empty router defaults. Each is a frozen dataclass whose members are
+# themselves immutable, so one instance can back every state's field instead
+# of being rebuilt per state.
+_DEFAULT_SESSION_DATA = SessionData()
+_DEFAULT_HEADER_DATA = HeaderData()
+_DEFAULT_URL_DATA = URLData()
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -624,16 +631,21 @@ class BaseState(EvenMoreBasicBaseState):
     )
 
     # The per-connection session data (constant for the socket lifetime).
-    rx_router_session: Field[SessionData] = field(default_factory=SessionData)
+    # These three defaults are frozen dataclasses holding only immutable
+    # members, so every state can share one instance instead of building a
+    # fresh one per field per state. `field()` cannot be used for that: it
+    # only shares a `default` whose type is in `IMMUTABLE_TYPES`, and
+    # otherwise deep-copies it per instance.
+    rx_router_session: Field[SessionData] = Field(default=_DEFAULT_SESSION_DATA)
 
     # The headers of the connection request (constant for the socket lifetime).
-    rx_router_headers: Field[HeaderData] = field(default_factory=HeaderData)
+    rx_router_headers: Field[HeaderData] = Field(default=_DEFAULT_HEADER_DATA)
 
     # The page data for the current page (deprecated; params feeds dynamic route vars).
     rx_router_page: Field[PageData] = field(default_factory=PageData)
 
     # The parsed URL of the current page.
-    rx_router_url: Field[URLData] = field(default_factory=URLData)
+    rx_router_url: Field[URLData] = Field(default=_DEFAULT_URL_DATA)
 
     # The route pattern that matched the current page.
     rx_router_route_id: Field[str] = field(default="")
