@@ -10,7 +10,6 @@ from reflex_base.constants import EventTriggers
 from reflex_base.constants.colors import Color
 from reflex_base.event import EventHandler, no_args_event_spec
 from reflex_base.vars.base import LiteralVar, Var
-from reflex_base.vars.function import FunctionStringVar, ReflexCallable
 from reflex_base.vars.sequence import LiteralStringVar
 
 from .recharts import (
@@ -116,10 +115,9 @@ class Axis(Recharts):
 
     tick_size: Var[int] = field(doc="The length of tick line. Default: 6")
 
-    tick_formatter: Var[str | ReflexCallable[Any, Any]] = field(
-        doc="A function to format the tick value shown in the axis. Pass a "
-        "raw JS function expression as a string, e.g. tick_formatter="
-        '"(value) => value.toFixed(2)".'
+    tick_formatter: Var[str] = field(
+        doc="A JS function expression that formats the tick value shown in the "
+        'axis, e.g. tick_formatter="(value) => value.toFixed(2)".'
     )
 
     min_tick_gap: Var[int] = field(
@@ -130,9 +128,8 @@ class Axis(Recharts):
     def create(cls, *children, **props):
         """Create an Axis component.
 
-        A ``tick_formatter`` given as a raw JS function expression string, or
-        as a literal string Var, is emitted as a JS function instead of a
-        quoted string.
+        A ``tick_formatter`` string is emitted as a JS function expression
+        rather than a quoted string.
 
         Args:
             *children: The children of the component.
@@ -140,22 +137,12 @@ class Axis(Recharts):
 
         Returns:
             The Axis component.
-
-        Raises:
-            TypeError: If ``tick_formatter`` is a Python value other than a string.
         """
         tick_formatter = props.get("tick_formatter")
         if isinstance(tick_formatter, LiteralStringVar):
             tick_formatter = tick_formatter._var_value
         if isinstance(tick_formatter, str):
-            props["tick_formatter"] = FunctionStringVar.create(tick_formatter)
-        elif tick_formatter is not None and not isinstance(tick_formatter, Var):
-            msg = (
-                "tick_formatter must be a raw JS function expression string "
-                f'(e.g. "(value) => value.toFixed(2)") or a Var, got a Python '
-                f"{type(tick_formatter).__name__}."
-            )
-            raise TypeError(msg)
+            props["tick_formatter"] = Var(_js_expr=tick_formatter)
         return super().create(*children, **props)
 
     stroke: Var[str | Color] = field(

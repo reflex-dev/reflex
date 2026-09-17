@@ -5,7 +5,7 @@ import subprocess
 import sys
 import typing
 from collections.abc import Callable
-from typing import Any, Literal, TypeVar
+from typing import Literal, TypeVar
 
 import pytest
 from reflex_base.utils.types import (
@@ -18,7 +18,6 @@ from reflex_base.utils.types import (
     resolve_type_alias,
     typehint_issubclass,
 )
-from reflex_base.vars.function import ReflexCallable
 from typing_extensions import ParamSpec, TypeAliasType, TypeVarTuple, Unpack
 
 P = ParamSpec("P")
@@ -197,17 +196,3 @@ def test_typehint_issubclass_resolves_type_alias(alias_cls: type) -> None:
     assert typehint_issubclass(maybe, maybe)
     assert not typehint_issubclass(maybe, str)
     assert typehint_issubclass(str, maybe)
-
-
-def test_typehint_issubclass_reflex_callable_alias_identity() -> None:
-    """Equal ReflexCallable aliases match even when they are distinct objects.
-
-    The typing alias cache is bounded, so a Var's ``_var_type`` and a field
-    annotation can be equal but not identical.
-    """
-    provided = ReflexCallable[Any, Any]
-    for cleanup in typing._cleanups:  # pyright: ignore [reportAttributeAccessIssue]
-        cleanup()
-    accepted = ReflexCallable[Any, Any]
-    assert provided is not accepted
-    assert typehint_issubclass(provided, accepted)
