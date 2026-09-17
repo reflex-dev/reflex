@@ -2,12 +2,20 @@
 from __future__ import annotations
 
 import datetime
+import inspect
 import uuid
 from collections.abc import Iterator
 
 import pytest
-from reflex_sdk import AuthenticationError, ReflexCloud
-from reflex_sdk.types import AccessScope, Me, Token, TokenAccess
+from reflex_sdk import (
+    APIConnectionError,
+    AuthenticationError,
+    LoginDeniedError,
+    LoginTimeoutError,
+    ReflexCloud,
+)
+from reflex_sdk.transports import Request, Response, TransportError
+from reflex_sdk.types import AccessScope, LoginRequest, Me, Token, TokenAccess
 
 from tests.units.reflex_sdk.conftest import MockAPI, MockTransport, json_body, reply
 
@@ -62,6 +70,12 @@ def test_me(client: ReflexCloud, mock_api: MockAPI):
     (request,) = mock_api.requests
     assert request.headers["X-API-TOKEN"] == "test-token"
     assert "?" not in request.url
+
+
+def test_me_records_the_login_source(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add("POST", "/api/v1/authenticate/me", reply(200, json=ME))
+    client.auth.me(source="reflex")
+    assert mock_api.requests[0].url.endswith("/authenticate/me?source=reflex")
 
 
 def test_me_scoped_token(client: ReflexCloud, mock_api: MockAPI):
@@ -154,3 +168,112 @@ def test_delete_token_quotes_name(client: ReflexCloud, mock_api: MockAPI):
         reply(200, json={"message": "success"}),
     )
     assert client.auth.tokens.delete("ci/prod key") is None
+
+
+@pytest.mark.parametrize(
+    ("ui_url", "env", "base"),
+    [
+        (None, None, "https://build.reflex.dev"),
+        (None, "https://cloud.example.com/", "https://cloud.example.com"),
+        (
+            "https://ui.example.com",
+            "https://cloud.example.com",
+            "https://ui.example.com",
+        ),
+    ],
+)
+def test_begin_login(
+    mock_api: MockAPI,
+    monkeypatch: pytest.MonkeyPatch,
+    ui_url: str | None,
+    env: str | None,
+    base: str,
+):
+    if env is not None:
+        monkeypatch.setenv("REFLEX_CLOUD_URL", env)
+    # Starting a login sends nothing, so it needs no event loop or token.
+    client = ReflexCloud(transport=MockTransport(mock_api))
+    login = client.auth.begin_login(ui_url=ui_url)
+    assert len(login.request_id) == 32
+    assert login.url == f"{base}/cli/login?request_id={login.request_id}"
+    assert client.auth.begin_login().request_id != login.request_id
+    assert not mock_api.requests
+
+
+LOGIN = LoginRequest(request_id="abc123", url="https://build.reflex.dev/cli/login")
+
+
+def test_finish_login_waits_for_approval(mock_api: MockAPI):
+    token = str(uuid.uuid4())
+    mock_api.add(
+        "GET",
+        "/api/v1/cli/token",
+        reply(404, json={"detail": "Token not found or not yet approved"}),
+        reply(404, json={"detail": "Token not found or not yet approved"}),
+        reply(200, json={"token_id": token}),
+    )
+    # No token is needed to log in.
+    with ReflexCloud(transport=MockTransport(mock_api)) as client:
+        assert client.auth.finish_login(LOGIN, poll_interval=0) == token
+    assert len(mock_api.requests) == 3
+    for request in mock_api.requests:
+        assert request.url.endswith("/cli/token?request_id=abc123")
+        assert "X-API-TOKEN" not in request.headers
+
+
+def test_finish_login_does_not_retry_a_lost_response(
+    client: ReflexCloud, mock_api: MockAPI
+):
+    def lose_response(request: Request) -> Response:
+        msg = "connection reset after the token was handed out"
+        raise TransportError(msg, request=request, sent=True)
+
+    mock_api.add("GET", "/api/v1/cli/token", lose_response)
+    # A retry would find the token gone and keep waiting for a done approval.
+    with pytest.raises(APIConnectionError, match="connection reset"):
+        client.auth.finish_login(LOGIN, poll_interval=0)
+    assert len(mock_api.requests) == 1
+
+
+def test_finish_login_retries_an_unsent_request(client: ReflexCloud, mock_api: MockAPI):
+    token = str(uuid.uuid4())
+
+    def refuse_connection(request: Request) -> Response:
+        msg = "connection refused"
+        raise TransportError(msg, request=request, sent=False)
+
+    mock_api.add(
+        "GET",
+        "/api/v1/cli/token",
+        refuse_connection,
+        reply(200, json={"token_id": token}),
+    )
+    # The server never saw the first request, so the token is still there.
+    assert client.auth.finish_login(LOGIN, poll_interval=0) == token
+    assert len(mock_api.requests) == 2
+
+
+def test_finish_login_denied(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "GET",
+        "/api/v1/cli/token",
+        reply(403, json={"detail": "Authorization request was denied"}),
+    )
+    with pytest.raises(LoginDeniedError):
+        client.auth.finish_login(LOGIN, poll_interval=0)
+
+
+def test_finish_login_waits_ten_minutes_by_default(mock_api: MockAPI):
+    client = ReflexCloud(transport=MockTransport(mock_api))
+    timeout = inspect.signature(client.auth.finish_login).parameters["timeout"]
+    assert timeout.default == pytest.approx(600.0)
+
+
+def test_finish_login_timeout(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "GET",
+        "/api/v1/cli/token",
+        reply(404, json={"detail": "Token not found or not yet approved"}),
+    )
+    with pytest.raises(LoginTimeoutError):
+        client.auth.finish_login(LOGIN, timeout=0.05, poll_interval=60)
