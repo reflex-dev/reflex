@@ -13,8 +13,11 @@ from reflex_sdk.types import (
     App,
     AppSummary,
     DeploymentRecord,
+    FullDeployChange,
     HostnameReservation,
+    InstanceBoundsChange,
     LogRecord,
+    ProviderChange,
 )
 
 if TYPE_CHECKING:
@@ -335,6 +338,101 @@ class AsyncApps:
         )
         await self._client._request(
             "POST", f"apps/{path_segment(app_id)}/scale", None, json=body
+        )
+
+    async def set_provider(
+        self,
+        app_id: uuid.UUID | str,
+        provider: str,
+        *,
+        provider_account_id: uuid.UUID | str | None = None,
+        service_name: str | None = None,
+        full_deploy: bool | None = None,
+        expected_project_id: uuid.UUID | str | None = None,
+    ) -> ProviderChange:
+        """Move an app to another hosting provider.
+
+        Hosting on a connected Google Cloud account needs the Enterprise plan. The
+        previous provider's resources are torn down.
+
+        Args:
+            app_id: The app.
+            provider: ``"fly"`` for Reflex Cloud, or ``"gcp"`` for the organization's
+                Google Cloud.
+            provider_account_id: The Google Cloud connection to deploy to. Defaults
+                to the organization's default connection.
+            service_name: The Cloud Run service name, for Google Cloud apps.
+            full_deploy: Whether to also serve the frontend from Google Cloud.
+            expected_project_id: Refuse the change if the app has moved to another
+                project since this id was read.
+
+        Returns:
+            The provider the app is now on, and whether the previous one was released.
+        """
+        body: dict[str, Any] = {"provider": provider}
+        if provider_account_id is not None:
+            body["provider_account_id"] = str(provider_account_id)
+        if service_name is not None:
+            body["service_name"] = service_name
+        if full_deploy is not None:
+            body["full_deploy"] = full_deploy
+        return await self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/provider",
+            ProviderChange,
+            params={"expected_project_id": expected_project_id},
+            json=body,
+        )
+
+    async def set_full_deploy(
+        self, app_id: uuid.UUID | str, full_deploy: bool
+    ) -> FullDeployChange:
+        """Choose whether a Google Cloud app serves its frontend from its own container.
+
+        Needs the Enterprise plan. A deployed app is stopped, and serves the new way
+        from its next deployment.
+
+        Args:
+            app_id: The app.
+            full_deploy: Whether to serve the frontend from the app's container
+                rather than the CDN.
+
+        Returns:
+            The setting, and whether the app was stopped for it.
+        """
+        return await self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/full_deploy",
+            FullDeployChange,
+            json={"full_deploy": full_deploy},
+        )
+
+    async def set_instance_bounds(
+        self,
+        app_id: uuid.UUID | str,
+        *,
+        min_instances: int | None,
+        max_instances: int | None,
+    ) -> InstanceBoundsChange:
+        """Set how many instances a Google Cloud app scales between.
+
+        Both bounds are replaced, so pass the current value of one to keep it.
+
+        Args:
+            app_id: The app.
+            min_instances: The fewest instances to run, from 0 to 1000, or None for
+                the platform default.
+            max_instances: The most instances to run, from 1 to 1000, or None for the
+                platform default.
+
+        Returns:
+            Whether the bounds changed and were applied to the running app.
+        """
+        return await self._client._request(
+            "POST",
+            f"apps/{path_segment(app_id)}/instance_bounds",
+            InstanceBoundsChange,
+            json={"min_instances": min_instances, "max_instances": max_instances},
         )
 
     async def reserve_hostname(
