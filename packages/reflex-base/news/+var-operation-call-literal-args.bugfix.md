@@ -1,0 +1,1 @@
+Calling a `FunctionVar` with a raw `dict`, `list`, or `set` argument no longer raises `TypeError: unhashable type` when the resulting var is hashed, such as when it is embedded in an f-string. Arguments are now converted to Vars when the call is created.
