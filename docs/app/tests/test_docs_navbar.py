@@ -109,15 +109,18 @@ def test_navigation_menu_keeps_cross_app_destinations_raw(navbar):
 
 def test_external_links_bypass_the_router(navbar):
     """Absolute off-site URLs render as raw anchors, not router links."""
-    from reflex_site_shared.constants import GITHUB_URL
+    from reflex_site_shared.constants import GITHUB_URL, REFLEX_URL
 
     assert _collect_links(navbar.github_button()) == [("anchor", GITHUB_URL)]
+    assert _collect_links(navbar.logo())[0] == ("anchor", REFLEX_URL)
 
 
 def test_docs_logo_returns_to_docs_overview(navbar):
-    """The router adds the docs mount exactly once to the overview link."""
+    """The Reflex wordmark is a raw anchor; the Docs wordmark routes in-app."""
+    from reflex_site_shared.constants import REFLEX_URL
+
     assert _collect_links(navbar.logo()) == [
-        ("anchor", "https://reflex.dev/"),
+        ("anchor", REFLEX_URL),
         ("router", "/"),
     ]
 

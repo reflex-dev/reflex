@@ -7,6 +7,7 @@ from reflex_site_shared.constants import (
     GITHUB_STARS,
     GITHUB_URL,
     REFLEX_ASSETS_CDN,
+    REFLEX_URL,
     XY_GITHUB_STARS,
 )
 
@@ -39,7 +40,7 @@ def logo() -> rx.Component:
     """Link each wordmark to its respective site overview."""
     focus_class = "rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
     return rx.el.div(
-        rx.el.a(
+        rx.el.elements.a(
             rx.image(
                 src=f"{REFLEX_ASSETS_CDN}logos/light/reflex.svg",
                 alt="Reflex Logo",
@@ -50,7 +51,7 @@ def logo() -> rx.Component:
                 alt="Reflex Logo",
                 class_name="shrink-0 hidden dark:block",
             ),
-            href="https://reflex.dev/",
+            href=REFLEX_URL,
             aria_label="Reflex home",
             class_name=focus_class,
         ),
