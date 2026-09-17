@@ -68,6 +68,22 @@ def _role_body(name: str, base_tier: str, permissions: Sequence[str]) -> dict[st
 class Roles:
     """Manage the roles that can be granted on a project.
 
+    A custom role extends a built-in tier with permissions, which are named:
+
+    ``can_view``, ``can_create_app``, ``can_create_thread``, ``can_delete``,
+    ``can_rename``, ``can_deploy``, ``can_start_apps``, ``can_stop_apps``,
+    ``can_delete_apps``, ``can_manage_domains``, ``can_edit_code``,
+    ``can_push_to_repo``, ``can_change_visibility``, ``can_resize_sandbox``,
+    ``can_view_secret_keys``, ``can_view_secret_values``, ``can_edit_secrets``,
+    ``can_manage_integrations``, ``can_edit_integrations``,
+    ``can_view_audit_logs``, ``can_approve_deploy``, ``can_approve_change`` and
+    ``can_manage_approvals``.
+
+    Managing members, managing roles and billing come with the admin tier and
+    cannot be added to a role. ``can_view_secret_values`` and
+    ``can_edit_secrets`` each add ``can_view_secret_keys`` as well, so a role
+    lists it back. An unknown name is refused with ``BadRequestError`` naming it.
+
     Creating, changing and previewing custom roles needs the Enterprise plan.
     """
 
@@ -126,9 +142,8 @@ class Roles:
             name: The role name, unique within the project and not the name of a
                 base tier.
             base_tier: The built-in tier the role extends.
-            permissions: The permissions the role adds to its base tier, e.g.
-                ``"can_view_audit_logs"``. Membership, role and billing management
-                cannot be added.
+            permissions: The permissions the role adds to its base tier, from the
+                names listed on this class, e.g. ``"can_view_audit_logs"``.
 
         Returns:
             The new role.
@@ -160,7 +175,8 @@ class Roles:
             role_id: The custom role.
             name: The role name.
             base_tier: The built-in tier the role extends.
-            permissions: Every permission the role adds to its base tier.
+            permissions: Every permission the role adds to its base tier, from the
+                names listed on this class.
         """
         self._client._request(
             "PATCH",
@@ -186,7 +202,8 @@ class Roles:
             role_id: The custom role.
             name: The role name.
             base_tier: The built-in tier the role would extend.
-            permissions: Every permission the role would add to its base tier.
+            permissions: Every permission the role would add to its base tier, from
+                the names listed on this class.
 
         Returns:
             The permissions the role would gain and lose, and who holds it.
