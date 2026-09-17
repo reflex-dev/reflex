@@ -242,9 +242,10 @@ def disable() -> None:
 def flush(timeout_millis: int = 5000) -> None:
     """Flush spans already ended by the current process.
 
-    This is needed before a compile worker exits: on Python <= 3.12,
-    multiprocessing fork and forkserver children exit with ``os._exit``,
-    skipping the ``atexit`` hook where the SDK registers its shutdown flush.
+    Multiprocessing children exit with ``os._exit``. Before Python 3.13 that
+    skips ``atexit`` entirely, and since 3.13 it only runs hooks registered
+    after the fork, so the SDK's shutdown flush is skipped for any provider
+    created before the worker started.
 
     Args:
         timeout_millis: Maximum time to wait for exporters to flush.
@@ -253,12 +254,8 @@ def flush(timeout_millis: int = 5000) -> None:
         return
     provider = _tracer_provider or trace.get_tracer_provider()
     force_flush = getattr(provider, "force_flush", None)
-    if force_flush is None:
-        return
-    try:
-        force_flush(timeout_millis=timeout_millis)
-    except Exception:
-        logger.debug("OpenTelemetry span flush failed", exc_info=True)
+    if force_flush and not force_flush(timeout_millis=timeout_millis):
+        logger.debug("OpenTelemetry span flush timed out after %d ms", timeout_millis)
 
 
 def capture_context() -> Context | None:
