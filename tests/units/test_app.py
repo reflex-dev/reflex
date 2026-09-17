@@ -5093,11 +5093,12 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
     app = App(_state=rx.State)
     app._stateful_pages = dict.fromkeys(routes)
     app._write_stateful_pages_marker()
-    stop = threading.Event()
+    round_started = threading.Barrier(8, timeout=10)
 
     def writer():
         """Repeatedly replace the marker."""
         for _ in range(50):
+            round_started.wait()
             app._write_stateful_pages_marker()
 
     def reader():
@@ -5105,8 +5106,7 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
         # Backend workers read on startup; an infinite read storm can starve
         # Windows replacement because its readers do not share delete access.
         for _ in range(50):
-            if stop.is_set():
-                break
+            round_started.wait()
             content = _read_stateful_pages_marker()
             if content is None:
                 continue
@@ -5119,7 +5119,7 @@ def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
             for future in writers:
                 future.result()
         finally:
-            stop.set()
+            round_started.abort()
         for future in readers:
             future.result()
     assert json.loads(marker.read_text()) == routes

@@ -1775,6 +1775,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     if not constants.IS_WINDOWS or attempt == 99:
                         raise
                     # Windows readers temporarily prevent replacing their open file.
+                    # Wait 10 milliseconds before retrying.
                     time.sleep(0.01)
         except BaseException:
             tmp_marker.unlink(missing_ok=True)
