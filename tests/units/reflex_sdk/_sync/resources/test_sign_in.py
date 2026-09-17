@@ -88,7 +88,8 @@ def test_enable_is_retried(client: ReflexCloud, mock_api: MockAPI):
     assert client.apps.sign_in.enable(APP_ID) == SignInStatus(
         enabled=True, issuer=ISSUER, client_id=APP_ID, client_enabled=True
     )
-    assert len(mock_api.requests) == 2
+    first, retry = mock_api.requests
+    assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
 def test_disable(client: ReflexCloud, mock_api: MockAPI):
@@ -249,3 +250,14 @@ def test_uninvite(client: ReflexCloud, mock_api: MockAPI):
     )
     # The address goes in the query, where "+" must be encoded.
     assert "email=a%2Bb%40example.com" in mock_api.requests[0].url
+
+
+def test_uninvite_is_retried(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "DELETE",
+        f"{AUTH_PATH}/invites",
+        reply(503),
+        reply(200, json={"email": "someone@example.com", "revoked_sessions": 0}),
+    )
+    client.apps.sign_in.uninvite(APP_ID, "someone@example.com")
+    assert len(mock_api.requests) == 2

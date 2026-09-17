@@ -121,7 +121,7 @@ client.apps.sign_in.set_audience(app.id, "invited")
 client.apps.sign_in.invite(app.id, "someone@example.com")
 ```
 
-`client.apps.sign_in` lets an app's users sign in with their Reflex accounts, through `rxe.AuthPlugin` from `reflex-enterprise`. It sets the app's sign-in settings as secrets, chooses who may sign in, and lists, exports and blocks the app's users. Changing sign-in needs a token with full access; tokens from `reflex login` are refused.
+`client.apps.sign_in` lets an app's users sign in with their Reflex accounts, through `rxe.AuthPlugin` from `reflex-enterprise`. It sets the app's sign-in settings as secrets, which take effect when the app is next deployed with `rxe.AuthPlugin`, chooses who may sign in, and lists, exports and blocks the app's users. Restricting who may sign in and inviting addresses need the Pro or Enterprise plan. Changing sign-in needs a token with full access; tokens from `reflex login` are refused.
 
 ## Authentication
 

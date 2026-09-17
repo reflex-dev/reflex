@@ -60,6 +60,15 @@ class SignIn:
         self._client = client
 
     def _path(self, app_id: uuid.UUID | str, suffix: str = "") -> str:
+        """Build the path of an app's sign-in endpoint.
+
+        Args:
+            app_id: The app.
+            suffix: The rest of the path, e.g. ``"/users"``.
+
+        Returns:
+            The path.
+        """
         return f"apps/{path_segment(app_id)}/auth{suffix}"
 
     def get(self, app_id: uuid.UUID | str) -> SignInStatus:
@@ -276,4 +285,6 @@ class SignIn:
             self._path(app_id, "/invites"),
             InviteRemoval,
             params={"email": email},
+            # Withdrawing an address that is not invited succeeds.
+            idempotent=True,
         )
