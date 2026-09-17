@@ -1,3 +1,4 @@
+import logging
 import os
 import typing
 from collections.abc import Mapping, Sequence
@@ -14,6 +15,7 @@ from reflex_base.utils.exceptions import ReflexError, SystemPackageMissingError
 from reflex_base.vars.base import Var
 
 from reflex.environment import environment
+from reflex.plugins import RadixThemesPlugin
 from reflex.state import BaseState
 from reflex.utils import exec as utils_exec
 from reflex.utils import frontend_skeleton, js_runtimes, prerequisites, templates, types
@@ -361,6 +363,11 @@ def test_create_config_e2e(tmp_working_dir):
     exec((tmp_working_dir / constants.Config.FILE).read_text(), eval_globals)
     config = eval_globals["config"]
     assert config.app_name == app_name
+    # The default template must declare RadixThemesPlugin explicitly. The blank
+    # app renders Radix Themes components, so without an explicit plugin the
+    # compiler falls back to implicit enablement and emits a deprecation warning
+    # on the first `reflex run` of a freshly scaffolded app (issue #6483).
+    assert any(isinstance(plugin, RadixThemesPlugin) for plugin in config.plugins)
 
 
 class DataFrame:
@@ -528,20 +535,20 @@ def test_initialize_agents_md_refreshes_managed_section(tmp_path, mocker):
     )
 
 
-def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker):
+def test_initialize_agents_md_warns_on_fetch_failure(tmp_path, mocker, caplog):
     """Test that a failed fetch warns without writing AGENTS.md or the bridge."""
     import httpx
 
     agents_file = tmp_path / "AGENTS.md"
     claude_file = tmp_path / "CLAUDE.md"
     mocker.patch("reflex.utils.net.get", side_effect=httpx.ConnectError("boom"))
-    warn = mocker.patch("reflex.utils.console.warn")
 
     frontend_skeleton.initialize_agents_md(
         agents_file=agents_file, claude_file=claude_file
     )
 
-    warn.assert_called_once()
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
     assert not agents_file.exists()
     assert not claude_file.exists()
 
@@ -780,7 +787,7 @@ def test_output_system_info(mocker: MockerFixture):
     This test makes no assertions about the output, other than it executes
     without crashing.
     """
-    mocker.patch("reflex_base.utils.console._LOG_LEVEL", constants.LogLevel.DEBUG)
+    mocker.patch("reflex_base.utils.log._log_level", constants.LogLevel.DEBUG)
     utils_exec.output_system_info()
 
 
@@ -815,3 +822,194 @@ def test_is_prod_mode() -> None:
     assert utils_exec.is_prod_mode()
     environment.REFLEX_ENV_MODE.set(None)
     assert not utils_exec.is_prod_mode()
+
+
+def test_preview_env_is_not_prod_mode() -> None:
+    """Preview is a development mode, so is_prod_mode must stay False."""
+    environment.REFLEX_ENV_MODE.set(constants.Env.PREVIEW)
+    try:
+        assert not utils_exec.is_prod_mode()
+    finally:
+        environment.REFLEX_ENV_MODE.set(None)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("dev", constants.Env.DEV),
+        ("preview", constants.Env.PREVIEW),
+        ("prod", constants.Env.PROD),
+    ],
+)
+def test_env_enum_roundtrip(value: str, expected: constants.Env) -> None:
+    """Each env string maps to the matching Env member (used by the run CLI)."""
+    assert constants.Env(value) is expected
+
+
+@pytest.mark.parametrize("minify", [True, False])
+def test_vite_config_template_minify(minify: bool) -> None:
+    """The vite config template emits the requested build.minify value."""
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+        minify=minify,
+    )
+    expected = "true" if minify else "false"
+    assert f"minify: {expected}," in config
+    # CSS minification follows the JS minify flag.
+    assert f"cssMinify: {expected}," in config
+
+
+def test_vite_config_template_valid_rolldown_options() -> None:
+    """The vite config only emits options accepted by rolldown-vite.
+
+    rolldown-vite rejects `rollupOptions.jsx` ("Invalid input options") and
+    deprecates `output.advancedChunks` in favor of `output.codeSplitting`
+    (same shape), so the template must emit neither legacy option while
+    keeping the reflex-env chunk group.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "jsx: {}" not in config
+    assert "advancedChunks" not in config
+    assert "codeSplitting: {" in config
+    assert 'name: "reflex-env",' in config
+
+
+def test_vite_config_template_pins_preview_host() -> None:
+    """The vite config pins the preview server to an IPv4 loopback address.
+
+    react-router prerenders by fetching pages from a `vite preview` server;
+    without a pinned host, the bound socket and the fetched `localhost` URL
+    can resolve to different address families and refuse the connection.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "preview: {" in config
+    assert 'host: "127.0.0.1",' in config
+
+
+def test_vite_config_template_imports_plugin_with_extension() -> None:
+    """Local plugin imports carry a file extension.
+
+    Vite's native config loader (planned to become the default) cannot resolve
+    extensionless relative imports and warns about them today.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert 'from "./vite-plugin-safari-cachebust.js"' in config
+
+
+def test_vite_config_template_filters_react_dom_server_resolve_hook() -> None:
+    """The react-dom/server resolveId hook declares a hook filter.
+
+    Without a filter, rolldown calls the hook for every import in the module
+    graph, which dominates build time on large apps.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+    )
+    assert "filter: { id: /react-dom\\/server/ }," in config
+    assert "handler(source, importer) {" in config
+
+
+@pytest.mark.parametrize("minify", [True, False])
+def test_compile_vite_config_reads_minify_env(
+    minify: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """_compile_vite_config threads the VITE_MINIFY env var into the template."""
+    monkeypatch.setenv(environment.VITE_MINIFY.name, "true" if minify else "false")
+    config = frontend_skeleton._compile_vite_config(prerequisites.get_config())
+    assert f"minify: {'true' if minify else 'false'}," in config
+
+
+@pytest.mark.parametrize("prod_react", [True, False])
+def test_vite_config_template_prod_react(prod_react: bool) -> None:
+    """REFLEX_DEV_PROD_REACT swaps the browser's prebundled React for production.
+
+    The swap lives in an optimizer-only plugin (never `resolve.alias`, which
+    would stop Vite externalizing React for SSR), compiles JSX with the non-dev
+    runtime, and changes the optimizer cache key via a define.
+    """
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=prod_react,
+        experimental_hmr=False,
+        sourcemap=False,
+        prod_react=prod_react,
+    )
+    markers = (
+        "function prodReactPrebundle() {",
+        "plugins: [prodReactPrebundle()],",
+        'transform: { define: { "process.env.REFLEX_DEV_PROD_REACT": \'"1"\' } },',
+        "jsx: { development: false },",
+        '"react-dom/client": path.join(reactDomRoot, "cjs/react-dom-client.production.js"),',
+        'packageRoot("scheduler", path.join(reactDomRoot, "package.json"))',
+    )
+    for marker in markers:
+        assert (marker in config) is prod_react, marker
+    assert "customResolver" not in config
+    assert ("[fullReload()]" in config) is prod_react
+
+
+@pytest.mark.parametrize("warmup_routes", [True, False])
+def test_vite_config_template_warmup_routes(warmup_routes: bool) -> None:
+    """REFLEX_VITE_WARMUP_ROUTES pre-transforms route modules at server start."""
+    from reflex.compiler import templates as compiler_templates
+
+    config = compiler_templates.vite_config_template(
+        base="/",
+        hmr=True,
+        force_full_reload=False,
+        experimental_hmr=False,
+        sourcemap=False,
+        warmup_routes=warmup_routes,
+    )
+    assert ('clientFiles: ["./app/routes/**/*.jsx"],' in config) is warmup_routes
+
+
+def test_compile_vite_config_prod_react_forces_full_reload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Production React cannot be hot-patched, so the env var also forces full reloads."""
+    from reflex_base.config import get_config
+
+    monkeypatch.setenv(environment.REFLEX_DEV_PROD_REACT.name, "true")
+    config = frontend_skeleton._compile_vite_config(get_config())
+    assert "plugins: [prodReactPrebundle()]," in config
+    assert "[fullReload()]" in config

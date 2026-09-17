@@ -34,11 +34,34 @@ repos:
     require_serial: true
 - repo: local
   hooks:
+  - id: unasync-reflex-sdk
+    name: unasync-reflex-sdk
+    description: Regenerate the synchronous reflex-sdk client and tests from the asynchronous source
+    entry: uv run --no-sync python packages/reflex-sdk/scripts/unasync.py
+    language: system
+    files: ^(packages/reflex-sdk/src/reflex_sdk/|packages/reflex-sdk/scripts/unasync\.py$|tests/units/reflex_sdk/)
+    pass_filenames: false
+    require_serial: true
+- repo: local
+  hooks:
   - id: pyright
     name: pyright
     entry: uv run --no-sync pyright
     language: system
     types: [python]
+    require_serial: true
+- repo: local
+  hooks:
+  # The second opinion the assert_type examples exist for. Always runs: what
+  # these examples catch is a source change altering an inferred type, so
+  # scoping the hook to the examples themselves would never fire on the edit
+  # that broke them.
+  - id: ty
+    name: ty
+    entry: uv run --no-sync ty check --python-version 3.14 tests/type_checking
+    language: system
+    always_run: true
+    pass_filenames: false
     require_serial: true
 - repo: https://github.com/biomejs/pre-commit
   rev: 19865851e014cbe6138e295365f95ca51bf953f8 # v0.6.1
@@ -46,5 +69,5 @@ repos:
   - id: biome-format
     additional_dependencies: ['@biomejs/biome@2.4.8']
     args: [--indent-width, '2', --indent-style, space]
-    exclude: (\.css$|docs/app/)
+    exclude: (\.css$|docs/app/|packages/reflex-sdk/openapi\.json$)
     require_serial: true

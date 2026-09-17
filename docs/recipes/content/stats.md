@@ -8,7 +8,7 @@ Stats cards are used to display key metrics or data points. They are typically u
 
 ## Variant 1
 
-```python demo exec toggle
+```python demo exec
 from reflex.components.radix.themes.base import LiteralAccentColor
 
 
@@ -79,7 +79,7 @@ def stats(
 
 ## Variant 2
 
-```python demo exec toggle
+```python demo exec
 from reflex.components.radix.themes.base import LiteralAccentColor
 
 

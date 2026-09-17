@@ -5,14 +5,16 @@ import copy
 import dataclasses
 import datetime
 import functools
+import inspect
 import json
+import logging
 import math
 import os
 import sys
 import threading
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal, TypeVar
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -28,6 +30,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor
 from reflex_base.utils import format, types
 from reflex_base.utils.exceptions import (
+    BaseVarShadowsInheritedVarError,
     InvalidLockWarningThresholdError,
     LockExpiredError,
     ReflexRuntimeError,
@@ -37,24 +40,25 @@ from reflex_base.utils.exceptions import (
 )
 from reflex_base.utils.format import json_dumps
 from reflex_base.vars.base import Field, Var, computed_var, field
+from typing_extensions import TypeAliasType
 
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.istate.data import HeaderData, _FrozenDictStrStr
+from reflex.istate.data import HeaderData, RouterData, SessionData, _FrozenDictStrStr
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
 from reflex.istate.manager.redis import StateManagerRedis
 from reflex.istate.manager.token import BaseStateToken
-from reflex.istate.proxy import StateProxy
+from reflex.istate.proxy import MutableProxy, StateProxy
 from reflex.state import (
     BaseState,
+    Delta,
     ImmutableStateError,
-    MutableProxy,
     OnLoadInternalState,
-    RouterData,
     State,
+    _suppress_delta_recording,
 )
 from reflex.testing import chdir
 from reflex.utils import prerequisites
@@ -997,13 +1001,12 @@ async def test_process_event_substate(
     )
     async with mock_base_state_event_processor as processor:
         await processor.enqueue(token, event)
+    # GrandchildState3.computed is uncached, but its value is unchanged since the
+    # previous delta, so it is not sent again.
     assert emitted_deltas == [
         (
             token,
-            {
-                GrandchildState.get_full_name(): {"value2" + FIELD_MARKER: "new"},
-                GrandchildState3.get_full_name(): {"computed" + FIELD_MARKER: ""},
-            },
+            {GrandchildState.get_full_name(): {"value2" + FIELD_MARKER: "new"}},
         )
     ]
 
@@ -1461,9 +1464,8 @@ def test_computed_var_cached_depends_on_non_cached():
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0, "dep_v" + FIELD_MARKER: 0}
-    }
+    # no_cache_v is recomputed, but the value is unchanged, so it is not resent.
+    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 0}}
     cs._clean()
     assert cs.dirty_vars == set()
     cs.v = 1
@@ -1478,16 +1480,297 @@ def test_computed_var_cached_depends_on_non_cached():
     }
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
-    }
+    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 1}}
     cs._clean()
     assert cs.dirty_vars == set()
-    assert cs.get_delta() == {
-        cs.get_name(): {"no_cache_v" + FIELD_MARKER: 1, "dep_v" + FIELD_MARKER: 1}
-    }
+    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 1}}
     cs._clean()
     assert cs.dirty_vars == set()
+
+
+def test_uncached_computed_var_unchanged_omitted_from_delta():
+    """An uncached var that recomputes to the same value is left out of the delta."""
+    calls = 0
+
+    class UncachedState(BaseState):
+        v: int = 0
+
+        @rx.var(cache=False)
+        def no_cache_v(self) -> int:
+            nonlocal calls
+            calls += 1
+            return self.v
+
+    ucs = UncachedState()
+    assert ucs.get_delta() == {ucs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}}
+    assert calls == 1
+    ucs._clean()
+
+    # Still recomputed, but the unchanged value is not sent again.
+    assert ucs.get_delta() == {}
+    assert calls == 2
+    ucs._clean()
+
+    ucs.v = 1
+    assert ucs.get_delta() == {
+        ucs.get_name(): {"v" + FIELD_MARKER: 1, "no_cache_v" + FIELD_MARKER: 1}
+    }
+    ucs._clean()
+    assert ucs.get_delta() == {}
+
+
+def test_uncached_computed_var_scalar_key_distinguishes_types():
+    """Python-equal but JSON-distinct scalars are not suppressed as unchanged."""
+    values = iter([1, True, 1.0])
+
+    class ScalarState(BaseState):
+        @rx.var(cache=False)
+        def v(self) -> int | float:
+            return next(values)
+
+    ss = ScalarState()
+    key = "v" + FIELD_MARKER
+    # 1, True and 1.0 are all Python-equal, but the client would receive 1,
+    # true and 1.0, so each one has to be sent.
+    for expected_type in (int, bool, float):
+        assert type(ss.get_delta()[ss.get_name()][key]) is expected_type
+        ss._clean()
+
+
+def test_uncached_computed_var_nan_value_not_resent():
+    """NaN is keyed by its serialized form, so an unchanged NaN is not resent."""
+
+    class NanState(BaseState):
+        @rx.var(cache=False)
+        def v(self) -> float:
+            return float("nan")
+
+    ns = NanState()
+    assert math.isnan(ns.get_delta()[ns.get_name()]["v" + FIELD_MARKER])
+    ns._clean()
+    assert ns.get_delta() == {}
+
+
+class UncachedRedisState(BaseState):
+    """A state with uncached computed vars, defined at module level to be picklable."""
+
+    _v: int = 0
+
+    @rx.var(cache=False)
+    def scalar_v(self) -> int:
+        """An uncached var with an atomic value.
+
+        Returns:
+            The backend var value.
+        """
+        return self._v
+
+    @rx.var(cache=False)
+    def list_v(self) -> list[int]:
+        """An uncached var with a value keyed by a digest.
+
+        Returns:
+            A list holding the backend var value.
+        """
+        return [self._v]
+
+
+def test_uncached_computed_var_records_last_value_for_redis():
+    """Recorded delta keys mark the state touched and survive serialization."""
+    urs = UncachedRedisState()
+    assert urs._was_touched is False
+    assert urs.get_delta() == {
+        urs.get_name(): {
+            "scalar_v" + FIELD_MARKER: 0,
+            "list_v" + FIELD_MARKER: [0],
+        }
+    }
+    # The recorded keys have to reach redis, so the state counts as touched.
+    assert urs._was_touched is True
+
+    # Recomputing unchanged values does not force another redis write.
+    urs._clean()
+    urs._was_touched = False
+    assert urs.get_delta() == {}
+    assert urs._was_touched is False
+
+    # A state restored from its serialized form still knows what was sent.
+    restored = BaseState._deserialize(urs._serialize())
+    assert isinstance(restored, UncachedRedisState)
+    assert restored.get_delta() == {}
+
+    restored._v = 1
+    assert restored.get_delta() == {
+        restored.get_name(): {
+            "scalar_v" + FIELD_MARKER: 1,
+            "list_v" + FIELD_MARKER: [1],
+        }
+    }
+
+
+def test_uncached_computed_var_mutable_value_mutated_in_place():
+    """An uncached var returning a state-owned mutable value still sees mutations."""
+
+    class UncachedMutableState(BaseState):
+        items: list[str] = []
+
+        @rx.var(cache=False)
+        def all_items(self) -> list[str]:
+            return self.items
+
+    ums = UncachedMutableState()
+    assert ums.get_delta() == {ums.get_name(): {"all_items" + FIELD_MARKER: []}}
+    ums._clean()
+    assert ums.get_delta() == {}
+    ums._clean()
+
+    ums.items.append("a")
+    assert ums.get_delta() == {
+        ums.get_name(): {
+            "items" + FIELD_MARKER: ["a"],
+            "all_items" + FIELD_MARKER: ["a"],
+        }
+    }
+    ums._clean()
+    assert ums.get_delta() == {}
+
+
+def test_uncached_computed_var_recorded_per_client_token():
+    """A value already sent to one client is still sent to another client.
+
+    A single state instance can serve multiple clients (linked shared states),
+    so the recorded value only suppresses the delta for the client that got it.
+    """
+
+    class MultiClientState(BaseState):
+        @rx.var(cache=False)
+        def no_cache_v(self) -> int:
+            return 1
+
+    mcs = MultiClientState()
+    mcs.router = RouterData(session=SessionData(client_token="token_a"))
+    mcs._clean()
+    assert mcs.get_delta() == {mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
+    mcs._clean()
+    assert mcs.get_delta() == {}
+    mcs._clean()
+
+    # The same state instance now produces a delta for a different client.
+    mcs.router = RouterData(session=SessionData(client_token="token_b"))
+    mcs._clean()
+    assert mcs.get_delta() == {mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
+    mcs._clean()
+    assert mcs.get_delta() == {}
+
+
+def test_uncached_computed_var_unkeyable_value_always_sent():
+    """A value that cannot be serialized has no key and is always sent."""
+
+    class CircularState(BaseState):
+        @rx.var(cache=False)
+        def circular(self) -> list:
+            value = []
+            value.append(value)
+            return value
+
+    cs = CircularState()
+    # Compare the keys only: the values are self-referential.
+    assert list(cs.get_delta()[cs.get_name()]) == ["circular" + FIELD_MARKER]
+    cs._clean()
+    assert list(cs.get_delta()[cs.get_name()]) == ["circular" + FIELD_MARKER]
+
+
+async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
+    """An unchanged async uncached var is dropped from the resolved delta."""
+
+    class AsyncUncachedState(BaseState):
+        v: int = 0
+
+        @rx.var(cache=False)
+        async def no_cache_v(self) -> int:
+            return self.v
+
+    aus = AsyncUncachedState()
+    assert await aus._get_resolved_delta() == {
+        aus.get_name(): {"no_cache_v" + FIELD_MARKER: 0}
+    }
+    aus._clean()
+    assert await aus._get_resolved_delta() == {}
+    aus._clean()
+
+    aus.v = 1
+    assert await aus._get_resolved_delta() == {
+        aus.get_name(): {"v" + FIELD_MARKER: 1, "no_cache_v" + FIELD_MARKER: 1}
+    }
+    aus._clean()
+    assert await aus._get_resolved_delta() == {}
+
+
+def test_get_delta_tolerates_zero_argument_override(test_state: TestState, monkeypatch):
+    """A `get_delta` override taking only `self` still serves the whole state tree.
+
+    Downstream packages monkeypatch `get_delta` with a function that accepts no
+    arguments, so no internal caller may pass it one -- including the recursion
+    into substates, which reaches the override for every state in the tree.
+
+    Args:
+        test_state: A test state.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    original_get_delta = TestState.get_delta
+    seen: list[str] = []
+
+    def patched_get_delta(self: TestState) -> Delta:
+        seen.append(self.get_full_name())
+        return original_get_delta(self)
+
+    monkeypatch.setattr(TestState, "get_delta", patched_get_delta)
+
+    child_state = test_state.get_substate([ChildState.get_name()])
+    assert child_state is not None
+    child_state.value = "hi"
+
+    delta = test_state.get_delta()
+    assert delta[ChildState.get_full_name()]["value" + FIELD_MARKER] == "hi"
+    # The override is reached for substates, not only for the root.
+    assert ChildState.get_full_name() in seen
+
+
+def test_discarded_delta_does_not_record_values_of_substates():
+    """A delta built only for its side effects does not count as sent, at any depth."""
+
+    class DiscardedParentState(BaseState):
+        pass
+
+    class DiscardedChildState(DiscardedParentState):
+        v: int = 0
+
+        @rx.var(cache=False)
+        def no_cache_v(self) -> int:
+            return self.v
+
+    dps = DiscardedParentState()
+    expected = {DiscardedChildState.get_full_name(): {"no_cache_v" + FIELD_MARKER: 0}}
+
+    # A discarded traversal must not record the values it computed...
+    with _suppress_delta_recording():
+        assert dps.get_delta() == expected
+    dps._clean()
+
+    # ...so the client still receives them on the next real delta.
+    assert dps.get_delta() == expected
+    dps._clean()
+    assert dps.get_delta() == {}
+
+
+def test_delta_methods_take_no_arguments():
+    """`get_delta` and `_get_resolved_delta` must stay callable with no arguments.
+
+    Downstream packages monkeypatch them with functions accepting only `self`, so
+    a parameter here breaks every delta for them as soon as a caller passes it.
+    """
+    assert list(inspect.signature(BaseState.get_delta).parameters) == ["self"]
+    assert list(inspect.signature(BaseState._get_resolved_delta).parameters) == ["self"]
 
 
 def test_computed_var_depends_on_parent_non_cached():
@@ -1862,7 +2145,7 @@ async def test_state_manager_modify_state(
 
         # separate instances should NOT share locks
         sm2 = type(state_manager)()
-        assert sm2._state_manager_lock is state_manager._state_manager_lock
+        assert sm2._state_manager_lock is not state_manager._state_manager_lock
         assert not sm2._states_locks
         if state_manager._states_locks:
             assert sm2._states_locks != state_manager._states_locks
@@ -1922,66 +2205,74 @@ async def test_state_manager_legacy_token(state_manager: StateManager, token: st
     """
     from unittest.mock import patch
 
-    import reflex_base.utils.console as _base_console
-
-    from reflex.istate.manager import token as _token_mod
-
-    console = _token_mod.console
+    from reflex_base.utils import log as _base_log
 
     from reflex.state import State
+    from reflex.utils import console
 
     legacy_token = f"{token}_{OnLoadState.get_full_name()}"
+    dedupe_state = _base_log._dedupe_filter().seen.copy()
 
-    def _clear_dedupe():
-        _base_console._EMITTED_DEPRECATION_WARNINGS -= {
-            k
-            for k in _base_console._EMITTED_DEPRECATION_WARNINGS
-            if "Passing a string to modify_state" in k
-        }
+    try:
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            # The legacy modify_state token path emits the deprecation.
+            async with state_manager.modify_state(legacy_token) as state:
+                assert isinstance(state, State)
+                assert OnLoadState.get_name() in state.substates
+            mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
 
-    _clear_dedupe()
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            # The legacy get_state token path emits the same deprecation.
+            retrieved = await state_manager.get_state(legacy_token)
+            assert isinstance(retrieved, State)
+            assert OnLoadState.get_name() in retrieved.substates
+            mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
 
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        # modify_state should accept a legacy string token and emit a deprecation warning.
-        async with state_manager.modify_state(legacy_token) as state:
-            assert isinstance(state, State)
-            # The substate targeted by the token should be prepopulated.
-            assert OnLoadState.get_name() in state.substates
-        mock_deprecate.assert_called()
-        assert (
-            mock_deprecate.call_args.kwargs["feature_name"]
-            == "Passing a string to modify_state"
-        )
-        mock_deprecate.reset_mock()
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            # The legacy set_state token path emits the same deprecation.
+            await state_manager.set_state(legacy_token, retrieved)
+            mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
 
-    _clear_dedupe()
-
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        # get_state should also accept a legacy string token.
-        retrieved = await state_manager.get_state(legacy_token)
-        assert isinstance(retrieved, State)
-        assert OnLoadState.get_name() in retrieved.substates
-        mock_deprecate.assert_called()
-        mock_deprecate.reset_mock()
-
-    _clear_dedupe()
-
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        # set_state should also accept a legacy string token.
-        await state_manager.set_state(legacy_token, retrieved)
-        mock_deprecate.assert_called()
-        mock_deprecate.reset_mock()
-
-    _clear_dedupe()
-
-    with patch.object(console, "deprecate", wraps=console.deprecate) as mock_deprecate:
-        final = await state_manager.get_state(legacy_token)
-        assert isinstance(final, State)
-        assert OnLoadState.get_name() in final.substates
-        mock_deprecate.assert_called()
+        with patch.object(
+            console, "deprecate", wraps=console.deprecate
+        ) as mock_deprecate:
+            _base_log._dedupe_filter().seen.clear()
+            # A final legacy get_state lookup remains supported.
+            final = await state_manager.get_state(legacy_token)
+            assert isinstance(final, State)
+            assert OnLoadState.get_name() in final.substates
+            mock_deprecate.assert_called()
+            assert (
+                mock_deprecate.call_args.kwargs["feature_name"]
+                == "Passing a string to modify_state"
+            )
+    finally:
+        _base_log._dedupe_filter().seen.clear()
+        _base_log._dedupe_filter().seen.update(dedupe_state)
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@pytest_asyncio.fixture(loop_scope="function")
 async def state_manager_redis() -> AsyncGenerator[StateManager, None]:
     """Instance of state manager for redis only.
 
@@ -2143,7 +2434,7 @@ async def test_state_manager_lock_warning_threshold_contend(
     state_manager_redis: StateManagerRedis,
     token: str,
     substate_token_redis: BaseStateToken,
-    mocker: MockerFixture,
+    caplog: pytest.LogCaptureFixture,
 ):
     """Test that the state manager triggers a warning when lock contention exceeds the warning threshold.
 
@@ -2151,10 +2442,8 @@ async def test_state_manager_lock_warning_threshold_contend(
         state_manager_redis: A state manager instance.
         token: A token.
         substate_token_redis: A token + substate name for looking up in state manager.
-        mocker: Pytest mocker object.
+        caplog: Pytest log capture fixture.
     """
-    console_warn = mocker.patch("reflex_base.utils.console.warn")
-
     state_manager_redis.lock_expiration = LOCK_EXPIRATION
     state_manager_redis.lock_warning_threshold = LOCK_WARNING_THRESHOLD
 
@@ -2170,12 +2459,16 @@ async def test_state_manager_lock_warning_threshold_contend(
     ]
 
     await tasks[0]
+    lock_warnings = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.WARNING and "was held too long" in r.getMessage()
+    ]
     if environment.REFLEX_OPLOCK_ENABLED.get():
         # When Oplock is enabled, we don't warn when lock is held too long.
-        console_warn.assert_not_called()
+        assert not lock_warnings
     else:
-        console_warn.assert_called()
-        assert console_warn.call_count == 7
+        assert len(lock_warnings) == 7
 
 
 class CopyingAsyncMock(AsyncMock):
@@ -3365,7 +3658,6 @@ async def test_preprocess(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3429,7 +3721,6 @@ async def test_preprocess_multiple_load_events(
         mock_base_state_event_processor: The event processor.
         emitted_deltas: List to capture emitted deltas.
     """
-    OnLoadInternalState._app_ref = None
     app = app_module_mock.app = App(_state=State)
     app._state_manager = mock_root_event_context.state_manager
 
@@ -3586,17 +3877,21 @@ async def test_get_state(token: str, attached_mock_event_context: EventContext):
     child_state2 = new_test_state.get_substate((ChildState2.get_name(),))
     child_state2.value = "set_c2_value"
 
-    assert new_test_state.get_delta() == {
+    expected_delta = {
         ChildState2.get_full_name(): {
             "value" + FIELD_MARKER: "set_c2_value",
         },
         GrandchildState2.get_full_name(): {
             "cached" + FIELD_MARKER: "set_c2_value",
         },
-        GrandchildState3.get_full_name(): {
-            "computed" + FIELD_MARKER: "",
-        },
     }
+    if not isinstance(state_manager, (StateManagerMemory, StateManagerDisk)):
+        # With redis this is a fresh instance which has not sent the uncached
+        # GrandchildState3.computed yet; in memory it was sent by the delta above.
+        expected_delta[GrandchildState3.get_full_name()] = {
+            "computed" + FIELD_MARKER: "",
+        }
+    assert new_test_state.get_delta() == expected_delta
 
 
 @pytest.mark.asyncio
@@ -3880,7 +4175,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         state_manager = StateManagerRedis(redis=mock_redis())
         assert state_manager.lock_expiration == expected_values[0]  # pyright: ignore [reportAttributeAccessIssue]
@@ -3916,7 +4211,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         with pytest.raises(InvalidLockWarningThresholdError):
             StateManagerRedis(redis=mock_redis())
@@ -3941,7 +4236,7 @@ config = rx.Config(
     monkeypatch.setenv("REFLEX_REDIS_URL", "redis://localhost:6379")
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         monkeypatch.setattr(prerequisites, "get_redis", mock_redis)
         state_manager = StateManager.create()
         assert isinstance(state_manager, StateManagerMemory)
@@ -3965,7 +4260,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -3992,7 +4287,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # reload config for each parameter to avoid stale values
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class TestState(State):
@@ -4032,7 +4327,7 @@ config = rx.Config(
 
     with chdir(proj_root):
         # Must not raise (previously raised AttributeError mid-import).
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         del sys.modules[constants.Config.MODULE]
 
 
@@ -4061,7 +4356,7 @@ config = rx.Config(app_name="project1")
     (proj_root / "rxconfig.py").write_text(dedent(config_string))
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         state_cls = sys.modules[constants.Config.MODULE].RxconfigEnvSetterState
         assert "set_n" in state_cls.event_handlers
         del sys.modules[constants.Config.MODULE]
@@ -4087,7 +4382,7 @@ config = rx.Config(app_name="project1")
     (proj_root / "rxconfig.py").write_text(dedent(config_string))
 
     with chdir(proj_root):
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         state_cls = sys.modules[constants.Config.MODULE].RxconfigNoSetterState
         assert list(state_cls.event_handlers) == ["setvar"]
         del sys.modules[constants.Config.MODULE]
@@ -4109,7 +4404,7 @@ config = rx.Config(app_name="project1", state_auto_setters=True)
 
     with chdir(proj_root):
         rxconfig_path.write_text(dedent(off_config))
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
         from reflex.state import State
 
         class ReloadOffState(State):
@@ -4118,7 +4413,7 @@ config = rx.Config(app_name="project1", state_auto_setters=True)
         assert list(ReloadOffState.event_handlers) == ["setvar"]
 
         rxconfig_path.write_text(dedent(on_config))
-        reflex_base.config.get_config(reload=True)
+        reflex_base.config.reload_config()
 
         class ReloadOnState(State):
             num: int = 0
@@ -4381,6 +4676,67 @@ def test_assignment_to_undeclared_vars():
     state.handle_non_var()
 
 
+def test_backend_var_inherits_field_default_and_surfaces_factory_errors():
+    """A Field on a plain base supplies its default; a failing factory is not swallowed."""
+
+    class WithDefault:
+        _n = field(default=3)
+
+    class InheritsDefault(WithDefault, BaseState):
+        _n: int
+
+    assert InheritsDefault.backend_vars["_n"] == 3
+
+    def _boom() -> int:
+        msg = "factory blew up"
+        raise ValueError(msg)
+
+    class WithFailingFactory:
+        _n = field(default_factory=_boom)
+
+    with pytest.raises(ValueError, match="factory blew up"):
+
+        class FactoryState(WithFailingFactory, BaseState):
+            _n: int
+
+
+def test_assignment_through_property_setter():
+    """A property's setter runs instead of the undeclared-var guard."""
+
+    class PropertyState(BaseState):
+        first: str = "Jane"
+        last: str = "Doe"
+
+        @property
+        def full(self) -> str:
+            return f"{self.first} {self.last}"
+
+        @full.setter
+        def full(self, value: str) -> None:
+            self.first, self.last = value.split(" ", 1)
+
+        @full.deleter
+        def full(self) -> None:
+            self.first = self.last = ""
+
+    state = PropertyState()  # pyright: ignore [reportCallIssue]
+    state.full = "Ada Lovelace"
+    assert (state.first, state.last) == ("Ada", "Lovelace")
+    del state.full
+    assert (state.first, state.last) == ("", "")
+
+    # a read-only property raises its own error, not the undeclared-var guard
+    class ReadOnlyState(BaseState):
+        @property
+        def derived(self) -> str:
+            return ""
+
+    with pytest.raises(AttributeError) as exc_info:
+        ReadOnlyState().derived = "x"  # pyright: ignore [reportCallIssue, reportAttributeAccessIssue]
+    # SetUndefinedStateVarError is itself an AttributeError, so exclude it by type
+    assert not isinstance(exc_info.value, SetUndefinedStateVarError)
+
+
 @pytest.mark.asyncio
 async def test_deserialize_gc_state_disk(token):
     """Test that a state can be deserialized from disk with a grandchild state.
@@ -4437,6 +4793,13 @@ class Obj(Base):
     f: Callable
 
 
+# TODO: drop the xfail once the dill release fixing
+# https://github.com/uqfoundation/dill/issues/753 lands in uv.lock
+@pytest.mark.xfail(
+    sys.version_info >= (3, 15),
+    reason="dill <= 0.4.1 uses code.co_lnotab, removed in Python 3.15",
+    raises=StateSerializationError,
+)
 def test_fallback_pickle():
     """Test that state serialization will fall back to dill."""
 
@@ -5146,6 +5509,89 @@ def test_descriptor_overrides_inherited_descriptor():
     assert (ParentDescState.get_full_name(), "parent_view") in parent_deps
 
 
+class OnLoadCancelState(State):
+    """A test state whose on_load handler blocks until cancelled."""
+
+    # Signalling gates, populated per-test with loop-local events.
+    _gates: ClassVar[dict[str, asyncio.Event]] = {}
+
+    @rx.event
+    async def slow_handler(self):
+        """Signal start, then block; signal again if cancelled."""
+        type(self)._gates["started"].set()
+        try:
+            await asyncio.sleep(10)
+        except asyncio.CancelledError:
+            type(self)._gates["cancelled"].set()
+            raise
+
+
+async def test_on_load_internal_supersedes_previous_navigation(
+    app_module_mock,
+    token,
+    mock_root_event_context: EventContext,
+    mock_base_state_event_processor: BaseStateEventProcessor,
+):
+    """A newer navigation cancels the previous unfinished on_load chain (#6593).
+
+    Args:
+        app_module_mock: The app module that will be returned by get_app().
+        token: A token.
+        mock_root_event_context: The mock root event context.
+        mock_base_state_event_processor: The event processor.
+    """
+    assert OnLoadInternalState.event_handlers["on_load_internal"].supersedes
+    assert not State.event_handlers["hydrate"].supersedes
+
+    app = app_module_mock.app = App(_state=State)
+    app._state_manager = mock_root_event_context.state_manager
+
+    def index():
+        return "hello"
+
+    app.add_page(index, on_load=OnLoadCancelState.slow_handler)
+    app._compile_page("index")
+
+    OnLoadCancelState._gates = {
+        "started": asyncio.Event(),
+        "cancelled": asyncio.Event(),
+    }
+    on_load_internal_name = format.format_event_handler(
+        OnLoadInternalState.on_load_internal  # pyright: ignore[reportArgumentType]
+    )
+
+    async with mock_base_state_event_processor as processor:
+        stale = await processor.enqueue(
+            token,
+            Event(
+                name=on_load_internal_name,
+                router_data={
+                    RouteVar.PATH: "/",
+                    RouteVar.ORIGIN: "/",
+                    RouteVar.QUERY: {},
+                },
+            ),
+        )
+        await asyncio.wait_for(OnLoadCancelState._gates["started"].wait(), timeout=5)
+
+        # Navigate to a page without on_load events (fast path).
+        current = await processor.enqueue(
+            token,
+            Event(
+                name=on_load_internal_name,
+                router_data={
+                    RouteVar.PATH: "/other",
+                    RouteVar.ORIGIN: "/other",
+                    RouteVar.QUERY: {},
+                },
+            ),
+        )
+        await asyncio.wait_for(OnLoadCancelState._gates["cancelled"].wait(), timeout=5)
+        # The fresh navigation completes without waiting behind the stale chain.
+        await asyncio.wait_for(current.wait_all(), timeout=5)
+        assert stale.done()
+
+
 async def test_resolve_delta_awaits_coroutines_and_keeps_plain_values():
     """_resolve_delta awaits coroutine values and leaves plain values untouched."""
     from reflex.state import _resolve_delta
@@ -5195,3 +5641,131 @@ async def test_resolve_delta_pops_subdict_when_all_keys_drop():
     }
     resolved = await _resolve_delta(delta)
     assert resolved == {"s2": {"keep": 1}}
+
+
+_ALIAS_ITEM = TypeVar("_ALIAS_ITEM")
+NameAlias = TypeAliasType("NameAlias", str)
+KeyAlias = TypeAliasType("KeyAlias", Literal["a", "b"])
+ItemsAlias = TypeAliasType("ItemsAlias", list[_ALIAS_ITEM], type_params=(_ALIAS_ITEM,))  # pyright: ignore[reportGeneralTypeIssues]
+
+
+class AliasAnnotatedState(BaseState):
+    """A state with vars annotated through TypeAliasType (PEP 695 aliases)."""
+
+    name: NameAlias = "x"
+    key: KeyAlias = "a"
+    entries: ItemsAlias[str] = []
+    maybe: KeyAlias | None = None
+
+    @rx.event
+    def assign(self):
+        """Assign a new value to every alias-annotated var."""
+        self.name = "y"
+        self.key = "b"
+        self.entries = ["z"]
+        self.maybe = "a"
+
+
+def test_setattr_alias_annotated_var(mocker: MockerFixture):
+    """Assigning alias-annotated state vars via an event handler works.
+
+    The __setattr__ type guard must resolve TypeAliasType annotations and only
+    log a mismatch instead of raising TypeError from isinstance().
+
+    Args:
+        mocker: Pytest mock fixture.
+    """
+    error_mock = mocker.patch("reflex.state.logger.error")
+    state = AliasAnnotatedState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    state.assign()
+    assert state.name == "y"
+    assert state.key == "b"
+    assert state.entries == ["z"]
+    assert state.maybe == "a"
+    error_mock.assert_not_called()
+
+    # A mismatched value is logged by the guard, not raised.
+    state.key = 1  # pyright: ignore[reportAttributeAccessIssue]
+    assert state.key == 1
+    error_mock.assert_called_once()
+
+
+def test_base_var_shadowing_inherited_var_raises() -> None:
+    """A base var shadowing an inherited var raises instead of being dropped silently."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="shadowed_value"):
+
+        class ShadowChild(ShadowParent):
+            shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+
+def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
+    """Re-annotating to win over a descriptor from a non-state base is not a shadow."""
+    from reflex_base.vars.hybrid_property import hybrid_property
+
+    class SharedMixin:
+        @hybrid_property
+        def descriptor_value(self) -> int:
+            return 1
+
+    class PlainBase(SharedMixin):
+        pass
+
+    class OverridingState(SharedMixin, BaseState):
+        descriptor_value: int = 5  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    class DescriptorChild(PlainBase, OverridingState):
+        descriptor_value: int  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
+
+    assert isinstance(DescriptorChild.descriptor_value, Var)
+
+
+def test_base_var_shadowing_raises_when_descriptor_outranks_state_field() -> None:
+    """A descriptor closer than the state field does not exempt a dropped declaration."""
+    from reflex_base.vars.hybrid_property import hybrid_property
+
+    class CloserMixin:
+        @hybrid_property
+        def outranked_value(self) -> int:
+            return 1
+
+    class OutrankedParent(BaseState):
+        outranked_value: int = 1  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="outranked_value"):
+
+        class OutrankedChild(CloserMixin, OutrankedParent):
+            outranked_value: str = "x"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+
+def test_base_var_shadowing_raises_despite_state_field_outranking_descriptor() -> None:
+    """A dropped redeclaration raises even where a state field outranks a descriptor."""
+    from reflex_base.vars.hybrid_property import hybrid_property
+
+    class OutrankedMixin:
+        @hybrid_property
+        def redeclared_value(self) -> int:
+            return 1
+
+    class DescriptorOwningParent(OutrankedMixin, BaseState):
+        redeclared_value: int = 5  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="redeclared_value"):
+
+        class RedeclaringChild(DescriptorOwningParent):
+            redeclared_value: str = "shadowed"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+
+def test_base_var_bare_reannotation_does_not_raise() -> None:
+    """A bare re-annotation of an inherited var is inert and stays allowed."""
+
+    class ReannotatedParent(BaseState):
+        reannotated_value: int = 1
+
+    class ReannotatingChild(ReannotatedParent):
+        reannotated_value: int  # pyright: ignore[reportGeneralTypeIssues]
+
+    assert isinstance(ReannotatingChild.reannotated_value, Var)

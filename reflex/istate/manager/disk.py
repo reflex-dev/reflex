@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import dataclasses
 import functools
+import logging
 import time
 from collections.abc import AsyncIterator
 from hashlib import md5
@@ -20,17 +21,44 @@ from reflex.istate.manager import (
 )
 from reflex.istate.manager.token import TOKEN_TYPE, BaseStateToken, StateToken
 from reflex.state import BaseState
-from reflex.utils import console, path_ops, prerequisites
+from reflex.utils import path_ops, prerequisites
 from reflex.utils.misc import run_in_thread
 
+logger = logging.getLogger(__name__)
 
-@dataclasses.dataclass(frozen=True)
+
+@dataclasses.dataclass
 class QueueItem(Generic[TOKEN_TYPE]):
     """An item in the write queue."""
 
     token: StateToken[TOKEN_TYPE]
     state: TOKEN_TYPE
     timestamp: float
+
+
+def _mark_state_tree_touched(state: BaseState) -> None:
+    """Mark a state and all of its substates as touched.
+
+    Args:
+        state: The root of the state tree to mark.
+    """
+    state._was_touched = True
+    for substate in state.substates.values():
+        _mark_state_tree_touched(substate)
+
+
+def _mark_replacement_state_touched(cached_state: object, state: object) -> None:
+    """Mark a state tree as touched when it replaces the cached instance.
+
+    A state instance not obtained from get_state carries no touched tracking,
+    so mark the whole tree touched to ensure it gets persisted.
+
+    Args:
+        cached_state: The instance currently cached for the token, if any.
+        state: The instance supplied to set_state.
+    """
+    if state is not cached_state and isinstance(state, BaseState):
+        _mark_state_tree_touched(state)
 
 
 @dataclasses.dataclass
@@ -41,7 +69,7 @@ class StateManagerDisk(StateManager):
     states: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     # The mutex ensures the dict of mutexes is updated exclusively
-    _state_manager_lock: asyncio.Lock = dataclasses.field(default=asyncio.Lock())
+    _state_manager_lock: asyncio.Lock = dataclasses.field(default_factory=asyncio.Lock)
 
     # The dict of mutexes for each client
     _states_locks: dict[str, asyncio.Lock] = dataclasses.field(
@@ -76,12 +104,15 @@ class StateManagerDisk(StateManager):
 
     @functools.cached_property
     def states_directory(self) -> Path:
-        """Get the states directory.
+        """The states directory.
+
+        Resolved once so later cwd changes do not move where states are
+        written or purged.
 
         Returns:
-            The states directory.
+            The absolute states directory.
         """
-        return prerequisites.get_states_dir()
+        return prerequisites.get_states_dir().absolute()
 
     def _purge_expired_states(self):
         """Purge expired states from the disk."""
@@ -282,7 +313,7 @@ class StateManagerDisk(StateManager):
                 await self._flush_write_queue()
                 raise
             except Exception as e:
-                console.error(f"Error processing write queue: {e!r}")
+                logger.error(f"Error processing write queue: {e!r}")
                 if e.args == ("cannot schedule new futures after shutdown",):
                     # Event loop is shutdown, nothing else we can really do...
                     return
@@ -294,7 +325,7 @@ class StateManagerDisk(StateManager):
         n_outstanding_items = len(outstanding_items)
         self._write_queue.clear()
         # When the task is cancelled, write all remaining items to disk.
-        console.debug(
+        logger.debug(
             f"StateManagerDisk._flush_write_queue: writing {n_outstanding_items} remaining items to disk"
         )
         for item in outstanding_items:
@@ -302,7 +333,7 @@ class StateManagerDisk(StateManager):
                 item.token,
                 item.state,
             )
-        console.debug(
+        logger.debug(
             f"StateManagerDisk._flush_write_queue: Finished writing {n_outstanding_items} items"
         )
 
@@ -332,17 +363,24 @@ class StateManagerDisk(StateManager):
             context: The state modification context.
         """
         token = self._coerce_token(token)
+        _mark_replacement_state_touched(self.states.get(token.cache_key), state)
+        self._token_last_touched[token.cache_key] = time.time()
         if self._write_debounce_seconds > 0:
             # Deferred write to reduce disk IO overhead.
-            if token not in self._write_queue:
+            self.states[token.cache_key] = state
+            queued_item = self._write_queue.get(token)
+            if queued_item is None:
                 self._write_queue[token] = QueueItem(
                     token=token,
                     state=state,
                     timestamp=time.time(),
                 )
+            else:
+                queued_item.state = state
         else:
             # Immediate write to disk.
             await self.set_state_for_substate(token, state)
+            self.states[token.cache_key] = state
         # Ensure the processing task is scheduled to handle expirations and any deferred writes.
         await self._schedule_process_write_queue()
 

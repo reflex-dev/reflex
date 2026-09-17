@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from collections import defaultdict
-from contextlib import suppress
 from importlib.util import find_spec
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from reflex_base.config import get_config
 from reflex_base.environment import environment
 from reflex_base.utils import console
-from reflex_base.utils.serializers import serializer
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from typing import TypeVar
@@ -49,6 +50,17 @@ def _print_db_not_available(*args, **kwargs):
 class _ClassThatErrorsOnInit:
     def __init__(self, *args, **kwargs):
         _print_db_not_available(*args, **kwargs)
+
+    def __init_subclass__(cls, **kwargs):
+        """Point at the db extra when a model is declared without it.
+
+        Args:
+            **kwargs: Class keywords such as ``table=True``.
+
+        Raises:
+            ImportError: Always, with the ``pip install reflex[db]`` guidance.
+        """
+        _print_db_not_available(**kwargs)
 
 
 if find_spec("sqlalchemy"):
@@ -109,9 +121,9 @@ if find_spec("sqlalchemy"):
             return _ENGINE[url]
 
         if not environment.ALEMBIC_CONFIG.get().exists():
-            console.warn(
+            logger.warning(
                 "Database is not initialized, run [bold]reflex db init[/bold] first.",
-                dedupe=True,
+                extra={"dedupe": True, "rich": True},
             )
         _ENGINE[url] = sqlalchemy.engine.create_engine(
             url,
@@ -143,7 +155,7 @@ if find_spec("sqlalchemy"):
                 async_db_url_tail = url.partition("://")[2]
                 db_url_tail = conf.db_url.partition("://")[2]
                 if async_db_url_tail != db_url_tail:
-                    console.warn(
+                    logger.warning(
                         f"async_db_url `{_safe_db_url_for_logging(url)}` "
                         "should reference the same database as "
                         f"db_url `{_safe_db_url_for_logging(conf.db_url)}`."
@@ -157,9 +169,9 @@ if find_spec("sqlalchemy"):
             return _ASYNC_ENGINE[url]
 
         if not environment.ALEMBIC_CONFIG.get().exists():
-            console.warn(
+            logger.warning(
                 "Database is not initialized, run [bold]reflex db init[/bold] first.",
-                dedupe=True,
+                extra={"dedupe": True, "rich": True},
             )
         _ASYNC_ENGINE[url] = sqlalchemy.ext.asyncio.create_async_engine(
             url,
@@ -508,6 +520,7 @@ else:
 
 if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
     import sqlmodel
+    from reflex_base.utils.serializers import serialize_sqlmodel as serialize_sqlmodel
     from sqlmodel.ext.asyncio.session import AsyncSession
 
     _AsyncSessionLocal: dict[str | None, sqlalchemy.ext.asyncio.async_sessionmaker] = {}
@@ -527,35 +540,12 @@ if find_spec("sqlmodel") and find_spec("sqlalchemy") and find_spec("pydantic"):
                 connection.execute(sqlalchemy.text("SELECT 1"))
         except Exception as exc:
             status = False
-            console.error(
+            logger.error(
                 f"Database health check failed: {exc} (subsequent errors will not be logged)",
-                dedupe=True,
+                extra={"dedupe": True},
             )
 
         return {"db": status}
-
-    @serializer
-    def serialize_sqlmodel(m: sqlmodel.SQLModel) -> dict[str, Any]:
-        """Serialize a SQLModel object to a dictionary.
-
-        Args:
-            m: The SQLModel object to serialize.
-
-        Returns:
-            The serialized object as a dictionary.
-        """
-        base_fields = m.model_dump()
-        relationships = {}
-        # SQLModel relationships do not appear in __fields__, but should be included if present.
-        for name in m.__sqlmodel_relationships__:
-            with suppress(
-                sqlalchemy.orm.exc.DetachedInstanceError  # This happens when the relationship was never loaded and the session is closed.
-            ):
-                relationships[name] = getattr(m, name)
-        return {
-            **base_fields,
-            **relationships,
-        }
 
     def _warn_about_model_deprecation():
         console.deprecate(

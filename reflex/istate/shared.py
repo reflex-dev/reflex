@@ -2,17 +2,25 @@
 
 import asyncio
 import contextlib
+import logging
 from collections.abc import AsyncIterator
 from typing import TypeVar
 
 from reflex_base.constants import ROUTER_DATA
 from reflex_base.event import Event, get_hydrate_event
-from reflex_base.utils import console
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import ReflexRuntimeError
 from typing_extensions import Self
 
 from reflex.istate.manager.token import BaseStateToken
-from reflex.state import BaseState, State, _override_base_method
+from reflex.state import (
+    BaseState,
+    State,
+    _override_base_method,
+    _suppress_delta_recording,
+)
+
+logger = logging.getLogger(__name__)
 
 UPDATE_OTHER_CLIENT_TASKS: set[asyncio.Task] = set()
 LINKED_STATE = TypeVar("LINKED_STATE", bound="SharedStateBaseInternal")
@@ -27,7 +35,7 @@ def _log_update_client_errors(task: asyncio.Task):
     try:
         task.result()
     except Exception as e:
-        console.warn(f"Error updating linked client: {e}")
+        logger.warning(f"Error updating linked client: {e}")
     finally:
         UPDATE_OTHER_CLIENT_TASKS.discard(task)
 
@@ -49,22 +57,25 @@ def _do_update_other_tokens(
     Returns:
         The list of asyncio tasks created to perform the updates.
     """
-    from reflex.utils.prerequisites import get_app
+    app = RegistrationContext.get().app
 
-    app = get_app().app
+    tasks = []
+    if (event_namespace := app.event_namespace) is None:
+        return tasks
+    token_manager = event_namespace._token_manager
 
     async def _update_client(token: str):
+        # Don't send updates for disconnected clients; emit_update relays the
+        # delta to the owning instance if the socket lives elsewhere.
+        if not await token_manager.is_token_connected(token):
+            return
         async with app.modify_state(
             BaseStateToken(ident=token, cls=state_type),
             previous_dirty_vars=previous_dirty_vars,
         ):
             pass
 
-    tasks = []
     for affected_token in affected_tokens:
-        # Don't send updates for disconnected clients.
-        if affected_token not in app.event_namespace._token_manager.token_to_socket:
-            continue
         # TODO: remove disconnected clients after some time.
         t = asyncio.create_task(_update_client(affected_token))
         UPDATE_OTHER_CLIENT_TASKS.add(t)
@@ -106,7 +117,10 @@ async def _patch_state(
         root_state.dirty_vars.add("router")
         root_state.dirty_vars.add(ROUTER_DATA)
         root_state._mark_dirty()
-        await root_state._get_resolved_delta()
+        # The delta is discarded: it is only resolved to refresh computed vars,
+        # so its values must not count as sent to the client.
+        with _suppress_delta_recording():
+            await root_state._get_resolved_delta()
         yield
     finally:
         original_parent_state.substates[state_name] = original_state
@@ -429,7 +443,7 @@ class SharedStateBaseInternal(State):
                             linked_state._previous_dirty_vars
                         )
                     if (
-                        linked_state._get_was_touched()
+                        BaseState._get_was_touched(linked_state)
                         or linked_state._previous_dirty_vars is not None
                     ):
                         affected_tokens.update(
@@ -488,7 +502,10 @@ class SharedStateBaseInternal(State):
                     current_dirty_vars[substate.get_full_name()] = set(
                         substate._previous_dirty_vars
                     )
-                if substate._get_was_touched() or substate._previous_dirty_vars:
+                if (
+                    BaseState._get_was_touched(substate)
+                    or substate._previous_dirty_vars
+                ):
                     affected_tokens.update(substate._linked_from)
             substate._collect_shared_token_updates(affected_tokens, current_dirty_vars)
 

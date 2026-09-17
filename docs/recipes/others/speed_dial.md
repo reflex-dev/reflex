@@ -8,7 +8,7 @@ A speed dial is a component that allows users to quickly access frequently used 
 
 ## Vertical
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialVertical(rx.ComponentState):
     is_open: bool = False
 
@@ -95,7 +95,7 @@ def render_vertical():
 
 ## Horizontal
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialHorizontal(rx.ComponentState):
     is_open: bool = False
 
@@ -183,7 +183,7 @@ def render_horizontal():
 
 ## Vertical with text
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialVerticalText(rx.ComponentState):
     is_open: bool = False
 
@@ -277,7 +277,7 @@ def render_vertical_text():
 
 ## Reveal animation
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialReveal(rx.ComponentState):
     is_open: bool = False
 
@@ -380,7 +380,7 @@ def render_reveal():
 
 ## Menu
 
-```python demo exec toggle
+```python demo exec
 class SpeedDialMenu(rx.ComponentState):
     is_open: bool = False
 

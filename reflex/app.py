@@ -10,6 +10,7 @@ import functools
 import importlib
 import inspect
 import json
+import logging
 import operator
 import sys
 import time
@@ -27,9 +28,9 @@ from contextvars import Token
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
-from reflex_base import constants
+from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
-from reflex_base.config import get_config
+from reflex_base.config import get_config, reload_config
 from reflex_base.context.base import BaseContext
 from reflex_base.environment import environment
 from reflex_base.event import (
@@ -44,7 +45,7 @@ from reflex_base.event.context import EventContext
 from reflex_base.event.processor import BaseStateEventProcessor, EventProcessor
 from reflex_base.registry import RegistrationContext
 from reflex_base.telemetry_context import CompileTrigger, TelemetryContext
-from reflex_base.utils import console, memo_paths
+from reflex_base.utils import memo_paths
 from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import ASGIApp, Message, Receive, Scope, Send
 from reflex_components_core.base.error_boundary import ErrorBoundary
@@ -75,7 +76,6 @@ from reflex.compiler.compiler import readable_name_from_component
 from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
-from reflex.page import DECORATED_PAGES
 from reflex.route import (
     get_route_args,
     replace_brackets_with_keywords,
@@ -97,8 +97,10 @@ from reflex.utils.exec import (
     is_testing_env,
     should_prerender_routes,
 )
-from reflex.utils.misc import run_in_thread
+from reflex.utils.misc import is_page_meta_set, run_in_thread
 from reflex.utils.token_manager import RedisTokenManager, TokenManager
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info < (3, 13):
     from typing_extensions import deprecated
@@ -125,7 +127,7 @@ def default_frontend_exception_handler(exception: Exception) -> None:
         exception: The exception.
 
     """
-    console.error(f"[Reflex Frontend Exception]\n {exception}\n")
+    logger.error(f"[Reflex Frontend Exception]\n {exception}\n")
 
 
 def default_backend_exception_handler(exception: Exception) -> EventSpec:
@@ -144,7 +146,7 @@ def default_backend_exception_handler(exception: Exception) -> EventSpec:
         type(exception), exception, exception.__traceback__
     )
 
-    console.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
+    logger.error(f"[Reflex Backend Exception]\n {''.join(error)}\n")
 
     error_message = (
         ["Contact the website administrator."]
@@ -211,7 +213,7 @@ def _component_from_import_path(
 
         log_path = save_error(e)
 
-        console.error(
+        logger.error(
             f"Error loading {feature_name} {import_path}. Error saved to {log_path}"
         )
         return None
@@ -328,6 +330,48 @@ def _route_arg_label(arg_type: str) -> str:
         ``"list"`` for catch-all arguments, otherwise ``"single"``.
     """
     return "list" if arg_type == constants.RouteArgType.LIST else "single"
+
+
+class _ContextMiddleware:
+    """Ensure Reflex contexts are attached for each ASGI request.
+
+    Many ASGI servers start each request with a fresh contextvars scope, so this
+    middleware re-applies the RegistrationContext and EventContext that are
+    needed for Reflex state and event processing.
+    """
+
+    def __init__(self, app: ASGIApp, reflex_app: App):
+        """Wrap an ASGI app so that it runs with the Reflex contexts set.
+
+        Args:
+            app: The next ASGI app in the middleware stack.
+            reflex_app: The Reflex app owning the contexts to attach.
+        """
+        self.app = app
+        self.reflex_app = reflex_app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        self.reflex_app._set_contexts_internal()
+        await self.app(scope, receive, send)
+
+
+def _is_location_specifier(specifier: str) -> bool:
+    """Check whether a dependency specifier points at a location.
+
+    A location specifier names where a package comes from (a local path, a
+    protocol like ``file:``/``github:``/``git+ssh:``, or a git ref) instead of
+    naming a version. Its slashes belong to the location, so it must be kept
+    whole rather than split into a version and a package subpath.
+
+    Args:
+        specifier: The part of an import name following ``package@``.
+
+    Returns:
+        Whether the specifier is a location rather than a version or dist-tag.
+    """
+    return (
+        ":" in specifier or "#" in specifier or specifier.startswith((".", "/", "~/"))
+    )
 
 
 @dataclasses.dataclass()
@@ -477,7 +521,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def event_namespace(self) -> EventNamespace | None:
-        """Get the event namespace.
+        """The event namespace.
 
         Returns:
             The event namespace.
@@ -486,7 +530,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def event_processor(self) -> EventProcessor:
-        """Get the event processor.
+        """The event processor.
 
         Raises:
             RuntimeError: If the event processor is not initialized.
@@ -510,7 +554,9 @@ class App(MiddlewareMixin, LifespanMixin):
             msg = "rx.BaseState cannot be subclassed directly. Use rx.State instead"
             raise ValueError(msg)
 
-        get_config(reload=True)
+        self._registration_context._set_app(self)
+
+        reload_config()
 
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
@@ -576,11 +622,15 @@ class App(MiddlewareMixin, LifespanMixin):
                 ping_interval=environment.REFLEX_SOCKET_INTERVAL.get(),
                 ping_timeout=environment.REFLEX_SOCKET_TIMEOUT.get(),
                 json=SimpleNamespace(
-                    dumps=staticmethod(format.json_dumps),
-                    loads=staticmethod(json.loads),
+                    dumps=staticmethod(_sio_dumps),
+                    loads=staticmethod(_sio_loads),
                 ),
                 allow_upgrades=False,
                 transports=[config.transport],
+                # Handlers here only parse and enqueue (or emit a pong), so run
+                # them inline on the socket's receive loop instead of paying a
+                # task creation and a loop hop per incoming message.
+                async_handlers=False,
             )
         elif getattr(self.sio, "async_mode", "") != "asgi":
             msg = f"Custom `sio` must use `async_mode='asgi'`, not '{self.sio.async_mode}'."
@@ -688,35 +738,24 @@ class App(MiddlewareMixin, LifespanMixin):
             stack.callback(ctx_cls.reset, tok)
         return stack
 
-    def _context_middleware(self, app: ASGIApp) -> ASGIApp:
-        """Ensure Reflex contexts are attached for each ASGI request.
-
-        Many ASGI servers start each request with a fresh contextvars scope,
-        so this middleware re-applies the RegistrationContext and EventContext
-        that are needed for Reflex state and event processing.
-
-        Args:
-            app: The ASGI app to attach the middleware to.
-
-        Returns:
-            The ASGI app with the middleware attached.
-        """
-
-        async def context_middleware(scope: Scope, receive: Receive, send: Send):
-            self._set_contexts_internal()
-            await app(scope, receive, send)
-
-        return context_middleware
-
     @contextlib.asynccontextmanager
     async def _setup_event_processor(self) -> AsyncIterator[None]:
+        """Configure event processing with a fresh worker socket identity.
+
+        Yields:
+            None while the event processor is active.
+        """
+        # The app may have been imported before the server forked its workers.
+        event_namespace = self.event_namespace
+        if event_namespace is not None:
+            event_namespace._token_manager._reset_instance_id()
         # Create the event processor.
         self._event_processor = BaseStateEventProcessor(
             middleware=self, backend_exception_handler=self.backend_exception_handler
         )
         async with self._event_processor.configure(
             state_manager=self.state_manager,
-            event_namespace=self.event_namespace,
+            event_namespace=event_namespace,
         ):
             yield
 
@@ -745,10 +784,25 @@ class App(MiddlewareMixin, LifespanMixin):
         # rx.asset(shared=True) symlink re-creation doesn't trigger further reloads.
         remove_stale_external_asset_symlinks()
 
+        trigger = get_backend_compile_trigger()
         self._compile(
             prerender_routes=should_prerender_routes(),
-            trigger=get_backend_compile_trigger(),
+            trigger=trigger,
         )
+
+        # In preview mode the frontend is served as a mounted static bundle rather
+        # than by the Vite dev server, so each hot reload must re-run the frontend
+        # build against the freshly compiled output.
+        if (
+            trigger == "hot_reload"
+            and environment.REFLEX_ENV_MODE.get() == constants.Env.PREVIEW
+            and environment.REFLEX_MOUNT_FRONTEND_COMPILED_APP.get()
+        ):
+            from reflex.utils import build
+
+            # The previous output is deleted before building, so a failed build
+            # must fail hard rather than pretend to serve a frontend.
+            build.build()
 
         config = get_config()
 
@@ -788,11 +842,11 @@ class App(MiddlewareMixin, LifespanMixin):
 
         top_asgi_app = Starlette(lifespan=self._run_lifespan_tasks)
         # Make sure Reflex contexts are attached for each request.
-        top_asgi_app.mount(
-            "",
-            self._context_middleware(asgi_app),
-        )
+        top_asgi_app.add_middleware(_ContextMiddleware, reflex_app=self)
+        top_asgi_app.mount("", asgi_app)
         App._add_cors(top_asgi_app)
+        if otel.asgi_middleware is not None:
+            return otel.asgi_middleware(top_asgi_app)
         return top_asgi_app
 
     def _add_default_endpoints(self):
@@ -866,7 +920,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @property
     def state_manager(self) -> StateManager:
-        """Get the state manager.
+        """The state manager.
 
         Returns:
             The initialized state manager.
@@ -1001,8 +1055,10 @@ class App(MiddlewareMixin, LifespanMixin):
                 from reflex_components_core.el.elements import span
 
                 component = span("404: Page not found")
-            title = title or constants.Page404.TITLE
-            description = description or constants.Page404.DESCRIPTION
+            if not is_page_meta_set(title):
+                title = constants.Page404.TITLE
+            if not is_page_meta_set(description):
+                description = constants.Page404.DESCRIPTION
             image = image or constants.Page404.IMAGE
         else:
             if component is None:
@@ -1053,7 +1109,7 @@ class App(MiddlewareMixin, LifespanMixin):
                     prepared,
                     page=page.merged_with(existing_page),
                 )
-                console.warn(
+                logger.warning(
                     f"Page {page.route} is being redefined with the same component."
                 )
             else:
@@ -1297,7 +1353,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     @functools.cached_property
     def router(self) -> Callable[[str], str | None]:
-        """Get the route computer function.
+        """The route computer function.
 
         Returns:
             The route computer function.
@@ -1316,6 +1372,13 @@ class App(MiddlewareMixin, LifespanMixin):
             The load events for the route.
         """
         four_oh_four_load_events = self._load_events.get("404", [])
+        # The path is the browser URL path, which includes frontend_path, while the
+        # router matches paths relative to it. A URL outside frontend_path is not a page.
+        frontend_path = get_config().frontend_path.rstrip("/")
+        if frontend_path:
+            if path != frontend_path and not path.startswith(frontend_path + "/"):
+                return four_oh_four_load_events
+            path = path.removeprefix(frontend_path)
         route = self.router(path)
         if not route:
             # If the path is not a valid route, return the 404 page load events.
@@ -1369,26 +1432,37 @@ class App(MiddlewareMixin, LifespanMixin):
             constants.RouteRegex.DOUBLE_SEGMENT,
             constants.RouteRegex.DOUBLE_CATCHALL_SEGMENT,
         )
+        replaced_new_route = replace_brackets_with_keywords(new_route)
         for route in existing_routes:
             replaced_route = replace_brackets_with_keywords(route)
-            for rw, r, nr in zip(
+            for rw, nrw, r, nr in zip(
                 replaced_route.split("/"),
+                replaced_new_route.split("/"),
                 route.split("/"),
                 new_route.split("/"),
                 strict=False,
             ):
-                if rw in segments and r != nr:
+                if r == nr:
+                    continue
+                if rw in segments and nrw in segments:
+                    # Two dynamic segments with different names cannot share
+                    # the same position in the route tree.
                     return route, r, nr
-                if rw not in segments and r != nr:
-                    # if the section being compared in both routes is not a dynamic segment(i.e not wrapped in brackets)
-                    # then we are guaranteed that the route is valid and there's no need checking the rest.
-                    # eg. /posts/[id]/info/[slug1] and /posts/[id]/info1/[slug1] is always going to be valid since
-                    # info1 will break away into its own tree.
-                    break
+                # A static segment differing from the other route's segment
+                # (static or dynamic) splits into its own subtree, so the rest
+                # of the route cannot conflict. e.g. /posts/[id]/info/[slug1]
+                # and /posts/[id]/info1/[slug1] is always going to be valid
+                # since info1 will break away into its own tree; likewise
+                # /posts/all is a legal static sibling of /posts/[id].
+                break
         return None
 
     def _setup_admin_dash(self):
         """Setup the admin dash."""
+        admin_dash = self.admin_dash
+        if not admin_dash or not admin_dash.models:
+            return
+
         try:
             from starlette_admin.contrib.sqla.admin import Admin
             from starlette_admin.contrib.sqla.view import ModelView
@@ -1401,21 +1475,21 @@ class App(MiddlewareMixin, LifespanMixin):
         if not self._api:
             return
 
-        admin_dash = self.admin_dash
+        # Build the admin dashboard
+        # The first positional argument is `engine` before starlette-admin
+        # 1.0 and `session_provider` (which still accepts an Engine) after,
+        # so pass it positionally to support both.
+        admin = admin_dash.admin or Admin(
+            get_engine(),
+            title="Reflex Admin Dashboard",
+            logo_url="https://reflex.dev/Reflex.svg",
+        )
 
-        if admin_dash and admin_dash.models:
-            # Build the admin dashboard
-            admin = admin_dash.admin or Admin(
-                engine=get_engine(),
-                title="Reflex Admin Dashboard",
-                logo_url="https://reflex.dev/Reflex.svg",
-            )
+        for model in admin_dash.models:
+            view = admin_dash.view_overrides.get(model, ModelView)
+            admin.add_view(view(model))
 
-            for model in admin_dash.models:
-                view = admin_dash.view_overrides.get(model, ModelView)
-                admin.add_view(view(model))
-
-            admin.mount_to(self._api)
+        admin.mount_to(self._api)
 
     def _get_frontend_packages(
         self,
@@ -1446,7 +1520,7 @@ class App(MiddlewareMixin, LifespanMixin):
         filtered_frontend_packages = []
         for package in frontend_packages:
             if package in page_imports:
-                console.warn(
+                logger.warning(
                     f"React packages and their dependencies are inferred from Component.library and Component.lib_dependencies, remove `{package}` from `frontend_packages`"
                 )
                 continue
@@ -1484,13 +1558,11 @@ class App(MiddlewareMixin, LifespanMixin):
             package_name = library_name.split("/", maxsplit=1)[0]
 
         if import_name.startswith(f"{library_name}@"):
-            version_and_maybe_subpath = import_name[len(library_name) + 1 :]
-            version, slash, _ = version_and_maybe_subpath.partition("/")
-            if slash and ":" not in version:
+            specifier = import_name[len(library_name) + 1 :]
+            version, slash, _ = specifier.partition("/")
+            if slash and not _is_location_specifier(specifier):
                 return f"{package_name}@{version}"
-            if package_name == library_name:
-                return import_name
-            return f"{package_name}@{version_and_maybe_subpath}"
+            return f"{package_name}@{specifier}"
 
         if package_name == library_name:
             return import_name
@@ -1575,8 +1647,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
     def _apply_decorated_pages(self):
         """Add @rx.page decorated pages to the app."""
-        app_name = get_config().app_name
-        for render, kwargs in DECORATED_PAGES[app_name]:
+        for render, kwargs in self._registration_context.decorated_pages:
             self.add_page(render, **kwargs)
 
     def _validate_var_dependencies(self, state: type[BaseState] | None = None) -> None:
@@ -1632,32 +1703,44 @@ class App(MiddlewareMixin, LifespanMixin):
             ReflexRuntimeError: When any page uses state, but no rx.State subclass is defined.
             FileNotFoundError: When a plugin requires a file that does not exist.
         """
-        ctx = TelemetryContext.start(trigger=trigger)
-        if ctx is None:
-            compiler.compile_app(
-                self,
-                prerender_routes=prerender_routes,
-                dry_run=dry_run,
-                use_rich=use_rich,
-            )
-            return
+        from reflex_base.utils.deterministic_hash import clear_hash_caches
 
-        with ctx:
-            did_real_compile = False
+        with otel.compile_span(trigger, dry_run):
+            ctx = TelemetryContext.start(trigger=trigger)
             try:
-                did_real_compile = compiler.compile_app(
-                    self,
-                    prerender_routes=prerender_routes,
-                    dry_run=dry_run,
-                    use_rich=use_rich,
-                )
-            except Exception as exc:
-                ctx.set_exception(exc)
-                did_real_compile = True
-                raise
+                if ctx is None:
+                    compiler.compile_app(
+                        self,
+                        prerender_routes=prerender_routes,
+                        dry_run=dry_run,
+                        use_rich=use_rich,
+                    )
+                    return
+
+                with ctx:
+                    did_real_compile = False
+                    try:
+                        did_real_compile = compiler.compile_app(
+                            self,
+                            prerender_routes=prerender_routes,
+                            dry_run=dry_run,
+                            use_rich=use_rich,
+                        )
+                    except Exception as exc:
+                        ctx.set_exception(exc)
+                        did_real_compile = True
+                        raise
+                    finally:
+                        if did_real_compile:
+                            telemetry_accounting.record_compile(self, ctx)
             finally:
-                if did_real_compile:
-                    telemetry_accounting.record_compile(self, ctx)
+                # Auto-memoization named every wrapper it will ever name during the
+                # compile, so its encoding caches are dead weight from here. This is
+                # the single funnel every compile goes through -- the CLI and export
+                # paths reach it via ``get_compiled_app`` and never touch
+                # ``App.__call__`` -- and the ``finally`` keeps a failed compile
+                # from leaving them behind.
+                clear_hash_caches()
 
     def _write_stateful_pages_marker(self):
         """Write list of routes that create dynamic states for the backend to use later."""
@@ -1902,11 +1985,68 @@ async def health(_request: Request) -> JSONResponse:
     return JSONResponse(content=health_status, status_code=status_code)
 
 
+def _utf8_size(data: str) -> int:
+    """Size of a serialized message in UTF-8 bytes.
+
+    ASCII payloads (the common case) are sized without encoding a copy.
+
+    Args:
+        data: The serialized message.
+
+    Returns:
+        The number of bytes the message occupies on the wire.
+    """
+    return len(data) if data.isascii() else len(data.encode())
+
+
+def _sio_dumps(obj: Any, **kwargs: Any) -> str:
+    """Serialize an outgoing Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        obj: The packet payload.
+        **kwargs: Options forwarded to the JSON encoder.
+
+    Returns:
+        The JSON string.
+    """
+    data = format.json_dumps(obj, **kwargs)
+    if otel.enabled:
+        otel.record_message_size(_utf8_size(data), "transmit")
+    return data
+
+
+def _sio_loads(data: str | bytes, **kwargs: Any) -> Any:
+    """Deserialize an incoming Socket.IO packet, recording its size when telemetry is on.
+
+    Args:
+        data: The JSON string.
+        **kwargs: Options forwarded to the JSON decoder.
+
+    Returns:
+        The decoded payload.
+    """
+    if otel.enabled:
+        otel.record_message_size(
+            _utf8_size(data) if isinstance(data, str) else len(data), "receive"
+        )
+    return json.loads(data, **kwargs)
+
+
 class EventNamespace(AsyncNamespace):
     """The event namespace."""
 
     # The application object.
     app: App
+
+    # Maximum error-level log entries a single session may produce via the
+    # client_error event before further reports from it are dropped.
+    _MAX_CLIENT_ERRORS_PER_SID = 5
+
+    # Process-wide bound on error-level client_error log entries per time
+    # window; per-SID budgets alone reset on reconnect, so scripted
+    # reconnects could otherwise flood the logs.
+    _CLIENT_ERROR_WINDOW_SECONDS = 60.0
+    _MAX_CLIENT_ERRORS_PER_WINDOW = 20
 
     def __init__(self, namespace: str, app: App):
         """Initialize the event namespace.
@@ -1921,9 +2061,16 @@ class EventNamespace(AsyncNamespace):
         # Use TokenManager for distributed duplicate tab prevention
         self._token_manager = TokenManager.create()
 
+        # Number of client_error reports logged per SID, for rate limiting.
+        self._client_error_counts: dict[str, int] = {}
+
+        # Start time and count of the current process-wide client_error window.
+        self._client_error_window_start = 0.0
+        self._client_error_window_count = 0
+
     @property
     def token_to_sid(self) -> Mapping[str, str]:
-        """Get token to SID mapping for backward compatibility.
+        """Token to SID mapping for backward compatibility.
 
         Note: this mapping is read-only.
 
@@ -1935,7 +2082,7 @@ class EventNamespace(AsyncNamespace):
 
     @property
     def sid_to_token(self) -> dict[str, str]:
-        """Get SID to token mapping for backward compatibility.
+        """SID to token mapping for backward compatibility.
 
         Returns:
             The SID to token mapping dict.
@@ -1958,13 +2105,15 @@ class EventNamespace(AsyncNamespace):
         if token_list:
             await self.link_token_to_sid(sid, token_list[0])
         else:
-            console.warn(f"No token provided in connection for session {sid}")
+            logger.warning(f"No token provided in connection for session {sid}")
 
         subprotocol = environ.get("HTTP_SEC_WEBSOCKET_PROTOCOL")
         if subprotocol and subprotocol != constants.Reflex.VERSION:
-            console.warn(
+            logger.warning(
                 f"Frontend version {subprotocol} for session {sid} does not match the backend version {constants.Reflex.VERSION}."
             )
+        if otel.enabled:
+            otel.record_connection(1)
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
@@ -1975,6 +2124,9 @@ class EventNamespace(AsyncNamespace):
         Returns:
             An asyncio Task for cleaning up the token, or None.
         """
+        if otel.enabled:
+            otel.record_connection(-1)
+        self._client_error_counts.pop(sid, None)
         # Get token before cleaning up
         disconnect_token = self.sid_to_token.get(sid)
         if disconnect_token:
@@ -1987,7 +2139,7 @@ class EventNamespace(AsyncNamespace):
             task.add_done_callback(
                 lambda t: (
                     t.exception()
-                    and console.error(f"Token cleanup error: {t.exception()}")
+                    and logger.error(f"Token cleanup error: {t.exception()}")
                 )
             )
             return task
@@ -2011,15 +2163,19 @@ class EventNamespace(AsyncNamespace):
             else:
                 # If the socket record is None, we are not connected to a client. Prevent sending
                 # updates to all clients.
-                console.warn(
+                logger.warning(
                     f"Attempting to send delta to disconnected client {token!r}"
                 )
             return
-        # Creating a task prevents the update from being blocked behind other coroutines.
-        await asyncio.create_task(
-            self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid),
-            name=f"reflex_emit_event|{token}|{socket_record.sid}|{time.time()}",
-        )
+        # Await the emit directly: wrapping it in a task does not unblock the
+        # caller (awaiting the task blocks just the same) and only adds task
+        # creation/scheduling overhead on every update.
+        await self.emit(str(constants.SocketEvent.EVENT), update, to=socket_record.sid)
+        # The emit may complete without suspending (the packet is queued, not
+        # sent). Yield one loop tick so the websocket writer can flush the
+        # packet before the caller potentially blocks the event loop (e.g. a
+        # sync event handler resuming after a yield).
+        await asyncio.sleep(0)
 
     async def on_event(self, sid: str, data: Any):
         """Event for receiving front-end websocket events.
@@ -2034,7 +2190,7 @@ class EventNamespace(AsyncNamespace):
         """
         # Determine the token for this SID
         if (token := self.sid_to_token.get(sid)) is None:
-            console.warn(
+            logger.warning(
                 f"Received event from session {sid} with no associated token. This may indicate a bug. Event data: {data}"
             )
             return
@@ -2042,7 +2198,7 @@ class EventNamespace(AsyncNamespace):
         fields = data
 
         if isinstance(fields, str):
-            console.warn(
+            logger.warning(
                 "Received event data as a string. This generally should not happen and may indicate a bug."
                 f" Event data: {fields}"
             )
@@ -2108,7 +2264,11 @@ class EventNamespace(AsyncNamespace):
             if (path := router_data.get(constants.RouteVar.PATH))
             else "404"
         ).removeprefix("/")
-        await self.app.event_processor.enqueue(token, event)
+        if not otel.enabled:
+            await self.app.event_processor.enqueue(token, event)
+            return
+        with otel.remote_context(fields):
+            await self.app.event_processor.enqueue(token, event)
 
     async def on_ping(self, sid: str):
         """Event for testing the API endpoint.
@@ -2118,6 +2278,86 @@ class EventNamespace(AsyncNamespace):
         """
         # Emit the test event.
         await self.emit(str(constants.SocketEvent.PING), "pong", to=sid)
+
+    async def on_client_error(self, sid: str, data: Any = None):
+        """Handle errors reported by the frontend.
+
+        This is a dedicated socket event rather than a state event
+        (``FrontendEventExceptionState.handle_frontend_exception``) because a
+        state event is addressed by a handler name the frontend derives from
+        its own state definitions. When those definitions are what disagree
+        with the backend -- the case this handler exists to report -- the name
+        may not resolve and the report is lost. A fixed socket event name
+        cannot drift, and it still gets through after the frontend has stopped
+        sending events on detecting the mismatch.
+
+        Reports are routed through the app's ``frontend_exception_handler``,
+        so frontend errors (especially state update processing errors) are
+        visible in backend logs and reach custom exception handlers.
+
+        Args:
+            sid: The Socket.IO session id.
+            data: The error data from the client. Defaults to None because
+                python-socketio dispatches a payload-less emit as
+                ``on_client_error(sid)``; the malformed-payload guard below
+                then drops it without raising.
+        """
+        if not isinstance(data, dict):
+            logger.debug(f"Ignoring malformed client_error payload from SID {sid}.")
+            return
+
+        # Check the sender and the rate limits before sanitizing: sanitizing is
+        # linear in the size of the client-supplied values, and reports that are
+        # dropped here must not cost more than the check itself.
+        if sid not in self.sid_to_token:
+            # Sockets without a linked token are not known clients; don't let
+            # them write error-level entries into the backend logs.
+            logger.debug(f"Ignoring client_error report from unknown SID {sid}.")
+            return
+
+        # Rate limit per session so a client cannot flood the backend logs.
+        error_count = self._client_error_counts.get(sid, 0)
+        if error_count >= self._MAX_CLIENT_ERRORS_PER_SID:
+            return
+
+        # Also bound total entries per time window: per-SID budgets reset on
+        # reconnect, so they alone do not stop scripted reconnect loops.
+        now = time.monotonic()
+        if now - self._client_error_window_start > self._CLIENT_ERROR_WINDOW_SECONDS:
+            self._client_error_window_start = now
+            self._client_error_window_count = 0
+        if self._client_error_window_count >= self._MAX_CLIENT_ERRORS_PER_WINDOW:
+            if self._client_error_window_count == self._MAX_CLIENT_ERRORS_PER_WINDOW:
+                # Warn once per window so suppression is visible in the logs
+                # and a flooding client cannot silently starve reports from
+                # other sessions.
+                self._client_error_window_count += 1
+                logger.warning(
+                    f"Received more than {self._MAX_CLIENT_ERRORS_PER_WINDOW} "
+                    f"client_error reports in {self._CLIENT_ERROR_WINDOW_SECONDS:.0f}s; "
+                    "suppressing further reports for this window."
+                )
+            return
+        self._client_error_window_count += 1
+        self._client_error_counts[sid] = error_count + 1
+
+        error_type = format.sanitize_client_log_value(data.get("error_type", "unknown"))
+        if error_type == constants.ClientErrorType.DISPATCH_MISSING:
+            substate = format.sanitize_client_log_value(data.get("substate", ""))
+            report = (
+                f"[SID: {sid}] State update failed: "
+                f"no dispatch function for substate(s) '{substate}'. "
+                "This indicates a frontend/backend state mismatch. "
+                "Rebuild the frontend or check that api_url points to the matching backend."
+            )
+        else:
+            message = format.sanitize_client_log_value(
+                data.get("message", "No error message provided")
+            )
+            report = f"[SID: {sid}] {error_type}: {message}"
+        # Route through the app's frontend exception handler so custom
+        # handlers (e.g. error trackers) receive client errors too.
+        self.app.frontend_exception_handler(Exception(report))
 
     async def link_token_to_sid(self, sid: str, token: str):
         """Link a token to a session id.

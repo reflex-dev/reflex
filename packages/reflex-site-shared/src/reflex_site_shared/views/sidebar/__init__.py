@@ -10,11 +10,12 @@ from reflex_site_shared.components.marketing_button import button as marketing_b
 from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
-    GITHUB_URL,
+    GITHUB_ORG_URL,
     REFLEX_BUILD_LOGIN_URL,
     REFLEX_BUILD_URL,
 )
 from reflex_site_shared.views.hosting_banner import HostingBannerState
+from reflex_site_shared.views.marketing_navbar import marketing_mobile_drawer
 
 
 def drawer_badge(text: str) -> rx.Component:
@@ -25,7 +26,7 @@ def drawer_badge(text: str) -> rx.Component:
     """
     return rx.el.div(
         text,
-        class_name="text-secondary-11 text-xs font-[475] bg-secondary-1 px-1.5 h-5 rounded-md flex items-center justify-center border border-secondary-4 shrink-0",
+        class_name="text-muted-foreground text-xs font-[475] bg-background px-1.5 h-5 rounded-md flex items-center justify-center border border-border-subtle shrink-0",
     )
 
 
@@ -38,13 +39,13 @@ def drawer_category_label(text: str) -> rx.Component:
     return rx.el.div(
         rx.el.span(
             text,
-            class_name="font-mono font-[415] text-caption uppercase pb-4 rule-dashed-b text-secondary-11 block",
+            class_name="font-mono font-[415] text-caption uppercase pb-4 rule-dashed-b text-muted-foreground block",
         ),
         class_name="px-4 pt-4",
     )
 
 
-DRAWER_ROW_CLASS = "flex flex-row items-center justify-between gap-3 w-full px-4 h-12 shrink-0 border-b border-secondary-4 hover-card-shadow"
+DRAWER_ROW_CLASS = "flex flex-row items-center justify-between gap-3 w-full px-4 h-12 shrink-0 border-b border-border-subtle hover-card-shadow"
 
 
 def drawer_row_content(
@@ -66,14 +67,14 @@ def drawer_row_content(
         icon,
         rx.el.span(
             title,
-            class_name="text-sm font-[525] text-secondary-12 text-nowrap",
+            class_name="text-sm font-[525] text-foreground text-nowrap",
         ),
     ]
     if launch:
         label_children.append(
             ui.icon(
                 "ArrowUpRight03Icon",
-                class_name="size-3 shrink-0 -ml-1.75 text-secondary-12",
+                class_name="size-3 shrink-0 -ml-1.75 text-foreground",
             )
         )
     if badge_text:
@@ -86,7 +87,7 @@ def drawer_row_content(
         ui.icon(
             "ArrowRight01Icon",
             stroke_width=1.5,
-            class_name="size-4 shrink-0 text-secondary-12",
+            class_name="size-4 shrink-0 text-foreground",
         ),
     ]
 
@@ -124,7 +125,7 @@ def drawer_card(*children: rx.Component) -> rx.Component:
     """
     return rx.el.div(
         *children,
-        class_name="flex flex-col rounded-xl border border-secondary-4 bg-white-1 overflow-hidden",
+        class_name="flex flex-col rounded-xl border border-border-subtle bg-white-1 overflow-hidden",
     )
 
 
@@ -162,7 +163,7 @@ def nav_icon(name: str) -> rx.Component:
     return ui.icon(
         name,
         stroke_width=1.5,
-        class_name="size-5 shrink-0 text-secondary-11",
+        class_name="size-5 shrink-0 text-muted-foreground",
     )
 
 
@@ -172,7 +173,7 @@ def custom_nav_icon(name: str) -> rx.Component:
     Returns:
         The component.
     """
-    return get_icon(icon=name, class_name="size-[18px] shrink-0 text-secondary-12")
+    return get_icon(icon=name, class_name="size-[18px] shrink-0 text-foreground")
 
 
 def products_panel() -> rx.Component:
@@ -227,7 +228,7 @@ def products_panel() -> rx.Component:
             drawer_panel_item(
                 custom_nav_icon("github_navbar"),
                 "View on GitHub",
-                GITHUB_URL,
+                GITHUB_ORG_URL,
                 external=True,
                 launch=True,
             ),
@@ -279,7 +280,7 @@ def resources_panel() -> rx.Component:
             drawer_panel_item(
                 custom_nav_icon("github_navbar"),
                 "GitHub",
-                GITHUB_URL,
+                GITHUB_ORG_URL,
                 external=True,
             ),
             drawer_panel_item(
@@ -364,7 +365,7 @@ def solutions_panel() -> rx.Component:
 DRAWER_SECTION_CLASS = (
     "flex flex-row items-center justify-between w-full px-4 h-16 shrink-0"
 )
-DRAWER_SECTION_TITLE_CLASS = "text-base font-[550] text-secondary-12"
+DRAWER_SECTION_TITLE_CLASS = "text-base font-[550] text-foreground"
 
 
 def drawer_collapsible(
@@ -381,13 +382,13 @@ def drawer_collapsible(
             ui.icon(
                 "ArrowDown01Icon",
                 stroke_width=1.5,
-                class_name="size-5 shrink-0 text-secondary-11 transition-transform ease-out group-data-[panel-open]:rotate-180",
+                class_name="size-5 shrink-0 text-muted-foreground transition-transform ease-out group-data-[panel-open]:rotate-180",
             ),
             class_name=ui.cn("group cursor-pointer", DRAWER_SECTION_CLASS),
         ),
         ui.collapsible.panel(content),
         default_open=default_open,
-        class_name="flex flex-col border-b border-secondary-4 w-full shrink-0",
+        class_name="flex flex-col border-b border-border-subtle w-full shrink-0",
     )
 
 
@@ -402,11 +403,11 @@ def drawer_link(title: str, href: str, *, external: bool = False) -> rx.Componen
         ui.icon(
             "ArrowRight01Icon",
             stroke_width=1.5,
-            class_name="size-5 shrink-0 text-secondary-12",
+            class_name="size-5 shrink-0 text-foreground",
         ),
         href=href,
         target="_blank" if external else None,
-        class_name=ui.cn(DRAWER_SECTION_CLASS, "border-b border-secondary-4"),
+        class_name=ui.cn(DRAWER_SECTION_CLASS, "border-b border-border-subtle"),
     )
 
 
@@ -430,7 +431,7 @@ def drawer_footer() -> rx.Component:
             target="_blank",
             class_name="block w-full",
         ),
-        class_name="flex flex-col w-full px-4 py-4 shrink-0 border-t border-secondary-4",
+        class_name="flex flex-col w-full px-4 py-4 shrink-0 border-t border-border-subtle",
     )
 
 
@@ -456,7 +457,7 @@ def navbar_sidebar_drawer(
         The component.
     """
     content_class = ui.cn(
-        "!bg-secondary-1 w-full !outline-none",
+        "!bg-background w-full !outline-none",
         rx.cond(
             HostingBannerState.is_banner_visible,
             drawer_top_offset(136.5),
@@ -483,7 +484,7 @@ def navbar_sidebar_drawer(
                         class_name="flex flex-col flex-1 w-full overflow-y-auto min-h-0",
                     ),
                     drawer_footer(),
-                    class_name="flex flex-col w-full h-full bg-secondary-1",
+                    class_name="flex flex-col w-full h-full bg-background",
                 ),
                 class_name=content_class,
             )
@@ -508,59 +509,26 @@ def docs_sidebar_drawer(sidebar: rx.Component, trigger: rx.Component) -> rx.Comp
                 rx.el.div(
                     rx.drawer.close(
                         rx.el.div(
-                            class_name="absolute left-1/2 transform -translate-x-1/2 top-[-12px] flex-shrink-0 bg-secondary-9 rounded-full w-[96px] h-[5px]",
+                            class_name="absolute left-1/2 transform -translate-x-1/2 top-[-12px] flex-shrink-0 bg-subtle-foreground rounded-full w-[96px] h-[5px]",
                         ),
                         as_child=True,
                     ),
                     sidebar,
                     class_name="relative flex flex-col w-full flex-1 min-h-0",
                 ),
-                class_name="!top-[4rem] flex-col !bg-secondary-1 rounded-[24px_24px_0px_0px] w-full h-[calc(100dvh-4rem)] min-h-0 !outline-none",
+                class_name="!top-[4rem] flex-col !bg-background rounded-[24px_24px_0px_0px] w-full h-[calc(100dvh-4rem)] min-h-0 !outline-none",
             ),
         ),
     )
 
 
 def navbar_sidebar_button(*, show_banner: bool = True) -> rx.Component:
-    """Navbar sidebar button.
+    """Render the shared marketing mobile menu through the existing entry point.
 
     Args:
-        show_banner: Whether the navbar includes the hosting banner.
+        show_banner: Retained for compatibility; the panel follows its header.
 
     Returns:
-        The component.
+        Marketing mobile disclosure menu.
     """
-    return rx.el.div(
-        navbar_sidebar_drawer(
-            button(
-                ui.icon(
-                    "Menu01Icon",
-                    style={
-                        "[data-state=open] &": {
-                            "display": "none",
-                        },
-                        "[data-state=closed] &": {
-                            "display": "flex",
-                        },
-                    },
-                ),
-                ui.icon(
-                    "Cancel01Icon",
-                    style={
-                        "[data-state=open] &": {
-                            "display": "flex",
-                        },
-                        "[data-state=closed] &": {
-                            "display": "none",
-                        },
-                    },
-                ),
-                size="icon-sm",
-                variant="outline-shadow",
-                custom_attrs={"aria-label": "Open sidebar"},
-                native_button=False,
-            ),
-            show_banner=show_banner,
-        ),
-        class_name="flex justify-center items-center size-8",
-    )
+    return marketing_mobile_drawer()

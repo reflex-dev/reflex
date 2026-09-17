@@ -18,7 +18,7 @@ from .base import RadixPrimitiveComponentWithClassName
 class FormComponent(RadixPrimitiveComponentWithClassName):
     """Base class for all @radix-ui/react-form components."""
 
-    library = "@radix-ui/react-form@0.1.8"
+    library = "@radix-ui/react-form@0.1.16"
 
 
 class FormRoot(FormComponent, HTMLForm):
@@ -153,6 +153,19 @@ class FormMessage(FormComponent):
             The style of the component.
         """
         return {"font_size": "13px", "opacity": "0.8", "color": "white"}
+
+    def _exclude_props(self) -> list[str]:
+        """Exclude force_match when match is not set.
+
+        Radix only reads forceMatch together with match. Without match it passes
+        forceMatch through to the DOM element, and React logs an unknown prop.
+
+        Returns:
+            The props to exclude.
+        """
+        if self.match is None:
+            return [*super()._exclude_props(), "force_match"]
+        return super()._exclude_props()
 
 
 class FormValidityState(FormComponent):

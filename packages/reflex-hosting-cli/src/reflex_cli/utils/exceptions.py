@@ -43,6 +43,10 @@ class ResponseError(ReflexHostingCliError):
     """Raised when a response is not as expected."""
 
 
+class ArchiveUploadError(ReflexHostingCliError):
+    """Raised when a build's archives cannot be uploaded to storage."""
+
+
 class ConfigError(ReflexHostingCliError):
     """Raised when there is an error with the config."""
 

@@ -23,6 +23,10 @@ class SideBarBase:
     # Whether the item is a category. Occurs if a single item is at the top level of the sidebar for aesthetics.
     outer: bool = False
 
+    # Whether to skip the item in the prev/next footer chain. Set on links into
+    # another sidebar section so the target page keeps its own section's flow.
+    exclude_from_prev_next: bool = False
+
     def __post_init__(self):
         """Post initialization processing."""
         if self.link:

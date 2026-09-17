@@ -64,7 +64,7 @@ categories_data = [
     {
         "category": "Authentication",
         "description": "OIDC authentication with a secure-by-default model",
-        "count": 6,
+        "count": 7,
         "components": [
             {
                 "feature": "AuthPlugin",
@@ -93,6 +93,13 @@ categories_data = [
                 "cloud_tier": "Enterprise",
                 "self_hosted_tier": "Enterprise",
                 "link": "/enterprise/auth/custom-pages",
+            },
+            {
+                "feature": "Audit Hook",
+                "description": "One observe-only callable receives every auth action and access decision",
+                "cloud_tier": "Enterprise",
+                "self_hosted_tier": "Enterprise",
+                "link": "/enterprise/auth/audit",
             },
             {
                 "feature": "Testing",

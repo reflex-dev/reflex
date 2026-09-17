@@ -15,7 +15,7 @@ from reflex_site_shared.constants import (
     CHANGELOG_URL,
     DISCORD_URL,
     FORUM_URL,
-    GITHUB_URL,
+    GITHUB_ORG_URL,
     LINKEDIN_URL,
     REFLEX_ASSETS_CDN,
     REFLEX_BUILD_URL,
@@ -51,16 +51,21 @@ def tab_item(mode: str, icon: str) -> rx.Component:
     Returns:
         The component.
     """
-    active_cn = " shadow-[0_-1px_0_0_rgba(0,0,0,0.08)_inset,0_0_0_1px_rgba(0,0,0,0.08)_inset,0_1px_2px_0_rgba(0,0,0,0.02),0_1px_4px_0_rgba(0,0,0,0.02)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.16)_inset] bg-white-1 hover:bg-secondary-2 text-secondary-12"
-    unactive_cn = " hover:text-secondary-12 text-secondary-11"
+    active_cn = "bg-background text-foreground border-border"
+    unactive_cn = (
+        "border-transparent hover:bg-accent hover:text-foreground text-muted-foreground"
+    )
     return rx.el.button(
         get_icon(icon, class_name="shrink-0"),
         on_click=set_color_mode(mode),  # type: ignore[reportArgumentType]
         class_name=ui.cn(
-            "flex items-center cursor-pointer justify-center rounded-lg transition-colors size-7 outline-none focus:outline-none ",
+            "flex items-center cursor-pointer justify-center rounded-full border shadow-none transition-colors size-7 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ",
             rx.cond(mode == color_mode, active_cn, unactive_cn),
         ),
-        custom_attrs={"aria-label": f"Toggle {mode} color mode"},
+        custom_attrs={
+            "aria-label": f"Toggle {mode} color mode",
+            "aria-pressed": mode == color_mode,
+        },
     )
 
 
@@ -74,7 +79,9 @@ def dark_mode_toggle() -> rx.Component:
         tab_item("system", "computer_footer"),
         tab_item("light", "sun_footer"),
         tab_item("dark", "moon_footer"),
-        class_name="flex flex-row gap-0.5 items-center p-0.5 [box-shadow:0_1px_0_0_rgba(0,_0,_0,_0.08),_0_0_0_1px_rgba(0,_0,_0,_0.08),_0_1px_2px_0_rgba(0,_0,_0,_0.02),_0_1px_4px_0_rgba(0,_0,_0,_0.02)] w-fit mt-auto bg-secondary-1 rounded-[0.625rem] dark:border dark:border-secondary-4 border border-transparent",
+        class_name="flex flex-row gap-0.5 items-center p-0.5 w-fit shrink-0 bg-card rounded-full border border-border shadow-none",
+        role="group",
+        aria_label="Color theme",
     )
 
 
@@ -88,7 +95,7 @@ def footer_link(text: str, href: str) -> rx.Component:
         text,
         href=href,
         target="_blank" if not href.startswith("/") else "",
-        class_name="font-[525] text-secondary-11 hover:text-secondary-12 text-sm transition-color w-fit flex flex-row items-center min-h-[24px]",
+        class_name="font-[525] text-muted-foreground hover:text-foreground text-sm transition-color w-fit flex flex-row items-center min-h-[24px]",
     )
 
 
@@ -103,7 +110,7 @@ def footer_link_flex(
     return rx.el.div(
         rx.el.h3(
             heading,
-            class_name="text-xs text-secondary-12 font-[525] w-fit mb-2",
+            class_name="text-xs text-foreground font-[525] w-fit mb-2",
         ),
         *links,
         class_name=ui.cn("flex flex-col gap-2", class_name),
@@ -124,7 +131,7 @@ def social_menu_item(
         custom_attrs={"aria-label": "Social link for " + name},
         target="_blank",
         class_name=ui.cn(
-            "text-secondary-11 hover:text-secondary-12 transition-colors flex items-center justify-center h-full w-full rounded-none",
+            "text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center h-full w-full rounded-none",
             "lg:size-auto lg:h-full lg:w-full lg:rounded-none",
             class_name,
         ),
@@ -139,11 +146,11 @@ def menu_socials() -> rx.Component:
     """
     return rx.el.div(
         social_menu_item("twitter_footer", TWITTER_URL, "Twitter"),
-        social_menu_item("github_navbar", GITHUB_URL, "Github"),
+        social_menu_item("github_navbar", GITHUB_ORG_URL, "Github"),
         social_menu_item("discord_navbar", DISCORD_URL, "Discord"),
         social_menu_item("linkedin_footer", LINKEDIN_URL, "LinkedIn"),
         social_menu_item("forum_footer", FORUM_URL, "Forum"),
-        class_name="grid grid-cols-5 border-y border-secondary-4 divide-x divide-secondary-4 h-16 max-lg:w-auto lg:w-full",
+        class_name="grid grid-cols-5 border-y border-border-subtle divide-x divide-border-subtle h-16 max-lg:w-auto lg:w-full",
     )
 
 
@@ -161,11 +168,11 @@ def newsletter_input() -> rx.Component:
                     rx.icon(
                         tag="circle-check",
                         size=16,
-                        class_name="!text-primary-9",
+                        class_name="!text-primary",
                     ),
                     rx.text(
                         "Thanks for subscribing!",
-                        class_name="text-xs font-[525] text-secondary-12",
+                        class_name="text-xs font-[525] text-foreground",
                     ),
                     class_name="flex flex-row items-center gap-2",
                 ),
@@ -223,7 +230,7 @@ def footer_legal(class_name: str = "") -> rx.Component:
         dark_mode_toggle(),
         rx.el.span(
             f"Copyright © {datetime.now().year} Pynecone, Inc.",
-            class_name="text-xs font-[525] text-secondary-11",
+            class_name="text-xs font-[525] text-muted-foreground",
         ),
         rx.el.div(server_status(StatusState.status), class_name="-ml-2.5"),
         class_name=ui.cn("justify-start flex flex-col items-start gap-6", class_name),
@@ -246,7 +253,7 @@ def footer_index(
                 rx.el.div(
                     rx.el.div(
                         rx.el.div(
-                            class_name="absolute -right-px -top-24 h-24 w-px bg-linear-to-b from-transparent to-current text-secondary-4 max-lg:hidden"
+                            class_name="absolute -right-px -top-24 h-24 w-px bg-linear-to-b from-transparent to-current text-border-subtle max-lg:hidden"
                         ),
                         logo(),
                         newsletter(),
@@ -255,7 +262,7 @@ def footer_index(
                             class_name="mt-8 w-full lg:-mx-8 lg:w-[calc(100%+4rem)]",
                         ),
                         footer_legal("mt-auto pt-8 max-lg:hidden"),
-                        class_name="flex flex-col lg:pr-8 lg:pl-8 pb-8 min-w-0 lg:min-w-[337px] lg:border-r border-secondary-4 shrink-0 relative pt-16",
+                        class_name="flex flex-col lg:pr-8 lg:pl-8 pb-8 min-w-0 lg:min-w-[337px] lg:border-r border-border-subtle shrink-0 relative pt-16",
                     ),
                     rx.el.div(
                         footer_link_flex(
@@ -293,6 +300,7 @@ def footer_index(
                                     "Integrations",
                                     "/docs/ai/integrations/overview/",
                                 ),
+                                footer_link("FAQ", "/faq/"),
                             ],
                         ),
                         footer_link_flex(
@@ -342,22 +350,22 @@ def footer_index(
                         ),
                     ),
                     footer_legal(
-                        "lg:hidden w-full border-t border-secondary-4 px-6 py-8"
+                        "lg:hidden w-full border-t border-border-subtle px-6 py-8"
                     ),
                     class_name="flex lg:flex-row flex-col w-full",
                 ),
                 rx.el.div(
-                    class_name="absolute -top-px -right-24 w-24 h-px bg-linear-to-l from-transparent to-current text-secondary-4 max-lg:hidden"
+                    class_name="absolute -top-px -right-24 w-24 h-px bg-linear-to-l from-transparent to-current text-border-subtle max-lg:hidden"
                 ),
                 rx.el.div(
-                    class_name="absolute -top-px -left-24 w-24 h-px bg-linear-to-r from-transparent to-current text-secondary-4 max-lg:hidden"
+                    class_name="absolute -top-px -left-24 w-24 h-px bg-linear-to-r from-transparent to-current text-border-subtle max-lg:hidden"
                 ),
-                class_name="relative flex flex-col w-full border-x border-secondary-4 border-t",
+                class_name="relative flex flex-col w-full border-x border-border-subtle border-t",
             ),
             class_name="w-full min-w-0 lg:px-2",
         ),
         class_name=ui.cn(
-            "flex flex-col w-full min-w-0 max-w-(--landing-layout-max-width) items-stretch mx-auto lg:border-x border-secondary-4 relative",
+            "flex flex-col w-full min-w-0 max-w-(--landing-layout-max-width) items-stretch mx-auto lg:border-x border-border-subtle relative",
             class_name,
         ),
     )

@@ -192,6 +192,33 @@ def demo_only_example():
     assert "Demo only output" in rendered
 
 
+def test_render_markdown_dedent_kwarg_controls_whitespace_normalization() -> None:
+    """Allow callers to opt out of dedenting already formatted markdown."""
+    source = """        ```python exec
+        import reflex as rx
+
+        def answer_component():
+            return rx.text(str(6 * 7))
+        ```
+
+        ```python eval
+        answer_component()
+        ```
+"""
+
+    dedented = str(render_markdown(source, virtual_filepath="tests/dedent-true.md"))
+    not_dedented = str(
+        render_markdown(
+            source,
+            virtual_filepath="tests/dedent-false.md",
+            dedent=False,
+        )
+    )
+
+    assert "42" in dedented
+    assert "42" not in not_dedented
+
+
 def test_toc_helpers_extract_heading_levels() -> None:
     """Extract heading levels and labels from Markdown source."""
     source = "# One\n\n## Two\n\nBody text.\n\n### Three\n"

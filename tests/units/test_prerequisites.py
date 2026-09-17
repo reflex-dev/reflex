@@ -1,9 +1,13 @@
+import importlib.metadata
 import json
 import shutil
+import subprocess
+import sys
 import tempfile
 import uuid
 from collections.abc import Callable, Generator
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Protocol
 
@@ -11,6 +15,8 @@ import pytest
 from click.testing import CliRunner
 from reflex_base import constants
 from reflex_base.config import Config
+from reflex_base.environment import environment
+from reflex_base.utils import log
 from reflex_base.utils.decorator import cached_procedure
 
 from reflex.reflex import cli
@@ -24,6 +30,296 @@ from reflex.utils.rename import rename_imports_and_app_name
 from reflex.utils.telemetry import CpuInfo, get_cpu_info
 
 runner = CliRunner()
+
+
+@pytest.fixture
+def version_check_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Create an isolated reflex.json for latest-version checks.
+
+    Args:
+        tmp_path: Temporary test directory.
+        monkeypatch: Pytest monkeypatch fixture.
+
+    Returns:
+        The path to the isolated reflex.json file.
+    """
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    reflex_json_file = web_dir / constants.Reflex.JSON
+    reflex_json_file.write_text("{}")
+    monkeypatch.setattr(prerequisites, "get_web_dir", lambda: web_dir)
+    monkeypatch.delenv(environment.REFLEX_CHECK_LATEST_VERSION.name, raising=False)
+    return reflex_json_file
+
+
+def _mock_pypi_versions(
+    mocker,
+    current_version: str = "1.0.0",
+    latest_version: str = "2.0.0",
+):
+    """Mock installed and latest package versions.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        current_version: Installed package version.
+        latest_version: Latest package version returned by PyPI.
+
+    Returns:
+        The installed-version and network request mocks.
+    """
+    installed_version = mocker.Mock(return_value=current_version)
+    # Keep lazy dependency imports on real metadata, outside this consumer's mock.
+    mocker.patch.object(
+        prerequisites,
+        "importlib",
+        mocker.Mock(metadata=mocker.Mock(version=installed_version)),
+    )
+    response = mocker.Mock()
+    response.json.return_value = {"info": {"version": latest_version}}
+    request = mocker.patch.object(prerequisites.net, "get", return_value=response)
+    return installed_version, request
+
+
+def test_check_latest_package_version_skips_fresh_check(
+    version_check_file: Path,
+    mocker,
+):
+    """A fresh timestamp avoids package metadata and network work."""
+    last_check = datetime.now() - timedelta(hours=12)
+    version_check_file.write_text(
+        json.dumps({"last_version_check_datetime": str(last_check)})
+    )
+    installed_version, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex")
+
+    installed_version.assert_not_called()
+    request.assert_not_called()
+    assert json.loads(version_check_file.read_text())[
+        "last_version_check_datetime"
+    ] == str(last_check)
+
+
+def test_check_latest_package_version_tracks_packages_independently(
+    version_check_file: Path,
+    mocker,
+):
+    """A Reflex check does not suppress a hosting CLI version check."""
+    version_check_file.write_text(
+        json.dumps({"last_version_check_datetime": str(datetime.now())})
+    )
+    installed_version, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex-hosting-cli")
+
+    installed_version.assert_called_once_with("reflex-hosting-cli")
+    request.assert_called_once_with(
+        "https://pypi.org/pypi/reflex-hosting-cli/json", timeout=2
+    )
+    stored = json.loads(version_check_file.read_text())
+    assert "last_version_check_datetime_reflex_hosting_cli" in stored
+
+
+def test_version_check_mock_keeps_dependency_metadata_real(mocker):
+    """Lazy dependency imports must not see the version check's fixture value."""
+    original_version = importlib.metadata.version
+    installed_version, _ = _mock_pypi_versions(mocker)
+    assert importlib.metadata.version is original_version
+    assert prerequisites.importlib.metadata.version is installed_version
+
+
+def test_check_latest_package_version_refreshes_expired_check(
+    version_check_file: Path,
+    mocker,
+    caplog: pytest.LogCaptureFixture,
+):
+    """An expired timestamp triggers a request, refresh, and update warning."""
+    version_check_file.write_text(
+        json.dumps({
+            "last_version_check_datetime": str(
+                datetime.now() - timedelta(days=1, seconds=1)
+            )
+        })
+    )
+    installed_version, request = _mock_pypi_versions(mocker)
+    before_check = datetime.now()
+
+    with caplog.at_level("WARNING"):
+        prerequisites.check_latest_package_version("reflex")
+
+    checked_at = datetime.fromisoformat(
+        json.loads(version_check_file.read_text())["last_version_check_datetime"]
+    )
+    installed_version.assert_called_once_with("reflex")
+    request.assert_called_once_with("https://pypi.org/pypi/reflex/json", timeout=2)
+    assert before_check <= checked_at <= datetime.now()
+    assert caplog.messages == [
+        (
+            "Your version (1.0.0) of reflex is out of date. Upgrade to 2.0.0 "
+            "with 'pip install reflex --upgrade'"
+        )
+    ]
+
+
+def test_check_latest_package_version_records_current_version(
+    version_check_file: Path,
+    mocker,
+    caplog: pytest.LogCaptureFixture,
+):
+    """A successful first check is recorded without an unnecessary warning."""
+    installed_version, request = _mock_pypi_versions(
+        mocker,
+        current_version="2.0.0",
+        latest_version="2.0.0",
+    )
+
+    with caplog.at_level("WARNING"):
+        prerequisites.check_latest_package_version("reflex")
+
+    installed_version.assert_called_once_with("reflex")
+    request.assert_called_once()
+    assert datetime.fromisoformat(
+        json.loads(version_check_file.read_text())["last_version_check_datetime"]
+    )
+    assert caplog.messages == []
+
+
+@pytest.mark.parametrize(
+    "stored_timestamp",
+    [
+        "not-a-datetime",
+        str(datetime.now() + timedelta(days=1)),
+    ],
+)
+def test_check_latest_package_version_repairs_invalid_timestamp(
+    version_check_file: Path,
+    mocker,
+    stored_timestamp: str,
+):
+    """Malformed and future timestamps do not suppress version checks."""
+    version_check_file.write_text(
+        json.dumps({"last_version_check_datetime": stored_timestamp})
+    )
+    _, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex")
+
+    request.assert_called_once()
+    refreshed_timestamp = json.loads(version_check_file.read_text())[
+        "last_version_check_datetime"
+    ]
+    assert refreshed_timestamp != stored_timestamp
+    assert datetime.fromisoformat(refreshed_timestamp) <= datetime.now()
+
+
+def test_check_latest_package_version_throttles_failed_request(
+    version_check_file: Path,
+    mocker,
+):
+    """A failed request is not retried by every command within the TTL."""
+    mocker.patch.object(
+        prerequisites.importlib.metadata,
+        "version",
+        return_value="1.0.0",
+    )
+    request = mocker.patch.object(
+        prerequisites.net,
+        "get",
+        side_effect=RuntimeError("offline"),
+    )
+
+    prerequisites.check_latest_package_version("reflex")
+    prerequisites.check_latest_package_version("reflex")
+
+    request.assert_called_once()
+    stored = json.loads(version_check_file.read_text())
+    assert "last_version_check_datetime" not in stored
+    assert datetime.fromisoformat(stored["last_version_check_attempt_datetime"])
+
+
+def test_check_latest_package_version_retries_after_failure_cooldown(
+    version_check_file: Path,
+    mocker,
+):
+    """A failed check retries sooner than the successful-check TTL."""
+    last_attempt = (
+        datetime.now()
+        - prerequisites._LATEST_VERSION_CHECK_FAILURE_INTERVAL
+        - timedelta(seconds=1)
+    )
+    version_check_file.write_text(
+        json.dumps({"last_version_check_attempt_datetime": str(last_attempt)})
+    )
+    _, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex")
+
+    request.assert_called_once()
+    stored = json.loads(version_check_file.read_text())
+    assert datetime.fromisoformat(stored["last_version_check_datetime"])
+
+
+def test_check_latest_package_version_preserves_concurrent_json_updates(
+    version_check_file: Path,
+    mocker,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Recording a check does not write back a stale reflex.json snapshot."""
+    version_check_file.write_text(json.dumps({"last_reflex_run_datetime": "old"}))
+    _mock_pypi_versions(mocker, current_version="2.0.0", latest_version="2.0.0")
+    update_json_file = prerequisites.path_ops.update_json_file
+
+    def update_after_concurrent_write(file_path: Path, update: dict[str, object]):
+        update_json_file(file_path, {"last_reflex_run_datetime": "new"})
+        update_json_file(file_path, update)
+
+    monkeypatch.setattr(
+        prerequisites.path_ops,
+        "update_json_file",
+        update_after_concurrent_write,
+    )
+
+    prerequisites.check_latest_package_version("reflex")
+
+    assert (
+        json.loads(version_check_file.read_text())["last_reflex_run_datetime"] == "new"
+    )
+
+
+def test_check_latest_package_version_can_be_disabled(
+    version_check_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mocker,
+):
+    """Disabling latest-version checks avoids both I/O and timestamp updates."""
+    monkeypatch.setenv(environment.REFLEX_CHECK_LATEST_VERSION.name, "false")
+    installed_version, request = _mock_pypi_versions(mocker)
+
+    prerequisites.check_latest_package_version("reflex")
+
+    installed_version.assert_not_called()
+    request.assert_not_called()
+    assert json.loads(version_check_file.read_text()) == {}
+
+
+def test_prerequisites_does_not_import_database_stack() -> None:
+    """Importing general prerequisites must not load optional database support."""
+    script = """
+import sys
+
+from reflex.utils import prerequisites  # noqa: F401
+
+loaded = [name for name in ("reflex.model", "alembic", "sqlmodel") if name in sys.modules]
+assert not loaded, f"database modules imported eagerly: {loaded}"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def _patch_web_dir(monkeypatch: pytest.MonkeyPatch, web_dir: Path):
@@ -81,9 +377,10 @@ class InstallPackagesEnv:
 
 
 def _stub_framework_packages(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Empty out framework deps so install call counts are predictable."""
+    """Empty out framework deps and overrides so install call counts are predictable."""
     monkeypatch.setattr(constants.PackageJson, "DEPENDENCIES", {})
     monkeypatch.setattr(constants.PackageJson, "DEV_DEPENDENCIES", {})
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {})
 
 
 @pytest.fixture
@@ -482,6 +779,55 @@ def test_install_frontend_packages_cache_hit_refreshes_web_bun_lock(
 
     assert call_count == 1
     assert env.web_lock.read_text() == "root-lock"
+
+
+def test_install_frontend_packages_cache_ignores_backend_config(
+    install_packages_env: InstallPackagesEnv,
+):
+    """Backend-only config changes do not invalidate frontend dependencies."""
+    env = install_packages_env
+    calls = _record_calls(env)
+
+    env.install({"some-pkg@1.0.0"})
+    first_run_calls = len(calls)
+    env.config.backend_port = 8123
+    env.config.db_url = "sqlite:///changed.db"
+    env.install({"some-pkg@1.0.0"})
+
+    assert len(calls) == first_run_calls
+
+
+def test_install_frontend_packages_cache_tracks_plugin_dependencies(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Changing resolved plugin dependencies invalidates the install cache."""
+    env = install_packages_env
+    dependency_calls = 0
+
+    @dataclass
+    class FakePlugin:
+        package: str
+
+        def get_frontend_dependencies(self):
+            nonlocal dependency_calls
+            dependency_calls += 1
+            return {self.package}
+
+        def get_frontend_development_dependencies(self):
+            return set()
+
+    plugin = FakePlugin("plugin-pkg@1")
+    monkeypatch.setattr(env.config, "plugins", [plugin])
+    calls = _record_calls(env)
+
+    env.install()
+    plugin.package = "plugin-pkg@2"
+    env.install()
+
+    assert dependency_calls == 2
+    assert any("plugin-pkg@1" in call for call in calls)
+    assert any("plugin-pkg@2" in call for call in calls)
 
 
 def _record_calls(env: InstallPackagesEnv) -> list[list[str]]:
@@ -910,6 +1256,136 @@ def test_install_frontend_packages_bun_skips_frozen_lockfile_when_disabled(
         assert "--frozen-lockfile" not in call
 
 
+def _write_restored_package_json(env: InstallPackagesEnv, overrides: dict[str, str]):
+    """Persist a package.json as a completed previous run would have left it.
+
+    Dependencies are left empty so no stale-removal call muddies the counts.
+
+    Args:
+        env: The install_packages_env fixture instance.
+        overrides: The overrides the persisted lockfile was resolved against.
+    """
+    env.root_package_json.write_text(
+        json.dumps({
+            "name": "reflex",
+            "type": "module",
+            "scripts": {
+                "dev": constants.PackageJson.Commands.DEV,
+                "export": constants.PackageJson.Commands.EXPORT,
+            },
+            "dependencies": {},
+            "devDependencies": {},
+            "overrides": overrides,
+        })
+    )
+
+
+def test_install_frontend_packages_applies_overrides_after_frozen_install(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """A newly introduced framework override lands only after the frozen install.
+
+    Upgrading Reflex can add an override that the persisted lockfile knows
+    nothing about. Merging it before the frozen install would desync the pair
+    and abort with "lockfile had changes, but lockfile is frozen".
+    """
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.23"})
+    env.root_lock.write_text("root-lock")
+    _write_restored_package_json(env, {"user-pkg": "2.0.0"})
+
+    seen: list[tuple[list[str], dict]] = []
+
+    def run_package_manager(args, **kwargs):
+        seen.append((
+            list(args),
+            json.loads(env.web_package_json.read_text())["overrides"],
+        ))
+
+    env.patch_pm(["bun"], run_package_manager)
+    env.install({"some-pkg@1.0.0"})
+
+    # The frozen install must see the persisted overrides untouched.
+    frozen_installs = [
+        (args, overrides) for args, overrides in seen if "install" in args
+    ]
+    assert len(frozen_installs) == 1
+    assert "--frozen-lockfile" in frozen_installs[0][0]
+    assert frozen_installs[0][1] == {"user-pkg": "2.0.0"}
+
+    # Every subsequent add resolves against the merged overrides.
+    merged = {"user-pkg": "2.0.0", "postcss": "8.5.23"}
+    add_calls = [(args, overrides) for args, overrides in seen if "add" in args]
+    assert add_calls
+    assert all(overrides == merged for _, overrides in add_calls)
+
+    assert json.loads(env.web_package_json.read_text())["overrides"] == merged
+    assert json.loads(env.root_package_json.read_text())["overrides"] == merged
+
+
+def test_install_frontend_packages_reconciles_lockfile_for_overrides_only_change(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """New overrides with nothing to add still refresh the lockfile."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.23"})
+    env.root_lock.write_text("root-lock")
+    _write_restored_package_json(env, {})
+    calls = _record_calls(env)
+
+    env.install()
+
+    assert [c for c in calls if "add" in c] == []
+    install_calls = [c for c in calls if "install" in c]
+    assert len(install_calls) == 2
+    # Frozen first (against the restored pair), then non-frozen to resolve the
+    # merged overrides into the lockfile.
+    assert "--frozen-lockfile" in install_calls[0]
+    assert "--frozen-lockfile" not in install_calls[1]
+
+
+def test_install_frontend_packages_skips_reconcile_when_overrides_unchanged(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """Already-applied overrides do not trigger an extra install."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.23"})
+    env.root_lock.write_text("root-lock")
+    _write_restored_package_json(env, {"postcss": "8.5.23"})
+    calls = _record_calls(env)
+
+    env.install()
+
+    assert len([c for c in calls if "install" in c]) == 1
+
+
+def test_install_frontend_packages_cache_invalidated_by_new_override(
+    install_packages_env: InstallPackagesEnv,
+    monkeypatch,
+):
+    """A changed framework override busts the install cache so it gets applied."""
+    env = install_packages_env
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {})
+    env.root_lock.write_text("root-lock")
+    _write_restored_package_json(env, {})
+    calls = _record_calls(env)
+
+    env.install()
+    env.install()
+    assert len(calls) == 1
+
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"postcss": "8.5.23"})
+    env.install()
+
+    assert len(calls) == 3
+    assert json.loads(env.web_package_json.read_text())["overrides"] == {
+        "postcss": "8.5.23"
+    }
+
+
 def test_install_frontend_packages_persists_package_json_to_root(
     install_packages_env: InstallPackagesEnv,
 ):
@@ -967,14 +1443,15 @@ def test_compile_package_json_recovers_dependencies(tmp_path, monkeypatch):
 
     assert rendered["dependencies"] == {"react": "19.2.5"}
     assert rendered["devDependencies"] == {"vite": "8.0.9"}
-    assert rendered["overrides"] == {"old-override": "1.0", "cookie": "1.1.1"}
+    # Framework overrides are merged after the frozen install, not here.
+    assert rendered["overrides"] == {"old-override": "1.0"}
     assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
     assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
     assert rendered["scripts"]["old"] == "x"
 
 
 def test_compile_package_json_no_persisted_starts_empty(tmp_path, monkeypatch):
-    """Without a persisted file, deps/devDeps are empty."""
+    """Without a persisted file, deps/devDeps/overrides are empty."""
     monkeypatch.setattr(
         constants.PackageJson,
         "OVERRIDES",
@@ -986,7 +1463,7 @@ def test_compile_package_json_no_persisted_starts_empty(tmp_path, monkeypatch):
 
     assert rendered["dependencies"] == {}
     assert rendered["devDependencies"] == {}
-    assert rendered["overrides"] == {"cookie": "1.1.1"}
+    assert rendered["overrides"] == {}
 
 
 def test_compile_package_json_preserves_user_scripts(tmp_path):
@@ -1015,8 +1492,10 @@ def test_compile_package_json_preserves_user_scripts(tmp_path):
     assert rendered["scripts"]["export"] == constants.PackageJson.Commands.EXPORT
 
 
-def test_compile_package_json_preserves_user_overrides(tmp_path, monkeypatch):
-    """User-added overrides survive init; framework overrides win conflicts."""
+def test_compile_package_json_preserves_persisted_overrides_verbatim(
+    tmp_path, monkeypatch
+):
+    """Persisted overrides round-trip untouched so they still pair with the lockfile."""
     root_pkg = tmp_path / constants.Bun.ROOT_LOCKFILE_DIR / constants.PackageJson.PATH
     root_pkg.parent.mkdir(parents=True, exist_ok=True)
     root_pkg.write_text(
@@ -1036,7 +1515,88 @@ def test_compile_package_json_preserves_user_overrides(tmp_path, monkeypatch):
     with chdir(tmp_path):
         rendered = json.loads(frontend_skeleton._compile_package_json())
 
-    assert rendered["overrides"] == {"user-pkg": "2.0.0", "cookie": "1.1.1"}
+    assert rendered["overrides"] == {"user-pkg": "2.0.0", "cookie": "0.0.1"}
+
+
+def test_update_package_json_overrides_merges_framework_entries(tmp_path, monkeypatch):
+    """User-added overrides survive the merge; framework overrides win conflicts."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_text(
+        json.dumps({
+            "name": "reflex",
+            "dependencies": {"react": "19.2.5"},
+            "overrides": {"user-pkg": "2.0.0", "cookie": "0.0.1"},
+        })
+    )
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is True
+
+    updated = json.loads(web_pkg.read_text())
+    assert updated["overrides"] == {"user-pkg": "2.0.0", "cookie": "1.1.1"}
+    # Untouched fields are preserved as-is.
+    assert updated["name"] == "reflex"
+    assert updated["dependencies"] == {"react": "19.2.5"}
+
+
+def test_update_package_json_overrides_adds_missing_section(tmp_path, monkeypatch):
+    """A package.json without an overrides section gets one."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    web_pkg.write_text(json.dumps({"name": "reflex"}))
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is True
+
+    assert json.loads(web_pkg.read_text())["overrides"] == {"cookie": "1.1.1"}
+
+
+def test_update_package_json_overrides_noop_when_already_applied(tmp_path, monkeypatch):
+    """An up-to-date package.json is left byte-identical so no reinstall is triggered."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    original = json.dumps({
+        "name": "reflex",
+        "overrides": {"user-pkg": "2.0.0", "cookie": "1.1.1"},
+    })
+    web_pkg.write_text(original)
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is False
+
+    assert web_pkg.read_text() == original
+
+
+@pytest.mark.parametrize("content", [None, "{not json", "[]"])
+def test_update_package_json_overrides_skips_unusable_file(
+    tmp_path, monkeypatch, content
+):
+    """A missing or malformed .web/package.json is left for the dependency adds."""
+    web_dir = tmp_path / constants.Dirs.WEB
+    web_dir.mkdir()
+    _patch_web_dir(monkeypatch, web_dir)
+    web_pkg = web_dir / constants.PackageJson.PATH
+    if content is not None:
+        web_pkg.write_text(content)
+    monkeypatch.setattr(constants.PackageJson, "OVERRIDES", {"cookie": "1.1.1"})
+
+    with chdir(tmp_path):
+        assert frontend_skeleton.update_package_json_overrides() is False
+
+    if content is None:
+        assert not web_pkg.exists()
+    else:
+        assert web_pkg.read_text() == content
 
 
 def test_compile_package_json_preserves_additional_fields(tmp_path):
@@ -1082,7 +1642,7 @@ def test_compile_package_json_null_fields(tmp_path):
 
     assert rendered["dependencies"] == {}
     assert rendered["devDependencies"] == {}
-    assert rendered["overrides"] == constants.PackageJson.OVERRIDES
+    assert rendered["overrides"] == {}
     assert rendered["scripts"]["dev"] == constants.PackageJson.Commands.DEV
 
 
@@ -1098,7 +1658,7 @@ def test_compile_package_json_non_object_root(tmp_path, content):
 
     assert rendered["dependencies"] == {}
     assert rendered["devDependencies"] == {}
-    assert rendered["overrides"] == constants.PackageJson.OVERRIDES
+    assert rendered["overrides"] == {}
 
 
 def test_install_frontend_packages_removes_stale_dependencies(
@@ -1332,8 +1892,131 @@ def test_install_frontend_packages_does_not_fall_back(
         env.install({"some-pkg@1.0.0"})
 
 
+def test_npm_install_drops_stale_bun_lock_instead_of_persisting_both(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Switching to npm removes stale bun lockfiles.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    env.root_lock.write_text("exact-spec bun lock from an earlier bun run")
+    env.web_package_json.write_text('{"dependencies": {"react": "19.0.0"}}')
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+
+    def run_npm(args, **kwargs):
+        # npm rewrites exact versions to caret ranges.
+        web_npm_lock.write_text('{"lockfileVersion": 3}')
+        env.web_package_json.write_text('{"dependencies": {"react": "^19.0.0"}}')
+
+    env.patch_pm(["npm"], run_npm)
+
+    with chdir(env.tmp_path):
+        env.install()
+        implies_npm = js_runtimes._persisted_lockfile_implies_npm()
+
+    assert root_npm_lock.exists()
+    assert not env.root_lock.exists(), (
+        "stale bun.lock was persisted beside package-lock.json"
+    )
+    assert not env.web_lock.exists()
+    assert implies_npm is True
+
+
+def test_bun_install_drops_stale_npm_lock_instead_of_persisting_both(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Switching to bun removes stale npm lockfiles.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    web_npm_lock = env.web_dir / constants.Node.LOCKFILE_PATH
+    root_npm_lock.write_text('{"lockfileVersion": 3}')
+    env.web_package_json.write_text('{"dependencies": {"react": "^19.0.0"}}')
+
+    def run_bun(args, **kwargs):
+        env.web_lock.write_text("bun lock")
+        env.web_package_json.write_text('{"dependencies": {"react": "19.0.0"}}')
+
+    env.patch_pm(["bun"], run_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+        implies_npm = js_runtimes._persisted_lockfile_implies_npm()
+
+    assert env.root_lock.exists()
+    assert not root_npm_lock.exists(), (
+        "stale package-lock.json was persisted beside bun.lock"
+    )
+    assert not web_npm_lock.exists()
+    assert implies_npm is False
+
+
+def test_install_keeps_the_running_managers_lockfile_untouched(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Preserve the active manager's lockfile unchanged.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    env.root_lock.write_text("bun lock")
+    env.web_package_json.write_text("{}")
+
+    def run_bun(args, **kwargs):
+        env.web_lock.write_text("bun lock")
+
+    env.patch_pm(["bun"], run_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+
+    assert env.root_lock.read_text() == "bun lock"
+    assert env.web_lock.read_text() == "bun lock"
+
+
+def test_install_drops_nothing_for_a_custom_named_bun_binary(
+    install_packages_env: InstallPackagesEnv, monkeypatch
+):
+    """Custom bun executable names leave both lockfiles intact.
+
+    Args:
+        install_packages_env: The isolated install environment.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    env = install_packages_env
+    monkeypatch.setattr(js_runtimes.constants, "IS_WINDOWS", False)
+    root_npm_lock = env.root_lock.parent / constants.Node.LOCKFILE_PATH
+    root_npm_lock.write_text('{"lockfileVersion": 3}')
+    env.web_package_json.write_text("{}")
+
+    def run_custom_bun(args, **kwargs):
+        env.web_lock.write_text("fresh bun lock")
+
+    env.patch_pm(["/opt/tools/bun-1.3"], run_custom_bun)
+
+    with chdir(env.tmp_path):
+        env.install()
+
+    assert env.root_lock.read_text() == "fresh bun lock"
+    assert env.web_lock.read_text() == "fresh bun lock"
+    assert root_npm_lock.exists()
+
+
 @pytest.mark.usefixtures("install_packages_env")
-def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, capsys):
+def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, caplog):
     """A frozen-lockfile mismatch surfaces a 'delete reflex.lock/package.json' hint."""
 
     class _FakeProcess:
@@ -1355,14 +2038,12 @@ def test_run_initial_install_frozen_lockfile_error_helpful_message(monkeypatch, 
     with pytest.raises(SystemExit):
         js_runtimes._run_initial_install("bun", env={}, frozen_lockfile=True)
 
-    captured = capsys.readouterr()
-    output = captured.out + captured.err
-    assert "out of sync" in output
-    assert constants.Bun.ROOT_LOCKFILE_DIR in output
+    assert "out of sync" in caplog.text
+    assert constants.Bun.ROOT_LOCKFILE_DIR in caplog.text
 
 
 @pytest.mark.usefixtures("install_packages_env")
-def test_run_initial_install_other_error_replays_logs(monkeypatch, capsys):
+def test_run_initial_install_other_error_replays_logs(monkeypatch, caplog):
     """Non-frozen-lockfile failures replay the captured logs."""
 
     class _FakeProcess:
@@ -1384,8 +2065,7 @@ def test_run_initial_install_other_error_replays_logs(monkeypatch, capsys):
     with pytest.raises(SystemExit):
         js_runtimes._run_initial_install("bun", env={}, frozen_lockfile=True)
 
-    captured = capsys.readouterr()
-    assert "network unreachable" in captured.out + captured.err
+    assert "network unreachable" in caplog.text
 
 
 def test_extract_package_name():
@@ -1592,7 +2272,10 @@ def test_rename_imports_and_app_name_preserves_line_endings(
     assert file_path.read_bytes() == expected.encode()
 
 
-def test_cli_rename_command(temp_directory):
+def test_cli_rename_command(temp_directory, monkeypatch):
+    # The ``cli`` group callback enables managed logging for the process;
+    # snapshot the marker so it does not leak into the rest of the session.
+    monkeypatch.delenv(log._MANAGED_ENV_VAR, raising=False)
     foo_dir = temp_directory / "foo"
     foo_dir.mkdir()
     (foo_dir / "__init__").touch()
@@ -1644,8 +2327,11 @@ app.add_page(index)
 """
     )
 
-    with chdir(temp_directory / "foo"):
-        result = runner.invoke(cli, ["rename", "bar"])
+    try:
+        with chdir(temp_directory / "foo"):
+            result = runner.invoke(cli, ["rename", "bar"])
+    finally:
+        log._reset()
 
     assert result.exit_code == 0, result.output
     assert (foo_dir / "rxconfig.py").read_text() == (
