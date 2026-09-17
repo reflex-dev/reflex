@@ -465,13 +465,11 @@ def compile_experimental_component_memo(
         render = copy.copy(definition.component)
         _apply_root_style(render)
 
-        # Older reflex-base versions do not provide shared body analysis.
-        analyses = getattr(
-            RegistrationContext.ensure_context(), "_memo_body_analyses", {}
-        )
-        analysis = analyses.get(definition.component.__dict__.get("_memo_analysis_key"))
-        if analysis is not None and not analysis.can_reuse(render):
-            analysis = None
+        analysis = None
+        if (key := definition.component.__dict__.get("_memo_analysis_key")) is not None:
+            analysis = RegistrationContext.ensure_context()._memo_body_analyses.get(key)
+            if analysis is not None and not analysis.can_reuse(render):
+                analysis = None
         hooks = _root_only_hooks(render, analysis=analysis)
         custom_code = _root_only_custom_code(render, analysis=analysis)
         if analysis is None:

@@ -88,6 +88,12 @@ class RegistrationContext(BaseContext):
         default_factory=dict, repr=False
     )
 
+    def _reset_compile_caches(self) -> None:
+        """Drop the memo and event caches that only need to outlive one compile."""
+        self._memoized_event_triggers.clear()
+        self._bound_event_chains.clear()
+        self._memo_body_analyses.clear()
+
     @property
     def app(self) -> App:
         """The App instance associated with this context.

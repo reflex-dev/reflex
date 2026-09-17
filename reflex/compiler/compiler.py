@@ -1278,6 +1278,7 @@ def compile_app(
     # ``library`` from the current module layout (handles a module flipping to
     # a package across hot reloads).
     reset_memo_component_classes()
+    RegistrationContext.ensure_context()._reset_compile_caches()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
             _bundle_library(dependency)
