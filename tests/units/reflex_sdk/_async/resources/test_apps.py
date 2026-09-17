@@ -14,8 +14,11 @@ from reflex_sdk.types import (
     AppDeployment,
     AppSummary,
     DeploymentRecord,
+    FullDeployChange,
     HostnameReservation,
+    InstanceBoundsChange,
     LogRecord,
+    ProviderChange,
     User,
     VmType,
 )
@@ -230,6 +233,73 @@ async def test_scale_rejects_ambiguous_arguments(
     with pytest.raises(ValueError, match="exactly one of"):
         await client.apps.scale(APP_ID, **kwargs)
     assert not mock_api.requests
+
+
+async def test_set_provider(client: AsyncReflexCloud, mock_api: MockAPI):
+    account_id = "2b7c9d1e-3f4a-4b5c-8d6e-7f8091a2b3c4"
+    mock_api.add(
+        "POST",
+        f"{APP_PATH}/provider",
+        reply(
+            200,
+            json={"provider": "gcp", "released": True, "unreleased_provider": None},
+        ),
+    )
+    change = await client.apps.set_provider(
+        APP_ID,
+        "gcp",
+        provider_account_id=uuid.UUID(account_id),
+        service_name="dashboard",
+        expected_project_id=PROJECT_ID,
+    )
+    assert change == ProviderChange(provider="gcp", released=True)
+    (request,) = mock_api.requests
+    assert json_body(request) == {
+        "provider": "gcp",
+        "provider_account_id": account_id,
+        "service_name": "dashboard",
+    }
+    assert _query(request) == {"expected_project_id": [PROJECT_ID]}
+
+
+async def test_set_full_deploy(client: AsyncReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "POST",
+        f"{APP_PATH}/full_deploy",
+        reply(200, json={"full_deploy": True, "stopped": True, "stop_confirmed": True}),
+    )
+    assert await client.apps.set_full_deploy(APP_ID, True) == FullDeployChange(
+        full_deploy=True, stopped=True, stop_confirmed=True
+    )
+    assert json_body(mock_api.requests[0]) == {"full_deploy": True}
+
+
+@pytest.mark.parametrize(
+    ("body", "change"),
+    [
+        (
+            {"status": "ok", "applied_now": True},
+            InstanceBoundsChange(status="ok", applied_now=True),
+        ),
+        ({"status": "unchanged"}, InstanceBoundsChange(status="unchanged")),
+    ],
+)
+async def test_set_instance_bounds(
+    client: AsyncReflexCloud,
+    mock_api: MockAPI,
+    body: dict,
+    change: InstanceBoundsChange,
+):
+    mock_api.add("POST", f"{APP_PATH}/instance_bounds", reply(200, json=body))
+    result = await client.apps.set_instance_bounds(
+        APP_ID, min_instances=1, max_instances=None
+    )
+    assert result == change
+    # Both bounds are always sent: the server replaces both.
+    assert json_body(mock_api.requests[0]) == {
+        "min_instances": 1,
+        "max_instances": None,
+    }
 
 
 async def test_reserve_hostname(client: AsyncReflexCloud, mock_api: MockAPI):
