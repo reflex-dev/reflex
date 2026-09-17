@@ -7,7 +7,6 @@ from typing import Any
 
 import reflex as rx
 from reflex.event import EventType, IndividualEventType
-from reflex.experimental.client_state import ClientStateVar
 from reflex.vars.base import get_unique_variable_name
 from reflex_components_internal.blocks.telemetry.posthog import (
     track_intro_form_posthog_submission,
@@ -20,9 +19,9 @@ from reflex_components_internal.components.icons.hugeicon import hi
 from reflex_components_internal.components.icons.others import select_arrow
 from reflex_components_internal.utils.twmerge import cn
 
-intro_form_error_message = ClientStateVar.create("intro_form_error_message", "")
-intro_form_open_cs = ClientStateVar.create("intro_form_open", False)
-is_submitting_intro_form_cs = ClientStateVar.create("is_submitting_intro_form", False)
+intro_form_error_message = rx.client_state("", name="intro_form_error_message")
+intro_form_open_cs = rx.client_state(False, name="intro_form_open")
+is_submitting_intro_form_cs = rx.client_state(False, name="is_submitting_intro_form")
 
 PERSONAL_EMAIL_PROVIDERS = r"^(?!.*@(gmail|outlook|hotmail|yahoo|icloud|aol|protonmail|mail|yandex|zoho|live|msn|me|mac|googlemail)\.com$|.*@(yahoo|outlook|hotmail)\.co\.uk$|.*@yahoo\.ca$|.*@yahoo\.co\.in$|.*@proton\.me$).*$"
 
@@ -418,7 +417,7 @@ def intro_form_dialog(
                                 hi("Cancel01Icon"),
                                 variant="ghost",
                                 size="icon-sm",
-                                on_click=intro_form_open_cs.set_value(False),
+                                on_click=intro_form_open_cs.set(False),
                                 class_name="text-secondary-11",
                             ),
                         ),
@@ -436,8 +435,8 @@ def intro_form_dialog(
         ),
         open=intro_form_open_cs.value,
         on_open_change_complete=[
-            rx.call_function(intro_form_error_message.set_value("")),
-            rx.call_function(is_submitting_intro_form_cs.set_value(False)),
+            rx.call_function(intro_form_error_message.set("")),
+            rx.call_function(is_submitting_intro_form_cs.set(False)),
         ],
         class_name=class_name,
         **props,

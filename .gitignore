@@ -25,6 +25,8 @@ reflex.db
 .env.*
 node_modules
 package-lock.json
+# ...except the javascript test harness, which CI installs with `npm ci`.
+!tests/js/package-lock.json
 *.pyi
 .pre-commit-config.yaml
 .claude/.worktrees
@@ -33,3 +35,4 @@ CLAUDE.local.md
 
 # Backups written by scripts/delete_automated_releases.sh
 automated-releases-backup-*.json
+tests/js/node_modules

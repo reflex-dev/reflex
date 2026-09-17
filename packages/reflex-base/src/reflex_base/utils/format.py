@@ -533,7 +533,7 @@ def format_queue_events(
     The resulting code can be passed to interfaces that expect a callback
     function and when triggered it dispatches the events through `addEvents`.
     The name resolves via the attached imports in compiled modules and via a
-    local alias in the `applyEvent` eval context.
+    local alias in the `applyResultCallback` eval context.
 
     Args:
         events: The events to queue.
