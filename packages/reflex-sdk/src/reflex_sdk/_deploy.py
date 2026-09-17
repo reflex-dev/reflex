@@ -29,8 +29,9 @@ DEPLOY_PROTOCOL_VERSION = "0.1.71"
 UPLOAD_CHUNK_SIZE = 256 * 1024
 
 # How many times the archives are uploaded before giving up. The signed upload URLs
-# expire 30 minutes after they are reserved, and a second reservation recovers
-# from an upload that outlasted them.
+# expire 30 minutes after they are reserved. Storage checks that when an upload
+# starts, so an upload already under way finishes, but one that starts late is
+# refused, and a second reservation recovers from that.
 UPLOAD_ATTEMPTS = 2
 
 # Called with the bytes uploaded so far and the total, across both archives.
