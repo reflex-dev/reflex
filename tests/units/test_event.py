@@ -1469,6 +1469,7 @@ def test_event_chain_create_shares_chains_bound_from_one_handler():
         ChainState.handler, args_spec=args_spec, key="on_click", event_actions={"x": 1}
     )
     assert with_actions is not chain
+    # The event_actions call above must not replace the cached chain.
     assert (
         EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
         is chain
