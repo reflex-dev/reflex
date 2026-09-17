@@ -932,10 +932,10 @@ def get_memo_module_path(segments: tuple[str, ...]) -> str:
 
 def add_meta(
     page: Component,
-    title: str,
+    title: str | Var,
     image: str,
     meta: Sequence[Mapping[str, Any] | Component],
-    description: str | None = None,
+    description: str | Var | None = None,
 ) -> Component:
     """Add metadata to a page.
 
@@ -949,12 +949,14 @@ def add_meta(
     Returns:
         The component with the metadata added.
     """
+    from reflex.utils.misc import is_page_meta_set
+
     meta_tags = [
         item if isinstance(item, Component) else Meta.create(**item) for item in meta
     ]
 
     children: list[Any] = [Title.create(title)]
-    if description:
+    if is_page_meta_set(description):
         children.append(Description.create(content=description))
     children.append(Image.create(content=image))
 

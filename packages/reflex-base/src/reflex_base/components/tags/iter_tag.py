@@ -7,7 +7,7 @@ import inspect
 from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
-from reflex_base.components.tags.tag import Tag
+from reflex_base.components.tags.tag import CommonTag
 from reflex_base.utils.types import GenericType
 from reflex_base.vars import LiteralArrayVar, Var, get_unique_variable_name
 from reflex_base.vars.sequence import _determine_value_of_array_index
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass(frozen=True)
-class IterTag(Tag):
+class IterTag(CommonTag):
     """An iterator tag."""
 
     # The var to iterate over.

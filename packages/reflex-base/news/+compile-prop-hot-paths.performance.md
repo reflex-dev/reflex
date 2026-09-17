@@ -1,1 +1,1 @@
-Speed up compilation by reading only the props a component sets, caching literal Var dispatch by value type, and trimming render and app-wrap bookkeeping.
+Speed up compilation by reading only the props a component sets, caching literal Var dispatch by value type, and trimming render and app-wrap bookkeeping. Tags now render through `render(children)`: `CommonTag` holds the generic protocol shared by every tag class, and `Tag` overrides it with a direct fast path.

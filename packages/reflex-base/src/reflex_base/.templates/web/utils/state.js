@@ -10,8 +10,9 @@ import {
   useSearchParams,
   useParams,
 } from "react-router";
-import { app } from "$/utils/context-registry";
+import { app, eventLoop } from "$/utils/context-registry";
 import debounce from "$/utils/helpers/debounce";
+import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 
@@ -219,6 +220,10 @@ function urlFrom(string) {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
+  // Eval'd callback strings (format_queue_events) dispatch through addEvents
+  // like compiled event triggers do; late-bound so a remounted
+  // EventLoopProvider is picked up.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
@@ -468,25 +473,6 @@ const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
 
-// Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
-// Rewrite them outside string literals so JSON.parse accepts the payload.
-// 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal, so it is
-// swapped for a sentinel string and revived back to NaN after parsing.
-// The alternation matches whole string literals first (passed through unchanged),
-// guaranteeing bare-token matches only land in numeric positions.
-const NAN_SENTINEL = "__reflex_nan__";
-const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
-const NON_FINITE_REPLACEMENTS = {
-  Infinity: "1e999",
-  "-Infinity": "-1e999",
-  NaN: `"${NAN_SENTINEL}"`,
-};
-const rewriteBareNonFiniteFloats = (str) =>
-  str.replace(NON_FINITE_FLOAT_RE, (match) =>
-    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
-  );
-const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
-
 /**
  * Queue events to be processed and trigger processing of queue.
  * @param events Array of events to queue.
@@ -600,16 +586,9 @@ export const connect = async (
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
-      return JSON.parse(str);
-    } catch (e) {
-      try {
-        return JSON.parse(
-          rewriteBareNonFiniteFloats(str),
-          reviveNonFiniteFloats,
-        );
-      } catch (e2) {
-        return false;
-      }
+      return parseJson(str);
+    } catch {
+      return false;
     }
   };
   // Set up a reconnect helper function
