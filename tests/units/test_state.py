@@ -5,6 +5,7 @@ import copy
 import dataclasses
 import datetime
 import functools
+import inspect
 import json
 import logging
 import math
@@ -57,7 +58,7 @@ from reflex.state import (
     ImmutableStateError,
     OnLoadInternalState,
     State,
-    _recording_delta_values,
+    _suppress_delta_recording,
 )
 from reflex.testing import chdir
 from reflex.utils import prerequisites
@@ -1752,7 +1753,7 @@ def test_discarded_delta_does_not_record_values_of_substates():
     expected = {DiscardedChildState.get_full_name(): {"no_cache_v" + FIELD_MARKER: 0}}
 
     # A discarded traversal must not record the values it computed...
-    with _recording_delta_values(False):
+    with _suppress_delta_recording():
         assert dps.get_delta() == expected
     dps._clean()
 
@@ -1762,17 +1763,14 @@ def test_discarded_delta_does_not_record_values_of_substates():
     assert dps.get_delta() == {}
 
 
-def test_get_delta_record_values_is_keyword_only():
-    """`record_values` cannot be passed positionally."""
+def test_delta_methods_take_no_arguments():
+    """`get_delta` and `_get_resolved_delta` must stay callable with no arguments.
 
-    class KeywordOnlyState(BaseState):
-        @rx.var(cache=False)
-        def v(self) -> int:
-            return 0
-
-    kos = KeywordOnlyState()
-    with pytest.raises(TypeError):
-        kos.get_delta(False)  # pyright: ignore[reportCallIssue]
+    Downstream packages monkeypatch them with functions accepting only `self`, so
+    a parameter here breaks every delta for them as soon as a caller passes it.
+    """
+    assert list(inspect.signature(BaseState.get_delta).parameters) == ["self"]
+    assert list(inspect.signature(BaseState._get_resolved_delta).parameters) == ["self"]
 
 
 def test_computed_var_depends_on_parent_non_cached():

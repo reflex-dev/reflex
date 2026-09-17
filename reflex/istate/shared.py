@@ -17,7 +17,7 @@ from reflex.state import (
     BaseState,
     State,
     _override_base_method,
-    _recording_delta_values,
+    _suppress_delta_recording,
 )
 
 logger = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ async def _patch_state(
         root_state._mark_dirty()
         # The delta is discarded: it is only resolved to refresh computed vars,
         # so its values must not count as sent to the client.
-        with _recording_delta_values(False):
+        with _suppress_delta_recording():
             await root_state._get_resolved_delta()
         yield
     finally:

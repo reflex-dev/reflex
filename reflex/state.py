@@ -293,19 +293,16 @@ _record_delta_values: ContextVar[bool] = ContextVar(
 
 
 @contextlib.contextmanager
-def _recording_delta_values(enabled: bool) -> Iterator[None]:
-    """Set whether delta values may be recorded for the duration of the block.
+def _suppress_delta_recording() -> Iterator[None]:
+    """Stop delta values built in this block from counting as sent to the client.
 
-    Narrowing only: a nested block cannot re-enable recording that an enclosing
-    block turned off.
-
-    Args:
-        enabled: Whether values may be recorded.
+    For a delta that is computed for its side effects and then discarded, whose
+    values the client never receives.
 
     Yields:
-        None, with the flag applied.
+        None, with recording suppressed.
     """
-    token = _record_delta_values.set(enabled and _record_delta_values.get())
+    token = _record_delta_values.set(False)
     try:
         yield
     finally:
@@ -2111,21 +2108,18 @@ class BaseState(EvenMoreBasicBaseState):
             if include_backend or not self.computed_vars[cvar]._backend
         }
 
-    def get_delta(self, *, record_values: bool = True) -> Delta:
+    def get_delta(self) -> Delta:
         """Get the delta for the state.
 
-        Args:
-            record_values: Whether the values of uncached computed vars may be
-                recorded as sent to the client. Pass False when the delta is
-                computed for its side effects and then discarded, otherwise the
-                unsent values would be omitted from the next delta. Recording is
-                also suppressed while an enclosing `_recording_delta_values(False)`
-                block is active, which is how the flag reaches substates.
+        Takes no arguments, and no internal caller passes any: the method is
+        monkeypatched downstream with a signature accepting only `self`. Whether
+        the uncached computed var values it computes count as sent to the client
+        is carried by `_suppress_delta_recording` instead.
 
         Returns:
             The delta for the state.
         """
-        record_values = record_values and _record_delta_values.get()
+        record_values = _record_delta_values.get()
         delta = {}
 
         self._mark_dirty_computed_vars()
@@ -2168,19 +2162,13 @@ class BaseState(EvenMoreBasicBaseState):
         # Return the delta.
         return delta
 
-    async def _get_resolved_delta(self, *, record_values: bool = True) -> Delta:
+    async def _get_resolved_delta(self) -> Delta:
         """Get the delta for the state after resolving all coroutines.
-
-        Args:
-            record_values: Whether the values of uncached computed vars may be
-                recorded as sent to the client. See `get_delta`.
 
         Returns:
             The resolved delta for the state.
         """
-        with _recording_delta_values(record_values):
-            delta = self.get_delta()
-        return await _resolve_delta(delta)
+        return await _resolve_delta(self.get_delta())
 
     def _mark_dirty(self):
         """Mark the substate and all parent states as dirty."""
