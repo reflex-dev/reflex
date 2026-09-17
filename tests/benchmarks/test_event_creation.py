@@ -60,7 +60,6 @@ def increment_event(increment_spec: EventSpec) -> Event:
     params=(
         "event",
         "event_spec",
-        "lambda_event",
         "lambda_event_spec",
         "lambda_event_handler",
     )
@@ -88,7 +87,6 @@ def event_input(
     inputs: dict[str, Any] = {
         "event": increment_event,
         "event_spec": increment_spec,
-        "lambda_event": lambda: increment_event,
         "lambda_event_spec": lambda: increment_spec,
         "lambda_event_handler": lambda: increment_handler,
     }
