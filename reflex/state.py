@@ -46,7 +46,6 @@ from reflex_base.utils.exceptions import (
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
     DynamicRouteArgShadowsStateVarError,
-    EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateMismatchError,
@@ -79,6 +78,7 @@ from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
+from reflex.istate.validation import _StateMeta, _validate_state_name
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
@@ -435,8 +435,8 @@ all_base_state_classes: dict[str, None] = {}
 # Instance bookkeeping fields and framework methods read on every event. They
 # bypass the var-resolution logic below, so nothing stored in `_backend_vars`
 # (e.g. `_reflex_internal_links`) or delegated to the parent (`router_data`)
-# may appear here. A subclass that defines one of these names itself (as a var
-# or an event handler) drops it from its own `_fast_attr_names`.
+# may appear here. A subclass that overrides one of these methods drops the
+# name from its own `_fast_attr_names`.
 _FRAMEWORK_ATTR_NAMES = frozenset({
     "dirty_vars",
     "dirty_substates",
@@ -480,7 +480,7 @@ CLASS_VAR_NAMES = frozenset({
 })
 
 
-class BaseState(EvenMoreBasicBaseState):
+class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -670,9 +670,6 @@ class BaseState(EvenMoreBasicBaseState):
         # Validate the module name.
         cls._validate_module_name()
 
-        # Event handlers should not shadow builtin state methods.
-        cls._check_overridden_methods()
-
         # Computed vars should not shadow builtin state props.
         cls._check_overridden_basevars()
 
@@ -837,38 +834,15 @@ class BaseState(EvenMoreBasicBaseState):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
-        cls._prune_fast_attr_names()
-
-        all_base_state_classes[cls.get_full_name()] = None
-
-    @classmethod
-    def _prune_fast_attr_names(cls) -> None:
-        """Recompute which framework attribute names this state tree may fast-path.
-
-        A name the state defines (as a var, a backend var, an event handler or
-        a marked method override) must keep going through the full lookup in
-        ``_get_attribute``. The set is rebuilt from the parent's current set
-        minus this class's own names, then recomputed for every substate, so a
-        var or handler registered after class creation (dynamic route args,
-        ``add_var``, ...) drops the name for the whole subtree that inherits it.
-        """
+        # A marked override of a framework method must keep the full lookup.
         parent_state = cls.get_parent_state()
-        inherited = (
+        cls._fast_attr_names = (
             parent_state._fast_attr_names
             if parent_state is not None
             else _FRAMEWORK_ATTR_NAMES
-        )
-        cls._fast_attr_names = inherited - (
-            _FRAMEWORK_ATTR_NAMES
-            & (
-                set(cls.__dict__)
-                | set(cls.vars)
-                | set(cls.backend_vars)
-                | set(cls.event_handlers)
-            )
-        )
-        for substate_class in cls.get_substates():
-            substate_class._prune_fast_attr_names()
+        ) - cls.__dict__.keys()
+
+        all_base_state_classes[cls.get_full_name()] = None
 
     @classmethod
     def _add_event_handler(
@@ -882,10 +856,10 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
         """
+        _validate_state_name(name)
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
-        cls._prune_fast_attr_names()
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -1115,29 +1089,6 @@ class BaseState(EvenMoreBasicBaseState):
                     value = value.__func__
                 if isinstance(value, FunctionType):
                     yield name, value
-
-    @classmethod
-    def _check_overridden_methods(cls):
-        """Check for shadow methods and raise error if any.
-
-        Raises:
-            EventHandlerShadowsBuiltInStateMethodError: When an event handler shadows an inbuilt state method.
-        """
-        overridden_methods = set()
-        state_base_functions = cls._get_base_functions()
-        for name, method in cls._iter_functions():
-            # Check if the method is overridden and not a dunder method
-            if (
-                not name.startswith("__")
-                and method.__name__ in state_base_functions
-                and state_base_functions[method.__name__] != method
-                and not getattr(method, "__override_base_method__", False)
-            ):
-                overridden_methods.add(method.__name__)
-
-        for method_name in overridden_methods:
-            msg = f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
-            raise EventHandlerShadowsBuiltInStateMethodError(msg)
 
     @classmethod
     def _check_overridden_basevars(cls):
@@ -1386,6 +1337,18 @@ class BaseState(EvenMoreBasicBaseState):
         cls._set_default_value(name, prop)
 
     @classmethod
+    def add_field(cls, name: str, var: Var, default_value: Any):
+        """Validate a dynamically added field before updating the field map.
+
+        Args:
+            name: The name of the field to add.
+            var: The variable to add a field for.
+            default_value: The default value of the field.
+        """
+        _validate_state_name(name)
+        super().add_field(name, var, default_value)
+
+    @classmethod
     def add_var(cls, name: str, type_: Any, default_value: Any = None):
         """Add dynamically a variable to the State.
 
@@ -1426,7 +1389,6 @@ class BaseState(EvenMoreBasicBaseState):
         # let substates know about the new variable
         for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
-        cls._prune_fast_attr_names()
 
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
@@ -1537,19 +1499,6 @@ class BaseState(EvenMoreBasicBaseState):
         except TypeError:
             return None
 
-    @staticmethod
-    def _get_base_functions() -> builtins.dict[str, FunctionType]:
-        """Get all functions of the state class excluding dunder methods.
-
-        Returns:
-            The functions of rx.State class as a dict.
-        """
-        return {
-            func[0]: func[1]
-            for func in inspect.getmembers(BaseState, predicate=inspect.isfunction)
-            if not func[0].startswith("__")
-        }
-
     @classmethod
     def _update_substate_inherited_vars(cls, vars_to_add: builtins.dict[str, Var]):
         """Update the inherited vars of substates recursively when new vars are added.
@@ -1570,7 +1519,6 @@ class BaseState(EvenMoreBasicBaseState):
                 substate_class._update_substate_inherited_vars(vars_to_add)
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
-        cls._prune_fast_attr_names()
 
     @classmethod
     def _dynamic_route_arg_types(cls) -> builtins.dict[str, str]:
@@ -1602,6 +1550,8 @@ class BaseState(EvenMoreBasicBaseState):
         if not args:
             return
 
+        for name in args:
+            _validate_state_name(name)
         cls._check_overwritten_dynamic_args(list(args.keys()))
 
         def argsingle_factory(param: str):
