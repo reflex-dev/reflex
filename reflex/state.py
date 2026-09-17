@@ -14,7 +14,8 @@ import pickle
 import re
 import sys
 import time
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
+from contextvars import ContextVar
 from hashlib import md5
 from types import FunctionType
 from typing import (
@@ -45,7 +46,6 @@ from reflex_base.utils.exceptions import (
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
     DynamicRouteArgShadowsStateVarError,
-    EventHandlerShadowsBuiltInStateMethodError,
     ReflexRuntimeError,
     SetUndefinedStateVarError,
     StateMismatchError,
@@ -78,6 +78,7 @@ from reflex.istate.data import RouterData
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
+from reflex.istate.validation import _StateMeta, _validate_state_name
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
@@ -279,6 +280,34 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
 # the contract); never serialized into a delta sent to the client.
 _DROP_FROM_DELTA: Final = object()
 
+# Whether uncached computed var values may be recorded as sent to the client for
+# the delta currently being built. Carried out of band rather than as an argument
+# so that every internal call stays ``get_delta()``: downstream packages patch
+# that method with a signature taking no arguments, and the flag describes the
+# whole traversal rather than any single state in it. A ContextVar, not a global:
+# deltas for different clients are built in concurrent tasks, and leaking a
+# discarded traversal's flag into one of those would suppress a real update.
+_record_delta_values: ContextVar[bool] = ContextVar(
+    "_record_delta_values", default=True
+)
+
+
+@contextlib.contextmanager
+def _suppress_delta_recording() -> Iterator[None]:
+    """Stop delta values built in this block from counting as sent to the client.
+
+    For a delta that is computed for its side effects and then discarded, whose
+    values the client never receives.
+
+    Yields:
+        None, with recording suppressed.
+    """
+    token = _record_delta_values.set(False)
+    try:
+        yield
+    finally:
+        _record_delta_values.reset(token)
+
 
 async def _resolve_delta(delta: Delta) -> Delta:
     """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
@@ -308,6 +337,30 @@ async def _resolve_delta(delta: Delta) -> Delta:
         else:
             delta[state_name][var_name] = resolved
     return delta
+
+
+async def _drop_unchanged_delta_value(
+    cvar: ComputedVar,
+    instance: BaseState,
+    value: Coroutine[None, None, Any],
+    token: str,
+) -> Any:
+    """Await an async uncached computed var, dropping it if the value did not change.
+
+    Args:
+        cvar: The computed var that produced the coroutine.
+        instance: The state instance the computed var is attached to.
+        value: The coroutine returned by the computed var.
+        token: The client token the delta is being produced for.
+
+    Returns:
+        The resolved value, or ``_DROP_FROM_DELTA`` when it matches the last
+        value that was sent to the client.
+    """
+    resolved = await value
+    if not cvar._record_delta_value(instance, resolved, token):
+        return _DROP_FROM_DELTA
+    return resolved
 
 
 RETURN = TypeVar("RETURN")
@@ -382,8 +435,8 @@ all_base_state_classes: dict[str, None] = {}
 # Instance bookkeeping fields and framework methods read on every event. They
 # bypass the var-resolution logic below, so nothing stored in `_backend_vars`
 # (e.g. `_reflex_internal_links`) or delegated to the parent (`router_data`)
-# may appear here. A subclass that defines one of these names itself (as a var
-# or an event handler) drops it from its own `_fast_attr_names`.
+# may appear here. A subclass that overrides one of these methods drops the
+# name from its own `_fast_attr_names`.
 _FRAMEWORK_ATTR_NAMES = frozenset({
     "dirty_vars",
     "dirty_substates",
@@ -427,7 +480,7 @@ CLASS_VAR_NAMES = frozenset({
 })
 
 
-class BaseState(EvenMoreBasicBaseState):
+class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -617,9 +670,6 @@ class BaseState(EvenMoreBasicBaseState):
         # Validate the module name.
         cls._validate_module_name()
 
-        # Event handlers should not shadow builtin state methods.
-        cls._check_overridden_methods()
-
         # Computed vars should not shadow builtin state props.
         cls._check_overridden_basevars()
 
@@ -784,38 +834,15 @@ class BaseState(EvenMoreBasicBaseState):
         cls._var_dependencies = {}
         cls._init_var_dependency_dicts()
 
-        cls._prune_fast_attr_names()
-
-        all_base_state_classes[cls.get_full_name()] = None
-
-    @classmethod
-    def _prune_fast_attr_names(cls) -> None:
-        """Recompute which framework attribute names this state tree may fast-path.
-
-        A name the state defines (as a var, a backend var, an event handler or
-        a marked method override) must keep going through the full lookup in
-        ``_get_attribute``. The set is rebuilt from the parent's current set
-        minus this class's own names, then recomputed for every substate, so a
-        var or handler registered after class creation (dynamic route args,
-        ``add_var``, ...) drops the name for the whole subtree that inherits it.
-        """
+        # A marked override of a framework method must keep the full lookup.
         parent_state = cls.get_parent_state()
-        inherited = (
+        cls._fast_attr_names = (
             parent_state._fast_attr_names
             if parent_state is not None
             else _FRAMEWORK_ATTR_NAMES
-        )
-        cls._fast_attr_names = inherited - (
-            _FRAMEWORK_ATTR_NAMES
-            & (
-                set(cls.__dict__)
-                | set(cls.vars)
-                | set(cls.backend_vars)
-                | set(cls.event_handlers)
-            )
-        )
-        for substate_class in cls.get_substates():
-            substate_class._prune_fast_attr_names()
+        ) - cls.__dict__.keys()
+
+        all_base_state_classes[cls.get_full_name()] = None
 
     @classmethod
     def _add_event_handler(
@@ -829,10 +856,10 @@ class BaseState(EvenMoreBasicBaseState):
             name: The name of the event handler.
             fn: The function to call when the event is triggered.
         """
+        _validate_state_name(name)
         handler = cls._create_event_handler(fn)
         cls.event_handlers[name] = handler
         setattr(cls, name, handler)
-        cls._prune_fast_attr_names()
 
     @staticmethod
     def _copy_fn(fn: Callable) -> Callable:
@@ -1062,29 +1089,6 @@ class BaseState(EvenMoreBasicBaseState):
                     value = value.__func__
                 if isinstance(value, FunctionType):
                     yield name, value
-
-    @classmethod
-    def _check_overridden_methods(cls):
-        """Check for shadow methods and raise error if any.
-
-        Raises:
-            EventHandlerShadowsBuiltInStateMethodError: When an event handler shadows an inbuilt state method.
-        """
-        overridden_methods = set()
-        state_base_functions = cls._get_base_functions()
-        for name, method in cls._iter_functions():
-            # Check if the method is overridden and not a dunder method
-            if (
-                not name.startswith("__")
-                and method.__name__ in state_base_functions
-                and state_base_functions[method.__name__] != method
-                and not getattr(method, "__override_base_method__", False)
-            ):
-                overridden_methods.add(method.__name__)
-
-        for method_name in overridden_methods:
-            msg = f"The event handler name `{method_name}` shadows a builtin State method; use a different name instead"
-            raise EventHandlerShadowsBuiltInStateMethodError(msg)
 
     @classmethod
     def _check_overridden_basevars(cls):
@@ -1333,6 +1337,18 @@ class BaseState(EvenMoreBasicBaseState):
         cls._set_default_value(name, prop)
 
     @classmethod
+    def add_field(cls, name: str, var: Var, default_value: Any):
+        """Validate a dynamically added field before updating the field map.
+
+        Args:
+            name: The name of the field to add.
+            var: The variable to add a field for.
+            default_value: The default value of the field.
+        """
+        _validate_state_name(name)
+        super().add_field(name, var, default_value)
+
+    @classmethod
     def add_var(cls, name: str, type_: Any, default_value: Any = None):
         """Add dynamically a variable to the State.
 
@@ -1373,7 +1389,6 @@ class BaseState(EvenMoreBasicBaseState):
         # let substates know about the new variable
         for substate_class in cls.get_substates():
             substate_class.vars.setdefault(name, var)
-        cls._prune_fast_attr_names()
 
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
@@ -1484,19 +1499,6 @@ class BaseState(EvenMoreBasicBaseState):
         except TypeError:
             return None
 
-    @staticmethod
-    def _get_base_functions() -> builtins.dict[str, FunctionType]:
-        """Get all functions of the state class excluding dunder methods.
-
-        Returns:
-            The functions of rx.State class as a dict.
-        """
-        return {
-            func[0]: func[1]
-            for func in inspect.getmembers(BaseState, predicate=inspect.isfunction)
-            if not func[0].startswith("__")
-        }
-
     @classmethod
     def _update_substate_inherited_vars(cls, vars_to_add: builtins.dict[str, Var]):
         """Update the inherited vars of substates recursively when new vars are added.
@@ -1517,7 +1519,6 @@ class BaseState(EvenMoreBasicBaseState):
                 substate_class._update_substate_inherited_vars(vars_to_add)
         # Reinitialize dependency tracking dicts.
         cls._init_var_dependency_dicts()
-        cls._prune_fast_attr_names()
 
     @classmethod
     def _dynamic_route_arg_types(cls) -> builtins.dict[str, str]:
@@ -1549,6 +1550,8 @@ class BaseState(EvenMoreBasicBaseState):
         if not args:
             return
 
+        for name in args:
+            _validate_state_name(name)
         cls._check_overwritten_dynamic_args(list(args.keys()))
 
         def argsingle_factory(param: str):
@@ -2058,9 +2061,15 @@ class BaseState(EvenMoreBasicBaseState):
     def get_delta(self) -> Delta:
         """Get the delta for the state.
 
+        Takes no arguments, and no internal caller passes any: the method is
+        monkeypatched downstream with a signature accepting only `self`. Whether
+        the uncached computed var values it computes count as sent to the client
+        is carried by `_suppress_delta_recording` instead.
+
         Returns:
             The delta for the state.
         """
+        record_values = _record_delta_values.get()
         delta = {}
 
         self._mark_dirty_computed_vars()
@@ -2074,11 +2083,23 @@ class BaseState(EvenMoreBasicBaseState):
             self.dirty_vars.intersection(frontend_computed_vars)
         )
 
-        subdelta: dict[str, Any] = {
-            prop + FIELD_MARKER: self.get_value(prop)
-            for prop in delta_vars
-            if not types.is_backend_base_variable(prop, type(self))
-        }
+        always_dirty_computed_vars = self._always_dirty_computed_vars
+        # Token of the client this delta is for, used to know which values it has.
+        token = self.router.session.client_token if always_dirty_computed_vars else ""
+        subdelta: dict[str, Any] = {}
+        for prop in delta_vars:
+            if types.is_backend_base_variable(prop, type(self)):
+                continue
+            value = self.get_value(prop)
+            if record_values and prop in always_dirty_computed_vars:
+                # Uncached computed vars are recomputed for every delta; only
+                # send them when the recomputed value actually changed.
+                cvar = self.computed_vars[prop]
+                if inspect.iscoroutine(value):
+                    value = _drop_unchanged_delta_value(cvar, self, value, token)
+                elif not cvar._record_delta_value(self, value, token):
+                    continue
+            subdelta[prop + FIELD_MARKER] = value
 
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta

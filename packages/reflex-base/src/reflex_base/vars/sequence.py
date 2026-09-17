@@ -659,14 +659,6 @@ class LiteralArrayVar(
             self._var_data,
         )
 
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((self.__class__.__name__, self._js_expr))
-
     def json(self) -> str:
         """Get the JSON representation of the var.
 
@@ -1501,14 +1493,6 @@ class LiteralStringVar(LiteralVar[STRING_TYPE], StringVar[STRING_TYPE]):
             _var_value=value,
         )
 
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((type(self).__name__, self._var_value))
-
     def json(self) -> str:
         """Get the JSON representation of the var.
 
@@ -2116,19 +2100,6 @@ class LiteralRangeVar(CachedVarOperation, LiteralVar[Sequence[int]], RangeVar):
             _var_data=_var_data,
             _var_value=value,
         )
-
-    def __hash__(self) -> int:
-        """Get the hash of the var.
-
-        Returns:
-            The hash of the var.
-        """
-        return hash((
-            self.__class__.__name__,
-            self._var_value.start,
-            self._var_value.stop,
-            self._var_value.step,
-        ))
 
     @cached_property_no_lock
     def _cached_var_name(self) -> str:
