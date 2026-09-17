@@ -14,7 +14,8 @@ import pickle
 import re
 import sys
 import time
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
+from contextvars import ContextVar
 from hashlib import md5
 from types import FunctionType
 from typing import (
@@ -279,6 +280,34 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
 # the contract); never serialized into a delta sent to the client.
 _DROP_FROM_DELTA: Final = object()
 
+# Whether uncached computed var values may be recorded as sent to the client for
+# the delta currently being built. Carried out of band rather than as an argument
+# so that every internal call stays ``get_delta()``: downstream packages patch
+# that method with a signature taking no arguments, and the flag describes the
+# whole traversal rather than any single state in it. A ContextVar, not a global:
+# deltas for different clients are built in concurrent tasks, and leaking a
+# discarded traversal's flag into one of those would suppress a real update.
+_record_delta_values: ContextVar[bool] = ContextVar(
+    "_record_delta_values", default=True
+)
+
+
+@contextlib.contextmanager
+def _suppress_delta_recording() -> Iterator[None]:
+    """Stop delta values built in this block from counting as sent to the client.
+
+    For a delta that is computed for its side effects and then discarded, whose
+    values the client never receives.
+
+    Yields:
+        None, with recording suppressed.
+    """
+    token = _record_delta_values.set(False)
+    try:
+        yield
+    finally:
+        _record_delta_values.reset(token)
+
 
 async def _resolve_delta(delta: Delta) -> Delta:
     """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
@@ -308,6 +337,30 @@ async def _resolve_delta(delta: Delta) -> Delta:
         else:
             delta[state_name][var_name] = resolved
     return delta
+
+
+async def _drop_unchanged_delta_value(
+    cvar: ComputedVar,
+    instance: BaseState,
+    value: Coroutine[None, None, Any],
+    token: str,
+) -> Any:
+    """Await an async uncached computed var, dropping it if the value did not change.
+
+    Args:
+        cvar: The computed var that produced the coroutine.
+        instance: The state instance the computed var is attached to.
+        value: The coroutine returned by the computed var.
+        token: The client token the delta is being produced for.
+
+    Returns:
+        The resolved value, or ``_DROP_FROM_DELTA`` when it matches the last
+        value that was sent to the client.
+    """
+    resolved = await value
+    if not cvar._record_delta_value(instance, resolved, token):
+        return _DROP_FROM_DELTA
+    return resolved
 
 
 RETURN = TypeVar("RETURN")
@@ -2058,9 +2111,15 @@ class BaseState(EvenMoreBasicBaseState):
     def get_delta(self) -> Delta:
         """Get the delta for the state.
 
+        Takes no arguments, and no internal caller passes any: the method is
+        monkeypatched downstream with a signature accepting only `self`. Whether
+        the uncached computed var values it computes count as sent to the client
+        is carried by `_suppress_delta_recording` instead.
+
         Returns:
             The delta for the state.
         """
+        record_values = _record_delta_values.get()
         delta = {}
 
         self._mark_dirty_computed_vars()
@@ -2074,11 +2133,23 @@ class BaseState(EvenMoreBasicBaseState):
             self.dirty_vars.intersection(frontend_computed_vars)
         )
 
-        subdelta: dict[str, Any] = {
-            prop + FIELD_MARKER: self.get_value(prop)
-            for prop in delta_vars
-            if not types.is_backend_base_variable(prop, type(self))
-        }
+        always_dirty_computed_vars = self._always_dirty_computed_vars
+        # Token of the client this delta is for, used to know which values it has.
+        token = self.router.session.client_token if always_dirty_computed_vars else ""
+        subdelta: dict[str, Any] = {}
+        for prop in delta_vars:
+            if types.is_backend_base_variable(prop, type(self)):
+                continue
+            value = self.get_value(prop)
+            if record_values and prop in always_dirty_computed_vars:
+                # Uncached computed vars are recomputed for every delta; only
+                # send them when the recomputed value actually changed.
+                cvar = self.computed_vars[prop]
+                if inspect.iscoroutine(value):
+                    value = _drop_unchanged_delta_value(cvar, self, value, token)
+                elif not cvar._record_delta_value(self, value, token):
+                    continue
+            subdelta[prop + FIELD_MARKER] = value
 
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta
