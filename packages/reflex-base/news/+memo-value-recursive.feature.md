@@ -1,0 +1,1 @@
+Extend `@rx.memo` with `by_value=True` for component props and function arguments, `recursive=True` to auto-memoize reactive descendants, and `name=` to override generated names. Function memos now cache return values by argument identity by default; pass `wrapper=None` to emit a plain function.

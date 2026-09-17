@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import inspect
 import re
+import shutil
+import subprocess
 from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any, cast
@@ -12,6 +14,8 @@ from unittest.mock import patch
 import pytest
 from reflex_base.components.component import Component
 from reflex_base.components.memo import (
+    _BY_VALUE_FUNCTION_MEMO_WRAPPER,
+    _DEFAULT_FUNCTION_MEMO_WRAPPER,
     _SPECS,
     DEFAULT_MEMO_WRAPPER,
     EMPTY_VAR_COMPONENT,
@@ -184,10 +188,8 @@ def test_var_returning_memo_with_rest_props():
     sym = memo_paths.mirrored_symbol("merge_styles", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert (
-        f"export const {sym} = (({{base, ...overrides}}) => ({{...base, ...overrides}}));"
-        in code
-    )
+    assert f"export const {sym} = " in code
+    assert "(({base, ...overrides}) => ({...base, ...overrides}))" in code
 
     with pytest.raises(TypeError, match="Do not pass `overrides=` directly"):
         merge_styles(base=base, overrides={"color": "red"})
@@ -275,7 +277,8 @@ def test_var_returning_memo_with_children_and_rest():
     sym = memo_paths.mirrored_symbol("label_slot", __name__)
     files, _ = compiler.compile_memo_components(tuple(MEMOS.values()))
     code = "\n".join(c for _, c in files)
-    assert f"export const {sym} = (({{children, label, ...rest}}) => label);" in code
+    assert f"export const {sym} = " in code
+    assert "(({children, label, ...rest}) => label)" in code
 
 
 def test_memo_munges_legacy_bare_type_param():
@@ -1194,6 +1197,120 @@ def test_component_memo_default_wrapper():
     assert any(imp.tag == "memo" for imp in imports.get("react", []))
 
 
+def test_component_memo_by_value_uses_prop_equality():
+    """``by_value=True`` emits React memo with a value comparator."""
+
+    @rx.memo(by_value=True)
+    def value_wrapped(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["ValueWrapped", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+
+    files, imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("ValueWrapped", __name__)
+    assert (
+        f"export const {sym} = ((Component) => memo(Component, "
+        "(prevProps, nextProps) => JSON.stringify(prevProps) === "
+        "JSON.stringify(nextProps)))" in code
+    )
+    assert any(imp.tag == "memo" for imp in imports.get("react", []))
+
+
+def test_component_memo_name_overrides_lambda_name():
+    """``name=`` provides a stable exported name for lambda memos."""
+    named_lambda = rx.memo(name="named_lambda")(
+        lambda label: rx.text(label),  # pyright: ignore[reportUnknownLambdaType]
+    )
+
+    definition = MEMOS["NamedLambdaRxMemo", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.python_name == "named_lambda"
+    assert definition.fn.__name__ == "<lambda>"
+    assert isinstance(named_lambda(label="label"), MemoComponent)
+
+    files, _imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("NamedLambdaRxMemo", __name__)
+    assert f"const {sym} = memo(" in code
+
+
+@pytest.mark.parametrize("memo_name", ["bad name", "bad;name", "1bad"])
+def test_memo_name_must_be_a_valid_js_identifier(memo_name: str):
+    """Memo names that would produce invalid JavaScript are rejected."""
+    with pytest.raises(ValueError, match="valid JavaScript identifier"):
+
+        @rx.memo(name=memo_name)
+        def invalid_name(label: rx.Var[str]) -> rx.Component:
+            return rx.text(label)
+
+
+def test_function_memo_name_appends_marker_to_js_keyword():
+    """An explicit name gets a suffix that makes JS keywords safe."""
+
+    @rx.memo(name="await")
+    def keyword_named(value: rx.Var[int]) -> rx.Var[str]:
+        return value.to(str)
+
+    definition = MEMOS["awaitRxMemo", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    assert definition.python_name == "await"
+    assert definition.export_name == "awaitRxMemo"
+
+    files, _imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    sym = memo_paths.mirrored_symbol("awaitRxMemo", __name__)
+    assert f"export const {sym} = " in code
+
+
+def test_function_memo_name_accepts_interior_dollar():
+    """JavaScript identifiers can contain dollar signs after a letter."""
+
+    @rx.memo(name="format$total")
+    def dollar_named(value: rx.Var[int]) -> rx.Var[str]:
+        return value.to(str)
+
+    assert "format$totalRxMemo" in str(dollar_named(value=1))
+
+
+def test_function_memo_packed_arguments_reuse_cached_results():
+    """Fresh transport objects reuse entries for the same logical props."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is needed to execute the memo cache")
+
+    @rx.memo
+    def packed_styles(base: rx.Var[dict[str, str]], rest: rx.RestProp) -> rx.Var[Any]:
+        return base.to(dict).merge(rest)
+
+    definition = MEMOS["packed_styles", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    subprocess.run(
+        [
+            node,
+            "--input-type=module",
+            "--eval",
+            f"""
+import assert from 'node:assert/strict';
+let calls = 0;
+const cached = ({definition.wrapper!s})((props) => ({{...props, call: ++calls}}));
+const base = {{}};
+const child = {{}};
+const first = cached({{base, color: 'red', children: child}});
+assert.equal(cached({{children: child, color: 'red', base}}), first);
+assert.notEqual(cached({{base, color: 'blue', children: child}}), first);
+assert.notEqual(cached({{base: {{}}, color: 'red', children: child}}), first);
+assert.equal(calls, 3);
+assert.equal(cached({{base, color: 'red', children: child}}), first);
+""",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
 def test_component_memo_wrapper_none_emits_bare_function():
     """``@rx.memo(wrapper=None)`` exports the bare function component."""
 
@@ -1346,13 +1463,118 @@ def test_component_memo_wrapper_none_in_unmirrored_module():
     assert " = memo(" not in single_code
 
 
-def test_var_returning_memo_rejects_wrapper():
-    """``wrapper=`` is only supported on component-returning memos."""
-    with pytest.raises(TypeError, match="only supports `wrapper=`"):
+def test_var_returning_memo_default_wrapper_memoizes_by_identity():
+    """Function memos cache results by argument identity by default."""
 
-        @rx.memo(wrapper=None)  # pyright: ignore[reportArgumentType]
-        def format_id(value: rx.Var[int]) -> rx.Var[str]:
+    @rx.memo
+    def format_id(value: rx.Var[int]) -> rx.Var[str]:
+        return value.to(str)
+
+    definition = MEMOS["format_id", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    assert definition.wrapper is _DEFAULT_FUNCTION_MEMO_WRAPPER
+
+    files, _imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert "const cache = new Map()" in code
+
+
+def test_var_returning_memo_wrapper_none_emits_bare_function():
+    """``wrapper=None`` disables memoization for function memos."""
+
+    @rx.memo(wrapper=None)
+    def format_id(value: rx.Var[int]) -> rx.Var[str]:
+        return value.to(str)
+
+    definition = MEMOS["format_id", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    assert definition.wrapper is None
+
+    files, _imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert "Object.is" not in code
+    assert "JSON.stringify" not in code
+
+
+def test_var_returning_memo_by_value_uses_argument_equality():
+    """``by_value=True`` caches function results by serialized arguments."""
+
+    @rx.memo(by_value=True)
+    def format_value(value: rx.Var[int]) -> rx.Var[str]:
+        return value.to(str)
+
+    definition = MEMOS["format_value", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    assert definition.wrapper is _BY_VALUE_FUNCTION_MEMO_WRAPPER
+
+    files, _imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert "JSON.stringify(args)" in code
+
+
+def test_by_value_composes_with_an_explicit_wrapper():
+    """The value comparator wraps the result of a custom wrapper."""
+    track_render = FunctionStringVar.create(
+        "trackRender",
+        _var_data=VarData(imports={"my-render-lib": [ImportVar(tag="trackRender")]}),
+    )
+
+    @rx.memo(by_value=True, wrapper=track_render)
+    def tracked(label: rx.Var[str]) -> rx.Component:
+        return rx.text(label)
+
+    definition = MEMOS["Tracked", __name__]
+    assert isinstance(definition, MemoComponentDefinition)
+    assert definition.wrapper is not track_render
+    assert "trackRender" in str(definition.wrapper)
+    assert "JSON.stringify" in str(definition.wrapper)
+
+    files, imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert "trackRender" in code
+    assert "JSON.stringify(prevProps)" in code
+    assert any(imp.tag == "trackRender" for imp in imports["my-render-lib"])
+
+
+def test_var_returning_memo_custom_wrapper_and_by_value_compose():
+    """Function memos compose a custom wrapper with value memoization."""
+    trace = FunctionStringVar.create(
+        "trace",
+        _var_data=VarData(imports={"trace-lib": [ImportVar(tag="trace")]}),
+    )
+
+    @rx.memo(by_value=True, wrapper=trace)
+    def format_value(value: rx.Var[int]) -> rx.Var[str]:
+        return value.to(str)
+
+    definition = MEMOS["format_value", __name__]
+    assert isinstance(definition, MemoFunctionDefinition)
+    assert "trace" in str(definition.wrapper)
+    assert "JSON.stringify(args)" in str(definition.wrapper)
+
+    files, imports = compiler.compile_memo_components((definition,))
+    code = "\n".join(c for _, c in files)
+    assert "trace" in code
+    assert "JSON.stringify(args)" in code
+    assert any(imp.tag == "trace" for imp in imports["trace-lib"])
+
+
+def test_var_returning_memo_rejects_recursive():
+    """``recursive`` applies only to component memos."""
+    with pytest.raises(TypeError, match="only supports `recursive=True`"):
+
+        @rx.memo(recursive=True)
+        def format_value(value: rx.Var[int]) -> rx.Var[str]:
             return value.to(str)
+
+
+def test_by_value_rejects_wrapper_none():
+    """Value memoization requires a wrapper for either memo kind."""
+    with pytest.raises(TypeError, match="requires a memo wrapper"):
+
+        @rx.memo(by_value=True, wrapper=None)
+        def unwrapped(label: rx.Var[str]) -> rx.Component:
+            return rx.text(label)
 
 
 def test_memo_decorator_parens_form_matches_bare_decorator():
