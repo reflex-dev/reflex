@@ -145,7 +145,7 @@ with ReflexCloud() as client:
     credentials.save_token(client.auth.finish_login(login, timeout=600))
 ```
 
-`credentials.delete_token()` removes the saved token. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`, and rotate or revoke one with `tokens.refresh(token)` and `tokens.revoke(token)`. Managing tokens needs a token with full access, which `reflex login` tokens are not.
+`credentials.delete_token()` removes the saved token. Create a token for CI with `client.auth.tokens.create("ci", expires_in_days=30)`, and rotate or revoke one with `client.auth.tokens.refresh(token)` and `client.auth.tokens.revoke(token)`. Managing tokens needs a token with full access, which `reflex login` tokens are not.
 
 `client.usage.balance()` reports how much of the organization's plan allowance is used, and `client.usage.history()` iterates over its charges and credits.
 
@@ -178,14 +178,14 @@ Organization admins connect Google Cloud projects with a service account key:
 ```python
 with open("key.json") as key_file:
     client.providers.connect_gcp(
-        org_id,
+        client.auth.me().org_id,
         service_account_key=key_file.read(),
         project_number="123456789012",
         region="us-central1",
     )
 ```
 
-`client.providers.gcp_connections` adds, updates, verifies and removes further projects, rotates their keys and chooses the default, and `providers.disconnect_gcp` removes them all. These need a token with full access.
+`client.providers.gcp_connections` adds, updates, verifies and removes further projects, rotates their keys and chooses the default, and `client.providers.disconnect_gcp` removes them all. These need a token with full access.
 
 ## Errors
 

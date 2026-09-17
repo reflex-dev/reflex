@@ -255,12 +255,15 @@ async def test_gcp_connections_update(client: AsyncReflexCloud, mock_api: MockAP
         f"{GCP_PATH}/connections/{ACCOUNT_ID}",
         reply(200, json={"status": "ok", "skipped_checks": []}),
     )
-    await client.providers.gcp_connections.update(
-        ORG_ID,
-        ACCOUNT_ID,
-        expected_project_id="acme-prod",
-        expected_region="us-central1",
-        vpc_connector="",
+    assert (
+        await client.providers.gcp_connections.update(
+            ORG_ID,
+            ACCOUNT_ID,
+            expected_project_id="acme-prod",
+            expected_region="us-central1",
+            vpc_connector="",
+        )
+        == []
     )
     # Only the settings passed are sent; the rest are kept.
     assert json_body(mock_api.requests[0]) == {
@@ -355,7 +358,8 @@ async def test_gcp_connections_set_default_is_retried(
         reply(200, json={"status": "ok"}),
     )
     await client.providers.gcp_connections.set_default(ORG_ID, ACCOUNT_ID)
-    assert len(mock_api.requests) == 2
+    first, retry = mock_api.requests
+    assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
 async def test_gcp_connections_delete(client: AsyncReflexCloud, mock_api: MockAPI):

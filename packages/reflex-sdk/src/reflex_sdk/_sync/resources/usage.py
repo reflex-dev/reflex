@@ -19,6 +19,17 @@ _NEXT_CURSOR_HEADER = "x-next-cursor"
 
 
 def _iso(value: datetime.date | None) -> str | None:
+    """Format a usage history bound the way the API takes it.
+
+    Args:
+        value: A date, a timezone-aware datetime, or None for the default.
+
+    Returns:
+        The ISO 8601 text, or None for the default.
+
+    Raises:
+        ValueError: If ``value`` is a naive datetime.
+    """
     if value is None:
         return None
     # The server reads a naive datetime in its database's time zone.

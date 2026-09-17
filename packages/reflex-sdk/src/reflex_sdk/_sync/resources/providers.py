@@ -32,7 +32,14 @@ class _GcpSave:
 
 
 def _key_text(service_account_key: str | Mapping[str, Any]) -> str:
-    # The API takes the key file's contents as a string.
+    """Serialize a service account key the way the API takes it: as the file's text.
+
+    Args:
+        service_account_key: The key file's contents, or the parsed key.
+
+    Returns:
+        The key file's contents.
+    """
     return (
         service_account_key
         if isinstance(service_account_key, str)
@@ -41,6 +48,15 @@ def _key_text(service_account_key: str | Mapping[str, Any]) -> str:
 
 
 def _gcp_path(org_id: uuid.UUID | str, suffix: str = "") -> str:
+    """Build the path of an organization's Google Cloud endpoint.
+
+    Args:
+        org_id: The organization.
+        suffix: The rest of the path, e.g. ``"/connections"``.
+
+    Returns:
+        The path.
+    """
     return f"orgs/{path_segment(org_id)}/provider-accounts/gcp{suffix}"
 
 
@@ -51,6 +67,17 @@ def _gcp_settings(
     vpc_connector: str | None,
     vpc_egress: str | None,
 ) -> dict[str, str | None]:
+    """Build the runtime identity and network settings of a Google Cloud connection.
+
+    Args:
+        runtime_service_account: The service account apps run as.
+        ingress: Where apps accept traffic from.
+        vpc_connector: The Serverless VPC Access connector.
+        vpc_egress: Which traffic goes through the connector.
+
+    Returns:
+        The settings, by request field.
+    """
     return {
         "runtime_service_account": runtime_service_account,
         "ingress": ingress,
