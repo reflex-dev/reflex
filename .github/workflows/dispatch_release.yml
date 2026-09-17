@@ -138,8 +138,16 @@ on:
         description: "reflex-hosting-cli"
         type: boolean
         default: false
+      reflex_otel:
+        description: "reflex-otel"
+        type: boolean
+        default: false
       reflex_release:
         description: "reflex-release"
+        type: boolean
+        default: false
+      reflex_sdk:
+        description: "reflex-sdk"
         type: boolean
         default: false
 
@@ -190,7 +198,9 @@ jobs:
             ${{ inputs.reflex_components_sonner && 'reflex-components-sonner' || '' }}
             ${{ inputs.reflex_docgen && 'reflex-docgen' || '' }}
             ${{ inputs.reflex_hosting_cli && 'reflex-hosting-cli' || '' }}
+            ${{ inputs.reflex_otel && 'reflex-otel' || '' }}
             ${{ inputs.reflex_release && 'reflex-release' || '' }}
+            ${{ inputs.reflex_sdk && 'reflex-sdk' || '' }}
         shell: bash
         run: uv run --frozen --package reflex-release reflex-release plan
       - name: Materialize changelogs

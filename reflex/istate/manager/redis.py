@@ -496,8 +496,12 @@ class StateManagerRedis(StateManager):
         stack = [base_state]
         while stack:
             state = stack.pop()
-            # Persist only the given state (parents or substates are excluded by BaseState.__getstate__).
-            if state._get_was_touched() and (pickle_state := state._serialize()):
+            # Persist only the given state (parents or substates are excluded by
+            # BaseState.__getstate__). Call _get_was_touched through the class: a
+            # state var of the same name shadows the method on the instance.
+            if BaseState._get_was_touched(state) and (
+                pickle_state := state._serialize()
+            ):
                 writes.append((str(token.with_cls(type(state))), pickle_state))
             stack.extend(state.substates.values())
         return writes

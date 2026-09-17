@@ -17,6 +17,13 @@ _CODE_TAB_VALUE = "code"
 _DATA_TAB_VALUE = "data"
 
 
+class DeferredDemo(rx.Component):
+    """Mount a costly interactive preview when it approaches the viewport."""
+
+    library = "$/public/components/DeferredDemo"
+    tag = "DeferredDemo"
+
+
 def _reflex_build_icon() -> rx.Component:
     """Create the Reflex Build mark for the demo action.
 
@@ -34,17 +41,17 @@ def _reflex_build_icon() -> rx.Component:
         ),
         rx.el.path(
             d="M9.75 9.16675V11.9376C9.75 12.0181 9.81529 12.0834 9.89583 12.0834H11.3542C11.4347 12.0834 11.5 12.0181 11.5 11.9376V9.31258C11.5 9.23204 11.4347 9.16675 11.3542 9.16675H9.75Z",
-            fill="white",
+            fill="var(--primary-foreground)",
         ),
         rx.el.path(
             d="M4.64583 3.91675C4.56529 3.91675 4.5 3.98204 4.5 4.06258V11.9376C4.5 12.0181 4.56529 12.0834 4.64583 12.0834H6.10417C6.18471 12.0834 6.25 12.0181 6.25 11.9376V9.31258C6.25 9.23204 6.31529 9.16675 6.39583 9.16675H9.75V7.41675H6.39583C6.31529 7.41675 6.25 7.35146 6.25 7.27091V5.81258C6.25 5.73204 6.31529 5.66675 6.39583 5.66675H9.60417C9.68471 5.66675 9.75 5.73204 9.75 5.81258V7.41675H11.3542C11.4347 7.41675 11.5 7.35146 11.5 7.27091V4.06258C11.5 3.98204 11.4347 3.91675 11.3542 3.91675H4.64583Z",
-            fill="white",
+            fill="var(--primary-foreground)",
         ),
         width="16",
         height="16",
         view_box="0 0 16 16",
         fill="none",
-        class_name="text-primary-9",
+        class_name="text-primary",
         custom_attrs={"aria-hidden": "true"},
     )
 
@@ -101,7 +108,7 @@ def docdemobox(*children, **props) -> rx.Component:
     return rx.box(
         *children,
         **props,
-        class_name="flex flex-col p-6 rounded-xl overflow-x-auto border border-secondary-4 bg-secondary-2 items-center justify-center w-full",
+        class_name="flex flex-col p-6 rounded-xl overflow-x-auto border border-border-subtle bg-muted items-center justify-center w-full",
     )
 
 
@@ -189,7 +196,7 @@ def _doc_code_panel(
             "[&_div]:!bg-transparent [&_pre]:!bg-transparent "
             "[&_.code-block]:!rounded-none [&_.code-block]:!border-0 "
             "[&_.code-block]:!bg-transparent [&_.code-block]:!shadow-none "
-            "[&_summary]:!from-[var(--secondary-2)]"
+            "[&_summary]:!from-[var(--muted)]"
         ),
     )
 

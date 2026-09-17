@@ -15,7 +15,8 @@ import pickle
 import re
 import sys
 import time
-from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Iterator, Mapping, Sequence
+from contextvars import ContextVar
 from hashlib import md5
 from types import FunctionType
 from typing import (
@@ -41,6 +42,7 @@ from reflex_base.event import (
 )
 from reflex_base.registry import RegistrationContext
 from reflex_base.utils.exceptions import (
+    BaseVarShadowsInheritedVarError,
     ComputedVarShadowsBaseVarsError,
     ComputedVarShadowsStateVarError,
     DynamicComponentInvalidSignatureError,
@@ -279,6 +281,34 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
 # the contract); never serialized into a delta sent to the client.
 _DROP_FROM_DELTA: Final = object()
 
+# Whether uncached computed var values may be recorded as sent to the client for
+# the delta currently being built. Carried out of band rather than as an argument
+# so that every internal call stays ``get_delta()``: downstream packages patch
+# that method with a signature taking no arguments, and the flag describes the
+# whole traversal rather than any single state in it. A ContextVar, not a global:
+# deltas for different clients are built in concurrent tasks, and leaking a
+# discarded traversal's flag into one of those would suppress a real update.
+_record_delta_values: ContextVar[bool] = ContextVar(
+    "_record_delta_values", default=True
+)
+
+
+@contextlib.contextmanager
+def _suppress_delta_recording() -> Iterator[None]:
+    """Stop delta values built in this block from counting as sent to the client.
+
+    For a delta that is computed for its side effects and then discarded, whose
+    values the client never receives.
+
+    Yields:
+        None, with recording suppressed.
+    """
+    token = _record_delta_values.set(False)
+    try:
+        yield
+    finally:
+        _record_delta_values.reset(token)
+
 
 async def _resolve_delta(delta: Delta) -> Delta:
     """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
@@ -308,6 +338,30 @@ async def _resolve_delta(delta: Delta) -> Delta:
         else:
             delta[state_name][var_name] = resolved
     return delta
+
+
+async def _drop_unchanged_delta_value(
+    cvar: ComputedVar,
+    instance: BaseState,
+    value: Coroutine[None, None, Any],
+    token: str,
+) -> Any:
+    """Await an async uncached computed var, dropping it if the value did not change.
+
+    Args:
+        cvar: The computed var that produced the coroutine.
+        instance: The state instance the computed var is attached to.
+        value: The coroutine returned by the computed var.
+        token: The client token the delta is being produced for.
+
+    Returns:
+        The resolved value, or ``_DROP_FROM_DELTA`` when it matches the last
+        value that was sent to the client.
+    """
+    resolved = await value
+    if not cvar._record_delta_value(instance, resolved, token):
+        return _DROP_FROM_DELTA
+    return resolved
 
 
 RETURN = TypeVar("RETURN")
@@ -708,6 +762,9 @@ class BaseState(EvenMoreBasicBaseState):
                 for k, v in cls.inherited_backend_vars.items()
                 if k not in own_descriptor_names
             }
+
+        # Base vars silently lose to an inherited var of the same name; warn about it.
+        cls._check_overridden_inherited_vars()
 
         # Get computed vars.
         computed_vars = cls._get_computed_vars()
@@ -1155,6 +1212,44 @@ class BaseState(EvenMoreBasicBaseState):
             if name in cls.inherited_vars or name in cls.inherited_backend_vars:
                 msg = f"The computed var name `{cv._js_expr}` shadows a var in {cls.__module__}.{cls.__name__}; use a different name instead"
                 raise ComputedVarShadowsStateVarError(msg)
+
+    @classmethod
+    def _check_overridden_inherited_vars(cls) -> None:
+        """Reject base vars that shadow a var inherited from a parent state.
+
+        Such a redeclaration is dropped: the field never becomes a base var,
+        so reads and writes resolve to the parent's var, and the raw default left in
+        the class dict makes class-level access return it instead of a Var.
+
+        A bare re-annotation leaves no class attribute, so the name keeps resolving
+        to the inherited Var and stays reactive — that form is inert, not a shadow.
+
+        Raises:
+            BaseVarShadowsInheritedVarError: When a base var shadows an inherited var.
+        """
+        parent_state = cls.get_parent_state()
+        if parent_state is None:
+            return
+        parent_fields = parent_state.get_fields()
+        for name, own_field in cls.get_fields().items():
+            if (
+                name.startswith("_")
+                or not own_field.is_var
+                or name not in cls.inherited_vars
+                or name not in cls.__dict__
+            ):
+                continue
+            # A field redeclared on this class is a distinct object from the parent's;
+            # a merely inherited one is the same object.
+            parent_field = parent_fields.get(name)
+            if parent_field is None or parent_field is own_field:
+                continue
+            msg = (
+                f"The var `{name}` in {cls.__module__}.{cls.__name__} shadows a var "
+                f"inherited from {parent_state.__module__}.{parent_state.__name__}; "
+                "use a different name instead"
+            )
+            raise BaseVarShadowsInheritedVarError(msg)
 
     @classmethod
     def get_skip_vars(cls) -> set[str]:
@@ -2062,9 +2157,15 @@ class BaseState(EvenMoreBasicBaseState):
     def get_delta(self) -> Delta:
         """Get the delta for the state.
 
+        Takes no arguments, and no internal caller passes any: the method is
+        monkeypatched downstream with a signature accepting only `self`. Whether
+        the uncached computed var values it computes count as sent to the client
+        is carried by `_suppress_delta_recording` instead.
+
         Returns:
             The delta for the state.
         """
+        record_values = _record_delta_values.get()
         delta = {}
 
         self._mark_dirty_computed_vars()
@@ -2078,11 +2179,23 @@ class BaseState(EvenMoreBasicBaseState):
             self.dirty_vars.intersection(frontend_computed_vars)
         )
 
-        subdelta: dict[str, Any] = {
-            prop + FIELD_MARKER: self.get_value(prop)
-            for prop in delta_vars
-            if not types.is_backend_base_variable(prop, type(self))
-        }
+        always_dirty_computed_vars = self._always_dirty_computed_vars
+        # Token of the client this delta is for, used to know which values it has.
+        token = self.router.session.client_token if always_dirty_computed_vars else ""
+        subdelta: dict[str, Any] = {}
+        for prop in delta_vars:
+            if types.is_backend_base_variable(prop, type(self)):
+                continue
+            value = self.get_value(prop)
+            if record_values and prop in always_dirty_computed_vars:
+                # Uncached computed vars are recomputed for every delta; only
+                # send them when the recomputed value actually changed.
+                cvar = self.computed_vars[prop]
+                if inspect.iscoroutine(value):
+                    value = _drop_unchanged_delta_value(cvar, self, value, token)
+                elif not cvar._record_delta_value(self, value, token):
+                    continue
+            subdelta[prop + FIELD_MARKER] = value
 
         if len(subdelta) > 0:
             delta[self.get_full_name()] = subdelta

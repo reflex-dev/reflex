@@ -8,16 +8,16 @@ import copy
 import dataclasses
 import datetime
 import functools
+import hashlib
 import inspect
 import json
 import logging
 import re
 import string
-import uuid
 import warnings
 from abc import ABCMeta
 from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
-from dataclasses import _MISSING_TYPE, MISSING
+from dataclasses import MISSING
 from decimal import Decimal
 from types import CodeType, FunctionType
 from typing import (
@@ -25,6 +25,7 @@ from typing import (
     Annotated,
     Any,
     ClassVar,
+    Final,
     Generic,
     Literal,
     NoReturn,
@@ -44,16 +45,17 @@ from reflex_base import constants
 from reflex_base.constants.compiler import Hooks
 from reflex_base.constants.state import FIELD_MARKER
 from reflex_base.utils import exceptions, imports, serializers, types
-from reflex_base.utils.compat import annotations_from_namespace
+from reflex_base.utils.compat import MISSING_TYPE, annotations_from_namespace
 from reflex_base.utils.decorator import once
 from reflex_base.utils.exceptions import (
     ComputedVarSignatureError,
+    ReflexRuntimeError,
     UntypedComputedVarError,
     VarAttributeError,
     VarDependencyError,
     VarTypeError,
 )
-from reflex_base.utils.format import format_state_name
+from reflex_base.utils.format import format_state_name, json_dumps
 from reflex_base.utils.imports import (
     ImmutableImportDict,
     ImmutableParsedImportDict,
@@ -114,6 +116,37 @@ class VarSubclassEntry:
 
 _var_subclasses: list[VarSubclassEntry] = []
 _var_literal_subclasses: list[tuple[type[LiteralVar], VarSubclassEntry]] = []
+# Exact value type -> the literal class claiming it, or None when no literal
+# class does. Reset whenever a literal subclass registers.
+_literal_var_by_type: dict[type, type[LiteralVar] | None] = {}
+
+
+def _literal_var_for(value: Any) -> type[LiteralVar] | None:
+    """Find the literal Var class claiming ``value``'s type.
+
+    Args:
+        value: The python value to wrap.
+
+    Returns:
+        The matching literal class, or None if no registered class claims it.
+    """
+    value_type = type(value)
+    try:
+        return _literal_var_by_type[value_type]
+    except KeyError:
+        pass
+    literal_subclass = next(
+        (
+            literal
+            for literal, var_subclass in reversed(_var_literal_subclasses)
+            if isinstance(value, var_subclass.python_types)
+        ),
+        None,
+    )
+    # A class object's type is its metaclass, which other classes share.
+    if not isinstance(value, type):
+        _literal_var_by_type[value_type] = literal_subclass
+    return literal_subclass
 
 
 @functools.cache
@@ -235,7 +268,7 @@ def insert_app_wraps(
         if seen is None:
             seen = target.get(key)
         if seen is not None:
-            if seen != wrapper:
+            if seen is not wrapper and seen != wrapper:
                 msg = (
                     f"Conflicting app wraps for {key!r}: two different "
                     "components claim the same (priority, tag) slot."
@@ -380,7 +413,13 @@ class VarData:
             *(var_data.imports for var_data in all_var_datas)
         )
 
-        deps = [dep for var_data in all_var_datas for dep in var_data.deps]
+        deps = list(
+            {
+                dep._hash_key(): dep
+                for var_data in all_var_datas
+                for dep in var_data.deps
+            }.values()
+        )
 
         positions = list(
             dict.fromkeys(
@@ -435,16 +474,20 @@ class VarData:
             or self.app_wraps
         )
 
+    @functools.cached_property
     def _identity_key(self) -> tuple:
-        """Return a hashable key for ``__eq__`` and ``__hash__``.
+        """A hashable key for ``__eq__`` and ``__hash__``.
 
-        ``components`` and ``app_wraps`` hold ``BaseComponent`` instances whose
-        ``__eq__`` override drops the default hash. Use component identity for
-        embedded components because they can contribute hooks/imports, and use
-        the compiler's app-wrap registry key for wrappers so fresh provider
-        instances with the same role still compare equal. App wraps are a set
-        of required roles, so a ``frozenset`` keeps identity insensitive to the
-        order vars happened to merge in (``a + b`` and ``b + a`` stay equal).
+        ``deps`` holds Vars, which a container can never compare because
+        ``Var.__eq__`` builds a ``BooleanVar``, so they are reduced to their
+        ``_hash_key()``. ``components`` and ``app_wraps`` hold ``BaseComponent``
+        instances whose ``__eq__`` override drops the default hash. Use
+        component identity for embedded components because they can contribute
+        hooks/imports, and use the compiler's app-wrap registry key for
+        wrappers so fresh provider instances with the same role still compare
+        equal. App wraps are a set of required roles, so a ``frozenset`` keeps
+        identity insensitive to the order vars happened to merge in
+        (``a + b`` and ``b + a`` stay equal).
 
         Returns:
             A hashable tuple uniquely identifying this VarData.
@@ -454,7 +497,7 @@ class VarData:
             self.field_name,
             self.imports,
             self.hooks,
-            self.deps,
+            tuple(dep._hash_key() for dep in self.deps),
             self.position,
             tuple(id(component) for component in self.components),
             frozenset(
@@ -474,7 +517,7 @@ class VarData:
         """
         if not isinstance(other, VarData):
             return NotImplemented
-        return self._identity_key() == other._identity_key()
+        return self._identity_key == other._identity_key
 
     def __hash__(self) -> int:
         """Hash consistent with ``__eq__``.
@@ -482,7 +525,16 @@ class VarData:
         Returns:
             A hash over render-time fields and hashable component metadata.
         """
-        return hash(self._identity_key())
+        return self._cached_hash
+
+    @functools.cached_property
+    def _cached_hash(self) -> int:
+        """The hash, cached because every Var interpolation recomputes it.
+
+        Returns:
+            A hash over render-time fields and hashable component metadata.
+        """
+        return hash(self._identity_key)
 
     @classmethod
     def from_state(cls, state: type[BaseState] | str, field_name: str = "") -> VarData:
@@ -704,13 +756,28 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
                 _var_data=VarData.merge(self._var_data, var_data_),
             )
 
+    def _hash_key(self) -> tuple[Any, ...]:
+        """Return the canonical identity of this var.
+
+        ``__eq__`` builds a ``BooleanVar`` rather than returning a bool, and
+        bool-ifying a Var raises, so a Var can never be compared by a container.
+        Every structural comparison goes through this key instead, which holds
+        no Var objects and is therefore safe to nest in tuples, dicts and sets.
+        Subclasses that need a different identity override this rather than
+        ``__hash__``, so hashing and ``equals`` can never drift apart.
+
+        Returns:
+            A hashable tuple uniquely identifying this var.
+        """
+        return (self._js_expr, self._var_type, self._get_all_var_data())
+
     def __hash__(self) -> int:
         """Define a hash function for the var.
 
         Returns:
             The hash of the var.
         """
-        return hash((self._js_expr, self._var_type, self._var_data))
+        return hash(self._hash_key())
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all VarData associated with the Var.
@@ -740,11 +807,7 @@ class Var(Generic[VAR_TYPE], metaclass=MetaclassVar):
         Returns:
             Whether the vars are equal.
         """
-        return (
-            self._js_expr == other._js_expr
-            and self._var_type == other._var_type
-            and self._get_all_var_data() == other._get_all_var_data()
-        )
+        return self._hash_key() == other._hash_key()
 
     @overload
     def _replace(
@@ -1553,13 +1616,17 @@ class ToOperation:
         """Post initialization."""
         object.__delattr__(self, "_js_expr")
 
-    def __hash__(self) -> int:
-        """Calculate the hash value of the object.
+    def _hash_key(self) -> tuple[Any, ...]:
+        """Return the canonical identity of this var.
+
+        Identical to ``Var._hash_key``, but reads the expression straight off
+        ``_original``: ``__post_init__`` deletes ``_js_expr``, so the inherited
+        version would pay a ``__getattr__`` round trip on every hash.
 
         Returns:
-            int: The hash value of the object.
+            A hashable tuple uniquely identifying this var.
         """
-        return hash(self._original)
+        return (self._original._js_expr, self._var_type, self._get_all_var_data())
 
     def _get_all_var_data(self) -> VarData | None:
         """Get all the var data.
@@ -1650,6 +1717,7 @@ class LiteralVar(Var[VAR_TYPE]):
                 _var_literal_subclasses.remove(var_literal_subclass)
 
         _var_literal_subclasses.append((cls, var_subclass))
+        _literal_var_by_type.clear()
 
     @classmethod
     def _create_literal_var(
@@ -1677,9 +1745,8 @@ class LiteralVar(Var[VAR_TYPE]):
                 return value
             return value._replace(merge_var_data=_var_data)
 
-        for literal_subclass, var_subclass in _var_literal_subclasses[::-1]:
-            if isinstance(value, var_subclass.python_types):
-                return literal_subclass.create(value, _var_data=_var_data)
+        if (literal_subclass := _literal_var_for(value)) is not None:
+            return literal_subclass.create(value, _var_data=_var_data)
 
         if (
             (as_var_method := getattr(value, "_as_var", None)) is not None
@@ -1759,9 +1826,8 @@ class LiteralVar(Var[VAR_TYPE]):
         if isinstance(value, Var):
             return value._get_all_var_data()
 
-        for literal_subclass, var_subclass in _var_literal_subclasses[::-1]:
-            if isinstance(value, var_subclass.python_types):
-                return literal_subclass._get_all_var_data_without_creating_var(value)
+        if (literal_subclass := _literal_var_for(value)) is not None:
+            return literal_subclass._get_all_var_data_without_creating_var(value)
 
         if (
             (as_var_method := getattr(value, "_as_var", None)) is not None
@@ -2019,6 +2085,8 @@ class cached_property:  # noqa: N801
         """
         if self._attrname is None:
             self._attrname = name
+            self._cached_field_name = "_reflex_cache_" + name
+            cached_field_name = self._cached_field_name
 
             original_del = getattr(owner, "__del__", None)
 
@@ -2028,7 +2096,6 @@ class cached_property:  # noqa: N801
                 Args:
                     this: The object to delete the cached property from.
                 """
-                cached_field_name = "_reflex_cache_" + name
                 try:
                     unique_id = object.__getattribute__(this, cached_field_name)
                 except AttributeError:
@@ -2061,18 +2128,27 @@ class cached_property:  # noqa: N801
 
         Raises:
             TypeError: If the class does not have __set_name__.
+            ReflexRuntimeError: If computing the property raises an AttributeError.
         """
         if self._attrname is None:
             msg = "Cannot use cached_property on a class without __set_name__."
             raise TypeError(msg)
-        cached_field_name = "_reflex_cache_" + self._attrname
+        cached_field_name = self._cached_field_name
         try:
             unique_id = object.__getattribute__(instance, cached_field_name)
         except AttributeError:
-            unique_id = uuid.uuid4().int
+            unique_id = object()
             object.__setattr__(instance, cached_field_name, unique_id)
         if unique_id not in GLOBAL_CACHE:
-            GLOBAL_CACHE[unique_id] = self._func(instance)
+            try:
+                GLOBAL_CACHE[unique_id] = self._func(instance)
+            except AttributeError as err:
+                # CPython would swallow an AttributeError here and fall back to __getattr__
+                msg = (
+                    f"Computing cached property {type(instance).__name__}."
+                    f"{self._attrname} raised {type(err).__name__}: {err}"
+                )
+                raise ReflexRuntimeError(msg) from err
         return GLOBAL_CACHE[unique_id]
 
 
@@ -2143,21 +2219,6 @@ class CachedVarOperation:
             ),
             self._var_data,
         )
-
-    def __hash__(self: DataclassInstance) -> int:
-        """Calculate the hash of the object.
-
-        Returns:
-            The hash of the object.
-        """
-        return hash((
-            type(self).__name__,
-            *[
-                getattr(self, field.name)
-                for field in dataclasses.fields(self)
-                if field.name not in ["_js_expr", "_var_data", "_var_type"]
-            ],
-        ))
 
 
 _PY_AND_IMPORT: ImportDict = {
@@ -2247,6 +2308,47 @@ class FakeComputedVarBaseClass(property):
     """A fake base class for ComputedVar to avoid inheriting from property."""
 
     __pydantic_run_validation__ = False
+
+
+# Marker for a value that has no delta key. Compared by identity and never stored
+# on a state instance, so it is safe from serialization round trips.
+_UNKEYABLE_VALUE: Final = object()
+
+# Types whose instances are immutable and cheap to compare directly. float is
+# deliberately absent: NaN is not equal to itself, so floats are keyed by their
+# serialized form instead of comparing equal to nothing forever.
+_ATOMIC_DELTA_VALUE_TYPES: Final = frozenset({str, int, bool, type(None)})
+
+# Size of the digest used to key non-atomic delta values.
+_DELTA_VALUE_DIGEST_SIZE: Final = 16
+
+
+def _delta_value_key(value: Any) -> Any:
+    """Get a comparable, alias-free key for a value going into a delta.
+
+    Immutable scalars are keyed by themselves, paired with their type so that
+    Python-equal but JSON-distinct values (``1`` and ``True``) do not collide.
+    Everything else is keyed by a digest of its serialized form: that is exactly
+    what the client receives, so a value without a registered serializer keys by
+    the ``null`` the client would get, it cannot be invalidated by a later
+    in-place mutation of the value, and it stays small no matter how big the
+    value is.
+
+    Args:
+        value: The value to key.
+
+    Returns:
+        The key, or ``_UNKEYABLE_VALUE`` if the value cannot be serialized.
+    """
+    value_type = type(value)
+    if value_type in _ATOMIC_DELTA_VALUE_TYPES:
+        return (value_type, value)
+    try:
+        return hashlib.blake2b(
+            json_dumps(value).encode(), digest_size=_DELTA_VALUE_DIGEST_SIZE
+        ).digest()
+    except Exception:
+        return _UNKEYABLE_VALUE
 
 
 def is_computed_var(obj: Any) -> TypeGuard[ComputedVar]:
@@ -2482,6 +2584,51 @@ class ComputedVar(Var[RETURN_TYPE]):
             An attribute name.
         """
         return f"__last_updated_{self._js_expr}"
+
+    @property
+    def _last_delta_key_attr(self) -> str:
+        """The attribute used to store the key of the last value sent in a delta.
+
+        Returns:
+            An attribute name.
+        """
+        return f"__last_delta_{self._js_expr}"
+
+    def _record_delta_value(self, instance: BaseState, value: Any, token: str) -> bool:
+        """Record the value an uncached var contributes to the delta.
+
+        Uncached vars are recomputed for every delta, but recomputing does not
+        imply the value changed. Keeping a key for the last value that was sent
+        to the client allows an unchanged value to be omitted from the delta,
+        avoiding a needless re-render on the frontend.
+
+        The client token is recorded alongside the key because a single state
+        instance can serve several clients (linked shared states): a value that
+        was already sent to one client still has to be sent to the others.
+
+        Args:
+            instance: The state instance that the computed var is attached to.
+            value: The freshly computed value.
+            token: The client token the delta is being produced for.
+
+        Returns:
+            Whether the value differs from the last recorded value and should
+            therefore be included in the delta.
+        """
+        attr = self._last_delta_key_attr
+        key = _delta_value_key(value)
+        if key is _UNKEYABLE_VALUE:
+            # The value can never be compared, so it always has to be sent.
+            with contextlib.suppress(AttributeError):
+                delattr(instance, attr)
+            return True
+        recorded = (token, key)
+        if getattr(instance, attr, None) == recorded:
+            return False
+        setattr(instance, attr, recorded)
+        # Ensure the recorded value gets serialized to redis.
+        instance._was_touched = True
+        return True
 
     def needs_update(self, instance: BaseState) -> bool:
         """Check if the computed var needs to be updated.
@@ -3488,16 +3635,16 @@ class Field(Generic[FIELD_TYPE]):
 
     if TYPE_CHECKING:
         type_: GenericType
-        default: FIELD_TYPE | _MISSING_TYPE | None
+        default: FIELD_TYPE | MISSING_TYPE | None
         default_factory: Callable[[], FIELD_TYPE | None] | None
 
     def __init__(
         self,
-        default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+        default: FIELD_TYPE | MISSING_TYPE = MISSING,
         default_factory: Callable[[], FIELD_TYPE] | None = None,
         is_var: bool = True,
         annotated_type: GenericType  # pyright: ignore [reportRedeclaration]
-        | _MISSING_TYPE = MISSING,
+        | MISSING_TYPE = MISSING,
         source_field: Field | None = None,
     ) -> None:
         """Initialize the field.
@@ -3682,7 +3829,7 @@ class Field(Generic[FIELD_TYPE]):
 
 @overload
 def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: FIELD_TYPE | MISSING_TYPE = MISSING,
     *,
     is_var: Literal[False],
     default_factory: Callable[[], FIELD_TYPE] | None = None,
@@ -3691,7 +3838,7 @@ def field(
 
 @overload
 def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: FIELD_TYPE | MISSING_TYPE = MISSING,
     *,
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_var: Literal[True] = True,
@@ -3699,7 +3846,7 @@ def field(
 
 
 def field(
-    default: FIELD_TYPE | _MISSING_TYPE = MISSING,
+    default: FIELD_TYPE | MISSING_TYPE = MISSING,
     *,
     default_factory: Callable[[], FIELD_TYPE] | None = None,
     is_var: bool = True,

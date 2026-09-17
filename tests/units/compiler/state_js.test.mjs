@@ -107,21 +107,25 @@ async function setup({
       useSearchParams() {},
       useParams() {},
     },
-    "$/utils/context": {
-      initialEvents(first) {
-        firstHydrates.push(first);
-        return [
-          {
-            name: "root.hydrate_and_load",
-            payload: first ? { hashes: ["defaults"] } : {},
-          },
-        ];
+    "$/utils/context-registry": {
+      app: {
+        initialEvents(first) {
+          firstHydrates.push(first);
+          return [
+            {
+              name: "root.hydrate_and_load",
+              payload: first ? { hashes: ["defaults"] } : {},
+            },
+          ];
+        },
+        initialState: stateful ? { root: {}, child: {} } : {},
+        onLoadInternalEvent() {},
+        state_name: "root",
+        exception_state_name: "exception",
       },
-      initialState: stateful ? { root: {}, child: {} } : {},
-      onLoadInternalEvent() {},
-      state_name: "root",
-      exception_state_name: "exception",
+      eventLoop: { addEvents() {}, connectErrors: [] },
     },
+    "$/utils/helpers/json": { parseJson: JSON.parse },
     "$/utils/helpers/debounce": { default() {} },
     "$/utils/helpers/throttle": { default() {} },
     "$/utils/helpers/upload": { uploadFiles() {} },

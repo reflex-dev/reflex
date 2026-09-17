@@ -299,9 +299,11 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
     # vars. The `_V` default in the `self` annotations keeps these from matching
     # once a var function has declared a type of its own. Only access on a state
     # produces a var; on any other class the descriptor itself is returned.
+    # Preserve `_O` in `self`: nested `Any` makes newer Pyright versions treat
+    # these overloads as ambiguous and discard the frontend return type.
     @overload
     def __get__(
-        self: HybridProperty[bool, Any, Var[Any] | None],
+        self: HybridProperty[bool, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -309,7 +311,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[bool | None, Any, Var[Any] | None],
+        self: HybridProperty[bool | None, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -317,7 +319,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_INT, Any, Var[Any] | None],
+        self: HybridProperty[_INT, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -325,7 +327,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_INT | None, Any, Var[Any] | None],
+        self: HybridProperty[_INT | None, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -333,7 +335,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_FLOAT, Any, Var[Any] | None],
+        self: HybridProperty[_FLOAT, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -341,7 +343,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_FLOAT | None, Any, Var[Any] | None],
+        self: HybridProperty[_FLOAT | None, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -349,7 +351,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_STR, Any, Var[Any] | None],
+        self: HybridProperty[_STR, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -357,7 +359,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_STR | None, Any, Var[Any] | None],
+        self: HybridProperty[_STR | None, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -365,7 +367,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_MAPPING, Any, Var[Any] | None],
+        self: HybridProperty[_MAPPING, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -373,7 +375,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_MAPPING | None, Any, Var[Any] | None],
+        self: HybridProperty[_MAPPING | None, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -381,7 +383,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_SEQUENCE, Any, Var[Any] | None],
+        self: HybridProperty[_SEQUENCE, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
@@ -389,7 +391,7 @@ class HybridProperty(_PropertyBase, Generic[_T, _O, _V]):
 
     @overload
     def __get__(
-        self: HybridProperty[_SEQUENCE | None, Any, Var[Any] | None],
+        self: HybridProperty[_SEQUENCE | None, _O, Var[Any] | None],
         instance: None,
         owner: type[BaseState],
         /,
