@@ -33,6 +33,35 @@ Reflex uses [sqlmodel](https://sqlmodel.tiangolo.com) to provide a built-in ORM 
 
 For new applications, follow the [SQLModel tutorial](https://sqlmodel.tiangolo.com/tutorial/select/) using `SQLModel`, `create_engine()`, and `Session(engine)` directly. Keep database queries in your Python backend and load their results into Reflex state.
 
+Here is a minimal SQLModel example for a new app. Install `sqlmodel` (or the `reflex[db]` extra shown below), then run this code in a Python script to create a local SQLite table, save a customer, and query their email:
+
+```python
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+
+
+class Customer(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    email: str
+
+
+engine = create_engine("sqlite:///customers.db")
+SQLModel.metadata.create_all(engine)
+
+with Session(engine) as session:
+    customer = Customer(name="Alex", email="alex@example.com")
+    session.add(customer)
+    session.commit()
+
+    customers = session.exec(
+        select(Customer).where(Customer.email == "alex@example.com")
+    ).all()
+    for customer in customers:
+        print(customer.email)
+```
+
+In a Reflex app, create the engine once in your backend module and open a short-lived `Session(engine)` in each event handler that queries or updates the database. Copy the values you need into state for display. `create_all()` creates missing tables for this local example; use migrations to change existing schemas. Running the script again inserts another customer.
+
 The examples below cover the legacy integrated database interface for existing apps. Only when maintaining that interface should you adapt SQLModel examples by replacing `SQLModel` with `rx.Model` and `Session(engine)` with `rx.session()`.
 
 For advanced use cases, please see the

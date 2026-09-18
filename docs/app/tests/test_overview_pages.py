@@ -81,7 +81,10 @@ def test_overview_renders_twice(path):
         disclosures = []
         while pending:
             component = pending.pop()
-            if component.tag == "details":
+            if (
+                component.tag == "details"
+                and "group" in str(component.class_name).strip('"').split()
+            ):
                 disclosures.append(component)
             pending.extend(component.children)
         assert len(disclosures) == 3
