@@ -1,4 +1,4 @@
-"""Refresh the Reflex Cloud OpenAPI snapshot that the reflex-build-sdk tests check routes against."""
+"""Refresh the Reflex Build OpenAPI snapshot that the reflex-build-sdk tests check routes against."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import httpx
 from reflex_build_sdk._base import DEFAULT_BASE_URL
 
 SNAPSHOT = Path(__file__).resolve().parent.parent / "openapi.json"
-# Where the control plane serves its schema, relative to the Reflex Cloud URL.
+# Where the control plane serves its schema, relative to the Reflex Build URL.
 OPENAPI_PATH = "/api/openapi.json"
 
 
@@ -20,7 +20,7 @@ def main() -> None:
     parser.add_argument(
         "--base-url",
         default=DEFAULT_BASE_URL,
-        help="the Reflex Cloud URL to download the schema from",
+        help="the Reflex Build URL to download the schema from",
     )
     args = parser.parse_args()
     response = httpx.get(f"{args.base_url.rstrip('/')}{OPENAPI_PATH}", timeout=30)

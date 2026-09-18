@@ -1,6 +1,6 @@
-"""Python client for the Reflex Cloud API."""
+"""Python client for the Reflex Build API."""
 
-from reflex_build_sdk._async._client import AsyncReflexCloud
+from reflex_build_sdk._async._client import AsyncReflexBuild
 from reflex_build_sdk._errors import (
     APIConnectionError,
     APIError,
@@ -19,12 +19,12 @@ from reflex_build_sdk._errors import (
     NotFoundError,
     PermissionDeniedError,
     RateLimitError,
-    ReflexCloudError,
+    ReflexBuildError,
     SecurityReviewFailedError,
     SecurityReviewTimeoutError,
     UnprocessableEntityError,
 )
-from reflex_build_sdk._sync._client import ReflexCloud
+from reflex_build_sdk._sync._client import ReflexBuild
 
 __all__ = [
     "APIConnectionError",
@@ -32,7 +32,7 @@ __all__ = [
     "APIResponseValidationError",
     "APIStatusError",
     "APITimeoutError",
-    "AsyncReflexCloud",
+    "AsyncReflexBuild",
     "AuthenticationError",
     "BadRequestError",
     "ConflictError",
@@ -45,8 +45,8 @@ __all__ = [
     "NotFoundError",
     "PermissionDeniedError",
     "RateLimitError",
-    "ReflexCloud",
-    "ReflexCloudError",
+    "ReflexBuild",
+    "ReflexBuildError",
     "SecurityReviewFailedError",
     "SecurityReviewTimeoutError",
     "UnprocessableEntityError",

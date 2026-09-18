@@ -32,7 +32,7 @@ from reflex_build_sdk.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._sync._client import ReflexCloud
+    from reflex_build_sdk._sync._client import ReflexBuild
 
 
 # The name under which the secrets route reads every secret at once, which a single
@@ -83,7 +83,7 @@ class Secrets:
     deployments are built for: the first environment of an app that has several.
     """
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -212,7 +212,7 @@ class Secrets:
 class Domains:
     """Serve apps at custom domains."""
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -289,14 +289,14 @@ class Apps:
     domains: Domains
     # Deploy apps through a pipeline of environments, such as dev and production.
     environments: Environments
-    # Give apps a Postgres database hosted by Reflex Cloud.
+    # Give apps a Postgres database hosted by Reflex Build.
     database: Database
     # Sign an app's users in with their Reflex accounts.
     sign_in: SignIn
     # Call third-party services an app is connected to.
     connections: Connections
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -669,7 +669,7 @@ class Apps:
 
         Args:
             app_id: The app.
-            provider: ``"fly"`` for Reflex Cloud, or ``"gcp"`` for the organization's
+            provider: ``"fly"`` for Reflex Build, or ``"gcp"`` for the organization's
                 Google Cloud.
             provider_account_id: The Google Cloud connection to deploy to. Defaults
                 to the organization's default connection.

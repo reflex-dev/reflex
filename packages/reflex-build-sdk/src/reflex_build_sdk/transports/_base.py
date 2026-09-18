@@ -1,4 +1,4 @@
-"""The interface between the Reflex Cloud clients and an HTTP library."""
+"""The interface between the Reflex Build clients and an HTTP library."""
 
 from __future__ import annotations
 

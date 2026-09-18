@@ -8,7 +8,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_build_sdk import APIResponseValidationError, ReflexCloud
+from reflex_build_sdk import APIResponseValidationError, ReflexBuild
 from reflex_build_sdk.transports import Request, Response
 from reflex_build_sdk.types import (
     App,
@@ -91,7 +91,7 @@ APP_INFO = {
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -100,7 +100,7 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
@@ -108,7 +108,7 @@ def _query(request: Request) -> dict[str, list[str]]:
     return parse_qs(urlsplit(request.url).query)
 
 
-def test_list(client: ReflexCloud, mock_api: MockAPI):
+def test_list(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", "/api/v1/apps", reply(200, json=[APP_SUMMARY]))
     assert client.apps.list(project_id=uuid.UUID(PROJECT_ID)) == [
         AppSummary(
@@ -122,14 +122,14 @@ def test_list(client: ReflexCloud, mock_api: MockAPI):
     assert _query(mock_api.requests[0]) == {"project": [PROJECT_ID]}
 
 
-def test_search(client: ReflexCloud, mock_api: MockAPI):
+def test_search(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", "/api/v1/apps/search", reply(200, json=[APP_SUMMARY]))
     (app,) = client.apps.search("dashboard")
     assert app.name == "dashboard"
     assert _query(mock_api.requests[0]) == {"app_name": ["dashboard"]}
 
 
-def test_get(client: ReflexCloud, mock_api: MockAPI):
+def test_get(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", APP_PATH, reply(200, json=APP_INFO))
     assert client.apps.get(APP_ID) == App(
         id=uuid.UUID(APP_ID),
@@ -160,7 +160,7 @@ def test_get(client: ReflexCloud, mock_api: MockAPI):
     )
 
 
-def test_create(client: ReflexCloud, mock_api: MockAPI):
+def test_create(client: ReflexBuild, mock_api: MockAPI):
     created = {
         key: APP_SUMMARY[key] for key in ("id", "name", "description", "project_id")
     }
@@ -186,7 +186,7 @@ def test_create(client: ReflexCloud, mock_api: MockAPI):
     ],
 )
 def test_update_field(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     method_name: str,
     value: Any,
@@ -199,7 +199,7 @@ def test_update_field(
     assert json_body(mock_api.requests[0]) == body
 
 
-def test_move(client: ReflexCloud, mock_api: MockAPI):
+def test_move(client: ReflexBuild, mock_api: MockAPI):
     thread_id = "6a1d2c3b-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
     mock_api.add(
         "POST",
@@ -239,7 +239,7 @@ def test_move(client: ReflexCloud, mock_api: MockAPI):
     ],
 )
 def test_update_settings(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     method_name: str,
     value: Any,
@@ -257,7 +257,7 @@ def test_update_settings(
     }
 
 
-def test_set_service_name(client: ReflexCloud, mock_api: MockAPI):
+def test_set_service_name(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{APP_PATH}/service_name",
@@ -269,7 +269,7 @@ def test_set_service_name(client: ReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"service_name": "dashboard"}
 
 
-def test_status(client: ReflexCloud, mock_api: MockAPI):
+def test_status(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{APP_PATH}/status",
@@ -303,7 +303,7 @@ RUNNING_DEPLOYMENT = {
 }
 
 
-def test_current_deployment(client: ReflexCloud, mock_api: MockAPI):
+def test_current_deployment(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{APP_PATH}/deployment", reply(200, json=RUNNING_DEPLOYMENT))
     assert client.apps.current_deployment(
         APP_ID, environment_id="env"
@@ -326,7 +326,7 @@ def test_current_deployment(client: ReflexCloud, mock_api: MockAPI):
     assert _query(mock_api.requests[0]) == {"environment_id": ["env"]}
 
 
-def test_current_deployment_when_nothing_runs(client: ReflexCloud, mock_api: MockAPI):
+def test_current_deployment_when_nothing_runs(client: ReflexBuild, mock_api: MockAPI):
     # The route answers "not found" with a 200.
     mock_api.add(
         "GET",
@@ -346,7 +346,7 @@ def test_current_deployment_when_nothing_runs(client: ReflexCloud, mock_api: Moc
     ],
 )
 def test_lifecycle(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     method_name: str,
     http_method: str,
@@ -369,7 +369,7 @@ def test_lifecycle(
     ],
 )
 def test_scale(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     kwargs: dict[str, Any],
     body: dict[str, Any],
@@ -391,14 +391,14 @@ def test_scale(
     ],
 )
 def test_scale_rejects_ambiguous_arguments(
-    client: ReflexCloud, mock_api: MockAPI, kwargs: dict[str, Any]
+    client: ReflexBuild, mock_api: MockAPI, kwargs: dict[str, Any]
 ):
     with pytest.raises(ValueError, match="exactly one of"):
         client.apps.scale(APP_ID, **kwargs)
     assert not mock_api.requests
 
 
-def test_set_provider(client: ReflexCloud, mock_api: MockAPI):
+def test_set_provider(client: ReflexBuild, mock_api: MockAPI):
     account_id = "2b7c9d1e-3f4a-4b5c-8d6e-7f8091a2b3c4"
     mock_api.add(
         "POST",
@@ -425,7 +425,7 @@ def test_set_provider(client: ReflexCloud, mock_api: MockAPI):
     assert _query(request) == {"expected_project_id": [PROJECT_ID]}
 
 
-def test_set_full_deploy(client: ReflexCloud, mock_api: MockAPI):
+def test_set_full_deploy(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{APP_PATH}/full_deploy",
@@ -448,7 +448,7 @@ def test_set_full_deploy(client: ReflexCloud, mock_api: MockAPI):
     ],
 )
 def test_set_instance_bounds(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     body: dict,
     change: InstanceBoundsChange,
@@ -465,7 +465,7 @@ def test_set_instance_bounds(
     }
 
 
-def test_reserve_hostname(client: ReflexCloud, mock_api: MockAPI):
+def test_reserve_hostname(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/apps/reserve",
@@ -490,7 +490,7 @@ def test_reserve_hostname(client: ReflexCloud, mock_api: MockAPI):
     }
 
 
-def test_rollback(client: ReflexCloud, mock_api: MockAPI):
+def test_rollback(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{APP_PATH}/deployments/{DEPLOYMENT_ID}/rollback",
@@ -500,7 +500,7 @@ def test_rollback(client: ReflexCloud, mock_api: MockAPI):
     assert len(mock_api.requests) == 1
 
 
-def test_history(client: ReflexCloud, mock_api: MockAPI):
+def test_history(client: ReflexBuild, mock_api: MockAPI):
     record = {
         "id": DEPLOYMENT_ID,
         "hostname": "dashboard.reflex.run",
@@ -579,7 +579,7 @@ def _log_page(*pages: tuple[list[dict[str, Any]], str | None]):
     return handle
 
 
-def test_logs_follow_cursor_until_empty_page(client: ReflexCloud, mock_api: MockAPI):
+def test_logs_follow_cursor_until_empty_page(client: ReflexBuild, mock_api: MockAPI):
     # Fly-hosted apps keep returning a cursor, and an empty page ends the logs.
     mock_api.add(
         "GET",
@@ -619,7 +619,7 @@ def test_logs_follow_cursor_until_empty_page(client: ReflexCloud, mock_api: Mock
 
 @pytest.mark.parametrize("bound", ["start", "end"])
 def test_logs_reject_naive_datetimes(
-    client: ReflexCloud, mock_api: MockAPI, bound: str
+    client: ReflexBuild, mock_api: MockAPI, bound: str
 ):
     naive: dict[str, Any] = {bound: datetime.datetime(2026, 9, 16, 10)}
     with pytest.raises(ValueError, match="timezone-aware"):
@@ -628,7 +628,7 @@ def test_logs_reject_naive_datetimes(
     assert not mock_api.requests
 
 
-def test_logs_stop_without_cursor(client: ReflexCloud, mock_api: MockAPI):
+def test_logs_stop_without_cursor(client: ReflexBuild, mock_api: MockAPI):
     # Google Cloud apps mark the last page with a null cursor.
     mock_api.add("GET", f"{APP_PATH}/logsv2", _log_page(([_log(1)], None)))
     records = [record for record in client.apps.logs(APP_ID)]
@@ -636,18 +636,18 @@ def test_logs_stop_without_cursor(client: ReflexCloud, mock_api: MockAPI):
     assert len(mock_api.requests) == 1
 
 
-def test_secrets_list(client: ReflexCloud, mock_api: MockAPI):
+def test_secrets_list(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{APP_PATH}/secrets", reply(200, json=["API_KEY"]))
     assert client.apps.secrets.list(APP_ID, environment_id="env") == ["API_KEY"]
     assert _query(mock_api.requests[0]) == {"environment_id": ["env"]}
 
 
-def test_secrets_get(client: ReflexCloud, mock_api: MockAPI):
+def test_secrets_get(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{APP_PATH}/secrets/API%2FKEY", reply(200, json="value"))
     assert client.apps.secrets.get(APP_ID, "API/KEY") == "value"
 
 
-def test_secrets_get_named_all(client: ReflexCloud, mock_api: MockAPI):
+def test_secrets_get_named_all(client: ReflexBuild, mock_api: MockAPI):
     # A secret named __all__ shares its path with the route reading every secret.
     mock_api.add(
         "GET",
@@ -661,14 +661,14 @@ def test_secrets_get_named_all(client: ReflexCloud, mock_api: MockAPI):
     assert _query(mock_api.requests[1]) == {"environment_id": ["env"]}
 
 
-def test_secrets_get_all(client: ReflexCloud, mock_api: MockAPI):
+def test_secrets_get_all(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET", f"{APP_PATH}/secrets/__all__", reply(200, json={"API_KEY": "value"})
     )
     assert client.apps.secrets.get_all(APP_ID) == {"API_KEY": "value"}
 
 
-def test_secrets_set(client: ReflexCloud, mock_api: MockAPI):
+def test_secrets_set(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", f"{APP_PATH}/secrets", reply(200, json=None))
     client.apps.secrets.set(APP_ID, {"API_KEY": "value"}, reboot=True)
     (request,) = mock_api.requests
@@ -676,13 +676,13 @@ def test_secrets_set(client: ReflexCloud, mock_api: MockAPI):
     assert _query(request) == {"reboot": ["true"]}
 
 
-def test_secrets_delete(client: ReflexCloud, mock_api: MockAPI):
+def test_secrets_delete(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", f"{APP_PATH}/secrets/API_KEY", reply(200, json=None))
     client.apps.secrets.delete(APP_ID, "API_KEY")
     assert _query(mock_api.requests[0]) == {"reboot": ["false"]}
 
 
-def test_domains_get(client: ReflexCloud, mock_api: MockAPI):
+def test_domains_get(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{APP_PATH}/custom_domain",
@@ -724,21 +724,21 @@ def test_domains_get(client: ReflexCloud, mock_api: MockAPI):
     )
 
 
-def test_domains_get_without_a_domain(client: ReflexCloud, mock_api: MockAPI):
+def test_domains_get_without_a_domain(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{APP_PATH}/custom_domain", reply(200, json={}))
     assert client.apps.domains.get(APP_ID) is None
 
 
 @pytest.mark.parametrize("body", [{"domain": "example.com"}, {"domain": None}])
 def test_domains_get_rejects_an_unexpected_domain(
-    client: ReflexCloud, mock_api: MockAPI, body: dict
+    client: ReflexBuild, mock_api: MockAPI, body: dict
 ):
     mock_api.add("GET", f"{APP_PATH}/custom_domain", reply(200, json=body))
     with pytest.raises(APIResponseValidationError):
         client.apps.domains.get(APP_ID)
 
 
-def test_domains_add(client: ReflexCloud, mock_api: MockAPI):
+def test_domains_add(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{APP_PATH}/custom_domain",
@@ -761,7 +761,7 @@ def test_domains_add(client: ReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"domain": "example.com"}
 
 
-def test_domains_remove(client: ReflexCloud, mock_api: MockAPI):
+def test_domains_remove(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         f"{APP_PATH}/custom_domain/app.example.com",

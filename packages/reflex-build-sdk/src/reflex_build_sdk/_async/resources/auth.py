@@ -21,7 +21,7 @@ from reflex_build_sdk._errors import (
 from reflex_build_sdk.types import AccessScope, LoginRequest, Me, Token
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._async._client import AsyncReflexCloud
+    from reflex_build_sdk._async._client import AsyncReflexBuild
 
 # How often finish_login() checks whether a login was approved, in seconds.
 _LOGIN_POLL_INTERVAL = 1.0
@@ -37,7 +37,7 @@ class AsyncTokens:
     account tokens are refused with ``PermissionDeniedError``.
     """
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -145,7 +145,7 @@ class AsyncAuth:
     # Manage the caller's access tokens.
     tokens: AsyncTokens
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -176,14 +176,18 @@ class AsyncAuth:
         token with ``finish_login``.
 
         Args:
-            ui_url: The Reflex Cloud web app URL. Defaults to the ``REFLEX_CLOUD_URL``
-                environment variable, then to the client's ``base_url``.
+            ui_url: The Reflex Build web app URL. Defaults to the ``REFLEX_BUILD_URL``
+                environment variable, then to ``REFLEX_CLOUD_URL``, which
+                ``reflex-hosting-cli`` reads, then to the client's ``base_url``.
 
         Returns:
             The login and the URL to approve it at.
         """
         base = (
-            ui_url or os.environ.get("REFLEX_CLOUD_URL") or self._client.base_url
+            ui_url
+            or os.environ.get("REFLEX_BUILD_URL")
+            or os.environ.get("REFLEX_CLOUD_URL")
+            or self._client.base_url
         ).rstrip("/")
         request_id = uuid.uuid4().hex
         return LoginRequest(

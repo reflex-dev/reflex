@@ -1,4 +1,4 @@
-"""Models returned by the Reflex Cloud API."""
+"""Models returned by the Reflex Build API."""
 
 from __future__ import annotations
 
@@ -78,7 +78,7 @@ class AppSummary:
     name: str
     description: str
     project_id: uuid.UUID
-    # Where the app is hosted: ``"fly"`` for Reflex Cloud, ``"gcp"`` for a connected
+    # Where the app is hosted: ``"fly"`` for Reflex Build, ``"gcp"`` for a connected
     # Google Cloud account.
     provider: str
 
@@ -116,7 +116,7 @@ class App:
     description: str
     project_id: uuid.UUID
     org_id: uuid.UUID | None
-    # Where the app is hosted: ``"fly"`` for Reflex Cloud, ``"gcp"`` for a connected
+    # Where the app is hosted: ``"fly"`` for Reflex Build, ``"gcp"`` for a connected
     # Google Cloud account.
     provider: str
     # Whether the frontend is served from the app's own container rather than a CDN.
@@ -376,7 +376,7 @@ class CopiedSecrets:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ManagedDatabase:
-    """The Postgres database Reflex Cloud hosts for an app."""
+    """The Postgres database Reflex Build hosts for an app."""
 
     # The id of the database's project at the database provider, Neon.
     provider_project_id: str = field(metadata=json_name("project_id"))
