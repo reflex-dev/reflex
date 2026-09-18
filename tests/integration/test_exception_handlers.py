@@ -6,10 +6,7 @@ import time
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness, AppHarnessProd
 
@@ -93,27 +90,9 @@ def test_app(
         yield harness
 
 
-@pytest.fixture
-def driver(test_app: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the test_app app.
-
-    Args:
-        test_app: harness for TestApp app
-
-    Yields:
-        WebDriver instance.
-
-    """
-    assert test_app.app_instance is not None, "app is not running"
-    driver = test_app.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
 def test_frontend_exception_handler_during_runtime(
-    driver: WebDriver,
+    test_app: AppHarness,
+    page: Page,
     caplog: pytest.LogCaptureFixture,
 ):
     """Test calling frontend exception handler during runtime.
@@ -122,13 +101,16 @@ def test_frontend_exception_handler_during_runtime(
     This should trigger the default frontend exception handler.
 
     Args:
-        driver: WebDriver instance.
+        test_app: harness for TestApp app.
+        page: Playwright page.
         caplog: pytest fixture for capturing log records.
 
     """
-    reset_button = WebDriverWait(driver, 20).until(
-        EC.element_to_be_clickable((By.ID, "induce-frontend-error-btn"))
-    )
+    assert test_app.frontend_url is not None
+    page.goto(test_app.frontend_url)
+
+    reset_button = page.locator("#induce-frontend-error-btn")
+    expect(reset_button).to_be_enabled(timeout=20_000)
 
     reset_button.click()
 
@@ -140,7 +122,8 @@ def test_frontend_exception_handler_during_runtime(
 
 
 def test_backend_exception_handler_during_runtime(
-    driver: WebDriver,
+    test_app: AppHarness,
+    page: Page,
     caplog: pytest.LogCaptureFixture,
 ):
     """Test calling backend exception handler during runtime.
@@ -149,13 +132,16 @@ def test_backend_exception_handler_during_runtime(
     This should trigger the default backend exception handler.
 
     Args:
-        driver: WebDriver instance.
+        test_app: harness for TestApp app.
+        page: Playwright page.
         caplog: pytest fixture for capturing log records.
 
     """
-    reset_button = WebDriverWait(driver, 20).until(
-        EC.element_to_be_clickable((By.ID, "induce-backend-error-btn"))
-    )
+    assert test_app.frontend_url is not None
+    page.goto(test_app.frontend_url)
+
+    reset_button = page.locator("#induce-backend-error-btn")
+    expect(reset_button).to_be_enabled(timeout=20_000)
 
     reset_button.click()
 
@@ -168,7 +154,7 @@ def test_backend_exception_handler_during_runtime(
 
 def test_frontend_exception_handler_with_react(
     test_app: AppHarness,
-    driver: WebDriver,
+    page: Page,
     caplog: pytest.LogCaptureFixture,
 ):
     """Test calling frontend exception handler during runtime.
@@ -177,13 +163,15 @@ def test_frontend_exception_handler_with_react(
 
     Args:
         test_app: harness for TestApp app
-        driver: WebDriver instance.
+        page: Playwright page.
         caplog: pytest fixture for capturing log records.
 
     """
-    reset_button = WebDriverWait(driver, 20).until(
-        EC.element_to_be_clickable((By.ID, "induce-react-error-btn"))
-    )
+    assert test_app.frontend_url is not None
+    page.goto(test_app.frontend_url)
+
+    reset_button = page.locator("#induce-react-error-btn")
+    expect(reset_button).to_be_enabled(timeout=20_000)
 
     reset_button.click()
 

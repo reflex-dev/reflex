@@ -14,7 +14,7 @@ on:
 env:
   REFLEX_TELEMETRY_ENABLED: false
   NODE_OPTIONS: "--max_old_space_size=8192"
-  APP_HARNESS_HEADLESS: 1
+  PR_TITLE: ${{ github.event.pull_request.title }}
   PYTHONUNBUFFERED: 1
   # Randomized string hashing shifts dict probe sequences run to run, which the
   # instrumented benchmarks can pick up as drift unrelated to the code change.

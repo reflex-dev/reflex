@@ -3,7 +3,7 @@
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -34,21 +34,21 @@ def AutoMemoAcrossPagesApp():
     app.add_page(other, route="/other")
 
 
-@pytest.fixture
-def auto_memo_app(tmp_path) -> Generator[AppHarness, None, None]:
+@pytest.fixture(scope="module")
+def auto_memo_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start AutoMemoAcrossPagesApp app at tmp_path via AppHarness.
 
     Yields:
         A running AppHarness instance.
     """
     with AppHarness.create(
-        root=tmp_path,
+        root=tmp_path_factory.mktemp("auto_memo"),
         app_source=AutoMemoAcrossPagesApp,
     ) as harness:
         yield harness
 
 
-def test_auto_memo_shared_across_pages(auto_memo_app: AppHarness):
+def test_auto_memo_shared_across_pages(auto_memo_app: AppHarness, page: Page):
     """Shared stateful subtrees compile once and render correctly on both pages."""
     assert auto_memo_app.app_instance is not None, "app is not running"
 
@@ -58,16 +58,9 @@ def test_auto_memo_shared_across_pages(auto_memo_app: AppHarness):
     assert "$/app_components" in web_sources
     assert "$/utils/stateful_components" not in web_sources
 
-    driver = auto_memo_app.frontend()
-    shared_value = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "shared-value")
-    )
-    assert auto_memo_app.poll_for_content(shared_value, exp_not_equal="") == "/"
-
-    with poll_for_navigation(driver):
-        driver.find_element(By.ID, "to-other").click()
-
-    shared_value = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "shared-value")
-    )
-    assert "other" in auto_memo_app.poll_for_content(shared_value, exp_not_equal="")
+    assert auto_memo_app.frontend_url is not None
+    page.goto(auto_memo_app.frontend_url)
+    expect(page.locator("#shared-value")).to_have_text("/")
+    with poll_for_navigation(page):
+        page.locator("#to-other").click()
+    expect(page.locator("#shared-value")).to_contain_text("other")

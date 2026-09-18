@@ -1,15 +1,16 @@
 """Integration tests for TypedDict-annotated form submissions."""
 
-import asyncio
 import functools
 import json
 from collections.abc import Generator
 
 import pytest
+from playwright.sync_api import Page, expect
 from reflex_base.utils import format
-from selenium.webdriver.common.by import By
 
 from reflex.testing import AppHarness
+
+from .utils import poll_for_token
 
 
 def TypedDictFormSubmit(form_component):
@@ -172,65 +173,28 @@ def typeddict_form(
         yield harness, fields
 
 
-@pytest.fixture
-def driver(typeddict_form: tuple[AppHarness, dict]):
-    """Get an instance of the browser open to the app.
+def test_typeddict_form_submit(page: Page, typeddict_form: tuple[AppHarness, dict]):
+    """Fill a TypedDict-backed form and verify its submitted data.
 
     Args:
-        typeddict_form: harness and fields for the TypedDict form app
-
-    Yields:
-        WebDriver instance.
-    """
-    harness, _ = typeddict_form
-    driver = harness.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-@pytest.mark.asyncio
-async def test_typeddict_form_submit(driver, typeddict_form: tuple[AppHarness, dict]):
-    """Fill a TypedDict-backed form, submit it, and verify the data arrives.
-
-    Args:
-        driver: selenium WebDriver open to the app
-        typeddict_form: harness and fields for the app
+        page: Playwright page.
+        typeddict_form: The app harness and its expected form fields.
     """
     harness, fields = typeddict_form
-    assert harness.app_instance is not None, "app is not running"
-
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-    token = harness.poll_for_value(token_input)
-    assert token
-
+    assert harness.frontend_url is not None
+    page.goto(harness.frontend_url)
+    poll_for_token(page)
     for input_name, input_value in fields["inputs"].items():
-        el = driver.find_element(By.NAME, input_name)
-        el.send_keys(input_value)
-
+        page.locator(f'[name="{input_name}"]').fill(input_value)
     if fields["textarea"] is not None:
-        textarea = driver.find_element(By.TAG_NAME, "textarea")
-        textarea.send_keys(fields["textarea"])
-
-    await asyncio.sleep(0.5)
-
-    prev_url = driver.current_url
-
-    submit_btn = driver.find_element(By.CLASS_NAME, "rt-Button")
-    submit_btn.click()
-
-    harness.poll_for_content(
-        driver.find_element(By.ID, "form-data"), exp_not_equal="{}"
-    )
-    form_data = json.loads(driver.find_element(By.ID, "form-data").text)
+        page.locator("textarea").fill(fields["textarea"])
+    prev_url = page.url
+    page.get_by_role("button", name="Submit", exact=True).click()
+    result = page.locator("#form-data")
+    expect(result).not_to_have_text("{}")
+    form_data = json.loads(result.inner_text())
     assert isinstance(form_data, dict)
     form_data = format.collect_form_dict_names(form_data)
-
     for key, expected_value in fields["expected"].items():
         assert form_data[key] == expected_value, f"Mismatch for {key!r}"
-
-    # submitting the form should NOT change the url (preventDefault)
-    assert driver.current_url == prev_url
+    assert page.url == prev_url

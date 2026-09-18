@@ -15,7 +15,7 @@ from playwright.sync_api import Page, expect
 from reflex.testing import AppHarness
 
 
-def MemoApp():
+def MemoScopesApp():
     """App exercising ``rx.memo`` with ``EventHandler`` props and recursion."""
     from collections.abc import Sequence
     from typing import TypedDict
@@ -146,7 +146,7 @@ def memo_app(
     """
     with AppHarness.create(
         root=tmp_path_factory.mktemp("memo_app"),
-        app_source=MemoApp,
+        app_source=MemoScopesApp,
     ) as harness:
         yield harness
 

@@ -4,9 +4,11 @@ import time
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+
+from . import utils
 
 
 def ServerSideEvent():
@@ -104,31 +106,6 @@ def server_side_event(tmp_path_factory) -> Generator[AppHarness, None, None]:
         yield harness
 
 
-@pytest.fixture
-def driver(server_side_event: AppHarness):
-    """Get an instance of the browser open to the server_side_event app.
-
-    Args:
-        server_side_event: harness for ServerSideEvent app
-
-    Yields:
-        WebDriver instance.
-    """
-    assert server_side_event.app_instance is not None, "app is not running"
-    driver = server_side_event.frontend()
-    try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
-        # wait for the backend connection to send the token
-        token = server_side_event.poll_for_value(token_input)
-        assert token is not None
-
-        yield driver
-    finally:
-        driver.quit()
-
-
 @pytest.mark.parametrize(
     "button_id",
     [
@@ -138,75 +115,79 @@ def driver(server_side_event: AppHarness):
         "clear_chained_return",
     ],
 )
-def test_set_value(driver, button_id: str):
+def test_set_value(server_side_event: AppHarness, page: Page, button_id: str):
     """Call set_value as an event chain, via yielding, via yielding with return.
 
     Args:
-        driver: selenium WebDriver open to the app
+        server_side_event: harness for ServerSideEvent app
+        page: Playwright page.
         button_id: id of the button to click (parametrized)
     """
-    input_a = driver.find_element(By.ID, "a")
-    input_b = driver.find_element(By.ID, "b")
-    input_c = driver.find_element(By.ID, "c")
-    btn = driver.find_element(By.ID, button_id)
+    assert server_side_event.frontend_url is not None
+    page.goto(server_side_event.frontend_url)
 
-    assert input_a
-    assert input_b
-    assert input_c
-    assert btn
+    utils.poll_for_token(page)
 
-    assert input_a.get_attribute("value") == "a"
-    assert input_b.get_attribute("value") == "b"
-    assert input_c.get_attribute("value") == "c"
+    input_a = page.locator("#a")
+    input_b = page.locator("#b")
+    input_c = page.locator("#c")
+    btn = page.locator(f"#{button_id}")
+
+    expect(input_a).to_have_value("a")
+    expect(input_b).to_have_value("b")
+    expect(input_c).to_have_value("c")
     btn.click()
     time.sleep(0.2)
-    assert input_a.get_attribute("value") == ""
-    assert input_b.get_attribute("value") == ""
-    assert input_c.get_attribute("value") == ""
+    expect(input_a).to_have_value("")
+    expect(input_b).to_have_value("")
+    expect(input_c).to_have_value("")
 
 
-def test_set_value_return_c(driver):
+def test_set_value_return_c(server_side_event: AppHarness, page: Page):
     """Call set_value returning single event.
 
     Args:
-        driver: selenium WebDriver open to the app
+        server_side_event: harness for ServerSideEvent app
+        page: Playwright page.
     """
-    input_a = driver.find_element(By.ID, "a")
-    input_b = driver.find_element(By.ID, "b")
-    input_c = driver.find_element(By.ID, "c")
-    btn = driver.find_element(By.ID, "clear_return_c")
+    assert server_side_event.frontend_url is not None
+    page.goto(server_side_event.frontend_url)
 
-    assert input_a
-    assert input_b
-    assert input_c
-    assert btn
+    utils.poll_for_token(page)
 
-    assert input_a.get_attribute("value") == "a"
-    assert input_b.get_attribute("value") == "b"
-    assert input_c.get_attribute("value") == "c"
+    input_a = page.locator("#a")
+    input_b = page.locator("#b")
+    input_c = page.locator("#c")
+    btn = page.locator("#clear_return_c")
+
+    expect(input_a).to_have_value("a")
+    expect(input_b).to_have_value("b")
+    expect(input_c).to_have_value("c")
     btn.click()
     time.sleep(0.2)
-    assert input_a.get_attribute("value") == "a"
-    assert input_b.get_attribute("value") == "b"
-    assert input_c.get_attribute("value") == ""
+    expect(input_a).to_have_value("a")
+    expect(input_b).to_have_value("b")
+    expect(input_c).to_have_value("")
 
 
-def test_set_focus(driver):
+def test_set_focus(server_side_event: AppHarness, page: Page):
     """Call set_focus and verify the target input becomes active.
 
     Args:
-        driver: selenium WebDriver open to the app
+        server_side_event: harness for ServerSideEvent app
+        page: Playwright page.
     """
-    input_target = driver.find_element(By.ID, "focus_target")
-    btn = driver.find_element(By.ID, "focus_input")
+    assert server_side_event.frontend_url is not None
+    page.goto(server_side_event.frontend_url)
 
-    assert input_target
-    assert btn
+    utils.poll_for_token(page)
+
+    input_target = page.locator("#focus_target")
+    btn = page.locator("#focus_input")
+
+    expect(input_target).to_be_visible()
+    expect(btn).to_be_visible()
 
     btn.click()
 
-    assert AppHarness.poll_for_or_raise_timeout(
-        lambda: (
-            driver.execute_script("return document.activeElement?.id") == "focus_target"
-        )
-    )
+    expect(input_target).to_be_focused()

@@ -1,7 +1,10 @@
 """Unit tests for the included testing tools."""
 
 import sys
+import threading
+from io import StringIO
 from types import ModuleType, SimpleNamespace
+from typing import Any, cast
 from unittest import mock
 
 import pytest
@@ -22,6 +25,37 @@ from reflex.utils.exec import should_prerender_routes
 def test_testing_module_does_not_import_uvicorn_at_module_load():
     """Importing reflex.testing does not require the AppHarness backend runtime."""
     assert "uvicorn" not in reflex_testing.__dict__
+
+
+def test_legacy_selenium_harness_remains_available(tmp_path, monkeypatch):
+    """Existing harness callers retain browser creation and polling while migrating.
+
+    Args:
+        tmp_path: Temporary app directory.
+        monkeypatch: Fixture for replacing the optional browser runtime.
+    """
+    harness = AppHarness.create(root=tmp_path, app_name="legacy")
+    harness.frontend_url = "http://localhost:3000"
+    driver = mock.Mock()
+    driver_factory = mock.Mock(return_value=driver)
+    options = mock.Mock()
+    monkeypatch.setattr(reflex_testing, "has_selenium", True, raising=False)
+    monkeypatch.setattr(
+        reflex_testing,
+        "webdriver",
+        SimpleNamespace(Chrome=object(), Firefox=object(), Edge=object()),
+        raising=False,
+    )
+    assert (
+        harness.frontend(driver_clz=cast(Any, driver_factory), driver_options=options)
+        is driver
+    )
+    driver.get.assert_called_once_with(harness.frontend_url)
+    assert harness._frontends == [driver]
+    element = mock.Mock(text="ready")
+    element.get_attribute.return_value = "value"
+    assert harness.poll_for_content(element) == "ready"
+    assert harness.poll_for_value(element) == "value"
 
 
 @pytest.mark.skip("Slow test that makes network requests.")
@@ -192,6 +226,69 @@ def test_app_harness_initialize_reloads_existing_imported_app(
     harness._initialize_app()
 
     harness_mocks.get_and_validate_app.assert_called_once_with(reload=True)
+
+
+def test_wait_frontend_times_out_when_stdout_read_blocks(tmp_path, monkeypatch):
+    """Ensure frontend startup wait cannot hang forever on a blocking readline.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        monkeypatch: pytest monkeypatch fixture
+    """
+
+    class BlockingStdout:
+        def __init__(self):
+            self._release = threading.Event()
+
+        def readline(self):
+            self._release.wait()
+            return ""
+
+        def release(self):
+            self._release.set()
+
+    stdout = BlockingStdout()
+    process = mock.Mock(stdout=stdout)
+    process.poll.return_value = None
+
+    harness = AppHarness.create(root=tmp_path / "hang_app", app_name="hang_app")
+    harness.frontend_process = process
+    monkeypatch.setattr(reflex_testing, "FRONTEND_STARTUP_TIMEOUT", 0.05)
+
+    with pytest.raises(RuntimeError, match="Frontend did not start within"):
+        harness._wait_frontend()
+
+    stdout.release()
+    assert harness.frontend_output_thread is not None
+    harness.frontend_output_thread.join(timeout=1)
+
+
+def test_wait_frontend_updates_calling_context_config(tmp_path, monkeypatch):
+    """The output reader updates the harness config instead of a thread default.
+
+    Args:
+        tmp_path: Temporary app directory.
+        monkeypatch: Fixture for isolating thread-specific configuration.
+    """
+    config = SimpleNamespace(deploy_url=None)
+    thread_config = SimpleNamespace(deploy_url=None)
+    parent_thread = threading.current_thread()
+    monkeypatch.setattr(
+        reflex_testing,
+        "get_config",
+        lambda: (
+            config if threading.current_thread() is parent_thread else thread_config
+        ),
+    )
+    harness = AppHarness.create(root=tmp_path, app_name="config_context")
+    harness.frontend_process = mock.Mock(
+        stdout=StringIO("  ➜  Local:   http://localhost:3456/\n")
+    )
+    harness._wait_frontend()
+    assert harness.frontend_output_thread is not None
+    harness.frontend_output_thread.join(timeout=1)
+    assert config.deploy_url == harness.frontend_url == "http://localhost:3456/"
+    assert thread_config.deploy_url is None
 
 
 def test_app_harness_frontend_env_has_development_condition(

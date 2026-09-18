@@ -4,11 +4,11 @@ from collections.abc import Generator
 from urllib.parse import urlsplit
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
-from .utils import SessionStorage, click_element, poll_for_navigation
+from .utils import SessionStorage, poll_for_navigation
 
 
 def NavigationApp():
@@ -40,48 +40,55 @@ def NavigationApp():
         return rx.text("Internal")
 
 
-@pytest.fixture
-def navigation_app(tmp_path) -> Generator[AppHarness, None, None]:
+@pytest.fixture(scope="module")
+def navigation_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start NavigationApp app at tmp_path via AppHarness.
 
     Args:
-        tmp_path: pytest tmp_path fixture
+        tmp_path_factory: pytest tmp_path_factory fixture
 
     Yields:
         running AppHarness instance
     """
     with AppHarness.create(
-        root=tmp_path,
+        root=tmp_path_factory.mktemp("navigation_app"),
         app_source=NavigationApp,
     ) as harness:
         yield harness
 
 
-def test_navigation_app(navigation_app: AppHarness):
+def test_navigation_app(navigation_app: AppHarness, page: Page):
     """Type text after moving cursor. Update text on backend.
 
     Args:
         navigation_app: harness for NavigationApp app
+        page: Playwright page
     """
     assert navigation_app.app_instance is not None, "app is not running"
-    driver = navigation_app.frontend()
+    assert navigation_app.frontend_url is not None
+    page.goto(navigation_app.frontend_url)
 
-    ss = SessionStorage(driver)
+    ss = SessionStorage(page)
     assert AppHarness._poll_for(lambda: ss.get("token") is not None), "token not found"
 
-    with poll_for_navigation(driver):
-        click_element(driver, By.ID, "internal")
-    assert urlsplit(driver.current_url).path == "/internal"
-    with poll_for_navigation(driver):
-        driver.back()
+    internal_link = page.locator("#internal")
 
-    click_element(driver, By.ID, "external")
+    with poll_for_navigation(page):
+        internal_link.click()
+    assert urlsplit(page.url).path == "/internal"
+    with poll_for_navigation(page):
+        page.go_back()
+
+    external_link = page.locator("#external")
+    expect(external_link).to_have_count(1)
+    external2_link = page.locator("#external2")
+
+    with page.context.expect_page():
+        external_link.click()
     # Expect a new tab to open
-    AppHarness.expect(lambda: len(driver.window_handles) == 2)
+    AppHarness.expect(lambda: len(page.context.pages) == 2)
 
-    # Switch back to the main tab
-    driver.switch_to.window(driver.window_handles[0])
-
-    click_element(driver, By.ID, "external2")
+    with page.context.expect_page():
+        external2_link.click()
     # Expect another new tab to open
-    AppHarness.expect(lambda: len(driver.window_handles) == 3)
+    AppHarness.expect(lambda: len(page.context.pages) == 3)

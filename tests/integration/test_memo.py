@@ -3,7 +3,7 @@
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
 
@@ -82,59 +82,43 @@ def MemoApp():
     app.add_page(index)
 
 
-@pytest.fixture
-def memo_app(tmp_path) -> Generator[AppHarness, None, None]:
+@pytest.fixture(scope="module")
+def memo_app(tmp_path_factory) -> Generator[AppHarness, None, None]:
     """Start MemoApp app at tmp_path via AppHarness.
 
     Args:
-        tmp_path: pytest tmp_path fixture.
+        tmp_path_factory: pytest temporary directory factory.
 
     Yields:
         Running AppHarness instance.
     """
     with AppHarness.create(
-        root=tmp_path,
+        root=tmp_path_factory.mktemp("memo_app"),
         app_source=MemoApp,
     ) as harness:
         yield harness
 
 
-def test_memo_app(memo_app: AppHarness):
-    """Render experimental memos and assert on their frontend behavior.
+def test_memo_app(memo_app: AppHarness, page: Page):
+    """Render deprecated experimental memos and verify forwarded props.
 
     Args:
         memo_app: Harness for MemoApp.
+        page: Playwright page.
     """
-    assert memo_app.app_instance is not None, "app is not running"
-    driver = memo_app.frontend()
-
-    memo_custom_code_stack = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "experimental-memo-custom-code")
-    )
-    assert (
-        memo_app.poll_for_content(memo_custom_code_stack, exp_not_equal="")
-        == "foobarbarbar"
-    )
-    assert memo_custom_code_stack.text == "foobarbarbar"
-
-    formatted_price = driver.find_element(By.ID, "formatted-price")
-    assert memo_app.poll_for_content(formatted_price, exp_not_equal="") == "USD: $125"
-
-    summary_card = driver.find_element(By.ID, "summary-card")
+    assert memo_app.frontend_url is not None
+    page.goto(memo_app.frontend_url)
+    expect(page.locator("#experimental-memo-custom-code")).to_have_text("foobarbarbar")
+    expect(page.locator("#formatted-price")).to_have_text("USD: $125")
+    summary_card = page.locator("#summary-card")
     assert "forwarded-summary-card" in (summary_card.get_attribute("class") or "")
-    # CSS props forwarded through `rx.RestProp` are applied as styles, merged
-    # with (not clobbered by) an explicit `style=` (ENG-9676).
-    assert summary_card.value_of_css_property("font-weight") == "700"
-    assert summary_card.value_of_css_property("padding") == "10px"
-    assert driver.find_element(By.ID, "summary-title").text == "Current Price"
-    assert (
-        driver.find_element(By.ID, "summary-child").text
-        == "Children are passed positionally."
+    expect(summary_card).to_have_css("font-weight", "700")
+    expect(summary_card).to_have_css("padding", "10px")
+    expect(page.locator("#summary-title")).to_have_text("Current Price")
+    expect(page.locator("#summary-child")).to_have_text(
+        "Children are passed positionally."
     )
-
-    summary_value = driver.find_element(By.ID, "summary-value")
-    assert memo_app.poll_for_content(summary_value, exp_not_equal="") == "USD: $125"
-
-    driver.find_element(By.ID, "increment-price").click()
-    assert memo_app.poll_for_content(formatted_price) == "USD: $130"
-    assert memo_app.poll_for_content(summary_value) == "USD: $130"
+    expect(page.locator("#summary-value")).to_have_text("USD: $125")
+    page.locator("#increment-price").click()
+    expect(page.locator("#formatted-price")).to_have_text("USD: $130")
+    expect(page.locator("#summary-value")).to_have_text("USD: $130")

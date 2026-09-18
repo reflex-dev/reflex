@@ -3,10 +3,11 @@
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+
+from .utils import poll_for_token
 
 
 def MomentApp():
@@ -89,70 +90,46 @@ def moment_app(
 
 
 @pytest.fixture
-def driver(moment_app: AppHarness) -> Generator[WebDriver, None, None]:
-    """Open the Moment integration app in a browser.
-
-    Yields:
-        The browser driver connected to the Moment app.
-    """
-    driver = moment_app.frontend()
-    try:
-        token = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
-        AppHarness.poll_for_or_raise_timeout(lambda: token.get_attribute("value"))
-        yield driver
-    finally:
-        driver.quit()
-
-
-def test_moment_2_props_render(driver: WebDriver) -> None:
-    """Changed react-moment 2.x props should render without a client error."""
-    moment = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "moment")
-    )
-    AppHarness.expect(lambda: moment.text == "2026-08-30")
-    moment_duration = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "moment-duration")
-    )
-    AppHarness.expect(lambda: moment_duration.text == "30 mins")
-
-
-def test_moment_locales_are_isolated(driver: WebDriver) -> None:
-    """Keep default moments in English across sibling locales, navigation and reload.
+def driver(moment_app: AppHarness, page: Page) -> Page:
+    """Open the Moment app and wait for hydration.
 
     Args:
-        driver: The browser connected to the Moment app.
+        moment_app: The running app.
+        page: Playwright page.
+
+    Returns:
+        The hydrated page.
     """
-    AppHarness.expect(
-        lambda: (
-            driver.find_element(By.ID, "moment-default-locale").text
-            == "Thursday 14 March 2024"
-        )
+    assert moment_app.frontend_url is not None
+    page.goto(moment_app.frontend_url)
+    poll_for_token(page)
+    return page
+
+
+def test_moment_2_props_render(driver: Page) -> None:
+    """Changed react-moment 2.x props render without a client error."""
+    expect(driver.locator("#moment")).to_have_text("2026-08-30")
+    expect(driver.locator("#moment-duration")).to_have_text("30 mins")
+
+
+def test_moment_locales_are_isolated(driver: Page) -> None:
+    """Keep default moments in English across locales, navigation and reload.
+
+    Args:
+        driver: The hydrated page.
+    """
+    expect(driver.locator("#moment-default-locale")).to_have_text(
+        "Thursday 14 March 2024"
     )
-    AppHarness.expect(
-        lambda: driver.find_element(By.ID, "moment-french").text == "jeudi 14 mars 2024"
+    expect(driver.locator("#moment-french")).to_have_text("jeudi 14 mars 2024")
+    driver.locator("#plain-link").click()
+    expect(driver.locator("#plain-date")).to_have_text("Thursday 14 March 2024")
+    expect(driver.locator("#plain-relative")).to_contain_text("ago")
+    driver.locator("#home-link").click()
+    expect(driver.locator("#moment-default-locale")).to_have_text(
+        "Thursday 14 March 2024"
     )
-    driver.find_element(By.ID, "plain-link").click()
-    AppHarness.expect(
-        lambda: (
-            driver.find_element(By.ID, "plain-date").text == "Thursday 14 March 2024"
-        )
-    )
-    AppHarness.expect(
-        lambda: driver.find_element(By.ID, "plain-relative").text.endswith("ago")
-    )
-    driver.find_element(By.ID, "home-link").click()
-    AppHarness.expect(
-        lambda: (
-            driver.find_element(By.ID, "moment-default-locale").text
-            == "Thursday 14 March 2024"
-        )
-    )
-    driver.refresh()
-    AppHarness.expect(
-        lambda: (
-            driver.find_element(By.ID, "moment-default-locale").text
-            == "Thursday 14 March 2024"
-        )
+    driver.reload()
+    expect(driver.locator("#moment-default-locale")).to_have_text(
+        "Thursday 14 March 2024"
     )

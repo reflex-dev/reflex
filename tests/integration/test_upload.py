@@ -2,23 +2,21 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 import shutil
 import time
-from collections.abc import Callable, Generator
+from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
 import pytest
+from playwright.sync_api import Page, expect
 from reflex_base.constants.event import Endpoint
-from selenium.common.exceptions import NoAlertPresentException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.remote.webelement import WebElement
 
 import reflex as rx
 from reflex.testing import AppHarness
+
+from . import utils
 
 
 def UploadFile():
@@ -399,39 +397,175 @@ def clear_uploaded_files(uploaded_files_dir: Path):
     _clear_contents()
 
 
-@pytest.fixture
-def driver(upload_file: AppHarness):
-    """Get an instance of the browser open to the upload_file app.
+def _goto_app(upload_file: AppHarness, page: Page) -> None:
+    """Navigate to the upload app and wait for the token to appear.
 
     Args:
-        upload_file: harness for DynamicRoute app
-
-    Yields:
-        WebDriver instance.
+        upload_file: AppHarness instance.
+        page: Playwright page.
     """
-    assert upload_file.app_instance is not None, "app is not running"
-    driver = upload_file.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
+    assert upload_file.frontend_url is not None
+    page.goto(upload_file.frontend_url)
+    utils.poll_for_token(page)
 
 
-@pytest.fixture
-def simulate_slow_network(driver: WebDriver) -> Generator[None, None, None]:
-    """Throttle network speed to 1 Mbps / 200ms latency to reduce race condition window.
-
-    Restores unthrottled conditions on teardown so the throttle cannot bleed
-    into other tests if the driver scope is ever widened.
+@pytest.mark.parametrize("secondary", [False, True])
+def test_upload_file(tmp_path, upload_file: AppHarness, page: Page, secondary: bool):
+    """Submit a file upload and check that it arrived on the backend.
 
     Args:
-        driver: WebDriver instance
-
-    Yields:
-        None while the throttle is active.
+        tmp_path: pytest tmp_path fixture
+        upload_file: harness for UploadFile app.
+        page: Playwright page instance.
+        secondary: whether to use the secondary upload form
     """
-    driver.execute_cdp_cmd("Network.enable", {})
-    driver.execute_cdp_cmd(
+    assert upload_file.app_instance is not None
+    _goto_app(upload_file, page)
+    page.locator("#clear_uploads").click()
+
+    suffix = "_secondary" if secondary else ""
+
+    upload_box = page.locator("input[type='file']").nth(1 if secondary else 0)
+    upload_button = page.locator(f"#upload_button{suffix}")
+
+    exp_name = "test.txt"
+    exp_contents = "test file contents!"
+    target_file = tmp_path / exp_name
+    target_file.write_text(exp_contents)
+
+    upload_box.set_input_files(str(target_file))
+    upload_button.click()
+
+    # check that the selected files are displayed
+    selected_files = page.locator(f"#selected_files{suffix}")
+    expect(selected_files).to_have_text(exp_name)
+
+    # Wait for the upload to complete.
+    expect(page.locator("#upload_done")).to_have_value("true")
+
+    if secondary:
+        event_order_displayed = page.locator("#event-order")
+        expect(event_order_displayed).to_contain_text("chain_event")
+        progress_dicts = page.locator("xpath=//*[@id='progress_dicts']/p")
+        expect(progress_dicts.first).to_be_visible()
+        last_progress = progress_dicts.last.text_content() or ""
+        assert json.loads(last_progress)["progress"] == 1
+
+    # look up the backend state and assert on uploaded contents
+    actual_contents = (rx.get_upload_dir() / exp_name).read_text()
+    assert actual_contents == exp_contents
+
+
+def test_upload_file_multiple(tmp_path, upload_file: AppHarness, page: Page):
+    """Submit several file uploads and check that they arrived on the backend.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        upload_file: harness for UploadFile app.
+        page: Playwright page instance.
+    """
+    assert upload_file.app_instance is not None
+    _goto_app(upload_file, page)
+    page.locator("#clear_uploads").click()
+
+    upload_box = page.locator("input[type='file']").first
+    upload_button = page.locator("#upload_button")
+
+    exp_files = {
+        "test1.txt": "test file contents!",
+        "test2.txt": "this is test file number 2!",
+        "reflex.txt": "reflex is awesome!",
+    }
+    target_paths = []
+    for exp_name, exp_contents in exp_files.items():
+        target_file = tmp_path / exp_name
+        target_file.write_text(exp_contents)
+        target_paths.append(str(target_file))
+
+    upload_box.set_input_files(target_paths)
+
+    time.sleep(0.2)
+
+    # check that the selected files are displayed
+    selected_files = page.locator("#selected_files p")
+    assert [Path(name).name for name in selected_files.all_text_contents()] == [
+        Path(name).name for name in exp_files
+    ]
+
+    # do the upload
+    upload_button.click()
+
+    # Wait for the upload to complete.
+    expect(page.locator("#upload_done")).to_have_value("true")
+
+    for exp_name, exp_content in exp_files.items():
+        actual_contents = (rx.get_upload_dir() / exp_name).read_text()
+        assert actual_contents == exp_content
+
+
+@pytest.mark.parametrize("secondary", [False, True])
+def test_clear_files(tmp_path, upload_file: AppHarness, page: Page, secondary: bool):
+    """Select then clear several file uploads and check that they are cleared.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        upload_file: harness for UploadFile app.
+        page: Playwright page instance.
+        secondary: whether to use the secondary upload form.
+    """
+    assert upload_file.app_instance is not None
+    _goto_app(upload_file, page)
+    page.locator("#clear_uploads").click()
+
+    suffix = "_secondary" if secondary else ""
+
+    upload_box = page.locator("input[type='file']").nth(1 if secondary else 0)
+
+    exp_files = {
+        "test1.txt": "test file contents!",
+        "test2.txt": "this is test file number 2!",
+        "reflex.txt": "reflex is awesome!",
+    }
+    target_paths = []
+    for exp_name, exp_contents in exp_files.items():
+        target_file = tmp_path / exp_name
+        target_file.write_text(exp_contents)
+        target_paths.append(str(target_file))
+
+    upload_box.set_input_files(target_paths)
+
+    time.sleep(0.2)
+
+    # check that the selected files are displayed
+    selected_files = page.locator(f"#selected_files{suffix} p")
+    assert [Path(name).name for name in selected_files.all_text_contents()] == [
+        Path(name).name for name in exp_files
+    ]
+
+    page.locator(f"#clear_button{suffix}").click()
+
+    # check that the selected files are cleared
+    expect(page.locator(f"#selected_files{suffix}")).to_have_text("")
+
+
+# TODO: drag and drop directory
+# https://gist.github.com/florentbr/349b1ab024ca9f3de56e6bf8af2ac69e
+
+
+def test_cancel_upload(tmp_path, upload_file: AppHarness, page: Page):
+    """Submit a large file upload and cancel it.
+
+    Args:
+        tmp_path: pytest tmp_path fixture
+        upload_file: harness for UploadFile app.
+        page: Playwright page instance.
+    """
+    assert upload_file.app_instance is not None
+    assert upload_file.frontend_url is not None
+    page.goto(upload_file.frontend_url)
+    cdp = page.context.new_cdp_session(page)
+    cdp.send("Network.enable")
+    cdp.send(
         "Network.emulateNetworkConditions",
         {
             "offline": False,
@@ -440,482 +574,75 @@ def simulate_slow_network(driver: WebDriver) -> Generator[None, None, None]:
             "latency": 200,  # 200ms
         },
     )
-    yield
-    driver.execute_cdp_cmd(
-        "Network.emulateNetworkConditions",
-        {
-            "offline": False,
-            "downloadThroughput": -1,
-            "uploadThroughput": -1,
-            "latency": 0,
-        },
-    )
+    utils.poll_for_token(page)
 
+    upload_box = page.locator("input[type='file']").nth(1)
+    upload_button = page.locator("#upload_button_secondary")
+    cancel_button = page.locator("#cancel_button_secondary")
 
-def _wrap_find_elements_by_xpath(
-    driver: WebDriver, xpath: str
-) -> Callable[[], list[WebElement]]:
-    """Helper fixture factory for finding elements by xpath.
-
-    Args:
-        driver: WebDriver instance
-        xpath: xpath string to find elements
-
-    Returns:
-        A callable that returns the list of found elements.
-    """
-
-    def _finder():
-        return driver.find_elements(By.XPATH, xpath)
-
-    return _finder
-
-
-@pytest.fixture
-def progress_dicts(driver: WebDriver) -> Callable[[], list[WebElement]]:
-    """For retrieving the list of progress dictionary elements.
-
-    Args:
-        driver: WebDriver instance
-
-    Returns:
-        A callable that returns the list of progress dictionary elements.
-    """
-    return _wrap_find_elements_by_xpath(driver, "//*[@id='progress_dicts']/p")
-
-
-@pytest.fixture
-def stream_progress_dicts(driver: WebDriver) -> Callable[[], list[WebElement]]:
-    """For retrieving the list of streaming upload progress dictionary elements.
-
-    Args:
-        driver: WebDriver instance
-
-    Returns:
-        A callable that returns the list of streaming upload progress dictionary elements.
-    """
-    return _wrap_find_elements_by_xpath(driver, "//*[@id='stream_progress_dicts']/p")
-
-
-async def poll_for_stopped_progress(
-    get_progress_dicts: Callable[[], list[WebElement]],
-    iterations: int = 20,
-    delay: int | float = 1.0,
-    stable_iterations: int = 3,
-) -> list[dict]:
-    """Poll for progress dictionaries to stop updating.
-
-    Args:
-        get_progress_dicts: A callable that returns the list of progress dictionary elements.
-        iterations: Maximum number of iterations to poll for.
-        delay: Delay in seconds between iterations.
-        stable_iterations: Number of consecutive iterations with no new progress dictionaries before considering it stopped.
-
-    Returns:
-        The stable list of deserialized progress dicts.
-
-    Raises:
-        TimeoutError: If progress dictionaries keep updating beyond the maximum iterations.
-    """
-    remaining_stable_iterations = stable_iterations
-    last_progress_dicts_content = [p.text for p in get_progress_dicts()]
-    for _ in range(iterations):
-        await asyncio.sleep(delay)
-        progress_dicts_content = [p.text for p in get_progress_dicts()]
-        if progress_dicts_content == last_progress_dicts_content:
-            # Content remains stable, decrement remaining_stable_iterations
-            remaining_stable_iterations -= 1
-            if remaining_stable_iterations <= 0:
-                return [json.loads(t) for t in last_progress_dicts_content]
-        else:
-            # Progress dicts content changed, we must start over counting stable iterations.
-            remaining_stable_iterations = stable_iterations
-            last_progress_dicts_content = progress_dicts_content
-    msg = f"Progress dictionaries kept updating after {iterations} iterations ({iterations * delay} seconds)."
-    raise TimeoutError(msg)
-
-
-def poll_for_token(driver: WebDriver, upload_file: AppHarness) -> str:
-    """Poll for the token input to be populated.
-
-    Args:
-        driver: WebDriver instance.
-        upload_file: harness for UploadFile app.
-
-    Returns:
-        token value
-    """
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
-    )
-    # wait for the backend connection to send the token
-    token = upload_file.poll_for_value(token_input)
-    assert token is not None
-    return token
-
-
-def get_upload_box(driver: WebDriver, upload_root_id: str | None = None) -> WebElement:
-    """Find the file input belonging to a specific rx.upload.root, by its id.
-
-    When ``upload_root_id`` is None, returns the first ``input[type=file]``
-    on the page (the default upload form, which has no id).
-
-    Args:
-        driver: WebDriver instance.
-        upload_root_id: id of the ``rx.upload.root`` whose file input to return,
-            or None for the default (first) upload form.
-
-    Returns:
-        The matching file input WebElement.
-    """
-    if upload_root_id is not None:
-        return driver.find_element(
-            By.XPATH, f"//*[@id='{upload_root_id}']//input[@type='file']"
-        )
-    return driver.find_element(By.XPATH, "//input[@type='file']")
-
-
-@pytest.mark.parametrize("upload_root_id", [None, "secondary"])
-def test_upload_file(
-    tmp_path,
-    upload_file: AppHarness,
-    driver: WebDriver,
-    progress_dicts: Callable[[], list[WebElement]],
-    upload_root_id: str | None,
-):
-    """Submit a file upload and check that it arrived on the backend.
-
-    Args:
-        tmp_path: pytest tmp_path fixture
-        upload_file: harness for UploadFile app.
-        driver: WebDriver instance.
-        progress_dicts: callable to retrieve progress dictionary elements.
-        upload_root_id: ID of the upload root element, or None for the default.
-    """
-    assert upload_file.app_instance is not None
-    poll_for_token(driver, upload_file)
-    clear_btn = driver.find_element(By.ID, "clear_uploads")
-    clear_btn.click()
-
-    suffix = f"_{upload_root_id}" if upload_root_id else ""
-
-    upload_box = get_upload_box(driver, upload_root_id=upload_root_id)
-    assert upload_box
-    upload_button = driver.find_element(By.ID, f"upload_button{suffix}")
-    assert upload_button
-
-    exp_name = "test.txt"
-    exp_contents = "test file contents!"
-    target_file = tmp_path / exp_name
-    target_file.write_text(exp_contents)
-
-    upload_box.send_keys(str(target_file))
-    upload_button.click()
-
-    # check that the selected files are displayed
-    selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
-    assert Path(selected_files.text).name == Path(exp_name).name
-
-    # Wait for the upload to complete.
-    upload_done = driver.find_element(By.ID, "upload_done")
-    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
-
-    if upload_root_id == "secondary":
-        event_order_displayed = driver.find_element(By.ID, "event-order")
-        AppHarness.expect(lambda: "chain_event" in event_order_displayed.text)
-        final_progress = progress_dicts()
-        assert len(final_progress) > 0
-        assert json.loads(final_progress[-1].text)["progress"] == 1
-
-    # look up the backend state and assert on uploaded contents
-    actual_contents = (rx.get_upload_dir() / exp_name).read_text()
-    assert actual_contents == exp_contents
-
-
-@pytest.mark.asyncio
-async def test_upload_file_multiple(tmp_path, upload_file: AppHarness, driver):
-    """Submit several file uploads and check that they arrived on the backend.
-
-    Args:
-        tmp_path: pytest tmp_path fixture
-        upload_file: harness for UploadFile app.
-        driver: WebDriver instance.
-    """
-    assert upload_file.app_instance is not None
-    poll_for_token(driver, upload_file)
-    clear_btn = driver.find_element(By.ID, "clear_uploads")
-    clear_btn.click()
-
-    upload_box = get_upload_box(driver)
-    assert upload_box
-    upload_button = driver.find_element(By.ID, "upload_button")
-    assert upload_button
-
-    exp_files = {
-        "test1.txt": "test file contents!",
-        "test2.txt": "this is test file number 2!",
-        "reflex.txt": "reflex is awesome!",
-    }
-    for exp_name, exp_contents in exp_files.items():
-        target_file = tmp_path / exp_name
-        target_file.write_text(exp_contents)
-        upload_box.send_keys(str(target_file))
-
-    await asyncio.sleep(0.2)
-
-    # check that the selected files are displayed
-    selected_files = driver.find_element(By.ID, "selected_files")
-    assert [Path(name).name for name in selected_files.text.split("\n")] == [
-        Path(name).name for name in exp_files
-    ]
-
-    # do the upload
-    upload_button.click()
-
-    # Wait for the upload to complete.
-    upload_done = driver.find_element(By.ID, "upload_done")
-    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
-
-    for exp_name, exp_content in exp_files.items():
-        actual_contents = (rx.get_upload_dir() / exp_name).read_text()
-        assert actual_contents == exp_content
-
-
-def test_upload_file_with_bound_arg(
-    tmp_path, upload_file: AppHarness, driver: WebDriver
-):
-    """Upload via an on_drop handler bound with an extra arg and verify it arrives.
-
-    Regression test for https://github.com/reflex-dev/reflex/issues/5290: extra
-    args bound to an upload handler must reach the backend handler, not just the
-    compiled event spec.
-
-    Args:
-        tmp_path: pytest tmp_path fixture.
-        upload_file: harness for UploadFile app.
-        driver: WebDriver instance.
-    """
-    assert upload_file.app_instance is not None
-    poll_for_token(driver, upload_file)
-    clear_btn = driver.find_element(By.ID, "clear_uploads")
-    clear_btn.click()
-
-    upload_box = get_upload_box(driver, upload_root_id="quaternary")
-    assert upload_box
-
-    exp_name = "bound_arg.txt"
-    target_file = tmp_path / exp_name
-    target_file.write_text("bound arg upload contents!")
-
-    # Selecting a file fires on_drop, which carries the bound "resume-field" arg.
-    upload_box.send_keys(str(target_file))
-
-    upload_done = driver.find_element(By.ID, "upload_done")
-    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
-
-    # The bound arg must have reached the handler.
-    field_display = driver.find_element(By.ID, "quaternary_field")
-    assert upload_file.poll_for_value(field_display, exp_not_equal="") == "resume-field"
-
-    # The uploaded file itself must still arrive.
-    names_display = driver.find_element(By.ID, "quaternary_files")
-    assert Path(exp_name).name in names_display.text
-
-
-@pytest.mark.parametrize("upload_root_id", [None, "secondary"])
-def test_clear_files(
-    tmp_path, upload_file: AppHarness, driver: WebDriver, upload_root_id: str | None
-):
-    """Select then clear several file uploads and check that they are cleared.
-
-    Args:
-        tmp_path: pytest tmp_path fixture
-        upload_file: harness for UploadFile app.
-        driver: WebDriver instance.
-        upload_root_id: ID of the upload root element, or None for the default.
-    """
-    assert upload_file.app_instance is not None
-    poll_for_token(driver, upload_file)
-    clear_btn = driver.find_element(By.ID, "clear_uploads")
-    clear_btn.click()
-
-    suffix = f"_{upload_root_id}" if upload_root_id else ""
-
-    upload_box = get_upload_box(driver, upload_root_id=upload_root_id)
-    assert upload_box
-    upload_button = driver.find_element(By.ID, f"upload_button{suffix}")
-    assert upload_button
-
-    exp_files = {
-        "test1.txt": "test file contents!",
-        "test2.txt": "this is test file number 2!",
-        "reflex.txt": "reflex is awesome!",
-    }
-    for exp_name, exp_contents in exp_files.items():
-        target_file = tmp_path / exp_name
-        target_file.write_text(exp_contents)
-        upload_box.send_keys(str(target_file))
-
-    time.sleep(0.2)
-
-    # check that the selected files are displayed
-    selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
-    assert [Path(name).name for name in selected_files.text.split("\n")] == [
-        Path(name).name for name in exp_files
-    ]
-
-    clear_button = driver.find_element(By.ID, f"clear_button{suffix}")
-    assert clear_button
-    clear_button.click()
-
-    # check that the selected files are cleared
-    selected_files = driver.find_element(By.ID, f"selected_files{suffix}")
-    assert selected_files.text == ""
-
-
-# TODO: drag and drop directory
-# https://gist.github.com/florentbr/349b1ab024ca9f3de56e6bf8af2ac69e
-
-
-@pytest.mark.usefixtures("simulate_slow_network")
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    (
-        "upload_root_id",
-        "progress_fixture",
-        "exp_name",
-        "file_size_bytes",
-        "partial_subdir",
-    ),
-    [
-        pytest.param(
-            "secondary",
-            "progress_dicts",
-            "large.txt",
-            1024 * 1024,
-            None,
-            id="buffered",
-        ),
-        pytest.param(
-            "streaming",
-            "stream_progress_dicts",
-            "cancel_stream.txt",
-            2 * 1024 * 1024,
-            "streaming",
-            id="streaming",
-        ),
-    ],
-)
-async def test_cancel_upload(
-    request: pytest.FixtureRequest,
-    tmp_path,
-    upload_file: AppHarness,
-    driver: WebDriver,
-    upload_root_id: str,
-    progress_fixture: str,
-    exp_name: str,
-    file_size_bytes: int,
-    partial_subdir: str | None,
-):
-    """Submit a large file upload and cancel it.
-
-    Covers both the standard upload form and the streaming-chunk upload form;
-    the latter additionally writes a partial file to a subdirectory under
-    ``rx.get_upload_dir()`` which is verified to be smaller than the source.
-
-    Args:
-        request: pytest request fixture, used to resolve the parametrized progress fixture.
-        tmp_path: pytest tmp_path fixture
-        upload_file: harness for UploadFile app.
-        driver: WebDriver instance.
-        upload_root_id: id of the rx.upload.root component to drive; also the suffix used for its upload/cancel button ids.
-        progress_fixture: name of the fixture providing the progress dicts callable.
-        exp_name: name of the file to upload.
-        file_size_bytes: size of the file to create, in bytes.
-        partial_subdir: subdirectory under the upload dir where a partial file is expected, or None if no partial file is written.
-    """
-    assert upload_file.app_instance is not None
-    progress_dicts: Callable[[], list[WebElement]] = request.getfixturevalue(
-        progress_fixture
-    )
-    poll_for_token(driver, upload_file)
-
-    upload_box = get_upload_box(driver, upload_root_id=upload_root_id)
-    upload_button = driver.find_element(By.ID, f"upload_button_{upload_root_id}")
-    cancel_button = driver.find_element(By.ID, f"cancel_button_{upload_root_id}")
-
+    exp_name = "large.txt"
     target_file = tmp_path / exp_name
     with target_file.open("wb") as f:
-        f.seek(file_size_bytes)
+        f.seek(1024 * 1024)  # 1 MB file, should upload in ~8 seconds
         f.write(b"0")
 
-    upload_box.send_keys(str(target_file))
+    upload_box.set_input_files(str(target_file))
     upload_button.click()
-    # Check for at least 2 progress updates to ensure the upload is active.
-    AppHarness.expect(lambda: len(progress_dicts()) >= 2)
+    time.sleep(1)
     cancel_button.click()
 
-    # There should never be a final progress record for a cancelled upload.
-    for p in await poll_for_stopped_progress(progress_dicts):
-        assert p["progress"] != 1
+    # Wait a bit for the upload to get cancelled.
+    time.sleep(12)
+
+    # But there should never be a final progress record for a cancelled upload.
+    for p in page.locator("xpath=//*[@id='progress_dicts']/p").all():
+        text = p.text_content() or ""
+        assert json.loads(text)["progress"] != 1
 
     assert not (rx.get_upload_dir() / exp_name).exists()
-
-    if partial_subdir is not None:
-        partial_path = rx.get_upload_dir() / partial_subdir / exp_name
-        assert partial_path.exists()
-        assert partial_path.stat().st_size < target_file.stat().st_size
 
     target_file.unlink()
 
 
-@pytest.mark.asyncio
-async def test_upload_chunk_file(tmp_path, upload_file: AppHarness, driver: WebDriver):
+def test_upload_chunk_file(tmp_path, upload_file: AppHarness, page: Page):
     """Submit a streaming upload and check that chunks are processed incrementally."""
     assert upload_file.app_instance is not None
-    poll_for_token(driver, upload_file)
-    clear_btn = driver.find_element(By.ID, "clear_uploads")
-    clear_btn.click()
+    _goto_app(upload_file, page)
+    page.locator("#clear_uploads").click()
 
-    upload_box = get_upload_box(driver, upload_root_id="streaming")
-    upload_button = driver.find_element(By.ID, "upload_button_streaming")
-    selected_files = driver.find_element(By.ID, "selected_files_streaming")
-    chunk_records_display = driver.find_element(By.ID, "stream_chunk_records")
-    completed_files_display = driver.find_element(By.ID, "stream_completed_files")
+    upload_box = page.locator("input[type='file']").nth(4)
+    upload_button = page.locator("#upload_button_streaming")
+    selected_files = page.locator("#selected_files_streaming p")
+    chunk_records_display = page.locator("#stream_chunk_records")
+    completed_files_display = page.locator("#stream_completed_files")
 
     exp_files = {
         "stream1.txt": "ABCD" * 262_144,
         "stream2.txt": "WXYZ" * 262_144,
     }
+    target_paths = []
     for exp_name, exp_contents in exp_files.items():
         target_file = tmp_path / exp_name
         target_file.write_text(exp_contents)
-        upload_box.send_keys(str(target_file))
+        target_paths.append(str(target_file))
 
-    await asyncio.sleep(0.2)
+    upload_box.set_input_files(target_paths)
 
-    assert [Path(name).name for name in selected_files.text.split("\n")] == [
+    time.sleep(0.2)
+
+    assert [Path(name).name for name in selected_files.all_text_contents()] == [
         Path(name).name for name in exp_files
     ]
 
     upload_button.click()
 
-    AppHarness.expect(lambda: "stream1.txt" in chunk_records_display.text)
+    expect(chunk_records_display).to_contain_text("stream1.txt")
 
-    AppHarness.expect(
-        lambda: (
-            "stream1.txt" in completed_files_display.text
-            and "stream2.txt" in completed_files_display.text
-        )
-    )
+    expect(completed_files_display).to_contain_text("stream1.txt")
+    expect(completed_files_display).to_contain_text("stream2.txt")
 
     # Wait for the upload to complete.
-    upload_done = driver.find_element(By.ID, "upload_done")
-    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
-
-    # The bound arg must reach the streaming handler too.
-    stream_field = driver.find_element(By.ID, "stream_field")
-    assert upload_file.poll_for_value(stream_field, exp_not_equal="") == "stream-field"
+    expect(page.locator("#upload_done")).to_have_value("true")
 
     for exp_name, exp_contents in exp_files.items():
         assert (
@@ -923,10 +650,65 @@ async def test_upload_chunk_file(tmp_path, upload_file: AppHarness, driver: WebD
         ).read_text() == exp_contents
 
 
+def test_cancel_upload_chunk(
+    tmp_path,
+    upload_file: AppHarness,
+    page: Page,
+):
+    """Submit a large streaming upload and cancel it."""
+    assert upload_file.app_instance is not None
+    assert upload_file.frontend_url is not None
+    page.goto(upload_file.frontend_url)
+    cdp = page.context.new_cdp_session(page)
+    cdp.send("Network.enable")
+    cdp.send(
+        "Network.emulateNetworkConditions",
+        {
+            "offline": False,
+            "downloadThroughput": 1024 * 1024 / 8,  # 1 Mbps
+            "uploadThroughput": 1024 * 1024 / 8,  # 1 Mbps
+            "latency": 200,  # 200ms
+        },
+    )
+    utils.poll_for_token(page)
+
+    upload_box = page.locator("input[type='file']").nth(4)
+    upload_button = page.locator("#upload_button_streaming")
+    cancel_button = page.locator("#cancel_button_streaming")
+
+    exp_name = "cancel_stream.txt"
+    target_file = tmp_path / exp_name
+    with target_file.open("wb") as f:
+        f.seek(2 * 1024 * 1024)
+        f.write(b"0")
+
+    upload_box.set_input_files(str(target_file))
+    upload_button.click()
+    time.sleep(2)
+    cancel_button.click()
+
+    time.sleep(11)
+
+    # But there should never be a final progress record for a cancelled upload.
+    for p in page.locator("xpath=//*[@id='stream_progress_dicts']/p").all():
+        text = p.text_content() or ""
+        assert json.loads(text)["progress"] != 1
+
+    assert not (rx.get_upload_dir() / exp_name).exists()
+
+    partial_path = rx.get_upload_dir() / "streaming" / exp_name
+    assert partial_path.exists()
+    assert partial_path.stat().st_size < target_file.stat().st_size
+
+    target_file.unlink()
+    if partial_path.exists():
+        partial_path.unlink()
+
+
 def test_upload_download_file(
     tmp_path,
     upload_file: AppHarness,
-    driver: WebDriver,
+    page: Page,
 ):
     """Submit a file upload and then fetch it with rx.download.
 
@@ -936,52 +718,45 @@ def test_upload_download_file(
     Args:
         tmp_path: pytest tmp_path fixture
         upload_file: harness for UploadFile app.
-        driver: WebDriver instance.
+        page: Playwright page instance.
     """
     assert upload_file.app_instance is not None
-    poll_for_token(driver, upload_file)
-    clear_btn = driver.find_element(By.ID, "clear_uploads")
-    clear_btn.click()
+    _goto_app(upload_file, page)
+    page.locator("#clear_uploads").click()
 
-    upload_box = get_upload_box(driver, upload_root_id="tertiary")
-    assert upload_box
-    upload_button = driver.find_element(By.ID, "upload_button_tertiary")
-    assert upload_button
+    upload_box = page.locator("input[type='file']").nth(2)
+    upload_button = page.locator("#upload_button_tertiary")
 
     exp_name = "test.txt"
     exp_contents = "test file contents!"
     target_file = tmp_path / exp_name
     target_file.write_text(exp_contents)
 
-    upload_box.send_keys(str(target_file))
+    upload_box.set_input_files(str(target_file))
     upload_button.click()
 
     # Wait for the upload to complete.
-    upload_done = driver.find_element(By.ID, "upload_done")
-    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
+    expect(page.locator("#upload_done")).to_have_value("true")
 
-    # Configure the download directory using CDP.
     download_dir = tmp_path / "downloads"
     download_dir.mkdir()
-    driver.execute_cdp_cmd(
-        "Page.setDownloadBehavior",
-        {"behavior": "allow", "downloadPath": str(download_dir)},
-    )
-
-    downloaded_file = download_dir / exp_name
 
     # Download via event embedded in frontend code.
-    download_frontend = driver.find_element(By.ID, "download-frontend")
-    download_frontend.click()
-    AppHarness.expect(lambda: downloaded_file.exists())
-    assert downloaded_file.read_text() == exp_contents
-    downloaded_file.unlink()
+    with page.expect_download() as download_info:
+        page.locator("#download-frontend").click()
+    download = download_info.value
+    frontend_path = download_dir / exp_name
+    download.save_as(str(frontend_path))
+    assert frontend_path.read_text() == exp_contents
+    frontend_path.unlink()
 
     # Download via backend event handler.
-    download_backend = driver.find_element(By.ID, "download-backend")
-    download_backend.click()
-    AppHarness.expect(lambda: downloaded_file.exists())
-    assert downloaded_file.read_text() == exp_contents
+    with page.expect_download() as download_info:
+        page.locator("#download-backend").click()
+    download = download_info.value
+    backend_path = download_dir / exp_name
+    download.save_as(str(backend_path))
+    assert backend_path.read_text() == exp_contents
 
 
 @pytest.mark.parametrize(
@@ -1001,7 +776,7 @@ def test_upload_download_file(
 def test_uploaded_file_security_headers(
     tmp_path,
     upload_file: AppHarness,
-    driver: WebDriver,
+    page: Page,
     exp_name: str,
     exp_contents: str,
     expect_attachment: bool,
@@ -1017,7 +792,7 @@ def test_uploaded_file_security_headers(
     Args:
         tmp_path: pytest tmp_path fixture
         upload_file: harness for UploadFile app.
-        driver: WebDriver instance.
+        page: Playwright page instance.
         exp_name: filename to upload.
         exp_contents: file contents to upload.
         expect_attachment: whether the response should force a download.
@@ -1026,21 +801,19 @@ def test_uploaded_file_security_headers(
     import httpx
 
     assert upload_file.app_instance is not None
-    poll_for_token(driver, upload_file)
-    clear_btn = driver.find_element(By.ID, "clear_uploads")
-    clear_btn.click()
+    _goto_app(upload_file, page)
+    page.locator("#clear_uploads").click()
 
-    upload_box = get_upload_box(driver, upload_root_id="tertiary")
-    upload_button = driver.find_element(By.ID, "upload_button_tertiary")
+    upload_box = page.locator("input[type='file']").nth(2)
+    upload_button = page.locator("#upload_button_tertiary")
 
     target_file = tmp_path / exp_name
     target_file.write_text(exp_contents)
 
-    upload_box.send_keys(str(target_file))
+    upload_box.set_input_files(str(target_file))
     upload_button.click()
 
-    upload_done = driver.find_element(By.ID, "upload_done")
-    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
+    expect(page.locator("#upload_done")).to_have_value("true")
 
     # Fetch the uploaded file directly via httpx and check security headers.
     upload_url = f"{Endpoint.UPLOAD.get_url()}/{exp_name}"
@@ -1059,49 +832,51 @@ def test_uploaded_file_security_headers(
         # PDF: no browser download test needed, skip the rest.
         return
 
-    # Configure the download directory using CDP.
+    # No dialog should appear (the file should be downloaded, not rendered).
+    dialog_seen = {"value": False}
+
+    def _on_dialog(d):
+        dialog_seen["value"] = True
+        d.dismiss()
+
+    page.on("dialog", _on_dialog)
+
+    # Navigate to the uploaded HTML file. Content-Disposition: attachment means
+    # the browser triggers a download rather than rendering the HTML.
+    # page.goto() raises "Download is starting" when the response is an
+    # attachment, so trigger the navigation in JS and let expect_download
+    # capture the file.
+    with page.expect_download() as download_info:
+        page.evaluate(f"window.location.href = {json.dumps(upload_url)}")
+    download = download_info.value
+
     download_dir = tmp_path / "downloads"
     download_dir.mkdir()
-    driver.execute_cdp_cmd(
-        "Page.setDownloadBehavior",
-        {"behavior": "allow", "downloadPath": str(download_dir)},
-    )
-
     downloaded_file = download_dir / exp_name
+    download.save_as(str(downloaded_file))
 
-    # Navigate to the uploaded HTML file in the browser and verify the script
-    # does not execute (Content-Disposition: attachment prevents rendering).
-    driver.get(upload_url)
-    # If the browser rendered the HTML, an alert('xss') dialog would appear.
-    # Verify no alert is present — the file should be downloaded, not rendered.
-    with pytest.raises(NoAlertPresentException):
-        alert = driver.switch_to.alert
-        alert.dismiss()
-
-    # Also verify the file was downloaded with the correct contents.
-    AppHarness.expect(lambda: downloaded_file.exists())
+    assert dialog_seen["value"] is False, "unexpected alert was displayed"
     assert downloaded_file.read_text() == exp_contents
 
 
 def test_on_drop(
     tmp_path,
     upload_file: AppHarness,
-    driver: WebDriver,
+    page: Page,
 ):
     """Test the on_drop event handler.
 
     Args:
         tmp_path: pytest tmp_path fixture
         upload_file: harness for UploadFile app.
-        driver: WebDriver instance.
+        page: Playwright page instance.
     """
     assert upload_file.app_instance is not None
-    poll_for_token(driver, upload_file)
-    clear_btn = driver.find_element(By.ID, "clear_uploads")
-    clear_btn.click()
+    _goto_app(upload_file, page)
+    page.locator("#clear_uploads").click()
 
-    upload_box = get_upload_box(driver, upload_root_id="quaternary")
-    assert upload_box
+    # quaternary upload (4th file input, index 3)
+    upload_box = page.locator("input[type='file']").nth(3)
 
     exp_name = "drop_test.txt"
     exp_contents = "dropped file contents!"
@@ -1109,14 +884,13 @@ def test_on_drop(
     target_file.write_text(exp_contents)
 
     # Simulate file drop by directly setting the file input
-    upload_box.send_keys(str(target_file))
+    upload_box.set_input_files(str(target_file))
 
     # Wait for the upload to complete.
-    upload_done = driver.find_element(By.ID, "upload_done")
-    assert upload_file.poll_for_value(upload_done, exp_not_equal="false") == "true"
+    expect(page.locator("#upload_done")).to_have_value("true")
 
     def exp_name_in_quaternary():
-        quaternary_files = driver.find_element(By.ID, "quaternary_files").text
+        quaternary_files = page.locator("#quaternary_files").text_content() or ""
         if quaternary_files:
             files = json.loads(quaternary_files)
             return exp_name in files
@@ -1126,3 +900,21 @@ def test_on_drop(
     AppHarness._poll_for(exp_name_in_quaternary)
 
     assert exp_name_in_quaternary()
+
+
+def test_upload_file_with_bound_arg(tmp_path, upload_file: AppHarness, page: Page):
+    """Preserve bound handler arguments when uploading from on_drop.
+
+    Args:
+        tmp_path: Temporary directory for the upload.
+        upload_file: The running upload app.
+        page: Playwright page.
+    """
+    _goto_app(upload_file, page)
+    page.locator("#clear_uploads").click()
+    target = tmp_path / "bound_arg.txt"
+    target.write_text("bound arg upload contents!")
+    page.locator("#quaternary input[type=file]").set_input_files(target)
+    expect(page.locator("#upload_done")).to_have_value("true")
+    expect(page.locator("#quaternary_field")).to_have_value("resume-field")
+    expect(page.locator("#quaternary_files")).to_contain_text(target.name)

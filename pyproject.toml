@@ -84,6 +84,7 @@ reflex = "reflex.reflex:cli"
 dev = [
   "alembic",
   "asynctest",
+  "attrs",
   "codespell",
   "darglint",
   "dill",

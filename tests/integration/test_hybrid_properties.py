@@ -5,10 +5,11 @@ from __future__ import annotations
 from collections.abc import Generator
 
 import pytest
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
+from playwright.sync_api import Page, expect
 
-from reflex.testing import DEFAULT_TIMEOUT, AppHarness, WebDriver
+from reflex.testing import AppHarness
+
+from .utils import poll_for_token
 
 
 def HybridProperties():
@@ -170,117 +171,37 @@ def hybrid_properties(
         yield harness
 
 
-@pytest.fixture
-def driver(hybrid_properties: AppHarness) -> Generator[WebDriver, None, None]:
-    """Get an instance of the browser open to the hybrid_properties app.
+def test_hybrid_properties(hybrid_properties: AppHarness, page: Page):
+    """Check hybrid property values on the frontend and backend after changes.
 
     Args:
-        hybrid_properties: harness for HybridProperties app
-
-    Yields:
-        WebDriver instance.
+        hybrid_properties: The running app.
+        page: Playwright page.
     """
-    assert hybrid_properties.app_instance is not None, "app is not running"
-    driver = hybrid_properties.frontend()
-    try:
-        yield driver
-    finally:
-        driver.quit()
-
-
-@pytest.fixture
-def token(hybrid_properties: AppHarness, driver: WebDriver) -> str:
-    """Get a function that returns the active token.
-
-    Args:
-        hybrid_properties: harness for HybridProperties app.
-        driver: WebDriver instance.
-
-    Returns:
-        The token for the connected client
-    """
-    assert hybrid_properties.app_instance is not None
-    token_input = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "token")
+    assert hybrid_properties.frontend_url is not None
+    page.goto(hybrid_properties.frontend_url)
+    poll_for_token(page)
+    info = page.locator("#info_a_b")
+    expect(info).to_have_text("info_a_b: a - b")
+    page.locator("#set_info_a").fill("")
+    expect(info).to_have_text("info_a_b: - b")
+    page.locator("#set_info_a").fill("z")
+    expect(info).to_have_text("info_a_b: z - b")
+    expect(page.locator("#full_name")).to_have_text("full_name: John Doe")
+    expect(page.locator("#full_name_backend")).to_have_text(
+        "full_name_backend: John Doe"
     )
-
-    # wait for the backend connection to send the token
-    token = hybrid_properties.poll_for_value(token_input, timeout=DEFAULT_TIMEOUT * 2)
-    assert token is not None
-
-    return token
-
-
-def test_hybrid_properties(
-    hybrid_properties: AppHarness,
-    driver: WebDriver,
-    token: str,
-):
-    """Test that hybrid properties are working as expected.
-
-    Args:
-        hybrid_properties: harness for HybridProperties app.
-        driver: WebDriver instance.
-        token: The token for the connected client (used to wait for backend connection).
-    """
-    assert hybrid_properties.app_instance is not None
-    assert token
-
-    info_a_b = driver.find_element(By.ID, "info_a_b")
-    assert info_a_b.text == "info_a_b: a - b"
-
-    # Updating the nested dataclass re-renders the hybrid property accessed via the object var.
-    set_info_a = driver.find_element(By.ID, "set_info_a")
-    set_info_a.send_keys(Keys.CONTROL + "a")
-    set_info_a.send_keys(Keys.DELETE)
-    # Wait for the cleared value to round-trip before typing. The input is controlled
-    # by State.info.a, so typing while the clear is still in flight is racy: a late
-    # empty-state delta can drop the new key ("- b") or it can be appended to a stale
-    # "a" ("az - b"). Polling the backend-derived text gates on the clear landing.
-    assert (
-        hybrid_properties.poll_for_content(info_a_b, exp_not_equal="info_a_b: a - b")
-        == "info_a_b: - b"
+    expect(page.locator("#python_full_name")).to_contain_text("<property object at 0x")
+    expect(page.locator("#has_last_name")).to_have_text("has_last_name: yes")
+    expect(page.locator("#has_last_name_backend")).to_have_text(
+        "has_last_name_backend: yes"
     )
-    set_info_a.send_keys("z")
-    assert (
-        hybrid_properties.poll_for_content(info_a_b, exp_not_equal="info_a_b: - b")
-        == "info_a_b: z - b"
+    page.locator("#set_last_name").fill("")
+    expect(page.locator("#has_last_name")).to_have_text("has_last_name: no")
+    expect(page.locator("#has_last_name_backend")).to_have_text(
+        "has_last_name_backend: no"
     )
-
-    full_name = driver.find_element(By.ID, "full_name")
-    assert full_name.text == "full_name: John Doe"
-
-    full_name_backend = driver.find_element(By.ID, "full_name_backend")
-    assert full_name_backend.text == "full_name_backend: John Doe"
-
-    python_full_name = driver.find_element(By.ID, "python_full_name")
-    assert "<property object at 0x" in python_full_name.text
-
-    has_last_name = driver.find_element(By.ID, "has_last_name")
-    assert has_last_name.text == "has_last_name: yes"
-
-    has_last_name_backend = driver.find_element(By.ID, "has_last_name_backend")
-    assert has_last_name_backend.text == "has_last_name_backend: yes"
-
-    set_last_name = driver.find_element(By.ID, "set_last_name")
-    # clear the input
-    set_last_name.send_keys(Keys.CONTROL + "a")
-    set_last_name.send_keys(Keys.DELETE)
-
-    assert (
-        hybrid_properties.poll_for_content(
-            has_last_name, exp_not_equal="has_last_name: yes"
-        )
-        == "has_last_name: no"
+    expect(page.locator("#full_name")).to_have_text("full_name: John")
+    expect(page.locator("#full_name_backend")).to_have_js_property(
+        "textContent", "full_name_backend: John "
     )
-    assert (
-        hybrid_properties.poll_for_content(
-            has_last_name_backend, exp_not_equal="has_last_name_backend: yes"
-        )
-        == "has_last_name_backend: no"
-    )
-
-    assert full_name.text == "full_name: John"
-    # Use textContent to preserve trailing whitespace (Selenium's .text strips it),
-    # since the backend f-string yields "John " (with trailing space) when last_name is empty.
-    assert full_name_backend.get_attribute("textContent") == "full_name_backend: John "

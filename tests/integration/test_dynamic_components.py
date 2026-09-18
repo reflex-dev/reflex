@@ -6,9 +6,11 @@ from collections.abc import Generator
 from typing import TypeVar
 
 import pytest
-from selenium.webdriver.common.by import By
+from playwright.sync_api import Page, expect
 
 from reflex.testing import AppHarness
+
+from . import utils
 
 # pyright: reportOptionalMemberAccess=false, reportGeneralTypeIssues=false, reportUnknownMemberType=false
 
@@ -183,99 +185,50 @@ def dynamic_components(tmp_path_factory) -> Generator[AppHarness, None, None]:
 T = TypeVar("T")
 
 
-@pytest.fixture
-def driver(dynamic_components: AppHarness):
-    """Get an instance of the browser open to the dynamic components app.
-
-    Args:
-        dynamic_components: AppHarness for the dynamic components
-
-    Yields:
-        WebDriver instance.
-    """
-    driver = dynamic_components.frontend()
-    try:
-        token_input = AppHarness.poll_for_or_raise_timeout(
-            lambda: driver.find_element(By.ID, "token")
-        )
-        # wait for the backend connection to send the token
-        token = dynamic_components.poll_for_value(token_input)
-        assert token is not None
-
-        yield driver
-    finally:
-        driver.quit()
-
-
 # TODO: drop the skip once the dill release fixing
 # https://github.com/uqfoundation/dill/issues/753 lands in uv.lock
 @pytest.mark.skipif(
     sys.version_info >= (3, 15) and bool(os.environ.get("REFLEX_REDIS_URL")),
     reason="dill <= 0.4.1 cannot serialize functions on Python 3.15",
 )
-def test_dynamic_components(driver, dynamic_components: AppHarness):
+def test_dynamic_components(page: Page, dynamic_components: AppHarness):
     """Test that the var operations produce the right results.
 
     Args:
-        driver: selenium WebDriver open to the app
+        page: Playwright page.
         dynamic_components: AppHarness for the dynamic components
     """
-    button = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "button")
-    )
-    assert button.text == "Click me"
+    assert dynamic_components.frontend_url is not None
+    page.goto(dynamic_components.frontend_url)
 
-    update_button = driver.find_element(By.ID, "update")
-    assert update_button
+    utils.poll_for_token(page)
+
+    button = page.locator("#button")
+    expect(button).to_have_text("Click me")
+
+    update_button = page.locator("#update")
+    expect(update_button).to_be_visible()
     update_button.click()
 
-    assert AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "button").text == "Clicked"
-    )
-
-    factorial = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "factorial")
-    )
-    assert factorial.text == "3628800"
-
+    expect(button).to_have_text("Clicked")
+    expect(page.locator("#factorial")).to_have_text("3628800")
     for icon_id in ("dynamic-icon", "dynamic-named-icon"):
-        AppHarness.poll_for_or_raise_timeout(
-            lambda icon_id=icon_id: driver.find_element(By.ID, icon_id)
-        )
-
-    count = AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "count")
-    )
-    assert count.text == "0"
-
-    increment = driver.find_element(By.ID, "increment")
-    increment.click()
-    assert AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "count").text == "1"
-    )
-
-    decrement = driver.find_element(By.ID, "decrement")
-    decrement.click()
-    assert AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "count").text == "0"
-    )
-
-    assert not driver.find_elements(By.ID, "delayed-icon")
-    assert driver.find_element(By.ID, "initial-icon")
-    driver.find_element(By.ID, "activate").click()
-    AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "delayed-icon")
-    )
-    driver.find_element(By.ID, "delayed-increment").click()
-    AppHarness.expect(lambda: driver.find_element(By.ID, "delayed-count").text == "1")
-    driver.find_element(By.ID, "delayed-decrement").click()
-    AppHarness.expect(lambda: driver.find_element(By.ID, "delayed-count").text == "0")
-    driver.find_element(By.ID, "activate").click()
-    AppHarness.expect(lambda: not driver.find_elements(By.ID, "delayed-icon"))
-    AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "initial-icon")
-    )
-    driver.find_element(By.ID, "activate").click()
-    AppHarness.poll_for_or_raise_timeout(
-        lambda: driver.find_element(By.ID, "delayed-icon")
-    )
+        expect(page.locator(f"#{icon_id}")).to_be_visible()
+    expect(page.locator("#count")).to_have_text("0")
+    page.locator("#increment").click()
+    expect(page.locator("#count")).to_have_text("1")
+    page.locator("#decrement").click()
+    expect(page.locator("#count")).to_have_text("0")
+    expect(page.locator("#delayed-icon")).to_have_count(0)
+    expect(page.locator("#initial-icon")).to_be_visible()
+    page.locator("#activate").click()
+    expect(page.locator("#delayed-icon")).to_be_visible()
+    page.locator("#delayed-increment").click()
+    expect(page.locator("#delayed-count")).to_have_text("1")
+    page.locator("#delayed-decrement").click()
+    expect(page.locator("#delayed-count")).to_have_text("0")
+    page.locator("#activate").click()
+    expect(page.locator("#delayed-icon")).to_have_count(0)
+    expect(page.locator("#initial-icon")).to_be_visible()
+    page.locator("#activate").click()
+    expect(page.locator("#delayed-icon")).to_be_visible()

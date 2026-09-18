@@ -56,6 +56,12 @@ Within the 'test' directory of Reflex you can add to a test file already there o
 - Any edge cases or potential problem areas.
 - Any interactions between different parts of the code.
 
+#### Integration tests
+
+Integration tests live in `tests/integration/` and exercise a real Reflex app in a browser. They are written with **sync Playwright** on top of `reflex.testing.AppHarness`; The legacy Selenium `AppHarness` methods are deprecated and remain available until Reflex 1.0. See `AGENTS.md` for the idiomatic patterns, and reuse the helpers in `tests/integration/utils.py` (`poll_for_token`, `poll_for_navigation`, `LocalStorage`, `SessionStorage`, `poll_assert_event_order`, etc.) rather than inlining ad-hoc polling.
+
+Each `AppHarness`-returning fixture should be `scope="module"` so the app server shuts down only after every test in the module has finished.
+
 ## 📝 Changelog Fragments
 
 Each PR that changes the source of a published package must add a news fragment describing the change. Fragments are assembled into `CHANGELOG.md` at release time by [towncrier](https://towncrier.readthedocs.io/).
