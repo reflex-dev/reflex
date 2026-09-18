@@ -224,12 +224,13 @@ _DEV_CONDITION_FLAG = "--conditions=development"
 def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
     """Copy an environment with the `development` export condition enabled.
 
-    react-router's dev CLI requires the condition and re-executes itself with
-    NODE_OPTIONS to enable it; bun does not apply NODE_OPTIONS when it runs
-    the CLI on node-less installs, so the restarted process trips the CLI's
-    restart guard and exits. Enabling the condition for both runtimes in the
-    dev server's environment lets it start under either, without leaking the
-    setting into the parent process.
+    react-router's dev CLI requires the condition and relaunches itself to
+    enable it. Setting it up front skips that relaunch under node, which reads
+    NODE_OPTIONS. Bun applies neither variable to the process it spawns for a
+    package script, so a node-less install relaunches anyway and relies on the
+    CLI passing the condition along as a flag; BUN_OPTIONS still covers bun
+    invoked directly on a script. The setting does not leak into the parent
+    process.
 
     Args:
         environ: The base environment.

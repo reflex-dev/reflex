@@ -96,7 +96,7 @@ fetch-retries=0
 def _determine_react_router_version() -> str:
     # Requires Node >= 22.22.0 and React >= 19.2.7; keep Node.MIN_VERSION and
     # _determine_react_version in step when bumping.
-    default_version = "8.3.1"
+    default_version = "8.4.0"
     if (version := os.getenv("REACT_ROUTER_VERSION")) and version != default_version:
         logger.warning(
             f"You have requested react-router@{version} but the supported version is {default_version}, abandon all hope ye who enter here."
