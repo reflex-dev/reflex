@@ -18,6 +18,7 @@ from reflex.istate.manager.token import BaseStateToken
 from reflex.istate.proxy import StateProxy
 from reflex.utils import types
 from reflex_base import otel
+from reflex_base.constants import CompileVars
 from reflex_base.event.context import EventContext
 from reflex_base.event.processor.event_processor import EventProcessor, EventQueueEntry
 from reflex_base.registry import RegisteredEventHandler
@@ -38,10 +39,13 @@ else:
 
 
 @functools.lru_cache(maxsize=1)
-def _hydrate_event_name():
+def _hydrate_event_names() -> frozenset[str]:
     from reflex.state import State
 
-    return format_event_handler(State.event_handlers["hydrate"])
+    return frozenset(
+        format_event_handler(State.event_handlers[name])
+        for name in (CompileVars.HYDRATE, CompileVars.HYDRATE_AND_LOAD)
+    )
 
 
 def _check_valid_yield(events: Any, handler_name: str = "unknown") -> Any:
@@ -427,7 +431,7 @@ class BaseStateEventProcessor(EventProcessor):
                 otel.record_state_acquired(acquire_start, event)
             # Compatibility hack rehydrate the state before processing this event.
             needs_to_rehydrate = bool(
-                not state.router_data and event.name != _hydrate_event_name()
+                not state.router_data and event.name not in _hydrate_event_names()
             )
 
             # re-assign only when the value is set and different

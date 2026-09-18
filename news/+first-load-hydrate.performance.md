@@ -1,0 +1,1 @@
+Speed up first page loads by combining hydration with the websocket connect and sending only values that differ from compiled defaults. Reduce Redis state-tree read/write overhead and avoid repeated class metadata computation in apps with many states.

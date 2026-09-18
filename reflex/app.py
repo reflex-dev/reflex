@@ -76,7 +76,6 @@ from reflex.admin import AdminDash
 from reflex.app_mixins import AppMixin, LifespanMixin, MiddlewareMixin
 from reflex.compiler import compiler
 from reflex.compiler.compiler import readable_name_from_component
-from reflex.istate.data import RouterData
 from reflex.istate.manager import StateManager, StateModificationContext
 from reflex.istate.manager.token import BaseStateToken
 from reflex.route import (
@@ -2119,12 +2118,15 @@ class EventNamespace(AsyncNamespace):
         # For backward compatibility, expose the underlying dict
         return self._token_manager.sid_to_token
 
-    async def on_connect(self, sid: str, environ: dict):
+    async def on_connect(self, sid: str, environ: dict, auth: Any = None):
         """Event for when the websocket is connected.
 
         Args:
             sid: The Socket.IO session id.
             environ: The request information, including HTTP headers.
+            auth: The payload of the socket.io CONNECT packet. The frontend
+                puts its hydrate event here so it is processed without waiting
+                for the connect acknowledgement round trip.
         """
         if isinstance(self._token_manager, RedisTokenManager):
             # Make sure this instance is watching for updates from other instances.
@@ -2143,6 +2145,20 @@ class EventNamespace(AsyncNamespace):
             )
         if otel.enabled:
             otel.record_connection(1)
+
+        if (
+            isinstance(auth, dict)
+            and (boot_event := auth.get(constants.CompileVars.CONNECT_AUTH_EVENT))
+            is not None
+        ):
+            try:
+                await self.on_event(sid, boot_event)
+            except Exception:
+                # A refused connect never reaches on_disconnect, so drop the
+                # token link made above before the error refuses the connect.
+                if (linked_token := self.sid_to_token.get(sid)) is not None:
+                    await self._token_manager.disconnect_token(linked_token, sid)
+                raise
 
     def on_disconnect(self, sid: str) -> asyncio.Task | None:
         """Event for when the websocket disconnects.
@@ -2401,11 +2417,6 @@ class EventNamespace(AsyncNamespace):
         if new_token:
             # Duplicate detected, emit new token to client
             await self.emit("new_token", new_token, to=sid)
-
-        # Update client state to apply new sid/token for running background tasks.
-        if self.app._state is not None:
-            async with self.app.state_manager.modify_state(
-                BaseStateToken(ident=new_token or token, cls=self.app._state)
-            ) as state:
-                state.router_data[constants.RouteVar.SESSION_ID] = sid
-                state.router = RouterData.from_router_data(state.router_data)
+        # The new sid reaches the state through the router data of the first
+        # event the client sends after connecting (always the hydrate chain),
+        # so there is no need to load and persist the whole state tree here.

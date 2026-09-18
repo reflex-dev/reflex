@@ -125,8 +125,8 @@ class EventProcessor:
     _futures: dict[str, EventFuture] = dataclasses.field(
         default_factory=dict, init=False
     )
-    # Latest-wins tracking for superseding handlers: (event name, token) -> the
-    # live invocation futures of the newest root generation, keyed by txid.
+    # Latest-wins tracking for superseding handlers: (supersede group, token) ->
+    # the live invocation futures of the newest root generation, keyed by txid.
     _superseded: dict[tuple[str, str], dict[str, EventFuture]] = dataclasses.field(
         default_factory=dict, init=False
     )
@@ -589,7 +589,10 @@ class EventProcessor:
         live invocation of an older chain, invocations of the same chain
         (self-chains and sibling fan-out from one parent) coexist, and an
         older chain enqueuing after a newer chain already has is dropped
-        instead of cancelling the newer work.
+        instead of cancelling the newer work. Supersession is keyed by the
+        handler's supersede group (the handler itself, or the group it names),
+        so handlers sharing a group (e.g. ``hydrate_and_load`` and
+        ``on_load_internal``) supersede each other's chains.
 
         Args:
             token: The client token associated with the event.
@@ -604,9 +607,9 @@ class EventProcessor:
             registered = RegistrationContext.get().event_handlers.get(event.name)
         except LookupError:
             return True
-        if registered is None or not registered.handler.supersedes:
+        if registered is None or (group := registered.handler.supersede_group) is None:
             return True
-        key = (event.name, token)
+        key = (group, token)
         slot = self._superseded.get(key)
         if slot:
             current_gen = next(iter(slot.values())).root_gen
