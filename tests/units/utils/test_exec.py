@@ -390,13 +390,13 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.mark.parametrize("json_mode", [False, True])
-def test_run_granian_backend_disables_native_logs_in_json_mode(
+def test_run_granian_backend_json_logs_in_json_mode(
     tmp_path: Path,
     mocker: MockerFixture,
     monkeypatch: pytest.MonkeyPatch,
     json_mode: bool,
 ):
-    """Granian must not write plain-text lifecycle logs into JSON stdout."""
+    """Granian lifecycle logs are emitted as JSON records in JSON mode."""
     monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, str(json_mode))
     mocker.patch.object(
         exec_utils,
@@ -426,11 +426,20 @@ def test_run_granian_backend_disables_native_logs_in_json_mode(
         host="127.0.0.1", port=8000, loglevel=exec_utils.LogLevel.DEBUG
     )
 
-    assert options["log_enabled"] is not json_mode
+    assert options["log_dictconfig"] == (
+        {
+            "handlers": {
+                "console": {"()": "reflex_base.utils.log.JsonHandler"},
+                "access": {"()": "reflex_base.utils.log.JsonHandler"},
+            }
+        }
+        if json_mode
+        else None
+    )
 
 
 @pytest.mark.parametrize("json_mode", [False, True])
-def test_run_granian_backend_prod_disables_native_logs_in_json_mode(
+def test_run_granian_backend_prod_json_logs_in_json_mode(
     mocker: MockerFixture,
     monkeypatch: pytest.MonkeyPatch,
     json_mode: bool,
@@ -457,4 +466,13 @@ def test_run_granian_backend_prod_disables_native_logs_in_json_mode(
         host="127.0.0.1", port=8000, loglevel=exec_utils.LogLevel.DEBUG
     )
 
-    assert options["log_enabled"] is not json_mode
+    assert options["log_dictconfig"] == (
+        {
+            "handlers": {
+                "console": {"()": "reflex_base.utils.log.JsonHandler"},
+                "access": {"()": "reflex_base.utils.log.JsonHandler"},
+            }
+        }
+        if json_mode
+        else None
+    )
