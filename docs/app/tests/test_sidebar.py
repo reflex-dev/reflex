@@ -115,6 +115,7 @@ def test_api_reference_groups_related_symbols():
         "CLI",
         "Browser Storage",
         "Browser Javascript",
+        "Channels",
         "Plugins",
         "Utils",
         "Telemetry",

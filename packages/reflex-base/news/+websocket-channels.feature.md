@@ -1,0 +1,1 @@
+The frontend websocket client can carry channels: named message streams, with binary attachments, multiplexed onto the app's event socket. Components reach one with `getChannel(name)` from `$/utils/state`.
