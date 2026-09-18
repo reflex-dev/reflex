@@ -1,0 +1,1 @@
+Fix the dashboard and chatbot tutorial examples, including initial chart rendering, form defaults, streaming responses, conversation history, and retryable API errors. Clarify the incremental setup instructions and improve example layout and formatting.
