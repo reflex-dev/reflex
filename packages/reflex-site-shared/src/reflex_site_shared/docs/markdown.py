@@ -304,6 +304,10 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     def directive(self, block: DirectiveBlock) -> rx.Component:
         """Handle ```md <directive>``` blocks (alert, video, etc.)."""
         match block.name:
+            case "tutorial-intro":
+                return self._render_tutorial_intro(block)
+            case "faq":
+                return self._render_faq(block)
             case "alert":
                 return self._render_alert(block)
             case "video":
@@ -455,7 +459,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 return docgraphing(code, comp=comp, data=data)
             elif "box" in flags:
                 comp = eval(content, self.env, self.env)
-                return rx.box(docdemobox(comp), margin_bottom="1em", id=comp_id)
+                return rx.box(docdemobox(comp), margin_y="1.5em", id=comp_id)
             else:
                 comp = eval(content, self.env, self.env)
         except Exception as e:
@@ -501,7 +505,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             )
             raise
 
-        return rx.box(comp, margin_bottom="1em", id=comp_id)
+        return rx.box(comp, margin_y="1.5em", id=comp_id)
 
     def _render_children(self, blocks: tuple[Block, ...]) -> rx.Component:
         """Render a sequence of parsed blocks into a single component."""
@@ -631,6 +635,62 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             width="100%",
         )
 
+    def _render_tutorial_intro(self, block: DirectiveBlock) -> rx.Component:
+        """Style a tutorial lead, duration, and prerequisites without hiding text."""
+        children = block.children
+        duration = block.args[0] if block.args else "20"
+        return rx.el.section(
+            rx.el.div(
+                self._render_children(children[:1]),
+                class_name="[&_p]:!text-lg [&_p]:!leading-8 [&_p]:!mb-0 text-foreground",
+            ),
+            rx.el.div(
+                rx.el.span(
+                    rx.icon("clock", size=15, aria_hidden=True),
+                    f"About {duration} minutes",
+                    class_name="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm text-foreground",
+                ),
+                rx.el.span(
+                    "Hands-on tutorial",
+                    class_name="inline-flex items-center rounded-full bg-secondary-3 px-3 py-1.5 text-sm text-foreground",
+                ),
+                class_name="flex flex-wrap gap-2 my-5",
+            ),
+            rx.el.div(
+                self._render_children(children[1:]),
+                class_name="border-l-2 border-border pl-4 [&_p]:!text-sm [&_p]:!leading-6 [&_p]:!mb-0 text-muted-foreground",
+            ),
+            class_name="mb-8 pb-7 border-b border-border",
+        )
+
+    def _render_faq(self, block: DirectiveBlock) -> rx.Component:
+        """Render a native disclosure with its answer kept in the document."""
+        children = block.children
+        if not children or not isinstance(children[0], HeadingBlock):
+            return self._render_children(children)
+        return rx.el.details(
+            rx.el.summary(
+                rx.el.span(*_render_spans(children[0].children)),
+                rx.icon(
+                    "chevron-down",
+                    size=20,
+                    aria_hidden=True,
+                    class_name="shrink-0 transition-transform group-open:rotate-180",
+                ),
+                class_name=(
+                    "flex cursor-pointer list-none items-center justify-between gap-4 "
+                    "px-5 py-4 font-medium text-foreground "
+                    "[&::-webkit-details-marker]:hidden focus-visible:outline-2 "
+                    "focus-visible:outline-primary focus-visible:-outline-offset-2 rounded-xl"
+                ),
+            ),
+            rx.box(
+                self._render_children(children[1:]),
+                class_name="px-5 pb-4 [&>div>*:last-child]:mb-0",
+            ),
+            class_name="group my-4 rounded-xl border border-border bg-background",
+        )
+
     def _render_video(self, block: DirectiveBlock) -> rx.Component:
         """Render a ``md video`` directive — accordion-wrapped."""
         url = block.args[0] if block.args else ""
@@ -642,7 +702,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         color: ColorType = "blue"
         trigger = [
-            rx.text(title, class_name="font-[475]", color=f"{rx.color(color, 11)}"),
+            rx.text(title, class_name="font-[475]", color=f"{rx.color(color, 12)}"),
         ]
         body = rx.accordion.content(
             rx.video(
@@ -655,7 +715,13 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             margin_top="16px",
             padding="0px",
         )
-        return collapsible_box(trigger, body, color, item_border_radius="0px")
+        return collapsible_box(
+            trigger,
+            body,
+            color,
+            item_border_radius="0px",
+            foreground_override=str(rx.color(color, 12)),
+        )
 
     def _render_quote_directive(self, block: DirectiveBlock) -> rx.Component:
         """Render a ``md quote`` directive."""
