@@ -662,7 +662,7 @@ formatted_router_vars = {
     "rx_router_url" + FIELD_MARKER: {
         "scheme": "",
         "netloc": "",
-        "origin": "",
+        "origin": "://",
         "path": "",
         "query": "",
         "query_parameters": {},

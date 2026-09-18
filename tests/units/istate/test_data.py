@@ -279,3 +279,73 @@ def test_shared_empty_url_default_cannot_be_mutated_through_a_state():
     assert one.router.url.path == "/real"
     assert two.router.url.path == ""
     assert cast("ReflexURL", URLData().href).path == ""
+
+
+def test_url_data_default_matches_the_parsed_empty_url():
+    """`URLData()` must equal `URLData.from_url(ReflexURL(""))`.
+
+    The two are different construction paths to the same "not navigated yet"
+    value: the dataclass defaults back every fresh state, while `from_url` is
+    what `__reduce__` rebuilds a persisted one through. Written out by hand the
+    defaults drifted -- `ReflexURL("").origin` is "://", not "" -- so a state
+    reported one origin before a save and another after.
+    """
+    from reflex.istate.data import URLData
+
+    assert URLData() == URLData.from_url(ReflexURL(""))
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "",
+        SAMPLE_URL,
+        "http://x/",
+        "https://a.b/c?d=1&d=2#f",
+    ],
+)
+def test_reflex_url_and_url_data_survive_pickling(raw: str):
+    """Both persist through a pickle round-trip with every component intact.
+
+    `ReflexURL` and `URLData` persist only the URL itself and re-split it on
+    the way back, so this pins that the derived components come back equal
+    rather than being silently dropped or recomputed differently.
+    """
+    import pickle
+
+    from reflex.istate.data import URLData
+
+    components = ("scheme", "netloc", "origin", "path", "query", "fragment")
+
+    url = ReflexURL(raw)
+    restored_url = pickle.loads(pickle.dumps(url))
+    assert type(restored_url) is ReflexURL
+    assert str(restored_url) == raw
+    for component in components:
+        assert getattr(restored_url, component) == getattr(url, component)
+    assert dict(restored_url.query_parameters) == dict(url.query_parameters)
+
+    data = URLData.from_url(url)
+    restored_data = pickle.loads(pickle.dumps(data))
+    assert restored_data == data
+    # The runtime href must still be a ReflexURL, or backend component access
+    # through `self.router.url` breaks after a state is loaded from the store.
+    assert isinstance(restored_data.href, ReflexURL)
+
+
+def test_pickling_a_url_does_not_store_its_derived_components():
+    """The persisted form must carry the URL once, not every parsed piece.
+
+    `URLData` is the storage form of a router var, so it is pickled on every
+    state write. Storing the seven derived components alongside `href` wrote
+    the URL into the state store eight times over.
+    """
+    import pickle
+
+    from reflex.istate.data import URLData
+
+    blob = pickle.dumps(URLData.from_url(ReflexURL(SAMPLE_URL)))
+    # Every component is derivable from the href, so the href is the only
+    # occurrence of the URL text in the payload.
+    assert blob.count(b"example.com") == 1
+    assert b"query_parameters" not in blob

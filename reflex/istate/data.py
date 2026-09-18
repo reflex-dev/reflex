@@ -1,7 +1,7 @@
 """This module contains the dataclasses representing the router object."""
 
 import dataclasses
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, Final, NoReturn
 from urllib.parse import _NetlocResultMixinStr, parse_qsl, urlsplit
@@ -189,6 +189,19 @@ class ReflexURL(str, _NetlocResultMixinStr):
         """
         msg = f"cannot delete {name!r}: ReflexURL is immutable"
         raise AttributeError(msg)
+
+    def __reduce__(self) -> tuple[type["ReflexURL"], tuple[str]]:
+        """Persist only the URL itself, re-splitting it on the way back in.
+
+        Every parsed component is derived from the string by ``__new__``, so
+        pickling them as well writes the URL into the state store several times
+        over. Reconstructing costs one ``urlsplit`` and is cheaper than reading
+        the components back.
+
+        Returns:
+            The callable and argument that rebuild this URL.
+        """
+        return (type(self), (str.__str__(self),))
 
 
 @serializer(to=dict)
@@ -430,6 +443,11 @@ def _url_from_router_data(router_data: dict) -> ReflexURL:
     )
 
 
+# The parsed empty URL, shared as every URLData default: it is immutable, so
+# one instance can back every state that has not navigated yet.
+_EMPTY_URL: Final = ReflexURL("")
+
+
 @dataclasses.dataclass(frozen=True)
 class URLData:
     """The parsed components of the current page URL.
@@ -440,19 +458,20 @@ class URLData:
     receives the parsed component dict.
     """
 
-    scheme: str = ""
-    netloc: str = ""
-    origin: str = ""
-    path: str = ""
-    query: str = ""
-    query_parameters: Mapping[str, str] = dataclasses.field(
-        default_factory=_FrozenDictStrStr
-    )
-    fragment: str = ""
+    # Every default is read off the empty URL rather than written out here, so
+    # `URLData()` is exactly `URLData.from_url(ReflexURL(""))`. Spelled out by
+    # hand they drifted: `ReflexURL("").origin` is "://", not "".
+    scheme: str = _EMPTY_URL.scheme
+    netloc: str = _EMPTY_URL.netloc
+    origin: str = _EMPTY_URL.origin
+    path: str = _EMPTY_URL.path
+    query: str = _EMPTY_URL.query
+    query_parameters: Mapping[str, str] = _EMPTY_URL.query_parameters
+    fragment: str = _EMPTY_URL.fragment
     # Annotated str so the frontend var for this field renders the raw href
     # string, but always holds a ReflexURL at runtime so the backend keeps
     # parsed-component access without re-splitting the URL.
-    href: str = ReflexURL("")
+    href: str = _EMPTY_URL
 
     @classmethod
     def from_url(cls, url: ReflexURL) -> "URLData":
@@ -486,6 +505,30 @@ class URLData:
             A URLData object for the page described by the router_data.
         """
         return cls.from_url(_url_from_router_data(router_data))
+
+    def __reduce__(self) -> tuple[Callable[[str], "URLData"], tuple[str]]:
+        """Persist only the href, deriving the components again on the way back.
+
+        Every other field is a parsed piece of ``href``, so storing them too
+        writes the URL into the state store eight times over. This is the
+        storage form of a router var, so it is pickled on every state write.
+
+        Returns:
+            The callable and argument that rebuild this URLData.
+        """
+        return (_url_data_from_href, (str.__str__(self.href),))
+
+
+def _url_data_from_href(href: str) -> URLData:
+    """Rebuild a URLData from the raw href alone.
+
+    Args:
+        href: the full URL string.
+
+    Returns:
+        A URLData with every component re-derived from the URL.
+    """
+    return URLData.from_url(ReflexURL(href))
 
 
 @serializer(to=dict)
