@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
 from reflex_build_sdk._base import path_segment
+from reflex_build_sdk._sync.resources.connections import Connections
 from reflex_build_sdk._sync.resources.databases import Database
 from reflex_build_sdk._sync.resources.environments import Environments
 from reflex_build_sdk._sync.resources.sign_in import SignIn
@@ -292,6 +293,8 @@ class Apps:
     database: Database
     # Sign an app's users in with their Reflex accounts.
     sign_in: SignIn
+    # Call third-party services an app is connected to.
+    connections: Connections
 
     def __init__(self, client: ReflexCloud) -> None:
         """Bind the resource to a client.
@@ -305,6 +308,7 @@ class Apps:
         self.environments = Environments(client)
         self.database = Database(client)
         self.sign_in = SignIn(client)
+        self.connections = Connections(client)
 
     def list(
         self, *, project_id: uuid.UUID | str | None = None

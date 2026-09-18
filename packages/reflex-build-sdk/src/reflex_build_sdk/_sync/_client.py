@@ -134,6 +134,7 @@ class ReflexCloud(BaseClient):
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
         idempotent: bool | None = None,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> T: ...
 
     @overload
@@ -148,6 +149,7 @@ class ReflexCloud(BaseClient):
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
         idempotent: bool | None = None,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> None: ...
 
     def _request(
@@ -161,6 +163,7 @@ class ReflexCloud(BaseClient):
         form: Mapping[str, str] | None = None,
         authenticated: bool = True,
         idempotent: bool | None = None,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> Any:
         """Send an API request, retrying transient failures that are safe to retry.
 
@@ -177,6 +180,7 @@ class ReflexCloud(BaseClient):
             idempotent: Whether repeating the request is harmless, which decides
                 whether it is retried after it may have reached the server. Defaults
                 to whether the method is idempotent.
+            extra_headers: Headers to send beside the ones every request carries.
 
         Returns:
             The decoded response body.
@@ -193,6 +197,7 @@ class ReflexCloud(BaseClient):
             json=json,
             form=form,
             authenticated=authenticated,
+            extra_headers=extra_headers,
         )
         attempt = 0
         while True:

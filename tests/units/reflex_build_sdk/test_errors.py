@@ -64,6 +64,21 @@ def test_status_error_type(status_code: int, error_type: type[APIStatusError]):
     assert error.request_id == "abc"
 
 
+def test_status_error_code_from_the_header():
+    # Deliberately different from the detail, so that reading the body instead of
+    # the header would fail this.
+    response = _response(
+        409,
+        json={"detail": "this app is not connected to that provider"},
+        headers={"x-reflex-error-code": "not_connected"},
+    )
+    assert status_error_from_response(response).code == "not_connected"
+
+
+def test_status_error_code_is_empty_when_unnamed():
+    assert status_error_from_response(_response(409)).code == ""
+
+
 def test_status_error_detail_from_json_object():
     response = _response(401, json={"detail": "Token not found or is inactive"})
     error = status_error_from_response(response)

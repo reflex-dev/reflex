@@ -119,12 +119,19 @@ class APIResponseValidationError(APIError):
         self.response = response
 
 
+# The header naming the condition a refusal reports, beside its prose ``detail``.
+REFUSAL_CODE_HEADER = "x-reflex-error-code"
+
+
 class APIStatusError(APIError):
     """The API responded with a 4xx or 5xx status code."""
 
     response: Response
     status_code: int
     detail: Any
+    # What the API called the refusal, e.g. ``"not_connected"``, or an empty string
+    # when it did not name one. More stable than ``detail``, which is prose.
+    code: str
 
     def __init__(self, message: str, *, response: Response, detail: Any) -> None:
         """Initialize the error.
@@ -139,6 +146,7 @@ class APIStatusError(APIError):
         self.response = response
         self.status_code = response.status_code
         self.detail = detail
+        self.code = response.headers.get(REFUSAL_CODE_HEADER, "")
 
 
 class BadRequestError(APIStatusError):

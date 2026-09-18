@@ -573,6 +573,70 @@
         "title": "Body_create_deployment_v1_deployments_post",
         "type": "object"
       },
+      "ConnectLinkResponse": {
+        "properties": {
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "ConnectLinkResponse",
+        "type": "object"
+      },
+      "ConnectionStatusResponse": {
+        "properties": {
+          "broker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Broker"
+          },
+          "connected": {
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "connected_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connected At"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "connected"
+        ],
+        "title": "ConnectionStatusResponse",
+        "type": "object"
+      },
       "CreateEnvironmentParams": {
         "description": "Params for adding an app environment to the pipeline.",
         "properties": {
@@ -772,6 +836,46 @@
           "name"
         ],
         "title": "CreateTokenRequest",
+        "type": "object"
+      },
+      "CredentialResponse": {
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "kind": {
+            "default": "oauth2",
+            "title": "Kind",
+            "type": "string"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "required": [
+          "access_token"
+        ],
+        "title": "CredentialResponse",
         "type": "object"
       },
       "CustomDomain": {
@@ -1322,6 +1426,7 @@
         "type": "object"
       },
       "GenerationResponse": {
+        "description": "Where a generation got to.\n\n``status`` is ``preparing`` / ``queued`` / ``running`` / ``pushing`` while\nthe run is live, then ``finished`` / ``failed`` / ``stopped``, or an\n``awaiting_*`` -- ``awaiting_question``, ``awaiting_permission``,\n``awaiting_plan``, ``awaiting_integration``, ``awaiting_env_vars`` -- for a\nrun the agent stopped to ask something.\n\nOnly ``awaiting_question`` is resolvable here, by creating another\ngeneration on the same ``thread_id`` with the answer as the prompt. A\nprompt sent at any other ``awaiting_`` returns the same status: the agent\nis instructed that a free-text reply is not a permission grant, and an\nintegration is connected rather than described.\n\nA plain string, not an enum: a worker one release ahead can send an\n``awaiting_`` this client has no name for, and it should read as a parked\nrun rather than fail to parse.",
         "properties": {
           "id": {
             "format": "uuid",
@@ -2904,6 +3009,10 @@
             ],
             "title": "Default Kubernetes Namespace"
           },
+          "grant_overridable": {
+            "title": "Grant Overridable",
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2912,6 +3021,17 @@
           "member_count": {
             "title": "Member Count",
             "type": "integer"
+          },
+          "merged_into_org_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merged Into Org Id"
           },
           "monthly_allowance": {
             "title": "Monthly Allowance",
@@ -2931,6 +3051,10 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "boolean"
           },
           "pilot": {
             "title": "Pilot",
@@ -2982,6 +3106,8 @@
           "creator_username",
           "admin_emails",
           "tier",
+          "paid",
+          "grant_overridable",
           "seats",
           "project_count",
           "member_count",
@@ -3020,6 +3146,11 @@
               }
             ],
             "title": "Monthly Usd Allowance"
+          },
+          "notify": {
+            "default": false,
+            "title": "Notify",
+            "type": "boolean"
           },
           "pilot": {
             "anyOf": [
@@ -3486,6 +3617,40 @@
           }
         },
         "title": "PromoteEnvironmentParams",
+        "type": "object"
+      },
+      "ProviderResponse": {
+        "properties": {
+          "broker": {
+            "title": "Broker",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "broker"
+        ],
+        "title": "ProviderResponse",
         "type": "object"
       },
       "QueryResultOrder": {
@@ -4117,6 +4282,24 @@
           "recommendation"
         ],
         "title": "SecurityViolation",
+        "type": "object"
+      },
+      "SessionBody": {
+        "description": "Where a browser flow should send the person afterwards, if anywhere.",
+        "properties": {
+          "return_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return To"
+          }
+        },
+        "title": "SessionBody",
         "type": "object"
       },
       "SetProjectNamespaceParams": {
@@ -8464,6 +8647,565 @@
         "summary": "Unblock App Auth User"
       }
     },
+    "/v1/apps/{app_id}/connections": {
+      "get": {
+        "description": "The accounts the app itself has connected, one per provider.\n\nApp-owned only: an end user's connection is theirs, made inside the\nrunning app, and the builder is not shown other people's accounts.",
+        "operationId": "get_app_connections_v1_apps__app_id__connections_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectionStatusResponse"
+                  },
+                  "title": "Response Get App Connections V1 Apps  App Id  Connections Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get App Connections"
+      }
+    },
+    "/v1/apps/{app_id}/connections/{provider}": {
+      "delete": {
+        "description": "Revoke the app's own connection to *provider*.\n\nThe owner is read ahead of the access check and bound into the revoke's\nread, as the authorize route binds its mint: a move landing between the\ntwo would otherwise have this request revoke the connection the new owner\nrecorded, on the strength of access the move has since revoked.",
+        "operationId": "disconnect_app_connection_v1_apps__app_id__connections__provider__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Disconnect App Connection V1 Apps  App Id  Connections  Provider  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disconnect App Connection"
+      }
+    },
+    "/v1/apps/{app_id}/connections/{provider}/authorize": {
+      "post": {
+        "description": "Where the builder goes to connect *provider* on the app's behalf.\n\nGated like a secret write: what comes back is a credential the app's code\nwill read, so connecting one is editing the app's secrets by another door.\nThe owner is read *before* the access check and handed to the mint as the\none the session may be made under: a move landing between the two would\notherwise tag the session with the new owner, on the strength of access\nthe move has since revoked.",
+        "operationId": "authorize_app_connection_v1_apps__app_id__connections__provider__authorize_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SessionBody"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectLinkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Authorize App Connection"
+      }
+    },
+    "/v1/apps/{app_id}/connections/{provider}/credential": {
+      "get": {
+        "description": "A live access token for this identity's connection.\n\nRead under the org the token resolved to, so a move landing inside this\nrequest does not hand the old owner's token the new owner's connection.",
+        "operationId": "read_connection_credential_v1_apps__app_id__connections__provider__credential_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-End-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-End-User"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Connection Credential"
+      }
+    },
+    "/v1/apps/{app_id}/connections/{provider}/disconnect": {
+      "post": {
+        "description": "Revoke one of the app's end users' connection to *provider*.\n\nAn end user's, never the app's own: that one is the builder's to revoke,\nthrough the route gated as a secret write.",
+        "operationId": "disconnect_connection_v1_apps__app_id__connections__provider__disconnect_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-End-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-End-User"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Disconnect Connection V1 Apps  App Id  Connections  Provider  Disconnect Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Disconnect Connection"
+      }
+    },
+    "/v1/apps/{app_id}/connections/{provider}/session": {
+      "post": {
+        "description": "Mint the link one of the app's end users authorizes through.\n\nAn end user, never the app itself: the subject is required, and the\nsession is bound to the org the token resolved under, so a move landing\nbetween that resolve and the mint refuses the session rather than tagging\nit with the new owner.",
+        "operationId": "create_connection_session_v1_apps__app_id__connections__provider__session_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-End-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-End-User"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SessionBody"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectLinkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Connection Session"
+      }
+    },
+    "/v1/apps/{app_id}/connections/{provider}/status": {
+      "get": {
+        "description": "Whether this identity has connected *provider*.\n\nFor a page deciding between a connect button and the feature behind it.",
+        "operationId": "read_connection_status_v1_apps__app_id__connections__provider__status_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-End-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-End-User"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-API-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Connection Status"
+      }
+    },
     "/v1/apps/{app_id}/custom_domain": {
       "get": {
         "operationId": "get_current_domain_v1_apps__app_id__custom_domain_get",
@@ -11837,6 +12579,131 @@
         "summary": "Get Cli Token"
       }
     },
+    "/v1/connections/providers": {
+      "get": {
+        "description": "Which providers this deployment can connect.",
+        "operationId": "get_connection_providers_v1_connections_providers_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProviderResponse"
+                  },
+                  "title": "Response Get Connection Providers V1 Connections Providers Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Connection Providers"
+      }
+    },
+    "/v1/connections/{broker}/callback": {
+      "get": {
+        "description": "A completion arriving from the broker named in the path.\n\nHanded over whole -- method, query, headers, raw body -- because only the\nbroker knows how to verify it: Nango signs its webhook over the raw bytes,\nand a hand-written OAuth flow carries its state in the query string.\nAnswered 2xx whatever the body turns out to describe, since a delivery this\ndeployment has no use for is not a failure and a webhook sender would\nredeliver it forever. A browser is redirected where the broker says.\n\nNot gated on the feature flag, unlike every route above: a session minted\nbefore the flag went off completes at the broker regardless, and a\ncompletion refused here is a live connection no row ever names. New\nsessions are what the flag withholds, through ``handles()``; a completion\nis recorded so the teardown can find it.",
+        "operationId": "complete_connection_v1_connections__broker__callback_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "broker",
+            "required": true,
+            "schema": {
+              "title": "Broker",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete Connection"
+      },
+      "post": {
+        "description": "A completion arriving from the broker named in the path.\n\nHanded over whole -- method, query, headers, raw body -- because only the\nbroker knows how to verify it: Nango signs its webhook over the raw bytes,\nand a hand-written OAuth flow carries its state in the query string.\nAnswered 2xx whatever the body turns out to describe, since a delivery this\ndeployment has no use for is not a failure and a webhook sender would\nredeliver it forever. A browser is redirected where the broker says.\n\nNot gated on the feature flag, unlike every route above: a session minted\nbefore the flag went off completes at the broker regardless, and a\ncompletion refused here is a live connection no row ever names. New\nsessions are what the flag withholds, through ``handles()``; a completion\nis recorded so the teardown can find it.",
+        "operationId": "complete_connection_v1_connections__broker__callback_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "broker",
+            "required": true,
+            "schema": {
+              "title": "Broker",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete Connection"
+      }
+    },
     "/v1/deployments": {
       "post": {
         "description": "Accept a built app and hand it to the deployment pipeline.\n\nThe archives are already in the bucket, uploaded through\n``/deployments/reserve``; what arrives here is their id. ``stored_build_id``\nis optional in this signature so that a caller that omits it is refused by\nthe version gate below, which names the upgrade, rather than by FastAPI\nwith a validation report the CLI renders as an internal error.",
@@ -11893,7 +12760,7 @@
     },
     "/v1/deployments/regions": {
       "get": {
-        "description": "Endpoint to get the list of regions.",
+        "description": "The regions a deploy may name -- what `reflex cloud regions` prints.\n\nA retired region is filtered out rather than offered and then refused at\nsubmit time. The rows themselves stay: a machine already in one resolves its\nregion through them.",
         "operationId": "get_regions_public_v1_deployments_regions_get",
         "responses": {
           "200": {

@@ -9,6 +9,7 @@ from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn
 
+from reflex_build_sdk._async.resources.connections import AsyncConnections
 from reflex_build_sdk._async.resources.databases import AsyncDatabase
 from reflex_build_sdk._async.resources.environments import AsyncEnvironments
 from reflex_build_sdk._async.resources.sign_in import AsyncSignIn
@@ -291,6 +292,8 @@ class AsyncApps:
     database: AsyncDatabase
     # Sign an app's users in with their Reflex accounts.
     sign_in: AsyncSignIn
+    # Call third-party services an app is connected to.
+    connections: AsyncConnections
 
     def __init__(self, client: AsyncReflexCloud) -> None:
         """Bind the resource to a client.
@@ -304,6 +307,7 @@ class AsyncApps:
         self.environments = AsyncEnvironments(client)
         self.database = AsyncDatabase(client)
         self.sign_in = AsyncSignIn(client)
+        self.connections = AsyncConnections(client)
 
     async def list(
         self, *, project_id: uuid.UUID | str | None = None
