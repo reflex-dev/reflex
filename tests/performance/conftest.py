@@ -2,6 +2,7 @@
 
 from collections.abc import Generator
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -63,7 +64,7 @@ def performance_output(request: pytest.FixtureRequest) -> Path:
     Returns:
         Artifact directory.
     """
-    output = Path(request.config.getoption("--performance-output")).resolve()
+    output = Path(cast(str, request.config.getoption("--performance-output"))).resolve()
     output.mkdir(parents=True, exist_ok=True)
     return output
 
@@ -99,4 +100,4 @@ def performance_scale(request: pytest.FixtureRequest) -> str:
     Returns:
         ``smoke`` or ``release``.
     """
-    return request.config.getoption("--performance-scale")
+    return cast(str, request.config.getoption("--performance-scale"))

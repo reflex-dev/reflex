@@ -22,7 +22,7 @@ from tests.benchmarks.support.states import initialized_state
 
 def _compile_workload() -> None:
     """Build and compile a representative component tree."""
-    assert compiler._compile_page(_complicated_page())
+    assert compiler._compile_page(_complicated_page(), route="index")
 
 
 def _state_delta_workload() -> None:

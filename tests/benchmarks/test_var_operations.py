@@ -519,6 +519,8 @@ def test_evaluate_var_heavy_page(benchmark: BenchmarkFixture):
         benchmark: The codspeed benchmark fixture.
     """
     benchmark(_var_heavy_page)
+
+
 def test_var_arithmetic_chain(benchmark: BenchmarkFixture):
     """Benchmark construction of a representative arithmetic expression.
 

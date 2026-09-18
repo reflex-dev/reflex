@@ -25,7 +25,7 @@ class EventLoopProbe:
 
     @property
     def peak_tasks(self) -> int:
-        """Return the largest observed live-task count.
+        """The largest observed live-task count.
 
         Returns:
             Peak live tasks.
