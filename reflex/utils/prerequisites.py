@@ -189,7 +189,7 @@ def get_or_set_last_reflex_version_check_datetime(
 
     path_ops.update_json_file(
         reflex_json_file,
-        {_version_check_timestamp_key(package_name, attempt=True): str(now)},
+        {_version_check_timestamp_key(package_name, attempt=True): now.isoformat()},
     )
     return None
 

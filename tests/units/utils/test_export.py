@@ -136,7 +136,6 @@ def test_export_no_zip_emits_only_compile_and_build_durations(patched_export):
     [
         (True, True, ["get_compiled_app", "setup_frontend", "build", "zip_app"]),
         (True, False, ["get_compiled_app", "setup_frontend", "build"]),
-        (False, True, ["zip_app"]),
     ],
 )
 def test_export_holds_frontend_lock_through_packaging(
@@ -167,6 +166,13 @@ def test_export_holds_frontend_lock_through_packaging(
     lock.assert_called_once_with(export.prerequisites.get_web_dir())
     context.__exit__.assert_called_once_with(None, None, None)
     assert config._set_persistent.call_count == 2
+
+
+def test_backend_only_export_does_not_lock_frontend(patched_export):
+    """A backend-only export does not create or lock a frontend workspace."""
+    export.export(frontend=False)
+
+    patched_export["frontend_build_lock"].assert_not_called()
 
 
 @pytest.mark.parametrize(

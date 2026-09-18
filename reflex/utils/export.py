@@ -3,7 +3,7 @@
 import logging
 import time
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 from reflex_base import constants
@@ -63,7 +63,11 @@ def export(
             phase_durations[name] = time.monotonic() - t0
 
     try:
-        with build_cache.frontend_build_lock(prerequisites.get_web_dir()):
+        with (
+            build_cache.frontend_build_lock(prerequisites.get_web_dir())
+            if frontend
+            else nullcontext()
+        ):
             # Set env mode in the environment.
             environment.REFLEX_ENV_MODE.set(env)
 

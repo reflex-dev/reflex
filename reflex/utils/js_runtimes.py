@@ -469,6 +469,73 @@ def _is_bun_package_manager(package_manager: str) -> bool:
     return Path(package_manager).stem.lower() == "bun"
 
 
+def _verified_installed_version(
+    name: str, declaration: str, entry: object
+) -> str | None:
+    """Return a verified installed version for one npm caret declaration.
+
+    Args:
+        name: The package name.
+        declaration: The version declared in the package manifest.
+        entry: The package-lock entry for the installed package.
+
+    Returns:
+        The installed version when its lock and package metadata both match.
+    """
+    if (
+        not isinstance(entry, dict)
+        or entry.get("link")
+        or entry.get("name", name) != name
+    ):
+        return None
+    installed_version = entry.get("version")
+    if not isinstance(installed_version, str) or declaration != f"^{installed_version}":
+        return None
+    resolved = entry.get("resolved")
+    if isinstance(resolved, str) and resolved.startswith((
+        "file:",
+        "link:",
+        "workspace:",
+    )):
+        return None
+    package_dir = get_web_dir() / "node_modules" / name
+    if package_dir.is_symlink():
+        return None
+    try:
+        package = json.loads((package_dir / "package.json").read_text())
+    except (OSError, ValueError):
+        return None
+    if (
+        isinstance(package, dict)
+        and package.get("name") == name
+        and package.get("version") == installed_version
+    ):
+        return installed_version
+    return None
+
+
+def _npm_lock_package_data() -> tuple[dict, dict] | None:
+    """Read the root and package metadata from a supported npm lockfile.
+
+    Returns:
+        The root package declarations and installed package metadata, if usable.
+    """
+    try:
+        lock = json.loads(
+            frontend_skeleton.get_web_lockfile_path(
+                constants.Node.LOCKFILE_PATH
+            ).read_text()
+        )
+    except (OSError, ValueError):
+        return None
+    if not isinstance(lock, dict) or lock.get("lockfileVersion") not in (2, 3):
+        return None
+    packages = lock.get("packages")
+    if not isinstance(packages, dict) or not isinstance(root := packages.get(""), dict):
+        return None
+    return root, packages
+
+
 def _npm_installed_package_sections(
     declared_deps: dict[str, str], declared_dev_deps: dict[str, str]
 ) -> tuple[dict[str, str], dict[str, str]]:
@@ -482,19 +549,9 @@ def _npm_installed_package_sections(
         Dependency sections with verified caret declarations replaced by their
         exact installed versions. Unverified declarations remain unchanged.
     """
-    try:
-        lock = json.loads(
-            frontend_skeleton.get_web_lockfile_path(
-                constants.Node.LOCKFILE_PATH
-            ).read_text()
-        )
-    except (OSError, ValueError):
+    if (lock_data := _npm_lock_package_data()) is None:
         return declared_deps, declared_dev_deps
-    if not isinstance(lock, dict) or lock.get("lockfileVersion") not in (2, 3):
-        return declared_deps, declared_dev_deps
-    packages = lock.get("packages")
-    if not isinstance(packages, dict) or not isinstance(root := packages.get(""), dict):
-        return declared_deps, declared_dev_deps
+    root, packages = lock_data
 
     installed_deps, installed_dev_deps = dict(declared_deps), dict(declared_dev_deps)
     for section, declared, installed in (
@@ -505,40 +562,10 @@ def _npm_installed_package_sections(
         if not isinstance(root_declarations, dict):
             continue
         for name, declaration in declared.items():
-            entry = packages.get(f"node_modules/{name}")
-            if (
-                not isinstance(entry, dict)
-                or entry.get("link")
-                or entry.get("name", name) != name
-                or root_declarations.get(name) != declaration
-            ):
+            if root_declarations.get(name) != declaration:
                 continue
-            installed_version = entry.get("version")
-            if (
-                not isinstance(installed_version, str)
-                or declaration != f"^{installed_version}"
-            ):
-                continue
-            resolved = entry.get("resolved")
-            if isinstance(resolved, str) and resolved.startswith((
-                "file:",
-                "link:",
-                "workspace:",
-            )):
-                continue
-            package_dir = get_web_dir() / "node_modules" / name
-            if package_dir.is_symlink():
-                continue
-            # npm can ignore package-lock.json (package-lock=false or shrinkwrap).
-            # Check the installed package too so a stale lock cannot hide an upgrade.
-            try:
-                package = json.loads((package_dir / "package.json").read_text())
-            except (OSError, ValueError):
-                continue
-            if (
-                isinstance(package, dict)
-                and package.get("name") == name
-                and package.get("version") == installed_version
+            if installed_version := _verified_installed_version(
+                name, declaration, packages.get(f"node_modules/{name}")
             ):
                 installed[name] = installed_version
     return installed_deps, installed_dev_deps

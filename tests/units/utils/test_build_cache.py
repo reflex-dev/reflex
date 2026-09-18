@@ -238,13 +238,22 @@ def test_disabled_cache_forces_and_refreshes_build(cached_build, monkeypatch):
     assert process.call_count == 3
 
 
-def test_environment_change_rebuilds(cached_build, monkeypatch):
-    """Build hooks may observe arbitrary environment values."""
+def test_build_environment_change_rebuilds(cached_build, monkeypatch):
+    """A Vite environment value invalidates the build cache."""
     _, _, process = cached_build
     build.build()
-    monkeypatch.setenv("CUSTOM_BUILD_VALUE", "new")
+    monkeypatch.setenv("VITE_CUSTOM_BUILD_VALUE", "new")
     build.build()
     assert process.call_count == 2
+
+
+def test_non_build_environment_change_reuses_cache(cached_build, monkeypatch):
+    """Unrelated shell state does not invalidate a deterministic frontend build."""
+    _, _, process = cached_build
+    build.build()
+    monkeypatch.setenv("SHLVL", "999")
+    build.build()
+    assert process.call_count == 1
 
 
 def test_failed_build_is_retried(cached_build):

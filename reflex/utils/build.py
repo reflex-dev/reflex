@@ -41,6 +41,41 @@ def set_env_json():
     )
 
 
+def _zip_compress_type(component_name: constants.ComponentName, file: Path) -> int:
+    """Select compression suitable for one archive entry.
+
+    Args:
+        component_name: The archive being created.
+        file: The source file being archived.
+
+    Returns:
+        The ZIP compression type for the file.
+    """
+    if component_name == constants.ComponentName.FRONTEND and file.suffix in {
+        ".gz",
+        ".br",
+        ".zst",
+    }:
+        return zipfile.ZIP_STORED
+    return zipfile.ZIP_DEFLATED
+
+
+def _is_excluded_archive_path(
+    path: Path, excluded_file_ids: set[tuple[int, int]]
+) -> bool:
+    """Check whether an archive path has an excluded file identity.
+
+    Args:
+        path: The path being considered for the archive.
+        excluded_file_ids: Device and inode pairs that must be excluded.
+
+    Returns:
+        Whether the path refers to an excluded file or directory.
+    """
+    stat = path.stat()
+    return (stat.st_dev, stat.st_ino) in excluded_file_ids
+
+
 def _zip(
     *,
     component_name: constants.ComponentName,
@@ -75,20 +110,6 @@ def _zip(
             stat = excluded_file.stat()
             excluded_file_ids.add((stat.st_dev, stat.st_ino))
 
-    def is_excluded(path: Path) -> bool:
-        """Check file identity without repeatedly statting every excluded path.
-
-        Args:
-            path: The file or directory to check.
-
-        Returns:
-            Whether the path refers to an excluded file or directory.
-        """
-        if not excluded_file_ids:
-            return False
-        stat = path.stat()
-        return (stat.st_dev, stat.st_ino) in excluded_file_ids
-
     files_to_zip: list[Path] = []
     # Traverse the root directory in a top-down manner. In this traversal order,
     # we can modify the dirs list in-place to remove directories we don't want to include.
@@ -101,7 +122,12 @@ def _zip(
             subdirectory_name
             for subdirectory_name in subdirectories_names
             if subdirectory_name not in directory_names_to_exclude
-            and not is_excluded(directory_path / subdirectory_name)
+            and (
+                not excluded_file_ids
+                or not _is_excluded_archive_path(
+                    directory_path / subdirectory_name, excluded_file_ids
+                )
+            )
             and not subdirectory_name.startswith(".")
             and (
                 not exclude_venv_directories
@@ -118,7 +144,10 @@ def _zip(
         files_to_zip += [
             directory_path / subfile_name
             for subfile_name in subfiles_names
-            if not is_excluded(directory_path / subfile_name)
+            if not excluded_file_ids
+            or not _is_excluded_archive_path(
+                directory_path / subfile_name, excluded_file_ids
+            )
         ]
     if globs_to_include:
         for glob in globs_to_include:
@@ -137,15 +166,10 @@ def _zip(
         for file in files_to_zip:
             logger.debug(f"{target}: {file}", extra={"progress": progress})
             progress.advance(task)
-            # Sidecars are already compressed for serving the frontend.
-            compress_type = (
-                zipfile.ZIP_STORED
-                if component_name == constants.ComponentName.FRONTEND
-                and file.suffix in {".gz", ".br", ".zst"}
-                else zipfile.ZIP_DEFLATED
-            )
             zipf.write(
-                file, file.relative_to(root_directory), compress_type=compress_type
+                file,
+                file.relative_to(root_directory),
+                compress_type=_zip_compress_type(component_name, file),
             )
 
 

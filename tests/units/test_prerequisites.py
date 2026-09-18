@@ -396,7 +396,7 @@ def test_check_latest_package_version_refreshes_stale_or_invalid_timestamp(
     assert json.loads(reflex_json.read_text()) == {
         "project_hash": "test-project",
         "last_version_check_datetime": "2026-09-06T12:00:00+00:00",
-        "last_version_check_attempt_datetime": "2026-09-06 12:00:00+00:00",
+        "last_version_check_attempt_datetime": "2026-09-06T12:00:00+00:00",
     }
     assert sum(record.levelno == logging.WARNING for record in caplog.records) == 1
 

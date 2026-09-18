@@ -13,9 +13,10 @@ import sys
 import tempfile
 import threading
 import time
-from collections.abc import Iterator, Sequence
+from collections.abc import Buffer, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Protocol
 
 from reflex_base import constants
 from reflex_base.environment import environment
@@ -43,8 +44,17 @@ _VERSION_CHECK_PREFIXES = (
     "last_version_check_datetime_",
     "last_version_check_attempt_datetime_",
 )
+_BUILD_ENVIRONMENT_PREFIXES = ("BUN_", "NODE_", "NPM_CONFIG_", "REFLEX_", "VITE_")
+_IGNORED_BUILD_ENVIRONMENT_KEYS = {"REFLEX_LOGLEVEL"}
 _lock_state = threading.local()
 _lock_descriptors: set[int] = set()
+
+
+class _Digest(Protocol):
+    """Protocol for the portion of a hash object used by cache fingerprints."""
+
+    def update(self, data: Buffer, /) -> None:
+        """Add data to the digest."""
 
 
 def _reset_build_locks_after_fork() -> None:
@@ -175,6 +185,122 @@ def _remove_cache_entry(path: Path) -> None:
         shutil.rmtree(path)
 
 
+def _digest_symlink(digest: _Digest, root: Path, path: Path, *, inputs: bool) -> None:
+    """Hash a tracked symlink and validate its resolved target.
+
+    Args:
+        digest: The digest receiving the symlink identity.
+        root: The root of the tracked tree.
+        path: The symlink path.
+        inputs: Whether this is the frontend input tree.
+
+    Raises:
+        ValueError: The link loops, leaves the tree, or reaches generated output.
+    """
+    try:
+        target = path.resolve(strict=True)
+    except RuntimeError as error:
+        msg = "Build input contains a symlink loop"
+        raise ValueError(msg) from error
+    if not inputs or not target.is_relative_to(root):
+        msg = "Build cache cannot track an external symlink"
+        raise ValueError(msg)
+    target_relative = target.relative_to(root)
+    if _is_generated(target_relative):
+        msg = "Build input links to an untracked generated directory"
+        raise ValueError(msg)
+    digest.update(
+        json.dumps([str(path.readlink()), target_relative.as_posix()]).encode()
+    )
+
+
+def _digest_regular_file(
+    digest: _Digest, path: Path, relative: Path, info: os.stat_result, *, inputs: bool
+) -> None:
+    """Hash a file's content or installed-dependency metadata.
+
+    Args:
+        digest: The digest receiving file metadata.
+        path: The file path.
+        relative: The path relative to the tracked tree.
+        info: The file status metadata.
+        inputs: Whether this is the frontend input tree.
+
+    Raises:
+        ValueError: Frontend metadata is not a JSON object.
+    """
+    if inputs and relative.parts[0] == "node_modules":
+        digest.update(
+            json.dumps([
+                info.st_dev,
+                info.st_ino,
+                info.st_size,
+                info.st_mtime_ns,
+                info.st_ctime_ns,
+            ]).encode()
+        )
+        return
+    if inputs and relative.as_posix() == constants.Reflex.JSON:
+        metadata = json.loads(path.read_text())
+        if not isinstance(metadata, dict):
+            msg = "Frontend metadata must be an object"
+            raise ValueError(msg)
+        digest.update(
+            json.dumps(
+                {
+                    key: value
+                    for key, value in metadata.items()
+                    if key not in _TELEMETRY_FIELDS
+                    and not key.startswith(_VERSION_CHECK_PREFIXES)
+                },
+                sort_keys=True,
+            ).encode()
+        )
+        return
+    content_digest = hashlib.sha256()
+    with path.open("rb") as source:
+        while chunk := source.read(1024 * 1024):
+            content_digest.update(chunk)
+    digest.update(content_digest.digest())
+
+
+def _digest_entry(
+    digest: _Digest,
+    root: Path,
+    path: Path,
+    relative: Path,
+    info: os.stat_result,
+    *,
+    inputs: bool,
+) -> Path | None:
+    """Hash one tree entry and return a directory that should be visited.
+
+    Args:
+        digest: The digest receiving entry data.
+        root: The root of the tracked tree.
+        path: The entry path.
+        relative: The path relative to the tracked tree.
+        info: The entry status metadata.
+        inputs: Whether this is the frontend input tree.
+
+    Returns:
+        A physical child directory to visit, if applicable.
+
+    Raises:
+        ValueError: The entry is unsupported or cannot be safely tracked.
+    """
+    if stat.S_ISLNK(info.st_mode):
+        _digest_symlink(digest, root, path, inputs=inputs)
+        return None
+    if stat.S_ISDIR(info.st_mode):
+        return path
+    if stat.S_ISREG(info.st_mode):
+        _digest_regular_file(digest, path, relative, info, inputs=inputs)
+        return None
+    msg = "Build cache only supports regular files and directories"
+    raise ValueError(msg)
+
+
 def _tree_digest(root: Path, *, inputs: bool = False) -> str:
     """Hash tracked tree entries, using change metadata for installed dependencies.
 
@@ -209,71 +335,28 @@ def _tree_digest(root: Path, *, inputs: bool = False) -> str:
                 continue
             info = entry.stat(follow_symlinks=False)
             digest.update(json.dumps([relative.as_posix(), info.st_mode]).encode())
-            if stat.S_ISLNK(info.st_mode):
-                try:
-                    target = path.resolve(strict=True)
-                except RuntimeError as error:
-                    # Python 3.10-3.12 report symlink loops as RuntimeError.
-                    msg = "Build input contains a symlink loop"
-                    raise ValueError(msg) from error
-                if not inputs or not target.is_relative_to(root):
-                    msg = "Build cache cannot track an external symlink"
-                    raise ValueError(msg)
-                target_relative = target.relative_to(root)
-                if _is_generated(target_relative):
-                    msg = "Build input links to an untracked generated directory"
-                    raise ValueError(msg)
-                # An intermediate link outside the tree can redirect to another
-                # tracked file without changing this link or either file.
-                digest.update(
-                    json.dumps([
-                        str(path.readlink()),
-                        target_relative.as_posix(),
-                    ]).encode()
-                )
-            elif stat.S_ISDIR(info.st_mode):
-                visit(path)
-            elif stat.S_ISREG(info.st_mode):
-                if inputs and relative.parts[0] == "node_modules":
-                    # ctime detects edits even when size and mtime are restored.
-                    digest.update(
-                        json.dumps([
-                            info.st_dev,
-                            info.st_ino,
-                            info.st_size,
-                            info.st_mtime_ns,
-                            info.st_ctime_ns,
-                        ]).encode()
-                    )
-                elif inputs and relative.as_posix() == constants.Reflex.JSON:
-                    metadata = json.loads(path.read_text())
-                    if not isinstance(metadata, dict):
-                        msg = "Frontend metadata must be an object"
-                        raise ValueError(msg)
-                    digest.update(
-                        json.dumps(
-                            {
-                                key: value
-                                for key, value in metadata.items()
-                                if key not in _TELEMETRY_FIELDS
-                                and not key.startswith(_VERSION_CHECK_PREFIXES)
-                            },
-                            sort_keys=True,
-                        ).encode()
-                    )
-                else:
-                    content_digest = hashlib.sha256()
-                    with path.open("rb") as source:
-                        while chunk := source.read(1024 * 1024):
-                            content_digest.update(chunk)
-                    digest.update(content_digest.digest())
-            else:
-                msg = "Build cache only supports regular files and directories"
-                raise ValueError(msg)
+            if child_directory := _digest_entry(
+                digest, root, path, relative, info, inputs=inputs
+            ):
+                visit(child_directory)
             digest.update(b"\0")
 
     visit(root)
     return digest.hexdigest()
+
+
+def _build_environment() -> list[tuple[str, str]]:
+    """Return environment values that can affect a Vite production build.
+
+    Returns:
+        Sorted build-relevant environment key-value pairs.
+    """
+    return sorted(
+        (key, value)
+        for key, value in os.environ.items()
+        if (key == "PATH" or key.startswith(_BUILD_ENVIRONMENT_PREFIXES))
+        and key not in _IGNORED_BUILD_ENVIRONMENT_KEYS
+    )
 
 
 def _input_digest(web_dir: Path, command: Sequence[str | Path]) -> str:
@@ -309,12 +392,12 @@ def _input_digest(web_dir: Path, command: Sequence[str | Path]) -> str:
             info.st_ctime_ns,
         ))
     payload = [
-        2,  # Discard snapshots created before production workspace locking.
+        3,  # Discard snapshots created before build-environment filtering.
         str(web_dir),
         constants.Reflex.VERSION,
         [str(arg) for arg in command],
         runtimes,
-        sorted(os.environ.items()),
+        _build_environment(),
         _tree_digest(web_dir, inputs=True),
     ]
     return hashlib.sha256(json.dumps(payload).encode()).hexdigest()
