@@ -65,9 +65,11 @@ def test_status_error_type(status_code: int, error_type: type[APIStatusError]):
 
 
 def test_status_error_code_from_the_header():
+    # Deliberately different from the detail, so that reading the body instead of
+    # the header would fail this.
     response = _response(
         409,
-        json={"detail": "not_connected"},
+        json={"detail": "this app is not connected to that provider"},
         headers={"x-reflex-error-code": "not_connected"},
     )
     assert status_error_from_response(response).code == "not_connected"

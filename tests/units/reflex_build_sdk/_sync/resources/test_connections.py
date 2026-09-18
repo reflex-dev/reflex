@@ -136,6 +136,17 @@ def test_credential(
 ):
     mock_api.add("GET", f"{PROVIDER_PATH}/credential", reply(200, json=body))
     assert client.apps.connections.credential(APP_ID, "openai") == credential
+    assert "X-End-User" not in mock_api.requests[0].headers
+
+
+def test_credential_for_a_user(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "GET",
+        f"{PROVIDER_PATH}/credential",
+        reply(200, json={"access_token": "sk-live"}),
+    )
+    client.apps.connections.credential(APP_ID, "openai", end_user=END_USER)
+    assert mock_api.requests[0].headers["X-End-User"] == END_USER
 
 
 def test_credential_keeps_the_token_out_of_its_repr(
