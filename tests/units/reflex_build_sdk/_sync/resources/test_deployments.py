@@ -13,7 +13,7 @@ from reflex_build_sdk import (
     DeploymentFailedError,
     DeploymentTimeoutError,
     PermissionDeniedError,
-    ReflexCloud,
+    ReflexBuild,
 )
 from reflex_build_sdk.transports import Request, Response, TransportError
 from reflex_build_sdk.types import DeploymentReport, MachineSize, Region
@@ -42,7 +42,7 @@ PENDING_REPORT = {
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -51,7 +51,7 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
@@ -92,7 +92,7 @@ def _add_storage(mock_api: MockAPI, deployment_id: str, *handlers) -> None:
         mock_api.add("PUT", f"/{deployment_id}/{archive}", *(handlers or (reply(200),)))
 
 
-def test_create(client: ReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]):
+def test_create(client: ReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]):
     mock_api.add(
         "POST", "/api/v1/deployments/reserve", reply(200, json=_reservation(FIRST_ID))
     )
@@ -158,7 +158,7 @@ def test_create(client: ReflexCloud, mock_api: MockAPI, archives: tuple[Path, Pa
     [{"cpu": 2.0}, {"ram_mb": 4096}, {"vm_type": "c2m4", "cpu": 2.0, "ram_mb": 4096}],
 )
 def test_create_checks_sizing_before_uploading(
-    client: ReflexCloud,
+    client: ReflexBuild,
     mock_api: MockAPI,
     archives: tuple[Path, Path],
     sizing: dict,
@@ -178,7 +178,7 @@ def test_create_uploads_with_the_client_timeout(
     _add_storage(mock_api, FIRST_ID)
     mock_api.add("POST", "/api/v1/deployments", reply(201, json=FIRST_ID))
     backend, frontend = archives
-    with ReflexCloud(
+    with ReflexBuild(
         token="test-token", transport=MockTransport(mock_api), timeout=7.0
     ) as client:
         client.deployments.create(APP_ID, backend=backend, frontend=frontend)
@@ -188,7 +188,7 @@ def test_create_uploads_with_the_client_timeout(
 
 
 def test_create_reserves_again_when_upload_urls_expire(
-    client: ReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]
+    client: ReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]
 ):
     mock_api.add(
         "POST",
@@ -214,7 +214,7 @@ def test_create_reserves_again_when_upload_urls_expire(
 
 
 def test_create_gives_up_when_upload_urls_keep_expiring(
-    client: ReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]
+    client: ReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]
 ):
     mock_api.add(
         "POST",
@@ -232,7 +232,7 @@ def test_create_gives_up_when_upload_urls_keep_expiring(
 
 
 def test_create_does_not_retry_a_refused_reservation(
-    client: ReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]
+    client: ReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]
 ):
     mock_api.add(
         "POST",
@@ -247,7 +247,7 @@ def test_create_does_not_retry_a_refused_reservation(
 
 
 def test_create_upload_connection_error(
-    client: ReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]
+    client: ReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]
 ):
     def drop(request: Request) -> Response:
         msg = "connection reset"
@@ -297,7 +297,7 @@ def test_create_upload_connection_error(
         ),
     ],
 )
-def test_check(client: ReflexCloud, mock_api: MockAPI, kwargs: dict, query: dict):
+def test_check(client: ReflexBuild, mock_api: MockAPI, kwargs: dict, query: dict):
     project_id = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
     mock_api.add("GET", "/api/v1/deployments/validate_cli", reply(200, json=None))
     client.deployments.check(
@@ -308,14 +308,14 @@ def test_check(client: ReflexCloud, mock_api: MockAPI, kwargs: dict, query: dict
     assert sent == {"app_id": [APP_ID], "project_id": [project_id], **query}
 
 
-def test_status(client: ReflexCloud, mock_api: MockAPI):
+def test_status(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET", f"{DEPLOYMENT_PATH}/status", reply(200, json="pending worker...")
     )
     assert client.deployments.status(FIRST_ID) == "pending worker..."
 
 
-def test_report(client: ReflexCloud, mock_api: MockAPI):
+def test_report(client: ReflexBuild, mock_api: MockAPI):
     body = {
         "status": "Failed",
         "code": "build_failed",
@@ -329,7 +329,7 @@ def test_report(client: ReflexCloud, mock_api: MockAPI):
     assert client.deployments.report(FIRST_ID) == DeploymentReport(**body)
 
 
-def test_build_logs(client: ReflexCloud, mock_api: MockAPI):
+def test_build_logs(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{DEPLOYMENT_PATH}/build/logs", reply(200, json="step 1\n"))
     assert client.deployments.build_logs(FIRST_ID) == "step 1\n"
 
@@ -353,7 +353,7 @@ def _reports(mock_api: MockAPI, *statuses: str, **fields) -> None:
     )
 
 
-def test_wait_until_live(client: ReflexCloud, mock_api: MockAPI):
+def test_wait_until_live(client: ReflexBuild, mock_api: MockAPI):
     _statuses(
         mock_api,
         "pending worker...",
@@ -374,7 +374,7 @@ def test_wait_until_live(client: ReflexCloud, mock_api: MockAPI):
     ]
 
 
-def test_wait_raises_on_failure(client: ReflexCloud, mock_api: MockAPI):
+def test_wait_raises_on_failure(client: ReflexBuild, mock_api: MockAPI):
     _statuses(
         mock_api,
         f"failed: build error | run reflex cloud apps build-logs {FIRST_ID} for logs",
@@ -396,7 +396,7 @@ def test_wait_raises_on_failure(client: ReflexCloud, mock_api: MockAPI):
 
 @pytest.mark.parametrize("message", ["Rejected", "cancelled", "Deployment error: boom"])
 def test_wait_raises_on_messages_ending_a_deployment(
-    client: ReflexCloud, mock_api: MockAPI, message: str
+    client: ReflexBuild, mock_api: MockAPI, message: str
 ):
     _statuses(mock_api, message)
     _reports(mock_api, "Rejected")
@@ -404,7 +404,7 @@ def test_wait_raises_on_messages_ending_a_deployment(
         client.deployments.wait(FIRST_ID, poll_interval=0)
 
 
-def test_wait_returns_when_awaiting_approval(client: ReflexCloud, mock_api: MockAPI):
+def test_wait_returns_when_awaiting_approval(client: ReflexBuild, mock_api: MockAPI):
     _statuses(mock_api, "AwaitingApproval")
     _reports(mock_api, "AwaitingApproval")
     report = client.deployments.wait(FIRST_ID, poll_interval=0)
@@ -412,7 +412,7 @@ def test_wait_returns_when_awaiting_approval(client: ReflexCloud, mock_api: Mock
 
 
 def test_wait_trusts_the_recorded_state_when_the_message_is_stale(
-    client: ReflexCloud, mock_api: MockAPI
+    client: ReflexBuild, mock_api: MockAPI
 ):
     stale = "bad response: could not read the deployment status; check the dashboard"
     _statuses(mock_api, stale, stale)
@@ -423,7 +423,7 @@ def test_wait_trusts_the_recorded_state_when_the_message_is_stale(
 
 
 def test_wait_checks_the_recorded_state_periodically(
-    client: ReflexCloud, mock_api: MockAPI, monkeypatch: pytest.MonkeyPatch
+    client: ReflexBuild, mock_api: MockAPI, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setattr(
         "reflex_build_sdk._sync.resources.deployments._REPORT_EVERY_POLLS", 3
@@ -436,7 +436,7 @@ def test_wait_checks_the_recorded_state_periodically(
     assert len([r for r in mock_api.requests if r.url.endswith("/status")]) == 6
 
 
-def test_wait_stops_waiting_at_the_timeout(client: ReflexCloud, mock_api: MockAPI):
+def test_wait_stops_waiting_at_the_timeout(client: ReflexBuild, mock_api: MockAPI):
     _statuses(mock_api, "Building backend application...")
     started = monotonic()
     with pytest.raises(DeploymentTimeoutError):
@@ -445,13 +445,13 @@ def test_wait_stops_waiting_at_the_timeout(client: ReflexCloud, mock_api: MockAP
     assert monotonic() - started < 5
 
 
-def test_wait_timeout(client: ReflexCloud, mock_api: MockAPI):
+def test_wait_timeout(client: ReflexBuild, mock_api: MockAPI):
     _statuses(mock_api, "Building backend application...")
     with pytest.raises(DeploymentTimeoutError, match="Building backend application"):
         client.deployments.wait(FIRST_ID, timeout=0, poll_interval=0)
 
 
-def test_set_description(client: ReflexCloud, mock_api: MockAPI):
+def test_set_description(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"/api/v1/apps/{APP_ID}/deployments/{FIRST_ID}/description",
@@ -483,7 +483,7 @@ def test_regions_and_vm_types_need_no_token(mock_api: MockAPI):
             ],
         ),
     )
-    with ReflexCloud(transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(transport=MockTransport(mock_api)) as client:
         assert client.deployments.regions() == [
             Region(id=uuid.UUID(APP_ID), name="San Jose", code="sjc")
         ]

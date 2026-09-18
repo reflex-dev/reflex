@@ -1,4 +1,4 @@
-"""Exceptions raised by the Reflex Cloud client."""
+"""Exceptions raised by the Reflex Build client."""
 
 from __future__ import annotations
 
@@ -11,15 +11,15 @@ if TYPE_CHECKING:
     from reflex_build_sdk.types import DeploymentReport
 
 
-class ReflexCloudError(Exception):
-    """Base class for every error raised by the Reflex Cloud client."""
+class ReflexBuildError(Exception):
+    """Base class for every error raised by the Reflex Build client."""
 
 
-class MissingTokenError(ReflexCloudError):
+class MissingTokenError(ReflexBuildError):
     """Raised when an authenticated endpoint is called without an access token."""
 
 
-class DeploymentFailedError(ReflexCloudError):
+class DeploymentFailedError(ReflexBuildError):
     """A deployment ended without going live: it failed, or was rejected, cancelled
     or replaced before it did.
     """
@@ -45,19 +45,19 @@ class DeploymentFailedError(ReflexCloudError):
         self.report = report
 
 
-class DeploymentTimeoutError(ReflexCloudError, TimeoutError):
+class DeploymentTimeoutError(ReflexBuildError, TimeoutError):
     """A deployment was still in progress when waiting for it timed out."""
 
 
-class LoginDeniedError(ReflexCloudError):
+class LoginDeniedError(ReflexBuildError):
     """The user denied a browser login."""
 
 
-class LoginTimeoutError(ReflexCloudError, TimeoutError):
+class LoginTimeoutError(ReflexBuildError, TimeoutError):
     """A browser login was not approved before waiting for it timed out."""
 
 
-class SecurityReviewFailedError(ReflexCloudError):
+class SecurityReviewFailedError(ReflexBuildError):
     """A security review could not be completed."""
 
     job_id: str
@@ -73,12 +73,12 @@ class SecurityReviewFailedError(ReflexCloudError):
         self.job_id = job_id
 
 
-class SecurityReviewTimeoutError(ReflexCloudError, TimeoutError):
+class SecurityReviewTimeoutError(ReflexBuildError, TimeoutError):
     """A security review was still running when waiting for it timed out."""
 
 
-class APIError(ReflexCloudError):
-    """An error tied to a request sent to the Reflex Cloud API."""
+class APIError(ReflexBuildError):
+    """An error tied to a request sent to the Reflex Build API."""
 
     request: Request
     request_id: str

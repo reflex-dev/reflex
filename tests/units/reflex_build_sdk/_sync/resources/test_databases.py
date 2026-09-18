@@ -5,7 +5,7 @@ import datetime
 from collections.abc import Iterator
 
 import pytest
-from reflex_build_sdk import APIResponseValidationError, ReflexCloud
+from reflex_build_sdk import APIResponseValidationError, ReflexBuild
 from reflex_build_sdk.types import ManagedDatabase
 
 from tests.units.reflex_build_sdk.conftest import MockAPI, MockTransport, reply
@@ -34,7 +34,7 @@ MANAGED_DATABASE = ManagedDatabase(
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -43,27 +43,27 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
-def test_get(client: ReflexCloud, mock_api: MockAPI):
+def test_get(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", DATABASE_PATH, reply(200, json=DATABASE))
     assert client.apps.database.get(APP_ID) == MANAGED_DATABASE
 
 
-def test_get_without_a_database(client: ReflexCloud, mock_api: MockAPI):
+def test_get_without_a_database(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", DATABASE_PATH, reply(200, json={"has_database": False}))
     assert client.apps.database.get(APP_ID) is None
 
 
-def test_get_rejects_an_incomplete_database(client: ReflexCloud, mock_api: MockAPI):
+def test_get_rejects_an_incomplete_database(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", DATABASE_PATH, reply(200, json={"has_database": True}))
     with pytest.raises(APIResponseValidationError):
         client.apps.database.get(APP_ID)
 
 
-def test_create_is_retried(client: ReflexCloud, mock_api: MockAPI):
+def test_create_is_retried(client: ReflexBuild, mock_api: MockAPI):
     # Creating again converges on the database the first attempt made.
     mock_api.add(
         "POST",
@@ -77,6 +77,6 @@ def test_create_is_retried(client: ReflexCloud, mock_api: MockAPI):
 
 
 @pytest.mark.parametrize("deleted", [True, False])
-def test_delete(client: ReflexCloud, mock_api: MockAPI, deleted: bool):
+def test_delete(client: ReflexBuild, mock_api: MockAPI, deleted: bool):
     mock_api.add("DELETE", DATABASE_PATH, reply(200, json={"deleted": deleted}))
     assert client.apps.database.delete(APP_ID) is deleted

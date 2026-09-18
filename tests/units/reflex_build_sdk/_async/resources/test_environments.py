@@ -5,7 +5,7 @@ import uuid
 from collections.abc import AsyncIterator
 
 import pytest
-from reflex_build_sdk import APIResponseValidationError, AsyncReflexCloud
+from reflex_build_sdk import APIResponseValidationError, AsyncReflexBuild
 from reflex_build_sdk.types import (
     CopiedSecrets,
     Environment,
@@ -31,7 +31,7 @@ UTC = datetime.timezone.utc
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -40,13 +40,13 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
 
 
-async def test_list(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_list(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         ENVIRONMENTS_PATH,
@@ -112,7 +112,7 @@ async def test_list(client: AsyncReflexCloud, mock_api: MockAPI):
     )
 
 
-async def test_enable(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_enable(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{ENVIRONMENTS_PATH}/enable",
@@ -135,7 +135,7 @@ async def test_enable(client: AsyncReflexCloud, mock_api: MockAPI):
     assert mock_api.requests[0].content is None
 
 
-async def test_create(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_create(client: AsyncReflexBuild, mock_api: MockAPI):
     staging_id = "1f2e3d4c-5b6a-4978-8695-a4b3c2d1e0f9"
     mock_api.add(
         "POST",
@@ -153,7 +153,7 @@ async def test_create(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 async def test_update_sends_only_the_changed_settings(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add(
         "PATCH", f"{ENVIRONMENTS_PATH}/{DEV_ID}", reply(200, json={"id": DEV_ID})
@@ -162,7 +162,7 @@ async def test_update_sends_only_the_changed_settings(
     assert json_body(mock_api.requests[0]) == {"requires_approval": False}
 
 
-async def test_update_is_retried(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_update_is_retried(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "PATCH",
         f"{ENVIRONMENTS_PATH}/{DEV_ID}",
@@ -175,7 +175,7 @@ async def test_update_is_retried(client: AsyncReflexCloud, mock_api: MockAPI):
     assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
-async def test_reorder(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_reorder(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{ENVIRONMENTS_PATH}/reorder",
@@ -196,7 +196,7 @@ PROMOTION = {
 }
 
 
-async def test_promote(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_promote(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST", f"{ENVIRONMENTS_PATH}/{APP_ID}/promote", reply(202, json=PROMOTION)
     )
@@ -219,7 +219,7 @@ async def test_promote(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 async def test_promote_sends_an_object_without_options(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     # The route requires a JSON object body.
     mock_api.add(
@@ -244,7 +244,7 @@ async def test_promote_sends_an_object_without_options(
     ],
 )
 async def test_copy_missing_secrets(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     body: dict,
     copied: CopiedSecrets,
@@ -258,7 +258,7 @@ async def test_copy_missing_secrets(
 
 
 async def test_copy_missing_secrets_rejects_a_body_without_a_count(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add(
         "POST",
@@ -269,7 +269,7 @@ async def test_copy_missing_secrets_rejects_a_body_without_a_count(
         await client.apps.environments.copy_missing_secrets(APP_ID, APP_ID)
 
 
-async def test_delete(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_delete(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE", f"{ENVIRONMENTS_PATH}/{DEV_ID}", reply(200, json={"id": DEV_ID})
     )

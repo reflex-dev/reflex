@@ -20,7 +20,7 @@ from reflex_build_sdk.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._async._client import AsyncReflexCloud
+    from reflex_build_sdk._async._client import AsyncReflexBuild
 
 # The file name the user export is served under when it stops at its row limit.
 _TRUNCATED_EXPORT = "app-users.partial.csv"
@@ -44,13 +44,13 @@ class _SignInDisabled:
 class AsyncSignIn:
     """Sign an app's users in with their Reflex accounts.
 
-    Reflex Cloud is the OpenID Connect provider: the app uses ``rxe.AuthPlugin``
+    Reflex Build is the OpenID Connect provider: the app uses ``rxe.AuthPlugin``
     from ``reflex-enterprise`` and reads its settings from its secrets. Every method
     but ``get`` and ``get_audience`` needs edit access to the app and a token with
     full access; tokens from ``reflex login`` are refused with ``NotFoundError``.
     """
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

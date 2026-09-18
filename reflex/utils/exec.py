@@ -22,7 +22,7 @@ from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
 
 from reflex.utils import path_ops
@@ -685,6 +685,22 @@ HOTRELOAD_IGNORE_PATTERNS = (
 )
 
 
+def _granian_log_dictconfig() -> dict[str, Any] | None:
+    """Get the Granian logging config override for the active log mode.
+
+    Granian replaces top-level keys of its default config, so both of its
+    handlers are redefined.
+
+    Returns:
+        A config routing Granian records through the JSON handler in JSON
+        mode, otherwise None to keep the Granian defaults.
+    """
+    if not log.is_json_mode():
+        return None
+    json_handler = {"()": "reflex_base.utils.log.JsonHandler"}
+    return {"handlers": {"console": json_handler, "access": json_handler}}
+
+
 def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     """Run the backend in development mode using Granian.
 
@@ -733,6 +749,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(loglevel.value),
+        log_dictconfig=_granian_log_dictconfig(),
         reload=True,
         reload_paths=get_reload_paths(),
         reload_ignore_worker_failure=True,
@@ -860,6 +877,7 @@ def run_granian_backend_prod(
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
+        log_dictconfig=_granian_log_dictconfig(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
 

@@ -1,4 +1,4 @@
-"""The asynchronous Reflex Cloud client."""
+"""The asynchronous Reflex Build client."""
 
 from __future__ import annotations
 
@@ -28,8 +28,8 @@ from reflex_build_sdk.transports._defaults import AsyncDefaultTransport
 T = TypeVar("T")
 
 
-class AsyncReflexCloud(BaseClient):
-    """Client for the Reflex Cloud API.
+class AsyncReflexBuild(BaseClient):
+    """Client for the Reflex Build API.
 
     Use it as a context manager, or call ``aclose()``, to release its connections.
     """
@@ -63,8 +63,9 @@ class AsyncReflexCloud(BaseClient):
         Args:
             token: The access token. Defaults to the ``REFLEX_ACCESS_TOKEN`` environment
                 variable, then to the token saved by ``reflex login``.
-            base_url: The Reflex Cloud URL. Defaults to the ``REFLEX_CLOUD_BACKEND_URL``
-                environment variable, then to ``https://build.reflex.dev``.
+            base_url: The Reflex Build URL. Defaults to the ``REFLEX_BUILD_BACKEND_URL``
+                environment variable, then to ``REFLEX_CLOUD_BACKEND_URL``, which
+                ``reflex-hosting-cli`` reads, then to ``https://build.reflex.dev``.
             timeout: The timeout of each network operation (connecting, or any single
                 read or write), in seconds. Defaults to the transport's timeouts: 10
                 seconds to connect and 60 for a read or write for the transports the
@@ -93,7 +94,7 @@ class AsyncReflexCloud(BaseClient):
         self.security_reviews = AsyncSecurityReviews(self)
         self.usage = AsyncUsage(self)
 
-    async def __aenter__(self) -> AsyncReflexCloud:
+    async def __aenter__(self) -> AsyncReflexBuild:
         """Enter the client's context.
 
         Returns:

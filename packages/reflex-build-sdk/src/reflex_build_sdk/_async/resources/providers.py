@@ -20,7 +20,7 @@ from reflex_build_sdk.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._async._client import AsyncReflexCloud
+    from reflex_build_sdk._async._client import AsyncReflexBuild
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -95,7 +95,7 @@ class AsyncGcpConnections:
     Adding and changing connections needs the Enterprise plan.
     """
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -304,7 +304,7 @@ class AsyncProviders:
     # Manage the Google Cloud projects an organization deploys apps to.
     gcp_connections: AsyncGcpConnections
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

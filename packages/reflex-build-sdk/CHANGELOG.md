@@ -2,6 +2,23 @@
 
 <!-- towncrier release notes start -->
 
+## v0.0.2 (2026-09-18)
+
+### Breaking Changes
+
+- The clients are now named `ReflexBuild` and `AsyncReflexBuild`, and the base exception `ReflexBuildError`, matching the Reflex Build product they talk to. Rename the imports to upgrade:
+
+  ```python
+  from reflex_build_sdk import AsyncReflexBuild, ReflexBuild, ReflexBuildError
+  ```
+
+  The `REFLEX_CLOUD_BACKEND_URL` and `REFLEX_CLOUD_URL` environment variables keep working. ([#7201](https://github.com/reflex-dev/reflex/issues/7201))
+
+### Features
+
+- The client reads its URLs from `REFLEX_BUILD_BACKEND_URL` and `REFLEX_BUILD_URL`, falling back to `REFLEX_CLOUD_BACKEND_URL` and `REFLEX_CLOUD_URL`, which `reflex-hosting-cli` reads. Set both names when the SDK and `reflex deploy` should reach the same backend, since the CLI does not read the `REFLEX_BUILD_*` names. ([#7201](https://github.com/reflex-dev/reflex/issues/7201))
+
+
 ## v0.0.1 (2026-09-18)
 
 ### Features
