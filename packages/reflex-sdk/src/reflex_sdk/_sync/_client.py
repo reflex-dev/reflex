@@ -22,6 +22,7 @@ from reflex_sdk._sync.resources.deployments import Deployments
 from reflex_sdk._sync.resources.projects import Projects
 from reflex_sdk._sync.resources.providers import Providers
 from reflex_sdk._sync.resources.security_reviews import SecurityReviews
+from reflex_sdk._sync.resources.usage import Usage
 from reflex_sdk.transports._base import Transport, TransportError
 from reflex_sdk.transports._defaults import DefaultTransport
 
@@ -46,6 +47,8 @@ class ReflexCloud(BaseClient):
     providers: Providers
     # Review an app's source code for security and logic issues.
     security_reviews: SecurityReviews
+    # Read an organization's use of its plan allowance.
+    usage: Usage
 
     def __init__(
         self,
@@ -69,9 +72,11 @@ class ReflexCloud(BaseClient):
                 SDK creates.
             max_retries: How many times a failed request is retried. Only requests that
                 cannot be applied twice are retried: those the server never received or
-                turned away with 408 or 429, and ``GET``, ``HEAD``, ``OPTIONS`` and ``PUT``
-                requests that timed out, lost their connection, or got a 500, 502, 503
-                or 504 response.
+                turned away with 408 or 429, and requests that are harmless to repeat
+                (``GET``, ``HEAD``, ``OPTIONS`` and ``PUT`` requests, and calls such as
+                ``apps.environments.update`` that settle on the same result) that
+                timed out, lost their connection, or got a 500, 502, 503 or 504
+                response.
             transport: Sends the requests, e.g. a transport wrapping a preconfigured
                 HTTP client. The caller keeps ownership of it: closing this client
                 leaves it open. Defaults to a transport the client creates and closes.
@@ -87,6 +92,7 @@ class ReflexCloud(BaseClient):
         self.projects = Projects(self)
         self.providers = Providers(self)
         self.security_reviews = SecurityReviews(self)
+        self.usage = Usage(self)
 
     def __enter__(self) -> ReflexCloud:
         """Enter the client's context.

@@ -9,6 +9,7 @@ from collections.abc import Iterator
 import pytest
 from reflex_sdk import (
     APIConnectionError,
+    APIStatusError,
     AuthenticationError,
     LoginDeniedError,
     LoginTimeoutError,
@@ -168,6 +169,45 @@ def test_delete_token_quotes_name(client: ReflexCloud, mock_api: MockAPI):
         reply(200, json={"message": "success"}),
     )
     assert client.auth.tokens.delete("ci/prod key") is None
+
+
+def test_revoke_token(client: ReflexCloud, mock_api: MockAPI):
+    token = str(uuid.uuid4())
+    mock_api.add(
+        "POST", "/api/v1/user/token/revoke", reply(200, json={"message": "success"})
+    )
+    assert client.auth.tokens.revoke(token) is None
+    # The token goes in the body, where access logs don't record it.
+    assert json_body(mock_api.requests[0]) == {"token_id": token}
+
+
+def test_refresh_token(client: ReflexCloud, mock_api: MockAPI):
+    old, new = str(uuid.uuid4()), str(uuid.uuid4())
+    mock_api.add("POST", "/api/v1/user/token/refresh", reply(200, json=new))
+    assert client.auth.tokens.refresh(old) == new
+    assert json_body(mock_api.requests[0]) == {"token_id": old}
+
+
+def test_refresh_token_is_not_retried(client: ReflexCloud, mock_api: MockAPI):
+    # Each attempt would mint another token and revoke the one before.
+    mock_api.add("POST", "/api/v1/user/token/refresh", reply(503))
+    with pytest.raises(APIStatusError):
+        client.auth.tokens.refresh(str(uuid.uuid4()))
+    assert len(mock_api.requests) == 1
+
+
+def test_assign_token_to_service_account(client: ReflexCloud, mock_api: MockAPI):
+    account_id = str(uuid.uuid4())
+    mock_api.add(
+        "POST",
+        "/api/v1/user/token/ci/service-account",
+        reply(200, json={"message": "success", "service_account_name": "deployer"}),
+    )
+    assert (
+        client.auth.tokens.assign_to_service_account("ci", uuid.UUID(account_id))
+        == "deployer"
+    )
+    assert json_body(mock_api.requests[0]) == {"service_account_id": account_id}
 
 
 @pytest.mark.parametrize(

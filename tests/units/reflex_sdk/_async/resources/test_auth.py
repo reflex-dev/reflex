@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator
 import pytest
 from reflex_sdk import (
     APIConnectionError,
+    APIStatusError,
     AsyncReflexCloud,
     AuthenticationError,
     LoginDeniedError,
@@ -174,6 +175,49 @@ async def test_delete_token_quotes_name(client: AsyncReflexCloud, mock_api: Mock
         reply(200, json={"message": "success"}),
     )
     assert await client.auth.tokens.delete("ci/prod key") is None
+
+
+async def test_revoke_token(client: AsyncReflexCloud, mock_api: MockAPI):
+    token = str(uuid.uuid4())
+    mock_api.add(
+        "POST", "/api/v1/user/token/revoke", reply(200, json={"message": "success"})
+    )
+    assert await client.auth.tokens.revoke(token) is None
+    # The token goes in the body, where access logs don't record it.
+    assert json_body(mock_api.requests[0]) == {"token_id": token}
+
+
+async def test_refresh_token(client: AsyncReflexCloud, mock_api: MockAPI):
+    old, new = str(uuid.uuid4()), str(uuid.uuid4())
+    mock_api.add("POST", "/api/v1/user/token/refresh", reply(200, json=new))
+    assert await client.auth.tokens.refresh(old) == new
+    assert json_body(mock_api.requests[0]) == {"token_id": old}
+
+
+async def test_refresh_token_is_not_retried(
+    client: AsyncReflexCloud, mock_api: MockAPI
+):
+    # Each attempt would mint another token and revoke the one before.
+    mock_api.add("POST", "/api/v1/user/token/refresh", reply(503))
+    with pytest.raises(APIStatusError):
+        await client.auth.tokens.refresh(str(uuid.uuid4()))
+    assert len(mock_api.requests) == 1
+
+
+async def test_assign_token_to_service_account(
+    client: AsyncReflexCloud, mock_api: MockAPI
+):
+    account_id = str(uuid.uuid4())
+    mock_api.add(
+        "POST",
+        "/api/v1/user/token/ci/service-account",
+        reply(200, json={"message": "success", "service_account_name": "deployer"}),
+    )
+    assert (
+        await client.auth.tokens.assign_to_service_account("ci", uuid.UUID(account_id))
+        == "deployer"
+    )
+    assert json_body(mock_api.requests[0]) == {"service_account_id": account_id}
 
 
 @pytest.mark.parametrize(

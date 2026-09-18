@@ -863,6 +863,103 @@ class InstanceBoundsChange:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class GcpBlockingApp:
+    """An app that stops an organization's Google Cloud account from being removed."""
+
+    app_id: uuid.UUID
+    name: str
+    project_name: str
+    is_deleted: bool
+    project_is_deleted: bool
+    # Whether the app left Google Cloud, or was deleted, before its resources there
+    # were confirmed deleted.
+    release_unconfirmed: bool
+    # Whether the app only waits for a deployment to settle, which happens on its own.
+    awaiting_provisioning: bool
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class GcpCheck:
+    """One check of a Google Cloud connection's access."""
+
+    # E.g. ``"Cloud Run"`` or ``"deploy and teardown permissions"``.
+    check: str
+    # ``"passed"``, ``"failed"``, or ``"skipped"`` when Google did not answer.
+    outcome: str
+    # Why the check failed or was skipped; empty when it passed.
+    detail: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class GcpVerification:
+    """Whether a Google Cloud connection's stored key can still deploy."""
+
+    # Whether no check failed; checks may still have been skipped.
+    ok: bool
+    connection_name: str
+    project_id: str
+    # The service account the stored key belongs to; empty if the key is unreadable.
+    client_email: str
+    # What is wrong, as sentences.
+    problems: list[str]
+    checks: list[GcpCheck]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class GcpKeyRotation:
+    """The result of replacing a Google Cloud connection's service account key."""
+
+    connection_name: str
+    project_id: str
+    # The service account the new key belongs to.
+    client_email: str
+    # The new key's id; empty if the key has none.
+    new_key_id: str
+    # The replaced key's id, to delete in Google Cloud: rotating does not revoke it.
+    # None if the replaced key was unreadable or had no id.
+    old_key_id: str | None
+    old_client_email: str | None
+    # The names of the checks that could not run.
+    skipped_checks: list[str]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UsageBalance:
+    """How much of an organization's plan allowance is used this period."""
+
+    # Whether the organization has an allowance; both shares are ``"0"`` otherwise.
+    has_allowance: bool
+    # The share of the allowance used, as a percentage in a decimal string such as
+    # ``"37.50"``. It exceeds 100 when the balance is negative.
+    used_pct: str
+    # The share of the allowance left, as a percentage in a decimal string. Top-ups
+    # can take it past 100.
+    remaining_pct: str
+    # Whether the allowance refills on a rolling schedule rather than monthly.
+    refresh_eligible: bool
+    # When the allowance next refills, if known.
+    next_refresh_at: datetime.datetime | None
+    # The share of the allowance the refill brings the balance to, as a decimal
+    # string.
+    next_refresh_pct: str | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UsageEntry:
+    """A charge or credit against an organization's plan allowance."""
+
+    timestamp: datetime.datetime
+    # The amount as a signed percentage of the allowance of its period, in an
+    # unrounded decimal string: negative for charges, positive for credits. None
+    # for movements before the organization's first allowance.
+    amount_pct: str | None
+    # E.g. ``"task_debit"`` for an AI builder generation, ``"compute_debit"`` for
+    # hosting, ``"period_reset"`` for the allowance, or ``"topup"``.
+    kind: str
+    description: str | None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class SecurityViolation:
     """A security or logic issue found by a security review."""
 
