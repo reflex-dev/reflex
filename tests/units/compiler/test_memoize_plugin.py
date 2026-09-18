@@ -964,8 +964,8 @@ def test_shared_subtree_in_distinct_source_modules_emits_per_module() -> None:
     matched_b = find_emitted("memo_collision_test/module_b.jsx")
     assert matched_a is not None, f"missing module_a memo file in {sorted(emitted)}"
     assert matched_b is not None, f"missing module_b memo file in {sorted(emitted)}"
-    assert f"export const {symbol_a} = memo" in matched_a
-    assert f"export const {symbol_b} = memo" in matched_b
+    assert f"const {symbol_a} = memo" in matched_a
+    assert f"const {symbol_b} = memo" in matched_b
 
 
 def test_shared_parent_instance_across_pages_preserves_original() -> None:
@@ -2620,3 +2620,28 @@ def test_each_memo_wrapper_emits_one_component_module_file() -> None:
         "for Plain, one for WithProp, and one snapshot wrapper for the "
         f"LeafComponent boundary. Got: {sorted(ctx.memoize_wrappers)}"
     )
+
+
+def test_svg_boundary_shares_hook_var_between_children() -> None:
+    """Elements under one ``rx.el.svg`` read a hook var from a single hook call."""
+    from reflex_base.vars.special import use_id
+    from reflex_components_core.el.elements.media import LinearGradient, Rect, Svg
+
+    from reflex.compiler.compiler import compile_memo_components
+
+    def page() -> Component:
+        gradient_id = use_id()
+        return Svg.create(
+            LinearGradient.create(id=gradient_id),
+            Rect.create(fill=f"url(#{gradient_id})"),
+        )
+
+    ctx, page_ctx = _compile_single_page(page)
+    memo_files, _ = compile_memo_components(
+        memos=tuple(ctx.auto_memo_components.values())
+    )
+    memo_code = "\n".join(code for _, code in memo_files)
+
+    assert len(ctx.memoize_wrappers) == 1
+    assert len(re.findall(r"= useId_\w+\(\);", memo_code)) == 1
+    assert not any("useId" in hook for hook in page_ctx.hooks)

@@ -1,12 +1,35 @@
 """Tests for reflex_base.vars.base state metaclass field handling."""
 
+import dataclasses
+import gc
+import pickle
 import threading
+import traceback
 import typing
+import weakref
 from typing import Any, Literal, TypeVar
 
 import pytest
+from reflex_base.utils import serializers
+from reflex_base.utils.exceptions import ReflexRuntimeError
+from reflex_base.utils.imports import ImportVar
 from reflex_base.utils.types import get_field_type
-from reflex_base.vars.base import EvenMoreBasicBaseState, Var, _linearize_bases, field
+from reflex_base.vars.base import (
+    GLOBAL_CACHE,
+    CachedVarOperation,
+    EvenMoreBasicBaseState,
+    LiteralVar,
+    Var,
+    VarData,
+    _global_vars,
+    _linearize_bases,
+    cached_property,
+    cached_property_no_lock,
+    field,
+    var_operation,
+    var_operation_return,
+)
+from reflex_base.vars.number import NumberVar
 from reflex_base.vars.object import ObjectVar
 from reflex_base.vars.sequence import ArrayVar, StringVar
 from typing_extensions import TypeAliasType, TypeVarTuple, Unpack
@@ -246,3 +269,405 @@ def test_linearize_bases_compares_by_identity() -> None:
             _linearize_bases((b, c)), created.__mro__[1:], strict=True
         )
     )
+
+
+def test_var_data_merge_collects_field_names():
+    """Merging vars of one state keeps every field name, deduped and in order."""
+    merged = VarData.merge(
+        VarData(state="s", field_name="a"),
+        VarData(state="s", field_name="b"),
+        VarData(state="s", field_name="a"),
+    )
+
+    assert merged is not None
+    assert dict(merged.field_dependencies) == {"s": ("a", "b")}
+    # `field_name` stays the first, so existing single-field readers are intact.
+    assert merged.field_name == "a"
+
+
+def test_var_data_merge_keeps_field_names_of_every_state():
+    """A var spanning several states keeps each state's own fields.
+
+    Fields stay grouped by the state that owns them, so a dependency on a
+    composite var tracks every field it reads rather than only those of
+    whichever state happened to merge first.
+    """
+    merged = VarData.merge(
+        VarData(state="s", field_name="a"),
+        VarData(state="other", field_name="b"),
+        VarData(state="s", field_name="c"),
+    )
+
+    assert merged is not None
+    assert dict(merged.field_dependencies) == {"s": ("a", "c"), "other": ("b",)}
+    # The fallback accessors report the first state and its first field only.
+    assert merged.state == "s"
+    assert merged.field_name == "a"
+
+
+def test_var_data_field_dependencies_round_trip():
+    """`state`/`field_name` are the shorthand for a single-field mapping."""
+    assert dict(VarData(state="s", field_name="a").field_dependencies) == {"s": ("a",)}
+    # A state with no named field is still recorded: many vars carry only the
+    # state, for its imports and hooks, and read no field.
+    assert dict(VarData(state="s").field_dependencies) == {"s": ()}
+    assert dict(VarData().field_dependencies) == {}
+    # The canonical form wins over the shorthand.
+    assert dict(
+        VarData(
+            state="ignored",
+            field_name="ignored",
+            field_dependencies={"s": ("a",), "other": ("b",)},
+        ).field_dependencies
+    ) == {"s": ("a",), "other": ("b",)}
+
+
+def test_var_data_field_name_reports_the_first_field():
+    """`field_name` reports the first field of the first state."""
+    assert VarData(field_name="a").field_name == "a"
+    assert VarData(field_dependencies={"s": ("a", "b")}).field_name == "a"
+    assert VarData().field_name == ""
+
+
+def test_serializer_attribute_error_is_not_masked() -> None:
+    """An AttributeError raised inside a serializer surfaces chained, with its own frame."""
+
+    class Point:
+        pass
+
+    def serialize_point(value: Point) -> str:
+        return value.label  # pyright: ignore[reportAttributeAccessIssue]
+
+    serializers.serializer(serialize_point)
+    try:
+        with pytest.raises(ReflexRuntimeError, match=r"_cached_var_name") as exc_info:
+            str(LiteralVar.create([Point()]))
+    finally:
+        serializers.SERIALIZERS.pop(Point)
+        serializers.SERIALIZER_TYPES.pop(Point)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+    cause = exc_info.value.__cause__
+    assert isinstance(cause, AttributeError)
+    assert "'label'" in str(cause)
+    assert traceback.extract_tb(cause.__traceback__)[-1].name == "serialize_point"
+
+
+def test_cached_var_attribute_error_is_chained() -> None:
+    """An AttributeError raised in a cached var computation surfaces as the cause."""
+
+    @dataclasses.dataclass(eq=False, frozen=True, slots=True)
+    class BrokenVar(CachedVarOperation, Var):
+        @cached_property_no_lock
+        def _cached_var_name(self) -> str:
+            return "broken"
+
+        @cached_property_no_lock
+        def _cached_get_all_var_data(self):
+            msg = "the real error message"
+            raise AttributeError(msg)
+
+    with pytest.raises(ReflexRuntimeError, match="the real error message") as exc_info:
+        BrokenVar(_js_expr="")._get_all_var_data()
+    assert isinstance(exc_info.value.__cause__, AttributeError)
+    assert str(exc_info.value.__cause__) == "the real error message"
+
+
+class _CachedValue:
+    """A mutable input with an explicitly resettable derived value."""
+
+    _reflex_cache_result: object
+
+    def __init__(self, value: str):
+        """Store the input.
+
+        Args:
+            value: The value to cache.
+        """
+        self.value = value
+
+    @cached_property
+    def result(self) -> list[str]:
+        """Return the derived value.
+
+        Returns:
+            A fresh list containing the input.
+        """
+        return [self.value]
+
+
+def test_cached_property_identity_and_reset():
+    """Local keys isolate instances and survive explicit cache resets."""
+    first = _CachedValue("first")
+    second = _CachedValue("second")
+    result = first.result
+    assert first.result is result
+    assert second.result == ["second"]
+    first.value = "changed"
+    assert first.result is result
+    GLOBAL_CACHE.clear()
+    assert first.result == ["changed"]
+    assert first.result is not result
+
+
+def test_cached_property_pickle_does_not_reuse_another_instances_key():
+    """Deserialized keys must not collide with live cache entries."""
+    original = _CachedValue("original")
+    assert original.result == ["original"]
+    restored = pickle.loads(pickle.dumps(original))
+    restored.value = "restored"
+    assert restored.result == ["restored"]
+    assert original.result == ["original"]
+
+
+def test_cached_property_releases_entry_with_instance():
+    """Destroying an instance removes its cached value."""
+    value = _CachedValue("temporary")
+    assert value.result == ["temporary"]
+    key = value._reflex_cache_result
+    reference = weakref.ref(value)
+    del value
+    gc.collect()
+    assert reference() is None
+    assert key not in GLOBAL_CACHE
+
+
+def test_literal_var_dispatch_follows_later_registrations():
+    """A literal class registered after a lookup wins the next lookup for its type."""
+
+    class Coordinate:
+        """A value no literal Var claims yet."""
+
+        def __init__(self, x: int):
+            """Store the coordinate.
+
+            Args:
+                x: The coordinate value.
+            """
+            self.x = x
+
+    from reflex_base.utils import serializers
+    from reflex_base.vars import base
+
+    var_subclasses = len(base._var_subclasses)
+    literal_subclasses = len(base._var_literal_subclasses)
+    try:
+
+        @serializers.serializer
+        def serialize_coordinate(value: Coordinate) -> str:
+            """Serialize a coordinate.
+
+            Args:
+                value: The coordinate.
+
+            Returns:
+                Its string form.
+            """
+            return f"coordinate-{value.x}"
+
+        assert str(LiteralVar.create(Coordinate(1))) == '"coordinate-1"'
+
+        class CoordinateVar(Var[Coordinate], python_types=Coordinate):
+            """A Var holding a coordinate."""
+
+        class LiteralCoordinateVar(LiteralVar, CoordinateVar):
+            """A literal coordinate Var."""
+
+            @classmethod
+            def create(cls, value: Coordinate, _var_data=None):
+                """Create the literal.
+
+                Args:
+                    value: The coordinate.
+                    _var_data: Unused metadata.
+
+                Returns:
+                    A Var with the coordinate's expression.
+                """
+                return Var(_js_expr=f"[{value.x}]", _var_type=Coordinate)
+
+        assert str(LiteralVar.create(Coordinate(2))) == "[2]"
+    finally:
+        serializers.SERIALIZERS.pop(Coordinate)
+        serializers.SERIALIZER_TYPES.pop(Coordinate)
+        serializers.get_serializer.cache_clear()
+        serializers.get_serializer_type.cache_clear()
+        del base._var_subclasses[var_subclasses:]
+        del base._var_literal_subclasses[literal_subclasses:]
+        base._clear_var_subclass_lookup_caches()
+        base._literal_var_by_type.clear()
+
+
+def _operand_with_var_data() -> NumberVar[int]:
+    """Build an operand carrying imports and hooks worth losing.
+
+    Returns:
+        A number Var whose VarData has to survive into any operation built from it.
+    """
+    return Var(
+        _js_expr="operandValue",
+        _var_data=VarData(
+            imports={"operand-lib": [ImportVar(tag="operandThing")]},
+            hooks={"const operand = useOperand()": None},
+        ),
+    ).to(int)
+
+
+@pytest.mark.parametrize(
+    ("build", "expected_js"),
+    [
+        pytest.param(lambda v: v + 1, "(operandValue + 1)", id="add"),
+        pytest.param(lambda v: v - 1, "(operandValue - 1)", id="subtract"),
+        pytest.param(lambda v: v > 1, "(operandValue > 1)", id="greater_than"),
+        pytest.param(
+            lambda v: v.bool() & v.bool(),
+            "pyAnd(isTrue(operandValue), () => (isTrue(operandValue)))",
+            id="logical_and",
+        ),
+        pytest.param(lambda v: v.to_string().lower(), None, id="string_lower"),
+        pytest.param(lambda v: v.to(ArrayVar).length(), None, id="array_length"),
+        pytest.param(lambda v: v.to(ObjectVar).keys(), None, id="object_keys"),
+        pytest.param(lambda v: (v + 1) * 2 > 3, None, id="chained"),
+    ],
+)
+def test_var_operation_operands_do_not_register_global_vars(
+    build: typing.Callable[[NumberVar[int]], Var], expected_js: str | None
+) -> None:
+    """Building an operation leaves the module-global var registry alone.
+
+    Operation bodies interpolate their operands with ``!s``, which renders the
+    expression directly. Interpolating them with ``{}`` instead would hash each
+    operand, register it in ``_global_vars`` forever — a leak that grows with
+    every operation an app builds — and emit a tag the result then has to
+    regex-decode back out, all to recover VarData that ``_args`` already
+    carries.
+
+    Args:
+        build: Builds the operation from an operand.
+        expected_js: The expected JavaScript, when it is short enough to pin.
+    """
+    operand = _operand_with_var_data()
+
+    before = len(_global_vars)
+    result = build(operand)
+    assert len(_global_vars) == before
+
+    if expected_js is not None:
+        assert str(result) == expected_js
+
+
+def test_var_operation_rolls_up_operand_var_data() -> None:
+    """An operand's imports and hooks still reach the operation it is used in.
+
+    They arrive through ``CustomVarOperation._args`` rather than through a tag
+    decoded out of the returned expression, which is what makes ``!s`` safe.
+    """
+    operand = _operand_with_var_data()
+
+    var_data = (operand + 1)._get_all_var_data()
+
+    assert var_data is not None
+    assert dict(var_data.imports)["operand-lib"] == (ImportVar(tag="operandThing"),)
+    assert "const operand = useOperand()" in var_data.hooks
+
+
+def test_var_operation_body_created_var_still_tags() -> None:
+    """A var built inside a body is not an operand and must keep its tag.
+
+    ``_args`` only carries what was passed in, so a var the body creates itself
+    reaches the operation solely through the returned expression. It therefore
+    interpolates with ``{}``, and ``!s`` would silently drop its imports.
+    """
+
+    @var_operation
+    def op_with_derived(value: Var):
+        derived = Var(
+            _js_expr="derivedHelper",
+            _var_data=VarData(imports={"derived-lib": [ImportVar(tag="helper")]}),
+        )
+        return var_operation_return(f"({value!s} + {derived})", var_type=int)
+
+    result = op_with_derived(Var(_js_expr="a").to(int))
+
+    var_data = result._get_all_var_data()
+    assert var_data is not None
+    assert dict(var_data.imports)["derived-lib"] == (ImportVar(tag="helper"),)
+    assert str(result) == "(a + derivedHelper)"
+
+
+# Decorators whose function body builds a var operation's expression out of the
+# function's own parameters. ``var_operation`` wraps every argument with
+# ``LiteralVar.create``, so inside these bodies every parameter is a Var.
+_OPERAND_BUILDER_DECORATORS = frozenset({
+    "var_operation",
+    "binary_number_operation",
+    "comparison_operator",
+})
+# Plain helpers called only from such a body, mapped to the parameters the
+# operation forwards its operands into. Their other parameters are ordinary
+# Python values that never carried a tag to begin with.
+_OPERAND_BUILDER_FUNCTIONS = {"date_compare_operation": frozenset({"lhs", "rhs"})}
+
+
+def test_var_operation_bodies_interpolate_operands_with_str() -> None:
+    """No operation body interpolates an operand without ``!s``.
+
+    The rule is checked against the source rather than per operation, because
+    a missed one changes no behaviour: the rendered JavaScript and the merged
+    VarData come out identical, and only the leak and the cost give it away.
+    A var the body creates itself is not a parameter, so it is not flagged.
+    """
+    import ast
+    import pathlib
+
+    from reflex_base.vars import base as base_module
+
+    offenders: list[str] = []
+    for path in sorted(pathlib.Path(base_module.__file__).parent.glob("*.py")):
+        tree = ast.parse(path.read_text())
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef):
+                continue
+            decorators = {d.id for d in node.decorator_list if isinstance(d, ast.Name)}
+            if decorators & _OPERAND_BUILDER_DECORATORS:
+                params = {arg.arg for arg in node.args.args}
+            elif node.name in _OPERAND_BUILDER_FUNCTIONS:
+                params = _OPERAND_BUILDER_FUNCTIONS[node.name]
+            else:
+                continue
+            for joined in ast.walk(node):
+                if not isinstance(joined, ast.JoinedStr):
+                    continue
+                for value in joined.values:
+                    if (
+                        isinstance(value, ast.FormattedValue)
+                        and isinstance(value.value, ast.Name)
+                        and value.value.id in params
+                        and value.conversion != ord("s")
+                    ):
+                        offenders.append(
+                            f"{path.name}:{value.lineno} {node.name} "
+                            f"interpolates operand {value.value.id!r} without !s"
+                        )
+
+    assert not offenders, (
+        "Var operation bodies must interpolate their operands with !s, which "
+        "renders the expression directly; plain {} hashes the operand and "
+        "registers it in _global_vars forever to recover VarData that _args "
+        "already carries:\n  " + "\n  ".join(offenders)
+    )
+
+
+def test_var_operation_str_interpolation_matches_tagged_form() -> None:
+    """``!s`` renders exactly what a tagged interpolation decodes down to.
+
+    ``Var.__format__`` emits a tag followed by the expression, and the Var it
+    is interpolated into strips the tag back off in ``__post_init__``. ``!s``
+    just skips the round trip, so the two have to agree.
+    """
+    operand = _operand_with_var_data()
+
+    tagged = Var(_js_expr=f"wrap({operand})").to(int)
+    untagged = Var(_js_expr=f"wrap({operand!s})").to(int)
+
+    assert str(tagged) == str(untagged) == "wrap(operandValue)"

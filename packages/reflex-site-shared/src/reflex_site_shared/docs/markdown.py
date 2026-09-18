@@ -43,7 +43,12 @@ from reflex_docgen.markdown.transformer import DocumentTransformer
 import reflex as rx
 from reflex_site_shared.components.blocks.code import code_block
 from reflex_site_shared.components.blocks.collapsible import collapsible_box
-from reflex_site_shared.components.blocks.demo import docdemo, docdemobox, docgraphing
+from reflex_site_shared.components.blocks.demo import (
+    DeferredDemo,
+    docdemo,
+    docdemobox,
+    docgraphing,
+)
 from reflex_site_shared.components.blocks.headings import (
     h1_comp_xd,
     h2_comp_xd,
@@ -52,6 +57,7 @@ from reflex_site_shared.components.blocks.headings import (
     img_comp_xd,
 )
 from reflex_site_shared.components.blocks.typography import (
+    DOCS_BODY_CLASS,
     code_comp,
     doclink2,
     list_comp,
@@ -267,7 +273,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             return text_comp(text=children[0])
         return rx.text(
             *children,
-            class_name="font-[475] text-secondary-11 mb-4 leading-7",
+            class_name=DOCS_BODY_CLASS,
         )
 
     def code_block(self, block: CodeBlock) -> rx.Component:
@@ -298,6 +304,10 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     def directive(self, block: DirectiveBlock) -> rx.Component:
         """Handle ```md <directive>``` blocks (alert, video, etc.)."""
         match block.name:
+            case "tutorial-intro":
+                return self._render_tutorial_intro(block)
+            case "faq":
+                return self._render_faq(block)
             case "alert":
                 return self._render_alert(block)
             case "video":
@@ -326,7 +336,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             return list_comp(text=_spans_to_plaintext(spans))
         return rx.list_item(
             *_render_spans(spans),
-            class_name="font-[475] text-secondary-11 mb-4",
+            class_name=DOCS_BODY_CLASS,
         )
 
     def transform_list_item(self, item: ListItem) -> rx.Component:
@@ -345,14 +355,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         children = [self.transform_block(b) for b in block.children]
         return rx.box(
             *children,
-            class_name="border-l-[3px] border-secondary-4 pl-6 mt-2 mb-6",
+            class_name="border-l-[3px] border-border-subtle pl-6 mt-2 mb-6",
         )
 
     def table(self, block: TableBlock) -> rx.Component:
         header_cells = [
             rx.table.column_header_cell(
                 *_render_spans(cell.children),
-                class_name="font-small text-secondary-12 font-bold",
+                class_name="font-small text-foreground font-bold",
             )
             for cell in block.header.cells
         ]
@@ -361,7 +371,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             cells = [
                 rx.table.cell(
                     *_render_spans(cell.children),
-                    class_name="font-small text-secondary-11",
+                    class_name="font-small text-muted-foreground",
                 )
                 for cell in row.cells
             ]
@@ -372,7 +382,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             rx.table.body(*rows),
             variant="surface",
             size="1",
-            class_name="w-full border border-secondary-4 mb-4",
+            class_name="w-full border border-border-subtle mb-4",
         )
 
     def transform_table_row(self, row: TableRow) -> rx.Component:
@@ -449,7 +459,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 return docgraphing(code, comp=comp, data=data)
             elif "box" in flags:
                 comp = eval(content, self.env, self.env)
-                return rx.box(docdemobox(comp), margin_bottom="1em", id=comp_id)
+                return rx.box(docdemobox(comp), margin_y="1.5em", id=comp_id)
             else:
                 comp = eval(content, self.env, self.env)
         except Exception as e:
@@ -458,6 +468,9 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 f"While rendering demo block in {self.virtual_filepath}:\n{content[:200]}",
             )
             raise
+
+        if "defer" in flags:
+            comp = DeferredDemo.create(comp)
 
         demobox_props: dict = {}
         for flag in flags:
@@ -492,7 +505,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             )
             raise
 
-        return rx.box(comp, margin_bottom="1em", id=comp_id)
+        return rx.box(comp, margin_y="1.5em", id=comp_id)
 
     def _render_children(self, blocks: tuple[Block, ...]) -> rx.Component:
         """Render a sequence of parsed blocks into a single component."""
@@ -531,12 +544,12 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
         }
         color: ColorType = colors.get(status, "slate")
         background_shade = 2 if status == "info" else 3
-        # For "info" alerts, use the site secondary scale (--secondary-*) so the
+        # For "info" alerts, use semantic muted surface and border tokens so the
         # card matches codeblock styling instead of rx.color("slate", ...).
         is_info = status == "info"
-        foreground_override = "var(--secondary-11)" if is_info else None
-        bg_override = "var(--secondary-2)" if is_info else None
-        border_override = "var(--secondary-4)" if is_info else None
+        foreground_override = "var(--muted-foreground)" if is_info else None
+        bg_override = "var(--muted)" if is_info else None
+        border_override = "var(--border-subtle)" if is_info else None
 
         def foreground_color() -> str:
             return foreground_override or f"{rx.color(color, 11)}"
@@ -622,6 +635,62 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             width="100%",
         )
 
+    def _render_tutorial_intro(self, block: DirectiveBlock) -> rx.Component:
+        """Style a tutorial lead, duration, and prerequisites without hiding text."""
+        children = block.children
+        duration = block.args[0] if block.args else "20"
+        return rx.el.section(
+            rx.el.div(
+                self._render_children(children[:1]),
+                class_name="[&_p]:!text-lg [&_p]:!leading-8 [&_p]:!mb-0 text-foreground",
+            ),
+            rx.el.div(
+                rx.el.span(
+                    rx.icon("clock", size=15, aria_hidden=True),
+                    f"About {duration} minutes",
+                    class_name="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm text-foreground",
+                ),
+                rx.el.span(
+                    "Hands-on tutorial",
+                    class_name="inline-flex items-center rounded-full bg-secondary-3 px-3 py-1.5 text-sm text-foreground",
+                ),
+                class_name="flex flex-wrap gap-2 my-5",
+            ),
+            rx.el.div(
+                self._render_children(children[1:]),
+                class_name="border-l-2 border-border pl-4 [&_p]:!text-sm [&_p]:!leading-6 [&_p]:!mb-0 text-muted-foreground",
+            ),
+            class_name="mb-8 pb-7 border-b border-border",
+        )
+
+    def _render_faq(self, block: DirectiveBlock) -> rx.Component:
+        """Render a native disclosure with its answer kept in the document."""
+        children = block.children
+        if not children or not isinstance(children[0], HeadingBlock):
+            return self._render_children(children)
+        return rx.el.details(
+            rx.el.summary(
+                rx.el.span(*_render_spans(children[0].children)),
+                rx.icon(
+                    "chevron-down",
+                    size=20,
+                    aria_hidden=True,
+                    class_name="shrink-0 transition-transform group-open:rotate-180",
+                ),
+                class_name=(
+                    "flex cursor-pointer list-none items-center justify-between gap-4 "
+                    "px-5 py-4 font-medium text-foreground "
+                    "[&::-webkit-details-marker]:hidden focus-visible:outline-2 "
+                    "focus-visible:outline-primary focus-visible:-outline-offset-2 rounded-xl"
+                ),
+            ),
+            rx.box(
+                self._render_children(children[1:]),
+                class_name="px-5 pb-4 [&>div>*:last-child]:mb-0",
+            ),
+            class_name="group my-4 rounded-xl border border-border bg-background",
+        )
+
     def _render_video(self, block: DirectiveBlock) -> rx.Component:
         """Render a ``md video`` directive — accordion-wrapped."""
         url = block.args[0] if block.args else ""
@@ -633,7 +702,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
 
         color: ColorType = "blue"
         trigger = [
-            rx.text(title, class_name="font-[475]", color=f"{rx.color(color, 11)}"),
+            rx.text(title, class_name="font-[475]", color=f"{rx.color(color, 12)}"),
         ]
         body = rx.accordion.content(
             rx.video(
@@ -646,7 +715,13 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
             margin_top="16px",
             padding="0px",
         )
-        return collapsible_box(trigger, body, color, item_border_radius="0px")
+        return collapsible_box(
+            trigger,
+            body,
+            color,
+            item_border_radius="0px",
+            foreground_override=str(rx.color(color, 12)),
+        )
 
     def _render_quote_directive(self, block: DirectiveBlock) -> rx.Component:
         """Render a ``md quote`` directive."""
@@ -671,14 +746,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 '"',
                 *quote_parts,
                 '"',
-                class_name="text-secondary-11 font-base italic",
+                class_name="text-muted-foreground font-base italic",
             ),
             rx.box(
-                rx.text(name, class_name="text-secondary-11 font-base"),
-                rx.text(role, class_name="text-secondary-10 font-base"),
+                rx.text(name, class_name="text-muted-foreground font-base"),
+                rx.text(role, class_name="text-subtle-foreground font-base"),
                 class_name="flex flex-col gap-0.5",
             ),
-            class_name="flex flex-col gap-4 border-l-[3px] border-secondary-4 pl-6 mt-2 mb-6",
+            class_name="flex flex-col gap-4 border-l-[3px] border-border-subtle pl-6 mt-2 mb-6",
         )
 
     def _render_tabs(self, block: DirectiveBlock) -> rx.Component:
@@ -740,15 +815,17 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                         rx.el.div(
                             header,
                             style={
-                                "fontWeight": "600",
-                                "color": "var(--secondary-12)",
-                                "fontSize": "1rem",
-                                "lineHeight": "1.5",
+                                "fontWeight": "500",
+                                "color": "var(--foreground)",
+                                "fontSize": "1.0625rem",
+                                "lineHeight": "1.5rem",
+                                "letterSpacing": "-0.015em",
                             },
                         ),
                         rx.el.div(
                             self._render_children(body),
                             style={"width": "100%"},
+                            class_name="[&>p:last-child]:mb-0",
                         ),
                         style={
                             "display": "flex",
@@ -762,13 +839,14 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 style={
                     "display": "flex",
                     "flexDirection": "column",
-                    "gap": "1.25rem",
+                    "gap": "1.5rem",
                     "width": "100%",
                     "paddingLeft": "1.5rem",
-                    "borderLeft": "1.5px solid var(--secondary-4)",
+                    "borderLeft": "1px solid var(--border)",
                 },
             ),
             style={"width": "100%", "margin": "1.5rem 0"},
+            class_name="docs-section-list",
         )
 
 

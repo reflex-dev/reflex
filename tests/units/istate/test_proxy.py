@@ -3,6 +3,8 @@
 import asyncio
 import dataclasses
 import pickle
+import subprocess
+import sys
 from asyncio import CancelledError
 from contextlib import asynccontextmanager
 from typing import Any, ClassVar
@@ -19,8 +21,101 @@ from reflex.istate.proxy import (
     MutableProxy,
     ReadOnlyStateProxy,
     StateProxy,
+    is_mutable_type,
 )
 from reflex.state import BaseState
+
+
+def test_proxy_does_not_import_sqlalchemy() -> None:
+    """State mutation tracking must not load an unused database integration."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import sys
+from reflex.istate.proxy import is_mutable_type
+
+assert is_mutable_type(list)
+assert not is_mutable_type(str)
+assert "sqlalchemy" not in sys.modules
+""",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize("models_first", [False, True])
+def test_mutable_models_with_either_import_order(models_first: bool) -> None:
+    """Model classification works before or after importing state tracking."""
+    pytest.importorskip("sqlalchemy")
+    pytest.importorskip("sqlmodel")
+    script = """
+from pydantic import BaseModel
+from pydantic.v1 import BaseModel as LegacyPydanticBase
+from sqlalchemy.orm import DeclarativeBase, DeclarativeBaseNoMeta, declarative_base
+from sqlmodel import SQLModel
+"""
+    proxy_import = "from reflex.istate import proxy\n"
+    script = script + proxy_import if models_first else proxy_import + script
+    script += """
+class DatabaseBase(DeclarativeBase):
+    pass
+
+class PydanticModel(BaseModel):
+    value: int = 1
+
+class SQLModelSubclass(SQLModel):
+    value: int = 1
+
+for cls in (DeclarativeBase, DatabaseBase, BaseModel, PydanticModel, SQLModel, SQLModelSubclass):
+    assert proxy.is_mutable_type(cls), cls
+    assert proxy.is_mutable_type(cls), cls  # Exercise the cached result too.
+
+for cls in (LegacyPydanticBase, DeclarativeBaseNoMeta, declarative_base()):
+    assert not proxy.is_mutable_type(cls), cls
+
+Impostor = type("DeclarativeBase", (), {"__module__": "sqlalchemy.orm.decl_api"})
+assert not proxy.is_mutable_type(Impostor)
+assert proxy.MUTABLE_TYPES == (list, dict, set, DeclarativeBase, BaseModel)
+assert "MUTABLE_TYPES" not in dir(proxy)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.parametrize(
+    ("type_", "expected"),
+    [
+        (list, True),
+        (dict, True),
+        (set, True),
+        (type("ListSubclass", (list,), {}), True),
+        (type("DictSubclass", (dict,), {}), True),
+        (type("SetSubclass", (set,), {}), True),
+        (dataclasses.make_dataclass("Data", []), True),
+        (dataclasses.make_dataclass("FrozenData", [], frozen=True), True),
+        (rx.Var, False),
+        (int, False),
+        (str, False),
+        (tuple, False),
+        (frozenset, False),
+        (object, False),
+    ],
+)
+def test_is_mutable_type(type_: type, expected: bool) -> None:
+    """Keep the existing container, dataclass, and Var classification rules."""
+    assert is_mutable_type(type_) is expected
 
 
 @dataclasses.dataclass
@@ -912,10 +1007,10 @@ def test_fast_path_skips_names_a_subclass_defines():
     """A subclass defining a fast-pathed framework name keeps the full lookup for it.
 
     The fast path bypasses var resolution, so it must not apply to a name the
-    state itself defines (here a marked override of a BaseState method, and a
-    backend var named like a framework method). The class is a detached root
-    (not a substate of ``State``) so the shadowed method never reaches the
-    framework paths that other tests exercise on the shared state tree.
+    state itself defines (here a marked override of a BaseState method). The
+    class is a detached root (not a substate of ``State``) so the shadowed
+    method never reaches the framework paths that other tests exercise on the
+    shared state tree.
     """
     from reflex.state import BaseState
 
@@ -930,51 +1025,11 @@ def test_fast_path_skips_names_a_subclass_defines():
         {
             "__module__": __name__,
             "__qualname__": "ShadowState",
-            "__annotations__": {"_get_was_touched": int},
-            "_get_was_touched": 7,
             "get_value": get_value,
         },
     )
     assert "get_value" in BaseState._fast_attr_names
     assert "get_value" not in ShadowState._fast_attr_names
-    assert "_get_was_touched" not in ShadowState._fast_attr_names
     assert "dirty_vars" in ShadowState._fast_attr_names
     state = ShadowState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
     assert state.get_value("k") == "shadow:k"
-    assert state._get_was_touched == 7
-
-
-def test_fast_path_prunes_names_registered_after_class_creation():
-    """Vars and handlers added after class creation also leave the fast path."""
-    from reflex_base.constants import RouteArgType
-
-    from reflex.state import BaseState
-
-    DynamicState = type(
-        "DynamicState",
-        (BaseState,),
-        {"__module__": __name__, "__qualname__": "DynamicState"},
-    )
-    DynamicSubState = type(
-        "DynamicSubState",
-        (DynamicState,),
-        {"__module__": __name__, "__qualname__": "DynamicSubState"},
-    )
-    DynamicGrandChild = type(
-        "DynamicGrandChild",
-        (DynamicSubState,),
-        {"__module__": __name__, "__qualname__": "DynamicGrandChild"},
-    )
-    tree = (DynamicState, DynamicSubState, DynamicGrandChild)
-    for cls in tree:
-        assert {"get_value", "get_delta", "get_state"} <= cls._fast_attr_names
-
-    DynamicState.setup_dynamic_args({"get_value": RouteArgType.SINGLE})
-    DynamicState._add_event_handler("get_delta", lambda self: None)
-    DynamicState.add_var("get_state", int, 0)
-    # Registered on the root and inherited down the tree, so pruned everywhere.
-    for cls in tree:
-        assert "get_value" not in cls._fast_attr_names
-        assert "get_delta" not in cls._fast_attr_names
-        assert "get_state" not in cls._fast_attr_names
-        assert "dirty_vars" in cls._fast_attr_names

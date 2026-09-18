@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from contextlib import nullcontext
 from importlib import import_module
 from importlib.util import find_spec
@@ -362,13 +363,38 @@ def _compile_app(*, avoid_dirty_check: bool = True):
         import concurrent.futures
 
         with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-            compile_future = executor.submit(app_task, *args, **kwargs)
+            compile_future = executor.submit(
+                _compile_app_worker, app_task, args, kwargs
+            )
             return_result = compile_future.result()
     else:
         return_result = app_task(*args, **kwargs)
 
     if not return_result:
         raise SystemExit(1)
+
+
+def _compile_app_worker(
+    app_task: Callable[..., bool],
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> bool:
+    """Compile an app in a worker and flush telemetry before the worker exits.
+
+    Args:
+        app_task: The app compilation callable.
+        args: Positional arguments for ``app_task``.
+        kwargs: Keyword arguments for ``app_task``.
+
+    Returns:
+        Whether the app compiled successfully.
+    """
+    from reflex_base import otel
+
+    try:
+        return app_task(*args, **kwargs)
+    finally:
+        otel.flush()
 
 
 def _run_dev(

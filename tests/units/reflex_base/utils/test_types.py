@@ -5,7 +5,7 @@ import subprocess
 import sys
 import typing
 from collections.abc import Callable
-from typing import Literal, TypeVar
+from typing import Annotated, Literal, TypeVar
 
 import pytest
 from reflex_base.utils.types import (
@@ -77,6 +77,25 @@ def test_property_classes_wildcard_import_compatibility(module_name: str):
     )
 
     assert result.stdout.strip() == "True"
+
+
+def test_import_does_not_load_sqlalchemy() -> None:
+    """Generic type helpers must not import optional database support."""
+    script = """
+import sys
+
+from reflex_base.utils import types  # noqa: F401
+
+assert "sqlalchemy" not in sys.modules, "SQLAlchemy imported eagerly"
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def _type_alias_types() -> list[type]:
@@ -177,3 +196,53 @@ def test_typehint_issubclass_resolves_type_alias(alias_cls: type) -> None:
     assert typehint_issubclass(maybe, maybe)
     assert not typehint_issubclass(maybe, str)
     assert typehint_issubclass(str, maybe)
+
+
+@pytest.mark.parametrize("alias_cls", _type_alias_types())
+def test_resolve_type_alias_unwraps_annotated(alias_cls: type) -> None:
+    """``Annotated`` metadata is stripped, including around and inside aliases."""
+    assert resolve_type_alias(Annotated[int, "meta"]) is int
+    assert resolve_type_alias(Annotated[Annotated[int, "a"], "b"]) is int
+    assert resolve_type_alias(Annotated[int | str, "meta"]) == int | str
+    # An alias on either side of the annotation resolves through it.
+    assert resolve_type_alias(Annotated[alias_cls("Name", str), "meta"]) is str
+    assert resolve_type_alias(alias_cls("Meta", Annotated[str, "meta"])) is str
+    # A union member keeps resolving.
+    assert resolve_type_alias(Annotated[int, "meta"] | str) == int | str
+
+
+def test_typehint_issubclass_unwraps_annotated() -> None:
+    """``Annotated`` compares as the type it annotates, on either side."""
+    assert typehint_issubclass(Annotated[int, "meta"], int)
+    assert typehint_issubclass(int, Annotated[int, "meta"])
+    assert typehint_issubclass(Annotated[int, "a"], Annotated[int, "b"])
+    assert not typehint_issubclass(Annotated[str, "meta"], int)
+    # The union member-wise comparison must see a union, not the metadata.
+    assert typehint_issubclass(Annotated[int | str, "meta"], int | str)
+    assert typehint_issubclass(int, Annotated[int | str, "meta"])
+    assert not typehint_issubclass(Annotated[int | str, "meta"], int)
+    assert typehint_issubclass(list[Annotated[int, "meta"]], list[int])
+
+
+def test_annotated_attributes_do_not_unwrap_user_classes() -> None:
+    """User-defined metadata attributes must not identify an Annotated hint."""
+
+    class MetadataType:
+        __metadata__ = ("custom",)
+        __origin__ = int
+
+    assert resolve_type_alias(MetadataType) is MetadataType
+
+
+def test_isinstance_unwraps_annotated() -> None:
+    """``_isinstance`` validates against the annotated type, not the metadata."""
+    assert _isinstance(1, Annotated[int, "meta"], nested=1, treat_var_as_type=False)
+    assert not _isinstance(
+        "x", Annotated[int, "meta"], nested=1, treat_var_as_type=False
+    )
+    assert _isinstance(
+        {"a": 1}, dict[str, Annotated[int, "meta"]], nested=2, treat_var_as_type=False
+    )
+    assert not _isinstance(
+        {"a": "x"}, dict[str, Annotated[int, "meta"]], nested=2, treat_var_as_type=False
+    )

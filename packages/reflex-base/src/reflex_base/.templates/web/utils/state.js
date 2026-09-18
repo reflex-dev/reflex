@@ -10,14 +10,9 @@ import {
   useSearchParams,
   useParams,
 } from "react-router";
-import {
-  initialEvents,
-  initialState,
-  onLoadInternalEvent,
-  state_name,
-  exception_state_name,
-} from "$/utils/context";
+import { app, eventLoop } from "$/utils/context-registry";
 import debounce from "$/utils/helpers/debounce";
+import { parseJson } from "$/utils/helpers/json";
 import throttle from "$/utils/helpers/throttle";
 import { uploadFiles } from "$/utils/helpers/upload";
 
@@ -171,6 +166,7 @@ export const applyDelta = (state, delta) => {
  * @returns The evaluated component.
  */
 export const evalReactComponent = async (component) => {
+  await window.__reflex_load?.();
   if (!window.React && window.__reflex) {
     window.React = window.__reflex.react;
   }
@@ -224,6 +220,10 @@ function urlFrom(string) {
  * @param params The params object from useParams
  */
 export const applyEvent = async (event, socket, navigate, params) => {
+  // Eval'd callback strings (format_queue_events) dispatch through addEvents
+  // like compiled event triggers do; late-bound so a remounted
+  // EventLoopProvider is picked up.
+  const addEvents = (...args) => eventLoop.addEvents(...args);
   // Handle special events
   if (event.name == "_redirect") {
     if ((event.payload.path ?? undefined) === undefined) {
@@ -258,31 +258,31 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   if (event.name == "_remove_cookie") {
     cookies.remove(event.payload.key, { ...event.payload.options });
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_clear_local_storage") {
     localStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_remove_local_storage") {
     localStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_clear_session_storage") {
     sessionStorage.clear();
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
   if (event.name == "_remove_session_storage") {
     sessionStorage.removeItem(event.payload.key);
-    queueEventIfSocketExists(initialEvents(), socket, navigate, params);
+    queueEventIfSocketExists(app.initialEvents(), socket, navigate, params);
     return;
   }
 
@@ -426,6 +426,8 @@ export const applyEvent = async (event, socket, navigate, params) => {
 
   // Send the event to the server.
   if (socket) {
+    // Instrumentation hook (installed by reflex-otel): may add a traceparent.
+    window.__reflex_otel?.onEventSend?.(event);
     socket.emit("event", event);
   }
 };
@@ -470,25 +472,6 @@ export const applyRestEvent = async (event, socket, navigate, params) => {
 const resolveSocket = (socket) => {
   return socket?.current ?? socket;
 };
-
-// Python's json.dumps emits bare Infinity/-Infinity/NaN tokens (invalid JSON).
-// Rewrite them outside string literals so JSON.parse accepts the payload.
-// 1e999 / -1e999 overflow to ±Infinity; NaN has no JSON literal, so it is
-// swapped for a sentinel string and revived back to NaN after parsing.
-// The alternation matches whole string literals first (passed through unchanged),
-// guaranteeing bare-token matches only land in numeric positions.
-const NAN_SENTINEL = "__reflex_nan__";
-const NON_FINITE_FLOAT_RE = /"(?:[^"\\]|\\.)*"|-?\bInfinity\b|\bNaN\b/g;
-const NON_FINITE_REPLACEMENTS = {
-  Infinity: "1e999",
-  "-Infinity": "-1e999",
-  NaN: `"${NAN_SENTINEL}"`,
-};
-const rewriteBareNonFiniteFloats = (str) =>
-  str.replace(NON_FINITE_FLOAT_RE, (match) =>
-    match[0] === '"' ? match : NON_FINITE_REPLACEMENTS[match],
-  );
-const reviveNonFiniteFloats = (_k, v) => (v === NAN_SENTINEL ? NaN : v);
 
 /**
  * Queue events to be processed and trigger processing of queue.
@@ -603,16 +586,9 @@ export const connect = async (
   socket.current.io.encoder.replacer = (k, v) => (v === undefined ? null : v);
   socket.current.io.decoder.tryParse = (str) => {
     try {
-      return JSON.parse(str);
-    } catch (e) {
-      try {
-        return JSON.parse(
-          rewriteBareNonFiniteFloats(str),
-          reviveNonFiniteFloats,
-        );
-      } catch (e2) {
-        return false;
-      }
+      return parseJson(str);
+    } catch {
+      return false;
     }
   };
   // Set up a reconnect helper function
@@ -673,11 +649,12 @@ export const connect = async (
   socket.current.on("connect", async () => {
     socket.current.wait_connect = false;
     setConnectErrors([]);
+    window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
     window.addEventListener("beforeunload", disconnectTrigger);
     if (socket.current.rehydrate) {
       socket.current.rehydrate = false;
-      queueEvents(initialEvents(), socket, true, navigate, params);
+      queueEvents(app.initialEvents(), socket, true, navigate, params);
     }
     // Drain any initial events from the queue.
     while (event_queue.length > 0) {
@@ -702,6 +679,7 @@ export const connect = async (
 
   socket.current.on("disconnect", (reason, details) => {
     socket.current.wait_connect = false;
+    window.__reflex_otel?.onSocketDisconnect?.(reason);
     const try_reconnect =
       reason !== "io server disconnect" && reason !== "io client disconnect";
     window.removeEventListener("beforeunload", disconnectTrigger);
@@ -757,7 +735,7 @@ export const connect = async (
           dispatch[substate](update.delta[substate]);
           // handle events waiting for `is_hydrated`
           if (
-            substate === state_name &&
+            substate === app.state_name &&
             update.delta[substate]?.is_hydrated_rx_state_
           ) {
             // Deliberately not awaited: the rest of the delta and the client
@@ -1014,7 +992,7 @@ export const useEventLoop = (
     }
     // only use websockets if state is present and backend is not disabled (reflex cloud).
     if (
-      Object.keys(initialState).length > 1 &&
+      Object.keys(app.initialState).length > 1 &&
       !isBackendDisabled() &&
       !socket.current?.connected
     ) {
@@ -1078,7 +1056,7 @@ export const useEventLoop = (
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
           info: error.name + ": " + error.message + "\n" + error.stack,
           component_stack: "",
         }),
@@ -1090,7 +1068,7 @@ export const useEventLoop = (
     //https://github.com/mknichel/javascript-errors?tab=readme-ov-file#promise-rejection-events
     window.onunhandledrejection = function (event) {
       addEvents([
-        ReflexEvent(`${exception_state_name}.handle_frontend_exception`, {
+        ReflexEvent(`${app.exception_state_name}.handle_frontend_exception`, {
           info:
             event.reason?.name +
             ": " +
@@ -1156,7 +1134,7 @@ export const useEventLoop = (
         const vars = {};
         vars[storage_to_state_map[e.key]] = e.newValue;
         const event = ReflexEvent(
-          `${state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
+          `${app.state_name}.reflex___state____update_vars_internal_state.update_vars_internal`,
           { vars: vars },
         );
         addEvents([event], e);
@@ -1199,11 +1177,11 @@ export const useEventLoop = (
     }
 
     // Equivalent to routeChangeComplete - runs after navigation completes
-    addEvents(onLoadInternalEvent());
+    addEvents(app.onLoadInternalEvent());
 
     // Update the ref
     prevLocationRef.current = location;
-  }, [location, dispatch, onLoadInternalEvent, addEvents]);
+  }, [location, dispatch, addEvents]);
 
   return [addEvents, connectErrors];
 };

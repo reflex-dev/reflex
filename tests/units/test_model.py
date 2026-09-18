@@ -11,6 +11,7 @@ import reflex.model
 from reflex.model import (
     Model,
     ModelRegistry,
+    _ClassThatErrorsOnInit,
     alembic_autogenerate,
     alembic_init,
     get_engine,
@@ -298,3 +299,16 @@ def test_no_rebind_mutable_proxy_for_instrumented_functions():
     assert "sa_obj" not in sa_state.dirty_vars
     sa_state.sa_obj.keywords.append(SAKeyword(value="test"))
     assert "sa_obj" in sa_state.dirty_vars
+
+
+@pytest.mark.parametrize("class_kwargs", [{}, {"table": True}])
+def test_subclass_without_db_extra_points_to_install(class_kwargs: dict):
+    """Subclassing the placeholder Model raises the guided db extra ImportError.
+
+    Args:
+        class_kwargs: Class keywords passed to the subclass declaration.
+    """
+    with pytest.raises(ImportError, match=r"reflex\[db\]"):
+
+        class Item(_ClassThatErrorsOnInit, **class_kwargs):  # pyright: ignore[reportUnusedClass]
+            name: str

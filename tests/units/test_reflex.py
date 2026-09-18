@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 
+import click
 import click.testing
 import pytest
 from pytest_mock import MockerFixture
@@ -122,6 +123,52 @@ print(json.dumps({{"exit_code": result.exit_code, "loaded": loaded}}))
 
     assert outcome["exit_code"] == 0
     assert outcome["loaded"] == []
+
+
+def test_backend_launcher_does_not_import_compiler_or_state() -> None:
+    """The backend supervisor must not load the worker's compiler and state."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import sys
+from reflex import reflex
+from reflex.istate.manager import reset_disk_state_manager
+from reflex.utils import build, exec, telemetry
+
+unexpected = {"reflex.state", "reflex.compiler.utils", "sqlalchemy"} & sys.modules.keys()
+assert not unexpected, unexpected
+""",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_compile_app_worker_flushes_telemetry(mocker):
+    """Flush the completed compile span before an isolated worker exits."""
+    app_task = mocker.Mock(return_value=True)
+    flush = mocker.patch("reflex_base.otel.flush")
+
+    assert reflex._compile_app_worker(app_task, (True,), {"trigger": "initial"})
+
+    app_task.assert_called_once_with(True, trigger="initial")
+    flush.assert_called_once_with()
+
+
+def test_compile_app_worker_flushes_telemetry_on_failure(mocker):
+    """Flush telemetry even when the worker's compile task raises."""
+    app_task = mocker.Mock(side_effect=RuntimeError("compile failed"))
+    flush = mocker.patch("reflex_base.otel.flush")
+
+    with pytest.raises(RuntimeError, match="compile failed"):
+        reflex._compile_app_worker(app_task, (), {})
+
+    flush.assert_called_once_with()
 
 
 def test_cloud_commands_registered():
