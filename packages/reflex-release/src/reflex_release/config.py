@@ -12,6 +12,7 @@ import dataclasses
 import re
 import sys
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from packaging.version import Version
 
@@ -52,6 +53,7 @@ _VERSION_PIN_RE = re.compile(r"[A-Za-z0-9<>=~!^][A-Za-z0-9._+*,<>=~!^-]*")
 POST_RELEASE_INPUTS = ("tag", "package", "version")
 
 _KNOWN_KEYS = frozenset({
+    "app",
     "allow-self-review",
     "cli-command",
     "custom-build",
@@ -141,6 +143,31 @@ class LockstepGroup:
 
 
 @dataclasses.dataclass(frozen=True)
+class AppConfig:
+    """Repository-owned workflows and source selection for an application.
+
+    Attributes:
+        build_workflow: Reusable build workflow filename.
+        deploy_workflow: Reusable deploy workflow filename.
+        source_submodule: Optional repo-relative source submodule path.
+        source_ref: Default upstream revision for dispatch and speculative dev.
+        production_environment: GitHub environment requiring human approval.
+        staging_environment: Environment passed to the staging deploy hook.
+        dev_environment: Environment passed to speculative dev deployments.
+        dev_schedule: Optional five-field cron expression for dev builds.
+    """
+
+    build_workflow: str
+    deploy_workflow: str
+    source_submodule: str = ""
+    source_ref: str = "origin/main"
+    production_environment: str = "production"
+    staging_environment: str = "staging"
+    dev_environment: str = "development"
+    dev_schedule: str = ""
+
+
+@dataclasses.dataclass(frozen=True)
 class Config:
     """Resolved release configuration for one repository.
 
@@ -194,6 +221,7 @@ class Config:
         never_publish_packages: Packages this repository builds but never
             releases. They are excluded from every release path rather than
             merely exempt from the changelog.
+        app: Application deployment settings, replacing package publishing.
     """
 
     root: Path
@@ -224,6 +252,7 @@ class Config:
     uv_version: str = DEFAULT_UV_VERSION
     python_version: str = DEFAULT_PYTHON_VERSION
     never_publish_packages: tuple[str, ...] = ()
+    app: AppConfig | None = None
 
     def package_dir(self, package: str) -> str:
         """Return the repo-relative directory of a package.
@@ -849,6 +878,91 @@ def _default_root_source_dirs(root: Path, root_package: str | None) -> tuple[str
     return (module,) if (root / module).is_dir() else ()
 
 
+def _load_app(table: dict, towncrier: dict) -> AppConfig:
+    """Parse application workflows and source settings.
+
+    Args:
+        table: The reflex-release configuration table.
+        towncrier: Towncrier settings, which cannot accompany app mode.
+
+    Returns:
+        Validated application configuration.
+    """
+    app_table = table["app"]
+    fields = {field.name.replace("_", "-") for field in dataclasses.fields(AppConfig)}
+    if not isinstance(app_table, dict) or set(app_table) - fields:
+        fail(f"[tool.{TOOL_TABLE}.app] must contain only: {', '.join(sorted(fields))}")
+    values = {
+        key.replace("-", "_"): _string(app_table, key, "", f"[tool.{TOOL_TABLE}.app]")
+        for key in app_table
+    }
+    for key in ("build_workflow", "deploy_workflow"):
+        if not _WORKFLOW_FILENAME_RE.fullmatch(values.get(key, "")):
+            fail(
+                f"app {key.replace('_', '-')} must name a workflow under .github/workflows"
+            )
+    app = AppConfig(**values)
+    for key in ("production_environment", "staging_environment", "dev_environment"):
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", getattr(app, key)):
+            fail(f"app {key} must be a nonempty environment name")
+    if (
+        len({
+            app.production_environment,
+            app.staging_environment,
+            app.dev_environment,
+        })
+        != 3
+    ):
+        fail("app development, staging and production environments must be distinct")
+    path = Path(app.source_submodule)
+    if app.source_submodule and (
+        path.is_absolute()
+        or ".." in path.parts
+        or not path.parts
+        or any(part.startswith(".") for part in path.parts)
+        or not re.fullmatch(r"[A-Za-z0-9_/-]+", app.source_submodule)
+    ):
+        fail("app source-submodule must be a relative directory inside the repository")
+    if (
+        not app.source_ref
+        or app.source_ref.startswith("-")
+        or any(c.isspace() for c in app.source_ref)
+    ):
+        fail("app source-ref must be a git revision")
+    if app.dev_schedule and (
+        len(app.dev_schedule.split()) != 5
+        or not re.fullmatch(r"[0-9*/,-]+(?: +[0-9*/,-]+){4}", app.dev_schedule)
+    ):
+        fail("app dev-schedule must be a five-field numeric cron expression")
+    if (
+        any(
+            key in table
+            for key in (
+                "root-package",
+                "root-source-dirs",
+                "packages-dir",
+                "package-source-subdirs",
+                "custom-build",
+                "dispatch-package-inputs",
+                "lockstep",
+                "internal-packages",
+                "changelog-exempt-packages",
+                "never-publish-packages",
+                "prerelease-branch-prefix",
+                "hotfix-branch-prefix",
+                "latest-release-package",
+                "post-release-workflow",
+                "tag-prefix",
+            )
+        )
+        or towncrier
+    ):
+        fail(
+            "app deployments cannot be combined with package or towncrier release settings"
+        )
+    return app
+
+
 def load_config(root: Path) -> Config:
     """Load the release configuration from a repository's ``pyproject.toml``.
 
@@ -964,6 +1078,15 @@ def load_config(root: Path) -> Config:
         fail(
             f"[tool.{TOOL_TABLE}] dispatch-package-inputs must be one of "
             f"auto, checkboxes, text (got {config.dispatch_package_inputs!r})"
+        )
+
+    if "app" in table:
+        try:
+            ZoneInfo(config.release_timezone)
+        except (ValueError, ZoneInfoNotFoundError):
+            fail(f"invalid release-timezone: {config.release_timezone!r}")
+        return dataclasses.replace(
+            config, app=_load_app(table, towncrier), packages_dir=None
         )
 
     packages = config.all_packages()
