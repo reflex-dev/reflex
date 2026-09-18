@@ -279,7 +279,7 @@ def insert_app_wraps(
 
 
 def _normalize_field_dependencies(
-    field_dependencies: Mapping[str, Sequence[str]] | None,
+    field_dependencies: Mapping[str, Iterable[str]] | None,
     state: str,
     field_name: str,
 ) -> Mapping[str, tuple[str, ...]]:
@@ -356,7 +356,7 @@ class VarData:
         position: Hooks.HookPosition | None = None,
         components: Iterable[BaseComponent] | None = None,
         app_wraps: Iterable[tuple[int, BaseComponent]] | None = None,
-        field_dependencies: Mapping[str, Sequence[str]] | None = None,
+        field_dependencies: Mapping[str, Iterable[str]] | None = None,
     ):
         """Initialize the var data.
 
@@ -469,13 +469,18 @@ class VarData:
 
         # Union every state's fields, in order and deduped, so a var composed
         # of several fields -- across as many states as it reaches -- carries
-        # all of them and a dependency on it tracks each one.
-        field_dependencies: dict[str, tuple[str, ...]] = {}
+        # all of them and a dependency on it tracks each one. Accumulated as
+        # ordered sets and materialized once: this runs for every var
+        # operation, so rebuilding a tuple per contributing var costs.
+        seen_fields: dict[str, dict[str, None]] = {}
         for var_data in all_var_datas:
             for state_name, names in var_data.field_dependencies.items():
-                field_dependencies[state_name] = tuple(
-                    dict.fromkeys((*field_dependencies.get(state_name, ()), *names))
-                )
+                seen = seen_fields.get(state_name)
+                if seen is None:
+                    seen_fields[state_name] = dict.fromkeys(names)
+                else:
+                    for name in names:
+                        seen[name] = None
 
         hooks: dict[str, VarData | None] = {
             hook: None for var_data in all_var_datas for hook in var_data.hooks
@@ -517,7 +522,7 @@ class VarData:
             insert_app_wraps(app_wraps, var_data.app_wraps)
 
         return VarData(
-            field_dependencies=field_dependencies,
+            field_dependencies=seen_fields,
             imports=imports_,
             hooks=hooks,
             deps=deps,
