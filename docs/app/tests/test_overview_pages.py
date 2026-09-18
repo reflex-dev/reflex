@@ -51,6 +51,15 @@ def test_overview_renders_twice(path):
         body, script = render_docgen_document("docs/" + path, DOCS / path)
         assert body is not None
         assert script is not None
+        pending = [body]
+        disclosures = []
+        while pending:
+            component = pending.pop()
+            if component.tag == "details":
+                disclosures.append(component)
+            pending.extend(component.children)
+        assert len(disclosures) == 3
+        assert all(item.children[0].tag == "summary" for item in disclosures)
 
 
 def test_legacy_faq_remains_schema_only():

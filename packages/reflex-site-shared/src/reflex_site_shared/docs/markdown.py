@@ -304,6 +304,8 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
     def directive(self, block: DirectiveBlock) -> rx.Component:
         """Handle ```md <directive>``` blocks (alert, video, etc.)."""
         match block.name:
+            case "faq-section":
+                return self._render_faq_section(block)
             case "alert":
                 return self._render_alert(block)
             case "video":
@@ -318,6 +320,45 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                 return self._render_section(block)
             case _:
                 return self._render_children(block.children)
+
+    def _render_faq_section(self, block: DirectiveBlock) -> rx.Component:
+        """Render FAQ questions as native disclosures with answers in the DOM."""
+        children: list[rx.Component] = []
+        question: HeadingBlock | None = None
+        answer: list[Block] = []
+
+        def flush() -> None:
+            if question is not None:
+                children.append(
+                    rx.el.details(
+                        rx.el.summary(
+                            rx.el.span(*_render_spans(question.children)),
+                            rx.icon(
+                                "chevron-down",
+                                size=20,
+                                aria_hidden=True,
+                                class_name="shrink-0 transition-transform group-open:rotate-180",
+                            ),
+                            class_name="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-medium text-foreground [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 rounded-xl",
+                        ),
+                        rx.box(
+                            self._render_children(tuple(answer)),
+                            class_name="px-5 pb-4 [&>div>*:last-child]:mb-0",
+                        ),
+                        class_name="group my-4 rounded-xl border border-border bg-background",
+                    )
+                )
+
+        for child in block.children:
+            if isinstance(child, HeadingBlock) and child.level == 3:
+                flush()
+                question, answer = child, []
+            elif question is None:
+                children.append(self.transform_block(child))
+            else:
+                answer.append(child)
+        flush()
+        return rx.fragment(*children)
 
     def list_block(self, block: ListBlock) -> rx.Component:
         items = [self.transform_list_item(item) for item in block.items]
@@ -814,7 +855,9 @@ def _extract_faqs_jsonld(source: str) -> tuple[str, rx.Component | None]:
     before, _, rest = source.partition(FAQS_START_MARKER)
     faq_chunk, _, after = rest.partition(FAQS_END_MARKER)
     visible_faq = (
-        faq_chunk.replace(FAQS_VISIBLE_MARKER, "")
+        "\n```md faq-section\n"
+        + faq_chunk.replace(FAQS_VISIBLE_MARKER, "").strip()
+        + "\n```\n"
         if FAQS_VISIBLE_MARKER in faq_chunk
         else ""
     )
