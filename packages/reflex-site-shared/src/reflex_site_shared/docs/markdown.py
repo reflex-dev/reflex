@@ -342,7 +342,7 @@ class ReflexDocTransformer(DocumentTransformer[rx.Component]):
                             ),
                             class_name="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-medium text-foreground [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 rounded-xl",
                         ),
-                        rx.box(
+                        rx.el.div(
                             self._render_children(tuple(answer)),
                             class_name="px-5 pb-4 [&>div>*:last-child]:mb-0",
                         ),
