@@ -12,11 +12,27 @@ from reflex_site_shared.components.docs_shell import (
     docs_right_sidebar,
     docs_sidebar_category,
     docs_sidebar_group,
+    docs_sidebar_leaf,
+    docs_sidebar_section,
 )
 from reflex_site_shared.docs.models import DocsLayoutConfig, DocsPage, NavigationItem
 from reflex_site_shared.templates.docs import docs_layout
 
 import reflex as rx
+
+
+def test_sidebar_active_marker_aligns_with_section_guide() -> None:
+    """Use the same guide alignment and row spacing as a nested Learn group."""
+    rendered = str(docs_sidebar_leaf._definition.component)
+    section = docs_sidebar_section("MCP", "/mcp/", rx.text("Overview"))
+    group = docs_sidebar_group("Getting Started", rx.text("Installation"))
+    section_rows = section.children[1]
+    group_rows = group.children[0].children[1]
+
+    for rows in (section_rows, group_rows):
+        assert "left-[2.5rem]" in str(rows.children[0].class_name)
+        assert "gap-1" in str(rows.class_name)
+    assert "-bottom-1 -top-1 left-0" in rendered
 
 
 def test_feedback_choices_are_individual_popover_triggers():
