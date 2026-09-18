@@ -1278,6 +1278,11 @@ def compile_app(
     # ``library`` from the current module layout (handles a module flipping to
     # a package across hot reloads).
     reset_memo_component_classes()
+    # Page evaluation rebuilds every chain that is not interned by handler, so
+    # entries from an earlier compile can only retain dead chains.
+    context = RegistrationContext.ensure_context()
+    context._bound_event_chains.clear()
+    context._memoized_event_triggers.clear()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
             _bundle_library(dependency)
