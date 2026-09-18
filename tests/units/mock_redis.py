@@ -117,6 +117,15 @@ def mock_redis() -> Redis:
             raise TypeError(WRONGTYPE_MESSAGE)
         return len(keyset)
 
+    async def mock_sismember(key: KeyT, value: EncodableT) -> bool:  # noqa: RUF029
+        _expire_keys()
+        keyset = keys.get(_key_bytes(key))
+        if keyset is None:
+            return False
+        if not isinstance(keyset, set):
+            raise TypeError(WRONGTYPE_MESSAGE)
+        return value in keyset
+
     async def mock_delete(key: KeyT) -> int:  # noqa: RUF029
         _expire_keys()
         key = _key_bytes(key)
@@ -142,7 +151,7 @@ def mock_redis() -> Redis:
             return True
         return False
 
-    def pipeline():
+    def pipeline(transaction: bool = True):
         pipeline_mock = Mock()
         results = []
 
@@ -161,6 +170,12 @@ def mock_redis() -> Redis:
         def sadd_pipeline(key: KeyT, value: EncodableT):
             results.append(redis_mock.sadd(key=key, value=value))
 
+        def scard_pipeline(key: KeyT):
+            results.append(redis_mock.scard(key=key))
+
+        def sismember_pipeline(key: KeyT, value: EncodableT):
+            results.append(redis_mock.sismember(key=key, value=value))
+
         def pexpire_pipeline(key: KeyT, px: int, xx: bool = False):
             results.append(redis_mock.pexpire(key=key, px=px, xx=xx))
 
@@ -171,6 +186,8 @@ def mock_redis() -> Redis:
         pipeline_mock.get = get_pipeline
         pipeline_mock.set = set_pipeline
         pipeline_mock.sadd = sadd_pipeline
+        pipeline_mock.scard = scard_pipeline
+        pipeline_mock.sismember = sismember_pipeline
         pipeline_mock.pexpire = pexpire_pipeline
         pipeline_mock.execute = execute
 
@@ -242,6 +259,7 @@ def mock_redis() -> Redis:
     redis_mock.sadd = mock_sadd
     redis_mock.srem = mock_srem
     redis_mock.scard = mock_scard
+    redis_mock.sismember = mock_sismember
     redis_mock.pexpire = mock_pexpire
     redis_mock.pipeline = pipeline
     redis_mock.pttl = pttl

@@ -821,10 +821,13 @@ class StateManagerRedis(StateManager):
             message: The redis message.
         """
         # Opportunistic lock contention notification.
-        token = message["channel"].rsplit(b":", 1)[1][: -len(b"_lock_waiters")].decode()
+        lock_key = message["channel"].rsplit(b":", 1)[1][: -len(b"_waiters")]
+        token = lock_key[: -len(b"_lock")].decode()
         if (
             message["data"] == b"sadd"
             and (state_lock := self._cached_states_locks.get(token)) is not None
+            # Waiters from this instance share the lease instead of breaking it.
+            and await self._n_lock_contenders(lock_key) > 0
         ):
             # Cancel the lease break task to force a lock reacquisition.
             async with state_lock:
@@ -947,18 +950,25 @@ class StateManagerRedis(StateManager):
         return len(lock_released_events)
 
     async def _n_lock_contenders(self, lock_key: bytes) -> int:
-        """Get the number of contenders for a given lock key.
+        """Get the number of other instances contending for a given lock key.
+
+        Waiters belonging to this instance are excluded: they can read the
+        cached state behind the local lease instead of forcing a lock handoff.
 
         Args:
             lock_key: The redis key for the lock.
 
         Returns:
-            The number of contenders for the lock key across all instances.
+            The number of other instances contending for the lock key.
         """
-        res = self.redis.scard(lock_key + b"_waiters")
-        if inspect.isawaitable(res):
-            res = await res
-        return res
+        lock_waiter_key = lock_key + b"_waiters"
+        # Both reads in one round trip; no transaction needed, the count is
+        # advisory and goes stale as soon as it is returned either way.
+        pipeline = self.redis.pipeline(transaction=False)
+        pipeline.scard(lock_waiter_key)
+        pipeline.sismember(lock_waiter_key, self._instance_id)
+        n_waiters, self_is_waiting = await pipeline.execute()
+        return n_waiters - int(self_is_waiting)
 
     @contextlib.asynccontextmanager
     async def _request_lock_release(

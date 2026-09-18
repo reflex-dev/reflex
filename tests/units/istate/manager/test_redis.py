@@ -309,7 +309,6 @@ async def test_oplock_contention_queue(
     state_manager_2._oplock_enabled = True
 
     modify_started = asyncio.Event()
-    modify_2_started = asyncio.Event()
     modify_1_continue = asyncio.Event()
     modify_2_continue = asyncio.Event()
 
@@ -324,7 +323,6 @@ async def test_oplock_contention_queue(
 
     async def modify_2():
         await modify_started.wait()
-        modify_2_started.set()
         async with state_manager_2.modify_state(
             BaseStateToken(ident=token, cls=root_state),
         ) as new_state:
@@ -334,7 +332,6 @@ async def test_oplock_contention_queue(
 
     async def modify_3():
         await modify_started.wait()
-        modify_2_started.set()
         async with state_manager_2.modify_state(
             BaseStateToken(ident=token, cls=root_state),
         ) as new_state:
@@ -346,7 +343,15 @@ async def test_oplock_contention_queue(
     task_2 = asyncio.create_task(modify_2())
     task_3 = asyncio.create_task(modify_3())
 
-    await modify_2_started.wait()
+    lock_key = state_manager_2._lock_key(BaseStateToken(ident=token, cls=root_state))
+
+    async def both_contenders_queued():
+        while state_manager_2._n_lock_waiters(lock_key) < 2:  # noqa: ASYNC110
+            await asyncio.sleep(0)
+
+    # Both contenders have to be queued behind the lock before it is released,
+    # otherwise one of them takes the free lock without ever queuing up.
+    await asyncio.wait_for(both_contenders_queued(), timeout=2)
 
     # Let modify 1 complete
     modify_1_continue.set()
@@ -379,6 +384,68 @@ async def test_oplock_contention_queue(
         if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
     ])
     assert lock_events == 2
+
+
+async def test_oplock_same_instance_waiters_share_lease(
+    state_manager_redis: StateManagerRedis,
+    root_state: type[RedisTestState],
+    event_log: list[dict[str, Any]],
+):
+    """Test that concurrent modifications from one instance share a single lock.
+
+    A waiter belonging to the state manager that holds the lock is not a
+    contender: it reads the cached state behind the local lease instead of
+    forcing the lock to be handed off.
+
+    Args:
+        state_manager_redis: The StateManagerRedis to test.
+        root_state: The root state class.
+        event_log: The redis event log.
+    """
+    token = str(uuid.uuid4())
+
+    state_manager_redis._debug_enabled = True
+    state_manager_redis._oplock_enabled = True
+
+    state_manager_2 = StateManagerRedis(redis=state_manager_redis.redis)
+
+    state_manager_2._debug_enabled = True
+    state_manager_2._oplock_enabled = True
+
+    # Subscribe up front so both modifications race for the free lock together.
+    await state_manager_2._ensure_lock_task_subscribed()
+
+    async def modify():
+        async with state_manager_2.modify_state(
+            BaseStateToken(ident=token, cls=root_state),
+        ) as new_state:
+            assert isinstance(new_state, root_state)
+            new_state.count += 1
+
+    await asyncio.gather(modify(), modify())
+
+    # The second modification shares the lease instead of taking the lock again.
+    lock_events = len([
+        ev
+        for ev in event_log
+        if ev["channel"].endswith(b"lock") and ev["data"] == b"set"
+    ])
+    assert lock_events == 1
+
+    # Both increments are still cached behind the lease.
+    interim_state = await state_manager_redis.get_state(
+        BaseStateToken(ident=token, cls=root_state)
+    )
+    assert isinstance(interim_state, root_state)
+    assert interim_state.count == 0
+
+    await state_manager_2.close()
+
+    final_state = await state_manager_redis.get_state(
+        BaseStateToken(ident=token, cls=root_state)
+    )
+    assert isinstance(final_state, root_state)
+    assert final_state.count == 2
 
 
 async def test_oplock_contention_no_lease(
