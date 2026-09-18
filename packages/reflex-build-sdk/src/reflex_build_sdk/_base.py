@@ -195,6 +195,7 @@ class BaseClient:
         json: Any,
         authenticated: bool,
         form: Mapping[str, str] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
     ) -> Request:
         """Build an API request.
 
@@ -207,6 +208,8 @@ class BaseClient:
             json: The JSON body, if any.
             authenticated: Whether to send the access token.
             form: A form-encoded body, sent instead of ``json``.
+            extra_headers: Headers to send beside the ones every request carries,
+                which win over these.
 
         Returns:
             The request, carrying a fresh ``X-Request-ID``.
@@ -215,6 +218,9 @@ class BaseClient:
             MissingTokenError: If the request needs a token and the client has none.
         """
         headers = {
+            # First, so that the headers every request carries win: a caller cannot
+            # replace the request id an error is traced by.
+            **(extra_headers or {}),
             "Accept": "application/json",
             "User-Agent": user_agent(),
             "X-Request-ID": uuid.uuid4().hex,

@@ -960,6 +960,58 @@ class UsageEntry:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class ConnectionProvider:
+    """A third-party service an app can connect to."""
+
+    # The id to pass as ``provider``, e.g. ``"openai"``.
+    id: str
+    display_name: str
+    # The service brokering the connection, e.g. ``"nango"``.
+    broker: str
+    logo_url: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ConnectionStatus:
+    """Whether an app, or one of its users, is connected to a provider."""
+
+    provider: str
+    connected: bool
+    # The service brokering the connection, while it is connected.
+    broker: str | None = None
+    connected_at: datetime.datetime | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ConnectLink:
+    """Where to send someone to connect a provider."""
+
+    url: str
+    # When the link stops working.
+    expires_at: datetime.datetime | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class Credential:
+    """A third-party credential to call a provider with.
+
+    Read it when the call is made rather than storing it: it is refreshed on the
+    way out, so a copy kept in the app outlives what the provider accepts.
+    """
+
+    # The token, API key or password, depending on ``kind``. Kept out of this
+    # model's ``repr`` so that printing it, or an exception rendering it, does not
+    # disclose it.
+    access_token: str = field(repr=False)
+    # ``"oauth2"``, ``"api_key"``, ``"basic"``, or another the broker supports.
+    kind: str = "oauth2"
+    # When the credential stops working, for the kinds that expire.
+    expires_at: datetime.datetime | None = None
+    # The user name that goes with ``access_token`` for ``"basic"``.
+    username: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class SecurityViolation:
     """A security or logic issue found by a security review."""
 
