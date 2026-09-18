@@ -271,6 +271,64 @@ def test_linearize_bases_compares_by_identity() -> None:
     )
 
 
+def test_var_data_merge_collects_field_names():
+    """Merging vars of one state keeps every field name, deduped and in order."""
+    merged = VarData.merge(
+        VarData(state="s", field_name="a"),
+        VarData(state="s", field_name="b"),
+        VarData(state="s", field_name="a"),
+    )
+
+    assert merged is not None
+    assert dict(merged.field_dependencies) == {"s": ("a", "b")}
+    # `field_name` stays the first, so existing single-field readers are intact.
+    assert merged.field_name == "a"
+
+
+def test_var_data_merge_keeps_field_names_of_every_state():
+    """A var spanning several states keeps each state's own fields.
+
+    Fields stay grouped by the state that owns them, so a dependency on a
+    composite var tracks every field it reads rather than only those of
+    whichever state happened to merge first.
+    """
+    merged = VarData.merge(
+        VarData(state="s", field_name="a"),
+        VarData(state="other", field_name="b"),
+        VarData(state="s", field_name="c"),
+    )
+
+    assert merged is not None
+    assert dict(merged.field_dependencies) == {"s": ("a", "c"), "other": ("b",)}
+    # The fallback accessors report the first state and its first field only.
+    assert merged.state == "s"
+    assert merged.field_name == "a"
+
+
+def test_var_data_field_dependencies_round_trip():
+    """`state`/`field_name` are the shorthand for a single-field mapping."""
+    assert dict(VarData(state="s", field_name="a").field_dependencies) == {"s": ("a",)}
+    # A state with no named field is still recorded: many vars carry only the
+    # state, for its imports and hooks, and read no field.
+    assert dict(VarData(state="s").field_dependencies) == {"s": ()}
+    assert dict(VarData().field_dependencies) == {}
+    # The canonical form wins over the shorthand.
+    assert dict(
+        VarData(
+            state="ignored",
+            field_name="ignored",
+            field_dependencies={"s": ("a",), "other": ("b",)},
+        ).field_dependencies
+    ) == {"s": ("a",), "other": ("b",)}
+
+
+def test_var_data_field_name_reports_the_first_field():
+    """`field_name` reports the first field of the first state."""
+    assert VarData(field_name="a").field_name == "a"
+    assert VarData(field_dependencies={"s": ("a", "b")}).field_name == "a"
+    assert VarData().field_name == ""
+
+
 def test_serializer_attribute_error_is_not_masked() -> None:
     """An AttributeError raised inside a serializer surfaces chained, with its own frame."""
 
