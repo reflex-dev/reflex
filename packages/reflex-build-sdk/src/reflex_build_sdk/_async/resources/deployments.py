@@ -32,7 +32,7 @@ from reflex_build_sdk._errors import (
 from reflex_build_sdk.types import DeploymentReport, MachineSize, Region
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._async._client import AsyncReflexCloud
+    from reflex_build_sdk._async._client import AsyncReflexBuild
 
 # How often wait() polls a deployment's status, in seconds.
 _POLL_INTERVAL = 2.0
@@ -63,7 +63,7 @@ def _installed_reflex_version() -> str | None:
 class AsyncDeployments:
     """Deploy apps and follow their deployments."""
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

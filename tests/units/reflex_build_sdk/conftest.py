@@ -195,7 +195,7 @@ class AsyncMockTransport:
 
 @pytest.fixture
 def mock_api() -> MockAPI:
-    """A mock of the Reflex Cloud API.
+    """A mock of the Reflex Build API.
 
     Returns:
         The mock.
@@ -211,7 +211,13 @@ def isolated_settings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         monkeypatch: The pytest monkeypatch fixture.
         tmp_path: A temporary directory standing in for the Reflex data directory.
     """
-    for name in ("REFLEX_ACCESS_TOKEN", "REFLEX_CLOUD_BACKEND_URL", "REFLEX_CLOUD_URL"):
+    for name in (
+        "REFLEX_ACCESS_TOKEN",
+        "REFLEX_BUILD_BACKEND_URL",
+        "REFLEX_BUILD_URL",
+        "REFLEX_CLOUD_BACKEND_URL",
+        "REFLEX_CLOUD_URL",
+    ):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(
         reflex_build_sdk.credentials,

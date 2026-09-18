@@ -11,7 +11,7 @@ from reflex_build_sdk._base import path_segment
 from reflex_build_sdk.types import ManagedDatabase
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._sync._client import ReflexCloud
+    from reflex_build_sdk._sync._client import ReflexBuild
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -29,14 +29,14 @@ class _DatabaseDeletion:
 
 
 class Database:
-    """Give apps a Postgres database hosted by Reflex Cloud.
+    """Give apps a Postgres database hosted by Reflex Build.
 
     Every environment of an app uses the same database. Its connection strings are
     set as secrets, ``DATABASE_URL`` among them, and take effect from each
     environment's next deployment.
     """
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

@@ -56,9 +56,16 @@ def test_base_url_precedence(monkeypatch: pytest.MonkeyPatch):
     assert _client().base_url == DEFAULT_BASE_URL
     monkeypatch.setenv("REFLEX_CLOUD_BACKEND_URL", "https://cloud.example.com/")
     assert _client().base_url == "https://cloud.example.com"
+    monkeypatch.setenv("REFLEX_BUILD_BACKEND_URL", "https://build.example.com/")
+    assert _client().base_url == "https://build.example.com"
     assert _client(base_url="https://explicit.example.com").base_url == (
         "https://explicit.example.com"
     )
+
+
+def test_base_url_from_build_env_alone(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("REFLEX_BUILD_BACKEND_URL", "https://build.example.com/")
+    assert _client().base_url == "https://build.example.com"
 
 
 @pytest.mark.parametrize("setting", ["token", "base_url", "max_retries"])

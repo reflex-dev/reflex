@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_build_sdk import ReflexCloud
+from reflex_build_sdk import ReflexBuild
 from reflex_build_sdk.types import (
     Audience,
     AudienceChange,
@@ -36,7 +36,7 @@ NOON = datetime.datetime(2026, 9, 16, 12, tzinfo=UTC)
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -45,7 +45,7 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
@@ -69,12 +69,12 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
         ),
     ],
 )
-def test_get(client: ReflexCloud, mock_api: MockAPI, body: dict, status: SignInStatus):
+def test_get(client: ReflexBuild, mock_api: MockAPI, body: dict, status: SignInStatus):
     mock_api.add("GET", AUTH_PATH, reply(200, json=body))
     assert client.apps.sign_in.get(APP_ID) == status
 
 
-def test_enable_is_retried(client: ReflexCloud, mock_api: MockAPI):
+def test_enable_is_retried(client: ReflexBuild, mock_api: MockAPI):
     # Enabling again converges on the same settings.
     mock_api.add(
         "POST",
@@ -97,12 +97,12 @@ def test_enable_is_retried(client: ReflexCloud, mock_api: MockAPI):
     assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
-def test_disable(client: ReflexCloud, mock_api: MockAPI):
+def test_disable(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", AUTH_PATH, reply(200, json={"deleted": True}))
     assert client.apps.sign_in.disable(APP_ID) is True
 
 
-def test_list_users(client: ReflexCloud, mock_api: MockAPI):
+def test_list_users(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{AUTH_PATH}/users",
@@ -155,7 +155,7 @@ def test_list_users(client: ReflexCloud, mock_api: MockAPI):
     [("app-users.csv", False), ("app-users.partial.csv", True)],
 )
 def test_export_users(
-    client: ReflexCloud, mock_api: MockAPI, filename: str, truncated: bool
+    client: ReflexBuild, mock_api: MockAPI, filename: str, truncated: bool
 ):
     csv = "Email,Name,First consented,Last active,Consent last given,Blocked since,User ID\r\n"
     mock_api.add(
@@ -176,7 +176,7 @@ def test_export_users(
 
 
 @pytest.mark.parametrize("action", ["block", "unblock"])
-def test_block_and_unblock(client: ReflexCloud, mock_api: MockAPI, action: str):
+def test_block_and_unblock(client: ReflexBuild, mock_api: MockAPI, action: str):
     # A failed session sweep still answers 200, with revoked_sessions null.
     body = {
         "user_id": USER_ID,
@@ -218,13 +218,13 @@ SIGN_IN_INVITE = SignInInvite(
     ],
 )
 def test_get_audience(
-    client: ReflexCloud, mock_api: MockAPI, body: dict, audience: Audience
+    client: ReflexBuild, mock_api: MockAPI, body: dict, audience: Audience
 ):
     mock_api.add("GET", f"{AUTH_PATH}/audience", reply(200, json=body))
     assert client.apps.sign_in.get_audience(APP_ID) == audience
 
 
-def test_set_audience(client: ReflexCloud, mock_api: MockAPI):
+def test_set_audience(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{AUTH_PATH}/audience",
@@ -238,13 +238,13 @@ def test_set_audience(client: ReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"audience": "members"}
 
 
-def test_invite(client: ReflexCloud, mock_api: MockAPI):
+def test_invite(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", f"{AUTH_PATH}/invites", reply(201, json=INVITE))
     assert client.apps.sign_in.invite(APP_ID, "Someone@Example.com") == SIGN_IN_INVITE
     assert json_body(mock_api.requests[0]) == {"email": "Someone@Example.com"}
 
 
-def test_uninvite(client: ReflexCloud, mock_api: MockAPI):
+def test_uninvite(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         f"{AUTH_PATH}/invites",
@@ -257,7 +257,7 @@ def test_uninvite(client: ReflexCloud, mock_api: MockAPI):
     assert "email=a%2Bb%40example.com" in mock_api.requests[0].url
 
 
-def test_uninvite_is_retried(client: ReflexCloud, mock_api: MockAPI):
+def test_uninvite_is_retried(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         f"{AUTH_PATH}/invites",

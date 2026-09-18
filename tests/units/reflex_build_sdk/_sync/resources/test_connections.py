@@ -5,7 +5,7 @@ import datetime
 from collections.abc import Iterator
 
 import pytest
-from reflex_build_sdk import ConflictError, InternalServerError, ReflexCloud
+from reflex_build_sdk import ConflictError, InternalServerError, ReflexBuild
 from reflex_build_sdk.types import (
     ConnectionProvider,
     ConnectionStatus,
@@ -29,7 +29,7 @@ NOON = datetime.datetime(2026, 9, 17, 12, tzinfo=UTC)
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -38,11 +38,11 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
-def test_providers(client: ReflexCloud, mock_api: MockAPI):
+def test_providers(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/connections/providers",
@@ -65,7 +65,7 @@ def test_providers(client: ReflexCloud, mock_api: MockAPI):
     ]
 
 
-def test_list(client: ReflexCloud, mock_api: MockAPI):
+def test_list(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         CONNECTIONS_PATH,
@@ -88,7 +88,7 @@ def test_list(client: ReflexCloud, mock_api: MockAPI):
     ]
 
 
-def test_status_reads_the_apps_own_connection(client: ReflexCloud, mock_api: MockAPI):
+def test_status_reads_the_apps_own_connection(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROVIDER_PATH}/status",
@@ -101,7 +101,7 @@ def test_status_reads_the_apps_own_connection(client: ReflexCloud, mock_api: Moc
     assert "X-End-User" not in mock_api.requests[0].headers
 
 
-def test_status_names_a_user(client: ReflexCloud, mock_api: MockAPI):
+def test_status_names_a_user(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROVIDER_PATH}/status",
@@ -132,14 +132,14 @@ def test_status_names_a_user(client: ReflexCloud, mock_api: MockAPI):
     ],
 )
 def test_credential(
-    client: ReflexCloud, mock_api: MockAPI, body: dict, credential: Credential
+    client: ReflexBuild, mock_api: MockAPI, body: dict, credential: Credential
 ):
     mock_api.add("GET", f"{PROVIDER_PATH}/credential", reply(200, json=body))
     assert client.apps.connections.credential(APP_ID, "openai") == credential
     assert "X-End-User" not in mock_api.requests[0].headers
 
 
-def test_credential_for_a_user(client: ReflexCloud, mock_api: MockAPI):
+def test_credential_for_a_user(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROVIDER_PATH}/credential",
@@ -150,7 +150,7 @@ def test_credential_for_a_user(client: ReflexCloud, mock_api: MockAPI):
 
 
 def test_credential_keeps_the_token_out_of_its_repr(
-    client: ReflexCloud, mock_api: MockAPI
+    client: ReflexBuild, mock_api: MockAPI
 ):
     mock_api.add(
         "GET",
@@ -162,7 +162,7 @@ def test_credential_keeps_the_token_out_of_its_repr(
     assert "sk-live" not in repr(credential)
 
 
-def test_credential_refusal_names_its_condition(client: ReflexCloud, mock_api: MockAPI):
+def test_credential_refusal_names_its_condition(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROVIDER_PATH}/credential",
@@ -177,7 +177,7 @@ def test_credential_refusal_names_its_condition(client: ReflexCloud, mock_api: M
     assert exc_info.value.code == "not_connected"
 
 
-def test_connect_link_for_the_app(client: ReflexCloud, mock_api: MockAPI):
+def test_connect_link_for_the_app(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{PROVIDER_PATH}/authorize",
@@ -197,7 +197,7 @@ def test_connect_link_for_the_app(client: ReflexCloud, mock_api: MockAPI):
     assert "X-End-User" not in request.headers
 
 
-def test_connect_link_for_a_user(client: ReflexCloud, mock_api: MockAPI):
+def test_connect_link_for_a_user(client: ReflexBuild, mock_api: MockAPI):
     # A user connects through a different route than the app itself.
     mock_api.add(
         "POST",
@@ -211,13 +211,13 @@ def test_connect_link_for_a_user(client: ReflexCloud, mock_api: MockAPI):
     assert request.headers["X-End-User"] == END_USER
 
 
-def test_disconnect_the_app(client: ReflexCloud, mock_api: MockAPI):
+def test_disconnect_the_app(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", PROVIDER_PATH, reply(200, json={"disconnected": True}))
     assert client.apps.connections.disconnect(APP_ID, "openai") is None
     assert "X-End-User" not in mock_api.requests[0].headers
 
 
-def test_disconnect_a_user(client: ReflexCloud, mock_api: MockAPI):
+def test_disconnect_a_user(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST", f"{PROVIDER_PATH}/disconnect", reply(200, json={"disconnected": True})
     )
@@ -225,7 +225,7 @@ def test_disconnect_a_user(client: ReflexCloud, mock_api: MockAPI):
     assert mock_api.requests[0].headers["X-End-User"] == END_USER
 
 
-def test_mutations_are_not_retried(client: ReflexCloud, mock_api: MockAPI):
+def test_mutations_are_not_retried(client: ReflexBuild, mock_api: MockAPI):
     # A retried session mints a second link, so an ambiguous failure is raised.
     mock_api.add("POST", f"{PROVIDER_PATH}/session", reply(503))
     with pytest.raises(InternalServerError):

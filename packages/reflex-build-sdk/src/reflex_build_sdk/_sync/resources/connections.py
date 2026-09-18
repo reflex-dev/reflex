@@ -16,7 +16,7 @@ from reflex_build_sdk.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._sync._client import ReflexCloud
+    from reflex_build_sdk._sync._client import ReflexBuild
 
 # Names whose connection a request acts on: absent, a route acts on the app's own.
 _END_USER_HEADER = "X-End-User"
@@ -38,7 +38,7 @@ def _end_user_headers(end_user: str | None) -> dict[str, str] | None:
 class Connections:
     """Call third-party services an app is connected to, without holding their keys.
 
-    Reflex Cloud keeps the credentials and hands out a live one per call, so an app
+    Reflex Build keeps the credentials and hands out a live one per call, so an app
     stores none. A connection belongs either to the app itself or to one of its
     users, named by ``end_user``.
 
@@ -53,7 +53,7 @@ class Connections:
     longer honours, or ``"unsupported_credential"``.
     """
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

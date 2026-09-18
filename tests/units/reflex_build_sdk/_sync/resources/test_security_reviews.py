@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from reflex_build_sdk import (
-    ReflexCloud,
+    ReflexBuild,
     SecurityReviewFailedError,
     SecurityReviewTimeoutError,
 )
@@ -40,7 +40,7 @@ VIOLATION = {
 
 
 @pytest.fixture
-def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
+def client(mock_api: MockAPI) -> Iterator[ReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -49,11 +49,11 @@ def client(mock_api: MockAPI) -> Iterator[ReflexCloud]:
     Yields:
         The client.
     """
-    with ReflexCloud(token="test-token", transport=MockTransport(mock_api)) as client:
+    with ReflexBuild(token="test-token", transport=MockTransport(mock_api)) as client:
         yield client
 
 
-def test_submit(client: ReflexCloud, mock_api: MockAPI, tmp_path: Path):
+def test_submit(client: ReflexBuild, mock_api: MockAPI, tmp_path: Path):
     archive = tmp_path / "source.zip"
     archive.write_bytes(b"z" * 1234)
     mock_api.add(
@@ -94,7 +94,7 @@ def _job(status: str, **fields) -> dict:
     return {"job_id": JOB_ID, "status": status, "result": None, "error": None, **fields}
 
 
-def test_get(client: ReflexCloud, mock_api: MockAPI):
+def test_get(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         JOB_PATH,
@@ -114,7 +114,7 @@ def test_get(client: ReflexCloud, mock_api: MockAPI):
     )
 
 
-def test_wait(client: ReflexCloud, mock_api: MockAPI):
+def test_wait(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         JOB_PATH,
@@ -126,7 +126,7 @@ def test_wait(client: ReflexCloud, mock_api: MockAPI):
     assert len(mock_api.requests) == 2
 
 
-def test_wait_raises_when_the_review_fails(client: ReflexCloud, mock_api: MockAPI):
+def test_wait_raises_when_the_review_fails(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET", JOB_PATH, reply(200, json=_job("error", error="Security review failed."))
     )
@@ -138,7 +138,7 @@ def test_wait_raises_when_the_review_fails(client: ReflexCloud, mock_api: MockAP
 
 
 def test_wait_raises_when_a_review_completes_without_a_result(
-    client: ReflexCloud, mock_api: MockAPI
+    client: ReflexBuild, mock_api: MockAPI
 ):
     mock_api.add("GET", JOB_PATH, reply(200, json=_job("complete")))
     with pytest.raises(SecurityReviewFailedError, match="without a result"):
@@ -146,7 +146,7 @@ def test_wait_raises_when_a_review_completes_without_a_result(
     assert len(mock_api.requests) == 1
 
 
-def test_wait_timeout(client: ReflexCloud, mock_api: MockAPI):
+def test_wait_timeout(client: ReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", JOB_PATH, reply(200, json=_job("pending")))
     with pytest.raises(SecurityReviewTimeoutError):
         client.security_reviews.wait(JOB_ID, timeout=0.05, poll_interval=60)
