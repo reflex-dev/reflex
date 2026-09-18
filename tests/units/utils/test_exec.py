@@ -387,3 +387,74 @@ def test_arbitrate_ssr_env_var_wins(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv(environment.REFLEX_SSR.name, "False")
 
     assert exec_utils.arbitrate_ssr(True) is False
+
+
+@pytest.mark.parametrize("json_mode", [False, True])
+def test_run_granian_backend_disables_native_logs_in_json_mode(
+    tmp_path: Path,
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    json_mode: bool,
+):
+    """Granian must not write plain-text lifecycle logs into JSON stdout."""
+    monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, str(json_mode))
+    mocker.patch.object(
+        exec_utils,
+        "get_dev_backend_reload_marker",
+        return_value=tmp_path / exec_utils.DEV_BACKEND_RELOAD_MARKER,
+    )
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
+    granian_server = pytest.importorskip("granian.server")
+    options: dict[str, object] = {}
+
+    class FakeGranian:
+        def __init__(self, *_args, **kwargs):
+            options.update(kwargs)
+
+        def on_reload(self, _callback):
+            pass
+
+        def serve(self):
+            pass
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+
+    exec_utils.run_granian_backend(
+        host="127.0.0.1", port=8000, loglevel=exec_utils.LogLevel.DEBUG
+    )
+
+    assert options["log_enabled"] is not json_mode
+
+
+@pytest.mark.parametrize("json_mode", [False, True])
+def test_run_granian_backend_prod_disables_native_logs_in_json_mode(
+    mocker: MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    json_mode: bool,
+):
+    """The production Granian path follows the same JSON stdout contract."""
+    monkeypatch.setenv(environment.REFLEX_LOG_JSON.name, str(json_mode))
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
+    mocker.patch.object(exec_utils, "_get_backend_workers", return_value=1)
+    granian_server = pytest.importorskip("granian.server")
+    options: dict[str, object] = {}
+
+    class FakeGranian:
+        def __init__(self, *_args, **kwargs):
+            options.update(kwargs)
+
+        def serve(self):
+            pass
+
+    mocker.patch.object(granian_server, "Server", FakeGranian)
+
+    exec_utils.run_granian_backend_prod(
+        host="127.0.0.1", port=8000, loglevel=exec_utils.LogLevel.DEBUG
+    )
+
+    assert options["log_enabled"] is not json_mode
