@@ -791,6 +791,7 @@ def _parse_doc(filepath: str | Path) -> Document:
 
 FAQS_START_MARKER = "<!-- faqs-start -->"
 FAQS_END_MARKER = "<!-- faqs-end -->"
+FAQS_VISIBLE_MARKER = "<!-- faqs-visible -->"
 
 
 def _extract_faqs_jsonld(source: str) -> tuple[str, rx.Component | None]:
@@ -802,6 +803,9 @@ def _extract_faqs_jsonld(source: str) -> tuple[str, rx.Component | None]:
     pairs are emitted as a single ``<script type="application/ld+json">`` element
     using the schema.org ``FAQPage`` shape.
 
+    Include :data:`FAQS_VISIBLE_MARKER` inside the section to retain its content
+    in the visible page as well, using one source for the FAQ and its schema.
+
     Returns ``(stripped_source, jsonld_script_or_none)``. The script is ``None``
     if either marker is missing or no question/answer pairs were found.
     """
@@ -809,7 +813,12 @@ def _extract_faqs_jsonld(source: str) -> tuple[str, rx.Component | None]:
         return source, None
     before, _, rest = source.partition(FAQS_START_MARKER)
     faq_chunk, _, after = rest.partition(FAQS_END_MARKER)
-    stripped = before + after
+    visible_faq = (
+        faq_chunk.replace(FAQS_VISIBLE_MARKER, "")
+        if FAQS_VISIBLE_MARKER in faq_chunk
+        else ""
+    )
+    stripped = before + visible_faq + after
 
     doc = parse_document(faq_chunk)
     faqs: list[tuple[str, str]] = []
@@ -856,9 +865,10 @@ def render_docgen_document(
     """Render a doc file as ``(body, faq_jsonld)``.
 
     The FAQ section (between :data:`FAQS_START_MARKER` and
-    :data:`FAQS_END_MARKER`, if present) is stripped from the visible body and
-    returned as a JSON-LD ``<script>`` component for SEO. ``faq_jsonld`` is
-    ``None`` if no FAQ block is found.
+    :data:`FAQS_END_MARKER`, if present) is returned as a JSON-LD ``<script>``
+    component for SEO. It is also kept in the visible body when the section
+    contains :data:`FAQS_VISIBLE_MARKER`; otherwise it is stripped.
+    ``faq_jsonld`` is ``None`` if no FAQ block is found.
     """
     source = Path(actual_filepath).read_text(encoding="utf-8")
     source = rewrite_integration_doc_images_in_source(source)
