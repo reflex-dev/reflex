@@ -5,6 +5,10 @@ filter skips never reports its checks, and a matrix job's name changes with the
 matrix, so neither can be named in a rule directly. Every merge-blocking
 workflow therefore ends in a gate job with a fixed name, and these tests keep the
 workflows, the gates and the ruleset from drifting apart.
+
+The filter ban follows from that and no further: a workflow nothing requires may
+filter its trigger freely, because the filter then costs it a run rather than a
+merge.
 """
 
 import json
@@ -21,6 +25,10 @@ ACTIONS_APP_ID = 15368
 # Workflows with a single job whose check name cannot drift are required by that
 # name instead of through a gate.
 DIRECTLY_REQUIRED = {"pre-commit", "dependency-review", "changelog"}
+# Workflows that deliberately block no merge. They stay out of the ruleset, and
+# in exchange they keep the trigger-level path filter that would otherwise
+# deadlock a required check.
+ADVISORY = {"docs_whitelist.yml"}
 
 
 def workflow_triggers(doc: dict) -> dict:
@@ -40,6 +48,7 @@ WORKFLOWS = {
 PR_WORKFLOWS = [
     name for name, doc in WORKFLOWS.items() if "pull_request" in workflow_triggers(doc)
 ]
+REQUIRED_PR_WORKFLOWS = [name for name in PR_WORKFLOWS if name not in ADVISORY]
 GATED_WORKFLOWS = [
     name
     for name, doc in WORKFLOWS.items()
@@ -63,24 +72,36 @@ def required_checks() -> list[dict]:
     return rule["parameters"]["required_status_checks"]
 
 
-@pytest.mark.parametrize("name", PR_WORKFLOWS)
-def test_pull_request_trigger_carries_no_path_filter(name):
+@pytest.mark.parametrize("name", REQUIRED_PR_WORKFLOWS)
+def test_required_workflow_has_no_pull_request_path_filter(name):
     trigger = workflow_triggers(WORKFLOWS[name])["pull_request"] or {}
     filters = {"paths", "paths-ignore"} & set(trigger)
     assert not filters, (
         f"{name} filters its pull_request trigger on {sorted(filters)}. A workflow "
         "a path filter skips never reports its checks, so a required check on it "
-        "blocks every merge. Filter in a `changes` job instead."
+        f"blocks every merge. Filter in a `changes` job instead, or add {name} to "
+        "ADVISORY and drop it from the ruleset."
     )
 
 
-@pytest.mark.parametrize("name", PR_WORKFLOWS)
+@pytest.mark.parametrize("name", REQUIRED_PR_WORKFLOWS)
 def test_pull_request_workflow_contributes_a_required_check(name):
     jobs = set(WORKFLOWS[name].get("jobs", {}))
     gates = {job for job in jobs if job.endswith(GATE_SUFFIX)}
     assert gates or jobs <= DIRECTLY_REQUIRED, (
         f"{name} runs on pull requests but contributes no required check: add a "
-        f"'{GATE_SUFFIX}' job, or require its jobs by name."
+        f"'{GATE_SUFFIX}' job, require its jobs by name, or mark it ADVISORY."
+    )
+
+
+@pytest.mark.parametrize("name", sorted(ADVISORY))
+def test_advisory_workflow_is_absent_from_the_ruleset(name):
+    assert name in WORKFLOWS, f"{name} is marked ADVISORY but no longer exists"
+    required = {check["context"] for check in required_checks()}
+    listed = set(WORKFLOWS[name].get("jobs", {})) & required
+    assert not listed, (
+        f"{name} is marked ADVISORY, so it keeps a trigger path filter and cannot "
+        f"report on every pull request, yet the ruleset requires {sorted(listed)}."
     )
 
 

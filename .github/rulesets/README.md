@@ -19,12 +19,12 @@ no conditionals. That rules out naming CI jobs directly:
   `check-min-deps`' matrix is discovered at run time from `packages/*/`, so the
   names change whenever a package is added.
 
-So each workflow ends in a `*-gate` job that always runs, depends on every other
-job in the workflow, and fails unless each of them ended in `success` or
-`skipped` (`.github/actions/ci_gate`). The gate name is fixed, and it is the only
-name from that workflow in the list. The three workflows with a single job whose
-name cannot drift — `pre-commit`, `dependency-review`, `changelog` — are required
-directly.
+So each required workflow ends in a `*-gate` job that always runs, depends on
+every other job in the workflow, and fails unless each of them ended in `success`
+or `skipped` (`.github/actions/ci_gate`). The gate name is fixed, and it is the
+only name from that workflow in the list. The three workflows with a single job
+whose name cannot drift — `pre-commit`, `dependency-review`, `changelog` — are
+required directly.
 
 The path filters those workflows used to carry on their `pull_request` trigger
 now sit on a `changes` job instead (`.github/actions/changed_paths`), which
@@ -41,6 +41,11 @@ here. See the CI section of `CLAUDE.md` for the job to copy.
 
 ## Deliberate omissions
 
+- **`docs whitelist check` is advisory.** It keeps its trigger-level `paths`
+  filter and blocks no merge, which is the trade the filter ban exists to force:
+  a workflow either reports on every pull request and can be required, or filters
+  its trigger and cannot. Requiring it would mean spending a `changes` job and a
+  gate job on every pull request in the repo to guard one assertion.
 - **The ruleset targets `~DEFAULT_BRANCH` only.** Most of these workflows trigger
   on `pull_request: branches: ["main"]`, so requiring them on `r/pre-**` or
   `r/hotfix/**` would reintroduce exactly the never-reports deadlock this

@@ -42,10 +42,6 @@
             "integration_id": 15368
           },
           {
-            "context": "docs-whitelist-gate",
-            "integration_id": 15368
-          },
-          {
             "context": "integration-app-harness-gate",
             "integration_id": 15368
           },

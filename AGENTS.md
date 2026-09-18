@@ -97,11 +97,13 @@ Branch rules require one check per workflow, listed in
 `.github/rulesets/main-required-checks.json`. Check names are matched literally —
 no wildcards — so two rules follow:
 
-- **Never put `paths`/`paths-ignore` on a `pull_request` trigger.** A workflow a
-  path filter skips never reports its checks, so a required check on it blocks
+- **A required workflow must not filter its `pull_request` trigger.** A workflow
+  a path filter skips never reports its checks, so a required check on it blocks
   the merge forever. Filter in a `changes` job instead and gate the real jobs on
   `if: needs.changes.outputs.run == 'true'` — a job skipped by `if:` reports as a
-  pass. `push` triggers may keep their filters; nothing gates a merge there.
+  pass. `push` triggers may keep their filters; nothing gates a merge there. So
+  may a workflow that blocks no merge — absent from the ruleset and listed in
+  that test's `ADVISORY` — where the filter costs a run rather than a merge.
 - **Every merge-blocking workflow ends in a gate job** named `<workflow>-gate`,
   which collapses it into one check name that matrix expansion cannot move:
 
