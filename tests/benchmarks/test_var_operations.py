@@ -1,8 +1,8 @@
 """Benchmarks for building var operations.
 
-Every derived Var — arithmetic, comparisons, string/array/object methods,
-``rx.cond`` — is built by a ``@var_operation``, which interpolates each operand
-into the JavaScript expression it returns. That interpolation runs
+Every derived Var — arithmetic, comparisons, boolean logic, string/array/object
+methods, ``rx.cond`` — is built by a ``@var_operation``, which interpolates each
+operand into the JavaScript expression it returns. That interpolation runs
 ``Var.__format__``, which hashes the operand (recursively hashing its
 ``VarData``), stores it in a module-global registry, and emits a marker tag that
 the constructed Var then decodes back out with a regex.
@@ -11,10 +11,19 @@ Evaluating and compiling a page builds these by the thousand, but the page
 benchmarks are dominated by component construction, so a change to the operand
 path barely registers there. These benchmarks isolate it.
 
-Operands are parametrized by how much ``VarData`` they carry, because that is
-what the interpolation cost scales with: a bare Var carries none, a state var
-carries its state and field name, and a component-provided var carries imports
-and hooks.
+Each benchmark builds one family of operations, flat, over operands built
+outside the measured body: an operation whose operand is itself a freshly built
+operation costs more than one over a plain var, and mixing the two in a single
+benchmark makes it impossible to tell which moved. ``test_chained_operations``
+owns that second dimension on its own, and ``test_evaluate_var_heavy_page`` is
+where the families appear mixed the way real code writes them.
+
+Operands are parametrized by whether they carry ``VarData`` at all, because
+that is what the interpolation cost turns on: a bare Var carries none, while a
+state var carries its state name, field name, context imports, hook and app
+wraps. A var carrying even more of it measures the same, since ``VarData``
+caches its own hash and these benchmarks reuse one operand — a fresh operand
+per level is what ``test_chained_operations`` covers.
 """
 
 from collections.abc import Callable
@@ -22,8 +31,7 @@ from collections.abc import Callable
 import pytest
 from pytest_codspeed import BenchmarkFixture
 from reflex_base.components.component import Component
-from reflex_base.utils.imports import ImportVar
-from reflex_base.vars.base import Var, VarData
+from reflex_base.vars.base import Var
 from reflex_base.vars.number import NumberVar
 
 import reflex as rx
@@ -50,39 +58,31 @@ class VarOpState(BaseState):
 
     count: rx.Field[int] = rx.field(0)
 
+    enabled: rx.Field[bool] = rx.field(False)
+
+    verbose: rx.Field[bool] = rx.field(False)
+
     label: rx.Field[str] = rx.field("")
+
+    fallback: rx.Field[str] = rx.field("")
 
     tags: rx.Field[list[str]] = rx.field(default_factory=list)
 
     meta: rx.Field[dict[str, int]] = rx.field(default_factory=dict)
 
+    extra: rx.Field[dict[str, int]] = rx.field(default_factory=dict)
 
-# A var as a component hands one out: imports and hooks to merge, which is the
-# bulk of what hashing an operand walks.
-_COMPONENT_VAR_DATA = VarData(
-    imports={
-        "react": [ImportVar(tag="useCallback"), ImportVar(tag="useState")],
-        "/utils/state": [ImportVar(tag="getBackendURL")],
-    },
-    hooks={
-        "const [value, setValue] = useState(null)": None,
-        "const refresh = useCallback(() => setValue(null), [])": None,
-    },
-)
 
 _NUMBER_OPERANDS: dict[str, Callable[[], NumberVar[int]]] = {
     # A bare Var with no VarData: the cheapest operand to interpolate.
     "bare": lambda: Var(_js_expr="bare_value").to(int),
     "state": lambda: VarOpState.count,
-    "component": lambda: Var(
-        _js_expr="component_value", _var_data=_COMPONENT_VAR_DATA
-    ).to(int),
 }
 
 
 @pytest.fixture(params=list(_NUMBER_OPERANDS), scope="module")
 def number_operand(request: pytest.FixtureRequest) -> NumberVar[int]:
-    """A number operand, parametrized by how much VarData it carries.
+    """A number operand, parametrized by whether it carries VarData.
 
     Args:
         request: The fixture request holding the operand name.
@@ -96,7 +96,7 @@ def number_operand(request: pytest.FixtureRequest) -> NumberVar[int]:
 def test_arithmetic_operations(
     number_operand: NumberVar[int], benchmark: BenchmarkFixture
 ):
-    """Benchmark building arithmetic operations over a single operand.
+    """Benchmark building arithmetic operations directly over one operand.
 
     Args:
         number_operand: The number var to build operations from.
@@ -107,13 +107,16 @@ def test_arithmetic_operations(
     @benchmark
     def _():
         for i in range(N):
-            _ = (count + i) * 2 - count / (i + 1)
+            _ = count + i
+            _ = count - i
+            _ = count * i
+            _ = count / (i + 1)
 
 
 def test_comparison_operations(
     number_operand: NumberVar[int], benchmark: BenchmarkFixture
 ):
-    """Benchmark building comparison and boolean operations over one operand.
+    """Benchmark building comparison operations directly over one operand.
 
     Args:
         number_operand: The number var to build operations from.
@@ -124,7 +127,31 @@ def test_comparison_operations(
     @benchmark
     def _():
         for i in range(N):
-            _ = (count > i) & (count < i * 2) | (count == i)
+            _ = count > i
+            _ = count < i
+            _ = count >= i
+            _ = count == i
+            _ = count != i
+
+
+def test_boolean_operations(benchmark: BenchmarkFixture):
+    """Benchmark building boolean operations over state vars.
+
+    ``&`` and ``|`` interpolate both operands into a ``pyAnd``/``pyOr`` call and
+    carry their own imports, so they are the widest of the two-operand cases.
+
+    Args:
+        benchmark: The codspeed benchmark fixture.
+    """
+    enabled = VarOpState.enabled
+    verbose = VarOpState.verbose
+
+    @benchmark
+    def _():
+        for _i in range(N):
+            _ = enabled & verbose
+            _ = enabled | verbose
+            _ = ~enabled
 
 
 @pytest.mark.parametrize("depth", DEPTHS)
@@ -133,6 +160,8 @@ def test_chained_operations(depth: int, benchmark: BenchmarkFixture):
 
     Every level interpolates a freshly built operand whose expression and merged
     VarData are both new, so nothing the operand path computes can be reused.
+    This is the only benchmark here that nests; the rest stay flat so the two
+    effects can be read apart.
 
     Args:
         depth: How many operations to chain.
@@ -150,6 +179,10 @@ def test_chained_operations(depth: int, benchmark: BenchmarkFixture):
 def test_string_operations(benchmark: BenchmarkFixture):
     """Benchmark building string operations over a state var.
 
+    ``+`` is left out: string concatenation builds a ``ConcatVarOperation``,
+    which assembles its expression with ``str()`` and never interpolates an
+    operand, so it belongs to a different path than the rest of these.
+
     Args:
         benchmark: The codspeed benchmark fixture.
     """
@@ -157,10 +190,14 @@ def test_string_operations(benchmark: BenchmarkFixture):
 
     @benchmark
     def _():
-        for i in range(N):
-            _ = label.lower().strip().split(",")
-            _ = label.contains(str(i)) & label.startswith("a")
-            _ = label + str(i)
+        for _i in range(N):
+            _ = label.lower()
+            _ = label.upper()
+            _ = label.strip()
+            _ = label.split(",")
+            _ = label.contains("a")
+            _ = label.startswith("b")
+            _ = label.replace("c", "d")
 
 
 def test_array_operations(benchmark: BenchmarkFixture):
@@ -173,10 +210,31 @@ def test_array_operations(benchmark: BenchmarkFixture):
 
     @benchmark
     def _():
+        for _i in range(N):
+            _ = tags.length()
+            _ = tags.reverse()
+            _ = tags.join(", ")
+            _ = tags.contains("x")
+            _ = tags + tags
+
+
+def test_array_index_operation(benchmark: BenchmarkFixture):
+    """Benchmark building array indexing, the hot operation in a foreach body.
+
+    Kept apart from the other array operations because it is built differently:
+    ``array_item_operation`` renders its operands with ``!s``, which calls
+    ``str()`` rather than ``__format__``, so indexing never interpolates an
+    operand the way the rest of the family does.
+
+    Args:
+        benchmark: The codspeed benchmark fixture.
+    """
+    tags = VarOpState.tags
+
+    @benchmark
+    def _():
         for i in range(N):
-            _ = tags.reverse().join(", ")
-            _ = tags.length() > i
-            _ = tags[i].upper()
+            _ = tags[i]
 
 
 def test_object_operations(benchmark: BenchmarkFixture):
@@ -186,28 +244,36 @@ def test_object_operations(benchmark: BenchmarkFixture):
         benchmark: The codspeed benchmark fixture.
     """
     meta = VarOpState.meta
+    extra = VarOpState.extra
 
     @benchmark
     def _():
-        for i in range(N):
-            _ = meta.keys().join(",")
-            _ = meta.values().length() + i
-            _ = meta.entries().length()
+        for _i in range(N):
+            _ = meta.keys()
+            _ = meta.values()
+            _ = meta.entries()
+            _ = meta.merge(extra)
 
 
 def test_cond_operations(benchmark: BenchmarkFixture):
     """Benchmark building ``rx.cond`` ternaries over state vars.
 
+    The condition and both branches are plain state vars rather than derived
+    ones, so this measures the ternary and not the comparison and string
+    operations a realistic condition would be built from — those are already
+    benchmarked on their own.
+
     Args:
         benchmark: The codspeed benchmark fixture.
     """
-    count = VarOpState.count
+    enabled = VarOpState.enabled
     label = VarOpState.label
+    fallback = VarOpState.fallback
 
     @benchmark
     def _():
-        for i in range(N):
-            _ = rx.cond(count > i, label.upper(), label.lower())
+        for _i in range(N):
+            _ = rx.cond(enabled, label, fallback)
 
 
 def test_format_var_outside_operation(benchmark: BenchmarkFixture):
@@ -236,7 +302,8 @@ def _var_heavy_page() -> Component:
     Every row builds comparisons, string and array operations, and the
     ``rx.cond`` ternaries a dashboard uses to derive what it displays, so
     evaluating it spends its time building var operations rather than
-    constructing components.
+    constructing components. Unlike the benchmarks above it deliberately mixes
+    the families and nests them, the way application code writes them.
 
     Returns:
         The page component.
