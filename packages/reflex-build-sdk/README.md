@@ -123,6 +123,20 @@ client.apps.sign_in.invite(app.id, "someone@example.com")
 
 `client.apps.sign_in` lets an app's users sign in with their Reflex accounts, through `rxe.AuthPlugin` from `reflex-enterprise`. It sets the app's sign-in settings as secrets, which take effect when the app is next deployed with `rxe.AuthPlugin`, chooses who may sign in, and lists, exports and blocks the app's users. Restricting who may sign in and inviting addresses need the Pro or Enterprise plan. Changing sign-in needs a token with full access; tokens from `reflex login` are refused.
 
+### Third-party connections
+
+```python
+# Inside a deployed app, which is started with its own access token.
+with ReflexCloud() as client:
+    token = client.apps.connections.credential(app_id, "openai").access_token
+    # ... and for one of the app's users:
+    token = client.apps.connections.credential(
+        app_id, "openai", end_user=user_id
+    ).access_token
+```
+
+`client.apps.connections` calls third-party services an app is connected to without the app holding their keys: Reflex Cloud stores the credentials and hands out a live one per call, so read one for each call rather than storing it. `connect_link` starts a connection and returns the page to send someone to, `status` and `list` report what is connected, and `disconnect` ends it. A connection belongs either to the app or to one of its users, named with `end_user`. These need the app's own token, so a client built with no arguments inside a deployed app is already the right one.
+
 ## Authentication
 
 The client uses the first access token it finds:
@@ -189,7 +203,7 @@ with open("key.json") as key_file:
 
 ## Errors
 
-Every exception derives from `reflex_build_sdk.ReflexCloudError`. Error responses raise a subclass of `APIStatusError` matching the status code (`AuthenticationError`, `NotFoundError`, ...), carrying `status_code`, the server's `detail`, and the `request_id` to quote to support. Failed requests are retried up to `max_retries` times when repeating them cannot apply them twice: requests that never reached the server or were turned away with 408 or 429, and requests that are harmless to repeat (`GET`, `HEAD`, `OPTIONS` and `PUT` requests, and calls such as `apps.environments.update` that settle on the same result) that timed out, lost their connection, or got a 500, 502, 503 or 504 response.
+Every exception derives from `reflex_build_sdk.ReflexCloudError`. Error responses raise a subclass of `APIStatusError` matching the status code (`AuthenticationError`, `NotFoundError`, ...), carrying `status_code`, the server's `detail`, the `code` naming the condition where the API names one (e.g. `"not_connected"`), and the `request_id` to quote to support. Failed requests are retried up to `max_retries` times when repeating them cannot apply them twice: requests that never reached the server or were turned away with 408 or 429, and requests that are harmless to repeat (`GET`, `HEAD`, `OPTIONS` and `PUT` requests, and calls such as `apps.environments.update` that settle on the same result) that timed out, lost their connection, or got a 500, 502, 503 or 504 response.
 
 ## Transports
 
