@@ -12,7 +12,7 @@ from reflex_build_sdk.transports import Response
 from reflex_build_sdk.types import UsageBalance, UsageEntry
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._sync._client import ReflexCloud
+    from reflex_build_sdk._sync._client import ReflexBuild
 
 # The response header holding the cursor of the next page of usage history.
 _NEXT_CURSOR_HEADER = "x-next-cursor"
@@ -47,7 +47,7 @@ class Usage:
     calling token.
     """
 
-    def __init__(self, client: ReflexCloud) -> None:
+    def __init__(self, client: ReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

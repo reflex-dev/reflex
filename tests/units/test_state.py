@@ -14,7 +14,7 @@ import sys
 import threading
 from collections.abc import AsyncGenerator, Callable, Mapping
 from textwrap import dedent
-from typing import Any, ClassVar, Literal, TypeVar
+from typing import Any, ClassVar, Literal, TypeVar, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -45,7 +45,14 @@ from typing_extensions import TypeAliasType
 import reflex as rx
 from reflex.app import App
 from reflex.environment import environment
-from reflex.istate.data import HeaderData, RouterData, SessionData, _FrozenDictStrStr
+from reflex.istate.data import (
+    HeaderData,
+    RouterData,
+    RouterDataVar,
+    SessionData,
+    URLData,
+    _FrozenDictStrStr,
+)
 from reflex.istate.manager import StateManager
 from reflex.istate.manager.disk import StateManagerDisk
 from reflex.istate.manager.memory import StateManagerMemory
@@ -81,9 +88,9 @@ LOCK_WARN_SLEEP = 1.5 if CI else 0.15
 LOCK_EXPIRE_SLEEP = 2.5 if CI else 0.4
 
 
-formatted_router = {
-    "route_id": "",
-    "url": {
+formatted_router_vars = {
+    "rx_router_route_id" + FIELD_MARKER: "",
+    "rx_router_url" + FIELD_MARKER: {
         "scheme": "",
         "netloc": "",
         "origin": "://",
@@ -93,8 +100,12 @@ formatted_router = {
         "fragment": "",
         "href": "",
     },
-    "session": {"client_token": "", "client_ip": "", "session_id": ""},
-    "headers": {
+    "rx_router_session" + FIELD_MARKER: {
+        "client_token": "",
+        "client_ip": "",
+        "session_id": "",
+    },
+    "rx_router_headers" + FIELD_MARKER: {
         "host": "",
         "origin": "",
         "upgrade": "",
@@ -110,7 +121,7 @@ formatted_router = {
         "accept_language": "",
         "raw_headers": {},
     },
-    "page": {
+    "rx_router_page" + FIELD_MARKER: {
         "host": "",
         "path": "",
         "raw_path": "",
@@ -389,7 +400,8 @@ def test_class_vars(test_state):
     """
     cls = type(test_state)
     assert cls.vars.keys() == {
-        "router",
+        constants.ROUTER,
+        *constants.ROUTER_VARS,
         "num1",
         "num2",
         "key",
@@ -470,8 +482,10 @@ def test_dict(test_state: TestState):
     }
     test_state_dict = test_state.dict()
     assert set(test_state_dict) == substates
+    # Only vars with a backing field are serialized; `router` is a switchboard
+    # over the per-field router vars and has no field of its own.
     assert set(test_state_dict[test_state.get_name()]) == {
-        var + FIELD_MARKER for var in test_state.vars
+        var + FIELD_MARKER for var in (*test_state.base_vars, *test_state.computed_vars)
     }
     assert set(test_state.dict(include_computed=False)[test_state.get_name()]) == {
         var + FIELD_MARKER for var in test_state.base_vars
@@ -1225,7 +1239,8 @@ def test_interdependent_state_initial_dict() -> None:
     s = InterdependentState()
     state_name = s.get_name()
     d = s.dict(initial=True)[state_name]
-    d.pop("router" + FIELD_MARKER)
+    for router_var in constants.ROUTER_VARS:
+        d.pop(router_var + FIELD_MARKER)
     assert d == {
         "x" + FIELD_MARKER: 0,
         "v1" + FIELD_MARKER: 0,
@@ -1798,19 +1813,19 @@ def test_computed_var_depends_on_parent_non_cached():
     dict1 = json.loads(json_dumps(ps.dict()))
     assert dict1[ps.get_full_name()] == {
         "no_cache_v" + FIELD_MARKER: 1,
-        "router" + FIELD_MARKER: formatted_router,
+        **formatted_router_vars,
     }
     assert dict1[cs.get_full_name()] == {"dep_v" + FIELD_MARKER: 2}
     dict2 = json.loads(json_dumps(ps.dict()))
     assert dict2[ps.get_full_name()] == {
         "no_cache_v" + FIELD_MARKER: 3,
-        "router" + FIELD_MARKER: formatted_router,
+        **formatted_router_vars,
     }
     assert dict2[cs.get_full_name()] == {"dep_v" + FIELD_MARKER: 4}
     dict3 = json.loads(json_dumps(ps.dict()))
     assert dict3[ps.get_full_name()] == {
         "no_cache_v" + FIELD_MARKER: 5,
-        "router" + FIELD_MARKER: formatted_router,
+        **formatted_router_vars,
     }
     assert dict3[cs.get_full_name()] == {"dep_v" + FIELD_MARKER: 6}
     assert counter == 6
@@ -2695,7 +2710,13 @@ async def test_state_proxy(
         (
             token,
             {
-                TestState.get_full_name(): {"router" + FIELD_MARKER: router_data},
+                TestState.get_full_name(): {
+                    "rx_router_session" + FIELD_MARKER: router_data.session,
+                    "rx_router_headers" + FIELD_MARKER: router_data.headers,
+                    "rx_router_page" + FIELD_MARKER: router_data._page,
+                    "rx_router_url" + FIELD_MARKER: URLData.from_url(router_data.url),
+                    "rx_router_route_id" + FIELD_MARKER: router_data.route_id,
+                },
                 grandchild_state.get_full_name(): {
                     "value2" + FIELD_MARKER: "42",
                 },
@@ -3392,7 +3413,7 @@ def test_json_dumps_with_mutables():
     assert json.loads(val) == {
         MutableContainsBase.get_full_name(): {
             f"items{FIELD_MARKER}": [{"tags": ["123", "456"]}],
-            f"router{FIELD_MARKER}": formatted_router,
+            **formatted_router_vars,
         }
     }
 
@@ -3691,7 +3712,10 @@ async def test_preprocess(
     assert len(emitted_deltas) == 1 + len(expected)
     first_token, first_delta = emitted_deltas[0]
     assert first_token == token
-    assert first_delta[State.get_full_name()].pop("router" + FIELD_MARKER) is not None
+    first_state_delta = first_delta[State.get_full_name()]
+    assert first_state_delta.pop("rx_router_url" + FIELD_MARKER) is not None
+    for router_var in constants.ROUTER_VARS:
+        first_state_delta.pop(router_var + FIELD_MARKER, None)
     assert first_delta == exp_is_hydrated(State, False)
 
     # Find the deltas containing the test handler's state change
@@ -3751,7 +3775,10 @@ async def test_preprocess_multiple_load_events(
     # First delta: router + is_hydrated=False
     assert len(emitted_deltas) >= 2
     first_delta = emitted_deltas[0][1]
-    assert first_delta[State.get_full_name()].pop("router" + FIELD_MARKER) is not None
+    first_state_delta = first_delta[State.get_full_name()]
+    assert first_state_delta.pop("rx_router_url" + FIELD_MARKER) is not None
+    for router_var in constants.ROUTER_VARS:
+        first_state_delta.pop(router_var + FIELD_MARKER, None)
     assert first_delta == exp_is_hydrated(State, False)
 
     # Find deltas containing the test handler's state change (num incremented twice)
@@ -4028,12 +4055,15 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
     foo = RouterVarDepState.computed_vars["foo"]
     State._init_var_dependency_dicts()
 
+    # Reading self.router recurses into the router property getter, so the
+    # dependency lands on each of the per-field router vars.
     assert foo._deps(objclass=RouterVarDepState) == {
-        RouterVarDepState.get_full_name(): {"router"}
+        RouterVarDepState.get_full_name(): set(constants.ROUTER_VARS)
     }
-    assert (RouterVarDepState.get_full_name(), "foo") in State._var_dependencies[
-        "router"
-    ]
+    for router_var in constants.ROUTER_VARS:
+        assert (RouterVarDepState.get_full_name(), "foo") in State._var_dependencies[
+            router_var
+        ]
 
     # Get state from state manager.
     rx_state = await state_manager.get_state(BaseStateToken(ident=token, cls=State))
@@ -4046,9 +4076,368 @@ async def test_router_var_dep(state_manager: StateManager, token: str) -> None:
 
     # Reassign router var
     state.router = state.router
-    assert rx_state.dirty_vars == {"router"}
+    assert rx_state.dirty_vars == set(constants.ROUTER_VARS)
     assert state.dirty_vars == {"foo"}
     assert parent_state.dirty_substates == {RouterVarDepState.get_name()}
+
+    # The locally-defined states above registered themselves in the class-level
+    # dependency maps on State, which outlive this test. Left behind, a later
+    # test that dirties a router var on a fresh State tree resolves the stale
+    # entry and raises on the missing substate. Drop them.
+    for dep_set in State._var_dependencies.values():
+        dep_set.difference_update({
+            (RouterVarDepState.get_full_name(), "foo"),
+        })
+    State._potentially_dirty_states.discard(RouterVarDepState.get_full_name())
+
+
+@pytest.mark.parametrize("name", constants.ROUTER_VARS)
+def test_router_field_names_are_reserved(name):
+    """A substate cannot replace framework-owned router storage.
+
+    The guard is the framework's general inherited-var shadow detection, not
+    anything router-specific: the router fields live on `BaseState`, so a
+    substate redeclaring one shadows an inherited var like any other. Note
+    this covers substates only -- a direct `BaseState` subclass starts its own
+    root and has no inherited var to shadow.
+    """
+    with pytest.raises(BaseVarShadowsInheritedVarError):
+        type(
+            "InvalidRouterState",
+            (State,),
+            {"__module__": __name__, "__annotations__": {name: int}, name: 1},
+        )
+
+
+def test_router_var_dep_legacy_string() -> None:
+    """An explicit deps=["router"] still fires when any router var changes.
+
+    The `router` base var was split into per-field vars; a legacy string dep
+    on "router" is expanded to all of them (with a deprecation warning).
+    """
+
+    class LegacyRouterDepState(State):
+        """A state with a legacy string dependency on the router var."""
+
+        @rx.var(deps=["router"], auto_deps=False)
+        def foo(self) -> str:
+            return self.router.url.path
+
+    for router_var in constants.ROUTER_VARS:
+        assert (
+            LegacyRouterDepState.get_full_name(),
+            "foo",
+        ) in State._var_dependencies[router_var]
+    assert "router" not in State._var_dependencies
+
+    # Drop the class-level registrations this locally-defined state made; see
+    # the note in test_router_var_dep.
+    for dep_set in State._var_dependencies.values():
+        dep_set.discard((LegacyRouterDepState.get_full_name(), "foo"))
+    State._potentially_dirty_states.discard(LegacyRouterDepState.get_full_name())
+
+
+def test_router_var_dep_legacy_string_still_compiles() -> None:
+    """An app declaring deps=["router"] must still pass dependency validation.
+
+    `_validate_var_dependencies` checks the raw `_deps()` names against
+    `state_cls.vars` rather than the expanded registrations, so the deprecated
+    string only keeps working while `router` is itself listed as a var.
+    """
+
+    class LegacyRouterCompileState(State):
+        """A state with a legacy string dependency on the router var."""
+
+        @rx.var(deps=["router"], auto_deps=False)
+        def foo(self) -> str:
+            return self.router.url.path
+
+    assert constants.ROUTER in State.vars
+    # Raises VarDependencyError if the dependency does not resolve to a var.
+    App()._validate_var_dependencies()
+
+    for dep_set in State._var_dependencies.values():
+        dep_set.discard((LegacyRouterCompileState.get_full_name(), "foo"))
+    State._potentially_dirty_states.discard(LegacyRouterCompileState.get_full_name())
+
+
+@pytest.mark.asyncio
+async def test_get_var_value_of_the_whole_router() -> None:
+    """`get_var_value(State.router)` must hand back the composed RouterData.
+
+    The switchboard renders as an object literal over the five per-field vars,
+    so it has no field of its own to read. Without naming the `router`
+    attribute it stands for, this raised UnretrievableVarValueError, while a
+    state with a single `router` base var resolved it.
+    """
+    state = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+    router = await state.get_var_value(State.router)
+
+    assert isinstance(router, RouterData)
+    # The per-field vars resolve too, which the pre-split single var could not do.
+    assert await state.get_var_value(State.router.route_id) == router.route_id
+    assert (
+        await state.get_var_value(State.router.session)
+    ).client_token == router.session.client_token
+
+
+def test_router_var_dep_does_not_warn_for_the_var_form(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only the legacy string form is deprecated, and it must name the var.
+
+    `State.router` carries the per-field names as well as `router` itself, so
+    the expansion has nothing to warn about; `deps=["router"]` arrives with
+    only `router` and does. The warning has to identify the computed var,
+    because the lazy dep scan means the reported caller frame is unrelated to
+    the declaration.
+    """
+    # `console.deprecate` logs and dedupes rather than printing, so record the
+    # calls instead of scraping output.
+    from reflex import state as state_module
+
+    deprecations: list[str] = []
+    monkeypatch.setattr(
+        state_module.console,
+        "deprecate",
+        lambda *, feature_name, **kwargs: deprecations.append(feature_name),
+    )
+
+    class VarFormRouterDepState(State):
+        """A state depending on the router through the Var."""
+
+        @rx.var(deps=[State.router], auto_deps=False)
+        def from_var(self) -> str:
+            return ""
+
+    assert deprecations == []
+
+    class StringFormRouterDepState(State):
+        """A state depending on the router through the legacy string."""
+
+        @rx.var(deps=["router"], auto_deps=False)
+        def from_string(self) -> str:
+            return ""
+
+    assert len(deprecations) == 1
+    assert "StringFormRouterDepState.from_string" in deprecations[0]
+
+    for dep_set in State._var_dependencies.values():
+        dep_set.discard((VarFormRouterDepState.get_full_name(), "from_var"))
+        dep_set.discard((StringFormRouterDepState.get_full_name(), "from_string"))
+    State._potentially_dirty_states.discard(VarFormRouterDepState.get_full_name())
+    State._potentially_dirty_states.discard(StringFormRouterDepState.get_full_name())
+
+
+def test_router_var_dep_whole_router() -> None:
+    """deps=[State.router] must track every per-field router var.
+
+    The switchboard is composed of the five per-field vars, so its VarData
+    must carry all five field names; if it reported only one, a cached var
+    declaring the whole router would go stale when any other router field
+    changed -- a reconnect updates the session without touching the URL, for
+    instance.
+    """
+
+    class WholeRouterDepState(State):
+        """A state depending on the whole router var."""
+
+        @rx.var(deps=[State.router], auto_deps=False)
+        def summary(self) -> str:
+            return ""
+
+    # The declared set also names `router` itself, the switchboard the five
+    # fields were read through; it is expanded away before registration.
+    assert WholeRouterDepState.computed_vars["summary"]._static_deps == {
+        State.get_full_name(): {constants.ROUTER, *constants.ROUTER_VARS}
+    }
+    for router_var in constants.ROUTER_VARS:
+        assert (
+            WholeRouterDepState.get_full_name(),
+            "summary",
+        ) in State._var_dependencies[router_var]
+    # `router` has no backing field, so nothing may be registered against it --
+    # it would never be dirtied and the dependent var would go stale.
+    assert (
+        WholeRouterDepState.get_full_name(),
+        "summary",
+    ) not in State._var_dependencies.get(constants.ROUTER, set())
+
+    # Drop the class-level registrations; see the note in test_router_var_dep.
+    for dep_set in State._var_dependencies.values():
+        dep_set.discard((WholeRouterDepState.get_full_name(), "summary"))
+    State._potentially_dirty_states.discard(WholeRouterDepState.get_full_name())
+
+
+def test_router_is_listed_as_a_var_and_inherited_by_substates() -> None:
+    """`router` is usable as a Var, so it is listed in vars and inherited.
+
+    It has no backing field of its own, so it must stay out of anything that
+    serializes vars: the switchboard resolves to the root state's per-field
+    base vars instead.
+    """
+
+    class RouterVarListingState(State):
+        """A substate that only inherits the router."""
+
+    assert constants.ROUTER in State.vars
+    assert constants.ROUTER in RouterVarListingState.inherited_vars
+    assert constants.ROUTER not in State.base_vars
+    assert constants.ROUTER not in State.computed_vars
+
+    # The substate's entry is the root's switchboard, resolving to the root's
+    # per-field base vars rather than to anything on the substate.
+    router_var = RouterVarListingState.vars[constants.ROUTER]
+    assert isinstance(router_var, RouterDataVar)
+    assert router_var.equals(State.router)
+    assert str(router_var.route_id) == str(State.rx_router_route_id)
+
+
+def test_update_router_vars_ignores_omitted_static_keys(
+    test_state: TestState,
+) -> None:
+    """A navigation-only payload must not reset the connection-scoped vars.
+
+    A router_data carrying only the navigation keys says nothing about the
+    session or headers; treating the omission as a change would wipe them to
+    their defaults and ship a destructive delta.
+
+    Args:
+        test_state: A state.
+    """
+    full_router_data = {
+        RouteVar.PATH: "/a",
+        RouteVar.ORIGIN: "/a",
+        RouteVar.QUERY: {},
+        RouteVar.CLIENT_TOKEN: "tok",
+        RouteVar.SESSION_ID: "sid1",
+        RouteVar.CLIENT_IP: "127.0.0.1",
+        RouteVar.HEADERS: {"origin": "http://localhost:3000", "cookie": "a=b"},
+    }
+    test_state._update_router_vars(full_router_data, {})
+    test_state._clean()
+
+    navigation_only = {
+        RouteVar.PATH: "/b",
+        RouteVar.ORIGIN: "/b",
+        RouteVar.QUERY: {},
+    }
+    merged = test_state._update_router_vars(navigation_only, full_router_data)
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
+    }
+    assert test_state.router.session.client_token == "tok"
+    assert test_state.router.session.session_id == "sid1"
+    assert test_state.router.headers.cookie == "a=b"
+    # The rebuilt navigation vars keep the host from the headers the payload
+    # omitted, rather than being reconstructed from the partial dict alone.
+    assert test_state.router.url.origin == "http://localhost:3000"
+    assert test_state.router.url.path == "/b"
+    assert test_state.router.page.host == "http://localhost:3000"
+    # The merged data is what the caller stores, so the omitted keys are still
+    # there to compare against next time.
+    assert merged[RouteVar.CLIENT_TOKEN] == "tok"
+    assert merged[RouteVar.HEADERS] == full_router_data[RouteVar.HEADERS]
+
+    # A second consecutive partial payload still has the full picture.
+    test_state._clean()
+    merged2 = test_state._update_router_vars(
+        {RouteVar.PATH: "/c", RouteVar.ORIGIN: "/c", RouteVar.QUERY: {}}, merged
+    )
+    assert test_state.router.url.origin == "http://localhost:3000"
+    assert test_state.router.session.client_token == "tok"
+    assert merged2[RouteVar.HEADERS] == full_router_data[RouteVar.HEADERS]
+
+
+def test_update_router_vars_non_origin_header_leaves_navigation_clean(
+    test_state: TestState,
+) -> None:
+    """Only the origin header feeds the page/URL, so other headers leave them alone.
+
+    Args:
+        test_state: A state.
+    """
+    router_data = {
+        RouteVar.PATH: "/a",
+        RouteVar.ORIGIN: "/a",
+        RouteVar.QUERY: {},
+        RouteVar.HEADERS: {"origin": "http://localhost:3000", "cookie": "a=b"},
+    }
+    test_state._update_router_vars(router_data, {})
+    test_state._clean()
+
+    new_cookie = {
+        **router_data,
+        RouteVar.HEADERS: {"origin": "http://localhost:3000", "cookie": "c=d"},
+    }
+    test_state._update_router_vars(new_cookie, router_data)
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {"rx_router_headers"}
+
+
+def test_update_router_vars_granular_delta(test_state: TestState) -> None:
+    """_update_router_vars only dirties the vars whose source keys changed.
+
+    Args:
+        test_state: A state.
+    """
+    full_router_data = {
+        RouteVar.PATH: "/a",
+        RouteVar.ORIGIN: "/a",
+        RouteVar.QUERY: {},
+        RouteVar.CLIENT_TOKEN: "tok",
+        RouteVar.SESSION_ID: "sid1",
+        RouteVar.CLIENT_IP: "127.0.0.1",
+        RouteVar.HEADERS: {"origin": "http://localhost:3000"},
+    }
+    test_state._update_router_vars(full_router_data, {})
+    assert set(constants.ROUTER_VARS) <= test_state.dirty_vars
+    test_state._clean()
+
+    # Navigation: only the navigation-scoped vars are rebuilt.
+    nav_router_data = {**full_router_data, RouteVar.PATH: "/b", RouteVar.ORIGIN: "/b"}
+    test_state._update_router_vars(nav_router_data, full_router_data)
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {
+        "rx_router_page",
+        "rx_router_url",
+        "rx_router_route_id",
+    }
+    assert test_state.router.url.path == "/b"
+    assert test_state.router.session.session_id == "sid1"
+    test_state._clean()
+
+    # Reconnect: only the session var is rebuilt.
+    reconnect_router_data = {**nav_router_data, RouteVar.SESSION_ID: "sid2"}
+    test_state._update_router_vars(reconnect_router_data, nav_router_data)
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {"rx_router_session"}
+    assert test_state.router.session.session_id == "sid2"
+    test_state._clean()
+
+    # Header change: headers, and the page/URL whose host derives from them.
+    # route_id derives from the path alone, so it is left clean.
+    new_headers_router_data = {
+        **reconnect_router_data,
+        RouteVar.HEADERS: {"origin": "http://example.com"},
+    }
+    test_state._update_router_vars(new_headers_router_data, reconnect_router_data)
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == {
+        "rx_router_headers",
+        "rx_router_page",
+        "rx_router_url",
+    }
+    assert test_state.router.url.origin == "http://example.com"
+    test_state._clean()
+
+    # Keys that differ but derive the same values leave every var clean: an
+    # absent key and an empty one both produce the default, and dirtying on
+    # that alone would mark the state touched and persist it.
+    equivalent_router_data = {
+        k: v for k, v in new_headers_router_data.items() if k != RouteVar.QUERY
+    }
+    test_state._update_router_vars(equivalent_router_data, new_headers_router_data)
+    assert test_state.dirty_vars & set(constants.ROUTER_VARS) == set()
 
 
 @pytest.mark.asyncio
@@ -5769,3 +6158,82 @@ def test_base_var_bare_reannotation_does_not_raise() -> None:
         reannotated_value: int  # pyright: ignore[reportGeneralTypeIssues]
 
     assert isinstance(ReannotatingChild.reannotated_value, Var)
+
+
+def test_composite_var_dep_tracks_fields_in_every_state():
+    """A dependency on a var spanning two states must track both states' fields.
+
+    `VarData` groups field names by the state that owns them, so merging a var
+    built from `StateA.a_field` with one built from `StateB.b_field` keeps
+    both. Before that grouping the merge kept only the first state's fields and
+    a computed var depending on the composite went stale whenever the other
+    state changed.
+    """
+    from reflex_base.vars.base import Var, VarData
+
+    class _CompositeDepStateA(rx.State):
+        a_field: str = "a"
+
+    class _CompositeDepStateB(rx.State):
+        b_field: str = "b"
+
+    composite = Var(
+        "combo",
+        _var_data=VarData.merge(
+            cast("Var", _CompositeDepStateA.a_field)._get_all_var_data(),
+            cast("Var", _CompositeDepStateB.b_field)._get_all_var_data(),
+        ),
+    )
+
+    a_name = _CompositeDepStateA.get_full_name()
+    b_name = _CompositeDepStateB.get_full_name()
+    assert dict(composite._dependency_fields()) == {
+        a_name: ("a_field",),
+        b_name: ("b_field",),
+    }
+
+    class _CompositeDepConsumer(rx.State):
+        @rx.var(deps=[composite], cache=True)
+        def combined(self) -> str:
+            return "x"
+
+    static_deps = _CompositeDepConsumer.__dict__["combined"]._static_deps
+    assert "a_field" in static_deps.get(a_name, set())
+    assert "b_field" in static_deps.get(b_name, set())
+
+    # The consumer registered itself in both source states' class-level
+    # dependency maps, which outlive this test. Left behind, a later test that
+    # dirties a_field or b_field resolves the stale entry and raises on the
+    # missing substate. Drop them.
+    consumer_name = _CompositeDepConsumer.get_full_name()
+    for state_cls in (_CompositeDepStateA, _CompositeDepStateB):
+        for dep_set in state_cls._var_dependencies.values():
+            dep_set.difference_update({(consumer_name, "combined")})
+        state_cls._potentially_dirty_states.discard(consumer_name)
+
+
+def test_setstate_drops_the_legacy_router_entry():
+    """Unpickling a pre-split state must not route `router` through the setter.
+
+    Older pickles stored the whole `RouterData` under `router`, which is now a
+    descriptor. Restoring it with `object.__setattr__` would shadow that
+    descriptor on the instance; assigning it would decompose into the per-field
+    vars and resurrect stale connection data. The schema check in
+    `_deserialize` discards such states anyway, so the entry is simply dropped.
+    """
+    state = BaseState(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+    legacy = {
+        "parent_state": None,
+        "substates": {},
+        "router": RouterData.from_router_data({
+            constants.RouteVar.CLIENT_TOKEN: "stale-token",
+        }),
+        "dirty_vars": set(),
+    }
+
+    state.__setstate__(legacy)
+
+    # The entry is gone rather than shadowing the descriptor...
+    assert "router" not in state.__dict__
+    # ...and `router` still resolves through the switchboard to live fields.
+    assert state.router.session.client_token == ""

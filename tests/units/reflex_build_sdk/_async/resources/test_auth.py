@@ -9,7 +9,7 @@ import pytest
 from reflex_build_sdk import (
     APIConnectionError,
     APIStatusError,
-    AsyncReflexCloud,
+    AsyncReflexBuild,
     AuthenticationError,
     LoginDeniedError,
     LoginTimeoutError,
@@ -30,7 +30,7 @@ PROJECT_ID = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -39,7 +39,7 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
@@ -66,7 +66,7 @@ ME = {
 }
 
 
-async def test_me(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_me(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", "/api/v1/authenticate/me", reply(200, json=ME))
     assert await client.auth.me() == Me(
         user_id=uuid.UUID(USER_ID),
@@ -79,13 +79,13 @@ async def test_me(client: AsyncReflexCloud, mock_api: MockAPI):
     assert "?" not in request.url
 
 
-async def test_me_records_the_login_source(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_me_records_the_login_source(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", "/api/v1/authenticate/me", reply(200, json=ME))
     await client.auth.me(source="reflex")
     assert mock_api.requests[0].url.endswith("/authenticate/me?source=reflex")
 
 
-async def test_me_scoped_token(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_me_scoped_token(client: AsyncReflexBuild, mock_api: MockAPI):
     # Every token `reflex login` mints carries an access map.
     body = {
         **ME,
@@ -106,7 +106,7 @@ async def test_me_scoped_token(client: AsyncReflexCloud, mock_api: MockAPI):
     )
 
 
-async def test_me_invalid_token(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_me_invalid_token(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/authenticate/me",
@@ -116,7 +116,7 @@ async def test_me_invalid_token(client: AsyncReflexCloud, mock_api: MockAPI):
         await client.auth.me()
 
 
-async def test_create_token(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_create_token(client: AsyncReflexBuild, mock_api: MockAPI):
     token_id = str(uuid.uuid4())
     mock_api.add("POST", "/api/v1/user/token", reply(200, json=token_id))
     assert await client.auth.tokens.create("ci") == token_id
@@ -126,7 +126,7 @@ async def test_create_token(client: AsyncReflexCloud, mock_api: MockAPI):
     }
 
 
-async def test_create_scoped_token(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_create_scoped_token(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", "/api/v1/user/token", reply(200, json="token"))
     await client.auth.tokens.create(
         "deploy",
@@ -140,7 +140,7 @@ async def test_create_scoped_token(client: AsyncReflexCloud, mock_api: MockAPI):
     }
 
 
-async def test_list_tokens(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_list_tokens(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/user/token",
@@ -168,7 +168,7 @@ async def test_list_tokens(client: AsyncReflexCloud, mock_api: MockAPI):
     ]
 
 
-async def test_delete_token_quotes_name(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_delete_token_quotes_name(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         "/api/v1/user/token/ci%2Fprod%20key",
@@ -177,7 +177,7 @@ async def test_delete_token_quotes_name(client: AsyncReflexCloud, mock_api: Mock
     assert await client.auth.tokens.delete("ci/prod key") is None
 
 
-async def test_revoke_token(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_revoke_token(client: AsyncReflexBuild, mock_api: MockAPI):
     token = str(uuid.uuid4())
     mock_api.add(
         "POST", "/api/v1/user/token/revoke", reply(200, json={"message": "success"})
@@ -187,7 +187,7 @@ async def test_revoke_token(client: AsyncReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"token_id": token}
 
 
-async def test_refresh_token(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_refresh_token(client: AsyncReflexBuild, mock_api: MockAPI):
     old, new = str(uuid.uuid4()), str(uuid.uuid4())
     mock_api.add("POST", "/api/v1/user/token/refresh", reply(200, json=new))
     assert await client.auth.tokens.refresh(old) == new
@@ -195,7 +195,7 @@ async def test_refresh_token(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 async def test_refresh_token_is_not_retried(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     # Each attempt would mint another token and revoke the one before.
     mock_api.add("POST", "/api/v1/user/token/refresh", reply(503))
@@ -205,7 +205,7 @@ async def test_refresh_token_is_not_retried(
 
 
 async def test_assign_token_to_service_account(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     account_id = str(uuid.uuid4())
     mock_api.add(
@@ -223,12 +223,29 @@ async def test_assign_token_to_service_account(
 @pytest.mark.parametrize(
     ("ui_url", "env", "base"),
     [
-        (None, None, "https://build.reflex.dev"),
-        (None, "https://cloud.example.com/", "https://cloud.example.com"),
+        (None, {}, "https://build.reflex.dev"),
         (
-            "https://ui.example.com",
+            None,
+            {"REFLEX_CLOUD_URL": "https://cloud.example.com/"},
             "https://cloud.example.com",
+        ),
+        (
+            None,
+            {"REFLEX_BUILD_URL": "https://ui.example.com/"},
             "https://ui.example.com",
+        ),
+        (
+            None,
+            {
+                "REFLEX_BUILD_URL": "https://ui.example.com",
+                "REFLEX_CLOUD_URL": "https://cloud.example.com",
+            },
+            "https://ui.example.com",
+        ),
+        (
+            "https://explicit.example.com",
+            {"REFLEX_BUILD_URL": "https://ui.example.com"},
+            "https://explicit.example.com",
         ),
     ],
 )
@@ -236,13 +253,13 @@ def test_begin_login(
     mock_api: MockAPI,
     monkeypatch: pytest.MonkeyPatch,
     ui_url: str | None,
-    env: str | None,
+    env: dict[str, str],
     base: str,
 ):
-    if env is not None:
-        monkeypatch.setenv("REFLEX_CLOUD_URL", env)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
     # Starting a login sends nothing, so it needs no event loop or token.
-    client = AsyncReflexCloud(transport=AsyncMockTransport(mock_api))
+    client = AsyncReflexBuild(transport=AsyncMockTransport(mock_api))
     login = client.auth.begin_login(ui_url=ui_url)
     assert len(login.request_id) == 32
     assert login.url == f"{base}/cli/login?request_id={login.request_id}"
@@ -263,7 +280,7 @@ async def test_finish_login_waits_for_approval(mock_api: MockAPI):
         reply(200, json={"token_id": token}),
     )
     # No token is needed to log in.
-    async with AsyncReflexCloud(transport=AsyncMockTransport(mock_api)) as client:
+    async with AsyncReflexBuild(transport=AsyncMockTransport(mock_api)) as client:
         assert await client.auth.finish_login(LOGIN, poll_interval=0) == token
     assert len(mock_api.requests) == 3
     for request in mock_api.requests:
@@ -272,7 +289,7 @@ async def test_finish_login_waits_for_approval(mock_api: MockAPI):
 
 
 async def test_finish_login_does_not_retry_a_lost_response(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     def lose_response(request: Request) -> Response:
         msg = "connection reset after the token was handed out"
@@ -286,7 +303,7 @@ async def test_finish_login_does_not_retry_a_lost_response(
 
 
 async def test_finish_login_retries_an_unsent_request(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     token = str(uuid.uuid4())
 
@@ -305,7 +322,7 @@ async def test_finish_login_retries_an_unsent_request(
     assert len(mock_api.requests) == 2
 
 
-async def test_finish_login_denied(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_finish_login_denied(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/cli/token",
@@ -316,12 +333,12 @@ async def test_finish_login_denied(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 def test_finish_login_waits_ten_minutes_by_default(mock_api: MockAPI):
-    client = AsyncReflexCloud(transport=AsyncMockTransport(mock_api))
+    client = AsyncReflexBuild(transport=AsyncMockTransport(mock_api))
     timeout = inspect.signature(client.auth.finish_login).parameters["timeout"]
     assert timeout.default == pytest.approx(600.0)
 
 
-async def test_finish_login_timeout(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_finish_login_timeout(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/cli/token",

@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from reflex_build_sdk import (
-    AsyncReflexCloud,
+    AsyncReflexBuild,
     InternalServerError,
     PermissionDeniedError,
 )
@@ -44,7 +44,7 @@ TIER = {"name": "pro", "cpu_quota": 8.0, "ram_quota": 16.0, "deployment_quota": 
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -53,13 +53,13 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
 
 
-async def test_list(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_list(client: AsyncReflexBuild, mock_api: MockAPI):
     project = {
         "id": PROJECT_ID,
         "name": "default",
@@ -85,12 +85,12 @@ async def test_list(client: AsyncReflexCloud, mock_api: MockAPI):
     ]
 
 
-async def test_list_null(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_list_null(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", "/api/v1/project/", reply(200, json=None))
     assert await client.projects.list() == []
 
 
-async def test_search(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_search(client: AsyncReflexBuild, mock_api: MockAPI):
     found = {
         "id": PROJECT_ID,
         "name": "default",
@@ -108,7 +108,7 @@ async def test_search(client: AsyncReflexCloud, mock_api: MockAPI):
     }
 
 
-async def test_search_without_results(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_search_without_results(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/project/search",
@@ -117,7 +117,7 @@ async def test_search_without_results(client: AsyncReflexCloud, mock_api: MockAP
     assert await client.projects.search("missing") == []
 
 
-async def test_get(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_get(client: AsyncReflexBuild, mock_api: MockAPI):
     info = {
         "id": PROJECT_ID,
         "name": "default",
@@ -148,7 +148,7 @@ async def test_get(client: AsyncReflexCloud, mock_api: MockAPI):
     assert [app.name for app in project.apps] == ["dashboard"]
 
 
-async def test_create(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_create(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/project/create",
@@ -160,7 +160,7 @@ async def test_create(client: AsyncReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"name": "staging"}
 
 
-async def test_roles_list(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_roles_list(client: AsyncReflexBuild, mock_api: MockAPI):
     role = {
         "id": ROLE_ID,
         "name": "Editor",
@@ -191,7 +191,7 @@ async def test_roles_list(client: AsyncReflexCloud, mock_api: MockAPI):
     ],
 )
 async def test_roles_permissions(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     body: list[dict[str, Any]] | None,
     permissions: list[str],
@@ -200,7 +200,7 @@ async def test_roles_permissions(
     assert await client.projects.roles.permissions(PROJECT_ID, ROLE_ID) == permissions
 
 
-async def test_members_list(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_members_list(client: AsyncReflexBuild, mock_api: MockAPI):
     member = {
         "user_id": USER_ID,
         "email": "dev@example.com",
@@ -223,7 +223,7 @@ async def test_members_list(client: AsyncReflexCloud, mock_api: MockAPI):
     ]
 
 
-async def test_members_list_null(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_members_list_null(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{PROJECT_PATH}/users", reply(200, json=None))
     assert await client.projects.members.list(PROJECT_ID) == []
 
@@ -237,7 +237,7 @@ async def test_members_list_null(client: AsyncReflexCloud, mock_api: MockAPI):
     ],
 )
 async def test_members_set_role(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     body: dict[str, Any] | None,
     result: str,
@@ -255,7 +255,7 @@ async def test_members_set_role(
     }
 
 
-async def test_members_set_role_denied(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_members_set_role_denied(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/project/users/invite",
@@ -265,18 +265,18 @@ async def test_members_set_role_denied(client: AsyncReflexCloud, mock_api: MockA
         await client.projects.members.set_role(user_id=USER_ID, role_id=ROLE_ID)
 
 
-async def test_rename(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_rename(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", f"{PROJECT_PATH}/update_name", reply(200, json=None))
     await client.projects.rename(PROJECT_ID, "staging")
     assert json_body(mock_api.requests[0]) == {"name": "staging"}
 
 
-async def test_delete(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_delete(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", PROJECT_PATH, reply(200, json=None))
     assert await client.projects.delete(PROJECT_ID) is None
 
 
-async def test_audit_logs(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_audit_logs(client: AsyncReflexBuild, mock_api: MockAPI):
     entry = {
         "id": ROLE_ID,
         "timestamp": "2026-09-16T12:00:00Z",
@@ -325,7 +325,7 @@ ROLE_BODY = {
 }
 
 
-async def test_roles_create(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_roles_create(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{PROJECT_PATH}/roles",
@@ -348,7 +348,7 @@ async def test_roles_create(client: AsyncReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == ROLE_BODY
 
 
-async def test_roles_update(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_roles_update(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("PATCH", f"{PROJECT_PATH}/roles/{ROLE_ID}", reply(200, json=None))
     await client.projects.roles.update(
         PROJECT_ID,
@@ -360,7 +360,7 @@ async def test_roles_update(client: AsyncReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == ROLE_BODY
 
 
-async def test_roles_preview_update(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_roles_preview_update(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{PROJECT_PATH}/roles/{ROLE_ID}/preview",
@@ -403,17 +403,17 @@ async def test_roles_preview_update(client: AsyncReflexCloud, mock_api: MockAPI)
     assert json_body(mock_api.requests[0]) == ROLE_BODY
 
 
-async def test_roles_delete(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_roles_delete(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", f"{PROJECT_PATH}/roles/{ROLE_ID}", reply(200, json=None))
     assert await client.projects.roles.delete(PROJECT_ID, ROLE_ID) is None
 
 
-async def test_members_remove(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_members_remove(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", f"{PROJECT_PATH}/user/{USER_ID}", reply(200, json=None))
     assert await client.projects.members.remove(PROJECT_ID, USER_ID) is None
 
 
-async def test_members_permissions(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_members_permissions(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROJECT_PATH}/users/{USER_ID}/permissions",
@@ -427,7 +427,7 @@ async def test_members_permissions(client: AsyncReflexCloud, mock_api: MockAPI):
     ]
 
 
-async def test_teams_list(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_teams_list(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROJECT_PATH}/teams",
@@ -475,7 +475,7 @@ async def test_teams_list(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 @pytest.mark.parametrize("status", ["granted", "pending_approval"])
-async def test_teams_grant(client: AsyncReflexCloud, mock_api: MockAPI, status: str):
+async def test_teams_grant(client: AsyncReflexBuild, mock_api: MockAPI, status: str):
     mock_api.add(
         "PUT",
         f"{PROJECT_PATH}/teams/{TEAM_ID}",
@@ -485,7 +485,7 @@ async def test_teams_grant(client: AsyncReflexCloud, mock_api: MockAPI, status: 
     assert json_body(mock_api.requests[0]) == {"role": "editor"}
 
 
-async def test_teams_revoke_is_retried(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_teams_revoke_is_retried(client: AsyncReflexBuild, mock_api: MockAPI):
     # Revoking again reports the outcome without changing anything.
     mock_api.add(
         "DELETE",
@@ -532,7 +532,7 @@ async def test_teams_revoke_is_retried(client: AsyncReflexCloud, mock_api: MockA
     ],
 )
 async def test_repeatable_calls_are_retried(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     http_method: str,
     suffix: str,
@@ -556,7 +556,7 @@ async def test_repeatable_calls_are_retried(
     ],
 )
 async def test_deletions_are_not_retried(
-    client: AsyncReflexCloud, mock_api: MockAPI, suffix: str, call: Any
+    client: AsyncReflexBuild, mock_api: MockAPI, suffix: str, call: Any
 ):
     mock_api.add("DELETE", PROJECT_PATH + suffix, reply(503))
     with pytest.raises(InternalServerError):

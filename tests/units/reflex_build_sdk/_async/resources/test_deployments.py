@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, urlsplit
 import pytest
 from reflex_build_sdk import (
     APIConnectionError,
-    AsyncReflexCloud,
+    AsyncReflexBuild,
     DeploymentFailedError,
     DeploymentTimeoutError,
     PermissionDeniedError,
@@ -41,7 +41,7 @@ PENDING_REPORT = {
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -50,7 +50,7 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
@@ -94,7 +94,7 @@ def _add_storage(mock_api: MockAPI, deployment_id: str, *handlers) -> None:
 
 
 async def test_create(
-    client: AsyncReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]
+    client: AsyncReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]
 ):
     mock_api.add(
         "POST", "/api/v1/deployments/reserve", reply(200, json=_reservation(FIRST_ID))
@@ -161,7 +161,7 @@ async def test_create(
     [{"cpu": 2.0}, {"ram_mb": 4096}, {"vm_type": "c2m4", "cpu": 2.0, "ram_mb": 4096}],
 )
 async def test_create_checks_sizing_before_uploading(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     archives: tuple[Path, Path],
     sizing: dict,
@@ -183,7 +183,7 @@ async def test_create_uploads_with_the_client_timeout(
     _add_storage(mock_api, FIRST_ID)
     mock_api.add("POST", "/api/v1/deployments", reply(201, json=FIRST_ID))
     backend, frontend = archives
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api), timeout=7.0
     ) as client:
         await client.deployments.create(APP_ID, backend=backend, frontend=frontend)
@@ -193,7 +193,7 @@ async def test_create_uploads_with_the_client_timeout(
 
 
 async def test_create_reserves_again_when_upload_urls_expire(
-    client: AsyncReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]
+    client: AsyncReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]
 ):
     mock_api.add(
         "POST",
@@ -219,7 +219,7 @@ async def test_create_reserves_again_when_upload_urls_expire(
 
 
 async def test_create_gives_up_when_upload_urls_keep_expiring(
-    client: AsyncReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]
+    client: AsyncReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]
 ):
     mock_api.add(
         "POST",
@@ -237,7 +237,7 @@ async def test_create_gives_up_when_upload_urls_keep_expiring(
 
 
 async def test_create_does_not_retry_a_refused_reservation(
-    client: AsyncReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]
+    client: AsyncReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]
 ):
     mock_api.add(
         "POST",
@@ -252,7 +252,7 @@ async def test_create_does_not_retry_a_refused_reservation(
 
 
 async def test_create_upload_connection_error(
-    client: AsyncReflexCloud, mock_api: MockAPI, archives: tuple[Path, Path]
+    client: AsyncReflexBuild, mock_api: MockAPI, archives: tuple[Path, Path]
 ):
     def drop(request: Request) -> Response:
         msg = "connection reset"
@@ -303,7 +303,7 @@ async def test_create_upload_connection_error(
     ],
 )
 async def test_check(
-    client: AsyncReflexCloud, mock_api: MockAPI, kwargs: dict, query: dict
+    client: AsyncReflexBuild, mock_api: MockAPI, kwargs: dict, query: dict
 ):
     project_id = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
     mock_api.add("GET", "/api/v1/deployments/validate_cli", reply(200, json=None))
@@ -315,14 +315,14 @@ async def test_check(
     assert sent == {"app_id": [APP_ID], "project_id": [project_id], **query}
 
 
-async def test_status(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_status(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET", f"{DEPLOYMENT_PATH}/status", reply(200, json="pending worker...")
     )
     assert await client.deployments.status(FIRST_ID) == "pending worker..."
 
 
-async def test_report(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_report(client: AsyncReflexBuild, mock_api: MockAPI):
     body = {
         "status": "Failed",
         "code": "build_failed",
@@ -336,7 +336,7 @@ async def test_report(client: AsyncReflexCloud, mock_api: MockAPI):
     assert await client.deployments.report(FIRST_ID) == DeploymentReport(**body)
 
 
-async def test_build_logs(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_build_logs(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{DEPLOYMENT_PATH}/build/logs", reply(200, json="step 1\n"))
     assert await client.deployments.build_logs(FIRST_ID) == "step 1\n"
 
@@ -360,7 +360,7 @@ def _reports(mock_api: MockAPI, *statuses: str, **fields) -> None:
     )
 
 
-async def test_wait_until_live(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_wait_until_live(client: AsyncReflexBuild, mock_api: MockAPI):
     _statuses(
         mock_api,
         "pending worker...",
@@ -381,7 +381,7 @@ async def test_wait_until_live(client: AsyncReflexCloud, mock_api: MockAPI):
     ]
 
 
-async def test_wait_raises_on_failure(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_wait_raises_on_failure(client: AsyncReflexBuild, mock_api: MockAPI):
     _statuses(
         mock_api,
         f"failed: build error | run reflex cloud apps build-logs {FIRST_ID} for logs",
@@ -403,7 +403,7 @@ async def test_wait_raises_on_failure(client: AsyncReflexCloud, mock_api: MockAP
 
 @pytest.mark.parametrize("message", ["Rejected", "cancelled", "Deployment error: boom"])
 async def test_wait_raises_on_messages_ending_a_deployment(
-    client: AsyncReflexCloud, mock_api: MockAPI, message: str
+    client: AsyncReflexBuild, mock_api: MockAPI, message: str
 ):
     _statuses(mock_api, message)
     _reports(mock_api, "Rejected")
@@ -412,7 +412,7 @@ async def test_wait_raises_on_messages_ending_a_deployment(
 
 
 async def test_wait_returns_when_awaiting_approval(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     _statuses(mock_api, "AwaitingApproval")
     _reports(mock_api, "AwaitingApproval")
@@ -421,7 +421,7 @@ async def test_wait_returns_when_awaiting_approval(
 
 
 async def test_wait_trusts_the_recorded_state_when_the_message_is_stale(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     stale = "bad response: could not read the deployment status; check the dashboard"
     _statuses(mock_api, stale, stale)
@@ -432,7 +432,7 @@ async def test_wait_trusts_the_recorded_state_when_the_message_is_stale(
 
 
 async def test_wait_checks_the_recorded_state_periodically(
-    client: AsyncReflexCloud, mock_api: MockAPI, monkeypatch: pytest.MonkeyPatch
+    client: AsyncReflexBuild, mock_api: MockAPI, monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setattr(
         "reflex_build_sdk._async.resources.deployments._REPORT_EVERY_POLLS", 3
@@ -446,7 +446,7 @@ async def test_wait_checks_the_recorded_state_periodically(
 
 
 async def test_wait_stops_waiting_at_the_timeout(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     _statuses(mock_api, "Building backend application...")
     started = monotonic()
@@ -456,13 +456,13 @@ async def test_wait_stops_waiting_at_the_timeout(
     assert monotonic() - started < 5
 
 
-async def test_wait_timeout(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_wait_timeout(client: AsyncReflexBuild, mock_api: MockAPI):
     _statuses(mock_api, "Building backend application...")
     with pytest.raises(DeploymentTimeoutError, match="Building backend application"):
         await client.deployments.wait(FIRST_ID, timeout=0, poll_interval=0)
 
 
-async def test_set_description(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_set_description(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"/api/v1/apps/{APP_ID}/deployments/{FIRST_ID}/description",
@@ -494,7 +494,7 @@ async def test_regions_and_vm_types_need_no_token(mock_api: MockAPI):
             ],
         ),
     )
-    async with AsyncReflexCloud(transport=AsyncMockTransport(mock_api)) as client:
+    async with AsyncReflexBuild(transport=AsyncMockTransport(mock_api)) as client:
         assert await client.deployments.regions() == [
             Region(id=uuid.UUID(APP_ID), name="San Jose", code="sjc")
         ]
