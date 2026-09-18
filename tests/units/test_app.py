@@ -9,11 +9,15 @@ import io
 import json
 import logging
 import multiprocessing
+import os
 import pickle
 import re
+import tempfile
+import threading
 import unittest.mock
 import uuid
 from collections.abc import AsyncGenerator, Generator
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext as does_not_raise
 from importlib.util import find_spec
 from pathlib import Path
@@ -69,6 +73,7 @@ from reflex.app import (
 from reflex.compiler.compiler import (
     _compile_app,
     _memoize_stateful_app_wraps,
+    _read_stateful_pages_marker,
     _resolve_app_wrap_components,
 )
 from reflex.compiler.plugins import default_page_plugins
@@ -5213,3 +5218,172 @@ def test_compile_emits_stage_spans(
         parent = spans[name].parent
         assert parent is not None
         assert parent.span_id == root.get_span_context().span_id
+
+
+def test_write_stateful_pages_marker_never_truncates_final_path(
+    tmp_path: Path, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+):
+    """The marker is swapped into place atomically, never opened for writing."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    marker = tmp_path / constants.Dirs.STATEFUL_PAGES
+    original_open = Path.open
+    write_opens: list[str] = []
+
+    def spy_open(self: Path, mode: str = "r", *args, **kwargs):
+        if self == marker and mode != "r":
+            write_opens.append(mode)
+        return original_open(self, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", spy_open)
+    app = App(_state=rx.State)
+    app._stateful_pages = dict.fromkeys(["index", "about"])
+
+    app._write_stateful_pages_marker()
+
+    assert write_opens == []
+    assert json.loads(marker.read_text()) == ["index", "about"]
+    assert [p.name for p in tmp_path.iterdir()] == [constants.Dirs.STATEFUL_PAGES]
+
+
+def test_write_stateful_pages_marker_is_always_written(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Stateless apps write an empty marker so backend workers skip page evaluation."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    app = App(enable_state=False)
+
+    app._write_stateful_pages_marker()
+
+    assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Unix file permissions")
+def test_write_stateful_pages_marker_is_shared_readable(tmp_path, mocker):
+    """Backend workers running as another user can read the compiled marker."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    app = App(enable_state=False)
+    app._write_stateful_pages_marker()
+    assert (tmp_path / constants.Dirs.STATEFUL_PAGES).stat().st_mode & 0o777 == 0o644
+
+
+def test_write_stateful_pages_marker_closes_descriptor_on_open_failure(
+    tmp_path, mocker
+):
+    """Failure to open the temporary marker must not leak its raw descriptor."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    created = mocker.spy(tempfile, "mkstemp")
+    mocker.patch("os.fdopen", side_effect=OSError("open failed"))
+    mocker.patch.object(Path, "open", side_effect=OSError("open failed"))
+    with pytest.raises(OSError, match="open failed"):
+        App(enable_state=False)._write_stateful_pages_marker()
+    descriptor, _ = created.spy_return
+    try:
+        with pytest.raises(OSError):
+            os.fstat(descriptor)
+    finally:
+        with contextlib.suppress(OSError):
+            os.close(descriptor)
+    assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize(("windows", "failures"), [(True, 1), (True, 100), (False, 1)])
+def test_write_stateful_pages_marker_sharing_violation(
+    tmp_path, mocker, windows, failures
+):
+    """Windows sharing violations are retried without hiding persistent failures."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    mocker.patch("reflex.app.constants.IS_WINDOWS", windows)
+    sleep = mocker.patch("reflex.app.time.sleep")
+    original_replace = Path.replace
+    attempts = 0
+
+    def replace(path, target):
+        """Simulate a reader holding the Windows marker open.
+
+        Args:
+            path: The temporary marker.
+            target: The final marker.
+
+        Returns:
+            The replacement path.
+
+        Raises:
+            PermissionError: While the simulated reader has the marker open.
+        """
+        nonlocal attempts
+        attempts += 1
+        if attempts <= failures:
+            msg = "marker is open"
+            raise PermissionError(msg)
+        return original_replace(path, target)
+
+    mocker.patch.object(Path, "replace", replace)
+    app = App(enable_state=False)
+    if windows and failures == 1:
+        app._write_stateful_pages_marker()
+        assert json.loads((tmp_path / constants.Dirs.STATEFUL_PAGES).read_text()) == []
+        assert attempts == 2
+        sleep.assert_called_once_with(0.01)
+    else:
+        with pytest.raises(PermissionError, match="marker is open"):
+            app._write_stateful_pages_marker()
+        assert attempts == (100 if windows else 1)
+        assert sleep.call_count == attempts - 1
+        assert list(tmp_path.iterdir()) == []
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_compile_dry_run_preserves_stateful_marker(compilable_app, mocker, existing):
+    """A dry compile neither creates nor replaces the backend route marker."""
+    app, web_dir = compilable_app
+    mocker.patch("reflex.utils.prerequisites.get_web_dir", return_value=web_dir)
+    marker = web_dir / constants.Dirs.BACKEND / constants.Dirs.STATEFUL_PAGES
+    if existing:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text('["previous"]')
+    app._compile(dry_run=True)
+    assert marker.exists() == existing
+    if existing:
+        assert marker.read_text() == '["previous"]'
+
+
+def test_write_stateful_pages_marker_concurrent_readers_see_valid_json(
+    tmp_path: Path, mocker: MockerFixture
+):
+    """Concurrent writers and readers of the marker never observe a partial file."""
+    mocker.patch("reflex.utils.prerequisites.get_backend_dir", return_value=tmp_path)
+    marker = tmp_path / constants.Dirs.STATEFUL_PAGES
+    routes = [f"route-{i}" for i in range(4000)]
+    app = App(_state=rx.State)
+    app._stateful_pages = dict.fromkeys(routes)
+    app._write_stateful_pages_marker()
+    round_started = threading.Barrier(8, timeout=10)
+
+    def writer():
+        """Repeatedly replace the marker."""
+        for _ in range(50):
+            round_started.wait()
+            app._write_stateful_pages_marker()
+
+    def reader():
+        """Check that every observed marker is complete."""
+        # Backend workers read on startup; an infinite read storm can starve
+        # Windows replacement because its readers do not share delete access.
+        for _ in range(50):
+            round_started.wait()
+            content = _read_stateful_pages_marker()
+            if content is None:
+                continue
+            assert content == routes
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        readers = [pool.submit(reader) for _ in range(4)]
+        try:
+            writers = [pool.submit(writer) for _ in range(4)]
+            for future in writers:
+                future.result()
+        finally:
+            round_started.abort()
+        for future in readers:
+            future.result()
+    assert json.loads(marker.read_text()) == routes
