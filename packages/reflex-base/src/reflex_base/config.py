@@ -850,6 +850,10 @@ class Config(BaseConfig):
 _config_module_deps: set[str] = set()
 _config_module_deps_root: Path | None = None
 
+# The rxconfig module that _get_config last executed. Any other rxconfig in
+# sys.modules was imported by project code. Only mutated under _load_config_lock.
+_loaded_config_module: ModuleType | None = None
+
 
 class _ImportRecorder:
     """Meta-path finder that records import attempts made on one thread.
@@ -958,6 +962,28 @@ def get_state_auto_setters() -> bool:
     return False
 
 
+def _imported_config(project_root: Path) -> Config | None:
+    """Get the config of an rxconfig module that project code already imported.
+
+    Executing rxconfig.py again would create a second copy of every class it
+    defines, distinct from the one the app module holds.
+
+    Args:
+        project_root: The root the imported module must live under.
+
+    Returns:
+        The imported module's config, or None when project code has not
+        imported rxconfig from project_root.
+    """
+    module = sys.modules.get(constants.Config.MODULE)
+    if module is None or module is _loaded_config_module:
+        return None
+    origin = getattr(module, "__file__", None)
+    if not origin or not Path(origin).is_relative_to(project_root):
+        return None
+    return getattr(module, "config", None)
+
+
 def _get_config(project_root: Path | None = None) -> Config:
     """Import rxconfig.py fresh from the project root and return its config.
 
@@ -975,7 +1001,7 @@ def _get_config(project_root: Path | None = None) -> Config:
     Returns:
         The app config.
     """
-    global _config_module_deps_root
+    global _config_module_deps_root, _loaded_config_module
 
     project_root = (project_root or Path.cwd()).resolve()
     with _load_config_lock:
@@ -1005,6 +1031,7 @@ def _get_config(project_root: Path | None = None) -> Config:
             with _record_imports() as recorder:
                 try:
                     rxconfig = importlib.import_module(constants.Config.MODULE)
+                    _loaded_config_module = rxconfig
                 finally:
                     # Record even on failure so a later load from another root
                     # evicts what this one imported. Nothing is evicted here:
@@ -1073,7 +1100,7 @@ def get_config(reload: bool = False) -> Config:
         # Serialize check/load/set so threads sharing a context load once.
         with _load_config_lock:
             if ctx._config is None:
-                ctx._set_config(_get_config())
+                ctx._set_config(_imported_config(Path.cwd().resolve()) or _get_config())
     return ctx.config
 
 

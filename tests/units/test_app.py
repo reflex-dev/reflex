@@ -5,6 +5,7 @@ import builtins
 import contextlib
 import contextvars
 import functools
+import importlib
 import io
 import json
 import logging
@@ -154,6 +155,42 @@ def test_app_reuses_preloaded_config_with_state(
         reflex_base.config._state_auto_setters = previous_state_auto_setters
 
     assert reflex_base.config._state_auto_setters is previous_state_auto_setters
+
+
+def test_app_reuses_config_module_imported_by_app(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """An app module that imports rxconfig before creating the App keeps its classes.
+
+    Args:
+        tmp_path: The pytest temporary project directory.
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    (tmp_path / base_constants.Config.FILE).write_text(
+        "import reflex as rx\n\n"
+        "class DirectConfigState(rx.State):\n"
+        "    value: str = ''\n\n"
+        "config = rx.Config(app_name='direct_config_app')\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    config_module_name = base_constants.Config.MODULE
+    monkeypatch.delitem(sys.modules, config_module_name, raising=False)
+    previous_state_auto_setters = reflex_base.config._state_auto_setters
+
+    try:
+        with RegistrationContext():
+            rxconfig = importlib.import_module(config_module_name)
+
+            App(_state=rxconfig.DirectConfigState)
+
+            assert sys.modules[config_module_name] is rxconfig
+            assert get_config() is rxconfig.config
+    finally:
+        sys.modules.pop(config_module_name, None)
+        reflex_base.config._config_module_deps.clear()
+        reflex_base.config._config_module_deps_root = None
+        reflex_base.config._state_auto_setters = previous_state_auto_setters
 
 
 @pytest.fixture

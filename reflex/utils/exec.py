@@ -444,25 +444,52 @@ def should_use_granian():
     return False
 
 
+def get_app_module():
+    """Get the app module for the backend.
+
+    Returns:
+        The app module for the backend.
+    """
+    return get_config().module
+
+
 def get_app_instance():
-    """Return the backend app factory target.
+    """Get the app module for the backend.
 
     Returns:
-        The import path for the backend app factory.
+        The app module for the backend.
     """
-    return f"{__name__}:load_app"
+    return f"{get_app_module()}:{constants.CompileVars.APP}"
 
 
-def load_app():
-    """Load config before importing the backend app.
+def get_app_file() -> Path:
+    """Get the app file for the backend.
 
     Returns:
-        The backend ASGI app.
-    """
-    from reflex.utils.prerequisites import get_and_validate_app
+        The app file for the backend.
 
-    get_config()
-    return get_and_validate_app().app()
+    Raises:
+        ImportError: If the app module is not found.
+    """
+    current_working_dir = str(Path.cwd())
+    if current_working_dir not in sys.path:
+        # Add the current working directory to sys.path
+        sys.path.insert(0, current_working_dir)
+    app_module = get_app_module()
+    module_path = get_module_path(app_module)
+    if module_path is None:
+        msg = f"Module {app_module} not found. Make sure the module is installed."
+        raise ImportError(msg)
+    return module_path
+
+
+def get_app_instance_from_file() -> str:
+    """Get the app module for the backend.
+
+    Returns:
+        The app module for the backend.
+    """
+    return f"{get_app_file()}:{constants.CompileVars.APP}"
 
 
 def run_backend(
@@ -700,7 +727,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 
     granian_app = ParentBoundGranian(
-        target=get_app_instance(),
+        target=get_app_instance_from_file(),
         factory=True,
         address=host,
         port=port,
@@ -827,7 +854,7 @@ def run_granian_backend_prod(
     logger.debug("Using Granian for backend")
 
     granian_app = Granian(
-        target=app_target or get_app_instance(),
+        target=app_target or get_app_instance_from_file(),
         factory=True,
         address=host,
         port=port,

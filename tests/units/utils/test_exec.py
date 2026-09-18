@@ -12,80 +12,13 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-import reflex_base.config
 from pytest_mock import MockerFixture
-from reflex_base import constants
 from reflex_base.environment import environment
-from reflex_base.registry import RegistrationContext
 from reflex_base.utils import serializers
 
 from reflex.utils import exec as exec_utils
 
 DEV_BACKEND_RELOAD_ENV_NAME = environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.name
-
-
-@pytest.mark.parametrize("preload_app", [False, True])
-def test_load_app_initializes_config_before_importing_app(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, preload_app: bool
-) -> None:
-    """The backend factory preserves the config classes used by a preloaded app.
-
-    Args:
-        tmp_path: The pytest temporary project directory.
-        monkeypatch: The pytest monkeypatch fixture.
-        preload_app: Whether the supervisor has already imported the app.
-    """
-    package = tmp_path / "config_first_app"
-    package.mkdir()
-    (package / "__init__.py").touch()
-    (package / "config_first_app.py").write_text(
-        "import reflex as rx\n"
-        "from rxconfig import ConfigState\n\n"
-        "def index():\n"
-        "    return rx.text(ConfigState.value)\n\n"
-        "app = rx.App(_state=ConfigState)\n"
-        "app.add_page(index)\n"
-    )
-    (tmp_path / constants.Config.FILE).write_text(
-        "import reflex as rx\n\n"
-        "class ConfigState(rx.State):\n"
-        "    value: str = ''\n\n"
-        "config = rx.Config(app_name='config_first_app')\n"
-    )
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.syspath_prepend(str(tmp_path))
-    config_module_name = constants.Config.MODULE
-    monkeypatch.delitem(sys.modules, config_module_name, raising=False)
-    monkeypatch.delitem(sys.modules, "config_first_app", raising=False)
-    monkeypatch.delitem(sys.modules, "config_first_app.config_first_app", raising=False)
-    inherited_state: type[object] | None = None
-    inherited_app: object | None = None
-    previous_state_auto_setters = reflex_base.config._state_auto_setters
-
-    try:
-        with RegistrationContext():
-            if preload_app:
-                from reflex.utils.prerequisites import get_and_validate_app
-
-                reflex_base.config.get_config()
-                inherited_state = sys.modules[config_module_name].ConfigState
-                inherited_app = get_and_validate_app().module.app
-
-            assert exec_utils.load_app() is not None
-            app_module = sys.modules["config_first_app.config_first_app"]
-            assert app_module.app._state is sys.modules[config_module_name].ConfigState
-            if preload_app:
-                assert app_module.app is inherited_app
-                assert app_module.app._state is inherited_state
-    finally:
-        sys.modules.pop(config_module_name, None)
-        sys.modules.pop("config_first_app", None)
-        sys.modules.pop("config_first_app.config_first_app", None)
-        reflex_base.config._config_module_deps.clear()
-        reflex_base.config._config_module_deps_root = None
-        reflex_base.config._state_auto_setters = previous_state_auto_setters
-
-    assert reflex_base.config._state_auto_setters is previous_state_auto_setters
 
 
 def _run_granian_reload_test_app(app_dir: str, port_queue: Queue) -> None:
@@ -97,7 +30,7 @@ def _run_granian_reload_test_app(app_dir: str, port_queue: Queue) -> None:
     """
     app_path = Path(app_dir)
     sys.path.insert(0, app_dir)
-    exec_utils.get_app_instance = lambda: "reload_app:app"
+    exec_utils.get_app_instance_from_file = lambda: "reload_app:app"
     exec_utils.get_reload_paths = lambda: [app_path]
     exec_utils.get_dev_backend_reload_marker = lambda: app_path / ".reload"
     original_socket = socket.socket
@@ -281,7 +214,9 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     mocker.patch.object(
         exec_utils, "get_dev_backend_reload_marker", return_value=marker
     )
-    mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
     mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
 
     seen: dict[str, str | None] = {}
@@ -317,7 +252,9 @@ def test_run_granian_backend_binds_listen_socket_in_supervisor(
         "get_dev_backend_reload_marker",
         return_value=tmp_path / exec_utils.DEV_BACKEND_RELOAD_MARKER,
     )
-    mocker.patch.object(exec_utils, "get_app_instance", return_value="app:app")
+    mocker.patch.object(
+        exec_utils, "get_app_instance_from_file", return_value="app:app"
+    )
     mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
     granian_server = pytest.importorskip("granian.server")
     servers: list[object] = []
