@@ -88,7 +88,8 @@ def test_state_js_reconnect_helper_respects_fatal_mismatch() -> None:
     assert "if (backend_state_mismatch)" in reconnect_helper, (
         "the reconnect helper must not reconnect after a fatal mismatch."
     )
-    # Direct `socket.current.connect()` calls would bypass that guard.
-    assert content.count("socket.current.connect();") == 1, (
+    # Counting every spelling, `socket.current?.connect()` included, so a
+    # direct call cannot slip past the guard by writing itself differently.
+    assert reconnect_helper.count(".connect(") == content.count(".connect(") == 1, (
         "socket reconnection should only happen inside the reconnect helper."
     )
