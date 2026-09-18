@@ -6,12 +6,19 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
+from unittest import mock
 
 import click
 import click.testing
 import pytest
+from click.testing import CliRunner
+from reflex_base.registry import RegistrationContext
 
 from reflex import reflex
+from reflex.minify import clear_config_cache, get_state_full_path
+from reflex.state import State
+from tests.units.minify_helpers import install_config, set_minify_modes
 
 _CLI_STARTUP_DENIED_MODULES = frozenset({
     "PIL",
@@ -40,6 +47,22 @@ _CLI_STARTUP_DENIED_MODULES = frozenset({
 _COMPONENT_HELP_DENIED_MODULES = _CLI_STARTUP_DENIED_MODULES - {
     "reflex.custom_components.custom_components"
 }
+
+
+@pytest.fixture
+def cli_runner(monkeypatch: pytest.MonkeyPatch) -> CliRunner:
+    """Click runner with ``prerequisites.get_compiled_app`` stubbed out.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        A ``CliRunner`` ready to invoke ``reflex.reflex.cli`` commands.
+    """
+    from reflex.utils import prerequisites
+
+    monkeypatch.setattr(prerequisites, "get_compiled_app", lambda *a, **kw: mock.Mock())
+    return CliRunner()
 
 
 def _run_cli_probe(probe: str) -> dict[str, object]:
@@ -431,3 +454,461 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+def test_lookup_resolves_minified_path(temp_minify_json, cli_runner):
+    """Test that lookup resolves a minified path to full state info."""
+    from reflex.reflex import cli
+
+    class AppState(State):
+        pass
+
+    class ChildState(AppState):
+        pass
+
+    install_config(
+        states={
+            get_state_full_path(AppState): "b",
+            get_state_full_path(ChildState): "c",
+        },
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "b.c"])
+
+    assert result.exit_code == 0, result.output
+    assert "AppState" in result.output
+    assert "ChildState" in result.output
+
+
+def test_lookup_accepts_full_wire_path(temp_minify_json, cli_runner):
+    """A path copied verbatim from the frontend keeps the root state prefix."""
+    from reflex.reflex import cli
+
+    class WirePathState(State):
+        pass
+
+    install_config(
+        states={get_state_full_path(WirePathState): "b"},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(
+        cli, ["minify", "lookup", "--json", f"{State.get_name()}.b"]
+    )
+
+    assert result.exit_code == 0, result.output
+    output_data = json.loads(result.output)
+    assert [info["class"] for info in output_data] == ["WirePathState"]
+
+
+@pytest.mark.parametrize("states_mode", [False, True])
+def test_lookup_root_prefix_is_env_independent(
+    temp_minify_json, cli_runner, monkeypatch, states_mode
+):
+    """Both spellings of the root prefix resolve, whatever the env var says.
+
+    Args:
+        temp_minify_json: The temporary config fixture.
+        cli_runner: The click CLI runner.
+        monkeypatch: The pytest monkeypatch fixture.
+        states_mode: Whether ``REFLEX_MINIFY_STATES`` is on.
+    """
+    from reflex.reflex import cli
+
+    class RootIdState(State):
+        pass
+
+    # "a" is the root's config id; the only real segment is RootIdState's "b".
+    install_config(
+        states={get_state_full_path(RootIdState): "b"},
+        include_state_root=True,
+    )
+    set_minify_modes(monkeypatch, states=states_mode)
+    clear_config_cache()
+
+    for prefix in ("a", RegistrationContext.default_state_name(State)):
+        result = cli_runner.invoke(cli, ["minify", "lookup", "--json", f"{prefix}.b"])
+        assert result.exit_code == 0, f"{prefix}: {result.output}"
+        assert [info["class"] for info in json.loads(result.output)] == [
+            RootIdState.__name__
+        ], f"{prefix}: {result.output}"
+
+
+def test_lookup_fails_without_minify_json(temp_minify_json, cli_runner):
+    """Test that lookup fails gracefully when minify.json is missing."""
+    from reflex.reflex import cli
+
+    clear_config_cache()
+    result = cli_runner.invoke(cli, ["minify", "lookup", "a.b"])
+
+    assert result.exit_code == 1
+    assert "minify.json does not exist" in result.output
+
+
+def test_lookup_fails_for_malformed_config(
+    temp_minify_json: Path, cli_runner: CliRunner
+) -> None:
+    """Test that a malformed minify.json exits cleanly, not with a traceback."""
+    from reflex.reflex import cli
+
+    (temp_minify_json / "minify.json").write_text("{not json", encoding="utf-8")
+    clear_config_cache()
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "a.b"])
+
+    assert result.exit_code == 1
+    assert isinstance(result.exception, SystemExit)
+    assert "Invalid JSON" in result.output
+
+
+def test_lookup_fails_for_invalid_path(temp_minify_json, cli_runner):
+    """Test that lookup fails for non-existent minified path."""
+    from reflex.reflex import cli
+
+    class InvalidPathState(State):
+        pass
+
+    install_config(
+        states={get_state_full_path(InvalidPathState): "b"},
+        include_state_root=True,
+    )
+    result = cli_runner.invoke(cli, ["minify", "lookup", "b.xyz"])
+
+    assert result.exit_code == 1
+    assert "No state or event handler found" in result.output
+
+
+def test_lookup_resolves_event_handler(temp_minify_json, cli_runner):
+    """The final segment of a copied event name is a handler id, not a state id."""
+    from reflex.reflex import cli
+
+    class HandlerLookupState(State):
+        def increment(self):
+            pass
+
+    state_path = get_state_full_path(HandlerLookupState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"increment": "cX"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(
+        cli, ["minify", "lookup", "--json", f"{State.get_name()}.b.cX"]
+    )
+
+    assert result.exit_code == 0, result.output
+    output_data = json.loads(result.output)
+    assert [entry["kind"] for entry in output_data] == ["state", "event"]
+    assert {entry["module"] for entry in output_data} == {__name__}
+    assert output_data[1]["class"] == "HandlerLookupState"
+    assert output_data[1]["handler"] == "increment"
+    assert output_data[1]["event_id"] == "cX"
+    assert output_data[1]["full_path"] == f"{state_path}.increment"
+
+
+def test_lookup_event_handler_text_output(temp_minify_json, cli_runner):
+    """Text output names the handler after its owning state class."""
+    from reflex.reflex import cli
+
+    class HandlerTextState(State):
+        def increment(self):
+            pass
+
+    state_path = get_state_full_path(HandlerTextState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"increment": "a"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
+
+    assert result.exit_code == 0, result.output
+    assert f"{__name__}.HandlerTextState.increment" in result.output
+
+
+def test_lookup_reports_ambiguous_final_segment(temp_minify_json, cli_runner):
+    """A final segment that is both a substate id and a handler id yields both."""
+    from reflex.reflex import cli
+
+    class AmbiguousParentState(State):
+        def increment(self):
+            pass
+
+    class AmbiguousChildState(AmbiguousParentState):
+        pass
+
+    parent_path = get_state_full_path(AmbiguousParentState)
+    install_config(
+        states={
+            parent_path: "b",
+            get_state_full_path(AmbiguousChildState): "a",
+        },
+        events={parent_path: {"increment": "a"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.a"])
+
+    assert result.exit_code == 0, result.output
+    output_data = json.loads(result.output)
+    assert [(entry["kind"], entry["class"]) for entry in output_data] == [
+        ("state", "AmbiguousParentState"),
+        ("state", "AmbiguousChildState"),
+        ("event", "AmbiguousParentState"),
+    ]
+
+    text_result = cli_runner.invoke(cli, ["minify", "lookup", "b.a"])
+
+    assert text_result.exit_code == 0, text_result.output
+    assert "is both a state id and an event handler id" in text_result.output
+    assert "AmbiguousParentState.increment" in text_result.output
+
+
+@pytest.mark.parametrize("minified", [True, False])
+def test_lookup_bare_root_segment(temp_minify_json, cli_runner, minified):
+    """A lone root segment is the root state, not a prefix with nothing behind it.
+
+    Args:
+        temp_minify_json: The temporary config fixture.
+        cli_runner: The click CLI runner.
+        minified: Whether to look the root state up by its minified id.
+    """
+    from reflex.reflex import cli
+
+    install_config(include_state_root=True)
+
+    segment = "a" if minified else RegistrationContext.default_state_name(State)
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", segment])
+
+    assert result.exit_code == 0, result.output
+    assert [(entry["kind"], entry["class"]) for entry in json.loads(result.output)] == [
+        ("state", "State")
+    ]
+
+
+def test_lookup_bare_root_segment_also_matches_root_handler(
+    temp_minify_json, cli_runner
+):
+    """The root state id and a root handler id collide; both are reported."""
+    from reflex.reflex import cli
+
+    install_config(
+        events={get_state_full_path(State): {"hydrate": "a"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "a"])
+
+    assert result.exit_code == 0, result.output
+    assert [
+        (entry["kind"], entry.get("handler")) for entry in json.loads(result.output)
+    ] == [("state", None), ("event", "hydrate")]
+
+
+def test_lookup_accepts_unminified_segments(temp_minify_json, cli_runner):
+    """States and events minify independently, so either half may be unminified."""
+    from reflex.reflex import cli
+
+    class MixedModeState(State):
+        def increment(self):
+            pass
+
+    state_path = get_state_full_path(MixedModeState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"increment": "c"}},
+        include_state_root=True,
+    )
+    default_name = RegistrationContext.default_state_name(MixedModeState)
+
+    # Only events minified: the state keeps its default name on the wire.
+    result = cli_runner.invoke(
+        cli, ["minify", "lookup", "--json", f"{State.get_name()}.{default_name}.c"]
+    )
+    assert result.exit_code == 0, result.output
+    assert [(e["kind"], e["class"]) for e in json.loads(result.output)] == [
+        ("state", "MixedModeState"),
+        ("event", "MixedModeState"),
+    ]
+
+    # Only states minified: the handler keeps its Python name.
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b.increment"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)[1]["handler"] == "increment"
+
+
+def test_lookup_reports_configured_ids_for_unminified_segments(
+    temp_minify_json, cli_runner
+):
+    """``state_id``/``event_id`` are the configured ids, not the segment typed."""
+    from reflex.reflex import cli
+
+    class ConfiguredIdState(State):
+        def increment(self):
+            pass
+
+    class UnconfiguredIdState(ConfiguredIdState):
+        def decrement(self):
+            pass
+
+    state_path = get_state_full_path(ConfiguredIdState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"increment": "c"}},
+        include_state_root=True,
+    )
+    default_name = RegistrationContext.default_state_name(ConfiguredIdState)
+
+    result = cli_runner.invoke(
+        cli, ["minify", "lookup", "--json", f"{default_name}.increment"]
+    )
+
+    assert result.exit_code == 0, result.output
+    output_data = json.loads(result.output)
+    assert [(e["kind"], e["minified"]) for e in output_data] == [
+        ("state", default_name),
+        ("event", "increment"),
+    ]
+    assert output_data[0]["state_id"] == "b"
+    assert output_data[1]["event_id"] == "c"
+
+    # A state and handler with no configured id report ``None``, not the name.
+    child_name = RegistrationContext.default_state_name(UnconfiguredIdState)
+    result = cli_runner.invoke(
+        cli, ["minify", "lookup", "--json", f"b.{child_name}.decrement"]
+    )
+
+    assert result.exit_code == 0, result.output
+    output_data = json.loads(result.output)
+    assert output_data[1]["state_id"] is None
+    assert output_data[2]["event_id"] is None
+
+
+def test_lookup_handler_id_only_matches_final_segment(temp_minify_json, cli_runner):
+    """A handler id in the middle of a path is an error, not a state."""
+    from reflex.reflex import cli
+
+    class MiddleHandlerState(State):
+        def increment(self):
+            pass
+
+    state_path = get_state_full_path(MiddleHandlerState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"increment": "c"}},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "b.c.d"])
+
+    assert result.exit_code == 1
+    assert "No state found for minified segment 'c'" in result.output
+
+
+def test_lookup_with_json_output(temp_minify_json, cli_runner):
+    """Test that lookup with --json flag outputs valid JSON."""
+    from reflex.reflex import cli
+
+    class JsonTestState(State):
+        pass
+
+    install_config(
+        states={get_state_full_path(JsonTestState): "b"},
+        include_state_root=True,
+    )
+
+    result = cli_runner.invoke(cli, ["minify", "lookup", "--json", "b"])
+
+    assert result.exit_code == 0, result.output
+    output_data = json.loads(result.output)
+    assert isinstance(output_data, list)
+    assert len(output_data) == 1
+    assert output_data[0]["class"] == "JsonTestState"
+    assert output_data[0]["state_id"] == "b"
+
+
+@pytest.mark.parametrize("command", ["list", "lookup"])
+def test_stdout_is_reserved_before_the_app_loads(
+    command, temp_minify_json, monkeypatch, cli_runner
+):
+    """Reserving after the app loaded would be too late to help.
+
+    Loading the app dry-runs a compile, which logs warnings and
+    deprecations; those go to stdout unless it is claimed first.
+
+    Args:
+        command: The ``reflex minify`` subcommand under test.
+        temp_minify_json: Temporary ``minify.json`` location.
+        monkeypatch: The pytest monkeypatch fixture.
+        cli_runner: Click runner with the app loader stubbed.
+    """
+    from reflex_base.utils import log
+
+    from reflex.reflex import cli
+    from reflex.utils import prerequisites
+
+    monkeypatch.setattr(log, "_stdout_reserved", False)
+
+    class JsonOutputState(State):
+        pass
+
+    install_config(
+        states={get_state_full_path(JsonOutputState): "b"},
+        include_state_root=True,
+    )
+    args = ["minify", command, "--json"]
+    if command == "lookup":
+        args.append("b")
+
+    reserved_when_loading: list[bool] = []
+
+    def _noisy_load(*a, **kw):
+        reserved_when_loading.append(log.is_stdout_reserved())
+        # Loading an app runs arbitrary module-level code; reserving only
+        # covers Reflex's own logging, not a raw write like this one.
+        print("noise from the app import")
+        return mock.Mock()
+
+    monkeypatch.setattr(prerequisites, "get_compiled_app", _noisy_load)
+
+    result = cli_runner.invoke(cli, args)
+
+    assert reserved_when_loading == [True]
+    assert "noise from the app import" not in result.stdout
+    json.loads(result.stdout)
+
+
+@pytest.mark.parametrize("command", ["list", "lookup"])
+def test_json_output_does_not_leak_the_stdout_reservation(
+    command, temp_minify_json, cli_runner
+):
+    """The reservation is scoped to the command, not the process.
+
+    A real CLI process exits, but in-process callers would otherwise leave
+    every later log write pointed at stderr.
+
+    Args:
+        command: The ``reflex minify`` subcommand under test.
+        temp_minify_json: Temporary ``minify.json`` location.
+        cli_runner: Click runner with the app loader stubbed.
+    """
+    from reflex_base.utils import log
+
+    from reflex.reflex import cli
+
+    class ReservationState(State):
+        pass
+
+    install_config(
+        states={get_state_full_path(ReservationState): "b"},
+        include_state_root=True,
+    )
+    args = ["minify", command, "--json"]
+    if command == "lookup":
+        args.append("b")
+
+    assert cli_runner.invoke(cli, args).exit_code == 0
+    assert log.is_stdout_reserved() is False

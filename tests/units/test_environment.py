@@ -791,3 +791,48 @@ def test_timedelta_env_var_round_trips_through_set(
         # never matches - the same quirk the other `set` tests here work around.
         env_var_instance.set(value)  # type: ignore[arg-type]
         assert env_var_instance.get() == value
+
+
+@pytest.mark.parametrize(
+    "var",
+    [
+        EnvironmentVariables.REFLEX_MINIFY_STATES,
+        EnvironmentVariables.REFLEX_MINIFY_EVENTS,
+    ],
+)
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("true", True),
+        ("TRUE", True),
+        ("1", True),
+        ("yes", True),
+        ("false", False),
+        ("0", False),
+        ("no", False),
+        ("", False),
+    ],
+)
+def test_minify_env_vars_accept_boolean_literals(monkeypatch, var, value, expected):
+    """The minify toggles read like every other boolean env var.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+        var: The env var under test.
+        value: The literal written to the environment.
+        expected: The value the env var should report.
+    """
+    monkeypatch.setenv(var.name, value)
+    assert var.get() is expected
+
+
+def test_minify_env_vars_default_to_off(monkeypatch):
+    """Minification stays off until it is asked for.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+    """
+    monkeypatch.delenv(EnvironmentVariables.REFLEX_MINIFY_STATES.name, raising=False)
+    monkeypatch.delenv(EnvironmentVariables.REFLEX_MINIFY_EVENTS.name, raising=False)
+    assert EnvironmentVariables.REFLEX_MINIFY_STATES.get() is False
+    assert EnvironmentVariables.REFLEX_MINIFY_EVENTS.get() is False

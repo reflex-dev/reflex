@@ -47,6 +47,7 @@ section_order = (
     "importvar",
     "var-system",
     "cli",
+    "minification",
     "browser-storage",
     "browser-javascript",
     "plugins",
