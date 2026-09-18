@@ -125,8 +125,13 @@ def MemoEdgeCasesApp():
         counter: int = 0
         markdown_source: str = "Initial **memo-md-home** text"
         form_default: str = "Ada"
+        typed: str = ""
         submitted: rx.Field[dict] = rx.field(default_factory=dict)
         probe_label: str = "one"
+
+        @rx.event
+        def set_typed(self, value: str):
+            self.typed = value
 
         @rx.event
         def next_probe_label(self):
@@ -208,6 +213,30 @@ def MemoEdgeCasesApp():
                         as_child=True,
                     ),
                     name="full_name",
+                ),
+                on_submit=MemoState.handle_submit,
+            ),
+            # The fully-controlled variant compiles to a ``DebounceInput`` root
+            # — a class component that never accepts ``ref`` and exposes the
+            # real ``<input>`` through its ``inputRef`` prop instead. The
+            # Slot-injected ref must be routed there, or Radix ``Form.Control``
+            # calls ``addEventListener`` on the class instance and crashes.
+            rx.form.root(
+                rx.form.field(
+                    rx.form.control(
+                        rx.input(
+                            value=MemoState.typed,
+                            on_change=MemoState.set_typed,
+                        ),
+                        as_child=True,
+                    ),
+                    rx.form.submit(
+                        rx.button(
+                            "Submit typed", id="controlled-form-submit", type="submit"
+                        ),
+                        as_child=True,
+                    ),
+                    name="typed_name",
                 ),
                 on_submit=MemoState.handle_submit,
             ),
@@ -424,6 +453,37 @@ def test_as_child_slot_props_reach_memoized_input(
     expect(page.locator("#form-data-out")).to_contain_text('"full_name":"Ada"')
 
 
+def test_as_child_slot_props_reach_controlled_debounced_input(
+    memo_app: AppHarness, page: Page
+) -> None:
+    """A controlled input under ``as_child`` routes the Slot ref to the DOM node.
+
+    ``rx.input(value=..., on_change=...)`` compiles to a ``DebounceInput``
+    root — a class component whose real ``<input>`` is exposed through the
+    ``inputRef`` prop. If the memo wrapper hands the Slot-injected ref to the
+    root as ``ref``, it resolves to the class instance and Radix
+    ``Form.Control`` crashes the page with ``control.addEventListener is not
+    a function``; the injected ``name``/``id`` must still reach the input.
+
+    Args:
+        memo_app: Running app harness.
+        page: Playwright page.
+    """
+    assert memo_app.frontend_url is not None
+    page.goto(memo_app.frontend_url)
+
+    field_input = page.locator("input[name='typed_name']")
+    expect(field_input).to_have_count(1)
+    assert field_input.get_attribute("id"), (
+        "Slot-injected id must reach the debounced input"
+    )
+
+    field_input.fill("hello")
+    expect(field_input).to_have_value("hello")
+    page.click("#controlled-form-submit")
+    expect(page.locator("#form-data-out")).to_contain_text('"typed_name":"hello"')
+
+
 # Semantics of ``mergeSlotProps``, asserted against the real bundled helper and
 # the real ``mergician`` dependency rather than a reimplementation. Each entry
 # is ``(name, js_expression)``; the expression must evaluate to ``true``, with
@@ -577,6 +637,36 @@ MERGE_SLOT_PROPS_CASES: list[tuple[str, str]] = [
         if (r.current.n !== 1) return false;
         cleanup();
         return r.current === null;
+        """,
+    ),
+    # Roots that expose their DOM node through a dedicated prop (DebounceInput's
+    # `inputRef`) never accept `ref` — the injected ref must be routed there.
+    (
+        "an injected ref is routed to the root's DOM ref prop",
+        """
+        const own = {current: null};
+        const seen = [];
+        const inj = (n) => seen.push(n);
+        const r = m({ref: inj, name: "n"}, {inputRef: own, id: "x"}, "inputRef");
+        if ("ref" in r || r.name !== "n" || r.id !== "x") return false;
+        if (r.inputRef !== m({ref: inj}, {inputRef: own}, "inputRef").inputRef)
+            return false;
+        const node = {};
+        const cleanup = r.inputRef(node);
+        if (own.current !== node || seen[0] !== node) return false;
+        cleanup();
+        return own.current === null && seen[1] === null;
+        """,
+    ),
+    (
+        "ref routing without an own DOM ref or without an injection",
+        """
+        const own = {current: null};
+        const inj = () => {};
+        return m({ref: inj, id: "s"}, {name: "n"}, "inputRef").inputRef === inj
+            && !("ref" in m({ref: inj}, {name: "n"}, "inputRef"))
+            && m({id: "s"}, {inputRef: own}, "inputRef").inputRef === own
+            && m({ref: null}, {inputRef: own}, "inputRef").inputRef === own;
         """,
     ),
 ]

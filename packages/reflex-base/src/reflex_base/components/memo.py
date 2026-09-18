@@ -331,6 +331,12 @@ class MemoComponentDefinition(MemoDefinition):
     # object-valued props deep-merge). Set only when the root renders a tag
     # that can carry props and a ref.
     forward_root_props: bool = False
+    # The camelCased JS prop that carries the root's DOM ref when the root
+    # does not accept ``ref`` directly (from the component class's
+    # ``_dom_ref_prop``, e.g. DebounceInput's ``inputRef``). The generated
+    # ``mergeSlotProps`` call routes a runtime-injected ref to this prop so it
+    # reaches the real element instead of a class-component instance.
+    root_ref_prop: str | None = None
     # The JS function the compiled function component is wrapped in — React's
     # ``memo`` by default. ``None`` exports the bare function component. The
     # wrapper's ``VarData`` supplies its imports, so a custom wrapper brings
@@ -2123,6 +2129,8 @@ def create_passthrough_component_memo(
         and component._render().name
     ):
         replacements["forward_root_props"] = True
+        if (dom_ref_prop := type(component)._dom_ref_prop) is not None:
+            replacements["root_ref_prop"] = format.to_camel_case(dom_ref_prop)
     definition = dataclasses.replace(definition, **replacements)
 
     return _create_component_wrapper(definition), definition

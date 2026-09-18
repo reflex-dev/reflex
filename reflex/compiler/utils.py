@@ -441,7 +441,10 @@ def _app_style() -> ComponentStyle | Style:
 
 
 def _splice_transparent_root_props(
-    rest_name: str | None, rendered: dict, imports: ParsedImportDict
+    rest_name: str | None,
+    rendered: dict,
+    imports: ParsedImportDict,
+    ref_prop: str | None = None,
 ) -> str:
     """Make a memo wrapper transparent to props its parent injects at runtime.
 
@@ -457,14 +460,19 @@ def _splice_transparent_root_props(
             synthesize one.
         rendered: The root's rendered tag, whose ``props`` are replaced in place.
         imports: The memo module's imports, extended with the helper import.
+        ref_prop: The JS prop carrying the root's DOM ref when the root does
+            not accept ``ref`` directly (e.g. DebounceInput's ``inputRef``);
+            ``mergeSlotProps`` routes an injected ref there.
 
     Returns:
         The rest param name the wrapper signature must declare.
     """
     if rest_name is None:
         rest_name = "rest"
+    ref_prop_arg = f', "{ref_prop}"' if ref_prop is not None else ""
+    own_props = ", ".join(rendered["props"])
     rendered["props"] = [
-        f"...mergeSlotProps({rest_name}, ({{ {', '.join(rendered['props'])} }}))"
+        f"...mergeSlotProps({rest_name}, ({{ {own_props} }}){ref_prop_arg})"
     ]
     # The call is spliced into the rendered props rather than carried by any
     # Var, so its import is merged explicitly.
@@ -543,7 +551,9 @@ def compile_experimental_component_memo(
     )
     rest_name = rest_param.placeholder_name if rest_param is not None else None
     if definition.forward_root_props:
-        rest_name = _splice_transparent_root_props(rest_name, rendered, imports)
+        rest_name = _splice_transparent_root_props(
+            rest_name, rendered, imports, definition.root_ref_prop
+        )
 
     signature_fields = [
         field

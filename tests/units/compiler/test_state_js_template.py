@@ -50,7 +50,7 @@ def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node missing")
 def test_merge_slot_props_handles_conditional_event_handlers() -> None:
-    """Falsy conditional handlers preserve the callable handler on either side."""
+    """Falsy handlers, direct object merges and DOM-ref routing behave per contract."""
     content = STATE_JS_TEMPLATE.read_text()
     helpers = content[
         content.index("export const mergeRefs =") : content.index(
@@ -82,14 +82,39 @@ const first = mergeSlotProps(injected, own);
 assert.equal(first.onClick, mergeSlotProps(injected, own).onClick);
 first.onClick();
 assert.deepEqual(calls, ['own', 'injected']);
+// Object props merge directly through mergician — the own side is a fresh
+// literal every render, so there is no identity to cache under, and neither
+// input object may be mutated by the merge.
 const mergician = (injected, own) => ({...injected, ...own});
 const injectedStyle = {color: 'red', margin: 4};
 const ownStyle = {color: 'blue'};
-const firstStyle = mergeSlotProps({style: injectedStyle}, {style: ownStyle}).style;
-assert.deepEqual(firstStyle, {color: 'blue', margin: 4});
-assert.equal(firstStyle, mergeSlotProps({style: injectedStyle}, {style: ownStyle}).style);
-assert.notEqual(firstStyle, mergeSlotProps({style: {...injectedStyle}}, {style: ownStyle}).style);
-assert.notEqual(firstStyle, mergeSlotProps({style: injectedStyle}, {style: {...ownStyle}}).style);
+const mergedStyle = mergeSlotProps({style: injectedStyle}, {style: ownStyle}).style;
+assert.deepEqual(mergedStyle, {color: 'blue', margin: 4});
+assert.notEqual(mergedStyle, ownStyle);
+assert.notEqual(mergedStyle, injectedStyle);
+assert.deepEqual(ownStyle, {color: 'blue'});
+assert.deepEqual(injectedStyle, {color: 'red', margin: 4});
+// A root whose DOM ref rides a dedicated prop (DebounceInput's inputRef)
+// never receives `ref`; the injected ref is routed and composed there.
+const ownRef = {current: null};
+const seen = [];
+const routed = mergeSlotProps(
+  {ref: (n) => seen.push(n), name: 'n'},
+  {inputRef: ownRef, id: 'x'},
+  'inputRef',
+);
+assert.ok(!('ref' in routed));
+assert.equal(routed.name, 'n');
+assert.equal(routed.id, 'x');
+const cleanup = routed.inputRef({tag: 'input'});
+assert.equal(ownRef.current.tag, 'input');
+assert.equal(seen[0].tag, 'input');
+cleanup();
+assert.equal(ownRef.current, null);
+assert.equal(seen[1], null);
+assert.equal(
+  mergeSlotProps({id: 's'}, {inputRef: ownRef}, 'inputRef').inputRef, ownRef);
+assert.ok(!('ref' in mergeSlotProps({ref: null}, {inputRef: ownRef}, 'inputRef')));
 """,
         ],
         check=True,

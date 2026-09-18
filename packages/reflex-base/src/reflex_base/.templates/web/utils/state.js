@@ -1335,7 +1335,6 @@ export const mergeRefs =
 // Both levels are weak, so an entry dies with whichever input dies first.
 const composedRefCache = new WeakMap();
 const composedHandlerCache = new WeakMap();
-const composedObjectCache = new WeakMap();
 
 const canWeakKey = (value) =>
   value !== null && (typeof value === "object" || typeof value === "function");
@@ -1363,8 +1362,6 @@ const composeHandlers =
     own(...args);
     injected(...args);
   };
-
-const composeObjects = (own, injected) => mergician(injected, own);
 
 // Props named `on` followed by an uppercase letter are event handlers and get
 // composed rather than overridden. Hoisted because evaluating a regex literal
@@ -1403,9 +1400,13 @@ const isPlainObjectProp = (value) => {
  * exactly as it did before.
  * @param injectedProps The props injected by the parent at runtime.
  * @param ownProps The component's own compiled-in props.
+ * @param refProp The prop carrying the root's DOM ref when the root does not
+ * accept `ref` directly (e.g. DebounceInput's `inputRef`, a class component
+ * whose `ref` would resolve to the instance). An injected ref is routed there
+ * and `ref` itself is never emitted.
  * @returns The merged props object.
  */
-export const mergeSlotProps = (injectedProps, ownProps) => {
+export const mergeSlotProps = (injectedProps, ownProps, refProp) => {
   let hasInjected = false;
   for (const _ in injectedProps) {
     hasInjected = true;
@@ -1415,9 +1416,20 @@ export const mergeSlotProps = (injectedProps, ownProps) => {
     return ownProps;
   }
   const merged = { ...injectedProps, ...ownProps };
+  if (refProp !== undefined) {
+    const injectedRef = injectedProps.ref;
+    delete merged.ref;
+    if (injectedRef != null) {
+      const own = ownProps[refProp];
+      merged[refProp] =
+        own == null
+          ? injectedRef
+          : composeCached(composedRefCache, own, injectedRef, mergeRefs);
+    }
+  }
   for (const propName in ownProps) {
     const injected = injectedProps[propName];
-    if (injected == null) {
+    if (injected == null || propName === refProp) {
       continue;
     }
     const own = ownProps[propName];
@@ -1441,12 +1453,9 @@ export const mergeSlotProps = (injectedProps, ownProps) => {
       merged[propName] =
         own && injected ? injected + " " + own : own || injected;
     } else if (isPlainObjectProp(injected) && isPlainObjectProp(own)) {
-      merged[propName] = composeCached(
-        composedObjectCache,
-        own,
-        injected,
-        composeObjects,
-      );
+      // Own is a fresh object literal every render, so there is no identity
+      // to cache the merge under — merge directly.
+      merged[propName] = mergician(injected, own);
     }
   }
   return merged;

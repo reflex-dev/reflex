@@ -2730,6 +2730,53 @@ def test_snapshot_boundary_memo_forwards_ref_to_root() -> None:
     )
 
 
+def test_debounce_input_root_routes_injected_ref_to_input_ref() -> None:
+    """A ``DebounceInput`` root routes a runtime-injected ref to ``inputRef``.
+
+    ``DebounceInput`` is a class component: its ``_render`` strips ``ref``
+    (a plain ref resolves to the instance, not the ``<input>``) and the real
+    element rides the ``inputRef`` prop. The generated merge call must carry
+    that prop name so an injected ref reaches the DOM node — handing it to
+    the root as ``ref`` makes Radix ``Form.Control`` call ``addEventListener``
+    on the class instance and crash the page.
+    """
+    from reflex_base.event import EventChain
+    from reflex_components_core.core.debounce import DebounceInput
+
+    stateful_change = Var(_js_expr="evt")._replace(
+        _var_type=EventChain,
+        merge_var_data=VarData(state="TestState"),
+    )
+
+    def debounced() -> Component:
+        return DebounceInput.create(
+            Textarea.create(id="c2_input", on_change=stateful_change)
+        )
+
+    _factory, definition = create_passthrough_component_memo(debounced())
+    assert definition.forward_root_props
+    assert definition.root_ref_prop == "inputRef"
+
+    ctx, _page_ctx = _compile_single_page(debounced)
+    memo_code = _compile_memo_module_text(ctx)
+    assert re.search(
+        r"\.\.\.mergeSlotProps\(rest, \(\{[^)]*inputRef:ref_c2_input[^)]*\}\), \"inputRef\"\)",
+        memo_code,
+    ), (
+        "The DebounceInput root's merge must route injected refs to inputRef.\n"
+        f"Memo code snippet: {memo_code[:2000]}"
+    )
+
+    # Ordinary roots keep the two-argument call — no ref routing.
+    ctx, _page_ctx = _compile_single_page(
+        lambda: Plain.create("content", on_click=rx.console_log("x"))
+    )
+    plain_code = _compile_memo_module_text(ctx)
+    assert re.search(r"\.\.\.mergeSlotProps\(rest, \(\{[^)]*\}\)\)", plain_code), (
+        f"Plain roots must not gain a ref-prop argument: {plain_code[:2000]}"
+    )
+
+
 def test_untagged_memo_roots_do_not_forward_ref() -> None:
     """Roots that render no element get no ref or rest parameter.
 
