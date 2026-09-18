@@ -351,25 +351,29 @@ def test_frontend_env_defaults_mimalloc_and_no_color():
     )
 
 
-def test_with_development_condition_sets_node_and_bun_options():
-    """Both runtime option vars gain the development condition flag."""
+def test_with_development_condition_sets_node_options():
+    """NODE_OPTIONS gains the development condition flag."""
     env = exec_utils._with_development_condition({})
     assert env["NODE_OPTIONS"] == "--conditions=development"
-    assert env["BUN_OPTIONS"] == "--conditions=development"
+    # Bun ignores BUN_OPTIONS for the process it spawns for a package script,
+    # so setting it would do nothing.
+    assert "BUN_OPTIONS" not in env
 
 
 def test_with_development_condition_preserves_existing_options():
     """Existing runtime options are kept, the flag is appended once, and the
     base environment is not mutated.
     """
-    environ = {
-        "NODE_OPTIONS": "--max-old-space-size=4096",
-        "BUN_OPTIONS": "--conditions=development",
-    }
+    environ = {"NODE_OPTIONS": "--max-old-space-size=4096"}
     env = exec_utils._with_development_condition(environ)
     assert env["NODE_OPTIONS"] == "--max-old-space-size=4096 --conditions=development"
     # Already-present flag is not duplicated.
-    assert env["BUN_OPTIONS"] == "--conditions=development"
+    assert (
+        exec_utils._with_development_condition({
+            "NODE_OPTIONS": "--conditions=development"
+        })["NODE_OPTIONS"]
+        == "--conditions=development"
+    )
     # The dev condition must not leak into the parent environment.
     assert environ["NODE_OPTIONS"] == "--max-old-space-size=4096"
 
