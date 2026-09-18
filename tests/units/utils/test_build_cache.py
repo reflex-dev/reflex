@@ -247,6 +247,9 @@ def test_build_environment_change_rebuilds(cached_build, monkeypatch):
     assert process.call_count == 2
 
 
+@pytest.mark.skipif(
+    os.name == "nt", reason="Frontend build cache is disabled on Windows"
+)
 def test_non_build_environment_change_reuses_cache(cached_build, monkeypatch):
     """Unrelated shell state does not invalidate a deterministic frontend build."""
     _, _, process = cached_build
