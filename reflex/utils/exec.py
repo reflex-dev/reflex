@@ -226,24 +226,21 @@ def _with_development_condition(environ: Mapping[str, str]) -> dict[str, str]:
 
     react-router's dev CLI requires the condition and relaunches itself to
     enable it. Setting it up front skips that relaunch under node, which reads
-    NODE_OPTIONS. Bun applies neither variable to the process it spawns for a
-    package script, so a node-less install relaunches anyway and relies on the
-    CLI passing the condition along as a flag; BUN_OPTIONS still covers bun
-    invoked directly on a script. The setting does not leak into the parent
-    process.
+    NODE_OPTIONS. Bun applies neither NODE_OPTIONS nor BUN_OPTIONS to the
+    process it spawns for a package script, so a node-less install relaunches
+    regardless and relies on the CLI passing the condition along as a flag.
+    The setting does not leak into the parent process.
 
     Args:
         environ: The base environment.
 
     Returns:
-        A copy of the environment with the flag merged into NODE_OPTIONS and
-        BUN_OPTIONS.
+        A copy of the environment with the flag merged into NODE_OPTIONS.
     """
     env = dict(environ)
-    for options_var in ("NODE_OPTIONS", "BUN_OPTIONS"):
-        existing = env.get(options_var, "")
-        if _DEV_CONDITION_FLAG not in existing.split():
-            env[options_var] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
+    existing = env.get("NODE_OPTIONS", "")
+    if _DEV_CONDITION_FLAG not in existing.split():
+        env["NODE_OPTIONS"] = f"{existing} {_DEV_CONDITION_FLAG}".strip()
     return env
 
 
