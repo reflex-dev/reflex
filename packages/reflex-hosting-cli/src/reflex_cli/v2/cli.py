@@ -263,8 +263,8 @@ def _resolve_deploy_provider(
         # Explicit --provider always wins; validated by the caller already.
         target = hosting.normalize_provider(provider_arg)
     else:
-        gcp_status = hosting.gcp_deploy_available(client)
-        if not gcp_status or not interactive:
+        gcp_status = hosting.gcp_deploy_available(client) if interactive else None
+        if not gcp_status:
             # No GCP connected, or non-interactive with no explicit choice: keep
             # whatever the app already targets.
             target = current

@@ -1,0 +1,1 @@
+Add an opt-in local production frontend build cache with `REFLEX_FRONTEND_BUILD_CACHE=true` for deterministic repeat builds on macOS and Linux. Production exports sharing a frontend directory are serialized; post-build hooks and compression still run, and setting the variable to `false` forces a fresh build and discards cached output.
