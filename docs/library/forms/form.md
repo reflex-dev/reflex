@@ -298,7 +298,7 @@ class DynamicFormState(rx.State):
         ]
 
     @rx.event
-    def add_field(self, form_data: dict):
+    def add_form_field(self, form_data: dict):
         new_field = form_data.get("new_field")
         if not new_field:
             return
@@ -331,7 +331,7 @@ def dynamic_form():
                 rx.input(placeholder="New Field", name="new_field"),
                 rx.button("+", type="submit"),
             ),
-            on_submit=DynamicFormState.add_field,
+            on_submit=DynamicFormState.add_form_field,
             reset_on_submit=True,
         ),
         rx.divider(),
