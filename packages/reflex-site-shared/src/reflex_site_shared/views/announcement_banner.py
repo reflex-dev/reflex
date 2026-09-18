@@ -61,6 +61,7 @@ def announcement_banner() -> rx.Component:
                         ),
                     ),
                     rx.el.span(" (opens in a new tab)", class_name="sr-only"),
+                    aria_label="New — xy is now in Reflex Build — Read more (opens in a new tab)",
                     href=XY_IN_REFLEX_BUILD_URL,
                     target="_blank",
                     rel="noopener noreferrer",

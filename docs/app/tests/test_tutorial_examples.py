@@ -14,6 +14,7 @@ import reflex as rx
 from reflex_base.registry import RegistrationContext
 
 DOCS = Path(__file__).resolve().parents[2] / "getting_started"
+OPENAI_CHAT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 STATE_LOCKED = ContextVar("tutorial_state_locked", default=False)
 
 
@@ -24,21 +25,31 @@ def isolated_registration():
         yield
 
 
-def python_blocks(name):
-    """Return visible Python blocks from a tutorial."""
-    return re.findall(
-        r"^```python\n(.*?)^```", (DOCS / name).read_text(), re.MULTILINE | re.DOTALL
+def tutorial_block(name, section, marker):
+    """Select one marked snippet within a named tutorial section."""
+    source = (DOCS / name).read_text()
+    assert source.count(section + "\n") == 1, f"Expected one section: {section}"
+    content = source.split(section + "\n", 1)[1]
+    heading_prefix = section.split(" ", 1)[0]
+    content = re.split(rf"^{heading_prefix} ", content, maxsplit=1, flags=re.MULTILINE)[
+        0
+    ]
+    blocks = re.findall(r"^```python\n(.*?)^```", content, re.MULTILINE | re.DOTALL)
+    matches = [block for block in blocks if marker in block]
+    assert len(matches) == 1, (
+        f"Expected one {marker!r} block in {section}, got {len(matches)}"
     )
+    return matches[0]
 
 
-@pytest.fixture(params=[0, 1], ids=["walkthrough", "final"])
+@pytest.fixture(
+    params=["### Using the API", "### Final Code"], ids=["walkthrough", "final"]
+)
 def chat_module(monkeypatch, request):
     """Load each API state module exactly as a reader copies it."""
-    source = [
-        block
-        for block in python_blocks("chatapp_tutorial.md")
-        if "from openai import APIError, AsyncOpenAI" in block
-    ][request.param]
+    source = tutorial_block(
+        "chatapp_tutorial.md", request.param, "class State(rx.State):"
+    )
     module = ModuleType(f"tutorial_chat_state_{uuid4().hex}")
     monkeypatch.setitem(sys.modules, module.__name__, module)
     exec(source, module.__dict__)
@@ -115,7 +126,10 @@ def test_dashboard_final_code_is_self_contained(monkeypatch):
     """Copying the complete dashboard must build its UI and update chart data."""
     module = ModuleType("tutorial_dashboard_final")
     monkeypatch.setitem(sys.modules, module.__name__, module)
-    exec(python_blocks("dashboard_tutorial.md")[-1], module.__dict__)
+    exec(
+        tutorial_block("dashboard_tutorial.md", "## Full app styled", "def index()"),
+        module.__dict__,
+    )
     assert module.index() is not None
     state = SimpleNamespace(users=[], users_for_graph=[], add_user_dialog_open=True)
     state.transform_data = lambda: module.State.transform_data.fn(state)
@@ -182,7 +196,7 @@ def test_chat_api_error_restores_controls(chat_module, monkeypatch):
 
     _, client, _ = fake_client(monkeypatch, chat_module, [])
     client.chat.completions.create.side_effect = APIConnectionError(
-        request=httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+        request=httpx.Request("POST", OPENAI_CHAT_ENDPOINT)
     )
     state = SimpleNamespace(
         question="Hello", chat_history=[], processing=False, error=""
@@ -205,17 +219,22 @@ def test_all_python_blocks_parse(name):
 
 def test_chat_final_ui_builds_with_copied_modules(chat_module, monkeypatch):
     """The three final files must work together as an actual component tree."""
-    blocks = python_blocks("chatapp_tutorial.md")
     package = ModuleType("chatapp")
     package.__path__ = []
     styles = ModuleType("chatapp.style")
-    exec(blocks[-1], styles.__dict__)
+    exec(
+        tutorial_block("chatapp_tutorial.md", "### Final Code", "# style.py"),
+        styles.__dict__,
+    )
     package.style = styles
     monkeypatch.setitem(sys.modules, "chatapp", package)
     monkeypatch.setitem(sys.modules, "chatapp.style", styles)
     monkeypatch.setitem(sys.modules, "chatapp.state", chat_module)
     module = ModuleType("tutorial_chat_ui")
-    exec(blocks[-3], module.__dict__)
+    exec(
+        tutorial_block("chatapp_tutorial.md", "### Final Code", "app.add_page(index)"),
+        module.__dict__,
+    )
     assert module.index() is not None
 
 
