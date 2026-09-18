@@ -458,9 +458,8 @@ class URLData:
     receives the parsed component dict.
     """
 
-    # Every default is read off the empty URL rather than written out here, so
-    # `URLData()` is exactly `URLData.from_url(ReflexURL(""))`. Spelled out by
-    # hand they drifted: `ReflexURL("").origin` is "://", not "".
+    # Read off the empty URL so `URLData()` is exactly
+    # `URLData.from_url(ReflexURL(""))` -- note `ReflexURL("").origin` is "://".
     scheme: str = _EMPTY_URL.scheme
     netloc: str = _EMPTY_URL.netloc
     origin: str = _EMPTY_URL.origin

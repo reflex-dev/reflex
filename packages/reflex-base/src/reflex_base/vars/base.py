@@ -416,9 +416,8 @@ class VarData:
     def state(self) -> str:
         """The name of the enclosing state.
 
-        Deprecated fallback accessor: a var may be built from fields of more
-        than one state, and this reports only the first. Read
-        ``field_dependencies`` to see every state.
+        A var may be built from fields of more than one state; this reports
+        only the first. Read ``field_dependencies`` to see every state.
 
         Returns:
             The first state name, or an empty string if there is none.
@@ -429,9 +428,8 @@ class VarData:
     def field_name(self) -> str:
         """The name of the field in the state.
 
-        Deprecated fallback accessor: a var built from several fields reports
-        only the first, of the first state. Read ``field_dependencies`` to see
-        all of them.
+        A var built from several fields reports only the first, of the first
+        state. Read ``field_dependencies`` to see all of them.
 
         Returns:
             The first field name, or an empty string if there is none.

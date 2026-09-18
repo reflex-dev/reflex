@@ -4161,6 +4161,75 @@ def test_router_var_dep_legacy_string_still_compiles() -> None:
     State._potentially_dirty_states.discard(LegacyRouterCompileState.get_full_name())
 
 
+@pytest.mark.asyncio
+async def test_get_var_value_of_the_whole_router() -> None:
+    """`get_var_value(State.router)` must hand back the composed RouterData.
+
+    The switchboard renders as an object literal over the five per-field vars,
+    so it has no field of its own to read. Without naming the `router`
+    attribute it stands for, this raised UnretrievableVarValueError, while a
+    state with a single `router` base var resolved it.
+    """
+    state = State(_reflex_internal_init=True)  # pyright: ignore [reportCallIssue]
+
+    router = await state.get_var_value(State.router)
+
+    assert isinstance(router, RouterData)
+    # The per-field vars resolve too, which the pre-split single var could not do.
+    assert await state.get_var_value(State.router.route_id) == router.route_id
+    assert (
+        await state.get_var_value(State.router.session)
+    ).client_token == router.session.client_token
+
+
+def test_router_var_dep_does_not_warn_for_the_var_form(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only the legacy string form is deprecated, and it must name the var.
+
+    `State.router` carries the per-field names as well as `router` itself, so
+    the expansion has nothing to warn about; `deps=["router"]` arrives with
+    only `router` and does. The warning has to identify the computed var,
+    because the lazy dep scan means the reported caller frame is unrelated to
+    the declaration.
+    """
+    # `console.deprecate` logs and dedupes rather than printing, so record the
+    # calls instead of scraping output.
+    from reflex import state as state_module
+
+    deprecations: list[str] = []
+    monkeypatch.setattr(
+        state_module.console,
+        "deprecate",
+        lambda *, feature_name, **kwargs: deprecations.append(feature_name),
+    )
+
+    class VarFormRouterDepState(State):
+        """A state depending on the router through the Var."""
+
+        @rx.var(deps=[State.router], auto_deps=False)
+        def from_var(self) -> str:
+            return ""
+
+    assert deprecations == []
+
+    class StringFormRouterDepState(State):
+        """A state depending on the router through the legacy string."""
+
+        @rx.var(deps=["router"], auto_deps=False)
+        def from_string(self) -> str:
+            return ""
+
+    assert len(deprecations) == 1
+    assert "StringFormRouterDepState.from_string" in deprecations[0]
+
+    for dep_set in State._var_dependencies.values():
+        dep_set.discard((VarFormRouterDepState.get_full_name(), "from_var"))
+        dep_set.discard((StringFormRouterDepState.get_full_name(), "from_string"))
+    State._potentially_dirty_states.discard(VarFormRouterDepState.get_full_name())
+    State._potentially_dirty_states.discard(StringFormRouterDepState.get_full_name())
+
+
 def test_router_var_dep_whole_router() -> None:
     """deps=[State.router] must track every per-field router var.
 
@@ -4178,14 +4247,22 @@ def test_router_var_dep_whole_router() -> None:
         def summary(self) -> str:
             return ""
 
+    # The declared set also names `router` itself, the switchboard the five
+    # fields were read through; it is expanded away before registration.
     assert WholeRouterDepState.computed_vars["summary"]._static_deps == {
-        State.get_full_name(): set(constants.ROUTER_VARS)
+        State.get_full_name(): {constants.ROUTER, *constants.ROUTER_VARS}
     }
     for router_var in constants.ROUTER_VARS:
         assert (
             WholeRouterDepState.get_full_name(),
             "summary",
         ) in State._var_dependencies[router_var]
+    # `router` has no backing field, so nothing may be registered against it --
+    # it would never be dirtied and the dependent var would go stale.
+    assert (
+        WholeRouterDepState.get_full_name(),
+        "summary",
+    ) not in State._var_dependencies.get(constants.ROUTER, set())
 
     # Drop the class-level registrations; see the note in test_router_var_dep.
     for dep_set in State._var_dependencies.values():

@@ -439,14 +439,9 @@ class BaseStateEventProcessor(EventProcessor):
                 merged_router_data = state._update_router_vars(
                     router_data, previous_router_data
                 )
-                # Store what it merged rather than the payload: a partial one
-                # would otherwise drop the keys it omits for the next event.
-                # Only when that actually differs, though -- a payload that
-                # merges to what is already there changed nothing, and the
-                # assignment would still dirty router_data and mark the state
-                # touched, persisting it for an event that moved nothing.
-                # The assignment recurses into substates and forces
-                # recalculation of dependent ComputedVar (dynamic route vars).
+                # Store what it merged, not the payload, so a partial payload
+                # does not drop the keys it omits. Only on a real change: the
+                # assignment dirties router_data and marks the state touched.
                 if merged_router_data != previous_router_data:
                     state.router_data = merged_router_data
 

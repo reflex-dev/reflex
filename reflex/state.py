@@ -92,10 +92,8 @@ from reflex.istate.validation import _StateMeta, _validate_state_name
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
-# The key a pre-split pickle stored the whole RouterData under. Deliberately
-# not `constants.ROUTER`: that names the public switchboard as it is today,
-# while this is a historical name frozen into payloads already on disk, and
-# renaming the switchboard must not change what those are keyed by.
+# The key a pre-split pickle stored the whole RouterData under. Not
+# `constants.ROUTER`: this name is frozen into payloads already on disk.
 _LEGACY_ROUTER_PICKLE_KEY = "router"
 
 # Shared empty router defaults. Each is a frozen dataclass whose members are
@@ -509,6 +507,13 @@ def _get_router_var(cls: type[BaseState]) -> RouterDataVar:
             page=base_vars[constants.ROUTER_PAGE],
             url=base_vars[constants.ROUTER_URL],
             route_id=base_vars[constants.ROUTER_ROUTE_ID],
+            # Name the `router` attribute the switchboard stands for, so
+            # `get_var_value(State.router)` resolves it through the property
+            # and hands back the composed RouterData, as it does on a state
+            # with a single `router` base var.
+            _var_data=VarData(
+                state=root_cls.get_full_name(), field_name=constants.ROUTER
+            ),
         )
         setattr(root_cls, "_reflex_router_var", router_var)  # noqa: B010
     return router_var
@@ -1197,16 +1202,19 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
                 continue
             for state_name, dvar_set in cvar._deps(objclass=cls).items():
                 if constants.ROUTER in dvar_set:
-                    # Legacy explicit dependency on the pre-split `router` var:
-                    # depend on all the per-field router vars instead.
-                    console.deprecate(
-                        feature_name='ComputedVar deps=["router"]',
-                        reason="the router var was split; depend on the router"
-                        " Var instead (e.g. deps=[State.router.url] for one"
-                        " field, or deps=[State.router] for all of them).",
-                        deprecation_version="0.9.12",
-                        removal_version="1.0",
-                    )
+                    # `router` names the switchboard, which has no field of its
+                    # own: depend on the per-field router vars instead. The Var
+                    # form already carries them, so only the legacy string form
+                    # arrives here without them, and only it is deprecated.
+                    if dvar_set.isdisjoint(constants.ROUTER_VARS):
+                        console.deprecate(
+                            feature_name=f'ComputedVar deps=["router"] on {cls.__name__}.{cvar_name}',
+                            reason="the router var was split; depend on the router"
+                            " Var instead (e.g. deps=[State.router.url] for one"
+                            " field, or deps=[State.router] for all of them).",
+                            deprecation_version="0.9.12",
+                            removal_version="1.0",
+                        )
                     dvar_set = (dvar_set - {constants.ROUTER}) | set(
                         constants.ROUTER_VARS
                     )
@@ -2584,9 +2592,8 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         """
         state["parent_state"] = None
         state["substates"] = {}
-        # Pre-split pickles stored a RouterData under this key, which is now a
+        # Pre-split pickles stored a RouterData under this key, now a
         # descriptor; drop it so unpickling does not route through the setter.
-        # The schema check in _deserialize discards such states anyway.
         state.pop(_LEGACY_ROUTER_PICKLE_KEY, None)
         for key, value in state.items():
             object.__setattr__(self, key, value)
