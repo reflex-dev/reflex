@@ -88,3 +88,50 @@ def test_group_with_nested_pages_remains_expandable():
     assert rendered.count('jsx("details"') == 2
     assert 'href:"/postgres/"' in rendered
     assert 'href:"/sqlite/"' in rendered
+
+
+def test_api_reference_groups_related_symbols():
+    """The API reference section keeps related symbols adjacent."""
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
+        api_reference,
+    )
+
+    assert [item.names for item in api_reference] == [
+        "App",
+        "Config",
+        "Environment Variables",
+        "State",
+        "StateManager",
+        "Component",
+        "ComponentState",
+        "Event Triggers",
+        "Special Events",
+        "EventHandler",
+        "EventSpec",
+        "Event",
+        "Var",
+        "ImportVar",
+        "Var System",
+        "CLI",
+        "Browser Storage",
+        "Browser Javascript",
+        "Plugins",
+        "Utils",
+        "Telemetry",
+        "Observability",
+    ]
+
+
+def test_api_reference_section_order_places_every_page_once():
+    """Every API reference page has exactly one explicit place in the section."""
+    from reflex_docs.pages.docs import api_reference as pages
+    from reflex_docs.pages.docs.apiref import section_order
+    from reflex_docs.templates.docpage.sidebar.sidebar_items.reference import (
+        api_reference,
+    )
+
+    paths = {route.path for route in vars(pages).values()}
+    assert {f"/api-reference/{slug}/" for slug in section_order} == paths
+
+    links = [item.link for item in api_reference]
+    assert len(links) == len(set(links)) == len(paths)

@@ -1765,3 +1765,29 @@ def test_no_ssr_dynamic_import_names_the_client_side_wrapper():
     from reflex_components_plotly.plotly import Plotly
 
     assert Plotly.create()._get_dynamic_imports().endswith(', "Plot")')
+
+
+def test_compile_app_drops_event_caches_from_earlier_compiles(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Chains and wrappers cached by an earlier compile do not outlive it.
+
+    Args:
+        tmp_path: Directory for compiler output.
+        monkeypatch: Fixture for changing the app directory.
+        mocker: Fixture for configuring the test app.
+    """
+    monkeypatch.chdir(tmp_path)
+    with RegistrationContext() as context:
+        config = rx.Config(app_name="event_cache_test", plugins=[])
+        mocker.patch("reflex_base.config._get_config", return_value=config)
+        app = rx.App()
+        app.add_page(lambda: rx.el.div("hello"), route="/")
+        stale = object()
+        context._bound_event_chains[0, 0, None] = stale  # pyright: ignore[reportArgumentType]
+        context._memoized_event_triggers["on_click", 0] = stale  # pyright: ignore[reportArgumentType]
+
+        compiler.compile_app(app, dry_run=True, use_rich=False)
+
+        assert (0, 0, None) not in context._bound_event_chains
+        assert ("on_click", 0) not in context._memoized_event_triggers
