@@ -224,6 +224,16 @@ def test_typehint_issubclass_unwraps_annotated() -> None:
     assert typehint_issubclass(list[Annotated[int, "meta"]], list[int])
 
 
+def test_annotated_attributes_do_not_unwrap_user_classes() -> None:
+    """User-defined metadata attributes must not identify an Annotated hint."""
+
+    class MetadataType:
+        __metadata__ = ("custom",)
+        __origin__ = int
+
+    assert resolve_type_alias(MetadataType) is MetadataType
+
+
 def test_isinstance_unwraps_annotated() -> None:
     """``_isinstance`` validates against the annotated type, not the metadata."""
     assert _isinstance(1, Annotated[int, "meta"], nested=1, treat_var_as_type=False)

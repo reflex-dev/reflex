@@ -52,6 +52,8 @@ if TYPE_CHECKING:
 # Potential GenericAlias types for isinstance checks.
 GenericAliasTypes = (_GenericAlias, GenericAlias, _SpecialGenericAlias)
 
+_AnnotatedAlias = type(typing.Annotated[int, ""])
+
 # Potential Union types for isinstance checks.
 UnionTypes = (Union, types.UnionType)
 
@@ -495,18 +497,13 @@ def _apply_type_params(
 def _annotated_origin(cls: Any) -> Any:
     """Get the type that ``Annotated[X, ...]`` annotates.
 
-    Both attributes are required: a class of its own may happen to define
-    ``__metadata__``, and only an annotation pairs it with an ``__origin__``.
-
     Args:
         cls: The type to inspect.
 
     Returns:
         ``X`` for ``Annotated[X, ...]``, else None.
     """
-    if getattr(cls, "__metadata__", None) is None:
-        return None
-    return getattr(cls, "__origin__", None)
+    return cls.__origin__ if type(cls) is _AnnotatedAlias else None
 
 
 def resolve_type_alias(cls: GenericType) -> GenericType:
