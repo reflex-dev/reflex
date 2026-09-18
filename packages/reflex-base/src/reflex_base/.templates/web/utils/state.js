@@ -680,7 +680,9 @@ export const connect = async (
     // the only notice the viewer gets. It also outlives a reconnect, since
     // reconnecting cannot change what the names mean.
     setConnectErrors((connectErrors) =>
-      connectErrors.at(-1)?.fatal ? connectErrors : [],
+      connectErrors.length > 0 && connectErrors[connectErrors.length - 1].fatal
+        ? connectErrors
+        : [],
     );
     window.__reflex_otel?.onSocketConnect?.();
     window.addEventListener("pagehide", pagehideHandler);
@@ -744,6 +746,10 @@ export const connect = async (
       ...connectErrors.slice(-9),
       Object.assign(new Error(OUTDATED_PAGE_MESSAGE), { fatal: true }),
     ]);
+    // A dead tab must not hold a live server connection. Engine.IO flushes its
+    // write buffer (any client_error just emitted) before closing the transport,
+    // and "io client disconnect" keeps the reconnect helpers out of it.
+    socket.current?.disconnect();
   };
 
   // The backend resolves wire names with its own copy of the minification

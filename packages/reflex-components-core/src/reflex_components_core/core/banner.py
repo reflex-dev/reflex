@@ -44,7 +44,9 @@ has_connection_errors = Var(
 ).to(BooleanVar)
 
 has_fatal_connection_error = Var(
-    _js_expr="(connectErrors.at(-1)?.fatal === true)",
+    # Indexed access, not Array.prototype.at: a runtime method is not
+    # downlevelled by the bundler, so it would break older browsers.
+    _js_expr="((connectErrors.length > 0) && connectErrors[connectErrors.length - 1].fatal === true)",
     _var_data=connect_error_var_data,
 ).to(BooleanVar)
 

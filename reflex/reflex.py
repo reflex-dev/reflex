@@ -1465,7 +1465,7 @@ def minify_lookup(output_json: bool, minified_path: str):
     if leads_with_root and not root_only:
         parts = parts[1:]
 
-    result_parts: list[dict[str, str]] = []
+    result_parts: list[dict[str, str | None]] = []
     current = State
     last_index = len(parts) - 1
 
@@ -1492,13 +1492,10 @@ def minify_lookup(output_json: bool, minified_path: str):
         # handler's own name) of the state resolved so far, not a substate id.
         handler = None
         current_path = get_state_full_path(current)
+        current_events = config["events"].get(current_path, {})
         if index == last_index:
             handler = next(
-                (
-                    name
-                    for name, event_id in config["events"].get(current_path, {}).items()
-                    if event_id == part
-                ),
+                (name for name, event_id in current_events.items() if event_id == part),
                 part if part in current.event_handlers else None,
             )
         if found is None and handler is None:
@@ -1512,7 +1509,9 @@ def minify_lookup(output_json: bool, minified_path: str):
             result_parts.append({
                 "kind": "state",
                 "minified": part,
-                "state_id": part,  # we just matched on it
+                # ``part`` may be the unminified name, so report the id from
+                # the config; ``None`` when the state has no entry.
+                "state_id": path_to_id.get(get_state_full_path(found)),
                 "module": get_state_module(found),
                 "class": found.__name__,
                 "full_path": get_state_full_path(found),
@@ -1527,7 +1526,7 @@ def minify_lookup(output_json: bool, minified_path: str):
             result_parts.append({
                 "kind": "event",
                 "minified": part,
-                "event_id": part,
+                "event_id": current_events.get(handler),
                 "module": get_state_module(current),
                 "class": current.__name__,
                 "handler": handler,

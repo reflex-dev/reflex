@@ -5927,19 +5927,9 @@ def test_setvar_registered_with_config(temp_minify_json, monkeypatch):
 
 def test_auto_setter_registered_with_config(temp_minify_json, monkeypatch):
     """Test that auto-setters (set_*) are resolvable to their minified name."""
-    from reflex_base import config as base_config
-
     set_minify_modes(monkeypatch, events=True)
-    # state_auto_setters is False by default; force it on so that
-    # `_init_var` actually creates the setter we want to verify.
-    real_get_config = base_config.get_config
-
-    def _mock_get_config(*args, **kwargs):
-        cfg = real_get_config(*args, **kwargs)
-        cfg.state_auto_setters = True
-        return cfg
-
-    monkeypatch.setattr(base_config, "get_config", _mock_get_config)
+    # `_init_var` reads the cached flag, which defaults to off.
+    monkeypatch.setattr(reflex_base.config, "_state_auto_setters", True)
     state_path = f"{__name__}.State.TestStateWithAutoSetter"
     install_config(
         states={state_path: "b"},
@@ -5950,6 +5940,7 @@ def test_auto_setter_registered_with_config(temp_minify_json, monkeypatch):
     class TestStateWithAutoSetter(State):
         count: int = 0
 
+    assert "set_count" in TestStateWithAutoSetter.event_handlers
     assert resolved_event_id(TestStateWithAutoSetter, "set_count") == "c"
 
 

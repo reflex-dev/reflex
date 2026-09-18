@@ -740,6 +740,53 @@ def test_lookup_accepts_unminified_segments(temp_minify_json, cli_runner):
     assert json.loads(result.output)[1]["handler"] == "increment"
 
 
+def test_lookup_reports_configured_ids_for_unminified_segments(
+    temp_minify_json, cli_runner
+):
+    """``state_id``/``event_id`` are the configured ids, not the segment typed."""
+    from reflex.reflex import cli
+
+    class ConfiguredIdState(State):
+        def increment(self):
+            pass
+
+    class UnconfiguredIdState(ConfiguredIdState):
+        def decrement(self):
+            pass
+
+    state_path = get_state_full_path(ConfiguredIdState)
+    install_config(
+        states={state_path: "b"},
+        events={state_path: {"increment": "c"}},
+        include_state_root=True,
+    )
+    default_name = RegistrationContext.default_state_name(ConfiguredIdState)
+
+    result = cli_runner.invoke(
+        cli, ["minify", "lookup", "--json", f"{default_name}.increment"]
+    )
+
+    assert result.exit_code == 0, result.output
+    output_data = json.loads(result.output)
+    assert [(e["kind"], e["minified"]) for e in output_data] == [
+        ("state", default_name),
+        ("event", "increment"),
+    ]
+    assert output_data[0]["state_id"] == "b"
+    assert output_data[1]["event_id"] == "c"
+
+    # A state and handler with no configured id report ``None``, not the name.
+    child_name = RegistrationContext.default_state_name(UnconfiguredIdState)
+    result = cli_runner.invoke(
+        cli, ["minify", "lookup", "--json", f"b.{child_name}.decrement"]
+    )
+
+    assert result.exit_code == 0, result.output
+    output_data = json.loads(result.output)
+    assert output_data[1]["state_id"] is None
+    assert output_data[2]["event_id"] is None
+
+
 def test_lookup_handler_id_only_matches_final_segment(temp_minify_json, cli_runner):
     """A handler id in the middle of a path is an error, not a state."""
     from reflex.reflex import cli

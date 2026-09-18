@@ -42,3 +42,53 @@ def test_state_js_still_handles_page_lifecycle_disconnect() -> None:
     assert 'addEventListener("beforeunload"' in content, (
         "state.js should keep its `beforeunload` listener as a disconnect fallback."
     )
+
+
+def test_state_js_avoids_unpolyfilled_runtime_apis() -> None:
+    """The template must not call `Array.prototype.at`.
+
+    `Array.prototype.at` is ES2022 and, being a runtime method rather than
+    syntax, is not downlevelled by the bundler's build target, so it breaks
+    older browsers outright. Use length-guarded indexed access instead.
+    """
+    content = STATE_JS_TEMPLATE.read_text()
+
+    assert ".at(" not in content, (
+        "state.js calls Array.prototype.at; use `arr[arr.length - 1]` instead."
+    )
+
+
+def test_state_js_disconnects_on_fatal_mismatch() -> None:
+    """A fatal frontend/backend mismatch must close the socket.
+
+    No event can be exchanged after a mismatch, so a socket left open only
+    pins a server connection to a dead tab.
+    """
+    content = STATE_JS_TEMPLATE.read_text()
+
+    fatal_mismatch = content.split("const fatalMismatch = ", 1)[-1].split("\n  };", 1)[
+        0
+    ]
+    assert "socket.current?.disconnect();" in fatal_mismatch, (
+        "fatalMismatch should disconnect the socket after surfacing the error."
+    )
+
+
+def test_state_js_reconnect_helper_respects_fatal_mismatch() -> None:
+    """Every reconnect path must funnel through the mismatch-aware helper.
+
+    `socket.current.reconnect()` short-circuits on `backend_state_mismatch`, so
+    disconnecting on a fatal mismatch cannot start a reconnect loop.
+    """
+    content = STATE_JS_TEMPLATE.read_text()
+
+    reconnect_helper = content.split("socket.current.reconnect = () => {", 1)[-1].split(
+        "\n  };", 1
+    )[0]
+    assert "if (backend_state_mismatch)" in reconnect_helper, (
+        "the reconnect helper must not reconnect after a fatal mismatch."
+    )
+    # Direct `socket.current.connect()` calls would bypass that guard.
+    assert content.count("socket.current.connect();") == 1, (
+        "socket reconnection should only happen inside the reconnect helper."
+    )
