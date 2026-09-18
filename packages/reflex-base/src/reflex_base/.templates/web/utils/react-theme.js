@@ -122,18 +122,14 @@ export function ThemeProvider({ children, defaultTheme = "system" }) {
     [theme, resolvedTheme, toggleColorMode, setColorMode],
   );
 
-  return useMemo(
-    () =>
-      createElement(
-        ThemeContext.Provider,
-        { value: themeContextValue },
-        createElement(
-          ColorModeContext.Provider,
-          { value: colorModeContextValue },
-          children,
-        ),
-      ),
-    [themeContextValue, colorModeContextValue, children],
+  return createElement(
+    ThemeContext.Provider,
+    { value: themeContextValue },
+    createElement(
+      ColorModeContext.Provider,
+      { value: colorModeContextValue },
+      children,
+    ),
   );
 }
 

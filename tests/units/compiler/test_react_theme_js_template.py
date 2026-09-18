@@ -25,7 +25,7 @@ def test_theme_provider_memoizes_context_values() -> None:
 
     Every consumer of ``ColorModeContext`` re-renders when the context value
     identity changes, so a freshly built object on each ``ThemeProvider``
-    render fans a re-render out across the whole app. Regression guard for
+    render invalidates those consumers. Regression guard for
     https://github.com/reflex-dev/reflex/pull/6180.
     """
     body = _theme_provider_body()
@@ -35,9 +35,6 @@ def test_theme_provider_memoizes_context_values() -> None:
     )
     assert "const colorModeContextValue = useMemo(" in body, (
         "ColorModeContext value should be memoized."
-    )
-    assert "[themeContextValue, colorModeContextValue, children]" in body, (
-        "ThemeProvider should return a memoized element keyed on its context values."
     )
 
 

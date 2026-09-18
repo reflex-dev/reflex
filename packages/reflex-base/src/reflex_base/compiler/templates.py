@@ -507,9 +507,8 @@ export function EventLoopProvider({{ children }}) {{
     initialEvents,
     clientStorage,
   )
-  // Populate the module-level dispatchers so JSX literals constructed
-  // outside the React-tree path (e.g. ``ErrorBoundary.onError``) can call
-  // ``addEvents`` without needing the events hook hoisted in their scope.
+  // Publish the dispatchers so JSX literals constructed outside the
+  // React-tree path (e.g. ``ErrorBoundary.onError``) can call ``addEvents``.
   eventLoop.addEvents = addEventsLocal;
   eventLoop.connectErrors = connectErrors;
   return useMemo(

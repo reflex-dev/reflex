@@ -28,8 +28,8 @@ def test_event_loop_provider_memoizes_its_element() -> None:
     ``useEventLoop`` subscribes to router state (``useLocation``,
     ``useNavigate``), so the provider re-renders on every navigation even
     though ``addEvents`` and ``connectErrors`` are stable. Returning the same
-    element object lets React bail out instead of re-rendering the entire app
-    subtree below the provider.
+    element object keeps the context value stable, so unrelated router updates
+    do not invalidate its consumers.
     """
     body = _event_loop_provider_body()
 
