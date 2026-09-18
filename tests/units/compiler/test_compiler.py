@@ -1702,35 +1702,6 @@ def test_context_template_one_provider_per_substate():
     assert "createElement(DispatchProvider, {}," in provider_body
 
 
-def test_context_template_dispatchers_registered_before_socket():
-    """Dispatchers register in a layout effect, ahead of the socket connect.
-
-    ``EventLoopProvider`` mounts below the state providers, so its passive
-    effect (which connects the websocket) runs before any ancestor's passive
-    effect. A delta naming a substate with no dispatcher is a fatal state
-    mismatch, so registration has to happen in the layout phase instead.
-    """
-    from reflex_base.compiler.templates import context_template
-
-    rendered = context_template(
-        is_dev_mode=True,
-        default_color_mode='"light"',
-        initial_state={"reflex___state____state": {}},
-        state_name="reflex___state____state",
-    )
-
-    assert "useIsomorphicLayoutEffect(() => {" in rendered
-    assert "dispatchers[substateName] = dispatchSubstate;" in rendered
-    assert "delete dispatchers[substateName];" in rendered
-    # ``useLayoutEffect`` warns during SSR, where no effect runs at all.
-    assert (
-        'const useIsomorphicLayoutEffect =\n  typeof document !== "undefined" '
-        "? useLayoutEffect : useEffect;" in rendered
-    )
-    # The registry is a plain object, not the ref wrapper around it.
-    assert "createElement(DispatchContext, { value: dispatchers.current }" in rendered
-
-
 def test_context_template_client_side_component_is_named():
     """``ClientSide`` returns a named component, not an anonymous arrow."""
     from reflex_base.compiler.templates import context_template

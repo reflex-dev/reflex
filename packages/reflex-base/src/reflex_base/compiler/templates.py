@@ -522,13 +522,12 @@ const DispatchProvider = ({{ children }}) => {{
   return useMemo(
     () =>
       createElement(DispatchContext, {{ value: dispatchers.current }}, children),
-    [children, dispatchers],
+    [children],
   );
 }};
 
 // One provider per substate: each owns its own reducer, so a delta for one
-// substate only re-renders that substate's context consumers instead of every
-// consumer in the tree.
+// substate only re-renders its provider instead of recreating every provider.
 const SubstateProvider = ({{ children, substateName, contextName }}) => {{
   const dispatchers = useContext(DispatchContext);
   const [state, dispatchSubstate] = useReducer(
