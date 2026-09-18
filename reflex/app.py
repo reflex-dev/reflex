@@ -12,7 +12,9 @@ import inspect
 import json
 import logging
 import operator
+import os
 import sys
+import tempfile
 import time
 import traceback
 import urllib.parse
@@ -25,6 +27,7 @@ from collections.abc import (
     Sequence,
 )
 from contextvars import Token
+from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, overload
 
@@ -1743,14 +1746,40 @@ class App(MiddlewareMixin, LifespanMixin):
                 clear_hash_caches()
 
     def _write_stateful_pages_marker(self):
-        """Write list of routes that create dynamic states for the backend to use later."""
-        if self._state is not None:
-            stateful_pages_marker = (
-                prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
-            )
-            stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
-            with stateful_pages_marker.open("w") as f:
+        """Write list of routes that create dynamic states for the backend to use later.
+
+        Multiple backend workers may write the marker at the same time, so the
+        content is written to a temporary file and swapped into place with
+        ``Path.replace`` to ensure readers only ever see a complete marker.
+        """
+        stateful_pages_marker = (
+            prerequisites.get_backend_dir() / constants.Dirs.STATEFUL_PAGES
+        )
+        stateful_pages_marker.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(
+            dir=stateful_pages_marker.parent,
+            prefix=f"{stateful_pages_marker.name}.",
+            suffix=".tmp",
+        )
+        os.close(fd)
+        tmp_marker = Path(tmp_path)
+        try:
+            with tmp_marker.open("w", encoding="utf-8") as f:
                 json.dump(list(self._stateful_pages), f)
+            tmp_marker.chmod(0o644)
+            for attempt in range(100):
+                try:
+                    tmp_marker.replace(stateful_pages_marker)
+                    break
+                except PermissionError:
+                    if not constants.IS_WINDOWS or attempt == 99:
+                        raise
+                    # Windows readers temporarily prevent replacing their open file.
+                    # Wait 10 milliseconds before retrying.
+                    time.sleep(0.01)
+        except BaseException:
+            tmp_marker.unlink(missing_ok=True)
+            raise
 
     def add_all_routes_endpoint(self):
         """Add an endpoint to the app that returns all the routes."""
