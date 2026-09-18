@@ -22,7 +22,7 @@ from reflex_base.config import get_config
 from reflex_base.constants.base import LogLevel
 from reflex_base.environment import environment
 from reflex_base.telemetry_context import CompileTrigger
-from reflex_base.utils import console
+from reflex_base.utils import console, log
 from reflex_base.utils.decorator import once
 
 from reflex.utils import path_ops
@@ -733,6 +733,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(loglevel.value),
+        log_enabled=not log.is_json_mode(),
         reload=True,
         reload_paths=get_reload_paths(),
         reload_ignore_worker_failure=True,
@@ -860,6 +861,7 @@ def run_granian_backend_prod(
         port=port,
         interface=Interfaces.ASGI,
         log_level=LogLevels(os.getenv("GRANIAN_LOG_LEVEL", loglevel.value)),
+        log_enabled=not log.is_json_mode(),
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
 
