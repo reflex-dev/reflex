@@ -27,6 +27,7 @@ from reflex_base.vars.base import Var, VarData
 from reflex_base.vars.number import NumberVar
 
 import reflex as rx
+from reflex.state import BaseState
 
 # Expressions built per benchmark iteration. Large enough that the operand
 # path dominates the fixture and call overhead, small enough to stay cheap
@@ -39,8 +40,13 @@ N = 25
 DEPTHS = (2, 8, 32)
 
 
-class VarOpState(rx.State):
-    """State supplying operands that carry a state name and field name."""
+class VarOpState(BaseState):
+    """State supplying operands that carry a state name and field name.
+
+    Subclasses ``BaseState`` directly rather than ``rx.State`` so it stays out
+    of the state tree the event-processing benchmarks walk, which a substate
+    registered here would otherwise make measurably bigger.
+    """
 
     count: rx.Field[int] = rx.field(0)
 
@@ -208,9 +214,9 @@ def test_format_var_outside_operation(benchmark: BenchmarkFixture):
     """Benchmark interpolating a var outside any operation.
 
     User code writes ``f"Count: {State.count}"`` directly, which tags the var so
-    its VarData survives into the surrounding string. This path is deliberately
-    unchanged by operand handling inside ``var_operation``; the benchmark guards
-    it against regressing.
+    its VarData survives into the surrounding string. Nothing about how operands
+    are interpolated inside ``var_operation`` is meant to reach this path; this
+    is the control that says whether it did.
 
     Args:
         benchmark: The codspeed benchmark fixture.

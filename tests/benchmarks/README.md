@@ -37,12 +37,12 @@ that path; these isolate it.
   scales with it.
 - `test_chained_operations`: each operand is the previous result, so every level
   interpolates a freshly built expression and merged `VarData`. Parametrized by
-  depth, because the cost grows faster than the depth does.
+  depth, because each added level costs more than the last.
 - `test_string_operations`, `test_array_operations`, `test_object_operations`,
   `test_cond_operations`: the per-type operations, over state vars.
 - `test_format_var_outside_operation`: the control. Interpolating a var in user
   code (`f"Count: {State.count}"`) is a different path from interpolating an
-  operand inside an operation; this one guards it against regressing.
+  operand inside an operation, and is not meant to move with it.
 - `test_evaluate_var_heavy_page`: a dashboard-shaped page whose props and
   children are derived vars rather than literals, for the same work end to end.
 
