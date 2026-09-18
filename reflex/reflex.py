@@ -604,9 +604,6 @@ def _run(
     if backend_host != config.backend_host:
         config._set_persistent(backend_host=backend_host)
 
-    # Reload the config to make sure the env vars are persistent.
-    reload_config()
-
     console.rule("[bold]Starting Reflex App")
 
     prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)

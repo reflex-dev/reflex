@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING, Any, overload
 
 from reflex_base import constants, otel
 from reflex_base.components.component import Component, ComponentStyle
-from reflex_base.config import get_config, reload_config
+from reflex_base.config import get_config
 from reflex_base.context.base import BaseContext
 from reflex_base.environment import environment
 from reflex_base.event import (
@@ -556,7 +556,7 @@ class App(MiddlewareMixin, LifespanMixin):
 
         self._registration_context._set_app(self)
 
-        reload_config()
+        get_config()
 
         if "breakpoints" in self.style:
             set_breakpoints(self.style.pop("breakpoints"))
