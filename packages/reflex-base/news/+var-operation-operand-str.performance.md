@@ -1,0 +1,1 @@
+Var operations no longer keep a permanent reference to every operand they are built from, fixing a memory leak that grew with each operation an app created, and building them is 1.5x to 3.8x faster depending on the operation.
