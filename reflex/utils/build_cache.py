@@ -13,13 +13,14 @@ import sys
 import tempfile
 import threading
 import time
-from collections.abc import Buffer, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Protocol
 
 from reflex_base import constants
 from reflex_base.environment import environment
+from typing_extensions import Buffer
 
 from reflex.utils import path_ops
 
