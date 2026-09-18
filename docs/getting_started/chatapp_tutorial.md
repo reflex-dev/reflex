@@ -863,6 +863,8 @@ import os
 import reflex as rx
 from openai import APIError, AsyncOpenAI
 
+MODEL = "gpt-4o-mini"
+
 
 class State(rx.State):
     question: str = ""
@@ -874,33 +876,34 @@ class State(rx.State):
     def set_question(self, value: str):
         self.question = value
 
-    @rx.event
+    @rx.event(background=True)
     async def answer(self):
-        question = self.question.strip()
-        if not question or self.processing:
-            return
+        async with self:
+            question = self.question.strip()
+            if not question or self.processing:
+                return
 
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            self.error = "Set OPENAI_API_KEY and restart the app."
-            return
+            api_key = os.environ.get("OPENAI_API_KEY")
+            if not api_key:
+                self.error = "Set OPENAI_API_KEY and restart the app."
+                return
 
-        messages = []
-        for previous_question, previous_answer in self.chat_history:
-            messages.append({"role": "user", "content": previous_question})
-            messages.append({"role": "assistant", "content": previous_answer})
-        messages.append({"role": "user", "content": question})
+            messages = []
+            for previous_question, previous_answer in self.chat_history:
+                messages.append({"role": "user", "content": previous_question})
+                messages.append({"role": "assistant", "content": previous_answer})
+            messages.append({"role": "user", "content": question})
 
-        self.processing = True
-        self.error = ""
-        self.question = ""
-        self.chat_history.append((question, ""))
+            self.processing = True
+            self.error = ""
+            self.question = ""
+            self.chat_history.append((question, ""))
         yield
 
         try:
             async with AsyncOpenAI(api_key=api_key) as client:
                 stream = await client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model=MODEL,
                     messages=messages,
                     stream=True,
                 )
@@ -910,17 +913,22 @@ class State(rx.State):
                             continue
                         text = chunk.choices[0].delta.content
                         if text:
-                            previous = self.chat_history[-1][1]
-                            self.chat_history[-1] = (question, previous + text)
+                            async with self:
+                                previous = self.chat_history[-1][1]
+                                self.chat_history[-1] = (question, previous + text)
                             yield
         except APIError:
-            self.chat_history.pop()
-            self.question = question
-            self.error = "The request failed. Check your API access and try again."
+            async with self:
+                self.chat_history.pop()
+                self.question = question
+                self.error = "The request failed. Check your API access and try again."
         finally:
-            self.processing = False
+            async with self:
+                self.processing = False
             yield
 ```
+
+The `MODEL` constant selects the OpenAI model for this example. The handler runs as a [background event](/docs/events/background-events/): API requests and streaming waits happen outside the state lock, while short `async with self:` blocks protect state updates so other events can run during a response.
 
 The handler skips chunks without text rather than treating them as the end of the response; see [OpenAI streaming documentation](https://developers.openai.com/api/docs/guides/streaming-responses). Both the client and stream are closed with async context managers. On API failure, the unfinished turn is removed and the question is restored for retry.
 
@@ -1007,6 +1015,8 @@ import os
 import reflex as rx
 from openai import APIError, AsyncOpenAI
 
+MODEL = "gpt-4o-mini"
+
 
 class State(rx.State):
     question: str = ""
@@ -1018,33 +1028,34 @@ class State(rx.State):
     def set_question(self, value: str):
         self.question = value
 
-    @rx.event
+    @rx.event(background=True)
     async def answer(self):
-        question = self.question.strip()
-        if not question or self.processing:
-            return
+        async with self:
+            question = self.question.strip()
+            if not question or self.processing:
+                return
 
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            self.error = "Set OPENAI_API_KEY and restart the app."
-            return
+            api_key = os.environ.get("OPENAI_API_KEY")
+            if not api_key:
+                self.error = "Set OPENAI_API_KEY and restart the app."
+                return
 
-        messages = []
-        for previous_question, previous_answer in self.chat_history:
-            messages.append({"role": "user", "content": previous_question})
-            messages.append({"role": "assistant", "content": previous_answer})
-        messages.append({"role": "user", "content": question})
+            messages = []
+            for previous_question, previous_answer in self.chat_history:
+                messages.append({"role": "user", "content": previous_question})
+                messages.append({"role": "assistant", "content": previous_answer})
+            messages.append({"role": "user", "content": question})
 
-        self.processing = True
-        self.error = ""
-        self.question = ""
-        self.chat_history.append((question, ""))
+            self.processing = True
+            self.error = ""
+            self.question = ""
+            self.chat_history.append((question, ""))
         yield
 
         try:
             async with AsyncOpenAI(api_key=api_key) as client:
                 stream = await client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model=MODEL,
                     messages=messages,
                     stream=True,
                 )
@@ -1054,15 +1065,18 @@ class State(rx.State):
                             continue
                         text = chunk.choices[0].delta.content
                         if text:
-                            previous = self.chat_history[-1][1]
-                            self.chat_history[-1] = (question, previous + text)
+                            async with self:
+                                previous = self.chat_history[-1][1]
+                                self.chat_history[-1] = (question, previous + text)
                             yield
         except APIError:
-            self.chat_history.pop()
-            self.question = question
-            self.error = "The request failed. Check your API access and try again."
+            async with self:
+                self.chat_history.pop()
+                self.question = question
+                self.error = "The request failed. Check your API access and try again."
         finally:
-            self.processing = False
+            async with self:
+                self.processing = False
             yield
 ```
 

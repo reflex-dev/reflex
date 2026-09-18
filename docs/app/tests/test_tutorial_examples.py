@@ -3,6 +3,7 @@
 import asyncio
 import re
 import sys
+from contextvars import ContextVar
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -13,6 +14,7 @@ import reflex as rx
 from reflex_base.registry import RegistrationContext
 
 DOCS = Path(__file__).resolve().parents[2] / "getting_started"
+STATE_LOCKED = ContextVar("tutorial_state_locked", default=False)
 
 
 @pytest.fixture(autouse=True)
@@ -29,14 +31,14 @@ def python_blocks(name):
     )
 
 
-@pytest.fixture
-def chat_module(monkeypatch):
-    """Load the final state module exactly as a reader copies it."""
-    source = next(
+@pytest.fixture(params=[0, 1], ids=["walkthrough", "final"])
+def chat_module(monkeypatch, request):
+    """Load each API state module exactly as a reader copies it."""
+    source = [
         block
-        for block in reversed(python_blocks("chatapp_tutorial.md"))
-        if "class State(" in block
-    )
+        for block in python_blocks("chatapp_tutorial.md")
+        if "from openai import APIError, AsyncOpenAI" in block
+    ][request.param]
     module = ModuleType(f"tutorial_chat_state_{uuid4().hex}")
     monkeypatch.setitem(sys.modules, module.__name__, module)
     exec(source, module.__dict__)
@@ -46,11 +48,33 @@ def chat_module(monkeypatch):
 def run_answer(module, state):
     """Run a real tutorial handler with a lightweight state object."""
 
+    class LockedState(SimpleNamespace):
+        """Track the lock boundaries used by background events."""
+
+        def __setattr__(self, name, value):
+            if name in {"question", "processing", "error"}:
+                assert self.locked
+            super().__setattr__(name, value)
+
+        async def __aenter__(self):
+            self.locked = True
+            STATE_LOCKED.set(True)
+            self.lock_entries += 1
+            return self
+
+        async def __aexit__(self, *exc):
+            self.locked = False
+            STATE_LOCKED.set(False)
+
+    locked_state = LockedState(**vars(state), locked=False, lock_entries=0)
+
     async def consume():
-        async for _ in module.State.answer.fn(state):
-            pass
+        async for _ in module.State.answer.fn(locked_state):
+            assert not locked_state.locked
 
     asyncio.run(consume())
+    assert locked_state.lock_entries > 0
+    vars(state).update(vars(locked_state))
 
 
 def fake_client(monkeypatch, module, chunks):
@@ -58,6 +82,7 @@ def fake_client(monkeypatch, module, chunks):
 
     async def events():
         for chunk in chunks:
+            assert not STATE_LOCKED.get()
             yield chunk
 
     stream = MagicMock()
@@ -65,7 +90,12 @@ def fake_client(monkeypatch, module, chunks):
     stream.__aenter__ = AsyncMock(return_value=stream)
     stream.__aexit__ = AsyncMock(return_value=False)
     client = MagicMock()
-    client.chat.completions.create = AsyncMock(return_value=stream)
+
+    async def create(**kwargs):
+        assert not STATE_LOCKED.get()
+        return stream
+
+    client.chat.completions.create = AsyncMock(side_effect=create)
     client.__aenter__ = AsyncMock(return_value=client)
     client.__aexit__ = AsyncMock(return_value=False)
     factory = MagicMock(return_value=client)
@@ -99,6 +129,7 @@ def test_dashboard_final_code_is_self_contained(monkeypatch):
 
 def test_chat_stream_handles_non_text_chunks_and_history(chat_module, monkeypatch):
     """Role-only and usage chunks must not drop the subsequent response."""
+    assert chat_module.State.answer.is_background
     _, client, stream = fake_client(
         monkeypatch,
         chat_module,
@@ -117,6 +148,7 @@ def test_chat_stream_handles_non_text_chunks_and_history(chat_module, monkeypatc
         error="",
     )
     run_answer(chat_module, state)
+    assert client.chat.completions.create.call_args.kwargs["model"] == chat_module.MODEL
     assert state.chat_history[-1] == ("Next?", "Hello world")
     assert state.question == ""
     assert state.processing is False
