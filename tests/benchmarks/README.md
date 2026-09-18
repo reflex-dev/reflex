@@ -1,4 +1,6 @@
-# Event processing benchmarks
+# Benchmarks
+
+## Event processing benchmarks
 
 ```sh
 uv run pytest tests/benchmarks/test_event_processing.py --codspeed
@@ -19,7 +21,7 @@ direction, and totals that the table benchmark encodes.
 Timing includes processor startup/shutdown, but excludes initial
 hydration, Socket.IO packet framing, network transport, databases, and rendering.
 
-# Var operation benchmarks
+## Var operation benchmarks
 
 ```sh
 uv run pytest tests/benchmarks/test_var_operations.py --codspeed
@@ -63,7 +65,9 @@ that path; these isolate it.
   `!s`, which likewise calls `str()` rather than `__format__`, and a `match`
   switch is built from its cases. Folded into the family benchmarks they would
   be a few percent of the body, too little for a change to any of them to be
-  readable.
+  readable. The concat one renders what it builds, because a
+  `ConcatVarOperation` defers its whole assembly to `_cached_var_name` and
+  would otherwise report only the allocation.
 - `test_format_var_outside_operation`: the control. Interpolating a var in user
   code (`f"Count: {State.count}"`) is a different path from interpolating an
   operand inside an operation, and is not meant to move with it.

@@ -60,7 +60,7 @@ ARITHMETIC_SETS = 27
 COMPARISON_SETS = 22
 BOOLEAN_SETS = 17
 STRING_SETS = 13
-CONCAT_SETS = 88
+CONCAT_SETS = 39
 ARRAY_SETS = 19
 INDEX_SETS = 170
 RANGE_SETS = 65
@@ -249,13 +249,18 @@ def test_string_operations(benchmark: BenchmarkFixture):
 
 
 def test_string_concat_operation(benchmark: BenchmarkFixture):
-    """Benchmark building string concatenation.
+    """Benchmark building string concatenation, expression included.
 
     Kept apart from the other string operations because it is built
     differently: ``+`` builds a ``ConcatVarOperation``, which assembles its
     expression with ``str()`` and never interpolates an operand the way the
     rest of the family does. Folded in there it would be a few percent of the
     body, too little for a change to it to be readable.
+
+    This is the one benchmark that renders what it builds. The rest interpolate
+    their operands while the operation is constructed, so building is the work;
+    a concat defers its whole assembly to ``_cached_var_name``, and measured
+    without ``str()`` it reports only the allocation — around 40% of its cost.
 
     Args:
         benchmark: The codspeed benchmark fixture.
@@ -266,9 +271,9 @@ def test_string_concat_operation(benchmark: BenchmarkFixture):
     @benchmark
     def _():
         for _i in range(CONCAT_SETS):
-            _ = label + fallback
-            _ = label + " items"
-            _ = label + " / " + fallback + "!"
+            _ = str(label + fallback)
+            _ = str(label + " items")
+            _ = str(label + " / " + fallback + "!")
 
 
 def test_array_operations(benchmark: BenchmarkFixture):
