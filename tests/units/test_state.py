@@ -5702,6 +5702,36 @@ def test_base_var_shadowing_inherited_var_raises() -> None:
             shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
 
 
+def test_base_var_shadowing_inherited_var_through_mixin_raises() -> None:
+    """A mixin cannot silently shadow a var inherited from the parent state."""
+
+    class ShadowParent(BaseState):
+        shadowed_value: int = 1
+
+    class ShadowMixin(BaseState, mixin=True):
+        shadowed_value: str = "ninety-nine"  # pyright: ignore[reportIncompatibleVariableOverride, reportAssignmentType]
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="shadowed_value"):
+
+        class ShadowChild(ShadowMixin, ShadowParent):
+            pass
+
+
+def test_base_var_duplicate_through_mixins_raises() -> None:
+    """Unrelated mixins cannot silently define the same state var."""
+
+    class FirstMixin(BaseState, mixin=True):
+        duplicated_value: int = 1
+
+    class SecondMixin(BaseState, mixin=True):
+        duplicated_value: int = 2
+
+    with pytest.raises(BaseVarShadowsInheritedVarError, match="duplicated_value"):
+
+        class CombinedState(FirstMixin, SecondMixin, State):
+            pass
+
+
 def test_base_var_shadowing_non_state_descriptor_does_not_raise() -> None:
     """Re-annotating to win over a descriptor from a non-state base is not a shadow."""
     from reflex_base.vars.hybrid_property import hybrid_property

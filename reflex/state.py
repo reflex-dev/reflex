@@ -1136,12 +1136,36 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         if parent_state is None:
             return
         parent_fields = parent_state.get_fields()
+        parent_mro_index = cls.__mro__.index(parent_state)
+        mixins = tuple(
+            mixin
+            for mixin in cls.__mro__[1:parent_mro_index]
+            if getattr(mixin, "_mixin", False)
+        )
+        mixin_declarations: dict[str, list[type[BaseState]]] = {}
+        for mixin in mixins:
+            for name in mixin.__dict__:
+                field = mixin.get_fields().get(name)
+                if field is not None and field.is_var and not name.startswith("_"):
+                    mixin_declarations.setdefault(name, []).append(mixin)
+        for name, declarations in mixin_declarations.items():
+            if any(
+                not (issubclass(first, second) or issubclass(second, first))
+                for index, first in enumerate(declarations)
+                for second in declarations[index + 1 :]
+            ):
+                msg = (
+                    f"The var `{name}` in {cls.__module__}.{cls.__name__} is declared "
+                    "by multiple unrelated state mixins; use a different name instead"
+                )
+                raise BaseVarShadowsInheritedVarError(msg)
+        mixin_names = {name for mixin in mixins for name in mixin.__dict__}
         for name, own_field in cls.get_fields().items():
             if (
                 name.startswith("_")
                 or not own_field.is_var
                 or name not in cls.inherited_vars
-                or name not in cls.__dict__
+                or (name not in cls.__dict__ and name not in mixin_names)
             ):
                 continue
             # A field redeclared on this class is a distinct object from the parent's;
