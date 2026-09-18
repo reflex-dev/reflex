@@ -1,5 +1,5 @@
 ---
-meta_description: Connect Reflex apps to MySQL, PostgreSQL, SQL Server, and SQLite with Python models, database sessions, and migrations. Build database-driven dashboards and internal tools.
+meta_description: Build Reflex dashboards and internal tools with MySQL, PostgreSQL, SQL Server, or SQLite using Python models, database sessions, and migrations.
 ---
 
 # Database Overview
@@ -9,7 +9,7 @@ Connect a Reflex Python app to **MySQL, PostgreSQL, SQL Server, or SQLite** to b
 ## Key takeaways
 
 - Install the optional database dependencies with the `db` extra.
-- Define tables with `rx.Model`, query them with `rx.session()`, and manage schema changes with migrations.
+- For new apps, define tables and query data with SQLModel or SQLAlchemy directly. The legacy `rx.Model` and `rx.session()` examples below cover the existing Reflex ORM interface and migrations.
 - Configure the database URL and install the driver for your chosen database. Check dialect-specific types, queries, and migrations when switching databases.
 - Load query results into state to display them in the UI. External database changes require another query, polling, or an event to refresh the app.
 - Use ordinary Python clients or REST APIs for external data sources such as Airtable, Databricks, and Snowflake.
@@ -31,12 +31,9 @@ Reflex uses [sqlmodel](https://sqlmodel.tiangolo.com) to provide a built-in ORM 
 `rx.Model` is deprecated as of Reflex 0.9.2 and is scheduled for removal in 1.0.0. The examples below document the existing Reflex ORM interface. For new applications, use SQLModel or SQLAlchemy directly with your own engine and sessions; the same database connection and Python state patterns still apply.
 ```
 
-The examples on this page refer specifically to how Reflex uses various tools to
-expose an integrated database interface. Only basic use cases will be covered
-below, but you can refer to the
-[sqlmodel tutorial](https://sqlmodel.tiangolo.com/tutorial/select/)
-for more examples and information, just replace `SQLModel` with `rx.Model` and
-`Session(engine)` with `rx.session()`
+For new applications, follow the [SQLModel tutorial](https://sqlmodel.tiangolo.com/tutorial/select/) using `SQLModel`, `create_engine()`, and `Session(engine)` directly. Keep database queries in your Python backend and load their results into Reflex state.
+
+The examples below cover the legacy integrated database interface for existing apps. Only when maintaining that interface should you adapt SQLModel examples by replacing `SQLModel` with `rx.Model` and `Session(engine)` with `rx.session()`.
 
 For advanced use cases, please see the
 [SQLAlchemy docs](https://docs.sqlalchemy.org/en/14/orm/quickstart.html) (v1.4).

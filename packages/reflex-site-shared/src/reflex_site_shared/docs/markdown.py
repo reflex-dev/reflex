@@ -4,6 +4,7 @@
 # ruff: noqa: D102, D107, DOC201
 
 import json
+import re
 import sys
 import textwrap
 import types
@@ -854,13 +855,11 @@ def _extract_faqs_jsonld(source: str) -> tuple[str, rx.Component | None]:
         return source, None
     before, _, rest = source.partition(FAQS_START_MARKER)
     faq_chunk, _, after = rest.partition(FAQS_END_MARKER)
-    visible_faq = (
-        "\n```md faq-section\n"
-        + faq_chunk.replace(FAQS_VISIBLE_MARKER, "").strip()
-        + "\n```\n"
-        if FAQS_VISIBLE_MARKER in faq_chunk
-        else ""
-    )
+    visible_faq = ""
+    if FAQS_VISIBLE_MARKER in faq_chunk:
+        content = faq_chunk.replace(FAQS_VISIBLE_MARKER, "").strip()
+        fence = "`" * max(3, 1 + max(map(len, re.findall(r"`+", content)), default=0))
+        visible_faq = f"\n{fence}md faq-section\n{content}\n{fence}\n"
     stripped = before + visible_faq + after
 
     doc = parse_document(faq_chunk)
