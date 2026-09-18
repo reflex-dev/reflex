@@ -2257,7 +2257,7 @@ def _and_operation(a: Var, b: Var):
         The result of the logical AND operation.
     """
     return var_operation_return(
-        js_expression=f"pyAnd({a}, () => ({b}))",
+        js_expression=f"pyAnd({a!s}, () => ({b!s}))",
         var_type=unionize(a._var_type, b._var_type),
         var_data=VarData(imports=_PY_AND_IMPORT),
     )
@@ -2290,7 +2290,7 @@ def _or_operation(a: Var, b: Var):
         The result of the logical OR operation.
     """
     return var_operation_return(
-        js_expression=f"pyOr({a}, () => ({b}))",
+        js_expression=f"pyOr({a!s}, () => ({b!s}))",
         var_type=unionize(a._var_type, b._var_type),
         var_data=VarData(imports=_PY_OR_IMPORT),
     )
