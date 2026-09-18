@@ -1,6 +1,7 @@
 """Tests for the shared documentation shell."""
 
 from pathlib import Path
+from typing import cast
 
 import pytest
 from reflex_site_shared.components.docs_shell import (
@@ -30,8 +31,8 @@ def test_sidebar_active_marker_aligns_with_section_guide() -> None:
     group_rows = group.children[0].children[1]
 
     for rows in (section_rows, group_rows):
-        assert "left-[2.5rem]" in str(rows.children[0].class_name)
-        assert "gap-1" in str(rows.class_name)
+        assert "left-[2.5rem]" in str(cast(rx.Component, rows.children[0]).class_name)
+        assert "gap-1" in str(cast(rx.Component, rows).class_name)
     assert "-bottom-1 -top-1 left-0" in rendered
 
 
