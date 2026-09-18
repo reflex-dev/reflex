@@ -1,20 +1,28 @@
 # Generated from tests/units/reflex_sdk/_async/resources/test_projects.py by packages/reflex-sdk/scripts/unasync.py. Do not edit.
 from __future__ import annotations
 
+import datetime
 import uuid
 from collections.abc import Iterator
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_sdk import PermissionDeniedError, ReflexCloud
+from reflex_sdk import InternalServerError, PermissionDeniedError, ReflexCloud
 from reflex_sdk.types import (
+    AuditLogEntry,
+    PendingTeamChange,
     Project,
     ProjectMember,
     ProjectRef,
     ProjectSummary,
     ProjectTier,
     Role,
+    RolePreviewMember,
+    RolePreviewTeam,
+    RoleUpdatePreview,
+    TeamGrant,
+    TeamGrants,
 )
 
 from tests.units.reflex_sdk.conftest import MockAPI, MockTransport, json_body, reply
@@ -22,6 +30,7 @@ from tests.units.reflex_sdk.conftest import MockAPI, MockTransport, json_body, r
 PROJECT_ID = "b3c1e3f2-2d0a-4d8e-9a0e-7f7a1c2d3e4f"
 ROLE_ID = "3a9d7c1e-0b4f-4e2a-9c8d-1f2e3d4c5b6a"
 USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
+TEAM_ID = "4d5e6f70-8192-4a3b-9c4d-5e6f708192a3"
 PROJECT_PATH = f"/api/v1/project/{PROJECT_ID}"
 TIER = {"name": "pro", "cpu_quota": 8.0, "ram_quota": 16.0, "deployment_quota": 10}
 
@@ -242,3 +251,302 @@ def test_members_set_role_denied(client: ReflexCloud, mock_api: MockAPI):
     )
     with pytest.raises(PermissionDeniedError):
         client.projects.members.set_role(user_id=USER_ID, role_id=ROLE_ID)
+
+
+def test_rename(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add("POST", f"{PROJECT_PATH}/update_name", reply(200, json=None))
+    client.projects.rename(PROJECT_ID, "staging")
+    assert json_body(mock_api.requests[0]) == {"name": "staging"}
+
+
+def test_delete(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add("DELETE", PROJECT_PATH, reply(200, json=None))
+    assert client.projects.delete(PROJECT_ID) is None
+
+
+def test_audit_logs(client: ReflexCloud, mock_api: MockAPI):
+    entry = {
+        "id": ROLE_ID,
+        "timestamp": "2026-09-16T12:00:00Z",
+        "action": "ADD_USER",
+        "action_label": "Add User",
+        "summary": "dev@example.com added a member",
+        "resource_id": PROJECT_ID,
+        "resource_type": "project",
+        "resource_display": "default",
+        "actor_user_id": USER_ID,
+        "actor_display": "dev@example.com",
+        "actor_email": "dev@example.com",
+        "actor_is_service_account": False,
+        "content": f"{USER_ID}|editor",
+        "target_user_id": USER_ID,
+        "target_display": "dev@example.com",
+        "target_is_service_account": False,
+    }
+    mock_api.add("GET", f"{PROJECT_PATH}/audit-logs", reply(200, json=[entry]))
+    (log,) = client.projects.audit_logs(PROJECT_ID, limit=1)
+    assert log == AuditLogEntry(
+        id=uuid.UUID(ROLE_ID),
+        timestamp=datetime.datetime(2026, 9, 16, 12, tzinfo=datetime.timezone.utc),
+        action="ADD_USER",
+        action_label="Add User",
+        summary="dev@example.com added a member",
+        resource_id=uuid.UUID(PROJECT_ID),
+        resource_type="project",
+        resource_display="default",
+        actor_user_id=uuid.UUID(USER_ID),
+        actor_display="dev@example.com",
+        actor_email="dev@example.com",
+        actor_is_service_account=False,
+        content=f"{USER_ID}|editor",
+        target_user_id=uuid.UUID(USER_ID),
+        target_display="dev@example.com",
+        target_is_service_account=False,
+    )
+    assert parse_qs(urlsplit(mock_api.requests[0].url).query) == {"limit": ["1"]}
+
+
+ROLE_BODY = {
+    "name": "Auditor",
+    "base_tier": "viewer",
+    "permissions": ["can_view_audit_logs"],
+}
+
+
+def test_roles_create(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "POST",
+        f"{PROJECT_PATH}/roles",
+        reply(
+            200,
+            json={**ROLE_BODY, "id": ROLE_ID, "is_builtin": False, "member_count": 0},
+        ),
+    )
+    role = client.projects.roles.create(
+        PROJECT_ID, "Auditor", base_tier="viewer", permissions=["can_view_audit_logs"]
+    )
+    assert role == Role(
+        id=uuid.UUID(ROLE_ID),
+        name="Auditor",
+        base_tier="viewer",
+        permissions=["can_view_audit_logs"],
+        is_builtin=False,
+        member_count=0,
+    )
+    assert json_body(mock_api.requests[0]) == ROLE_BODY
+
+
+def test_roles_update(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add("PATCH", f"{PROJECT_PATH}/roles/{ROLE_ID}", reply(200, json=None))
+    client.projects.roles.update(
+        PROJECT_ID,
+        ROLE_ID,
+        name="Auditor",
+        base_tier="viewer",
+        permissions=("can_view_audit_logs",),
+    )
+    assert json_body(mock_api.requests[0]) == ROLE_BODY
+
+
+def test_roles_preview_update(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "POST",
+        f"{PROJECT_PATH}/roles/{ROLE_ID}/preview",
+        reply(
+            200,
+            json={
+                "gained": ["can_view_audit_logs"],
+                "lost": [],
+                "members": [
+                    {
+                        "user_id": USER_ID,
+                        "email": "dev@example.com",
+                        "is_service_account": False,
+                    }
+                ],
+                "teams": [
+                    {"team_id": TEAM_ID, "team_name": "Security", "member_count": 4}
+                ],
+            },
+        ),
+    )
+    assert client.projects.roles.preview_update(
+        PROJECT_ID, ROLE_ID, **ROLE_BODY
+    ) == RoleUpdatePreview(
+        gained=["can_view_audit_logs"],
+        lost=[],
+        members=[
+            RolePreviewMember(
+                user_id=uuid.UUID(USER_ID),
+                email="dev@example.com",
+                is_service_account=False,
+            )
+        ],
+        teams=[
+            RolePreviewTeam(
+                team_id=uuid.UUID(TEAM_ID), team_name="Security", member_count=4
+            )
+        ],
+    )
+    assert json_body(mock_api.requests[0]) == ROLE_BODY
+
+
+def test_roles_delete(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add("DELETE", f"{PROJECT_PATH}/roles/{ROLE_ID}", reply(200, json=None))
+    assert client.projects.roles.delete(PROJECT_ID, ROLE_ID) is None
+
+
+def test_members_remove(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add("DELETE", f"{PROJECT_PATH}/user/{USER_ID}", reply(200, json=None))
+    assert client.projects.members.remove(PROJECT_ID, USER_ID) is None
+
+
+def test_members_permissions(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "GET",
+        f"{PROJECT_PATH}/users/{USER_ID}/permissions",
+        reply(
+            200, json={"user_id": USER_ID, "permissions": ["can_deploy", "can_view"]}
+        ),
+    )
+    assert client.projects.members.permissions(PROJECT_ID, USER_ID) == [
+        "can_deploy",
+        "can_view",
+    ]
+
+
+def test_teams_list(client: ReflexCloud, mock_api: MockAPI):
+    mock_api.add(
+        "GET",
+        f"{PROJECT_PATH}/teams",
+        reply(
+            200,
+            json={
+                "grants": [
+                    {
+                        "team_id": TEAM_ID,
+                        "team_name": "Security",
+                        "role": "Auditor",
+                        "base_tier": "viewer",
+                        "permissions": ["can_view_audit_logs"],
+                        "member_count": 4,
+                    }
+                ],
+                "pending": [
+                    {
+                        "team_id": TEAM_ID,
+                        "team_name": "",
+                        "action": "revoke",
+                        "role": None,
+                    }
+                ],
+            },
+        ),
+    )
+    assert client.projects.teams.list(PROJECT_ID) == TeamGrants(
+        grants=[
+            TeamGrant(
+                team_id=uuid.UUID(TEAM_ID),
+                team_name="Security",
+                role="Auditor",
+                base_tier="viewer",
+                permissions=["can_view_audit_logs"],
+                member_count=4,
+            )
+        ],
+        pending=[
+            PendingTeamChange(
+                team_id=uuid.UUID(TEAM_ID), team_name="", action="revoke", role=None
+            )
+        ],
+    )
+
+
+@pytest.mark.parametrize("status", ["granted", "pending_approval"])
+def test_teams_grant(client: ReflexCloud, mock_api: MockAPI, status: str):
+    mock_api.add(
+        "PUT",
+        f"{PROJECT_PATH}/teams/{TEAM_ID}",
+        reply(200, json={"status": status, "team_id": TEAM_ID, "role": "editor"}),
+    )
+    assert client.projects.teams.grant(PROJECT_ID, TEAM_ID, "editor") == status
+    assert json_body(mock_api.requests[0]) == {"role": "editor"}
+
+
+def test_teams_revoke_is_retried(client: ReflexCloud, mock_api: MockAPI):
+    # Revoking again reports the outcome without changing anything.
+    mock_api.add(
+        "DELETE",
+        f"{PROJECT_PATH}/teams/{TEAM_ID}",
+        reply(503),
+        reply(200, json={"status": "not_granted", "team_id": TEAM_ID}),
+    )
+    assert client.projects.teams.revoke(PROJECT_ID, TEAM_ID) == "not_granted"
+    first, retry = mock_api.requests
+    assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
+
+
+@pytest.mark.parametrize(
+    ("http_method", "suffix", "body", "call"),
+    [
+        (
+            "POST",
+            "/update_name",
+            None,
+            lambda client: client.projects.rename(PROJECT_ID, "staging"),
+        ),
+        (
+            "PATCH",
+            f"/roles/{ROLE_ID}",
+            None,
+            lambda client: client.projects.roles.update(
+                PROJECT_ID, ROLE_ID, **ROLE_BODY
+            ),
+        ),
+        (
+            "POST",
+            f"/roles/{ROLE_ID}/preview",
+            {"gained": [], "lost": [], "members": [], "teams": []},
+            lambda client: client.projects.roles.preview_update(
+                PROJECT_ID, ROLE_ID, **ROLE_BODY
+            ),
+        ),
+        (
+            "PUT",
+            f"/teams/{TEAM_ID}",
+            {"status": "granted", "team_id": TEAM_ID, "role": "editor"},
+            lambda client: client.projects.teams.grant(PROJECT_ID, TEAM_ID, "editor"),
+        ),
+    ],
+)
+def test_repeatable_calls_are_retried(
+    client: ReflexCloud,
+    mock_api: MockAPI,
+    http_method: str,
+    suffix: str,
+    body: Any,
+    call: Any,
+):
+    mock_api.add(http_method, PROJECT_PATH + suffix, reply(503), reply(200, json=body))
+    call(client)
+    assert len(mock_api.requests) == 2
+
+
+@pytest.mark.parametrize(
+    ("suffix", "call"),
+    [
+        # Deleting again would start tearing down the project's apps again.
+        ("", lambda client: client.projects.delete(PROJECT_ID)),
+        (
+            f"/user/{USER_ID}",
+            lambda client: client.projects.members.remove(PROJECT_ID, USER_ID),
+        ),
+    ],
+)
+def test_deletions_are_not_retried(
+    client: ReflexCloud, mock_api: MockAPI, suffix: str, call: Any
+):
+    mock_api.add("DELETE", PROJECT_PATH + suffix, reply(503))
+    with pytest.raises(InternalServerError):
+        call(client)
+    assert len(mock_api.requests) == 1

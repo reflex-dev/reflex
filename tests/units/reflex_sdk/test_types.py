@@ -8,6 +8,11 @@ from typing import Any, Literal
 
 import pytest
 from reflex_sdk import types
+from reflex_sdk._async.resources.projects import (
+    _EffectivePermissions,
+    _TeamGrantResult,
+    _TeamRevokeResult,
+)
 from reflex_sdk._decode import json_name
 from reflex_sdk._deploy import UploadReservation, UploadTarget
 
@@ -34,6 +39,16 @@ SCHEMA_MODELS: dict[type, tuple[str, ...]] = {
     types.Project: ("GetProjectInfoResponse",),
     types.Role: ("ProjectRoleResponse",),
     types.ProjectMember: ("ProjectUserResult",),
+    types.RolePreviewMember: ("RolePreviewMember",),
+    types.RolePreviewTeam: ("RolePreviewTeam",),
+    types.RoleUpdatePreview: ("RoleUpdatePreviewResponse",),
+    types.TeamGrant: ("ProjectTeamGrantResponse",),
+    types.PendingTeamChange: ("PendingTeamGrantResponse",),
+    types.TeamGrants: ("ProjectTeamGrantsResponse",),
+    types.AuditLogEntry: ("GetProjectAuditLogResponse",),
+    _EffectivePermissions: ("EffectivePermissionsResponse",),
+    _TeamGrantResult: ("TeamGrantResult",),
+    _TeamRevokeResult: ("TeamRevokeResult",),
     types.DeploymentReport: ("DeploymentFailureResponse",),
     UploadReservation: ("ReserveUploadResponse",),
     UploadTarget: ("UploadTargetResponse",),
