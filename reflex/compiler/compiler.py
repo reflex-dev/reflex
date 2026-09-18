@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 from reflex_base import constants, otel
+from reflex_base.components.app_wraps import collect_var_app_wraps_in_subtree
 from reflex_base.components.component import (
     BaseComponent,
     Component,
@@ -55,7 +56,6 @@ from rich.progress import Progress
 
 from reflex.compiler import templates, utils
 from reflex.compiler.plugins import default_page_plugins
-from reflex.compiler.plugins.builtin import collect_var_app_wraps_in_subtree
 from reflex.compiler.plugins.memoize import MemoizeStatefulPlugin
 from reflex.minify import warn_if_config_stale
 from reflex.state import (
@@ -1353,6 +1353,11 @@ def compile_app(
     # ``library`` from the current module layout (handles a module flipping to
     # a package across hot reloads).
     reset_memo_component_classes()
+    # Page evaluation rebuilds every chain that is not interned by handler, so
+    # entries from an earlier compile can only retain dead chains.
+    context = RegistrationContext.ensure_context()
+    context._bound_event_chains.clear()
+    context._memoized_event_triggers.clear()
     for plugin in compiler_plugins:
         for dependency in plugin.get_frontend_dependencies():
             _bundle_library(dependency)

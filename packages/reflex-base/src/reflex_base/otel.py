@@ -16,12 +16,15 @@ even when the module is already loaded.
 from __future__ import annotations
 
 import hashlib
+import logging
 from collections.abc import Awaitable, Callable, Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from reflex_base.constants.base import Reflex
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from contextlib import AbstractContextManager
@@ -124,6 +127,7 @@ _NOOP_INSTRUMENT = _NoOpInstrument()
 
 # Bound by enable(); the trace points only run while enabled.
 _tracer: trace.Tracer
+_tracer_provider: trace.TracerProvider | None
 _event_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
 _state_acquire_duration: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
 _message_size: metrics.Histogram | _NoOpInstrument = _NOOP_INSTRUMENT
@@ -182,7 +186,14 @@ def enable(
             e.g. the OpenTelemetry ASGI middleware. Applied by the app when it
             builds its ASGI app.
     """
-    global _tracer, _remote_propagator, enabled, asgi_middleware, context_api, trace
+    global \
+        _tracer, \
+        _tracer_provider, \
+        _remote_propagator, \
+        enabled, \
+        asgi_middleware, \
+        context_api, \
+        trace
     if enabled:
         # Re-creating the instruments on another meter would log duplicate
         # instrument warnings; reconfiguring goes through disable() first.
@@ -196,6 +207,7 @@ def enable(
     )
 
     _remote_propagator = TraceContextTextMapPropagator()
+    _tracer_provider = tracer_provider
     _tracer = trace.get_tracer(
         INSTRUMENTATION_NAME, Reflex.VERSION, tracer_provider=tracer_provider
     )
@@ -225,6 +237,25 @@ def disable() -> None:
     asgi_middleware = None
     _event_duration = _state_acquire_duration = _NOOP_INSTRUMENT
     _message_size = _ws_connections = _NOOP_INSTRUMENT
+
+
+def flush(timeout_millis: int = 5000) -> None:
+    """Flush spans already ended by the current process.
+
+    Multiprocessing children exit with ``os._exit``. Before Python 3.13 that
+    skips ``atexit`` entirely, and since 3.13 it only runs hooks registered
+    after the fork, so the SDK's shutdown flush is skipped for any provider
+    created before the worker started.
+
+    Args:
+        timeout_millis: Maximum time to wait for exporters to flush.
+    """
+    if not enabled:
+        return
+    provider = _tracer_provider or trace.get_tracer_provider()
+    force_flush = getattr(provider, "force_flush", None)
+    if force_flush and not force_flush(timeout_millis=timeout_millis):
+        logger.debug("OpenTelemetry span flush timed out after %d ms", timeout_millis)
 
 
 def capture_context() -> Context | None:

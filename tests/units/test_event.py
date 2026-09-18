@@ -19,6 +19,7 @@ from reflex_base.event import (
     on_submit_event,
     on_submit_string_event,
 )
+from reflex_base.registry import RegistrationContext
 from reflex_base.utils import format, log
 from reflex_base.utils.exceptions import (
     EventHandlerArgTypeMismatchError,
@@ -1411,3 +1412,90 @@ def test_typing_event_helper_is_not_public():
 
     assert not hasattr(rx.event, "typing_event")
     assert not hasattr(rx.event, "_typing_event")
+
+
+def test_event_chain_cache_lives_on_the_registration_context(
+    forked_registration_context: RegistrationContext,
+):
+    """Bound chains are shared per context and leave the handler stateless."""
+
+    class ChainState(BaseState):
+        @event
+        def handler(self):
+            pass
+
+    def args_spec():
+        return ()
+
+    chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+    with forked_registration_context.fork():
+        forked = EventChain.create(
+            ChainState.handler, args_spec=args_spec, key="on_click"
+        )
+        assert forked is not chain
+        assert (
+            EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+            is forked
+        )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+
+    def retains(value: Any) -> bool:
+        if isinstance(value, dict):
+            value = tuple(value.values())
+        if isinstance(value, (tuple, list)):
+            return any(retains(item) for item in value)
+        return value is chain
+
+    assert not any(retains(value) for value in vars(ChainState.handler).values())
+
+
+def test_event_chain_create_shares_chains_bound_from_one_handler():
+    """A handler bound to one trigger yields one chain for every call site."""
+
+    class ChainState(BaseState):
+        @event
+        def handler(self):
+            pass
+
+    def args_spec():
+        return ()
+
+    chain = EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+    assert isinstance(chain, EventChain)
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_blur")
+        is not chain
+    )
+    assert (
+        EventChain.create(ChainState.handler, args_spec=lambda: (), key="on_click")
+        is not chain
+    )
+    with_actions = EventChain.create(
+        ChainState.handler, args_spec=args_spec, key="on_click", event_actions={"x": 1}
+    )
+    assert with_actions is not chain
+    # The event_actions call above must not replace the cached chain.
+    assert (
+        EventChain.create(ChainState.handler, args_spec=args_spec, key="on_click")
+        is chain
+    )
+    bound_chains = RegistrationContext.ensure_context()._bound_event_chains
+    cached = len(bound_chains)
+    assert (
+        EventChain.create(
+            ChainState.handler.prevent_default, args_spec=args_spec, key="on_click"
+        )
+        is not chain
+    )
+    assert len(bound_chains) == cached
+    assert (
+        EventChain.create([ChainState.handler], args_spec=args_spec, key="on_click")
+        is not chain
+    )

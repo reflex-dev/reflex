@@ -46,6 +46,7 @@ members = [
     "hatch-reflex-pyi",
     "reflex",
     "reflex-base",
+    "reflex-build-sdk",
     "reflex-components-code",
     "reflex-components-core",
     "reflex-components-dataeditor",
@@ -66,7 +67,6 @@ members = [
     "reflex-integrations-docs",
     "reflex-otel",
     "reflex-release",
-    "reflex-sdk",
     "reflex-site-shared",
 ]
 
@@ -3951,10 +3951,10 @@ dev = [
     { name = "pytest-split" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
+    { name = "reflex-build-sdk" },
     { name = "reflex-docgen" },
     { name = "reflex-otel" },
     { name = "reflex-release" },
-    { name = "reflex-sdk" },
     { name = "reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
@@ -4040,10 +4040,10 @@ dev = [
     { name = "pytest-split" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
+    { name = "reflex-build-sdk", editable = "packages/reflex-build-sdk" },
     { name = "reflex-docgen", editable = "packages/reflex-docgen" },
     { name = "reflex-otel", editable = "packages/reflex-otel" },
     { name = "reflex-release", editable = "packages/reflex-release" },
-    { name = "reflex-sdk", editable = "packages/reflex-sdk" },
     { name = "reflex-site-shared", editable = "packages/reflex-site-shared" },
     { name = "ruff" },
     { name = "selenium" },
@@ -4081,6 +4081,22 @@ requires-dist = [
     { name = "typing-extensions", specifier = ">=4.13.0" },
 ]
 provides-extras = ["pydantic"]
+
+[[package]]
+name = "reflex-build-sdk"
+source = { editable = "packages/reflex-build-sdk" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "httpx" },
+    { name = "platformdirs" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiohttp", specifier = ">=3.10.0,<4.0" },
+    { name = "httpx", specifier = ">=0.25.1,<1.0" },
+    { name = "platformdirs", specifier = ">=3.10.0,<5.0" },
+]
 
 [[package]]
 name = "reflex-components-code"
@@ -4454,22 +4470,6 @@ requires-dist = [
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.1" },
     { name = "towncrier", specifier = ">=24.8.0,<26" },
     { name = "tzdata", marker = "sys_platform == 'win32'", specifier = ">=2024.1" },
-]
-
-[[package]]
-name = "reflex-sdk"
-source = { editable = "packages/reflex-sdk" }
-dependencies = [
-    { name = "aiohttp" },
-    { name = "httpx" },
-    { name = "platformdirs" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiohttp", specifier = ">=3.10.0,<4.0" },
-    { name = "httpx", specifier = ">=0.25.1,<1.0" },
-    { name = "platformdirs", specifier = ">=3.10.0,<5.0" },
 ]
 
 [[package]]

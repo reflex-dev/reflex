@@ -122,3 +122,17 @@ async def test_lifespan_task_both_app_and_starlette_app_params_are_injected():
 
     assert received["app"] is mixin
     assert received["starlette_app"] is starlette_app
+
+
+@pytest.mark.asyncio
+async def test_lifespan_shutdown_closes_health_redis(mocker):
+    """Lifespan shutdown releases the cached health-check redis client."""
+    close = mocker.patch(
+        "reflex.utils.prerequisites.close_health_redis", new_callable=mocker.AsyncMock
+    )
+    mixin = LifespanMixin()
+
+    async with mixin._run_lifespan_tasks(Starlette()):
+        close.assert_not_awaited()
+
+    close.assert_awaited_once()
