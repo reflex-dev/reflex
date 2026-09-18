@@ -45,10 +45,13 @@ that path; these isolate it.
   `test_cond_operations`: the per-type operations, over state vars. Each stays
   inside its own family — a `cond` whose branches are string operations would
   mostly re-measure `test_string_operations`.
-- `test_array_index_operation`: indexing, kept apart from the other array
-  operations because `array_item_operation` renders its operands with `!s`,
-  which calls `str()` rather than `__format__`, so it is built differently from
-  the rest of the family.
+- `test_string_concat_operation`, `test_array_index_operation`: concatenation
+  and indexing, kept apart from their families because they are built without
+  interpolating an operand — `+` builds a `ConcatVarOperation` that assembles
+  its expression with `str()`, and `array_item_operation` renders its operands
+  with `!s`, which calls `str()` rather than `__format__`. Folded into the
+  family benchmarks they would be a few percent of the body, too little for a
+  change to either to be readable.
 - `test_format_var_outside_operation`: the control. Interpolating a var in user
   code (`f"Count: {State.count}"`) is a different path from interpolating an
   operand inside an operation, and is not meant to move with it.

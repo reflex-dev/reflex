@@ -18,6 +18,10 @@ benchmark makes it impossible to tell which moved. ``test_chained_operations``
 owns that second dimension on its own, and ``test_evaluate_var_heavy_page`` is
 where the families appear mixed the way real code writes them.
 
+Two operations stand alone rather than joining their family, because they are
+built without interpolating an operand at all and would be too small a share of
+it to read: string concatenation and array indexing.
+
 Operands are parametrized by whether they carry ``VarData`` at all, because
 that is what the interpolation cost turns on: a bare Var carries none, while a
 state var carries its state name, field name, context imports, hook and app
@@ -179,9 +183,8 @@ def test_chained_operations(depth: int, benchmark: BenchmarkFixture):
 def test_string_operations(benchmark: BenchmarkFixture):
     """Benchmark building string operations over a state var.
 
-    ``+`` is left out: string concatenation builds a ``ConcatVarOperation``,
-    which assembles its expression with ``str()`` and never interpolates an
-    operand, so it belongs to a different path than the rest of these.
+    Concatenation has its own benchmark; see
+    ``test_string_concat_operation``.
 
     Args:
         benchmark: The codspeed benchmark fixture.
@@ -198,6 +201,29 @@ def test_string_operations(benchmark: BenchmarkFixture):
             _ = label.contains("a")
             _ = label.startswith("b")
             _ = label.replace("c", "d")
+
+
+def test_string_concat_operation(benchmark: BenchmarkFixture):
+    """Benchmark building string concatenation.
+
+    Kept apart from the other string operations because it is built
+    differently: ``+`` builds a ``ConcatVarOperation``, which assembles its
+    expression with ``str()`` and never interpolates an operand the way the
+    rest of the family does. Folded in there it would be a few percent of the
+    body, too little for a change to it to be readable.
+
+    Args:
+        benchmark: The codspeed benchmark fixture.
+    """
+    label = VarOpState.label
+    fallback = VarOpState.fallback
+
+    @benchmark
+    def _():
+        for _i in range(N):
+            _ = label + fallback
+            _ = label + " items"
+            _ = label + " / " + fallback + "!"
 
 
 def test_array_operations(benchmark: BenchmarkFixture):
