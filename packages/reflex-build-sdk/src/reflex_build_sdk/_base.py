@@ -209,7 +209,7 @@ class BaseClient:
             authenticated: Whether to send the access token.
             form: A form-encoded body, sent instead of ``json``.
             extra_headers: Headers to send beside the ones every request carries,
-                which take precedence over these.
+                which win over these.
 
         Returns:
             The request, carrying a fresh ``X-Request-ID``.
