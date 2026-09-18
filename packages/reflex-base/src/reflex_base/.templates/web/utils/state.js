@@ -588,6 +588,7 @@ export const connect = async (
     try {
       return parseJson(str);
     } catch {
+      // socket.io's decoder expects false for an undecodable packet.
       return false;
     }
   };

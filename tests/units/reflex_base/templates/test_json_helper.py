@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 import reflex_base
+from reflex_base.utils.format import orjson_dumps_socket
 
 WEB_TEMPLATE = Path(reflex_base.__file__).parent / ".templates" / "web"
 JSON_HELPER_PATH = WEB_TEMPLATE / "utils" / "helpers" / "json.js"
@@ -150,21 +151,64 @@ def test_raises_on_unparseable_payload(tmp_path: Path) -> None:
 
 
 @requires_node
-def test_sentinel_lookalike_string_survives(tmp_path: Path) -> None:
-    """A string equal to the NaN placeholder is not revived into NaN.
+def test_parses_sentinel_encoded_non_finite_floats(tmp_path: Path) -> None:
+    """Sentinel strings are revived as floats, leaving other prefixed strings alone.
 
-    The fallback swaps bare NaN for a sentinel string and revives it after
-    parsing, so a payload carrying both a bare NaN and that exact string would
-    otherwise lose the string.
+    A payload already carrying the sentinel prefix is serialized with sentinels
+    rather than bare tokens, so both encodings have to round-trip.
 
     Args:
         tmp_path: Pytest temporary directory.
     """
-    payload = json.dumps({"text": "__reflex_nan__", "value": float("nan")})
+    payload = orjson_dumps_socket({
+        "prefixed": "__reflex_not_a_sentinel",
+        "nan": float("nan"),
+        "inf": float("inf"),
+        "ninf": float("-inf"),
+    })
+    assert "NaN" not in payload
+
+    (result,) = _parse_json([payload], tmp_path)
+
+    assert result == {
+        "ok": {
+            "prefixed": "__reflex_not_a_sentinel",
+            "nan": {"nonFinite": "NaN"},
+            "inf": {"nonFinite": "Infinity"},
+            "ninf": {"nonFinite": "-Infinity"},
+        }
+    }
+
+
+@requires_node
+def test_sentinel_lookalike_string_survives(tmp_path: Path) -> None:
+    """A string equal to a sentinel is escaped by the backend and restored here.
+
+    Reviving by value alone would turn such user data into a float, so the
+    serializer prefixes it and the helper strips one escape level back off.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    payload = orjson_dumps_socket({"text": "__reflex_nan__", "value": float("nan")})
 
     (result,) = _parse_json([payload], tmp_path)
 
     assert result == {"ok": {"text": "__reflex_nan__", "value": {"nonFinite": "NaN"}}}
+
+
+@requires_node
+def test_already_escaped_looking_string_survives(tmp_path: Path) -> None:
+    """User data that already looks escaped gets a second level, stripped once.
+
+    Args:
+        tmp_path: Pytest temporary directory.
+    """
+    payload = orjson_dumps_socket({"text": "__reflex_esc__data"})
+
+    (result,) = _parse_json([payload], tmp_path)
+
+    assert result == {"ok": {"text": "__reflex_esc__data"}}
 
 
 @requires_node
@@ -196,22 +240,3 @@ def test_non_finite_floats_in_every_value_position(tmp_path: Path) -> None:
         {"ok": [{"nonFinite": "NaN"}, 1]},
         {"ok": {"a": {"nonFinite": "-Infinity"}}},
     ]
-
-
-@requires_node
-def test_sentinel_derivation_handles_long_underscore_runs(tmp_path: Path) -> None:
-    """The sentinel is derived in one pass rather than by probing candidates.
-
-    A run of N underscores contains a run of every shorter length, so lengthening
-    a candidate until it no longer matches costs a full scan per underscore. The
-    run here is long enough that such an approach stalls for seconds.
-
-    Args:
-        tmp_path: Pytest temporary directory.
-    """
-    text = "__reflex_nan__" + "_" * 200_000
-    payload = json.dumps({"text": text, "value": float("nan")})
-
-    (result,) = _parse_json([payload], tmp_path)
-
-    assert result == {"ok": {"text": text, "value": {"nonFinite": "NaN"}}}

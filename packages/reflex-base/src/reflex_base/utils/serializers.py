@@ -19,7 +19,17 @@ from datetime import date, datetime, time, timedelta
 from enum import Enum
 from importlib.util import find_spec
 from pathlib import Path
-from typing import Any, Literal, TypeVar, get_type_hints, overload
+from types import UnionType
+from typing import (
+    Any,
+    Literal,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
+)
 from uuid import UUID
 
 from reflex_base.constants.colors import Color
@@ -55,6 +65,25 @@ deserializers = {
 }
 
 
+# orjson serializes these without consulting ``default``. Datetimes and
+# dataclasses are absent because ``format`` passes those through explicitly.
+_ORJSON_NATIVE_TYPES = (Enum, UUID)
+
+
+def _union_members(type_: Any) -> tuple[Any, ...]:
+    """Return the members of a union annotation, or empty for anything else.
+
+    Args:
+        type_: The annotation a serializer was registered under.
+
+    Returns:
+        The union's members, or an empty tuple.
+    """
+    if get_origin(type_) in (Union, UnionType):
+        return get_args(type_)
+    return ()
+
+
 def _get_optional_type_name(type_: type) -> str | None:
     """Identify an optional type by identity in an already-loaded module.
 
@@ -79,6 +108,7 @@ def serializer(
     fn: None = None,
     to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]: ...
 
 
@@ -87,6 +117,7 @@ def serializer(
     fn: SERIALIZED_FUNCTION,
     to: type[SerializedType] | None = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> SERIALIZED_FUNCTION: ...
 
 
@@ -94,6 +125,7 @@ def serializer(
     fn: SERIALIZED_FUNCTION | None = None,
     to: Any = None,
     overwrite: bool | None = None,
+    _orjson_native_equivalent: bool = False,
 ) -> SERIALIZED_FUNCTION | Callable[[SERIALIZED_FUNCTION], SERIALIZED_FUNCTION]:
     """Decorator to add a serializer for a given type.
 
@@ -101,6 +133,8 @@ def serializer(
         fn: The function to decorate.
         to: The type returned by the serializer. If this is `str`, then any Var created from this type will be treated as a string.
         overwrite: Whether to overwrite the existing serializer.
+        _orjson_native_equivalent: Internal. orjson's native output already matches
+            this serializer, so keep the orjson fast paths enabled.
 
     Returns:
         The decorated function.
@@ -153,6 +187,17 @@ def serializer(
         # Register the serializer.
         SERIALIZERS[type_] = fn
         get_serializer.cache_clear()
+
+        # ``type_`` comes from an annotation, so it is not necessarily a class.
+        # A union registers under the union itself, and ``get_serializer``
+        # resolves a member through ``issubclass``, so its members count too.
+        if not _orjson_native_equivalent and any(
+            isinstance(candidate, type) and issubclass(candidate, _ORJSON_NATIVE_TYPES)
+            for candidate in (type_, *_union_members(type_))
+        ):
+            from reflex_base.utils.format import _mark_orjson_registry_shadowed
+
+            _mark_orjson_registry_shadowed()
 
         # Return the function.
         return fn
@@ -438,7 +483,8 @@ def serialize_path(path: Path) -> str:
     return str(path.as_posix())
 
 
-@serializer
+# orjson emits ``en.value`` for an Enum, exactly what this returns.
+@serializer(_orjson_native_equivalent=True)
 def serialize_enum(en: Enum) -> str:
     """Serialize a enum to a JSON string.
 
@@ -451,7 +497,8 @@ def serialize_enum(en: Enum) -> str:
     return en.value
 
 
-@serializer(to=str)
+# orjson emits ``str(uuid)`` for a UUID, exactly what this returns.
+@serializer(to=str, _orjson_native_equivalent=True)
 def serialize_uuid(uuid: UUID) -> str:
     """Serialize a UUID to a JSON string.
 
@@ -520,6 +567,28 @@ def serialize_dataframe(df: _serializer_types.DataFrame) -> dict:
     }
 
 
+def _loads_plotly(data: str) -> Any:
+    """Parse JSON that plotly produced, with the parser plotly dumped it with.
+
+    Args:
+        data: The JSON plotly emitted.
+
+    Returns:
+        The parsed figure or template data.
+    """
+    from plotly.io.json import config as plotly_json_config
+
+    from reflex_base.utils.format import orjson_loads
+
+    # plotly's orjson engine and orjson_loads share the same 64-bit integer
+    # range, so the parse is exact whenever plotly dumped with orjson. Its
+    # stdlib engine can emit wider integers (a big id in customdata), which
+    # orjson would round to a float.
+    if plotly_json_config.default_engine == "json":
+        return json.loads(data)
+    return orjson_loads(data)
+
+
 def serialize_figure(figure: _serializer_types.Figure) -> dict:
     """Serialize a plotly figure.
 
@@ -531,7 +600,7 @@ def serialize_figure(figure: _serializer_types.Figure) -> dict:
     """
     from plotly.io import to_json
 
-    return json.loads(str(to_json(figure)))
+    return _loads_plotly(str(to_json(figure)))
 
 
 def serialize_template(template: _serializer_types.Template) -> dict:
@@ -546,8 +615,8 @@ def serialize_template(template: _serializer_types.Template) -> dict:
     from plotly.io import to_json
 
     return {
-        "data": json.loads(str(to_json(template.data))),
-        "layout": json.loads(str(to_json(template.layout))),
+        "data": _loads_plotly(str(to_json(template.data))),
+        "layout": _loads_plotly(str(to_json(template.layout))),
     }
 
 
@@ -611,10 +680,11 @@ def _prepare_serializers_for_fork() -> None:
             if module is not None and isinstance(vars(module).get(name), type):
                 # JSON engines can defer imports until their first invocation.
                 # Finish those imports too, without holding a serializer lock.
+                # The parse side defers imports as well, so warm it too.
                 with suppress(ImportError):
                     from plotly.io import to_json
 
-                    to_json({"data": []}, validate=False)
+                    _loads_plotly(str(to_json({"data": []}, validate=False)))
 
                 return
 
