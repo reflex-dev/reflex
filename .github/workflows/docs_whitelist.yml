@@ -2,53 +2,17 @@ name: docs whitelist check
 
 on:
   pull_request:
+    paths:
+      - 'docs/app/reflex_docs/whitelist.py'
+      - '.github/workflows/docs_whitelist.yml'
 
 permissions:
   contents: read
 
 jobs:
-  # This filter cannot live on the pull_request trigger: a workflow that a path
-  # filter skips never reports its checks at all, so a branch rule requiring
-  # them blocks the merge forever. Filtered out here, the jobs below skip
-  # instead, and a skipped job reports as a pass.
-  changes:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      run: ${{ steps.filter.outputs.changed }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/changed_paths
-        id: filter
-        with:
-          paths: |
-            docs/app/reflex_docs/whitelist.py
-            .github/workflows/docs_whitelist.yml
-
   check-whitelist:
-    needs: changes
-    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Assert whitelist is empty
         run: echo -e "\nassert not WHITELISTED_PAGES, f'WHITELISTED_PAGES includes {WHITELISTED_PAGES}'" | cat "docs/app/reflex_docs/whitelist.py" - | python3
-
-  # The one status check the branch rules require from this workflow. Naming the
-  # jobs above directly does not survive: check names follow the matrix and the
-  # display names, and a job that a filter skips must not block the merge.
-  docs-whitelist-gate:
-    needs: [changes, check-whitelist]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/ci_gate
-        with:
-          needs: ${{ toJSON(needs) }}
