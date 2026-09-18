@@ -4,7 +4,7 @@ import datetime
 from collections.abc import AsyncIterator
 
 import pytest
-from reflex_build_sdk import AsyncReflexCloud, ConflictError, InternalServerError
+from reflex_build_sdk import AsyncReflexBuild, ConflictError, InternalServerError
 from reflex_build_sdk.types import (
     ConnectionProvider,
     ConnectionStatus,
@@ -28,7 +28,7 @@ NOON = datetime.datetime(2026, 9, 17, 12, tzinfo=UTC)
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -37,13 +37,13 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
 
 
-async def test_providers(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_providers(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/connections/providers",
@@ -66,7 +66,7 @@ async def test_providers(client: AsyncReflexCloud, mock_api: MockAPI):
     ]
 
 
-async def test_list(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_list(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         CONNECTIONS_PATH,
@@ -90,7 +90,7 @@ async def test_list(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 async def test_status_reads_the_apps_own_connection(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add(
         "GET",
@@ -104,7 +104,7 @@ async def test_status_reads_the_apps_own_connection(
     assert "X-End-User" not in mock_api.requests[0].headers
 
 
-async def test_status_names_a_user(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_status_names_a_user(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROVIDER_PATH}/status",
@@ -135,14 +135,14 @@ async def test_status_names_a_user(client: AsyncReflexCloud, mock_api: MockAPI):
     ],
 )
 async def test_credential(
-    client: AsyncReflexCloud, mock_api: MockAPI, body: dict, credential: Credential
+    client: AsyncReflexBuild, mock_api: MockAPI, body: dict, credential: Credential
 ):
     mock_api.add("GET", f"{PROVIDER_PATH}/credential", reply(200, json=body))
     assert await client.apps.connections.credential(APP_ID, "openai") == credential
     assert "X-End-User" not in mock_api.requests[0].headers
 
 
-async def test_credential_for_a_user(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_credential_for_a_user(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{PROVIDER_PATH}/credential",
@@ -153,7 +153,7 @@ async def test_credential_for_a_user(client: AsyncReflexCloud, mock_api: MockAPI
 
 
 async def test_credential_keeps_the_token_out_of_its_repr(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add(
         "GET",
@@ -166,7 +166,7 @@ async def test_credential_keeps_the_token_out_of_its_repr(
 
 
 async def test_credential_refusal_names_its_condition(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add(
         "GET",
@@ -182,7 +182,7 @@ async def test_credential_refusal_names_its_condition(
     assert exc_info.value.code == "not_connected"
 
 
-async def test_connect_link_for_the_app(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_connect_link_for_the_app(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{PROVIDER_PATH}/authorize",
@@ -202,7 +202,7 @@ async def test_connect_link_for_the_app(client: AsyncReflexCloud, mock_api: Mock
     assert "X-End-User" not in request.headers
 
 
-async def test_connect_link_for_a_user(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_connect_link_for_a_user(client: AsyncReflexBuild, mock_api: MockAPI):
     # A user connects through a different route than the app itself.
     mock_api.add(
         "POST",
@@ -218,13 +218,13 @@ async def test_connect_link_for_a_user(client: AsyncReflexCloud, mock_api: MockA
     assert request.headers["X-End-User"] == END_USER
 
 
-async def test_disconnect_the_app(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_disconnect_the_app(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", PROVIDER_PATH, reply(200, json={"disconnected": True}))
     assert await client.apps.connections.disconnect(APP_ID, "openai") is None
     assert "X-End-User" not in mock_api.requests[0].headers
 
 
-async def test_disconnect_a_user(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_disconnect_a_user(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST", f"{PROVIDER_PATH}/disconnect", reply(200, json={"disconnected": True})
     )
@@ -232,7 +232,7 @@ async def test_disconnect_a_user(client: AsyncReflexCloud, mock_api: MockAPI):
     assert mock_api.requests[0].headers["X-End-User"] == END_USER
 
 
-async def test_mutations_are_not_retried(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_mutations_are_not_retried(client: AsyncReflexBuild, mock_api: MockAPI):
     # A retried session mints a second link, so an ambiguous failure is raised.
     mock_api.add("POST", f"{PROVIDER_PATH}/session", reply(503))
     with pytest.raises(InternalServerError):

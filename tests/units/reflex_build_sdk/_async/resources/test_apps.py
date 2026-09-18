@@ -7,7 +7,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_build_sdk import APIResponseValidationError, AsyncReflexCloud
+from reflex_build_sdk import APIResponseValidationError, AsyncReflexBuild
 from reflex_build_sdk.transports import Request, Response
 from reflex_build_sdk.types import (
     App,
@@ -90,7 +90,7 @@ APP_INFO = {
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -99,7 +99,7 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
@@ -109,7 +109,7 @@ def _query(request: Request) -> dict[str, list[str]]:
     return parse_qs(urlsplit(request.url).query)
 
 
-async def test_list(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_list(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", "/api/v1/apps", reply(200, json=[APP_SUMMARY]))
     assert await client.apps.list(project_id=uuid.UUID(PROJECT_ID)) == [
         AppSummary(
@@ -123,14 +123,14 @@ async def test_list(client: AsyncReflexCloud, mock_api: MockAPI):
     assert _query(mock_api.requests[0]) == {"project": [PROJECT_ID]}
 
 
-async def test_search(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_search(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", "/api/v1/apps/search", reply(200, json=[APP_SUMMARY]))
     (app,) = await client.apps.search("dashboard")
     assert app.name == "dashboard"
     assert _query(mock_api.requests[0]) == {"app_name": ["dashboard"]}
 
 
-async def test_get(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_get(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", APP_PATH, reply(200, json=APP_INFO))
     assert await client.apps.get(APP_ID) == App(
         id=uuid.UUID(APP_ID),
@@ -161,7 +161,7 @@ async def test_get(client: AsyncReflexCloud, mock_api: MockAPI):
     )
 
 
-async def test_create(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_create(client: AsyncReflexBuild, mock_api: MockAPI):
     created = {
         key: APP_SUMMARY[key] for key in ("id", "name", "description", "project_id")
     }
@@ -187,7 +187,7 @@ async def test_create(client: AsyncReflexCloud, mock_api: MockAPI):
     ],
 )
 async def test_update_field(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     method_name: str,
     value: Any,
@@ -200,7 +200,7 @@ async def test_update_field(
     assert json_body(mock_api.requests[0]) == body
 
 
-async def test_move(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_move(client: AsyncReflexBuild, mock_api: MockAPI):
     thread_id = "6a1d2c3b-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
     mock_api.add(
         "POST",
@@ -240,7 +240,7 @@ async def test_move(client: AsyncReflexCloud, mock_api: MockAPI):
     ],
 )
 async def test_update_settings(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     method_name: str,
     value: Any,
@@ -258,7 +258,7 @@ async def test_update_settings(
     }
 
 
-async def test_set_service_name(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_set_service_name(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{APP_PATH}/service_name",
@@ -270,7 +270,7 @@ async def test_set_service_name(client: AsyncReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"service_name": "dashboard"}
 
 
-async def test_status(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_status(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{APP_PATH}/status",
@@ -304,7 +304,7 @@ RUNNING_DEPLOYMENT = {
 }
 
 
-async def test_current_deployment(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_current_deployment(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{APP_PATH}/deployment", reply(200, json=RUNNING_DEPLOYMENT))
     assert await client.apps.current_deployment(
         APP_ID, environment_id="env"
@@ -328,7 +328,7 @@ async def test_current_deployment(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 async def test_current_deployment_when_nothing_runs(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     # The route answers "not found" with a 200.
     mock_api.add(
@@ -349,7 +349,7 @@ async def test_current_deployment_when_nothing_runs(
     ],
 )
 async def test_lifecycle(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     method_name: str,
     http_method: str,
@@ -372,7 +372,7 @@ async def test_lifecycle(
     ],
 )
 async def test_scale(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     kwargs: dict[str, Any],
     body: dict[str, Any],
@@ -394,14 +394,14 @@ async def test_scale(
     ],
 )
 async def test_scale_rejects_ambiguous_arguments(
-    client: AsyncReflexCloud, mock_api: MockAPI, kwargs: dict[str, Any]
+    client: AsyncReflexBuild, mock_api: MockAPI, kwargs: dict[str, Any]
 ):
     with pytest.raises(ValueError, match="exactly one of"):
         await client.apps.scale(APP_ID, **kwargs)
     assert not mock_api.requests
 
 
-async def test_set_provider(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_set_provider(client: AsyncReflexBuild, mock_api: MockAPI):
     account_id = "2b7c9d1e-3f4a-4b5c-8d6e-7f8091a2b3c4"
     mock_api.add(
         "POST",
@@ -428,7 +428,7 @@ async def test_set_provider(client: AsyncReflexCloud, mock_api: MockAPI):
     assert _query(request) == {"expected_project_id": [PROJECT_ID]}
 
 
-async def test_set_full_deploy(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_set_full_deploy(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{APP_PATH}/full_deploy",
@@ -451,7 +451,7 @@ async def test_set_full_deploy(client: AsyncReflexCloud, mock_api: MockAPI):
     ],
 )
 async def test_set_instance_bounds(
-    client: AsyncReflexCloud,
+    client: AsyncReflexBuild,
     mock_api: MockAPI,
     body: dict,
     change: InstanceBoundsChange,
@@ -468,7 +468,7 @@ async def test_set_instance_bounds(
     }
 
 
-async def test_reserve_hostname(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_reserve_hostname(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         "/api/v1/apps/reserve",
@@ -493,7 +493,7 @@ async def test_reserve_hostname(client: AsyncReflexCloud, mock_api: MockAPI):
     }
 
 
-async def test_rollback(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_rollback(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{APP_PATH}/deployments/{DEPLOYMENT_ID}/rollback",
@@ -503,7 +503,7 @@ async def test_rollback(client: AsyncReflexCloud, mock_api: MockAPI):
     assert len(mock_api.requests) == 1
 
 
-async def test_history(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_history(client: AsyncReflexBuild, mock_api: MockAPI):
     record = {
         "id": DEPLOYMENT_ID,
         "hostname": "dashboard.reflex.run",
@@ -583,7 +583,7 @@ def _log_page(*pages: tuple[list[dict[str, Any]], str | None]):
 
 
 async def test_logs_follow_cursor_until_empty_page(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     # Fly-hosted apps keep returning a cursor, and an empty page ends the logs.
     mock_api.add(
@@ -624,7 +624,7 @@ async def test_logs_follow_cursor_until_empty_page(
 
 @pytest.mark.parametrize("bound", ["start", "end"])
 async def test_logs_reject_naive_datetimes(
-    client: AsyncReflexCloud, mock_api: MockAPI, bound: str
+    client: AsyncReflexBuild, mock_api: MockAPI, bound: str
 ):
     naive: dict[str, Any] = {bound: datetime.datetime(2026, 9, 16, 10)}
     with pytest.raises(ValueError, match="timezone-aware"):
@@ -633,7 +633,7 @@ async def test_logs_reject_naive_datetimes(
     assert not mock_api.requests
 
 
-async def test_logs_stop_without_cursor(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_logs_stop_without_cursor(client: AsyncReflexBuild, mock_api: MockAPI):
     # Google Cloud apps mark the last page with a null cursor.
     mock_api.add("GET", f"{APP_PATH}/logsv2", _log_page(([_log(1)], None)))
     records = [record async for record in client.apps.logs(APP_ID)]
@@ -641,18 +641,18 @@ async def test_logs_stop_without_cursor(client: AsyncReflexCloud, mock_api: Mock
     assert len(mock_api.requests) == 1
 
 
-async def test_secrets_list(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_secrets_list(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{APP_PATH}/secrets", reply(200, json=["API_KEY"]))
     assert await client.apps.secrets.list(APP_ID, environment_id="env") == ["API_KEY"]
     assert _query(mock_api.requests[0]) == {"environment_id": ["env"]}
 
 
-async def test_secrets_get(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_secrets_get(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("GET", f"{APP_PATH}/secrets/API%2FKEY", reply(200, json="value"))
     assert await client.apps.secrets.get(APP_ID, "API/KEY") == "value"
 
 
-async def test_secrets_get_named_all(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_secrets_get_named_all(client: AsyncReflexBuild, mock_api: MockAPI):
     # A secret named __all__ shares its path with the route reading every secret.
     mock_api.add(
         "GET",
@@ -666,14 +666,14 @@ async def test_secrets_get_named_all(client: AsyncReflexCloud, mock_api: MockAPI
     assert _query(mock_api.requests[1]) == {"environment_id": ["env"]}
 
 
-async def test_secrets_get_all(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_secrets_get_all(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET", f"{APP_PATH}/secrets/__all__", reply(200, json={"API_KEY": "value"})
     )
     assert await client.apps.secrets.get_all(APP_ID) == {"API_KEY": "value"}
 
 
-async def test_secrets_set(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_secrets_set(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("POST", f"{APP_PATH}/secrets", reply(200, json=None))
     await client.apps.secrets.set(APP_ID, {"API_KEY": "value"}, reboot=True)
     (request,) = mock_api.requests
@@ -681,13 +681,13 @@ async def test_secrets_set(client: AsyncReflexCloud, mock_api: MockAPI):
     assert _query(request) == {"reboot": ["true"]}
 
 
-async def test_secrets_delete(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_secrets_delete(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", f"{APP_PATH}/secrets/API_KEY", reply(200, json=None))
     await client.apps.secrets.delete(APP_ID, "API_KEY")
     assert _query(mock_api.requests[0]) == {"reboot": ["false"]}
 
 
-async def test_domains_get(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_domains_get(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         f"{APP_PATH}/custom_domain",
@@ -730,7 +730,7 @@ async def test_domains_get(client: AsyncReflexCloud, mock_api: MockAPI):
 
 
 async def test_domains_get_without_a_domain(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add("GET", f"{APP_PATH}/custom_domain", reply(200, json={}))
     assert await client.apps.domains.get(APP_ID) is None
@@ -738,14 +738,14 @@ async def test_domains_get_without_a_domain(
 
 @pytest.mark.parametrize("body", [{"domain": "example.com"}, {"domain": None}])
 async def test_domains_get_rejects_an_unexpected_domain(
-    client: AsyncReflexCloud, mock_api: MockAPI, body: dict
+    client: AsyncReflexBuild, mock_api: MockAPI, body: dict
 ):
     mock_api.add("GET", f"{APP_PATH}/custom_domain", reply(200, json=body))
     with pytest.raises(APIResponseValidationError):
         await client.apps.domains.get(APP_ID)
 
 
-async def test_domains_add(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_domains_add(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{APP_PATH}/custom_domain",
@@ -768,7 +768,7 @@ async def test_domains_add(client: AsyncReflexCloud, mock_api: MockAPI):
     assert json_body(mock_api.requests[0]) == {"domain": "example.com"}
 
 
-async def test_domains_remove(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_domains_remove(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         f"{APP_PATH}/custom_domain/app.example.com",

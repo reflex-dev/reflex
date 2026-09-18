@@ -22,7 +22,7 @@ from reflex_build_sdk.types import (
 )
 
 if TYPE_CHECKING:
-    from reflex_build_sdk._async._client import AsyncReflexCloud
+    from reflex_build_sdk._async._client import AsyncReflexBuild
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -86,7 +86,7 @@ class AsyncRoles:
     Creating, changing and previewing custom roles needs the Enterprise plan.
     """
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -234,7 +234,7 @@ class AsyncRoles:
 class AsyncMembers:
     """Manage who has access to a project."""
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -333,7 +333,7 @@ class AsyncTeams:
     members get the role's access without being members themselves.
     """
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:
@@ -414,7 +414,7 @@ class AsyncProjects:
     # Give an organization's teams access to a project.
     teams: AsyncTeams
 
-    def __init__(self, client: AsyncReflexCloud) -> None:
+    def __init__(self, client: AsyncReflexBuild) -> None:
         """Bind the resource to a client.
 
         Args:

@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from reflex_build_sdk import AsyncReflexCloud
+from reflex_build_sdk import AsyncReflexBuild
 from reflex_build_sdk.transports import Request, Response
 from reflex_build_sdk.types import UsageBalance, UsageEntry
 
@@ -15,7 +15,7 @@ UTC = datetime.timezone.utc
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -24,13 +24,13 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
 
 
-async def test_balance(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_balance(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "GET",
         "/api/v1/user/usage/balance",
@@ -66,7 +66,7 @@ def _entry(kind: str) -> dict:
 
 
 async def test_history_follows_the_cursor_header(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     cursor = "2026-08-16T00:00:00+00:00|2026-09-15T13:00:00+00:00|6f1c"
 
@@ -109,7 +109,7 @@ async def test_history_follows_the_cursor_header(
 
 
 async def test_history_rejects_naive_datetimes(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     with pytest.raises(ValueError, match="timezone-aware"):
         async for _ in client.usage.history(start=datetime.datetime(2026, 9, 1)):

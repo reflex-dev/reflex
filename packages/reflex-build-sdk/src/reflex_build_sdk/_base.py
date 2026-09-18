@@ -145,15 +145,19 @@ class BaseClient:
         Args:
             token: The access token. Defaults to the ``REFLEX_ACCESS_TOKEN`` environment
                 variable, then to the token saved by ``reflex login``.
-            base_url: The Reflex Cloud URL. Defaults to the ``REFLEX_CLOUD_BACKEND_URL``
-                environment variable, then to ``https://build.reflex.dev``.
+            base_url: The Reflex Build URL. Defaults to the ``REFLEX_BUILD_BACKEND_URL``
+                environment variable, then to ``REFLEX_CLOUD_BACKEND_URL``, which
+                ``reflex-hosting-cli`` reads, then to ``https://build.reflex.dev``.
             timeout: The timeout of each network operation in seconds, or None for the
                 transport's defaults.
             max_retries: How many times a failed request that is safe to repeat is retried.
         """
         self._token = token or os.environ.get("REFLEX_ACCESS_TOKEN") or load_token()
         self._base_url = (
-            base_url or os.environ.get("REFLEX_CLOUD_BACKEND_URL") or DEFAULT_BASE_URL
+            base_url
+            or os.environ.get("REFLEX_BUILD_BACKEND_URL")
+            or os.environ.get("REFLEX_CLOUD_BACKEND_URL")
+            or DEFAULT_BASE_URL
         ).rstrip("/")
         self._timeout = timeout
         self._max_retries = max_retries
@@ -170,7 +174,7 @@ class BaseClient:
 
     @property
     def base_url(self) -> str:
-        """The Reflex Cloud URL requests are sent to, without a trailing slash.
+        """The Reflex Build URL requests are sent to, without a trailing slash.
 
         Returns:
             The base URL.
@@ -227,7 +231,7 @@ class BaseClient:
         }
         if authenticated:
             if not self._token:
-                msg = "No Reflex Cloud access token: pass token=, set REFLEX_ACCESS_TOKEN, or run `reflex login`."
+                msg = "No Reflex Build access token: pass token=, set REFLEX_ACCESS_TOKEN, or run `reflex login`."
                 raise MissingTokenError(msg)
             headers["X-API-TOKEN"] = self._token
         url = self._api_url + path

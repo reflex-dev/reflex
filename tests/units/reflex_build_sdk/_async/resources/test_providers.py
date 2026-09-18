@@ -6,7 +6,7 @@ import uuid
 from collections.abc import AsyncIterator
 
 import pytest
-from reflex_build_sdk import AsyncReflexCloud
+from reflex_build_sdk import AsyncReflexBuild
 from reflex_build_sdk.types import (
     CloudRunManifest,
     GcpBlockingApp,
@@ -33,7 +33,7 @@ USER_ID = "8b0f4a52-3a8a-4c43-9d7e-2f0c7d2a4b11"
 
 
 @pytest.fixture
-async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
+async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexBuild]:
     """A client talking to the mock API.
 
     Args:
@@ -42,13 +42,13 @@ async def client(mock_api: MockAPI) -> AsyncIterator[AsyncReflexCloud]:
     Yields:
         The client.
     """
-    async with AsyncReflexCloud(
+    async with AsyncReflexBuild(
         token="test-token", transport=AsyncMockTransport(mock_api)
     ) as client:
         yield client
 
 
-async def test_gcp_status(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_gcp_status(client: AsyncReflexBuild, mock_api: MockAPI):
     body = {
         "configured": True,
         "allowed": True,
@@ -86,7 +86,7 @@ async def test_gcp_status(client: AsyncReflexCloud, mock_api: MockAPI):
     )
 
 
-async def test_gcp_status_unconfigured(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_gcp_status_unconfigured(client: AsyncReflexBuild, mock_api: MockAPI):
     body = {
         "configured": False,
         "allowed": False,
@@ -108,7 +108,7 @@ async def test_gcp_status_unconfigured(client: AsyncReflexCloud, mock_api: MockA
     )
 
 
-async def test_accounts(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_accounts(client: AsyncReflexBuild, mock_api: MockAPI):
     account = {
         "id": ACCOUNT_ID,
         "provider": "gcp",
@@ -137,13 +137,13 @@ async def test_accounts(client: AsyncReflexCloud, mock_api: MockAPI):
     ]
 
 
-async def test_cloud_run_manifest(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_cloud_run_manifest(client: AsyncReflexBuild, mock_api: MockAPI):
     body = {"dockerfile": "FROM python:3.13", "deploy_command": "gcloud run deploy"}
     mock_api.add("GET", "/api/v1/cli/gcp-cloud-run-manifest", reply(200, json=body))
     assert await client.providers.cloud_run_manifest() == CloudRunManifest(**body)
 
 
-async def test_connect_gcp(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_connect_gcp(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "PUT",
         GCP_PATH,
@@ -180,12 +180,12 @@ async def test_connect_gcp(client: AsyncReflexCloud, mock_api: MockAPI):
     }
 
 
-async def test_disconnect_gcp(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_disconnect_gcp(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add("DELETE", GCP_PATH, reply(200, json={"status": "deleted"}))
     assert await client.providers.disconnect_gcp(ORG_ID) is None
 
 
-async def test_gcp_blocking_apps(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_gcp_blocking_apps(client: AsyncReflexBuild, mock_api: MockAPI):
     app_id = str(uuid.uuid4())
     mock_api.add(
         "GET",
@@ -218,7 +218,7 @@ async def test_gcp_blocking_apps(client: AsyncReflexCloud, mock_api: MockAPI):
     ]
 
 
-async def test_gcp_connections_create(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_gcp_connections_create(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{GCP_PATH}/connections",
@@ -249,7 +249,7 @@ async def test_gcp_connections_create(client: AsyncReflexCloud, mock_api: MockAP
     }
 
 
-async def test_gcp_connections_update(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_gcp_connections_update(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "PATCH",
         f"{GCP_PATH}/connections/{ACCOUNT_ID}",
@@ -273,7 +273,7 @@ async def test_gcp_connections_update(client: AsyncReflexCloud, mock_api: MockAP
     }
 
 
-async def test_gcp_connections_rotate_key(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_gcp_connections_rotate_key(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "POST",
         f"{GCP_PATH}/connections/{ACCOUNT_ID}/rotate-key",
@@ -307,7 +307,7 @@ async def test_gcp_connections_rotate_key(client: AsyncReflexCloud, mock_api: Mo
     assert json.loads(body["service_account_key"]) == KEY
 
 
-async def test_gcp_connections_verify(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_gcp_connections_verify(client: AsyncReflexBuild, mock_api: MockAPI):
     # Problems are reported in a 200.
     mock_api.add(
         "POST",
@@ -349,7 +349,7 @@ async def test_gcp_connections_verify(client: AsyncReflexCloud, mock_api: MockAP
 
 
 async def test_gcp_connections_set_default_is_retried(
-    client: AsyncReflexCloud, mock_api: MockAPI
+    client: AsyncReflexBuild, mock_api: MockAPI
 ):
     mock_api.add(
         "POST",
@@ -362,7 +362,7 @@ async def test_gcp_connections_set_default_is_retried(
     assert first.headers["X-Request-ID"] == retry.headers["X-Request-ID"]
 
 
-async def test_gcp_connections_delete(client: AsyncReflexCloud, mock_api: MockAPI):
+async def test_gcp_connections_delete(client: AsyncReflexBuild, mock_api: MockAPI):
     mock_api.add(
         "DELETE",
         f"{GCP_PATH}/connections/{ACCOUNT_ID}",
