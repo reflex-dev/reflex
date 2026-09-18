@@ -9,14 +9,13 @@ import reflex as rx
 import reflex_enterprise as rxe
 from reflex_site_shared import styles
 from reflex_site_shared.backend.status import monitor_checkly_status
-from reflex_site_shared.constants import OG_IMAGE_URL
+from reflex_site_shared.constants import OG_IMAGE_URL, REFLEX_DOMAIN_URL
 from reflex_site_shared.meta.meta import (
     ONE_LINE_DESCRIPTION,
     create_meta_tags,
     favicons_links,
     to_cdn_image_url,
 )
-from reflex_site_shared.utils.url import public_url
 
 from reflex_docs.pages import page404, routes
 from reflex_docs.redirects import DocsRedirectMiddleware
@@ -88,7 +87,7 @@ def _canonical_url(path: str) -> str:
     # "/docsoverview/" instead of "/docs/overview/".
     if not path.startswith("/"):
         path = "/" + path
-    url = public_url(path)
+    url = REFLEX_DOMAIN_URL.rstrip("/") + _FRONTEND_PATH + path
     return url if url.endswith("/") else url + "/"
 
 

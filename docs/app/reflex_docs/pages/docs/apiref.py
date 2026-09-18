@@ -9,22 +9,51 @@ from reflex_docs.templates.docpage import docpage
 
 from .api_reference_layout import generate_class_reference
 
+# Classes that get a generated reference page. Where each page appears is
+# decided by section_order below, not by this list. rx.Model is deliberately
+# absent: it is deprecated since 0.9.2 and removed in 1.0.
 modules = [
     rx.App,
+    rx.Config,
+    rx.State,
+    StateManager,
     rx.Component,
     rx.ComponentState,
-    rx.Config,
-    rx.event.Event,
     rx.event.EventHandler,
     rx.event.EventSpec,
-    # rx.Model excluded: deprecated in 0.9.2, removed in 1.0.
-    # rx.testing.AppHarness,
-    StateManager,
-    # rx.state.BaseState,
-    rx.State,
-    ImportVar,
+    rx.event.Event,
     rx.Var,
+    ImportVar,
 ]
+
+# The single source of truth for the order of the API reference section, by URL
+# slug: related symbols are grouped as app setup, state, components, events and
+# vars, followed by the standalone topic pages. Drives the docs sidebar, its
+# prev/next chain, and the llms.txt index.
+section_order = (
+    "app",
+    "config",
+    "environment-variables",
+    "state",
+    "statemanager",
+    "component",
+    "componentstate",
+    "event-triggers",
+    "special-events",
+    "eventhandler",
+    "eventspec",
+    "event",
+    "var",
+    "importvar",
+    "var-system",
+    "cli",
+    "browser-storage",
+    "browser-javascript",
+    "plugins",
+    "utils",
+    "telemetry",
+    "observability",
+)
 
 # Classes whose fields can be overridden via prefixed environment variables;
 # the fields table gets an extra column listing each generated env var name.
