@@ -1,0 +1,53 @@
+name: Changed paths
+description: >-
+  Evaluate an on.paths/on.paths-ignore style filter against a pull request's
+  changed files, for a workflow whose trigger-level filter was removed so that
+  its checks keep reporting to the branch rules.
+
+inputs:
+  paths:
+    description: >-
+      Newline-separated filter patterns; the result is true when any changed
+      file matches one of them. Mutually exclusive with paths-ignore.
+    required: false
+    default: ""
+  paths-ignore:
+    description: >-
+      Newline-separated filter patterns; the result is true when any changed
+      file matches none of them. Mutually exclusive with paths.
+    required: false
+    default: ""
+
+outputs:
+  changed:
+    description: "'true' when the jobs behind this filter should run."
+    value: ${{ steps.evaluate.outputs.changed }}
+
+runs:
+  using: composite
+  steps:
+    - id: evaluate
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        FILTER_PATHS: ${{ inputs.paths }}
+        FILTER_PATHS_IGNORE: ${{ inputs.paths-ignore }}
+      run: |
+        set -euo pipefail
+        # Only pull_request runs gate a merge, so only their trigger gave up its
+        # path filter. Every other event still filters at the trigger and has
+        # nothing left to evaluate here.
+        if [ -z "${PR_NUMBER:-}" ]; then
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        # The whole pull request diff, which is what the trigger filtered on --
+        # not the last push, which would skip jobs a later commit still needs.
+        changed=$(
+          gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename' |
+            python3 "$GITHUB_WORKSPACE/scripts/changed_paths.py"
+        )
+        echo "changed=$changed"
+        echo "changed=$changed" >> "$GITHUB_OUTPUT"
