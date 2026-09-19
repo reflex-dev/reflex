@@ -94,6 +94,12 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 - FINDING-021 — literal asset `src` paths not prefixed with `frontend_path` (pre-existing; docs or compile-time prefix).
 - FINDING-022 — `frontend_lazy_bundled_libraries=True` added ~65 KB of initial JS on every page of the test app;
   confirm with wire bytes on a larger app before deciding whether the #7078 claim needs rewording (`build_prod_export`).
+- FINDING-023 — the `backend_state_mismatch` latch in `state.js` (previous campaign's FINDING-036) still deadens the
+  whole frontend after one delta for an unregistered substate, on both versions; a recompile is the only way out.
+  Pre-existing, but HIGH impact and now easier to hit with backend-only workers — worth an issue with a reset path or
+  a visible error (`render_ctx_statemgr`).
+- FINDING-024 — `app.modify_state("<bare client token>")` raises `ValueError: Invalid path: ('',)` (pre-existing).
+- FINDING-025 — `reflex run` wipes `.states/` at startup in prod too (pre-existing; document or gate on env).
 - FINDING-016 — cancelled foreground `supersedes=True` handler loses pre-cancellation writes under redis (prod)
   while dev/memory keeps them; needs a 0.9.11.post1+redis baseline before triage (`event_loop`).
 - `on_load`-started self-chaining loops keep running after the client disconnects, logging one

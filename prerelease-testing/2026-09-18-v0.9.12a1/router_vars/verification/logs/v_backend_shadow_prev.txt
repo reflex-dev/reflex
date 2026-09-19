@@ -1,0 +1,10 @@
+reflex 0.9.11.post1
+C.backend_vars: {'_reflex_internal_links': None, '_priv': 1}
+instance C()._priv = 'shadow'
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_router_vars/scripts/v_backend_shadow_runtime.py", line 15, in <module>
+    c._priv = "written"
+    ^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/state.py", line 1663, in __setattr__
+    setattr(self.parent_state, name, value)
+AttributeError: 'NoneType' object has no attribute '_priv'

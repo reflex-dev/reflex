@@ -1,0 +1,11 @@
+reflex 0.9.12a1
+field_dependencies of State.router.url : {'reflex___state____state': ('rx_router_url',)}
+field_dependencies of State.router.session.client_ip : {'reflex___state____state': ('rx_router_session',)}
+field_dependencies of State.router : {'reflex___state____state': ('rx_router_url', 'rx_router_page', 'rx_router_session', 'rx_router_headers', 'rx_router_route_id', 'router')}
+narrow_url auto_deps= False deps= {'reflex___state____state': ['rx_router_url']}
+narrow_session auto_deps= False deps= {'reflex___state____state': ['rx_router_session']}
+rx_router_url        -> invalidates S vars ['narrow_url']
+rx_router_session    -> invalidates S vars ['narrow_session']
+rx_router_headers    -> invalidates S vars []
+rx_router_page       -> invalidates S vars []
+rx_router_route_id   -> invalidates S vars []

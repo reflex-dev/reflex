@@ -1,0 +1,7 @@
+only_session       -> ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']
+only_headers       -> ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']
+only_path          -> ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']
+explicit_session   -> ['rx_router_session']
+explicit_session   -> ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']
+explicit_url       -> ['rx_router_url']
+explicit_url       -> ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']

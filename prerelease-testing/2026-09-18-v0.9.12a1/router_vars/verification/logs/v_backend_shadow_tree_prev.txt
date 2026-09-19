@@ -1,0 +1,9 @@
+reflex 0.9.11.post1
+P instance _priv: 1
+C instance _priv: 1
+after c._priv = 'written-by-child':
+   C._priv reads: 'written-by-child'
+   P._priv reads: 'written-by-child'
+   C.dirty_vars: set()  P.dirty_vars: {'_priv'}
+   C._backend_vars: {}
+   P._backend_vars: {'_priv': 'written-by-child'}

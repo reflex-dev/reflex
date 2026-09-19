@@ -1,0 +1,15 @@
+reflex 0.9.12a1 /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+ComputedVar deps=["router"] on A.a_body_reads_router has been deprecated in version 0.9.12. the router var was split; depend on the router Var instead (e.g. deps=[State.router.url] for one field, or deps=[State.router] for all of them). It will be completely removed in 1.0. (scripts/v_deps_legacy_matrix.py:11)
+ComputedVar deps=["router"] on B.b_body_no_router has been deprecated in version 0.9.12. the router var was split; depend on the router Var instead (e.g. deps=[State.router.url] for one field, or deps=[State.router] for all of them). It will be completely removed in 1.0. (scripts/v_deps_legacy_matrix.py:11)
+ComputedVar deps=["router"] on D.d_auto_body_no_router has been deprecated in version 0.9.12. the router var was split; depend on the router Var instead (e.g. deps=[State.router.url] for one field, or deps=[State.router] for all of them). It will be completely removed in 1.0. (scripts/v_deps_legacy_matrix.py:11)
+a_body_reads_router        auto_deps=False static={None: ['router']}
+                           deps={'reflex___state____state.__main_____a': ['router']}
+b_body_no_router           auto_deps=False static={None: ['router']}
+                           deps={'reflex___state____state.__main_____b': ['router']}
+c_auto_body_reads_router   auto_deps=True  static={None: ['router', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']}
+                           deps={'reflex___state____state.__main_____c': ['router', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']}
+d_auto_body_no_router      auto_deps=True  static={None: ['router']}
+                           deps={'reflex___state____state.__main_____d': ['router']}
+e_var_form                 auto_deps=False static={'reflex___state____state': ['router', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']}
+                           deps={'reflex___state____state': ['router', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']}
+DEPRECATIONS SEEN: ['ComputedVar deps=["router"] on A.a_body_reads_router', 'ComputedVar deps=["router"] on B.b_body_no_router', 'ComputedVar deps=["router"] on D.d_auto_body_no_router']
