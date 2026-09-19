@@ -154,7 +154,22 @@ def test_validate_gates_npm_selected_as_fallback(monkeypatch):
     _patch_unsupported_node(monkeypatch)
 
     with pytest.raises(SystemExit):
-        js_runtimes.validate_frontend_dependencies()
+        js_runtimes.validate_frontend_dependencies(init=False)
+
+
+def test_validate_init_defers_gate_until_bun_setup(monkeypatch):
+    """Fresh init must not gate before install_bun can provide a manager.
+
+    On a machine without bun, package-manager discovery selects npm, but
+    init is exactly the phase that installs bun - exiting here would block
+    the setup that makes the supported path available. The later install
+    gate still stops an unsupported npm install before side effects.
+    """
+    monkeypatch.setattr(js_runtimes, "prefer_npm_over_bun", lambda: False)
+    _patch_manager_paths(monkeypatch, bun=False, npm=True)
+    _patch_unsupported_node(monkeypatch)
+
+    js_runtimes.validate_frontend_dependencies()
 
 
 def test_validate_does_not_gate_bun(monkeypatch):
@@ -163,4 +178,27 @@ def test_validate_does_not_gate_bun(monkeypatch):
     _patch_manager_paths(monkeypatch, bun=True, npm=True)
     _patch_unsupported_node(monkeypatch)
 
-    js_runtimes.validate_frontend_dependencies()
+    js_runtimes.validate_frontend_dependencies(init=False)
+
+
+def test_install_gate_does_not_probe_host(monkeypatch, install_mocks):
+    """The install gate works entirely off injected manager discovery.
+
+    Guards against the npm install tests silently depending on the host
+    machine's node, bun, or npm installation.
+    """
+    monkeypatch.setattr(js_runtimes, "prefer_npm_over_bun", lambda: False)
+    _patch_manager_paths(monkeypatch, bun=True, npm=True)
+    monkeypatch.setattr(js_runtimes, "check_node_version", lambda: True)
+
+    msg = "gate probed the host"
+
+    def _no_host_lookup(*args, **kwargs):
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(js_runtimes.path_ops, "which", _no_host_lookup)
+    monkeypatch.setattr(js_runtimes, "get_node_version", _no_host_lookup)
+
+    js_runtimes.install_frontend_packages({"react"}, _fake_config())
+
+    assert install_mocks["install"] != [], "install did not run"

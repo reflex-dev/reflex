@@ -403,9 +403,13 @@ def validate_frontend_dependencies(init: bool = True):
             logger.error(f"Failed to find a valid package manager due to {e}.")
             raise SystemExit(1) from None
 
-    _require_supported_node_for_npm(
-        get_nodejs_compatible_package_managers(raise_on_none=False)
-    )
+        # Runtime only: at init time bun may not be installed yet, and
+        # gating here would block the very setup that provides it. The
+        # install gate in install_frontend_packages runs after bun setup
+        # and still stops an unsupported npm install before side effects.
+        _require_supported_node_for_npm(
+            get_nodejs_compatible_package_managers(raise_on_none=False)
+        )
 
 
 def remove_existing_bun_installation():
