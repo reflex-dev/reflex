@@ -18,6 +18,7 @@ from reflex_cli.utils.hosting import (
     ScaleParams,
     ScaleType,
     TokenSource,
+    WatchOutcome,
     _report_deployment_failure,
     _strip_terminal_controls,
     as_json_document,
@@ -1014,7 +1015,10 @@ def test_watch_reports_a_deployment_that_went_live(caplog: pytest.LogCaptureFixt
     client.api.deployments.wait.return_value = _watch_report()
 
     with caplog.at_level(SUCCESS, logger="reflex_cli.utils.hosting"):
-        assert watch_deployment_status(str(uuid.UUID(int=5)), client) is True
+        assert (
+            watch_deployment_status(str(uuid.UUID(int=5)), client).outcome
+            is WatchOutcome.SUCCEEDED
+        )
     assert "completed successfully" in _log_messages(caplog, SUCCESS)[-1]
 
 
@@ -1028,7 +1032,10 @@ def test_watch_reports_a_build_awaiting_approval(caplog: pytest.LogCaptureFixtur
     client.api.deployments.wait.return_value = _watch_report("AwaitingApproval")
 
     with caplog.at_level(SUCCESS, logger="reflex_cli.utils.hosting"):
-        assert watch_deployment_status(str(uuid.UUID(int=5)), client) is True
+        assert (
+            watch_deployment_status(str(uuid.UUID(int=5)), client).outcome
+            is WatchOutcome.SUCCEEDED
+        )
     assert "approval" in _log_messages(caplog, SUCCESS)[-1]
 
 
@@ -1047,7 +1054,7 @@ def test_watch_reports_a_failure_from_the_error_it_was_given(
     client = _client()
     client.api.deployments.wait.side_effect = DeploymentFailedError(deployment, report)
 
-    assert watch_deployment_status(str(deployment), client) is False
+    assert watch_deployment_status(str(deployment), client).failed
     assert "the build failed" in _log_messages(caplog, logging.ERROR)
     assert "Check your imports." in _log_messages(caplog, logging.WARNING)
     client.api.deployments.report.assert_not_called()
@@ -1061,7 +1068,7 @@ def test_watch_rejects_an_id_that_is_not_one(caplog: pytest.LogCaptureFixture):
     """
     client = _client()
 
-    assert watch_deployment_status("not-a-uuid", client) is False
+    assert watch_deployment_status("not-a-uuid", client).failed
     assert _log_messages(caplog, logging.ERROR) == [
         "'not-a-uuid' is not a deployment id."
     ]
@@ -1078,7 +1085,7 @@ def test_watch_reports_an_id_that_names_nothing(caplog: pytest.LogCaptureFixture
     client = _client()
     client.api.deployments.wait.side_effect = api_error(404, "no such deployment")
 
-    assert watch_deployment_status(str(deployment), client) is False
+    assert watch_deployment_status(str(deployment), client).failed
     assert _log_messages(caplog, logging.ERROR) == [
         f"no deployment with id {deployment}."
     ]
@@ -1102,7 +1109,10 @@ def test_watch_waits_out_a_dropped_connection(mocker: MockerFixture):
         _watch_report(),
     ]
 
-    assert watch_deployment_status(str(uuid.UUID(int=5)), client) is True
+    assert (
+        watch_deployment_status(str(uuid.UUID(int=5)), client).outcome
+        is WatchOutcome.SUCCEEDED
+    )
     assert client.api.deployments.wait.call_count == 3
 
 
@@ -1118,7 +1128,10 @@ def test_watch_stops_following_when_the_api_refuses(
     client = _client()
     client.api.deployments.wait.side_effect = api_error(500, "boom")
 
-    assert watch_deployment_status(str(deployment), client) is True
+    assert (
+        watch_deployment_status(str(deployment), client).outcome
+        is WatchOutcome.UNFINISHED
+    )
     warning = _log_messages(caplog, logging.WARNING)[-1]
     assert "stopped following" in warning
     assert f"apps status {deployment} --watch" in warning
@@ -1177,7 +1190,10 @@ def test_watch_hands_back_a_control_plane_that_stays_unreachable(
         "no route", request=request
     )
 
-    assert watch_deployment_status(str(deployment), client) is True
+    assert (
+        watch_deployment_status(str(deployment), client).outcome
+        is WatchOutcome.UNFINISHED
+    )
     assert client.api.deployments.wait.call_count == 2
     warnings = _log_messages(caplog, logging.WARNING)
     assert "lost contact" in warnings[0]

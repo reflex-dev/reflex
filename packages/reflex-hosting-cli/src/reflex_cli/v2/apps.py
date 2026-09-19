@@ -354,21 +354,24 @@ def deployment_status(
             token=token, interactive=interactive
         )
         if watch:
-            succeeded = hosting.watch_deployment_status(
+            result = hosting.watch_deployment_status(
                 deployment_id=deployment_id, client=authenticated_client
             )
             if as_json:
-                # Re-read once the watch ends: the watch itself reports
-                # progress through the log stream and returns only whether it
-                # got there, which is not a status a caller can act on.
+                # The watch hands back the last status it saw, so there is
+                # nothing to ask the API again -- which matters most where the
+                # watch stopped because the API could not be reached.
                 print_json({
                     "deployment_id": deployment_id,
-                    "status": authenticated_client.api.deployments.status(
-                        deployment_id
-                    ),
-                    "success": succeeded,
+                    "status": result.status,
+                    # None, not False, for a watch that stopped early: the
+                    # deployment is still running and this command did not see
+                    # how it ended.
+                    "success": None
+                    if result.outcome is hosting.WatchOutcome.UNFINISHED
+                    else result.outcome is hosting.WatchOutcome.SUCCEEDED,
                 })
-            if succeeded is False:
+            if result.failed:
                 raise click.exceptions.Exit(1)
         else:
             status = authenticated_client.api.deployments.status(deployment_id)

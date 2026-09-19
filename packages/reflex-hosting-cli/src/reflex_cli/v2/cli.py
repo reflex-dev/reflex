@@ -1105,6 +1105,5 @@ def deploy(
     console.print(
         f"you are now safe to exit this command.\nfollow along with the deployment with the following command: \n  reflex cloud apps status {result} --watch"
     )
-    status = hosting.watch_deployment_status(result, client=authenticated_client)
-    if status is False:
+    if hosting.watch_deployment_status(result, client=authenticated_client).failed:
         raise click.exceptions.Exit(1)

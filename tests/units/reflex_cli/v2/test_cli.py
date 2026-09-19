@@ -23,6 +23,7 @@ from reflex_build_sdk.types import (
     ProjectTier,
     ProviderChange,
 )
+from reflex_cli.utils import hosting
 from reflex_cli.v2 import cli
 
 from .utils import FakeClient, api_error, fake_client, patch_upload_client
@@ -244,7 +245,7 @@ def test_deploy_non_interactive_app_not_found(
         client.api.apps.reserve_hostname.side_effect = api_error(409, "hostname taken")
     watch_deployment = mocker.patch(
         "reflex_cli.utils.hosting.watch_deployment_status",
-        return_value=True,
+        return_value=hosting.WatchResult(hosting.WatchOutcome.SUCCEEDED, "ready"),
     )
 
     if refused:
@@ -310,7 +311,7 @@ def test_deploy_non_interactive_project_name(
     client.api.deployments.create.return_value = uuid.UUID(int=41)
     watch_deployment = mocker.patch(
         "reflex_cli.utils.hosting.watch_deployment_status",
-        return_value={"status": "ready"},
+        return_value=hosting.WatchResult(hosting.WatchOutcome.SUCCEEDED, "ready"),
     )
 
     cli.deploy(
@@ -389,7 +390,7 @@ def test_deploy_interactive_project_name_multiple_values(
     client.api.deployments.create.return_value = uuid.UUID(int=41)
     mocker.patch(
         "reflex_cli.utils.hosting.watch_deployment_status",
-        return_value={"status": "ready"},
+        return_value=hosting.WatchResult(hosting.WatchOutcome.SUCCEEDED, "ready"),
     )
 
     def answer(question: str, **kwargs):
@@ -452,7 +453,7 @@ def test_deploy_non_interactive_export_failure(
     client.api.deployments.create.return_value = uuid.UUID(int=41)
     watch_deployment = mocker.patch(
         "reflex_cli.utils.hosting.watch_deployment_status",
-        return_value={"status": "ready"},
+        return_value=hosting.WatchResult(hosting.WatchOutcome.SUCCEEDED, "ready"),
     )
 
     with pytest.raises(click.exceptions.Exit):
@@ -493,7 +494,7 @@ def test_deploy_envfile_missing_python_dotenv_exits(
     client.api.deployments.create.return_value = uuid.UUID(int=41)
     watch_deployment = mocker.patch(
         "reflex_cli.utils.hosting.watch_deployment_status",
-        return_value={"status": "ready"},
+        return_value=hosting.WatchResult(hosting.WatchOutcome.SUCCEEDED, "ready"),
     )
     real_import = builtins.__import__
 
@@ -593,7 +594,7 @@ def test_deploy_create_deployment_multiple_apps_interactive(
     client.api.deployments.create.return_value = uuid.UUID(int=41)
     mocker.patch(
         "reflex_cli.utils.hosting.watch_deployment_status",
-        return_value={"status": "ready"},
+        return_value=hosting.WatchResult(hosting.WatchOutcome.SUCCEEDED, "ready"),
     )
     mocker.patch(
         "reflex_cli.utils.hosting.authenticated_token",
@@ -643,7 +644,7 @@ def _common_deploy_mocks(mocker: MockerFixture, *, selected_project: str | None 
     )
     mocker.patch(
         "reflex_cli.utils.hosting.watch_deployment_status",
-        return_value={"status": "ready"},
+        return_value=hosting.WatchResult(hosting.WatchOutcome.SUCCEEDED, "ready"),
     )
     patch_upload_client(mocker, client)
     return client

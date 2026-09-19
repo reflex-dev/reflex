@@ -288,7 +288,7 @@ def test_deployment_status_watch_success(mocker: MockFixture):
     client = _authed(mocker)
     mock_watch_status = mocker.patch(
         "reflex_cli.utils.hosting.watch_deployment_status",
-        return_value=None,
+        return_value=hosting.WatchResult(hosting.WatchOutcome.SUCCEEDED, "ready"),
     )
 
     result = runner.invoke(hosting_cli, ["apps", "status", "12345", "--watch"])
@@ -1609,10 +1609,14 @@ def test_deployment_status_json_output(mocker: MockFixture):
 
 
 def test_deployment_status_json_output_while_watching(mocker: MockFixture):
-    """Watching re-reads the status once it ends, since the watch returns a bool."""
+    """The watch hands back its last status, so nothing is asked again."""
     client = _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.watch_deployment_status", return_value=True)
-    client.api.deployments.status.return_value = "completed successfully"
+    mocker.patch(
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        return_value=hosting.WatchResult(
+            hosting.WatchOutcome.SUCCEEDED, "completed successfully"
+        ),
+    )
 
     result = runner.invoke(
         hosting_cli, ["apps", "status", "dep-1", "--watch", "--json"]
@@ -1623,6 +1627,52 @@ def test_deployment_status_json_output_while_watching(mocker: MockFixture):
         "deployment_id": "dep-1",
         "status": "completed successfully",
         "success": True,
+    }
+    client.api.deployments.status.assert_not_called()
+
+
+def test_deployment_status_json_output_when_the_watch_stopped_early(
+    mocker: MockFixture,
+):
+    """A watch that could not see the end says so rather than claiming success."""
+    client = _authed(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        return_value=hosting.WatchResult(hosting.WatchOutcome.UNFINISHED, "Building"),
+    )
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "status", "dep-1", "--watch", "--json"]
+    )
+
+    # Not a failure: the deployment is still running, and the document says so
+    # by refusing to answer rather than by guessing.
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "deployment_id": "dep-1",
+        "status": "Building",
+        "success": None,
+    }
+    client.api.deployments.status.assert_not_called()
+
+
+def test_deployment_status_json_output_when_the_watch_failed(mocker: MockFixture):
+    """A deployment that ended without going live exits non-zero."""
+    _authed(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        return_value=hosting.WatchResult(hosting.WatchOutcome.FAILED, "Failed"),
+    )
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "status", "dep-1", "--watch", "--json"]
+    )
+
+    assert result.exit_code == 1
+    assert json.loads(result.stdout) == {
+        "deployment_id": "dep-1",
+        "status": "Failed",
+        "success": False,
     }
 
 

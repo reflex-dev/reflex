@@ -1433,7 +1433,39 @@ def _report_deployment_failure(
     )
 
 
-def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> bool:
+class WatchOutcome(str, Enum):
+    """How watching a deployment ended."""
+
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    # The deployment is still being worked on and the watching stopped: the
+    # control plane went away, or refused to say more. Neither of the other two
+    # is an honest answer for it.
+    UNFINISHED = "unfinished"
+
+
+@dataclasses.dataclass(frozen=True)
+class WatchResult:
+    """How watching a deployment ended, and the last thing it was told."""
+
+    outcome: WatchOutcome
+    # The last status message the watch saw, empty if it never saw one.
+    status: str
+
+    @property
+    def failed(self) -> bool:
+        """Whether the deployment is known not to have made it.
+
+        Returns:
+            True only for a deployment that ended without going live.
+
+        """
+        return self.outcome is WatchOutcome.FAILED
+
+
+def watch_deployment_status(
+    deployment_id: str, client: AuthenticatedClient
+) -> WatchResult:
     """Continuously watch the status of a specific deployment.
 
     Args:
@@ -1441,49 +1473,61 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
         client: The authenticated client
 
     Returns:
-        True when the watching ends.
-        False when watching ends in fail.
+        How the watching ended, and the last status message it saw. A caller
+        that only wants to know whether to fail reads ``failed``: a watch that
+        stopped early is not a deployment that did.
 
     """
     try:
         uuid.UUID(deployment_id)
     except ValueError:
         logger.error(f"{deployment_id!r} is not a deployment id.")
-        return False
+        return WatchResult(WatchOutcome.FAILED, "")
 
-    def stopped_following(reason: str) -> bool:
+    last_status = ""
+
+    def note(message: str) -> None:
+        """Record and report a status the deployment reached.
+
+        Args:
+            message: The status message.
+
+        """
+        nonlocal last_status
+        last_status = message
+        logger.info(message)
+
+    def stopped_following(reason: str) -> WatchResult:
         """Hand the deployment back to the user and stop watching it.
 
         Args:
             reason: Why the watching stopped.
 
         Returns:
-            True: the build was submitted and is still being worked on, so
-            saying it succeeded would be a guess and saying it failed would be
-            a wrong one.
+            An unfinished watch: the build was submitted and is still being
+            worked on, so saying it succeeded would be a guess and saying it
+            failed would be a wrong one.
 
         """
         logger.warning(
             f"stopped following the deployment: {reason}. It is still running; "
             f"check it with:\n reflex cloud apps status {deployment_id} --watch"
         )
-        return True
+        return WatchResult(WatchOutcome.UNFINISHED, last_status)
 
     with console.status("listening to status updates!"):
         unreachable_since = None
         while True:
             try:
-                report = client.api.deployments.wait(
-                    deployment_id, on_status=logger.info
-                )
+                report = client.api.deployments.wait(deployment_id, on_status=note)
             except DeploymentFailedError as ex:
                 _report_deployment_failure(deployment_id, ex.report, str(ex))
-                return False
+                return WatchResult(WatchOutcome.FAILED, ex.report.status)
             except NotFoundError:
                 # The id parses but names nothing, so there is no deployment to
                 # report on and nothing to wait for.
                 logger.error(f"no deployment with id {deployment_id}.")
-                return False
+                return WatchResult(WatchOutcome.FAILED, last_status)
             except APIConnectionError as ex:
                 # The deployment is still there; only this process's view of it
                 # went away, and waiting that out is what the watch is for. Not
@@ -1509,7 +1553,7 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
         )
     else:
         logger.log(log.SUCCESS, "deployment completed successfully")
-    return True
+    return WatchResult(WatchOutcome.SUCCEEDED, report.status)
 
 
 def fetch_token(request_id: str, client: ReflexBuild | None = None) -> str:
