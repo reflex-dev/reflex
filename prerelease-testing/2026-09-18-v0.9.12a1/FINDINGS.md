@@ -75,6 +75,9 @@ Index:
 - FINDING-020: a `@rx.dynamic` component never re-renders when the state it reads changes — the delta carries only the plain field, never the recomputed component var (MEDIUM, pre-existing, dev and prod) — claimed by `build_prod_export`, verification pending
 - FINDING-021: literal asset `src` paths (`rx.image(src="/components/logo.svg")`) are not prefixed with `frontend_path`, so the image 404s while the file is served under `/app/...` (LOW, pre-existing) — claimed by `build_prod_export`
 - FINDING-022: `frontend_lazy_bundled_libraries=True` INCREASED decoded initial JS bytes by ~65 KB (+3.7–5.5%) on every page of the test app, including pages that use no optional library — the #7078 "reducing JavaScript loaded by ordinary pages" claim did not hold (LOW, perf-claim gap; measured as decoded bodies on one app, needs a wire-bytes/larger-app confirmation) — claimed by `build_prod_export`
+- FINDING-023: a hydrate/event delta naming a substate the compiled frontend has no dispatcher for sets `backend_state_mismatch=true` in `state.js` and every later event is discarded — zero websocket frames leave the browser until the frontend is recompiled (HIGH, pre-existing on both versions; the previous campaign's FINDING-036, re-tested because #6181 rewrote the dispatcher registry and did not change the latch) — re-confirmed by `render_ctx_statemgr`
+- FINDING-024: `app.modify_state("<client token>")` with the bare token raises `ValueError: Invalid path: ('',)` from `BaseStateToken.from_legacy_token` — the deprecated string form is broken for its most obvious argument (MEDIUM, pre-existing) — claimed by `render_ctx_statemgr`, verification pending
+- FINDING-025: `reflex run` deletes the whole `.states/` directory at startup in `--env prod` as well as dev, whatever `REFLEX_STATE_MANAGER_MODE` is, so disk-backed state never survives a restart (LOW, pre-existing, intentional-looking `reset_disk_state_manager()` call) — claimed by `render_ctx_statemgr`
 - FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package; currently masked by FINDING-001) — claimed by `ent_map_dnd_flow_mantine`, verification pending
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
@@ -251,6 +254,22 @@ Index:
 - FINDING-022: `/app/` 1 177 996 → 1 243 249 B (+65 253), `/app/about` +3.7%, `/app/components` +5.4% decoded JS with
   the flag on: fewer requests (17 → 14 files) but a single `esm-*.js` module ~65 KB larger than the shiki/icon chunks
   it displaces. Direction consistent across all three pages; caveat: Playwright `response.body()` bytes on one app.
+
+## FINDING-023 … FINDING-025 (`render_ctx_statemgr`; all pre-existing, details in `render_ctx_statemgr/NOTES.md`)
+
+- FINDING-023 (standing HIGH from the previous campaign): `renderapp` with `RENDERAPP_EXTRA_STATE=1` defines a backend
+  state class the compiled frontend does not know about; the hydrate delta names it, `.web/utils/state.js` sets
+  `backend_state_mismatch = true`, and both the socket `event` handler and `processEvent()` return early forever:
+  `A_after_load='0'`, `sent_frames_from_clicks=0`, same after reload (`out/mismatch_new_result.json`,
+  `out/mismatch_prev_result.json`). A one-way latch with no reset path; #6181 moved dispatcher registration into a
+  `useLayoutEffect` with `delete` on unmount but left the latch. Realistic trigger: a stale `.web/` after adding a
+  State class with the frontend compile skipped (backend-only workers, `nocompile`).
+- FINDING-024: `_split_substate_key` partitions the legacy token on `_`; a bare UUID yields an empty state path and
+  `get_class_substate` rejects `['']`. The deprecation warning fired just before names the right format, but the API
+  route gets a bare 500 (`evidence/modify_state_legacy_token_traceback.txt`).
+- FINDING-025: `reflex/reflex.py::_run` calls `reset_disk_state_manager()` unconditionally before the app starts;
+  after a clean SIGTERM flush wrote six pickles, the next `reflex run --env prod` left `.states/` empty
+  (`logs/disk_verify.log`). Reasonable in dev (stale schema), surprising for prod disk-backed state.
 
 ## FINDING-012: `rx.data_editor` image-preview overlay dead in prod with the default badge (HIGH impact, pre-existing — claimed, verification pending)
 
@@ -562,5 +581,24 @@ identical on 0.9.11.post1 → pre-existing. Issues: FINDING-019/020/021/022. Not
 (another agent's server shared the box), brotli/zstd compression formats, lazy-library load-failure retry. Tester
 trap: `uv pip install --prerelease=allow sentry-sdk` resolves 3.0.0a7, which crashes in `sentry_sdk.init()` against
 opentelemetry-api 1.44.0 before any reflex code runs — pin `sentry-sdk<3`.
+
+### `render_ctx_statemgr` (pass 21, anomaly 8, fail 4, skipped 3) — #6181 and #7159 verified; #6180 not observable; FINDING-023..025
+Render-count probe app (10 substates, memo sections, two ComponentStates, foreach over 300 rows, colour-mode and
+event-loop consumers, LocalStorage/Cookie/SessionStorage, client_state, background tasks, event chains, a second page
+and a dynamic route), a byte-identical 0.9.11.post1 copy, and a StateManagerDisk probe app with Starlette routes
+exposing the manager's disk contents, cache and write queue. #6181: per-substate providers are real in the compiled
+output and halve the on_load render count for the two substates an on_load touches (A/B/dual 2 vs 4 in dev); every
+other scenario was already isolated on 0.9.11.post1 and is unchanged; prod replays the suite with exactly half the
+dev counts (StrictMode). #7159: a debounced write flushes the LATEST of two different instances; a state never obtained
+from `get_state` is persisted; `modify_state` from an API route pushes live and persists; state survives a hot reload;
+the shutdown flush wrote at the SIGTERM second with a 30 s debounce. #6180: not contradicted but not observable — the
+colour-mode and event-loop probes recorded 0 extra renders on 0.9.11.post1 too because they sit behind memo boundaries;
+do not count #6180 as verified. #7132: FINDING-002 confirmed in one line (both a var and a computed var named
+`_get_was_touched` raise; both allowed on 0.9.11.post1). Issues: FINDING-023/024/025. Anomalies: `BaseStateToken` vs
+`StateToken` have different `cache_key`/`token_path()` shapes and using the wrong one silently writes a parallel state
+tree; `REFLEX_API_URL` did not reach the compiled bundle for `reflex run --frontend-only` (which also rejects
+`--backend-port`); SIGTERM to `reflex run` did not exit and SIGKILL orphaned the react-router process (FINDING-018);
+the vite dev server was SIGKILLed at startup twice (`exit code -9`) under concurrent load — environmental. Skipped:
+0.9.11.post1 prod baseline; redis half of #7132 (unreachable).
 
 _(other clusters pending)_

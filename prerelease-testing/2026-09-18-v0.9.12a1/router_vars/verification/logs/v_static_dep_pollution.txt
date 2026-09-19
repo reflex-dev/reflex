@@ -1,0 +1,3 @@
+BEFORE attach/_deps -> _static_deps = {None: ['router']}
+AFTER  class creation -> _static_deps = {None: ['router', 'rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']}
+same object as pre-attach cv? False
