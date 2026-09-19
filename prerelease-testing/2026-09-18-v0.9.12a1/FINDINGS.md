@@ -51,6 +51,9 @@ Index:
 - FINDING-005: any computed var reading `self.router` depends on all five router fields; a narrow `deps=[State.router.url]` cannot narrow; measured navigation delta −47% vs the PR's −67% (LOW, perf claim gap, #7068) — claimed by `router_vars`, verification pending
 - FINDING-006: a substate shadowing a parent's backend (underscore) var is still silently ignored — #7077's guard covers base vars only (LOW, pre-existing gap) — claimed by `router_vars`, verification pending
 - FINDING-007: PR #7136's description promises a `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` escape hatch that does not exist in the published packages or the release branch (LOW, PR/migration-doc mismatch, maintainer decision) — claimed by `ent_mcp_oidc`
+- FINDING-008: `rx.dropdown_menu.trigger` swallows its child button's `on_click` — the menu opens, the handler never runs; the other four Radix triggers compose correctly (MEDIUM, pre-existing, Radix pointerdown/dismissable-layer interaction) — claimed by `memo_aschild`, verification pending
+- FINDING-009: `rx.cond` renders both branches eagerly, so a render-time throw in the untaken branch fails the prod build at the prerender step (`Prerender: Request failed for /boom/: 500`, exit 1); dev only shows the error boundary (MEDIUM, pre-existing shape; prod half not baselined) — claimed by `memo_aschild`, verification pending
+- FINDING-010: `on_submit` form data carries id-keyed duplicates and stray entries (`the_form: banana`, `btn_submit: None`) besides the name-keyed fields (LOW, pre-existing) — claimed by `memo_aschild`, verification pending
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
 
@@ -142,6 +145,20 @@ Index:
   `git grep` over the release branch find nothing, while PR #7136's description tells users to set
   `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` for legacy handling until 1.0. Either ship the flag or fix the text.
 
+## FINDING-008 … FINDING-010 (`memo_aschild`, all pre-existing on 0.9.11.post1; claimed, details in `memo_aschild/NOTES.md`)
+
+- FINDING-008: `/triggers` page — `rx.button(on_click=TrigState.bump("dropdown"))` inside `rx.dropdown_menu.trigger`
+  opens the menu but never runs the handler; dialog/popover/tooltip/hover_card triggers run both. Identical
+  on 0.9.11.post1. Evidence: `memo_aschild/logs/dev_probe_evidence.log`, `shots/dev/dropdown.png`.
+- FINDING-009: `rx.cond(BoomState.boom, rx.box(rx.text(rx.Var("undefined_global_thing.nope"))), rx.text("not exploded"))`
+  with `boom=False` compiles to `jsx(Cond_comp_*, {}, <true>, <false>)`, both branches evaluated as arguments;
+  the untaken branch throws on first render. Dev: error boundary. Prod: React Router prerender returns 500
+  and `reflex run --env prod` exits 1. Evidence: `memo_aschild/logs/prod_server.trim.log`, `logs/prev_boom_probe.log`.
+  A user's typo in a `rx.cond` branch that is never shown makes the whole site unbuildable — worth a maintainer's eye
+  even though the shape is not new.
+- FINDING-010: `/forms` submit yields the nine name-keyed fields plus one entry per element id and
+  `'the_form': 'banana'` (the form's own id absorbing the select's hidden value). Byte-identical on 0.9.11.post1.
+
 ## Refuted / reclassified claims
 
 _(pending)_
@@ -191,5 +208,19 @@ browser login/reload/second tab/logout) with no page errors or 4xx/5xx. Found FI
 uncached var never re-sent) and FINDING-007. Behavior changes recorded as not-bugs: the MCP resource
 surface now lists `rx_router_*` as separate vars; MCP-originated events carry a real client token
 (improvement); uncached vars of untouched substates no longer ride along (the intended half of #6946).
+
+### `memo_aschild` (pass 29, anomaly 5, fail 0, skipped 1) — all seven changes verified, no regression
+Seven-page app (`memoaschild`), four Playwright drivers, a compile-timing harness; dev, prod and 0.9.11.post1
+baselines. #6850: Slot props/refs/class/style reach auto-memoized inputs under `rx.form.control(as_child=True)`
+and submitted form data now carries them (baseline drops `name`/`aria-describedby` and the values). #7176: a
+`@rx.memo` containing `rx.upload` crashes the WHOLE page on 0.9.11.post1 (`TypeError: useContext is not a
+function`, default error boundary takes over) and works on 0.9.12a1 in all three variants (memo, memo-in-memo,
+memo under a ComponentState) with real file delivery. #7130: no `Invalid DOM property` errors from the error
+boundary's SVG. #7133: no `force_match` without `match`. #6708: svg `defs`/gradients paint at top level, in
+`rx.foreach` and in a memo. #7122: 200 call sites sharing handlers dispatch the right args; throttle/debounce/
+stop_propagation do not leak; one handler on two triggers works. #7121: median python-side compile of a
+~500-component page 0.582 s → 0.493 s (~15%). Pre-existing defects recorded as FINDING-008/009/010. Note:
+`rx.form.control` only accepts TextFieldRoot/DebounceInput children (both versions), so the other controls
+were exercised as direct field children.
 
 _(other clusters pending)_
