@@ -156,5 +156,63 @@ Same for `get_delta()`. Neither `news/7068.breaking.md` (new base vars + shadowi
 - The worktree venv now additionally contains `reflex-enterprise==0.9.5` (installed `--no-deps`, as directed) and its runtime deps. Venv only; the git tree is clean.
 
 
-## REVIEW (independent adversarial reviewer — approved; text saved by the orchestrator from the agent's final response)
+## REVIEW (independent adversarial reviewer — APPROVED; verdict recorded by the orchestrator from the agent's structured result)
 
+- regression test seen to fail-then-pass by the reviewer: True
+- e2e repro re-run by the reviewer on the fixed tree: True
+- blocking issues: none
+- nits:
+  - Redundant second guard: reflex/istate/validation.py:22 adds a module global `_validated_state_base` and validation.py:107 re-checks `base_state is None` on every state class creation, although reflex_base/vars/base.py:4086 already guards on `_state_declaration_validator is not None` and the two are only ever set together in `_install_state_validation` (validation.py:122-130). A closure or `functools.partial(_validate_state_declaration, base_state)` installed by `_install_state_validation` would capture the base, drop the extra module global and remove a dead branch from the hot-ish path. CLAUDE.md: 'Don't repeat validation or be over-defensive'.
+  - No test for the new reflex-base extension point under the mirrored subpackage path `tests/units/reflex_base/vars/test_base.py` (CLAUDE.md's mirrored-tests rule). Defensible - `_set_state_declaration_validator` is only observable with `reflex` installed, and `tests/units/istate/test_validation.py` covers the behaviour end to end - but a one-line test that `BaseStateMeta.__new__` calls an installed validator would pin the contract from the package that owns it.
+  - Commit trailer deviates from the brief: both commits carry `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>` instead of the brief's `Claude Fable 5.1 <noreply@anthropic.com>`. The `Claude-Session:` trailer is correct. Re-trailer at cherry-pick time if the release tooling matches the exact string.
+  - Behaviour note worth one line in the changelog fragment or the `BaseStateMeta` docstring: because the validator now runs inside `BaseStateMeta.__new__`, names *injected* by a downstream metaclass's `__new__` are validated too (I confirmed a metaclass injecting `dirty_vars` is now rejected with `StateValueError`). This case was mechanically impossible before, so it is not a regression, and reflex-enterprise 0.9.5's injected names (`_access_token_data`, `_id_token`, `_refresh_token`, `_granted_scopes`) are unaffected - but it is the one semantic difference from #7136 and is currently only recorded in the fix report, not in anything a downstream reader sees.
+  - `news/+router-split-dict-shape.breaking.md` is a single 3-sentence paragraph (CLAUDE.md asks for 'a sentence or two'), and it sits in the repo-root `news/` although the var split itself is documented in `packages/reflex-base/news/7068.performance.md`. Both are defensible - the observable shape is `reflex`'s `state.dict()`/delta API - but the maintainer may want it trimmed or moved.
+
+### Reviewer summary
+
+APPROVED - no blocking issues. A maintainer would merge this as-is.
+
+NOTE ON REPORT.md: I did not append the "## REVIEW" section. This harness instructs subagents not to write report/summary .md files and to return findings as text instead (the same block the fix agent hit). Everything below is ready to paste under a `## REVIEW` heading in /home/user/reflex/prerelease-testing/2026-09-18-v0.9.12a1/fixes/f001/REPORT.md.
+
+== WHAT I VERIFIED MYSELF (not taken from the fix agent) ==
+
+1) DIFF REVIEW (git diff origin/main...HEAD, 7 files, +142/-37)
+Minimal and on-target: `_StateMeta` deleted (grep confirms zero remaining references anywhere in the repo, including .pyi and pyi_hashes.json), `BaseState` back to `class BaseState(EvenMoreBasicBaseState)` (reflex/state.py:629), the #7136 body moved verbatim into `_validate_state_declaration` (reflex/istate/validation.py:94-119) and invoked as the first statement of `BaseStateMeta.__new__` (packages/reflex-base/src/reflex_base/vars/base.py:4086-4087) - the same point in the sequence `_StateMeta.__new__` occupied. No drive-by refactors, no `isinstance` workarounds, Google-style docstrings on all three new functions, plain inline comments only (no section banners), tests at module level in the mirrored path `tests/units/istate/test_validation.py`, news fragments for both touched packages (`news/` + `packages/reflex-base/news/`). `pyi_hashes.json` correctly untouched - none of the three touched files appear in its 122 entries and no component signature changed. `Callable` is imported at runtime (collections.abc, base.py:19) and the module has `from __future__ import annotations`, so the new module-level annotation is safe on the declared `requires-python >=3.10`.
+Guard-equivalence: the predicate flip from `isinstance(base, _StateMeta)` to `issubclass(base, base_state)` selects the identical class set (`_StateMeta` was only ever the metaclass of `BaseState` and its descendants), and `BaseStateMeta.__new__` already calls `issubclass(base, EvenMoreBasicBaseState)` over the same `bases` two lines later, so the new `issubclass` introduces no new failure mode. The `base not in (...)` -> `base is not ...` change is identity-only and is justified now that user metaclasses (which may define `__eq__`) reach this code; `_linearize_bases` already does the same.
+Packaging skew risk checked and cleared: the fix splits across `reflex` and `reflex-base`, but published metadata pins `Requires-Dist: reflex-base==0.9.12a1` exactly (and pyproject.toml:390-393 declares a lockstep with `pin-exact = true`), so no install can pair a new `reflex` with a `reflex-base` lacking `_set_state_declaration_validator`.
+
+2) CHECKS RE-RUN BY ME FROM /home/user/wt/f001
+- `uv run ruff check .` -> All checks passed
+- `uv run ruff format --check .` -> 1628 files already formatted
+- `uv run pyright reflex tests` (full, in foreground) -> 0 errors, 0 warnings, 0 informations
+- `uv run pyright` on the four touched modules -> 0 errors
+- `uv run pytest tests/units --ignore=tests/units/reflex_cli` -> 9126 passed, 20 skipped (126s), run TWICE: once with `-p no:randomly` and once with the default random ordering. No flakes either time, including `test_state_manager_lock_warning_threshold_contend` which the fix agent saw flake.
+- `uv run pytest tests/units/istate tests/units/test_state.py` -> 368 passed; `uv run pytest tests/units/reflex_base` alone (no `reflex` import path) -> 489 passed, 1 skipped.
+
+3) REGRESSION TEST IS REAL - I SAW FAIL-THEN-PASS
+Single shell chain, source-only revert, restored in the same chain:
+  git checkout origin/main -- packages/reflex-base/src/reflex_base/vars/base.py reflex/istate/validation.py reflex/state.py
+  uv run pytest tests/units/istate/test_validation.py -q -p no:randomly
+  -> 4 failed, 34 passed; all four with `TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases` raised on the class statements at test_validation.py:235 and :252
+  git checkout HEAD -- <same three paths>  -> `git status --porcelain` empty, `git diff HEAD --stat` empty
+With the fix: `38 passed`. The 34 pre-existing #7136 tests are green on both sides.
+
+4) E2E CAMPAIGN REPRO RE-RUN BY ME (ports 8910, telemetry off)
+- `orch_probes/metaclass_probe.py` copied unmodified, three interpreters:
+    fixed worktree venv -> `type(rx.State) = reflex_base.vars.base.BaseStateMeta`, 3x OK
+    envs/shared (published 0.9.12a1) -> `type(rx.State) = reflex.istate.validation._StateMeta`, 2x FAIL (BaseStateMeta-derived, and the `mixin=True` variant)
+    envs/prev (0.9.11.post1) -> 3x OK
+  The fixed tree matches 0.9.11.post1 line for line.
+- reflex-enterprise 0.9.5 (installed --no-deps in the worktree venv): `import reflex_enterprise.auth.oidc.state` succeeds; `type(OIDCAuthState) is OIDCCookieMeta`; `OIDCCookieMeta.__bases__ == (BaseStateMeta,)`. Full `ent_import_probe.py` (only its `/envs/ent/` assert relaxed): 22/22 modules OK, 13/13 attributes OK, BAD = 0.
+- `ent_mcp_oidc/apps/mcpapp` (MCPPlugin-only) copied to scratch, `CI=true REFLEX_TELEMETRY_ENABLED=false .venv/bin/reflex run --backend-only --backend-port 8910` -> `GET /ping` 200 `"pong"`; 0 occurrences of `metaclass conflict` and 0 `Traceback` in the log. Campaign recorded 000 on published 0.9.12a1. Server killed by its own pid; `ports.py` shows no listeners left in 3900-3919/8900-8919.
+
+5) REGRESSION HUNT - I TRIED TO BREAK IT
+- Behaviour parity harness, 11 #7136 cases run on BOTH published 0.9.12a1 and the fixed tree, identical results on every one: plain mixin before/after the state, model mixin before/after the state, direct reserved var, handler shadowing a builtin, non-state model keeping its namespace, dataclass mixin, normal parent/child substate, `rx_router_url` shadowing (`BaseVarShadowsInheritedVarError`). The validation surface is unchanged.
+- Adversarial cases on the fixed tree: reserved name via a custom metaclass -> StateValueError; reserved name *injected* by a custom metaclass -> StateValueError (stricter, see nit 4); handler shadowing via custom metaclass -> EventHandlerShadowsBuiltInStateMethodError; non-state model on `BaseStateMeta` -> unvalidated, as intended; `rx.ComponentState` with a custom metaclass -> constructs and `.create()` works; `mixin=True` state mixin with a custom metaclass consumed by a real state -> `shared` in `User.vars`; a metaclass overriding `__eq__` to always return True -> still constructs correctly (the identity-comparison hardening earns its place); ABC mixin -> fine; `add_var` with a reserved name -> still rejected.
+- Runtime, not just construction: a `mixin=True` state with a `BaseStateMeta`-derived metaclass, consumed by a concrete substate - vars/backend_vars correct (`_injected` from the metaclass lands in `backend_vars`), delta correct, `_serialize()`/`_deserialize()` round-trip preserves values and class identity with the custom metaclass intact, and `pickle.loads(pickle.dumps(cls)) is cls`. That covers the redis/disk state-manager path.
+- Performance: the hook costs ~0.4 us per non-state `BaseStateMeta` class creation (14.20 vs 13.79 us/class, best of 3 x 4000) - and the fixed tree is actually *faster* than published 0.9.12a1 on both class-creation benchmarks (16.20 us/class non-state, 1730 vs 1620 us/class for a state subclass), since a metaclass layer was removed. Class creation is not a hot path either way.
+
+6) SECOND DELIVERABLE (`news/+router-split-dict-shape.breaking.md`)
+Claim independently verified on 0.9.11.post1 vs the fixed tree: `State(...).dict()` goes from `['router_rx_state_']` to the five `rx_router_{headers,page,route_id,session,url}_rx_state_` keys, and `get_delta()` shows the same five once the router vars are dirty (0.9.11.post1: `['router_rx_state_']`). I also confirmed no existing fragment covers it - `news/7068.breaking.md` documents the new base vars and the shadowing error, `news/7068.performance.md` and `packages/reflex-base/news/7068.performance.md` document the storage change, none tells a reader of a serialized state which keys to read. The gap is real and the wording is accurate.
+
+VERDICT: the root-cause analysis is correct (the conflict is raised by `__build_class__`/`_calculate_meta` before any metaclass code runs, so shape (b) from the brief is genuinely impossible, not merely unattractive), shape (a) is implemented minimally, the #7136 behaviour is bit-for-bit preserved, and the release blocker is gone on the real enterprise surface. Cherry-pickable as two clean commits (`6ab3edbc9`, `4290548fe`); worktree is clean at `4290548fe`.
