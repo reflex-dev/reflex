@@ -64,9 +64,9 @@ Index:
 - FINDING-008: `rx.dropdown_menu.trigger` swallows its child button's `on_click` — the menu opens, the handler never runs; the other four Radix triggers compose correctly (MEDIUM, pre-existing, Radix pointerdown/dismissable-layer interaction) — claimed by `memo_aschild`, verification pending
 - FINDING-009: `rx.cond` renders both branches eagerly, so a render-time throw in the untaken branch fails the prod build at the prerender step (`Prerender: Request failed for /boom/: 500`, exit 1); dev only shows the error boundary (MEDIUM, pre-existing shape; prod half not baselined) — claimed by `memo_aschild`, verification pending
 - FINDING-010: `on_submit` form data carries id-keyed duplicates and stray entries (`the_form: banana`, `btn_submit: None`) besides the name-keyed fields (LOW, pre-existing) — claimed by `memo_aschild`, verification pending
-- FINDING-012: the `rx.data_editor` overlay editor — the image-preview carousel that is the headline of #7081 — never opens in PROD when the "Built with Reflex" badge is on: the sticky-badge app-wrap nests the dataeditor's `#portal` wrap and drops it (HIGH impact on a headline feature, pre-existing nesting, trivially small to fix) — claimed by `components_bumps`, verification pending
-- FINDING-013: `rx.vars.use_id()` inside an `rx.foreach` body returns one identical id for every item — duplicate DOM ids, every `html_for` label targets the first row (MEDIUM, new API in #6708, by-design limitation of hook-per-compiled-component that the docs do not warn about) — claimed by `components_bumps`, verification pending
-- FINDING-014: the #7124 changelog's suggested path `reflex.components.datadisplay.code` fails in the `from reflex.components.datadisplay import code` spelling (`ImportError`); `import reflex.components.datadisplay.code` works (LOW, changelog wording) — claimed by `components_bumps`
+- FINDING-012: the `rx.data_editor` overlay editor — the image-preview carousel that is the headline of #7081 — never opens in PROD when the "Built with Reflex" badge is on: the sticky-badge app-wrap nests the dataeditor's `#portal` wrap and drops it (HIGH impact on a headline feature, pre-existing nesting, trivially small to fix) — **CONFIRMED** by the verifier on a fresh 12-line app with an A/B: `show_built_with_reflex=False` restores the portal and the carousel opens
+- FINDING-013: `rx.vars.use_id()` inside an `rx.foreach` body returns one identical id for every item — duplicate DOM ids, every `html_for` label targets the first row (LOW after verification — by-design limitation documented on `use_hook_var` but not on `use_id()` or its three docs pages; a docs fix) — **CONFIRMED** by the verifier
+- ~~FINDING-014~~: "the #7124 changelog's `reflex.components.datadisplay.code` path fails" — **REFUTED** by the verifier: the changelog names a module path, and `import reflex.components.datadisplay.code` works on both versions; only the `from … import code` spelling fails, and it never worked. Kept in the refuted list.
 - FINDING-015: #7156's headline scenario — a toast action or `rx.call_script` callback that triggers an upload handler — still fails: the handler slot is fixed but the payload's `filesById?.["u2"]` is only in scope inside the component that renders `rx.upload`, so the click throws `ReferenceError: filesById is not defined` and no upload starts (HIGH for the advertised scenario, pre-existing, changelog line misleading) — claimed by `event_loop`, verification pending
 - FINDING-016: a cancelled foreground `@rx.event(supersedes=True)` handler loses its pre-cancellation state writes under prod+redis (dev/memory keeps them) — the `yield` before the `await` is not flushed when `CancelledError` propagates (MEDIUM, dev/prod divergence; 0.9.11.post1+redis baseline not measured) — claimed by `event_loop`, verification pending
 - FINDING-017: after a SIGTERM that fails to stop `reflex run` (dev), or while the app module is broken, the backend port stays bound and accepts connections that are never answered — 0.9.11.post1 released the port and clients got an immediate refusal; a side effect of #7114 moving the listening socket into the granian supervisor (HIGH, regression) — claimed by `dev_server_cli`, verification pending
@@ -284,7 +284,19 @@ Index:
   Portal.create(id="portal")}` as an app wrap; `reflex/compiler/compiler.py:1356` adds `app_wraps[0, "StickyBadge"]`
   in prod when `show_built_with_reflex` is on; the badge wrap ends up the parent of the portal wrap and does not
   render its children, so the portal div never reaches the DOM. Setting `show_built_with_reflex=False` restores it.
-- Shape of fix: make the StickyBadge wrap forward its children (or register it so the portal stays a sibling).
+- Verifier (independent fresh app, `components_bumps/verification/`): prod default → `portal_exists=false`, badge
+  present, double-click yields no overlay and the quoted console error; same prod build with
+  `show_built_with_reflex=False` → `#portal` exists and the carousel opens ("1 of 2", arrows, dots). A real
+  0.9.11.post1 prod server fails identically with byte-identical `root.jsx` nesting, so not a regression — but
+  0.9.12a1 is the version that ships the carousel CSS (40 rules vs 0), i.e. #7081 ships styling for an overlay
+  production cannot open. Blast radius: every data_editor overlay cell editor in every default-config prod app;
+  `(-1, "DataEditorPortal")` is the only negative-priority app wrap in the train.
+- Root cause (verifier): `reflex/app.py:1574-1590` (`_app_root` sorts wraps descending and appends each
+  lower-priority wrap as a CHILD of the previous one) + `reflex/app.py:1639-1649` (`_setup_sticky_badge` registers
+  `app_wraps[0, "StickyBadge"]`) + `reflex/compiler/compiler.py:1347-1356` (badge added in prod when
+  `show_built_with_reflex` defaults True) + `reflex_components_core/core/sticky.py:90-107` (`StickyBadge.create`
+  accepts no `*children` and the compiled `memo(({}) => …)` never reads `props.children`).
+- Shape of fix: make the StickyBadge wrap forward its children (or register the portal so it stays a sibling).
   At minimum the #7081 docs need the `show_built_with_reflex=False` caveat.
 
 ## FINDING-004 … FINDING-007 (LOW; claimed, details in the cluster NOTES)
@@ -329,6 +341,11 @@ Index:
   additive unless `auto_deps=False`; the 0.9.11.post1 baseline was strictly coarser (everything depended on the
   single `router` var); and the −47% (whole websocket frame) vs −67% (router-only delta) numbers measure different
   things. Not a defect; at most a future optimisation of auto-dep tracking through composite Vars.
+- **FINDING-014 — "#7124's suggested import path fails" (`components_bumps`)**: refuted by the verifier. The
+  changelog says `reflex.components.datadisplay.code`, a module path; `import reflex.components.datadisplay.code`
+  (and `from reflex.components.datadisplay.code import CodeBlock`) work on both versions. The `from
+  reflex.components.datadisplay import code` spelling fails identically on 0.9.11.post1 because the lazy loader
+  lists attributes, not submodule names — optional loader polish, not a release item.
 
 ## Cluster summaries
 
