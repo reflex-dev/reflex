@@ -8,7 +8,11 @@ alone. Baselines against the previous stable, reflex 0.9.11.post1. Orchestrator 
 one verifier per cluster with claims (Opus 5, xhigh effort), two at a time.
 
 **Campaign status: IN PROGRESS** — this file is updated as clusters finish. Sections marked _(pending)_
-are not yet written.
+are not yet written. Process note: the fan-out was interrupted at ~03:00 UTC by the organisation's monthly
+spend limit after 10 of 15 explorers had finished; every adversarial verifier and the remaining five explorers
+(build_prod_export, render_ctx_statemgr, dev_server_cli, up_examples_c, db_optional_imports) died with the
+limit error. Both workflows were resumed from cache at 04:38 UTC once the limit reset (completed agents replay,
+the failed ones re-run), so "verification pending" below means the verifier had not yet run at the time of writing.
 
 ## Versions under test (all published on PyPI, verified with check_release_versions.py)
 
