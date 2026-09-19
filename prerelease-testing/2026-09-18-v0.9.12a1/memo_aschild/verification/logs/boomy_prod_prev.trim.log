@@ -1,0 +1,106 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+────────────────────────────── Initializing boomy ──────────────────────────────
+Info: Initializing the web directory.
+Success: Initialized boomy. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/prev/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 20/19 0:00:00
+Creating Production Build failed with exit code 1
+$ react-router build
+Using Vite Environment API
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 419 modules transformed.
+rendering chunks...
+computing gzip size...
+build/client/.vite/manifest.json                             5.02 kB │ gzip:  
+0.80 kB
+build/client/assets/__reflex_global_styles-NccINl-w.css    698.26 kB │ gzip: 
+84.10 kB
+build/client/assets/reflex-env-DF28-k4P.js                   0.30 kB │ gzip:  
+0.20 kB
+build/client/assets/_404_._index-BS4Ybev6.js                 0.41 kB │ gzip:  
+0.29 kB
+build/client/assets/_index-0B0NVw3N.js                       0.48 kB │ gzip:  
+0.35 kB
+build/client/assets/box-DaZ4_lnr.js                          0.55 kB │ gzip:  
+build/server/assets/reflex-env-DF28-k4P.js                 0.30 kB │ gzip:  0.20
+kB
+build/server/index.js                                     47.69 kB │ gzip: 13.76
+kB
+
+✓ built in 435ms
+Prerender (html): / -> build/client/index.html
+Prerender (html): /boommemo -> build/client/boommemo/index.html
+Prerender (html): /boomnull -> build/client/boomnull/index.html
+ReferenceError: undefined_global_thing is not defined
+    at Component$2 
+(file:///tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scr
+atchpad/apps/verify_memo_aschild/boomy_prev/.web/build/server/index.js:29:4241)
+    at renderWithHooks 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_memo_aschild/boomy_prev/.web/node_modules/react-dom/cjs/react-dom-s
+erver.node.production.js:4647:18)
+    at renderElement 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_memo_aschild/boomy_prev/.web/node_modules/react-dom/cjs/react-dom-s
+erver.node.production.js:4785:14)
+    at retryNode 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_memo_aschild/boomy_prev/.web/node_modules/react-dom/cjs/react-dom-s
+erver.node.production.js:5503:16)
+    at renderNodeDestructive 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_memo_aschild/boomy_prev/.web/node_modules/react-dom/cjs/react-dom-s
+erver.node.production.js:5297:7)
+    at finishFunctionComponent 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_memo_aschild/boomy_prev/.web/node_modules/react-dom/cjs/react-dom-s
+erver.node.production.js:4688:9)
+    at renderElement 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_memo_aschild/boomy_prev/.web/node_modules/react-dom/cjs/react-dom-s
+erver.node.production.js:4787:7)
+    at retryNode 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_memo_aschild/boomy_prev/.web/node_modules/react-dom/cjs/react-dom-s
+erver.node.production.js:5503:16)
+    at renderNodeDestructive 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_memo_aschild/boomy_prev/.web/node_modules/react-dom/cjs/react-dom-s
+erver.node.production.js:5297:7)
+    at renderElement 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_memo_aschild/boomy_prev/.web/node_modules/react-dom/cjs/react-dom-s
+erver.node.production.js:5230:11)
+[Error: Unexpected Server Error]
+Error: Prerender: Request failed for /boomvar/: Prerender (html): Received a 500
+status code from `entry.server.tsx` while prerendering the `/boomvar/` path.
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta 
+content="width=device-width, initial-scale=1" name="viewport"/><link 
+rel="modulepreload" href="/assets/manifest-2ace452b.js"/><link 
+rel="modulepreload" href="/assets/entry.client-DRZhgXsa.js"/><link 
+rel="modulepreload" href="/assets/components-Blt2PyNA.js"/><link 
+rel="modulepreload" href="/assets/react-dom-BRtR7_Pd.js"/><link 
+rel="modulepreload" href="/assets/errorBoundaries-Cdg4mEfL.js"/><link 
+rel="modulepreload" href="/assets/root-CnIDIA0i.js"/><link rel="modulepreload" 
+href="/assets/container-BWVDKNPd.js"/><link rel="modulepreload" 

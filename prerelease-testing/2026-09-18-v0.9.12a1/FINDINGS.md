@@ -573,8 +573,11 @@ react-router 8.4.0; `reflex init` on snakegame exited 0 with no migration warnin
 confirmed #6946 from the websocket frames, `rx.upload` inside `@rx.memo` (#7176), `client_state`, two
 `ComponentState`s, an event chain into a background task, `rx.foreach`/`rx.cond`. Issues (both pre-existing or
 cosmetic): the `upload` example's `@rx.var` file list never refreshes (cached var with no deps — an example bug on
-both versions); the generated `package.json` pins `"mergician": "v2.0.2"` with a leading `v` unlike every other
-dependency (new in this train, bun resolves it, cosmetic). Notes: a cached `@rx.var` twin is still re-sent on every
+both versions — verifier confirmed with a fresh-context control and validated the `cache=False` fix); the generated
+`package.json` pins `"mergician": "v2.0.2"` with a leading `v` unlike every other dependency (new in this train —
+verifier traced it to the literal at `reflex_base/constants/installer.py:151`; the string is only rendered into
+`bun add mergician@v2.0.2`, bun resolves 2.0.2 with a recorded sha512 and the lockfile stays frozen-consistent, so
+cosmetic; note the entry is written by the first run's install pass, not by `reflex init`). Notes: a cached `@rx.var` twin is still re-sent on every
 delta when its dependency changes even if its value did not — matches #6946's `cache=False`-only wording but is
 easy to misread; killing `reflex run` orphans the react-router dev process and keeps the frontend port bound (both
 versions), which silently served a previous app in the agent's first pass — `scripts/run_app.sh` now sweeps ports.

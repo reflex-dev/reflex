@@ -1,0 +1,16 @@
+ROUTE /boomvar: #ok_text count=0
+  body: An error occurred while rendering this page. |  | This is an error with the application itself. Refreshing the page might help. |  | ReferenceError: undefined_global_thing is not defined | ReferenceError: undefined_global_thing is not defined |     at Component (http://localhost:3644/app/routes/[boomvar]._index
+  errors(1): [error] %o
+
+%s
+
+%s
+ ReferenceError: undefined_global_thing is not defined
+    at Component (http://localhost:3644/app/routes/[boomvar]._index.jsx?import:24:6)
+    at Object.react_s
+ROUTE /boommemo: #ok_text count=1
+  body: boommemo |  | not exploded
+  errors(0): 
+ROUTE /boomnull: #ok_text count=1
+  body: boomnull |  | not exploded
+  errors(0): 

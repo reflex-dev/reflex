@@ -1,0 +1,33 @@
+### reflex 0.9.11.post1 METADATA (previous stable) — same floor-only shape
+Requires-Dist: reflex-base==0.9.11.post1
+Requires-Dist: reflex-components-code>=0.9.0
+Requires-Dist: reflex-components-core>=0.9.6
+Requires-Dist: reflex-components-dataeditor>=0.9.0
+Requires-Dist: reflex-components-gridjs>=0.9.0
+Requires-Dist: reflex-components-lucide>=0.9.0
+Requires-Dist: reflex-components-markdown>=0.9.0
+Requires-Dist: reflex-components-moment>=0.9.4
+Requires-Dist: reflex-components-plotly>=0.9.0
+Requires-Dist: reflex-components-radix>=0.9.9
+Requires-Dist: reflex-components-react-player>=0.9.0
+Requires-Dist: reflex-components-recharts>=0.9.0
+Requires-Dist: reflex-components-sonner>=0.9.0
+Requires-Dist: reflex-hosting-cli>=0.1.71
+Requires-Dist: reflex-base[pydantic]; extra == 'pydantic'
+
+### reflex 0.9.12a1 METADATA
+Requires-Dist: reflex-base==0.9.12a1
+Requires-Dist: reflex-components-code>=0.9.0
+Requires-Dist: reflex-components-core>=0.9.6
+Requires-Dist: reflex-components-dataeditor>=0.9.0
+Requires-Dist: reflex-components-gridjs>=0.9.0
+Requires-Dist: reflex-components-lucide>=0.9.0
+Requires-Dist: reflex-components-markdown>=0.9.0
+Requires-Dist: reflex-components-moment>=0.9.4
+Requires-Dist: reflex-components-plotly>=0.9.0
+Requires-Dist: reflex-components-radix>=0.9.9
+Requires-Dist: reflex-components-react-player>=0.9.0
+Requires-Dist: reflex-components-recharts>=0.9.0
+Requires-Dist: reflex-components-sonner>=0.9.0
+Requires-Dist: reflex-hosting-cli>=0.1.71
+Requires-Dist: reflex-base[pydantic]; extra == 'pydantic'

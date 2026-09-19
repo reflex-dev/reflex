@@ -113,7 +113,7 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 - #6946 polish: every uncached var is re-sent once right after hydrate; dict key order defeats the dedupe; the
   `_UNKEYABLE_VALUE` branch is unreachable (`event_loop`).
 - Generated `package.json` pins `"mergician": "v2.0.2"` (leading `v`; every other pin is bare semver) — cosmetic,
-  new in #6850 (`up_examples_a`).
+  new in #6850; literal at `packages/reflex-base/src/reflex_base/constants/installer.py:151` (`up_examples_a`, CONFIRMED).
 - `reflex db init` without the db extra prints a raw click traceback instead of the guided message; `rx.asession()`
   with only `db_url` configured fails with `No async database url configured` (silently inside background tasks) —
   both pre-existing (`db_optional_imports`).
