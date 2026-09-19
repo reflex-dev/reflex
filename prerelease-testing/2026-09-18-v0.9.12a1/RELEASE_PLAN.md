@@ -51,6 +51,12 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 ### Trivially small / significant impact
 
+- **FINDING-012 — `rx.data_editor`'s image-preview overlay (the #7081 headline) cannot open in prod while the
+  default "Built with Reflex" badge is on; the badge app-wrap swallows the `#portal` div** (HIGH impact,
+  pre-existing nesting; `components_bumps`, verification pending). Arm: significant user impact on a feature this
+  release advertises, and the fix (forward children in the StickyBadge wrap / keep the portal a sibling) is
+  small. Minimum: document `show_built_with_reflex=False` for image cells until fixed.
+
 - **FINDING-004 — `deps=["router"]` deprecation warning is dead code** (LOW, `router_vars`, pending
   verification). Arm: trivially small — the changelog promises the warning; the guard at
   `reflex/state.py:1205-1219` can never be true. Either emit the warning from where the string dep is
@@ -60,6 +66,12 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 ### reflex-dev/reflex
 
+- FINDING-013 — `rx.vars.use_id()` in an `rx.foreach` body yields one id for every item (new API, #6708):
+  either derive a per-iteration id or document that `use_id` is per compiled component (`components_bumps`).
+- FINDING-014 — #7124 changelog: the `reflex.components.datadisplay.code` path only works as a module import,
+  not `from reflex.components.datadisplay import code` (`components_bumps`).
+- `Axis.tick_formatter` accepts only a literal JS string; a `FunctionStringVar` raises `TypeError` (pre-existing,
+  `components_bumps`).
 - FINDING-005 — computed vars reading `self.router` depend on all five router fields; narrow `deps=` cannot
   narrow; navigation delta −47% measured vs −67% claimed (LOW, perf gap, `router_vars`).
 - FINDING-006 — backend (underscore) var shadowing across substates still silently ignored (LOW,
