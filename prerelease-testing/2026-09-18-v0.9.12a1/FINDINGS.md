@@ -79,7 +79,7 @@ Index:
 - FINDING-024: `app.modify_state("<client token>")` with the bare token raises `ValueError: Invalid path: ('',)` from `BaseStateToken.from_legacy_token` — the deprecated string form is broken for its most obvious argument (MEDIUM, pre-existing) — claimed by `render_ctx_statemgr`, verification pending
 - FINDING-025: `reflex run` deletes the whole `.states/` directory at startup in `--env prod` as well as dev, whatever `REFLEX_STATE_MANAGER_MODE` is, so disk-backed state never survives a restart (LOW, pre-existing, intentional-looking `reset_disk_state_manager()` call) — claimed by `render_ctx_statemgr`
 - FINDING-026: the #7083 changelog understates the behavior change — on a bare install a plain `class Item(rx.Model)` (no `table=True`) now fails at class-definition time with the guided ImportError, where 0.9.11.post1 let it define and failed only at instantiation; intended per the PR discussion, but the entry cites only the `table=True` form (LOW, changelog wording) — claimed by `db_optional_imports`
-- FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package; currently masked by FINDING-001) — claimed by `ent_map_dnd_flow_mantine`, verification pending
+- FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package) — **CONFIRMED** by the verifier in-process AND over real HTTP (`/_reflex/retrieve_state` and the event endpoint's ndjson delta return the server-side `client_token` on 0.9.12a1; blanked on 0.9.11.post1)
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
 
@@ -128,8 +128,11 @@ Index:
   at ..." and keeps running (pre-existing, both versions) — which makes this failure look like a hang.
 - Verifier (`ent_mcp_oidc/verification/2026-09-19-adversarial/`): reproduced the one-line import, the MCPPlugin-only
   app (`/ping` 000 on 0.9.12a1 vs 200 on 0.9.11.post1) and the byte-for-byte traceback chain on its own ports;
-  hash-verified the shared venv against the wheel RECORDs (248 files, 0 mismatches). Two facts every refutation ran
-  into: **reflex-enterprise 0.9.5 declares `reflex[db]>=0.9.6` with no upper bound, so a routine `pip install -U
+  hash-verified the shared venv against the wheel RECORDs (248 files, 0 mismatches). The `ent_map_dnd_flow_mantine`
+  verifier adds the cleanest proof of mechanism: monkeypatching only `reflex.vars.BaseStateMeta = type(rx.State)` in
+  `rxconfig.py` makes the unmodified tickets demo start cleanly on 0.9.12a1, and captured the user-visible symptom
+  (page loads, "Cannot connect to server: websocket error", repeated `ERR_CONNECTION_REFUSED`). Two facts every
+  refutation ran into: **reflex-enterprise 0.9.5 declares `reflex[db]>=0.9.6` with no upper bound, so a routine `pip install -U
   reflex` after 0.9.12 ships bricks every deployed enterprise auth/MCP/REST app**; and `BaseStateMeta` is exported in
   `reflex_base.vars.__all__`, so "enterprise relied on a private API" is not a defence.
 - Suggested fix shape (for the maintainers, not applied here): perform the #7136 validation inside
@@ -182,9 +185,17 @@ Index:
   recomputation (same value) is deduped away. Any downstream delta filter, or any delivery failure between
   compute and emit, has the same exposure.
 
-## FINDING-011: reflex-enterprise REST session-token redaction is a no-op after the router split (HIGH, security-relevant, regression — claimed, verification pending)
+## FINDING-011: reflex-enterprise REST session-token redaction is a no-op after the router split (HIGH, security-relevant, regression — CONFIRMED)
 
-- Cluster: `ent_map_dnd_flow_mantine` | Regression vs 0.9.11.post1: yes (probe run on both) | Verifier: pending
+- Cluster: `ent_map_dnd_flow_mantine` | Regression vs 0.9.11.post1: **yes** (probe and HTTP run on both) | Verifier:
+  CONFIRMED — and, contrary to the explorer's assumption, reproducible over HTTP: with only the FINDING-001 metaclass
+  shim in `rxconfig.py`, the unmodified `tickets` demo runs on 0.9.12a1 and `verification/v_leak_http.py` (anonymous
+  app bearer → `POST /_reflex/retrieve_state`, `POST /_reflex/event/<state>/seed`) shows `rx_router_session.client_token
+  = 95ddb344-…` in BOTH the retrieve_state body and the ndjson event delta — a server-side session identifier the
+  caller never presented (not its bearer). 0.9.11.post1: the same responses carry `router` with `client_token` blanked.
+  Root-state keys on 0.9.12a1 are exactly `is_hydrated` + the five `rx_router_*`; there is no `router` key for
+  `redact_router_session()` (`event_handler_api.py:733`) to find, so redaction silently no-ops on the REST, MCP and
+  agent-delta surfaces.
 - Repro: `ent_map_dnd_flow_mantine/scripts/probe_router_redact.py` from a neutral cwd on the `ent` and `entprev`
   venvs: it builds router data exactly as `EventHandlerAPIPlugin` does (`router_data_for_token(...)`, then
   `state.router = RouterData.from_router_data(...)`), runs rxe's `redact_router_session()` over `state.dict()`

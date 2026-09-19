@@ -1,0 +1,17 @@
+reflex module: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/__init__.py
+reflex-base: 0.9.11.post1
+RESULT: reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found.
+  __cause__: None
+  __context__: None
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/scripts/probe_masked_attrerror.py", line 43, in <module>
+    v._get_all_var_data()
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2128, in _get_all_var_data
+    return self._cached_get_all_var_data
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2120, in __getattr__
+    return next_class.__getattr__(self, name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1471, in __getattr__
+    raise VarAttributeError(msg)
+reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_get_all_var_data not found.
