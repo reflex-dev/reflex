@@ -378,3 +378,119 @@ the tables above. Noted so nobody re-derives the matrix from `ws_frames.txt` alo
 Servers on 3100/3101/3102 and 8100/8101, the redis on 8115 and all Chromium processes were killed;
 `ss -ltnp` over 3100-3119 / 8100-8119 is clear. `.web/`, `node_modules/` and `.states/` are
 excluded from this directory (the app rebuilds them on first `reflex run`).
+
+## VERIFICATION
+
+Independent adversarial verification (second agent, 2026-09-19). Worked from this NOTES.md, the
+scripts/ and routerlab/ sources in this directory and the claimed-issue list only — no access to
+the explorer's conversation. Everything was run from the neutral dir
+`$SB/apps/verify_router_vars/` (`SB=/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad`)
+with the prebuilt PyPI-only venvs; the checkout was never installed nor used as a cwd. No server
+was started for this pass (all three issues are class-creation-time behaviour); ports 3600-3619 /
+8600-8619 stayed unused.
+
+Versions (`uv pip freeze --python $SB/envs/shared/bin/python | grep reflex`):
+`reflex==0.9.12a1`, `reflex-base==0.9.12a1`, `-components-code==0.9.6a1`, `-core==0.9.10a1`,
+`-dataeditor==0.9.3a1`, `-gridjs==0.9.2a1`, `-lucide==1.0.4`, `-markdown==0.9.4a1`,
+`-moment==0.9.4`, `-plotly==0.9.7a1`, `-radix==0.9.10a1`, `-react-player==0.9.2`,
+`-recharts==0.9.4a1`, `-sonner==0.9.4a1`, `-hosting-cli==0.1.72`.
+Baseline: `$SB/envs/prev` = `reflex==0.9.11.post1`.
+
+New scripts and output live in `verification/scripts/` and `verification/logs/`.
+
+### Issue 1 — `deps=["router"]` deprecation never fires: **CONFIRMED, but the stated root cause and
+the "dead code" framing are wrong**
+
+Reproduced as written:
+
+```
+cd $SB/apps/verify_router_vars && $SB/envs/shared/bin/python scripts/deps_legacy.py
+```
+→ `verification/logs/deps_legacy_new.txt`: no warning; deps are the five `rx_router_*` plus
+`router`, exactly as claimed.
+
+Refutation attempt turned up the real rule (`verification/scripts/v_deps_legacy_matrix.py`,
+`verification/logs/v_deps_legacy_matrix.txt`) — the guard is **not** dead, it fires in 3 of 4
+legacy-string cases:
+
+| declaration | body reads `self.router`? | warning |
+|---|---|---|
+| `@rx.var(deps=["router"], auto_deps=False)` | yes | **fires** |
+| `@rx.var(deps=["router"], auto_deps=False)` | no | **fires** |
+| `@rx.var(deps=["router"])` (auto_deps default) | no | **fires** |
+| `@rx.var(deps=["router"])` (auto_deps default) | **yes** | **silent** ← the reported case |
+
+So the warning is lost precisely when the var body also touches the router — which is the normal
+way anybody writes this (and what `routerlab.State.cv_deps_legacy_string` does). The framework's
+own test `tests/units/test_state.py::test_router_var_dep_does_not_warn_for_the_var_form` only
+covers `auto_deps=False`, which is why CI is green.
+
+Corrected root cause (`verification/scripts/v_static_dep_pollution.py`): at declaration the static
+deps are exactly `{None: {'router'}}`; `ComputedVar._deps()`
+(`reflex_base/vars/base.py:2876-2895`) seeds `DependencyTracker` with **the same set objects** it
+took from `_static_deps`, so the auto-detected `rx_router_*` names are merged into the static set
+in place. By the time `reflex/state.py:1205-1221` runs `dvar_set.isdisjoint(constants.ROUTER_VARS)`
+the legacy string is indistinguishable from the Var form. A fix must flag the legacy string where
+it is parsed (`_add_static_dep`, the `isinstance(dep, str)` branch) — reading `_static_deps` after
+`_deps()` has run is already too late, because that dict has been polluted.
+
+Not a regression (0.9.11.post1 has no such deprecation at all; its `_deps` for the same
+declaration is just `{'router'}` — `verification/logs/deps_legacy_prev.txt`). Severity low:
+missing migration signal only, the var stays reactive.
+
+Note on the NOTES.md wording: "the other deprecations in the same import (`@rx.memo` without
+annotations, `RouterData.page`) do print" was **not** reproducible on a bare
+`python -c "import routerlab.routerlab"` — that import prints only the `rx._x` experimental notice
+and the SitemapPlugin notice. Those other deprecations fire when pages are rendered/compiled, not
+at import. The main observation (no warning for `cv_deps_legacy_string`) does hold, and the
+per-case matrix above is the stronger evidence that warnings are not globally suppressed.
+
+### Issue 2 — router computed vars invalidated by all five fields: **measurement accurate, but
+REFUTED as a defect**
+
+`scripts/deps_probe.py` reproduces exactly (`verification/logs/deps_probe_new.txt`).
+
+Three refutations:
+
+1. **Narrow deps *can* narrow.** `verification/scripts/v_narrow_deps.py`:
+   `@rx.var(deps=[rx.State.router.url], auto_deps=False)` resolves to
+   `{'reflex___state____state': ['rx_router_url']}` and the root state's `_var_dependencies`
+   registers it under `rx_router_url` only — `rx_router_headers/page/route_id/session` invalidate
+   nothing. Same for `deps=[State.router.session]`. `State.router.url._get_all_var_data()
+   .field_dependencies` is `{'reflex___state____state': ('rx_router_url',)}`, i.e. the per-field
+   Vars are properly narrow. The deps_probe script simply omitted `auto_deps=False`, and `deps=`
+   being *additive* unless `auto_deps=False` is long-standing reflex behaviour, not new in 0.9.12.
+2. **Not a regression, and strictly better than before.** On 0.9.11.post1 the same probe prints
+   `['router']` for every var including the explicit ones (`verification/logs/deps_probe_prev.txt`)
+   — one var, so any router change invalidated every router-reading computed var and no narrowing
+   was possible at all.
+3. **No broken promise.** Nothing in `news/7068.*` claims per-field *computed-var* invalidation;
+   the −67% figure is the router payload, and this cluster's own numbers confirm the router portion
+   of the delta did shrink.
+
+What remains is a real but inherent limitation of *auto* dependency detection: `self.router` is the
+composed switchboard Var whose `field_dependencies` names all five, so any attribute read through
+it depends on all five (confirmed in the routerlab app itself: `cv_headers` / `cv_session` carry all
+five, which is why the recorded `logs/matrix_dev.txt` step 03 re-sends them). Follow-up
+optimisation at most, not a release issue.
+
+### Issue 3 — backend (underscore) var shadowing silently ignored: **CONFIRMED (pre-existing, low)**
+
+`scripts/backend_shadow.py` reproduces on both versions (`verification/logs/backend_shadow_new.txt`,
+`..._prev.txt`). Characterised further in a real state tree
+(`verification/scripts/v_backend_shadow_tree.py`): with `P._priv: int = 1` and `C(P)._priv:
+str = "shadow"`, `c._priv` reads `1` (the child's declared default is discarded) and `c._priv = x`
+writes through to `P` — identical output on 0.9.12a1 and 0.9.11.post1
+(`verification/logs/v_backend_shadow_tree_*.txt`). Same failure mode as issue #7074.
+
+The exclusion is explicit, not an oversight of collection: `_check_overridden_inherited_vars`
+(`reflex/state.py:1316-1350`) skips any field whose `name.startswith("_")` at **state.py:1335**.
+A fix must restrict itself to names in `cls.inherited_backend_vars`, since that skip also covers
+private non-var fields and framework internals. Alternatively narrow `news/7077.breaking.md`, which
+as written ("a substate var that shadows a var inherited from a parent state") reads as covering
+backend vars too. Not a regression, not a blocker.
+
+### Housekeeping
+
+No servers, browsers or redis started by this pass; nothing to kill. Nothing was written outside
+this directory and `$SB/apps/verify_router_vars/`.

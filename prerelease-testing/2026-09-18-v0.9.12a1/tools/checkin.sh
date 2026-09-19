@@ -6,7 +6,7 @@ for j in $WF/*/journal.jsonl; do
   [ -f "$j" ] || continue
   echo "--- $(basename $(dirname $j)): $(grep -c '"type":"started"' $j) started, $(grep -c '"type":"result"' $j) results, $(grep -c '"type":"error"' $j) errors"
   jq -r --slurpfile all $j 'select(.type=="result") | .agentId as $id | "  done  " + (([$all[] | select(.type=="started" and .agentId==$id) | .label][0]) // "?") + "  tests=" + ((.result.tests // []) | length | tostring) + " issues=" + ((.result.issues // []) | length | tostring) + " verdicts=" + ((.result.verdicts // []) | length | tostring)' $j 2>/dev/null
-  comm -23 <(jq -r 'select(.type=="started") | .agentId + " " + .label' $j | sort) <(jq -r --slurpfile all $j 'select(.type=="result" or .type=="error" or .type=="skipped") | .agentId as $id | .agentId + " " + (([$all[] | select(.type=="started" and .agentId==$id) | .label][0]) // "?")' $j | sort) | cut -d' ' -f2- | sed 's/^/  running  /'
+  comm -23 <(jq -r 'select(.type=="started") | .agentId + " " + .label' $j | sort) <(jq -r --slurpfile all $j 'select(.type=="result" or .type=="error" or .type=="skipped" or .type=="failed") | .agentId as $id | .agentId + " " + (([$all[] | select(.type=="started" and .agentId==$id) | .label][0]) // "?")' $j | sort) | cut -d' ' -f2- | sed 's/^/  running  /'
 done
 echo "--- live servers (pid etimes rss cmd port):"
 python3 /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/bin/ports.py | sed 's/^/  /'
