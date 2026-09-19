@@ -623,8 +623,14 @@ def test_set_instance_bounds_error(status_code: int, detail: str):
     assert detail in result
 
 
-def test_validate_token_sends_a_fresh_request_id(mocker: MockerFixture):
-    """Each validation is traceable by its own request id."""
+def test_validate_token_names_the_product_it_logs_in_through(
+    mocker: MockerFixture,
+):
+    """The identity call records which product the login came from.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
     client = MagicMock()
     client.__enter__.return_value = client
     client.auth.me.return_value = _client(tier="Enterprise").me

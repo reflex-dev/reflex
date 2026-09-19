@@ -143,9 +143,11 @@ def test_create_project_with_json_output(mocker: MockFixture):
     result = runner.invoke(hosting_cli, ["project", "create", "test_project", "--json"])
 
     assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == [
-        {"id": str(_PROJECT_ID), "name": "test_project"}
-    ]
+    # One project, so one object -- the listings are what emit arrays.
+    assert json.loads(result.stdout) == {
+        "id": str(_PROJECT_ID),
+        "name": "test_project",
+    }
 
 
 def test_create_project_duplicate_name(
@@ -684,3 +686,25 @@ def test_get_selected_project_json_output_when_the_lookup_fails(mocker: MockFixt
     assert document["project_id"] == "proj1"
     assert document["name"] is None
     assert document["error"]
+
+
+def test_get_selected_project_reports_an_expired_token_as_one(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """A token that will not authenticate says so, rather than "lookup failed".
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
+    client = _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.get_selected_project", return_value="proj1")
+    client.api.projects.get.side_effect = api_error(401, "expired")
+
+    result = runner.invoke(hosting_cli, ["project", "selected", "--json"])
+
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    assert _log_messages(caplog, logging.ERROR) == [
+        "You are not authenticated. Run `reflex login` to authenticate."
+    ]

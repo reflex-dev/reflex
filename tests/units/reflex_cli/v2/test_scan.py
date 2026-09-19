@@ -17,6 +17,7 @@ from reflex_build_sdk import (
 )
 from reflex_build_sdk.types import SecurityReviewResult, SecurityViolation
 from reflex_cli.v2.deployments import hosting_cli
+from reflex_cli.v2.scan import _POLL_INTERVAL_SECONDS, _POLL_TIMEOUT_SECONDS
 
 from .utils import api_error, as_click_command, fake_client
 
@@ -210,7 +211,10 @@ def test_scan_waits_for_the_review(mocker: MockFixture, tmp_path: Path):
 
     assert result.exit_code == 0, result.output
     # Polling is the SDK's; the CLI states the window it is willing to wait.
-    assert client.api.security_reviews.wait.call_args.kwargs["timeout"] > 0
+    assert client.api.security_reviews.wait.call_args.kwargs == {
+        "timeout": _POLL_TIMEOUT_SECONDS,
+        "poll_interval": _POLL_INTERVAL_SECONDS,
+    }
 
 
 def test_scan_server_error(

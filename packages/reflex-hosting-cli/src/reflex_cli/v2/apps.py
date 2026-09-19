@@ -12,7 +12,6 @@ from reflex_cli.core.config import Config
 from reflex_cli.utils import console, log
 from reflex_cli.utils.exceptions import (
     ConfigInvalidFieldValueError,
-    NotAuthenticatedError,
     ResponseError,
     ScaleAppError,
     ScaleParamError,
@@ -634,7 +633,6 @@ def delete_app(
 )
 @json_option
 @interactive_option
-@click.option("--cursor", type=str, help="The cursor for pagination.")
 @click.option("--pretty", type=bool, help="Use pretty printing for logs.")
 @click.option(
     "--follow",
@@ -654,7 +652,6 @@ def app_logs(
     loglevel: str,
     as_json: bool,
     interactive: bool,
-    cursor: str | None = None,
     pretty: bool = False,
     follow: bool = False,
 ):
@@ -731,8 +728,13 @@ def app_logs(
             entry = hosting.as_json_document(record)
             logger.info(pprint.pformat(entry, indent=2) if pretty else entry)
             printed += 1
-            if not following or printed % _LOGS_PAGE_SIZE:
+            if printed % _LOGS_PAGE_SIZE:
                 continue
+            # A page at a time, as before: the SDK would otherwise walk the
+            # whole window, which is not what an unattended `apps logs` asked
+            # for.
+            if not following:
+                return
             from rich.prompt import Prompt
 
             prompt = Prompt.ask(
@@ -768,6 +770,8 @@ def list_apps(
     interactive: bool,
 ):
     """List all the hosted deployments of the authenticated user. Will exit if unable to list deployments."""
+    from reflex_build_sdk import AuthenticationError
+
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
@@ -797,7 +801,7 @@ def list_apps(
             hosting.as_json_document(app)
             for app in authenticated_client.api.apps.list(project_id=project_id)
         ]
-    except NotAuthenticatedError as err:
+    except AuthenticationError as err:
         logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
     except Exception as ex:
@@ -844,6 +848,8 @@ def scale_app(
     interactive: bool,
 ):
     """Scale an application by changing the VM type or adding/removing regions."""
+    from reflex_build_sdk import AuthenticationError
+
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
@@ -912,7 +918,7 @@ def scale_app(
             return
         logger.log(log.SUCCESS, "Successfully scaled the app.")
 
-    except NotAuthenticatedError as err:
+    except AuthenticationError as err:
         logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
     except (

@@ -540,6 +540,14 @@ def _request_manifest(client: hosting.AuthenticatedClient) -> tuple[str, str]:
         logger.error(f"Failed to reach Reflex: {ex}")
         raise click.exceptions.Exit(1) from ex
 
+    for field, value in (
+        ("dockerfile", manifest.dockerfile),
+        ("deploy_command", manifest.deploy_command),
+    ):
+        if not value.strip():
+            logger.error(f"Reflex returned an empty {field!r}.")
+            raise click.exceptions.Exit(1)
+
     return manifest.dockerfile, manifest.deploy_command
 
 

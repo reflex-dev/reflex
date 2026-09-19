@@ -84,6 +84,42 @@ def logout(
     logger.log(log.SUCCESS, "Successfully logged out.")
 
 
+def _create_app(
+    client: AuthenticatedClient,
+    app_name: str,
+    project_id: str | None,
+    description: str | None,
+) -> App:
+    """Create the app this deploy is for, reporting a refusal rather than raising.
+
+    Args:
+        client: The authenticated client.
+        app_name: The name to create the app under.
+        project_id: The project to create it in, or None for the default one.
+        description: A description for the app, if one was given.
+
+    Returns:
+        The new app.
+
+    Raises:
+        Exit: If the API refused to create it.
+
+    """
+    from reflex_build_sdk import ReflexBuildError
+
+    from reflex_cli.utils import hosting
+
+    try:
+        app = client.api.apps.create(
+            app_name, project_id=project_id, description=description
+        )
+    except ReflexBuildError as ex:
+        logger.error(f"could not create the app: {hosting.error_message(ex)}")
+        raise click.exceptions.Exit(1) from ex
+    logger.info(f"created app. \nName: {app.name} \nId: {app.id}")
+    return app
+
+
 def _project_name(project_id: str, client: AuthenticatedClient) -> str | None:
     """Look up a project's name for a prompt, best effort.
 
@@ -806,20 +842,18 @@ def deploy(
                 description = console.ask(
                     "App Description (Enter to skip)",
                 )
-            app = authenticated_client.api.apps.create(
-                app_name or "", project_id=project_id, description=description
+            app = _create_app(
+                authenticated_client, app_name or "", project_id, description
             )
             app_was_created = True
-            logger.info(f"created app. \nName: {app.name} \nId: {app.id}")
         else:
             logger.error("Please create an app to deploy.")
             raise click.exceptions.Exit(1)
     elif not app:
-        app = authenticated_client.api.apps.create(
-            app_name or "", project_id=project_id, description=description or ""
+        app = _create_app(
+            authenticated_client, app_name or "", project_id, description or ""
         )
         app_was_created = True
-        logger.info(f"created app. \nName: {app.name} \nId: {app.id}")
 
     # Choose/confirm the hosting provider before reserving the hostname: the
     # reserved URL is baked into the exported frontend, and a GCP app resolves

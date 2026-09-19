@@ -1386,7 +1386,7 @@ def test_restore_provider_on_failure_noop_without_switch(mocker: MockFixture):
     ):
         raise error
 
-    client.api.apps.set_full_deploy.assert_not_called()
+    client.api.apps.set_provider.assert_not_called()
 
 
 def test_restore_provider_on_failure_noop_on_success(mocker: MockFixture):
@@ -1397,7 +1397,7 @@ def test_restore_provider_on_failure_noop_on_success(mocker: MockFixture):
     with cli._restore_provider_on_failure(the_app, "fly", client):
         pass
 
-    client.api.apps.set_full_deploy.assert_not_called()
+    client.api.apps.set_provider.assert_not_called()
 
 
 def test_resolve_deploy_provider_named_connection_is_pinned(mocker: MockFixture):

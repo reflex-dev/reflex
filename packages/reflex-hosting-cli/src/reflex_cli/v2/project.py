@@ -161,7 +161,13 @@ def create_project(
             )
             raise click.exceptions.Exit(1) from err
 
-    _print_rows([hosting.as_json_document(project)], as_json)
+    document = hosting.as_json_document(project)
+    if as_json:
+        print_json(document)
+        return
+    console.print_table(
+        [[str(value) for value in document.values()]], headers=list(document)
+    )
 
 
 @project_cli.command(name="invite")
@@ -266,6 +272,8 @@ def get_select_project(
     interactive: bool,
 ):
     """Get the currently selected project."""
+    from reflex_build_sdk import AuthenticationError, MissingTokenError
+
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
@@ -285,6 +293,10 @@ def get_select_project(
         )
         try:
             details = authenticated_client.api.projects.get(project)
+        except (AuthenticationError, MissingTokenError):
+            # A token that will not authenticate is not a lookup that failed;
+            # it has its own answer, and it is the same one everywhere.
+            raise
         except Exception as ex:
             logger.error(f"Unable to get the currently selected project: {ex}")
             if as_json:

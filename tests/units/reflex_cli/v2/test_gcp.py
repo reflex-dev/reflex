@@ -58,21 +58,23 @@ def _patch_environment(
 
 
 def _mock_manifest_response(
-    mocker: MockFixture, body=MANIFEST, status_code: int = 200
+    body: dict[str, str] = MANIFEST,
+    status_code: int = 200,
+    detail: str = "boom",
 ) -> mock.MagicMock:
     """Make the manifest read answer with `body`, or refuse with `status_code`.
 
     Args:
-        mocker: The pytest-mock fixture.
-        body: The manifest the API returns.
+        body: The manifest the API returns, when it answers.
         status_code: The status to refuse with, or 200 to answer.
+        detail: The API's explanation, when it refuses.
 
     Returns:
         The mocked manifest call.
     """
     manifest = _CLIENT.api.providers.cloud_run_manifest
     if status_code >= 400:
-        manifest.side_effect = api_error(status_code, "boom")
+        manifest.side_effect = api_error(status_code, detail)
     else:
         manifest.return_value = CloudRunManifest(
             dockerfile=body["dockerfile"], deploy_command=body["deploy_command"]
@@ -101,7 +103,7 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
 
     run_mock = _patch_environment(mocker)
     run_mock.side_effect = capture
-    get_mock = _mock_manifest_response(mocker)
+    get_mock = _mock_manifest_response()
 
     # Pre-populate the source with a file and an existing Dockerfile that
     # must NOT be touched.
@@ -166,14 +168,13 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
     assert captured["env_overrides"]["VERSION"] == "v1"
 
     assert run_mock.call_count == 1
-    # X-API-Token header is sent.
     get_mock.assert_called_once_with()
 
 
 def test_gcp_deploy_forwards_resource_flags(mocker: MockFixture, tmp_path: Path):
     """--cpu / --memory / --min-instances flow through to the deploy script env."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -206,7 +207,7 @@ def test_gcp_deploy_legacy_name_still_works_and_says_so(
 ):
     """`reflex cloud deploy` keeps working, warning that it is not the managed path."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -225,7 +226,7 @@ def test_gcp_deploy_legacy_name_still_works_and_says_so(
 def test_gcp_deploy_new_name_does_not_warn(mocker: MockFixture, tmp_path: Path):
     """Reached by its own name, the command has nothing to correct."""
     _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -249,7 +250,7 @@ def test_gcp_deploy_legacy_name_is_hidden_from_help():
 def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: Path):
     """When the user omits the new flags, defaults reach the deploy script env."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -267,7 +268,7 @@ def test_gcp_deploy_resource_flags_have_defaults(mocker: MockFixture, tmp_path: 
 def test_gcp_deploy_forwards_max_instances(mocker: MockFixture, tmp_path: Path):
     """--max-instances threads through to CLOUD_RUN_MAX_INSTANCES."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -292,7 +293,7 @@ def test_gcp_deploy_forwards_max_instances(mocker: MockFixture, tmp_path: Path):
 def test_gcp_deploy_max_instances_default(mocker: MockFixture, tmp_path: Path):
     """Default --max-instances is 100, matching Cloud Run's own default."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -308,7 +309,7 @@ def test_gcp_deploy_max_instances_default(mocker: MockFixture, tmp_path: Path):
 def test_gcp_deploy_rejects_max_less_than_min(mocker: MockFixture, tmp_path: Path):
     """--max-instances < --min-instances is caught at the CLI, not inside gcloud."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -337,7 +338,7 @@ def test_gcp_deploy_allow_unauthenticated_defaults_true(
 ):
     """Default is --allow-unauthenticated (public service), matching prior behavior."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -375,7 +376,7 @@ def test_gcp_deploy_no_allow_unauthenticated_requires_backend_support(
         'gcloud run deploy "${SERVICE_NAME}" --image "${IMAGE}" --allow-unauthenticated\n'
     )
     _mock_manifest_response(
-        mocker, body={"dockerfile": DOCKERFILE, "deploy_command": legacy_script}
+        body={"dockerfile": DOCKERFILE, "deploy_command": legacy_script}
     )
 
     result = runner.invoke(
@@ -400,7 +401,7 @@ def test_gcp_deploy_no_allow_unauthenticated_requires_backend_support(
 def test_gcp_deploy_no_allow_unauthenticated(mocker: MockFixture, tmp_path: Path):
     """--no-allow-unauthenticated produces the 'false' value."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -426,7 +427,7 @@ def test_gcp_deploy_no_env_vars_means_no_env_vars_file(
 ):
     """Without --env or --envfile, REFLEX_ENV_VARS_FILE is absent from env_overrides."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -456,7 +457,7 @@ def test_gcp_deploy_forwards_env_flag(mocker: MockFixture, tmp_path: Path):
 
     run_mock = _patch_environment(mocker)
     run_mock.side_effect = capture
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -496,7 +497,7 @@ def test_gcp_deploy_envfile_loads_dotenv(mocker: MockFixture, tmp_path: Path):
 
     run_mock = _patch_environment(mocker)
     run_mock.side_effect = capture
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -535,7 +536,7 @@ def test_gcp_deploy_envfile_takes_precedence_over_env_with_warning(
 
     run_mock = _patch_environment(mocker)
     run_mock.side_effect = capture
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -580,7 +581,7 @@ def test_format_env_vars_yaml_escapes_specials():
 def test_gcp_deploy_forwards_service_account(mocker: MockFixture, tmp_path: Path):
     """--service-account threads through to CLOUD_RUN_SERVICE_ACCOUNT."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -614,7 +615,7 @@ def test_gcp_deploy_omits_service_account_when_unset(
     than sending an empty string) keeps the dry-run output tidy.
     """
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -634,7 +635,7 @@ def test_gcp_deploy_rejects_empty_service_account(mocker: MockFixture, tmp_path:
     flag would otherwise resolve to the default compute SA against user intent.
     """
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -658,7 +659,7 @@ def test_gcp_deploy_rejects_empty_service_account(mocker: MockFixture, tmp_path:
 def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path: Path):
     """--min-instances is IntRange(min=0); negative values fail at the CLI layer."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -682,7 +683,7 @@ def test_gcp_deploy_rejects_negative_min_instances(mocker: MockFixture, tmp_path
 def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
     """Declining the run prompt aborts before any staging."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -707,7 +708,7 @@ def test_gcp_deploy_aborts_on_no(mocker: MockFixture, tmp_path: Path):
 def test_gcp_deploy_propagates_script_failure(mocker: MockFixture, tmp_path: Path):
     run_mock = _patch_environment(mocker)
     run_mock.return_value = 7
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -720,7 +721,7 @@ def test_gcp_deploy_propagates_script_failure(mocker: MockFixture, tmp_path: Pat
 
 def test_gcp_deploy_dry_run(mocker: MockFixture, tmp_path: Path):
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -746,7 +747,7 @@ def test_gcp_deploy_existing_dockerfile_in_source_is_preserved(
 ):
     """An existing Dockerfile in --source is never read or modified."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
     existing = tmp_path / "Dockerfile"
     existing.write_text("FROM existing\n")
 
@@ -812,8 +813,9 @@ def test_gcp_deploy_requires_gcp_login(mocker: MockFixture, tmp_path: Path):
 
 
 def test_gcp_deploy_403_mentions_enterprise_tier(mocker: MockFixture, tmp_path: Path):
+    """A 403 is explained as the plan it needs, not as the API's own wording."""
     _patch_environment(mocker)
-    _mock_manifest_response(mocker, body={"detail": "denied"}, status_code=403)
+    _mock_manifest_response(status_code=403, detail="denied")
 
     result = runner.invoke(
         hosting_cli,
@@ -827,7 +829,7 @@ def test_gcp_deploy_403_mentions_enterprise_tier(mocker: MockFixture, tmp_path: 
 def test_gcp_deploy_reports_a_refused_manifest(mocker: MockFixture, tmp_path: Path):
     """A manifest the API will not hand over stops the deploy with its reason."""
     _patch_environment(mocker)
-    _mock_manifest_response(mocker, status_code=500)
+    _mock_manifest_response(status_code=500)
 
     result = runner.invoke(
         hosting_cli,
@@ -840,7 +842,7 @@ def test_gcp_deploy_reports_a_refused_manifest(mocker: MockFixture, tmp_path: Pa
 
 def test_gcp_deploy_default_version_is_timestamp(mocker: MockFixture, tmp_path: Path):
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -860,7 +862,7 @@ def test_gcp_deploy_no_interactive_skips_run_prompt(
     mocker: MockFixture, tmp_path: Path
 ):
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -897,7 +899,7 @@ def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path
     mocker.patch(
         "reflex_cli.v2.gcp._get_active_gcp_account", return_value="u@example.com"
     )
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     captured: dict[str, dict[str, str]] = {}
 
@@ -1043,7 +1045,6 @@ def test_gcp_deploy_surfaces_rewrite_failure(mocker: MockFixture, tmp_path: Path
     """If the manifest's script can't be rewritten, the command errors out clearly."""
     _patch_environment(mocker)
     _mock_manifest_response(
-        mocker,
         body={
             "dockerfile": DOCKERFILE,
             "deploy_command": "#!/usr/bin/env bash\necho no build here\n",
@@ -1084,7 +1085,7 @@ def _no_log_level_side_effects(mocker: MockFixture):
 def test_gcp_deploy_json_output(mocker: MockFixture, tmp_path: Path):
     """A standalone deploy reports where it deployed and whether it worked."""
     _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -1120,7 +1121,7 @@ def test_gcp_deploy_json_output(mocker: MockFixture, tmp_path: Path):
 def test_gcp_deploy_json_output_on_dry_run(mocker: MockFixture, tmp_path: Path):
     """A dry run hands back what it would have staged, unrendered."""
     run_mock = _patch_environment(mocker)
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -1149,7 +1150,7 @@ def test_gcp_deploy_json_output_on_script_failure(mocker: MockFixture, tmp_path:
     """A failing script still produces a document, alongside the non-zero exit."""
     run_mock = _patch_environment(mocker)
     run_mock.return_value = 7
-    _mock_manifest_response(mocker)
+    _mock_manifest_response()
 
     result = runner.invoke(
         hosting_cli,
@@ -1168,3 +1169,26 @@ def test_gcp_deploy_json_output_on_script_failure(mocker: MockFixture, tmp_path:
     payload = json.loads(result.stdout)
     assert payload["deployed"] is False
     assert payload["exit_code"] == 7
+
+
+@pytest.mark.parametrize("field", ["dockerfile", "deploy_command"])
+def test_gcp_deploy_rejects_an_empty_manifest_field(
+    mocker: MockFixture, tmp_path: Path, field: str
+):
+    """A manifest missing either half cannot drive a deploy.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        tmp_path: The source directory to deploy from.
+        field: The half of the manifest the API returned empty.
+    """
+    _patch_environment(mocker)
+    _mock_manifest_response(body={**MANIFEST, field: "  "})
+
+    result = runner.invoke(
+        hosting_cli,
+        ["gcp-standalone", "--gcp", "--gcp-project", "p", "--source", str(tmp_path)],
+    )
+
+    assert result.exit_code == 1
+    assert field in result.output
