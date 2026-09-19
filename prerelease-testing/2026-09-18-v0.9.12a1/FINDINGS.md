@@ -60,6 +60,9 @@ Index:
 - FINDING-008: `rx.dropdown_menu.trigger` swallows its child button's `on_click` — the menu opens, the handler never runs; the other four Radix triggers compose correctly (MEDIUM, pre-existing, Radix pointerdown/dismissable-layer interaction) — claimed by `memo_aschild`, verification pending
 - FINDING-009: `rx.cond` renders both branches eagerly, so a render-time throw in the untaken branch fails the prod build at the prerender step (`Prerender: Request failed for /boom/: 500`, exit 1); dev only shows the error boundary (MEDIUM, pre-existing shape; prod half not baselined) — claimed by `memo_aschild`, verification pending
 - FINDING-010: `on_submit` form data carries id-keyed duplicates and stray entries (`the_form: banana`, `btn_submit: None`) besides the name-keyed fields (LOW, pre-existing) — claimed by `memo_aschild`, verification pending
+- FINDING-012: the `rx.data_editor` overlay editor — the image-preview carousel that is the headline of #7081 — never opens in PROD when the "Built with Reflex" badge is on: the sticky-badge app-wrap nests the dataeditor's `#portal` wrap and drops it (HIGH impact on a headline feature, pre-existing nesting, trivially small to fix) — claimed by `components_bumps`, verification pending
+- FINDING-013: `rx.vars.use_id()` inside an `rx.foreach` body returns one identical id for every item — duplicate DOM ids, every `html_for` label targets the first row (MEDIUM, new API in #6708, by-design limitation of hook-per-compiled-component that the docs do not warn about) — claimed by `components_bumps`, verification pending
+- FINDING-014: the #7124 changelog's suggested path `reflex.components.datadisplay.code` fails in the `from reflex.components.datadisplay import code` spelling (`ImportError`); `import reflex.components.datadisplay.code` works (LOW, changelog wording) — claimed by `components_bumps`
 - FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package; currently masked by FINDING-001) — claimed by `ent_map_dnd_flow_mantine`, verification pending
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
@@ -155,6 +158,22 @@ Index:
   surface (`/_reflex/event/<state>/<handler>`, `retrieve_state`) on the next alpha. Whether the fix lands in reflex
   (keep a redactable `router` entry / provide a hook) or in a lockstep reflex-enterprise release is a maintainer
   decision, but a released 0.9.12 against the published rxe 0.9.5 would leak the tokens.
+
+## FINDING-012: `rx.data_editor` image-preview overlay dead in prod with the default badge (HIGH impact, pre-existing — claimed, verification pending)
+
+- Cluster: `components_bumps` | Regression vs 0.9.11.post1: no (identical `root.jsx` nesting on 0.9.11.post1) |
+  Newly relevant: #7081 advertises native image cells and PR #7081 "opens Glide Data Grid's built-in image
+  preview", and that preview cannot open in production for any app that has not set `show_built_with_reflex=False`.
+- Repro: `components_bumps/gallery` page with a `type="image"` column, `reflex run --env prod --frontend-port 3301
+  --backend-port 3301`; click an image cell. Console: `Cannot open Data Grid overlay editor, because portal not
+  found. Please add <div id="portal" /> as the last child of your <body>.`; `document.getElementById("portal")` is
+  null. Dev (no badge): the carousel opens (`shots/dev-editor-overlay.png` vs `shots/prod-editor-overlay.png`).
+- Mechanism (explorer): `reflex_components_dataeditor/dataeditor.py` registers `{(-1, "DataEditorPortal"):
+  Portal.create(id="portal")}` as an app wrap; `reflex/compiler/compiler.py:1356` adds `app_wraps[0, "StickyBadge"]`
+  in prod when `show_built_with_reflex` is on; the badge wrap ends up the parent of the portal wrap and does not
+  render its children, so the portal div never reaches the DOM. Setting `show_built_with_reflex=False` restores it.
+- Shape of fix: make the StickyBadge wrap forward its children (or register it so the portal stays a sibling).
+  At minimum the #7081 docs need the `show_built_with_reflex=False` caveat.
 
 ## FINDING-004 … FINDING-007 (LOW; claimed, details in the cluster NOTES)
 
@@ -289,5 +308,23 @@ a policy call for the team). Anomalies worth a line: dev hot reload did not reco
 (worker exited permanently; handed to `dev_server_cli` to baseline); `rx.form.control` rejects non-Radix
 children so #6850 cannot be exercised with third-party widgets through it; OSM tile requests blocked by the
 sandbox proxy (environmental).
+
+### `components_bumps` (pass 31, anomaly 7, fail 2, skipped 1) — component train verified; FINDING-012/013/014
+Nine-page gallery on a dedicated venv (train + plotly/pandas/httpx), driven in dev and prod with console/
+network/screenshot capture, 0.9.11.post1 baselines where a fix is claimed. Verified: `sankey_chart` (static,
+State-driven, custom node/link renderers with per-link `use_id` gradients, in `rx.foreach` and `@rx.memo`);
+`use_chart_width` (undefined outside a chart, reacts to viewport resize); plotly `divId` (literal, State var,
+foreach); sonner toast action/cancel callbacks from frontend triggers, memo, ComponentState, foreach, backend
+yield and background tasks (no `queueEvents` ReferenceError anywhere); code-block copy button (`aria-label`
+"Copy code", `type="button"`, clipboard works, the enclosing form's counter unaffected, readable code in prod
+SSR HTML); badge `aria-label` at 360 px; controlled 400s on unknown/missing upload handlers; the tightened
+`datadisplay` namespace. #6833 confirmed at the render level: 0.9.11.post1 emits `wrapperStyle:{strokeDasharray}`
+/ `wrapperStyle:{tickFormatter}`, 0.9.12a1 emits the real props, and the browser shows dashed reference lines and
+formatted ticks. Issues: FINDING-012 (portal swallowed by the badge wrap in prod), FINDING-013 (`use_id` in
+foreach), FINDING-014 (changelog import path). Anomalies: `Axis.tick_formatter` accepts only a literal string
+(a function Var raises `TypeError`); prod redirects extensionless routes 307 → trailing slash; `rx.el.svg`
+presentation props (`stroke`, `text-anchor`) become emotion styles rather than attributes; the error boundary's
+SVG attribute casing changed to camelCase between core 0.9.9 and 0.9.10a1 without a changelog line; one
+unreproducible 404 console error in a single prod run.
 
 _(other clusters pending)_
