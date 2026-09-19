@@ -1659,3 +1659,27 @@ def test_warn_if_full_deploy_outlives_deploy_stays_quiet_when_nothing_stopped(
         raise error
 
     assert _log_messages(caplog, logging.WARNING) == []
+
+
+def test_deploy_expired_token_says_to_log_in(
+    mocker: MockerFixture,
+    mock_export_fn: Callable[[str, str, str, bool, bool, bool, bool], None],
+    caplog: pytest.LogCaptureFixture,
+):
+    """A token that expires mid-deploy is named as one, not as a deploy failure.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        mock_export_fn: The export the deploy drives.
+        caplog: The pytest log capture fixture.
+    """
+    client = _common_deploy_mocks(mocker)
+    mocker.patch("reflex_cli.utils.hosting.search_app", return_value=None)
+    client.api.apps.create.side_effect = api_error(401, "expired")
+
+    with pytest.raises(click.exceptions.Exit):
+        cli.deploy(app_name="fake-app", export_fn=mock_export_fn, interactive=False)
+
+    assert _log_messages(caplog, logging.ERROR) == [
+        "You are not authenticated. Run `reflex login` to authenticate."
+    ]

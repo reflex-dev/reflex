@@ -1735,3 +1735,28 @@ def test_list_apps_expired_token(mocker: MockFixture, caplog: pytest.LogCaptureF
     assert result.exit_code == 1
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
     assert errors == ["You are not authenticated. Run `reflex login` to authenticate."]
+
+
+def test_scale_app_expired_token_says_to_log_in(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """An unusable token is not reported as a scale that failed.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
+    client = _authed(mocker)
+    mocker.patch("reflex_cli.core.config.Config.exists", return_value=False)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app", return_value=app_summary("fake-app")
+    )
+    client.api.apps.scale.side_effect = api_error(401, "expired")
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "scale", "--app-name", "random", "--vmtype", "c1m1"]
+    )
+
+    assert result.exit_code == 1
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["You are not authenticated. Run `reflex login` to authenticate."]

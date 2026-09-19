@@ -25,7 +25,7 @@ from collections.abc import Iterator, Mapping
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, NoReturn, TypedDict
 
 import click
 from reflex_build_sdk import (
@@ -347,6 +347,28 @@ def reporting_api_errors() -> Iterator[None]:
     except ReflexBuildError as ex:
         logger.error(error_message(ex))
         raise click.exceptions.Exit(1) from ex
+
+
+def exit_reporting(error: ReflexBuildError, message: str) -> NoReturn:
+    """Report a refused request in the caller's words, and exit.
+
+    A token that will not authenticate is reported as itself instead: it has
+    the same answer wherever it turns up, and the caller's wording -- "the
+    deployment failed", "set full deploy failed" -- buries it.
+
+    Args:
+        error: The error the SDK raised.
+        message: What to report for anything but an unusable token.
+
+    Raises:
+        Exit: Always.
+
+    """
+    if isinstance(error, (AuthenticationError, MissingTokenError)):
+        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
+    else:
+        logger.error(message)
+    raise click.exceptions.Exit(1) from error
 
 
 class SilentBackgroundBrowser(webbrowser.BackgroundBrowser):
@@ -1180,6 +1202,9 @@ def scale_app(app_id: str, scale_params: ScaleParams, client: AuthenticatedClien
     """
     try:
         client.api.apps.scale(app_id, **scale_params.as_scale_arguments())
+    except (AuthenticationError, MissingTokenError):
+        # Answered by the command's own handler, which says how to fix it.
+        raise
     except ReflexBuildError as ex:
         raise ResponseError(f"scale app failed: {error_message(ex)}") from ex
 

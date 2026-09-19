@@ -114,8 +114,9 @@ def _create_app(
             app_name, project_id=project_id, description=description
         )
     except ReflexBuildError as ex:
-        logger.error(f"could not create the app: {hosting.error_message(ex)}")
-        raise click.exceptions.Exit(1) from ex
+        hosting.exit_reporting(
+            ex, f"could not create the app: {hosting.error_message(ex)}"
+        )
     logger.info(f"created app. \nName: {app.name} \nId: {app.id}")
     return app
 
@@ -270,8 +271,7 @@ def _pin_app_provider(
             service_name=service_name,
         )
     except ReflexBuildError as ex:
-        logger.error(f"set provider failed: {hosting.error_message(ex)}")
-        raise click.exceptions.Exit(1) from ex
+        hosting.exit_reporting(ex, f"set provider failed: {hosting.error_message(ex)}")
 
 
 def _resolve_deploy_provider(
@@ -737,8 +737,7 @@ def deploy(
         if project_id:
             validated_project = authenticated_client.api.projects.get(project_id)
     except ReflexBuildError as ex:
-        logger.error(hosting.error_message(ex))
-        raise click.exceptions.Exit(1) from ex
+        hosting.exit_reporting(ex, hosting.error_message(ex))
 
     envs = envs or []
 
@@ -772,8 +771,7 @@ def deploy(
     except click.exceptions.Exit:
         raise
     except ReflexBuildError as ex:
-        logger.error(f"Deployment failed: {hosting.error_message(ex)}")
-        raise click.exceptions.Exit(1) from ex
+        hosting.exit_reporting(ex, f"Deployment failed: {hosting.error_message(ex)}")
     except Exception as ex:
         logger.error(f"Deployment failed: {ex}")
         raise click.exceptions.Exit(1) from ex
@@ -920,8 +918,9 @@ def deploy(
                 hostname=hostname,
             )
         except ReflexBuildError as ex:
-            logger.error(f"deployment failed: {hosting.error_message(ex)}")
-            raise click.exceptions.Exit(1) from ex
+            hosting.exit_reporting(
+                ex, f"deployment failed: {hosting.error_message(ex)}"
+            )
 
         # Inside the provider guard (a refused mode change must still restore the
         # provider it was asked for) and ahead of the reserve below, whose URL is
@@ -943,8 +942,9 @@ def deploy(
                 app.id, app.name, hostname=subdomain
             )
         except ReflexBuildError as ex:
-            logger.error(f"deployment failed: {hosting.error_message(ex)}")
-            raise click.exceptions.Exit(1) from ex
+            hosting.exit_reporting(
+                ex, f"deployment failed: {hosting.error_message(ex)}"
+            )
         server_url = (
             os.getenv("REFLEX_OVERRIDE_BACKEND_URL") or urls.backend_url
         )  # backend
@@ -1090,8 +1090,9 @@ def deploy(
                         )
                     )
             except ReflexBuildError as ex:
-                logger.error(f"deployment failed: {hosting.error_message(ex)}")
-                raise click.exceptions.Exit(1) from ex
+                hosting.exit_reporting(
+                    ex, f"deployment failed: {hosting.error_message(ex)}"
+                )
     hosting_ui_url = (
         f"{constants.Hosting.HOSTING_SERVICE_UI}/project/{app.project_id}/app/{app.id}/"
     )
