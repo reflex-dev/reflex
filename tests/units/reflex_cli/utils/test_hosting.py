@@ -14,6 +14,7 @@ from reflex_build_sdk.types import DeploymentReport, GcpConnection, GcpStatus
 from reflex_cli import constants
 from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
 from reflex_cli.utils.hosting import (
+    _WATCH_UNREACHABLE_GRACE,
     ScaleParams,
     ScaleType,
     TokenSource,
@@ -1148,3 +1149,36 @@ def test_as_json_document_keeps_the_keys_the_api_sent():
     # `created_at` is this client's name for it; `timestamp` is the API's.
     assert "created_at" not in document
     assert document["timestamp"] == "2026-07-01T00:00:00+00:00"
+
+
+def test_watch_hands_back_a_control_plane_that_stays_unreachable(
+    mocker: MockerFixture, caplog: pytest.LogCaptureFixture
+):
+    """Waiting out a blip is not waiting forever; the command has to return.
+
+    Args:
+        mocker: Pytest mocker fixture.
+        caplog: Pytest log capture fixture.
+    """
+    from reflex_build_sdk import APIConnectionError
+    from reflex_build_sdk.transports import Request
+
+    mocker.patch("reflex_cli.utils.hosting.time.sleep")
+    # Past the grace period on the second look, so the watch gives up rather
+    # than spinning against a control plane that is not coming back.
+    mocker.patch(
+        "reflex_cli.utils.hosting.monotonic",
+        side_effect=[0.0, _WATCH_UNREACHABLE_GRACE + 1],
+    )
+    request = Request(method="GET", url="https://build.reflex.dev", headers={})
+    deployment = uuid.UUID(int=5)
+    client = _client()
+    client.api.deployments.wait.side_effect = APIConnectionError(
+        "no route", request=request
+    )
+
+    assert watch_deployment_status(str(deployment), client) is True
+    assert client.api.deployments.wait.call_count == 2
+    warnings = _log_messages(caplog, logging.WARNING)
+    assert "lost contact" in warnings[0]
+    assert f"apps status {deployment} --watch" in warnings[-1]

@@ -25,6 +25,7 @@ from collections.abc import Iterator, Mapping
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
+from time import monotonic
 from typing import TYPE_CHECKING, Any, NoReturn, TypedDict
 
 import click
@@ -1360,6 +1361,12 @@ def _strip_terminal_controls(text: str) -> str:
 # deployment outlives the connection, so the watch does too.
 _WATCH_RETRY_SLEEP = 2.0
 
+# How long the control plane may stay unreachable before the watch hands the
+# deployment back. Long enough to ride out a reconnecting VPN or a flapping
+# link, short enough that a real outage does not hang a CI job until it is
+# killed.
+_WATCH_UNREACHABLE_GRACE = 300.0
+
 # "failed" is not one of the markers the SDK reads a status message for -- the
 # ones it documents cover the statuses the pipeline publishes -- and is kept
 # because it is what this predicate has always tested for. Dropping it could
@@ -1444,7 +1451,26 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
         logger.error(f"{deployment_id!r} is not a deployment id.")
         return False
 
+    def stopped_following(reason: str) -> bool:
+        """Hand the deployment back to the user and stop watching it.
+
+        Args:
+            reason: Why the watching stopped.
+
+        Returns:
+            True: the build was submitted and is still being worked on, so
+            saying it succeeded would be a guess and saying it failed would be
+            a wrong one.
+
+        """
+        logger.warning(
+            f"stopped following the deployment: {reason}. It is still running; "
+            f"check it with:\n reflex cloud apps status {deployment_id} --watch"
+        )
+        return True
+
     with console.status("listening to status updates!"):
+        unreachable_since = None
         while True:
             try:
                 report = client.api.deployments.wait(
@@ -1460,20 +1486,21 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
                 return False
             except APIConnectionError as ex:
                 # The deployment is still there; only this process's view of it
-                # went away. Waiting it out is what the watch is for.
-                logger.debug(f"lost connection, trying again: {ex}")
+                # went away, and waiting that out is what the watch is for. Not
+                # forever, though: a control plane that stays unreachable is a
+                # command that never returns, so the handoff below ends it.
+                now = monotonic()
+                if unreachable_since is None:
+                    unreachable_since = now
+                    logger.warning(
+                        "lost contact with the deployment service; still trying."
+                    )
+                if now - unreachable_since >= _WATCH_UNREACHABLE_GRACE:
+                    return stopped_following(error_message(ex))
                 time.sleep(_WATCH_RETRY_SLEEP)
                 continue
             except ReflexBuildError as ex:
-                # The build was submitted and is still being worked on; only the
-                # watching stopped. Saying it succeeded would be a guess, and
-                # saying it failed would be a wrong one.
-                logger.warning(
-                    f"stopped following the deployment: {error_message(ex)}. It is "
-                    f"still running; check it with:\n"
-                    f" reflex cloud apps status {deployment_id} --watch"
-                )
-                return True
+                return stopped_following(error_message(ex))
             break
     if report.status == "AwaitingApproval":
         logger.log(
