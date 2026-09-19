@@ -369,3 +369,155 @@ cd $SB && NO_PROXY=localhost,127.0.0.1 ./v12/bin/python v_leak_http.py http://lo
 
 `apps/tickets_published/rxconfig.py` carries the QA-only metaclass shim (clearly marked, not a fix)
 so the published package can start at all; `apps/tickets_fixed` is the demo unmodified.
+
+---
+
+## REVIEW
+
+Independent adversarial review, 2026-09-19. Verdict: **approve — no blocking issues.** Everything the
+fix agent claimed was re-run from scratch by the reviewer and reproduced; the two additions below are
+the reviewer's own controls, not the fix agent's.
+
+Scratch (reviewer): `.../scratchpad/fixes/rxe-review/`. Ports used: 3990-3992 / 8990-8992, all released.
+Worktree left clean at `c0e6b5d`; the only tracked-file writes were `git checkout origin/main -- <3 src
+files>` / `git checkout HEAD -- <same>` pairs for the before/after runs, each verified clean afterwards.
+
+### 1. Diff against the repository's coding rules
+
+Minimal and on-target: 3 source files, 2 test files, 2 news fragments, no drive-by refactors, public
+signature of `redact_router_session()` unchanged. `_redact_session_value()` is a genuine de-duplication
+(`_redact_router_value` now delegates instead of repeating the blanking), and moving `import dataclasses`
+out of the function body to the module top is a strict improvement. Google-style docstrings with
+Args/Returns on the new helper; no block comments; tests are module-level functions in the mirrored paths
+(`tests/units/plugins/test_event_handler_api.py`, `tests/units/auth/test_oidc_state.py`); inline imports
+inside tests match this file's established convention. News fragments: one per defect under the repo-root
+`news/`, in the style and length of the existing `news/223.bugfix.md`. No `pyi_hashes.json` in this repo
+and no component signature touched, so nothing to regenerate. The `try/except ImportError` around
+`reflex_base.constants.route.ROUTER_SESSION` is **not** dead code — verified: the name exists on 0.9.12a1
+and raises `ImportError` on both 0.9.11.post1 and 0.9.6.
+
+### 2. Checks re-run by the reviewer (worktree `.venv`, reflex 0.9.6 — the version CI uses)
+
+| check | result |
+|---|---|
+| `ruff check .` | All checks passed! |
+| `ruff format --check .` | 284 files already formatted |
+| `pyright` on the 3 touched modules | 46 errors — **diff against the same run with the sources reverted to `origin/main` is empty** (line numbers normalised). No new diagnostics. |
+| `pytest` touched modules, reflex 0.9.12a1 / 0.9.11.post1 / 0.9.6 | 159 passed on each |
+| `pytest tests/units`, reflex 0.9.6 | before 13F/1011P/5E → after 9F/1015P/5E; failure-name sets compared: **zero new failures**, 4 previously-failing new tests now pass (3 `test_highcharts.py` entries move in the other direction between runs — pre-existing flakiness, unrelated) |
+| `pytest tests/units`, reflex 0.9.11.post1 (`--continue-on-collection-errors`) | before 30F/886P/113E → after 26F/890P/113E; **zero new failures**, identical 113 errors |
+
+The 113 errors on reflex >= 0.9.11 are all `ReflexRuntimeError: A RegistrationContext can only be
+associated with a single App instance` from fixtures that build several `App`s — identical before and
+after this diff, confirming the fix agent's open question 2 (a test-harness incompatibility, not a
+product defect, but this repo's CI goes red the moment it moves off reflex 0.9.6).
+
+### 3. Regression tests are real (reviewer saw fail → pass)
+
+Sources reverted with `git checkout origin/main -- <3 files>`, new tests left in place, reflex 0.9.12a1:
+
+```
+tests/units/auth/test_oidc_state.py  -> ERROR at collection
+    reflex_enterprise/auth/oidc/state.py:381: in <module>
+    TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass …
+
+tests/units/plugins/test_event_handler_api.py  -> 6 failed, 48 passed
+    FAILED …::test_redact_router_session_blanks_split_session_var
+    FAILED …::test_redact_router_session_blanks_serialized_split_session_var
+    FAILED …::test_redact_router_session_blanks_real_root_state_dict
+    FAILED …::test_sanitize_agent_delta_blanks_session_and_strips_markers
+    FAILED …::test_redact_router_session_blanks_proxied_session_under_any_var_name
+    FAILED …::test_is_public_handler_filters_exempt_handlers   (pre-existing test, also metaclass)
+```
+
+Same revert on reflex 0.9.11.post1: 4 failed, 50 passed (the two legacy-`router` tests pass before and
+after by design — they are the dual-compat guard). With the fix restored: 159 passed on 0.9.12a1,
+0.9.11.post1 and 0.9.6.
+
+### 4. End-to-end, re-run independently by the reviewer
+
+In-process, the campaign's own unedited `scripts/probe_router_redact.py` from a neutral cwd:
+
+```
+fixed worktree + reflex 0.9.12a1      VERDICT OK
+fixed worktree + reflex 0.9.11.post1  VERDICT OK
+published rxe 0.9.5 + reflex 0.9.12a1 VERDICT LEAK
+    -> ['.reflex___state____state.rx_router_session_rx_state_.client_token']
+```
+
+HTTP, unmodified `demos/tickets`, `CI=true REFLEX_TELEMETRY_ENABLED=false … reflex run` (dev), the
+campaign's `verification/v_leak_http.py` with only `BASE` taken from argv:
+
+| | fixed tree + 0.9.12a1 (:8990, **no shim**) | published rxe 0.9.5 + 0.9.12a1 (:8991, shim — it cannot start without one) | fixed tree + 0.9.11.post1 (:8992) |
+|---|---|---|---|
+| backend `/ping` | 200 | 200 | 200 |
+| `retrieve_state` | `NONE (redacted)` | `client_token = cffcd5dc-…` | `NONE (redacted)` |
+| event ndjson delta | `NONE (redacted)` | same live token | `NONE (redacted)` |
+| var kept, secrets blanked | `"rx_router_session": {"client_token": "", "client_ip": "127.0.0.1", "session_id": ""}` | — | `"router": {"session": {"client_token": "", "client_ip": "0.0.0.0", …}}` |
+
+The control confirms the verifier is not vacuous, and the leaked token is not the caller's bearer
+(`equals bearer? False`). Scanned both fixed-tree bodies for UUID-shaped strings: the only hits are the
+demo's own `ticket_id`s. Reviewer bodies: `rs_fixed_912.json`, `ev_fixed_912.ndjson`, `rs_pub_912.json`,
+`ev_pub_912.ndjson`, `rs_fixed_911.json`, `ev_fixed_911.ndjson` under the reviewer scratch dir.
+
+Metaclass, beyond the one-line import: the shipped `demos/oidc` app module (real provider states +
+`register_auth_endpoints`) imports cleanly on the fixed tree under both 0.9.12a1 and 0.9.11.post1, and
+`OIDCCookieMeta.__mro__[1]` is `reflex.istate.validation._StateMeta` on the former,
+`reflex_base.vars.base.BaseStateMeta` on the latter. The same import on published rxe 0.9.5 + 0.9.12a1
+still raises `TypeError: metaclass conflict`.
+
+### 5. Attempts to break the fix (reviewer probes, run on 0.9.12a1 and 0.9.11.post1)
+
+All pass identically on both versions — no exception, no mangling, no leak:
+
+* `None` for a whole state; a var holding a list/str/int under the `router` and `rx_router_session` keys;
+  a `router` dict with no `session`; `session = None` — all returned untouched.
+* An app var named `router` holding `{"session": {"user": "bob"}}` (no secret fields) is **not** mangled.
+* Idempotent: redacting twice is a no-op the second time.
+* 500 session-valued vars in one state: all blanked, no "dictionary changed size during iteration"
+  (values are replaced, never added/removed, so the in-loop `sub[key] = …` is safe).
+* `strip_field_markers(redact_router_session(...))` keeps the redaction, i.e. the documented ordering holds.
+* On a real `State(...).dict()`: only `rx_router_session_rx_state_` satisfies `isinstance(v, SessionData)`
+  — `rx_router_headers`/`page`/`url`/`route_id` do not, so nothing else is touched.
+* `dataclasses.replace` is safe on both classes: `SessionData` and `RouterData` are frozen with all
+  fields `init=True` (including `RouterData._page`, which `replace` round-trips correctly).
+
+Non-buggy paths checked by reading: `enqueue_stream_delta` **diverts** the target token's deltas into a
+queue instead of emitting them to the websocket, and `get_pending_updates` redacts already-drained
+updates, so the in-place mutation `redact_router_session` performs cannot reach a live browser client.
+`resolve_state_dict` redacts before the exempt-state filter and before `strip_field_markers`, unchanged.
+`grep` confirms no other reflex-enterprise surface serialises state to an API caller.
+
+### 6. Nits (none blocking)
+
+1. **The redaction is one level deep.** A `SessionData` nested inside a list or an inner dict is not
+   found (`{"v": [SessionData(...)]}` still carries the token). Not reachable through any reflex layout
+   past or present, and the pre-fix code was equally shallow — but the docstring's "wherever the session
+   data lives" overstates it slightly. One clause would fix that.
+2. **`_redact_router_value`'s dict branch returns unchanged when `router["session"]` is a dataclass**
+   (a mixed serialized/live shape). Unreachable today — `.dict()` gives an all-live shape and the
+   `queue_event` path an all-serialized one — but it is the one asymmetry left between the two branches.
+3. **`sanitize_agent_delta` does `dict(delta)` and then mutates the inner per-state dicts in place**, so
+   the caller's delta is modified despite the copy at the top level. Pre-existing, and harmless on all
+   three current call sites (each owns its delta), but the shallow copy reads as if it were protective.
+4. **No direct test of `mcp_builtin_resources._resolve_single_var`** — the fix agent's own open question
+   3, and its reasoning is right: the path is exercised indirectly through the unit-tested
+   `redact_router_session()` and now carries no var-name condition at all.
+5. **The type-based match is deliberate defence-in-depth beyond the minimal name fix**, and with it the
+   behaviour widening the report flags (any `SessionData`-typed var is blanked whatever it is called).
+   The reviewer agrees with the call — the defect is "a rename silently disabled a security control", and
+   the type match is what stops it recurring — but it is the one design choice in this diff a maintainer
+   might want to weigh in on, and the report already surfaces it.
+6. **Commit trailer** says `Claude Opus 5 (1M context)` where the brief asked for `Claude Fable 5.1`;
+   rewrite on cherry-pick if the other spelling is wanted. Both patches in `patches/` were verified to
+   reproduce `HEAD` byte-for-byte.
+
+### 7. Would a maintainer merge this as-is?
+
+Yes. Two real defects, correct root-cause analysis, minimal and version-agnostic fixes, regression tests
+that fail first for the right reason, clean lint/format, no new type errors, no new test failures on any
+of the three reflex versions, and end-to-end proof on both the fixed and the published trees. The fix
+agent's open questions are the right ones — in particular **release sequencing**: reflex-enterprise 0.9.6
+carrying these commits must reach PyPI no later than reflex 0.9.12, and the reviewer endorses keeping the
+`reflex[db] >=0.9.6` floor (dual compatibility is proven at the HTTP level on 0.9.11.post1, not just in
+unit tests).
