@@ -53,7 +53,7 @@ Index:
 - FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — every reflex-enterprise 0.9.5 app using AuthPlugin OR MCPPlugin fails to start (CRITICAL, regression) — CONFIRMED (orchestrator + `ent_mcp_oidc` explorer; verifier pending)
 - FINDING-002: the #7132 changelog entry describes behavior #7136 made unreachable — a `_get_was_touched` var is now rejected at class creation (LOW, changelog/behavior mismatch, maintainer decision)
 - FINDING-003: a `@rx.var(cache=False)` withheld from a delivered delta by a downstream `get_delta` filter is never re-sent — #6946's last-sent memo is written while the delta is BUILT, not when it is delivered (HIGH, regression; reproduced in pure reflex by `event_loop` in dev and prod+redis, and through reflex-enterprise auth by `ent_mcp_oidc`) — CONFIRMED by two independent clusters; adversarial verifier pending
-- FINDING-004: the documented `deps=["router"]` deprecation warning never fires — the guard in `_init_var_dependency_dicts` is dead code (LOW, new in #7068) — claimed by `router_vars`, verification pending
+- FINDING-004: the documented `deps=["router"]` deprecation warning never fires — the guard in `_init_var_dependency_dicts` is dead code (LOW, new in #7068) — found independently by `router_vars` and `up_examples_b`; verification pending
 - FINDING-005: any computed var reading `self.router` depends on all five router fields; a narrow `deps=[State.router.url]` cannot narrow; measured navigation delta −47% vs the PR's −67% (LOW, perf claim gap, #7068) — claimed by `router_vars`, verification pending
 - FINDING-006: a substate shadowing a parent's backend (underscore) var is still silently ignored — #7077's guard covers base vars only (LOW, pre-existing gap) — claimed by `router_vars`, verification pending
 - FINDING-007: PR #7136's description promises a `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` escape hatch that does not exist in the published packages or the release branch (LOW, PR/migration-doc mismatch, maintainer decision) — claimed by `ent_mcp_oidc`
@@ -405,5 +405,22 @@ component" once per page (same code on both versions — the third cluster to se
 `og:image` points at a `favicon.ico` that does not ship (prod 404). Changelog note: #7115 also changes
 `hasattr`/`getattr(var, name, default)` on a broken var from returning False/the default to raising (in the PR body,
 not the changelog). Environment: `--prerelease=allow` pulls pydantic 2.14.0b2 — pin `pydantic<2.14` in test venvs.
+
+### `up_examples_b` (pass 17, anomaly 3, fail 1, skipped 3) — no upgrade regression on the db/auth/third-party apps
+form-designer (`reflex[db]` + reflex-local-auth 0.5.0), twitter (`reflex[db]`), basic_crud (`reflex[db]` + mounted
+FastAPI), reflexle (reflex-global-hotkey 1.2.3) and data_visualisation (pandas → sqlite) baselined end to end on
+0.9.11.post1 (register/login/create form, signup/tweet, CRUD via UI and API, keyboard Wordle, table load), then the
+SAME venv upgraded in place with sqlite DBs, `.web/` and `reflex.lock/` preserved and re-driven: every flow still
+works, rows survive, no new console/page errors or 4xx/5xx, and the preserved 0.9.11 `.web/` recompiled cleanly
+despite the #7068 state-key rename. #6946 verified from websocket frames (an unchanged uncached var re-sent on
+0.9.11.post1, omitted on 0.9.12a1); #7068/#7077/#7136 declaration errors fire as documented. Added a reusable
+`/pandas` probe page to data_visualisation (DataFrame through a literal, a State-driven computed var, an `@rx.memo`
+prop, a `ComponentState`, `rx.foreach` over sqlmodel rows). Issues: FINDING-004 (independently), and prod 404s for
+dynamic routes (pre-existing on both, issue #6983 / PR #6996). Notes: a naive `uv pip install --upgrade
+'reflex==0.9.12a1'` without `--prerelease=allow` upgrades only reflex/reflex-base and leaves every component
+package at its stable release — it happened to work, but the release notes should tell users to name the
+component alphas; form-designer's `/form/<id>` page crashes on both versions (an app bug in the example:
+`rx.form.message` outside `rx.form.field`); three examples ship no alembic dir so `reflex db init/makemigrations/
+migrate` is needed on both versions. Skipped for time: cold `.web` rebuilds for four apps, prod for three, redis.
 
 _(other clusters pending)_
