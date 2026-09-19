@@ -59,6 +59,11 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 ### Trivially small / significant impact
 
+- **FINDING-019 — a non-UTF-8 stateful-pages marker still wedges backend startup permanently; #7142 says corrupt
+  markers are rebuilt** (MEDIUM, `build_prod_export`, verification pending). Arm: trivially small — catch
+  `UnicodeDecodeError` (or `ValueError`/`OSError`) alongside `JSONDecodeError` in `_read_stateful_pages_marker()` and
+  fall through to the rebuild path.
+
 - **FINDING-015 — #7156's advertised scenario (toast action / `call_script` callback triggering an upload handler)
   still throws `ReferenceError: filesById is not defined`** (HIGH for the scenario, pre-existing; `event_loop`,
   verification pending). Arm: significant impact on a change this release announces as fixed. Shape: propagate the
@@ -85,6 +90,10 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   running. (`dev_server_cli`)
 - Clean group-SIGTERM shutdown logs `[ERROR] Unexpected exit from worker-1`; one `REFLEX_USE_NPM=1` run switches a
   project to npm with no documented way back (`dev_server_cli`).
+- FINDING-020 — `@rx.dynamic` components never re-render on state change (pre-existing; `build_prod_export`).
+- FINDING-021 — literal asset `src` paths not prefixed with `frontend_path` (pre-existing; docs or compile-time prefix).
+- FINDING-022 — `frontend_lazy_bundled_libraries=True` added ~65 KB of initial JS on every page of the test app;
+  confirm with wire bytes on a larger app before deciding whether the #7078 claim needs rewording (`build_prod_export`).
 - FINDING-016 — cancelled foreground `supersedes=True` handler loses pre-cancellation writes under redis (prod)
   while dev/memory keeps them; needs a 0.9.11.post1+redis baseline before triage (`event_loop`).
 - `on_load`-started self-chaining loops keep running after the client disconnects, logging one

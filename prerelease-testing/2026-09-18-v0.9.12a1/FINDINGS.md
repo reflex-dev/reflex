@@ -71,6 +71,10 @@ Index:
 - FINDING-016: a cancelled foreground `@rx.event(supersedes=True)` handler loses its pre-cancellation state writes under prod+redis (dev/memory keeps them) — the `yield` before the `await` is not flushed when `CancelledError` propagates (MEDIUM, dev/prod divergence; 0.9.11.post1+redis baseline not measured) — claimed by `event_loop`, verification pending
 - FINDING-017: after a SIGTERM that fails to stop `reflex run` (dev), or while the app module is broken, the backend port stays bound and accepts connections that are never answered — 0.9.11.post1 released the port and clients got an immediate refusal; a side effect of #7114 moving the listening socket into the granian supervisor (HIGH, regression) — claimed by `dev_server_cli`, verification pending
 - FINDING-018: `reflex run` (dev) ignores SIGTERM/SIGINT delivered to its pid alone (`docker stop`, `kill <pid>` semantics) — reflex, bun and node survive and the ports stay bound; only a process-group signal (Ctrl-C) exits cleanly (MEDIUM, pre-existing on both versions; #6981's changelog line promises a clean SIGTERM exit) — claimed by `dev_server_cli`, verification pending
+- FINDING-019: a stateful-pages marker containing non-UTF-8 bytes still crashes backend startup permanently — `UnicodeDecodeError` escapes `_read_stateful_pages_marker()`'s `except (FileNotFoundError, json.JSONDecodeError)` and the corrupt marker is never replaced (MEDIUM, gap in the #7142 "rebuilt when missing or corrupt" claim; same input crashes 0.9.11.post1) — claimed by `build_prod_export`, verification pending
+- FINDING-020: a `@rx.dynamic` component never re-renders when the state it reads changes — the delta carries only the plain field, never the recomputed component var (MEDIUM, pre-existing, dev and prod) — claimed by `build_prod_export`, verification pending
+- FINDING-021: literal asset `src` paths (`rx.image(src="/components/logo.svg")`) are not prefixed with `frontend_path`, so the image 404s while the file is served under `/app/...` (LOW, pre-existing) — claimed by `build_prod_export`
+- FINDING-022: `frontend_lazy_bundled_libraries=True` INCREASED decoded initial JS bytes by ~65 KB (+3.7–5.5%) on every page of the test app, including pages that use no optional library — the #7078 "reducing JavaScript loaded by ordinary pages" claim did not hold (LOW, perf-claim gap; measured as decoded bodies on one app, needs a wire-bytes/larger-app confirmation) — claimed by `build_prod_export`
 - FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package; currently masked by FINDING-001) — claimed by `ent_map_dnd_flow_mantine`, verification pending
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
@@ -228,6 +232,25 @@ Index:
   (the `.sh` version in the same dir is superseded — it signalled the `setsid` wrapper).
 - Impact: `docker stop`, systemd and `kill <pid>` never terminate a dev server; combined with FINDING-017 the port
   then hangs instead of refusing. Prod-mode signal handling was not exercised (out of timebox).
+
+## FINDING-019 … FINDING-022 (`build_prod_export`; claimed, details in `build_prod_export/NOTES.md`)
+
+- FINDING-019: `head -c 64 /dev/urandom > .web/backend/stateful_pages.json`, then `reflex run --env prod --backend-only`:
+  `UnicodeDecodeError` traceback (`logs/be_s3_garbage.log`), `Unexpected exit from worker-1`, nothing binds the port,
+  and every later start fails the same way because the marker is left in place. Truncated JSON, a missing marker and
+  a 4-worker cold start all rebuild cleanly, and `reflex compile --dry` leaves markers byte-identical — the fix works
+  except for this input. Root cause: `Path.read_text()` decodes before `json` sees anything;
+  `reflex/compiler/compiler.py::_read_stateful_pages_marker()` catches `JSONDecodeError` but not `UnicodeDecodeError`.
+  One-line fix (catch `ValueError`/`OSError`, or read bytes).
+- FINDING-020: `@rx.dynamic def widget(state: DynState)` rendering `rx.icon(tag=state.tag)`; flipping `tag` updates a
+  plain `rx.text(DynState.tag)` and the websocket delta carries `tag_rx_state_`, but the dynamic component keeps
+  rendering the old icon in dev, backend-only prod and on 0.9.11.post1 (`out/backend_only_0912a1.json`).
+- FINDING-021: `rx.image(src="/components/logo.svg")` under `frontend_path="/app"` requests `/components/logo.svg`
+  (404) while `/app/components/logo.svg` serves 200; identical on both versions. Either prefix root-relative literal
+  asset paths at compile time or document that `rx.asset()` is required with `frontend_path`.
+- FINDING-022: `/app/` 1 177 996 → 1 243 249 B (+65 253), `/app/about` +3.7%, `/app/components` +5.4% decoded JS with
+  the flag on: fewer requests (17 → 14 files) but a single `esm-*.js` module ~65 KB larger than the shiki/icon chunks
+  it displaces. Direction consistent across all three pages; caveat: Playwright `response.body()` bytes on one app.
 
 ## FINDING-012: `rx.data_editor` image-preview overlay dead in prod with the default badge (HIGH impact, pre-existing — claimed, verification pending)
 
@@ -513,5 +536,25 @@ FINDING-017, FINDING-018; plus (low) a clean group-SIGTERM stop logs `[ERROR] Un
 (re-grade of the previous campaign's FINDING-021: the failure is gone, the stickiness remains, undocumented).
 Anomaly: `reflex cloud ... --json` emits its error path as plain text (hosting-cli 0.1.72, almost certainly
 pre-existing). Not covered: prod-mode signal handling, `reflex export/init --json`, #7166 logging under `reflex run`.
+
+### `build_prod_export` (pass 16, anomaly 5, fail 3, skipped 2) — #7153/#7078/#7165/#7112/#7096/#7142/#7139 verified; FINDING-019..022
+One `frontend_path="/app"` app (routes `/`, `/apple`, `/app`, `/about`, `/components`, `/assets`, `/items/[id]`, `/dyn`;
+asset dirs colliding with route names; markdown + shiki, memo cards, ComponentState, cond, dynamic `rx.icon`, an upload
+handler setting inf/-inf/nan, background task, client_state, a `sys.modules` probe, a `@rx.dynamic` component-valued
+var referencing a bundled lucide icon) driven across `reflex export`, `reflex run --env prod`, prod + lazy bundled
+libraries, backend-only prod against a statically served export, dev, and a 0.9.11.post1 baseline. Verified: #7153
+(`/app/apple`, `/app/components`, `/app/assets` are 200 prerendered pages; 404 on 0.9.11.post1); #7078 prerender/asset
+coexistence, gzip sidecars (no `.br` because the default format list is `["gzip"]`), CSS preload link, sitemap namespace
+with `/app`-prefixed URLs, rxconfig isolation from an empty dir; #7165 (no core-js in the export; inf/-inf/nan render as
+Infinity/-Infinity/NaN with zero console errors); #7112 (backend worker `sys.modules` has no httpx/json5/sqlalchemy/
+pandas); #7096 (`.web/backend/bundled_libraries.json` written with the bundled icon — absent on 0.9.11.post1 — and a
+component-valued var hydrates in backend-only mode); #7142 (truncated/missing markers and a 4-worker cold start
+rebuild with no leftover `.tmp`; `reflex compile --dry` leaves markers identical); #7139 (double `StarletteIntegration`
+sentry init starts and runs). Baselined the `router_vars` leads: the prod 404 on a direct dynamic-route load, the
+trailing-slash rewrite and the "Page X is being redefined" warnings (7 for 7 routes, even with only `@rx.page`) are all
+identical on 0.9.11.post1 → pre-existing. Issues: FINDING-019/020/021/022. Not covered: the vite RSS half of #7112
+(another agent's server shared the box), brotli/zstd compression formats, lazy-library load-failure retry. Tester
+trap: `uv pip install --prerelease=allow sentry-sdk` resolves 3.0.0a7, which crashes in `sentry_sdk.init()` against
+opentelemetry-api 1.44.0 before any reflex code runs — pin `sentry-sdk<3`.
 
 _(other clusters pending)_
