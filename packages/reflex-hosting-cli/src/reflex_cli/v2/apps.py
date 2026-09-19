@@ -12,7 +12,6 @@ from reflex_cli.core.config import Config
 from reflex_cli.utils import console, log
 from reflex_cli.utils.exceptions import (
     ConfigInvalidFieldValueError,
-    GetAppError,
     NotAuthenticatedError,
     ResponseError,
     ScaleAppError,
@@ -22,6 +21,9 @@ from reflex_cli.utils.exceptions import (
 from reflex_cli.utils.output import interactive_option, json_option, print_json
 
 logger = logging.getLogger(__name__)
+
+# How many log lines `apps logs --follow` prints before prompting for more.
+_LOGS_PAGE_SIZE = 100
 
 
 @click.group()
@@ -62,7 +64,7 @@ def _resolve_app_id(
             client=client,
             interactive=interactive,
         )
-        app_id = result.get("id") if result else None
+        app_id = str(result.id) if result else None
 
     if not app_id and app_name is None:
         config = hosting.read_config()
@@ -104,7 +106,7 @@ def app_history(
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -126,13 +128,26 @@ def app_history(
                 client=authenticated_client,
                 interactive=interactive,
             )
-            app_id = result.get("id") if result else None
+            app_id = str(result.id) if result else None
 
         if not app_id:
             logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
-        history = hosting.get_app_history(app_id=app_id, client=authenticated_client)
+        history = [
+            {
+                "id": str(deployment.id),
+                "status": deployment.status,
+                "url": deployment.url,
+                "python version": deployment.python_version,
+                "reflex version": deployment.reflex_version,
+                "vm type": deployment.vm_type.name if deployment.vm_type else None,
+                "timestamp": deployment.created_at.isoformat(),
+                "description": deployment.description or "",
+                "can rollback": deployment.can_rollback,
+            }
+            for deployment in authenticated_client.api.apps.history(app_id)
+        ]
 
         if as_json:
             print_json(history)
@@ -145,9 +160,6 @@ def app_history(
             console.print_table(table, headers=headers)
         else:
             console.print(str(history))
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
 
 
 @apps_cli.command(name="rollback")
@@ -182,7 +194,7 @@ def app_rollback(
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -208,12 +220,7 @@ def app_rollback(
                 })
             return
 
-        result = hosting.rollback_deployment(
-            app_id=app_id, deployment_id=deployment_id, client=authenticated_client
-        )
-        if result:
-            logger.error(result)
-            raise click.exceptions.Exit(1)
+        authenticated_client.api.apps.rollback(app_id, deployment_id)
         if as_json:
             print_json({
                 "app_id": app_id,
@@ -227,9 +234,6 @@ def app_rollback(
             f"Track progress with `reflex cloud apps status {deployment_id} "
             "--watch` or the Reflex Cloud dashboard."
         )
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
 
 
 @apps_cli.command(name="describe")
@@ -268,21 +272,15 @@ def app_describe(
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
         app_id = _resolve_app_id(app_id, app_name, authenticated_client, interactive)
 
-        result = hosting.update_deployment_description(
-            app_id=app_id,
-            deployment_id=deployment_id,
-            description=description,
-            client=authenticated_client,
+        authenticated_client.api.deployments.set_description(
+            app_id, deployment_id, description
         )
-        if result:
-            logger.error(result)
-            raise click.exceptions.Exit(1)
         if as_json:
             print_json({
                 "app_id": app_id,
@@ -298,9 +296,6 @@ def app_describe(
             logger.log(
                 log.SUCCESS, f"Cleared description for deployment {deployment_id}."
             )
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
 
 
 @apps_cli.command("build-logs")
@@ -317,20 +312,15 @@ def deployment_build_logs(
     """Retrieve the build logs for a specific deployment."""
     from reflex_cli.utils import hosting
 
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
-        logs = hosting.get_deployment_build_logs(
-            deployment_id=deployment_id, client=authenticated_client
-        )
+        logs = authenticated_client.api.deployments.build_logs(deployment_id)
         if as_json:
             print_json({"deployment_id": deployment_id, "logs": logs})
             return
         console.print(logs)
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
 
 
 @apps_cli.command(name="status")
@@ -360,7 +350,7 @@ def deployment_status(
 
     console.set_log_level(loglevel)
 
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -374,17 +364,15 @@ def deployment_status(
                 # got there, which is not a status a caller can act on.
                 print_json({
                     "deployment_id": deployment_id,
-                    "status": hosting.get_deployment_status(
-                        deployment_id=deployment_id, client=authenticated_client
+                    "status": authenticated_client.api.deployments.status(
+                        deployment_id
                     ),
                     "success": succeeded,
                 })
             if succeeded is False:
                 raise click.exceptions.Exit(1)
         else:
-            status = hosting.get_deployment_status(
-                deployment_id=deployment_id, client=authenticated_client
-            )
+            status = authenticated_client.api.deployments.status(deployment_id)
             failed = hosting.deployment_status_failed(status)
             if as_json:
                 # Classified by the predicate --watch settles on, rather than
@@ -398,9 +386,6 @@ def deployment_status(
                 })
                 return
             logger.error(status) if failed else console.print(status)
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
 
 
 @apps_cli.command(name="stop")
@@ -428,7 +413,7 @@ def stop_app(
 
     console.set_log_level(loglevel)
 
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -450,22 +435,18 @@ def stop_app(
                 client=authenticated_client,
                 interactive=interactive,
             )
-            app_id = app_result.get("id") if app_result else None
+            app_id = str(app_result.id) if app_result else None
 
         if not app_id:
             logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
-        result = hosting.stop_app(app_id=app_id, client=authenticated_client)
-        failed = bool(result) and "failed" in result
+        authenticated_client.api.apps.stop(app_id)
+        message = "app stopped"
         if as_json:
-            print_json({"app_id": app_id, "stopped": not failed, "message": result})
+            print_json({"app_id": app_id, "stopped": True, "message": message})
             return
-        if result:
-            logger.error(result) if failed else logger.log(log.SUCCESS, result)
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
+        logger.log(log.SUCCESS, message)
 
 
 @apps_cli.command(name="start")
@@ -492,7 +473,7 @@ def start_app(
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -514,22 +495,18 @@ def start_app(
                 client=authenticated_client,
                 interactive=interactive,
             )
-            app_id = app_result.get("id") if app_result else None
+            app_id = str(app_result.id) if app_result else None
 
         if not app_id:
             logger.error("No valid app_id or app_name provided.")
             raise click.exceptions.Exit(1)
 
-        result = hosting.start_app(app_id=app_id, client=authenticated_client)
-        failed = bool(result) and "failed" in result
+        authenticated_client.api.apps.start(app_id)
+        message = "app started"
         if as_json:
-            print_json({"app_id": app_id, "started": not failed, "message": result})
+            print_json({"app_id": app_id, "started": True, "message": message})
             return
-        if result:
-            logger.error(result) if failed else logger.log(log.SUCCESS, result)
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
+        logger.log(log.SUCCESS, message)
 
 
 @apps_cli.command(name="delete")
@@ -553,10 +530,12 @@ def delete_app(
     interactive: bool,
 ):
     """Delete an application."""
+    from reflex_build_sdk import NotFoundError
+
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -582,16 +561,13 @@ def delete_app(
             if not app_result:
                 logger.warning(f"App '{app_name}' not found.")
                 raise click.exceptions.Exit(1)
-            app_id = app_result.get("id") if app_result else None
-            app_name_from_search = app_result.get("name") if app_result else app_name
+            app_id = str(app_result.id) if app_result else None
+            app_name_from_search = app_result.name
 
         if app_name_from_search is None and app_id:
             try:
-                app_result = hosting.get_app(
-                    client=authenticated_client,
-                    app_id=app_id,
-                )
-            except GetAppError:
+                app_name_from_search = authenticated_client.api.apps.get(app_id).name
+            except NotFoundError:
                 logger.warning(f"No application found with ID '{app_id}'")
                 if as_json:
                     print_json({
@@ -600,18 +576,6 @@ def delete_app(
                         "message": f"No application found with ID '{app_id}'",
                     })
                 return
-            if not app_result:
-                logger.warning(f"App with ID '{app_id}' not found.")
-                if as_json:
-                    # The one exit here that is zero, so nothing else says the
-                    # app was not deleted. The branches that exit non-zero
-                    # answer through their status.
-                    print_json({
-                        "app_id": app_id,
-                        "deleted": False,
-                        "message": f"App with ID '{app_id}' not found.",
-                    })
-                raise click.exceptions.Exit(0)
 
         if not app_id:
             logger.error("No valid app_id or app_name provided.")
@@ -624,14 +588,6 @@ def delete_app(
                 app_name_display = app_name_from_search
             elif app_name is not None:
                 app_name_display = app_name
-            else:
-                try:
-                    app_details = hosting.get_app(
-                        app_id=app_id, client=authenticated_client
-                    )
-                    app_name_display = app_details.get("name", "Unknown")
-                except Exception:
-                    app_name_display = "Unknown"
 
             app_id_display = app_id
 
@@ -652,23 +608,15 @@ def delete_app(
                     })
                 return
 
-        result = hosting.delete_app(app_id=app_id, client=authenticated_client)
+        authenticated_client.api.apps.delete(app_id)
         if as_json:
-            # A refusal comes back as a message rather than as an exception, so
-            # the document has to read it too: reporting the call as a deletion
-            # is how a caller ends up believing an app is gone.
-            failed = result is None or (isinstance(result, str) and "failed" in result)
             print_json({
                 "app_id": app_id,
-                "deleted": not failed,
-                "message": result,
+                "deleted": True,
+                "message": "app deleted",
             })
             return
-        if result:
-            logger.warning(result)
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
+        logger.log(log.SUCCESS, "app deleted")
 
 
 @apps_cli.command(name="logs")
@@ -711,13 +659,14 @@ def app_logs(
     follow: bool = False,
 ):
     """Retrieve logs for a given application."""
+    import datetime
     import pprint
 
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
 
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -739,7 +688,7 @@ def app_logs(
                 client=authenticated_client,
                 interactive=interactive,
             )
-            app_id = app_result.get("id") if app_result else None
+            app_id = str(app_result.id) if app_result else None
 
         if not app_id:
             logger.error("No valid app_id or app_name provided.")
@@ -751,87 +700,51 @@ def app_logs(
             logger.error("must provide both start and end")
             raise click.exceptions.Exit(1)
 
+        if offset:
+            until = datetime.datetime.now(datetime.timezone.utc)
+            since = until - datetime.timedelta(seconds=offset)
+        else:
+            since = datetime.datetime.fromtimestamp(start, datetime.timezone.utc)  # pyright: ignore[reportArgumentType]
+            until = datetime.datetime.fromtimestamp(end, datetime.timezone.utc)  # pyright: ignore[reportArgumentType]
+
         # Following means prompting between pages, which never returns on its
         # own, so it needs somebody at the terminal and a stream that is not
         # carrying a JSON document.
         following = follow and interactive and not as_json
 
-        while True:
-            logger.debug(f"fetching logs with cursor: {cursor}")
-            result = hosting.get_app_logs(
-                app_id=app_id,
-                offset=offset,
-                start=start,
-                end=end,
-                client=authenticated_client,
-                cursor=cursor,
-            )
-            if not isinstance(result, list):
-                # A string is the server's own reason; None is a request or a
-                # decode that failed, which has none to give.
-                reason = (
-                    result if isinstance(result, str) else "Unable to retrieve logs."
-                )
-                logger.warning(reason)
-                if as_json:
-                    # Kept apart from an empty page: "we could not read them"
-                    # and "there are none" call for different next steps.
-                    print_json({
-                        "app_id": app_id,
-                        "entries": [],
-                        "cursor": None,
-                        "error": reason,
-                    })
-                return
-            if len(result) == 2 and isinstance(result[1], str):
-                cursor = result[1]
-                result = result[0]
-            else:
-                cursor = None
-            if not result:
-                logger.warning("No logs found for the specified criteria.")
-                if as_json:
-                    print_json({
-                        "app_id": app_id,
-                        "entries": [],
-                        "cursor": cursor,
-                        "error": None,
-                    })
-                return
-            result.reverse()
-            if as_json:
-                # One page per invocation, with the cursor to ask for the next:
-                # a document is only a document once it is complete, so paging
-                # is the caller's loop rather than ours.
-                print_json({
-                    "app_id": app_id,
-                    "entries": result,
-                    "cursor": cursor,
-                    "error": None,
-                })
-                return
-            for log in result:
-                if pretty:
-                    log = pprint.pformat(log, indent=2)
-                logger.info(log)
-            if not following:
-                return
+        records = authenticated_client.api.apps.logs(app_id, start=since, end=until)
+
+        if as_json:
+            # The whole window in one document: paging is the client's, so a
+            # caller gets every line it asked for rather than a page and a
+            # cursor it had no way to send back.
+            print_json({
+                "app_id": app_id,
+                "entries": [hosting.as_json_document(record) for record in records],
+                "cursor": None,
+                "error": None,
+            })
+            return
+
+        printed = 0
+        for record in records:
+            entry = hosting.as_json_document(record)
+            logger.info(pprint.pformat(entry, indent=2) if pretty else entry)
+            printed += 1
+            if not following or printed % _LOGS_PAGE_SIZE:
+                continue
             from rich.prompt import Prompt
 
             prompt = Prompt.ask(
-                "Press Enter to fetch next 100 logs or type 'exit' to quit",
+                f"Press Enter to fetch next {_LOGS_PAGE_SIZE} logs or type 'exit' to quit",
                 default="",
                 show_default=False,
             )
             if prompt.lower() == "exit":
                 logger.info("Exiting log retrieval.")
                 return
-    except ResponseError as err:
-        logger.error(f"Error retrieving logs: {err}")
-        raise click.exceptions.Exit(1) from err
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
+        if not printed:
+            logger.warning("No logs found for the specified criteria.")
 
 
 @apps_cli.command(name="list")
@@ -868,21 +781,22 @@ def list_apps(
             result = hosting.search_project(
                 project_name, client=authenticated_client, interactive=interactive
             )
-            project_id = result.get("id") if result else None
+            project_id = str(result.id) if result else None
 
         if project_id is None:
             project_id = hosting.get_selected_project()
 
         if project_id is not None and not as_json:
             try:
-                project = hosting.get_project(project_id, client=authenticated_client)
-                logger.info(
-                    f"Listing apps for project '{project['name']}' ({project_id})"
-                )
+                project = authenticated_client.api.projects.get(project_id)
+                logger.info(f"Listing apps for project '{project.name}' ({project_id})")
             except Exception:
                 pass
 
-        deployments = hosting.list_apps(project=project_id, client=authenticated_client)
+        deployments = [
+            hosting.as_json_document(app)
+            for app in authenticated_client.api.apps.list(project_id=project_id)
+        ]
     except NotAuthenticatedError as err:
         logger.error("You are not authenticated. Run `reflex login` to authenticate.")
         raise click.exceptions.Exit(1) from err
@@ -978,7 +892,7 @@ def scale_app(
                 client=authenticated_client,
                 interactive=interactive,
             )
-            app_id = app_result.get("id") if app_result else None
+            app_id = str(app_result.id) if app_result else None
 
         if not app_id:
             logger.error("No valid app_id or app_name provided.")
@@ -1034,7 +948,7 @@ def inspect_app(
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -1055,21 +969,13 @@ def inspect_app(
             )
             raise click.exceptions.Exit(1)
 
-        app_info = hosting.get_app(app_id=app_id, client=authenticated_client)
+        app_info = hosting.as_json_document(authenticated_client.api.apps.get(app_id))
 
         if as_json:
             print_json(app_info)
             return
 
-        if app_info:
-            if isinstance(app_info, dict):
-                headers = list(app_info.keys())
-                values = [[str(value) for value in app_info.values()]]
-                console.print_table(values, headers=headers)
-            else:
-                console.print(str(app_info))
-        else:
-            console.print("No app information found.")
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
+        console.print_table(
+            [[str(value) for value in app_info.values()]],
+            headers=list(app_info.keys()),
+        )

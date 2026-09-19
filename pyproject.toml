@@ -505,6 +505,7 @@ exclude-newer = "7 days"
 hatch-reflex-pyi = false
 reflex = false
 reflex-base = false
+reflex-build-sdk = false
 reflex-components-code = false
 reflex-components-core = false
 reflex-components-dataeditor = false

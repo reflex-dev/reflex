@@ -8,7 +8,6 @@ import click
 
 from reflex_cli import constants
 from reflex_cli.utils import console, log
-from reflex_cli.utils.exceptions import NotAuthenticatedError
 from reflex_cli.utils.output import interactive_option, json_option, print_json
 
 logger = logging.getLogger(__name__)
@@ -42,7 +41,7 @@ def get_secrets(
 
     console.set_log_level(loglevel)
 
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -61,22 +60,14 @@ def get_secrets(
             logger.error("No valid app_id provided.")
             raise click.exceptions.Exit(1)
 
-        secrets = hosting.get_secrets(app_id=app_id, client=authenticated_client)
-        if "failed" in secrets:
-            logger.error(secrets)
-            raise click.exceptions.Exit(1)
+        secrets = authenticated_client.api.apps.secrets.list(app_id)
         if as_json:
             print_json(secrets)
             return
         if secrets:
-            headers = ["Keys"]
-            table = [[key] for key in secrets]
-            console.print_table(table, headers=headers)
+            console.print_table([[key] for key in secrets], headers=["Keys"])
         else:
             console.print(str(secrets))
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
 
 
 @secrets_cli.command(name="update")
@@ -119,7 +110,7 @@ def update_secrets(
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -155,12 +146,16 @@ def update_secrets(
                     """The `python-dotenv` package is required to load environment variables from a file. Run `pip install "python-dotenv>=1.0.1"`."""
                 )
                 raise click.exceptions.Exit(1) from None
-            secrets = dotenv_values(envfile)
+            # A bare `KEY` line with no `=` parses to None, which names no
+            # value to set; only assignments become secrets.
+            secrets = {
+                name: value
+                for name, value in dotenv_values(envfile).items()
+                if value is not None
+            }
         else:
             secrets = hosting.process_envs(list(envs))
-        hosting.update_secrets(
-            app_id=app_id, secrets=secrets, reboot=reboot, client=authenticated_client
-        )
+        authenticated_client.api.apps.secrets.set(app_id, secrets, reboot=reboot)
         if as_json:
             # Names only: a value the caller just sent back to them is a secret
             # written into a log or a transcript.
@@ -169,9 +164,6 @@ def update_secrets(
                 "updated": sorted(secrets),
                 "rebooted": reboot,
             })
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
 
 
 @secrets_cli.command(name="delete")
@@ -204,7 +196,7 @@ def delete_secret(
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -223,12 +215,7 @@ def delete_secret(
             logger.error("No valid app_id provided.")
             raise click.exceptions.Exit(1)
 
-        result = hosting.delete_secret(
-            app_id=app_id, key=key, reboot=reboot, client=authenticated_client
-        )
-        if "failed" in result:
-            logger.error(result)
-            raise click.exceptions.Exit(1)
+        authenticated_client.api.apps.secrets.delete(app_id, key, reboot=reboot)
         if as_json:
             print_json({
                 "app_id": app_id,
@@ -238,6 +225,3 @@ def delete_secret(
             })
             return
         logger.log(log.SUCCESS, "Successfully deleted secret.")
-    except NotAuthenticatedError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err

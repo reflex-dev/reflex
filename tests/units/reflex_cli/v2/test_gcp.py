@@ -5,14 +5,13 @@ import os
 from pathlib import Path
 from unittest import mock
 
-import httpx
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockFixture
-from reflex_cli.utils import hosting
+from reflex_build_sdk.types import CloudRunManifest
 from reflex_cli.v2.deployments import hosting_cli
 
-from .utils import as_click_command
+from .utils import api_error, as_click_command, fake_client
 
 hosting_cli = as_click_command(hosting_cli)
 
@@ -35,13 +34,19 @@ DEPLOY_SCRIPT = (
 MANIFEST = {"dockerfile": DOCKERFILE, "deploy_command": DEPLOY_SCRIPT}
 
 
+_CLIENT = fake_client()
+
+
 def _patch_environment(
     mocker: MockFixture, account: str = "user@example.com"
 ) -> mock.MagicMock:
     """Patch auth + tool detection. Returns the deploy-script subprocess mock."""
+    _CLIENT.api.reset_mock(return_value=True, side_effect=True)
+    _CLIENT.api.providers.cloud_run_manifest.return_value = CloudRunManifest(
+        dockerfile=DOCKERFILE, deploy_command=DEPLOY_SCRIPT
+    )
     mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(token="fake-token", validated_data={}),
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
     )
 
     def fake_which(name: str) -> str | None:
@@ -55,17 +60,24 @@ def _patch_environment(
 def _mock_manifest_response(
     mocker: MockFixture, body=MANIFEST, status_code: int = 200
 ) -> mock.MagicMock:
-    response = mock.MagicMock(spec=httpx.Response)
-    response.status_code = status_code
-    response.json.return_value = body
-    response.text = "ok"
+    """Make the manifest read answer with `body`, or refuse with `status_code`.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        body: The manifest the API returns.
+        status_code: The status to refuse with, or 200 to answer.
+
+    Returns:
+        The mocked manifest call.
+    """
+    manifest = _CLIENT.api.providers.cloud_run_manifest
     if status_code >= 400:
-        response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "boom", request=mock.MagicMock(), response=response
-        )
+        manifest.side_effect = api_error(status_code, "boom")
     else:
-        response.raise_for_status.return_value = None
-    return mocker.patch("httpx.get", return_value=response)
+        manifest.return_value = CloudRunManifest(
+            dockerfile=body["dockerfile"], deploy_command=body["deploy_command"]
+        )
+    return manifest
 
 
 def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
@@ -155,7 +167,7 @@ def test_gcp_deploy_runs_script_from_source_with_cloudbuild_yaml(
 
     assert run_mock.call_count == 1
     # X-API-Token header is sent.
-    assert get_mock.call_args.kwargs["headers"] == {"X-API-TOKEN": "fake-token"}
+    get_mock.assert_called_once_with()
 
 
 def test_gcp_deploy_forwards_resource_flags(mocker: MockFixture, tmp_path: Path):
@@ -752,7 +764,7 @@ def test_gcp_deploy_existing_dockerfile_in_source_is_preserved(
 def test_gcp_deploy_requires_gcloud(mocker: MockFixture, tmp_path: Path):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(token="t", validated_data={}),
+        return_value=fake_client(),
     )
     mocker.patch(
         "reflex_cli.v2.gcp.shutil.which",
@@ -771,7 +783,7 @@ def test_gcp_deploy_requires_gcloud(mocker: MockFixture, tmp_path: Path):
 def test_gcp_deploy_requires_docker(mocker: MockFixture, tmp_path: Path):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(token="t", validated_data={}),
+        return_value=fake_client(),
     )
     mocker.patch(
         "reflex_cli.v2.gcp.shutil.which",
@@ -812,9 +824,10 @@ def test_gcp_deploy_403_mentions_enterprise_tier(mocker: MockFixture, tmp_path: 
     assert "Enterprise" in result.output
 
 
-def test_gcp_deploy_rejects_missing_fields(mocker: MockFixture, tmp_path: Path):
+def test_gcp_deploy_reports_a_refused_manifest(mocker: MockFixture, tmp_path: Path):
+    """A manifest the API will not hand over stops the deploy with its reason."""
     _patch_environment(mocker)
-    _mock_manifest_response(mocker, body={"dockerfile": "FROM scratch"})
+    _mock_manifest_response(mocker, status_code=500)
 
     result = runner.invoke(
         hosting_cli,
@@ -822,7 +835,7 @@ def test_gcp_deploy_rejects_missing_fields(mocker: MockFixture, tmp_path: Path):
     )
 
     assert result.exit_code == 1
-    assert "deploy_command" in result.output
+    assert "boom" in result.output
 
 
 def test_gcp_deploy_default_version_is_timestamp(mocker: MockFixture, tmp_path: Path):
@@ -874,9 +887,9 @@ def test_gcp_deploy_env_is_restricted_to_allowlist(mocker: MockFixture, tmp_path
     """Verify the script env excludes host secrets and only includes allowlisted vars."""
     from reflex_cli.v2 import gcp as gcp_module
 
+    _CLIENT.api.reset_mock(return_value=True, side_effect=True)
     mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(token="fake-token", validated_data={}),
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=_CLIENT
     )
     mocker.patch(
         "reflex_cli.v2.gcp.shutil.which", side_effect=lambda n: f"/usr/bin/{n}"
@@ -1049,7 +1062,8 @@ def test_gcp_deploy_surfaces_rewrite_failure(mocker: MockFixture, tmp_path: Path
 def test_deploy_gcp_requires_gcp_project(mocker: MockFixture, tmp_path: Path):
     """With --gcp set but --gcp-project missing, errors before any auth/manifest call."""
     auth_mock = mocker.patch("reflex_cli.utils.hosting.get_authenticated_client")
-    get_mock = mocker.patch("httpx.get")
+    _CLIENT.api.reset_mock(return_value=True, side_effect=True)
+    get_mock = _CLIENT.api.providers.cloud_run_manifest
 
     result = runner.invoke(
         hosting_cli,
