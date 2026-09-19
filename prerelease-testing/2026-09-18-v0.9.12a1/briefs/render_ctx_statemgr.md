@@ -39,3 +39,11 @@ commit of the train) so they are the least battle-tested code in the release.
    survives the worker restart. A state declaring `_get_was_touched: bool = False` (and one
    declaring it as a computed var) → persistence to disk AND redis still happens (compare the
    `.states/` dir / redis keys before and after; 0.9.11.post1 stops saving — confirm as baseline).
+
+## Note from the orchestrator (before you start)
+
+`_get_was_touched: bool = False` on a State now raises `StateValueError ... reserved` at class creation
+(#7136), so #7132's "keep saving when a state defines a var named `_get_was_touched`" is unreachable —
+already recorded as FINDING-002; just confirm in one line and spend your time on the render-count and
+StateManagerDisk work. Also: reflex issues a DIFFERENT client token per browser tab in the same context
+(found by `ent_mcp_oidc`), so "second tab" tests observe a second state, not a shared one.

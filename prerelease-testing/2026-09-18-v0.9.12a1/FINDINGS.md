@@ -44,10 +44,15 @@ reflex-global-hotkey 1.2.3 import surfaces resolve on 0.9.12a1; reflex-otel 0.1.
 compile span tree that 0.9.11 lost (#7155).
 
 Index:
-- FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — reflex-enterprise OIDC auth cannot import (HIGH, regression) — CONFIRMED
+- FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — every reflex-enterprise 0.9.5 app using AuthPlugin OR MCPPlugin fails to start (CRITICAL, regression) — CONFIRMED (orchestrator + `ent_mcp_oidc` explorer; verifier pending)
 - FINDING-002: the #7132 changelog entry describes behavior #7136 made unreachable — a `_get_was_touched` var is now rejected at class creation (LOW, changelog/behavior mismatch, maintainer decision)
+- FINDING-003: a `@rx.var(cache=False)` withheld from a delivered delta by a downstream `get_delta` filter is never re-sent — #6946's last-sent memo is written at compute time (MEDIUM, regression, downstream-visible through reflex-enterprise auth) — claimed by `ent_mcp_oidc`, verification pending
+- FINDING-004: the documented `deps=["router"]` deprecation warning never fires — the guard in `_init_var_dependency_dicts` is dead code (LOW, new in #7068) — claimed by `router_vars`, verification pending
+- FINDING-005: any computed var reading `self.router` depends on all five router fields; a narrow `deps=[State.router.url]` cannot narrow; measured navigation delta −47% vs the PR's −67% (LOW, perf claim gap, #7068) — claimed by `router_vars`, verification pending
+- FINDING-006: a substate shadowing a parent's backend (underscore) var is still silently ignored — #7077's guard covers base vars only (LOW, pre-existing gap) — claimed by `router_vars`, verification pending
+- FINDING-007: PR #7136's description promises a `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` escape hatch that does not exist in the published packages or the release branch (LOW, PR/migration-doc mismatch, maintainer decision) — claimed by `ent_mcp_oidc`
 
-## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (HIGH, regression)
+## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
 
 - Cluster: `orch_probes` (found by the orchestrator's enterprise import sweep before the fan-out; the
   `ent_mcp_oidc` cluster measures the user-facing blast radius) | Regression vs 0.9.11.post1: **yes** |
@@ -76,9 +81,17 @@ Index:
   `_StateMeta(BaseStateMeta)` defined in `reflex/istate/validation.py:90`. Two sibling subclasses of
   `BaseStateMeta` cannot both be the metaclass of one class. Deriving from `type(rx.State)` works on
   both versions, but no published downstream code does that today.
-- Impact: reflex-enterprise 0.9.5 OIDC auth (`AuthPlugin` OIDC flow, `demos/oidc`) is unusable on
-  0.9.12a1; any third-party State metaclass written the same way breaks. Nothing in the changelog
-  announces the metaclass change.
+- Impact (measured by the `ent_mcp_oidc` explorer, `ent_mcp_oidc/NOTES.md` ISSUE-1): **total for enterprise
+  auth and MCP.** An app with only `rxe.MCPPlugin()` dies at startup — `MCPPlugin.post_compile` →
+  `build_event_handler_index` → `auth/enforcement.is_exempt` imports `reflex_enterprise.auth.oidc.state`
+  (`logs/a2_mcpapp.log`); an app with only `rxe.AuthPlugin()` dies at `from reflex_enterprise.auth import
+  AuthUserState, GenericOIDCAuthState` (`logs/a2_authonly_new.log`); the shipped `demos/oidc` cannot import.
+  All three start on 0.9.11.post1. With a test-only shim that forces the one class definition through
+  (`scripts2/oidc_meta_shim.py`, clearly not a fix), the entire MCP + OIDC surface passes end to end, so
+  the metaclass is the only #7136 incompatibility in reflex-enterprise 0.9.5. Any third-party State
+  metaclass written the same way breaks. Nothing in the changelog announces the metaclass change. Also
+  noted by both agents: when the app module raises at import, `reflex run` still prints "Backend running
+  at ..." and keeps running (pre-existing, both versions) — which makes this failure look like a hang.
 - Suggested fix shape (for the maintainers, not applied here): perform the #7136 validation inside
   `BaseStateMeta.__new__` (guarded on "a base is a BaseState") so `rx.State` keeps `BaseStateMeta` as its
   metaclass, or make the validating metaclass compose with sibling `BaseStateMeta` subclasses; and add a
@@ -97,6 +110,37 @@ Index:
   rejection is the better outcome, but a reader of the #7132 line will expect the declaration to work.
   Decision for the maintainers: reword/drop the #7132 entry (or fold it into #7136's). Also newly rejected
   with clear messages: base vars named `router`, `substates`, `dirty_vars`; handlers named `add_field`.
+
+## FINDING-003: a withheld `@rx.var(cache=False)` is never re-sent once visible (MEDIUM, regression — claimed, verification pending)
+
+- Cluster: `ent_mcp_oidc` | Regression vs 0.9.11.post1: yes (explorer ran both) | Verifier: pending; the
+  `event_loop` explorer was asked to build a pure-reflex repro
+- Repro (needs the FINDING-001 shim to run enterprise on 0.9.12a1): `ent_mcp_oidc/NOTES.md` ISSUE-2 and
+  `scripts2/uncached_after_login.py` — an `@rxe.var(auth=True, cache=False)` stays at its compiled default
+  through login and two further events; only a full reload shows the server value. 0.9.11.post1 shows it
+  right after login. Evidence: `ent_mcp_oidc/logs/uncached_new.json`, `uncached_prev.json`, `shots/uncached_*.png`.
+- Mechanism (explorer's analysis): #6946 records the last value an uncached var sent per client when the
+  delta is computed, not when it is delivered; enterprise's `get_delta` override filters the protected
+  entry out of the delta, so the memo says "sent" for a value the browser never received, and the next
+  recomputation (same value) is deduped away. Any downstream delta filter, or any delivery failure between
+  compute and emit, has the same exposure.
+
+## FINDING-004 … FINDING-007 (LOW; claimed, details in the cluster NOTES)
+
+- FINDING-004 (`router_vars`, ISSUE 1): `deps=["router"]` on a computed var raises no deprecation warning
+  at class creation or app start; `reflex/state.py:1205-1219` guards on `dvar_set.isdisjoint(ROUTER_VARS)`,
+  which is never true because the string dep is already resolved to the router Var carrying all five
+  fields. Both changelog and PR promise the warning. Repro: `router_vars/scripts/deps_legacy.py`.
+- FINDING-005 (`router_vars`, ISSUE 2): auto-deps through the `router` property record all five
+  `rx_router_*` fields whatever the body reads, and an explicit narrow `deps=` does not suppress
+  `_auto_deps`; measured whole-frame navigation delta 2535 B → 1334 B (−47%) vs the PR's −67% router-delta
+  claim. Repro: `router_vars/scripts/deps_probe.py`, `logs/matrix_dev.txt`.
+- FINDING-006 (`router_vars`, ISSUE 3): `class P(rx.State): _priv: int = 1` / `class C(P): _priv: str = "x"`
+  raises nothing on either version; `C.backend_vars["_priv"]` is the parent's. `_check_overridden_inherited_vars`
+  never sees backend vars. Repro: `router_vars/scripts/backend_shadow.py`.
+- FINDING-007 (`ent_mcp_oidc`, ISSUE 3): `grep -rn ALLOW_RESERVED` over the installed 0.9.12a1 packages and
+  `git grep` over the release branch find nothing, while PR #7136's description tells users to set
+  `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` for legacy handling until 1.0. Either ship the flag or fix the text.
 
 ## Refuted / reclassified claims
 
@@ -125,5 +169,27 @@ reflex-otel 0.1.0 on 0.9.12a1: the initial dev compile worker now exports the co
 `trigger=initial` tree (3 stage children, 0 orphans) on a first and a second run; `hot_reload` and `export`
 trees complete as well. #7155 verified; the previous campaign's FINDING-028 (issue #7095) is fixed.
 `orch_otel/NOTES.md`.
+
+### `router_vars` (pass 17, anomaly 3, fail 2, skipped 2) — #7068 verified, 3 low issues
+`routerlab`: 5 pages, every router dependency form, substate/ComponentState/memo/client_state consumers,
+24-step Playwright matrix with websocket-frame capture in dev, prod, memory/redis/disk state managers, two
+tabs and two contexts. The navigation-delta matrix matches PR #7068's table exactly in dev and prod; the
+URL persists once in redis and disk pickles; a 0.9.11.post1 → 0.9.12a1 redis upgrade discards old pickles
+with no traceback; whole-frame navigation delta −47%. #7077/#7136 negatives raise clear errors where
+0.9.11.post1 was silent or crashed with `KeyError: '__module__'`. Issues: FINDING-004/005/006. Unverified
+rows: reconnect → session-only delta (socket.io ping timeout too long to force a reconnect), custom headers
+(Playwright cannot inject websocket-handshake headers). Prod anomalies (dynamic-route direct-load 404 +
+trailing-slash rewrite; "Page X is being redefined" warnings) handed to `build_prod_export` for baselining.
+
+### `ent_mcp_oidc` (pass 6, anomaly 6, fail 7, skipped 2) — FINDING-001 is a total enterprise break
+Reused the previous campaign's harness (mcpapp, authapp, fake OIDC IdP with PKCE/refresh/logout, MCP
+drivers) on 0.9.12a1 + rxe 0.9.5 vs 0.9.11.post1. Root-caused FINDING-001 and measured its blast radius
+(MCPPlugin-only, AuthPlugin-only and `demos/oidc` all die at startup). With a test-only shim the whole MCP +
+OIDC surface passes end to end (anonymous token, 401/WWW-Authenticate, initialize/tools/resources,
+queue_event into root/sibling/nested/background handlers, every `reflex://` resource, OAuth 2.1 metadata,
+browser login/reload/second tab/logout) with no page errors or 4xx/5xx. Found FINDING-003 (withheld
+uncached var never re-sent) and FINDING-007. Behavior changes recorded as not-bugs: the MCP resource
+surface now lists `rx_router_*` as separate vars; MCP-originated events carry a real client token
+(improvement); uncached vars of untouched substates no longer ride along (the intended half of #6946).
 
 _(other clusters pending)_

@@ -44,3 +44,17 @@ same generation coexists, older generation is dropped).
 5. Health: start redis (BP+15), run with `REFLEX_REDIS_URL`, hit `/_health` 300 times and sample
    `redis-cli -p <port> CLIENT LIST | wc -l` and `INFO stats total_connections_received` before and
    after — the connection count must not grow per probe (compare 0.9.11.post1).
+
+## Lead handed over from the `ent_mcp_oidc` cluster (please chase)
+
+They found (regression vs 0.9.11.post1, reproduced only through reflex-enterprise's delta filter so far):
+a `@rx.var(cache=False)` whose entry is removed from the outgoing delta by a downstream `get_delta`
+override is **never re-sent** once it should become visible — #6946's "last value sent" memo is
+updated when the value is computed, not when the delta is actually delivered. Their script:
+`/home/user/reflex/prerelease-testing/2026-09-18-v0.9.12a1/ent_mcp_oidc/scripts2/uncached_after_login.py`
+and NOTES.md ISSUE-2. Build a pure-reflex repro: e.g. a State subclass overriding `get_delta` (decorate
+it with `rx.state._override_base_method`, a private helper, so #7136 accepts the name) that drops the
+uncached var's key the first time; or make the socket drop between compute and emit (kill the tab's
+websocket right after an event) and see whether the next event re-sends the unchanged uncached value.
+Read the memo logic in the release source (`grep -n "last" reflex/state.py packages/reflex-base/src/reflex_base/vars/base.py`
+around `ComputedVar`/`get_delta`) and say precisely when the memo is written.
