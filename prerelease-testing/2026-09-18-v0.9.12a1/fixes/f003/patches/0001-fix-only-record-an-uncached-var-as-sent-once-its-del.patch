@@ -1,0 +1,746 @@
+From 91020caec788275b36ec91e2bcb8dc7bc5899a21 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 19 Sep 2026 17:01:11 +0000
+Subject: [PATCH] fix: only record an uncached var as sent once its delta is
+ delivered
+
+`BaseState.get_delta` recorded the value of every `@rx.var(cache=False)` it
+computed as "sent to this client" while the delta was still being built, via
+`ComputedVar._record_delta_value`, which wrote `__last_delta_<js_expr>` on the
+instance immediately. A downstream `get_delta` override -- the documented
+pattern, used by reflex-enterprise's auth delta filter -- that drops such an
+entry from the delta, or replaces it with an anonymous placeholder, therefore
+left the memo claiming the client had a value it never received. The next
+recomputation produced the same value, the #6946 dedupe omitted it, and the
+client stayed stale until the value changed again.
+
+Gather the records while the delta is built instead, and commit them in
+`_get_resolved_delta` -- the single point every delivery path goes through, and
+the one that sees the delta as it comes back out of the override chain, with
+its coroutines resolved. A record is stored only where the delivered delta
+still holds the very object that was computed for it, so a dropped or replaced
+entry is simply owed to the client again. A delta that is built but never
+delivered (a bare `get_delta()` call, or one under `_suppress_delta_recording`)
+now records nothing, which is the safe direction: the value is re-sent rather
+than silently withheld forever.
+
+The dedupe and its wire savings are unchanged for values that are delivered:
+the `/uncached` probe of the campaign app sends the same 24 delta frames with
+the same keys as 0.9.12a1 (15331 B vs 15274 B inbound, against 26059 B on
+0.9.11.post1).
+
+Fixes #7212
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NeyxWsuC9hqSKq8YcEwZyY
+---
+ ...uncached-var-withheld-from-delta.bugfix.md |   1 +
+ ...uncached-var-withheld-from-delta.bugfix.md |   1 +
+ .../reflex-base/src/reflex_base/vars/base.py  |  28 ++-
+ reflex/state.py                               | 123 ++++++++--
+ tests/units/test_state.py                     | 220 ++++++++++++++----
+ 5 files changed, 302 insertions(+), 71 deletions(-)
+ create mode 100644 news/+uncached-var-withheld-from-delta.bugfix.md
+ create mode 100644 packages/reflex-base/news/+uncached-var-withheld-from-delta.bugfix.md
+
+diff --git a/news/+uncached-var-withheld-from-delta.bugfix.md b/news/+uncached-var-withheld-from-delta.bugfix.md
+new file mode 100644
+index 000000000..399c456af
+--- /dev/null
++++ b/news/+uncached-var-withheld-from-delta.bugfix.md
+@@ -0,0 +1 @@
++An `@rx.var(cache=False)` value that a downstream `get_delta` override keeps out of the delta is now delivered as soon as the override stops withholding it, instead of being deduplicated away until the value changes again. Uncached var values only count as sent to the client once the delta that carries them is actually delivered.
+diff --git a/packages/reflex-base/news/+uncached-var-withheld-from-delta.bugfix.md b/packages/reflex-base/news/+uncached-var-withheld-from-delta.bugfix.md
+new file mode 100644
+index 000000000..0c208cbd7
+--- /dev/null
++++ b/packages/reflex-base/news/+uncached-var-withheld-from-delta.bugfix.md
+@@ -0,0 +1 @@
++An `@rx.var(cache=False)` value only counts as sent to the client once the delta carrying it is delivered, so a value a `get_delta` override withholds is sent as soon as the override releases it instead of being deduplicated away until it changes again.
+diff --git a/packages/reflex-base/src/reflex_base/vars/base.py b/packages/reflex-base/src/reflex_base/vars/base.py
+index 026ba4bb7..846b0addf 100644
+--- a/packages/reflex-base/src/reflex_base/vars/base.py
++++ b/packages/reflex-base/src/reflex_base/vars/base.py
+@@ -2686,8 +2686,10 @@ class ComputedVar(Var[RETURN_TYPE]):
+         """
+         return f"__last_delta_{self._js_expr}"
+ 
+-    def _record_delta_value(self, instance: BaseState, value: Any, token: str) -> bool:
+-        """Record the value an uncached var contributes to the delta.
++    def _pending_delta_record(
++        self, instance: BaseState, value: Any, token: str
++    ) -> tuple[str, tuple[str, Any] | None] | None:
++        """Decide whether the value an uncached var contributes has to be sent.
+ 
+         Uncached vars are recomputed for every delta, but recomputing does not
+         imply the value changed. Keeping a key for the last value that was sent
+@@ -2698,29 +2700,31 @@ class ComputedVar(Var[RETURN_TYPE]):
+         instance can serve several clients (linked shared states): a value that
+         was already sent to one client still has to be sent to the others.
+ 
++        Nothing is written here: only the caller knows which of the values it
++        computes survive into the delta the client actually receives, and a
++        value that a downstream filter withholds still has to be sent later.
++
+         Args:
+             instance: The state instance that the computed var is attached to.
+             value: The freshly computed value.
+             token: The client token the delta is being produced for.
+ 
+         Returns:
+-            Whether the value differs from the last recorded value and should
+-            therefore be included in the delta.
++            None when the value matches the last one recorded as sent and can
++            be left out of the delta, otherwise the instance attribute holding
++            the record and what to store in it once the value has been
++            delivered -- None there for a value that cannot be compared, whose
++            record has to be dropped instead.
+         """
+         attr = self._last_delta_key_attr
+         key = _delta_value_key(value)
+         if key is _UNKEYABLE_VALUE:
+             # The value can never be compared, so it always has to be sent.
+-            with contextlib.suppress(AttributeError):
+-                delattr(instance, attr)
+-            return True
++            return attr, None
+         recorded = (token, key)
+         if getattr(instance, attr, None) == recorded:
+-            return False
+-        setattr(instance, attr, recorded)
+-        # Ensure the recorded value gets serialized to redis.
+-        instance._was_touched = True
+-        return True
++            return None
++        return attr, recorded
+ 
+     def needs_update(self, instance: BaseState) -> bool:
+         """Check if the computed var needs to be updated.
+diff --git a/reflex/state.py b/reflex/state.py
+index d332aef5a..c716d1e00 100644
+--- a/reflex/state.py
++++ b/reflex/state.py
+@@ -24,6 +24,7 @@ from typing import (
+     BinaryIO,
+     ClassVar,
+     Final,
++    NamedTuple,
+     ParamSpec,
+     TypeVar,
+     cast,
+@@ -301,11 +302,11 @@ def get_var_for_field(cls: type[BaseState], name: str, f: Field) -> Var:
+ # the contract); never serialized into a delta sent to the client.
+ _DROP_FROM_DELTA: Final = object()
+ 
+-# Whether uncached computed var values may be recorded as sent to the client for
+-# the delta currently being built. Carried out of band rather than as an argument
+-# so that every internal call stays ``get_delta()``: downstream packages patch
+-# that method with a signature taking no arguments, and the flag describes the
+-# whole traversal rather than any single state in it. A ContextVar, not a global:
++# Whether the delta currently being built reaches the client at all. Carried out
++# of band rather than as an argument so that every internal call stays
++# ``get_delta()``/``_get_resolved_delta()``: downstream packages patch those
++# methods with signatures taking no arguments, and the flag describes the whole
++# traversal rather than any single state in it. A ContextVar, not a global:
+ # deltas for different clients are built in concurrent tasks, and leaking a
+ # discarded traversal's flag into one of those would suppress a real update.
+ _record_delta_values: ContextVar[bool] = ContextVar(
+@@ -313,6 +314,27 @@ _record_delta_values: ContextVar[bool] = ContextVar(
+ )
+ 
+ 
++class _DeltaRecord(NamedTuple):
++    """An uncached var value that counts as sent once the delta delivers it."""
++
++    state_name: str
++    key: str
++    value: Any
++    instance: BaseState
++    attr: str
++    stored: tuple[str, Any] | None
++
++
++# Records gathered while a delta is built, for the caller that delivers it; None
++# when nobody is collecting, in which case the values computed never count as
++# sent. Recording has to wait for the delta to come back out of ``get_delta``:
++# a downstream override may drop an entry or replace it with a placeholder, and
++# a value the client never received has to be sent again later.
++_pending_delta_records: ContextVar[list[_DeltaRecord] | None] = ContextVar(
++    "_pending_delta_records", default=None
++)
++
++
+ @contextlib.contextmanager
+ def _suppress_delta_recording() -> Iterator[None]:
+     """Stop delta values built in this block from counting as sent to the client.
+@@ -330,6 +352,36 @@ def _suppress_delta_recording() -> Iterator[None]:
+         _record_delta_values.reset(token)
+ 
+ 
++def _commit_delta_records(pending: list[_DeltaRecord], delta: Delta) -> None:
++    """Record the values a delivered delta carries as sent to the client.
++
++    A value is recorded only where the delta still holds the very object that
++    was computed for it: a ``get_delta`` override may have dropped the key or
++    replaced it with a placeholder, and what the client never received has to
++    be sent again later.
++
++    Args:
++        pending: The records gathered while the delta was built.
++        delta: The delta as it comes back out of ``get_delta``, resolved.
++    """
++    for state_name, key, value, instance, attr, stored in pending:
++        subdelta = delta.get(state_name)
++        if subdelta is None or key not in subdelta or subdelta[key] is not value:
++            continue
++        if stored is None:
++            # An unkeyable value: forget what the client has, so that the next
++            # value is sent whatever it is.
++            try:
++                delattr(instance, attr)
++            except AttributeError:
++                # Nothing was recorded, so there is nothing to serialize.
++                continue
++        else:
++            setattr(instance, attr, stored)
++        # Ensure the recorded value gets serialized to redis.
++        instance._was_touched = True
++
++
+ async def _resolve_delta(delta: Delta) -> Delta:
+     """Await all coroutines in the delta, dropping keys that resolve to the drop sentinel.
+ 
+@@ -365,6 +417,9 @@ async def _drop_unchanged_delta_value(
+     instance: BaseState,
+     value: Coroutine[None, None, Any],
+     token: str,
++    state_name: str,
++    key: str,
++    pending: list[_DeltaRecord] | None,
+ ) -> Any:
+     """Await an async uncached computed var, dropping it if the value did not change.
+ 
+@@ -373,14 +428,21 @@ async def _drop_unchanged_delta_value(
+         instance: The state instance the computed var is attached to.
+         value: The coroutine returned by the computed var.
+         token: The client token the delta is being produced for.
++        state_name: The full name of the state the value belongs to.
++        key: The delta key the resolved value is stored under.
++        pending: The records to append to, or None when the delta being built
++            is not delivered to the client.
+ 
+     Returns:
+         The resolved value, or ``_DROP_FROM_DELTA`` when it matches the last
+         value that was sent to the client.
+     """
+     resolved = await value
+-    if not cvar._record_delta_value(instance, resolved, token):
++    record = cvar._pending_delta_record(instance, resolved, token)
++    if record is None:
+         return _DROP_FROM_DELTA
++    if pending is not None:
++        pending.append(_DeltaRecord(state_name, key, resolved, instance, *record))
+     return resolved
+ 
+ 
+@@ -2347,14 +2409,14 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
+         """Get the delta for the state.
+ 
+         Takes no arguments, and no internal caller passes any: the method is
+-        monkeypatched downstream with a signature accepting only `self`. Whether
+-        the uncached computed var values it computes count as sent to the client
+-        is carried by `_suppress_delta_recording` instead.
++        monkeypatched downstream with a signature accepting only `self`. The
++        uncached computed var values it computes only count as sent to the
++        client once `_get_resolved_delta` finds them in the delta that comes
++        back out of such an override.
+ 
+         Returns:
+             The delta for the state.
+         """
+-        record_values = _record_delta_values.get()
+         delta = {}
+ 
+         self._mark_dirty_computed_vars()
+@@ -2371,23 +2433,36 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
+         always_dirty_computed_vars = self._always_dirty_computed_vars
+         # Token of the client this delta is for, used to know which values it has.
+         token = self.router.session.client_token if always_dirty_computed_vars else ""
++        # Where to leave the values this traversal sends, for whoever delivers
++        # the delta to record them.
++        pending = _pending_delta_records.get() if always_dirty_computed_vars else None
++        full_name = self.get_full_name()
+         subdelta: dict[str, Any] = {}
+         for prop in delta_vars:
+             if types.is_backend_base_variable(prop, type(self)):
+                 continue
+             value = self.get_value(prop)
+-            if record_values and prop in always_dirty_computed_vars:
++            key = prop + FIELD_MARKER
++            if prop in always_dirty_computed_vars:
+                 # Uncached computed vars are recomputed for every delta; only
+                 # send them when the recomputed value actually changed.
+                 cvar = self.computed_vars[prop]
+                 if inspect.iscoroutine(value):
+-                    value = _drop_unchanged_delta_value(cvar, self, value, token)
+-                elif not cvar._record_delta_value(self, value, token):
+-                    continue
+-            subdelta[prop + FIELD_MARKER] = value
++                    value = _drop_unchanged_delta_value(
++                        cvar, self, value, token, full_name, key, pending
++                    )
++                else:
++                    record = cvar._pending_delta_record(self, value, token)
++                    if record is None:
++                        continue
++                    if pending is not None:
++                        pending.append(
++                            _DeltaRecord(full_name, key, value, self, *record)
++                        )
++            subdelta[key] = value
+ 
+         if len(subdelta) > 0:
+-            delta[self.get_full_name()] = subdelta
++            delta[full_name] = subdelta
+ 
+         # Recursively find the substate deltas.
+         substates = self.substates
+@@ -2400,10 +2475,24 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
+     async def _get_resolved_delta(self) -> Delta:
+         """Get the delta for the state after resolving all coroutines.
+ 
++        What this returns is what the caller delivers to the client -- past any
++        downstream `get_delta` override -- so it is here that the uncached
++        computed var values it carries count as sent.
++
+         Returns:
+             The resolved delta for the state.
+         """
+-        return await _resolve_delta(self.get_delta())
++        # No collector at all when this delta is not delivered, so that nothing
++        # it carries counts as sent, at any depth of the traversal.
++        pending: list[_DeltaRecord] | None = [] if _record_delta_values.get() else None
++        records_token = _pending_delta_records.set(pending)
++        try:
++            delta = await _resolve_delta(self.get_delta())
++        finally:
++            _pending_delta_records.reset(records_token)
++        if pending:
++            _commit_delta_records(pending, delta)
++        return delta
+ 
+     def _mark_dirty(self):
+         """Mark the substate and all parent states as dirty."""
+diff --git a/tests/units/test_state.py b/tests/units/test_state.py
+index f4f6c134f..b322ed9e6 100644
+--- a/tests/units/test_state.py
++++ b/tests/units/test_state.py
+@@ -1454,7 +1454,7 @@ def test_computed_var_cached():
+     assert comp_v_calls == 2
+ 
+ 
+-def test_computed_var_cached_depends_on_non_cached():
++async def test_computed_var_cached_depends_on_non_cached():
+     """Test that a cached var is recalculated if it depends on non-cached ComputedVar."""
+ 
+     class ComputedState(BaseState):
+@@ -1474,18 +1474,20 @@ def test_computed_var_cached_depends_on_non_cached():
+ 
+     cs = ComputedState()
+     assert cs.dirty_vars == set()
+-    assert cs.get_delta() == {
++    assert await cs._get_resolved_delta() == {
+         cs.get_name(): {"no_cache_v" + FIELD_MARKER: 0, "dep_v" + FIELD_MARKER: 0}
+     }
+     cs._clean()
+     assert cs.dirty_vars == set()
+     # no_cache_v is recomputed, but the value is unchanged, so it is not resent.
+-    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 0}}
++    assert await cs._get_resolved_delta() == {
++        cs.get_name(): {"dep_v" + FIELD_MARKER: 0}
++    }
+     cs._clean()
+     assert cs.dirty_vars == set()
+     cs.v = 1
+     assert cs.dirty_vars == {"v", "comp_v", "dep_v", "no_cache_v"}
+-    assert cs.get_delta() == {
++    assert await cs._get_resolved_delta() == {
+         cs.get_name(): {
+             "v" + FIELD_MARKER: 1,
+             "no_cache_v" + FIELD_MARKER: 1,
+@@ -1495,15 +1497,19 @@ def test_computed_var_cached_depends_on_non_cached():
+     }
+     cs._clean()
+     assert cs.dirty_vars == set()
+-    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 1}}
++    assert await cs._get_resolved_delta() == {
++        cs.get_name(): {"dep_v" + FIELD_MARKER: 1}
++    }
+     cs._clean()
+     assert cs.dirty_vars == set()
+-    assert cs.get_delta() == {cs.get_name(): {"dep_v" + FIELD_MARKER: 1}}
++    assert await cs._get_resolved_delta() == {
++        cs.get_name(): {"dep_v" + FIELD_MARKER: 1}
++    }
+     cs._clean()
+     assert cs.dirty_vars == set()
+ 
+ 
+-def test_uncached_computed_var_unchanged_omitted_from_delta():
++async def test_uncached_computed_var_unchanged_omitted_from_delta():
+     """An uncached var that recomputes to the same value is left out of the delta."""
+     calls = 0
+ 
+@@ -1517,24 +1523,26 @@ def test_uncached_computed_var_unchanged_omitted_from_delta():
+             return self.v
+ 
+     ucs = UncachedState()
+-    assert ucs.get_delta() == {ucs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}}
++    assert await ucs._get_resolved_delta() == {
++        ucs.get_name(): {"no_cache_v" + FIELD_MARKER: 0}
++    }
+     assert calls == 1
+     ucs._clean()
+ 
+     # Still recomputed, but the unchanged value is not sent again.
+-    assert ucs.get_delta() == {}
++    assert await ucs._get_resolved_delta() == {}
+     assert calls == 2
+     ucs._clean()
+ 
+     ucs.v = 1
+-    assert ucs.get_delta() == {
++    assert await ucs._get_resolved_delta() == {
+         ucs.get_name(): {"v" + FIELD_MARKER: 1, "no_cache_v" + FIELD_MARKER: 1}
+     }
+     ucs._clean()
+-    assert ucs.get_delta() == {}
++    assert await ucs._get_resolved_delta() == {}
+ 
+ 
+-def test_uncached_computed_var_scalar_key_distinguishes_types():
++async def test_uncached_computed_var_scalar_key_distinguishes_types():
+     """Python-equal but JSON-distinct scalars are not suppressed as unchanged."""
+     values = iter([1, True, 1.0])
+ 
+@@ -1548,11 +1556,12 @@ def test_uncached_computed_var_scalar_key_distinguishes_types():
+     # 1, True and 1.0 are all Python-equal, but the client would receive 1,
+     # true and 1.0, so each one has to be sent.
+     for expected_type in (int, bool, float):
+-        assert type(ss.get_delta()[ss.get_name()][key]) is expected_type
++        delta = await ss._get_resolved_delta()
++        assert type(delta[ss.get_name()][key]) is expected_type
+         ss._clean()
+ 
+ 
+-def test_uncached_computed_var_nan_value_not_resent():
++async def test_uncached_computed_var_nan_value_not_resent():
+     """NaN is keyed by its serialized form, so an unchanged NaN is not resent."""
+ 
+     class NanState(BaseState):
+@@ -1561,9 +1570,11 @@ def test_uncached_computed_var_nan_value_not_resent():
+             return float("nan")
+ 
+     ns = NanState()
+-    assert math.isnan(ns.get_delta()[ns.get_name()]["v" + FIELD_MARKER])
++    assert math.isnan(
++        (await ns._get_resolved_delta())[ns.get_name()]["v" + FIELD_MARKER]
++    )
+     ns._clean()
+-    assert ns.get_delta() == {}
++    assert await ns._get_resolved_delta() == {}
+ 
+ 
+ class UncachedRedisState(BaseState):
+@@ -1590,11 +1601,11 @@ class UncachedRedisState(BaseState):
+         return [self._v]
+ 
+ 
+-def test_uncached_computed_var_records_last_value_for_redis():
++async def test_uncached_computed_var_records_last_value_for_redis():
+     """Recorded delta keys mark the state touched and survive serialization."""
+     urs = UncachedRedisState()
+     assert urs._was_touched is False
+-    assert urs.get_delta() == {
++    assert await urs._get_resolved_delta() == {
+         urs.get_name(): {
+             "scalar_v" + FIELD_MARKER: 0,
+             "list_v" + FIELD_MARKER: [0],
+@@ -1606,16 +1617,16 @@ def test_uncached_computed_var_records_last_value_for_redis():
+     # Recomputing unchanged values does not force another redis write.
+     urs._clean()
+     urs._was_touched = False
+-    assert urs.get_delta() == {}
++    assert await urs._get_resolved_delta() == {}
+     assert urs._was_touched is False
+ 
+     # A state restored from its serialized form still knows what was sent.
+     restored = BaseState._deserialize(urs._serialize())
+     assert isinstance(restored, UncachedRedisState)
+-    assert restored.get_delta() == {}
++    assert await restored._get_resolved_delta() == {}
+ 
+     restored._v = 1
+-    assert restored.get_delta() == {
++    assert await restored._get_resolved_delta() == {
+         restored.get_name(): {
+             "scalar_v" + FIELD_MARKER: 1,
+             "list_v" + FIELD_MARKER: [1],
+@@ -1623,7 +1634,7 @@ def test_uncached_computed_var_records_last_value_for_redis():
+     }
+ 
+ 
+-def test_uncached_computed_var_mutable_value_mutated_in_place():
++async def test_uncached_computed_var_mutable_value_mutated_in_place():
+     """An uncached var returning a state-owned mutable value still sees mutations."""
+ 
+     class UncachedMutableState(BaseState):
+@@ -1634,23 +1645,25 @@ def test_uncached_computed_var_mutable_value_mutated_in_place():
+             return self.items
+ 
+     ums = UncachedMutableState()
+-    assert ums.get_delta() == {ums.get_name(): {"all_items" + FIELD_MARKER: []}}
++    assert await ums._get_resolved_delta() == {
++        ums.get_name(): {"all_items" + FIELD_MARKER: []}
++    }
+     ums._clean()
+-    assert ums.get_delta() == {}
++    assert await ums._get_resolved_delta() == {}
+     ums._clean()
+ 
+     ums.items.append("a")
+-    assert ums.get_delta() == {
++    assert await ums._get_resolved_delta() == {
+         ums.get_name(): {
+             "items" + FIELD_MARKER: ["a"],
+             "all_items" + FIELD_MARKER: ["a"],
+         }
+     }
+     ums._clean()
+-    assert ums.get_delta() == {}
++    assert await ums._get_resolved_delta() == {}
+ 
+ 
+-def test_uncached_computed_var_recorded_per_client_token():
++async def test_uncached_computed_var_recorded_per_client_token():
+     """A value already sent to one client is still sent to another client.
+ 
+     A single state instance can serve multiple clients (linked shared states),
+@@ -1665,20 +1678,24 @@ def test_uncached_computed_var_recorded_per_client_token():
+     mcs = MultiClientState()
+     mcs.router = RouterData(session=SessionData(client_token="token_a"))
+     mcs._clean()
+-    assert mcs.get_delta() == {mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
++    assert await mcs._get_resolved_delta() == {
++        mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
++    }
+     mcs._clean()
+-    assert mcs.get_delta() == {}
++    assert await mcs._get_resolved_delta() == {}
+     mcs._clean()
+ 
+     # The same state instance now produces a delta for a different client.
+     mcs.router = RouterData(session=SessionData(client_token="token_b"))
+     mcs._clean()
+-    assert mcs.get_delta() == {mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}}
++    assert await mcs._get_resolved_delta() == {
++        mcs.get_name(): {"no_cache_v" + FIELD_MARKER: 1}
++    }
+     mcs._clean()
+-    assert mcs.get_delta() == {}
++    assert await mcs._get_resolved_delta() == {}
+ 
+ 
+-def test_uncached_computed_var_unkeyable_value_always_sent():
++async def test_uncached_computed_var_unkeyable_value_always_sent():
+     """A value that cannot be serialized has no key and is always sent."""
+ 
+     class CircularState(BaseState):
+@@ -1689,10 +1706,11 @@ def test_uncached_computed_var_unkeyable_value_always_sent():
+             return value
+ 
+     cs = CircularState()
+-    # Compare the keys only: the values are self-referential.
+-    assert list(cs.get_delta()[cs.get_name()]) == ["circular" + FIELD_MARKER]
+-    cs._clean()
+-    assert list(cs.get_delta()[cs.get_name()]) == ["circular" + FIELD_MARKER]
++    for _ in range(2):
++        # Compare the keys only: the values are self-referential.
++        delta = await cs._get_resolved_delta()
++        assert list(delta[cs.get_name()]) == ["circular" + FIELD_MARKER]
++        cs._clean()
+ 
+ 
+ async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
+@@ -1721,6 +1739,124 @@ async def test_uncached_async_computed_var_unchanged_omitted_from_delta():
+     assert await aus._get_resolved_delta() == {}
+ 
+ 
++# Withholding an async var can only close the wrapper coroutine; the getter
++# coroutine it holds is then collected unawaited, which a filter cannot reach
++# and this test is not about.
++@pytest.mark.filterwarnings(
++    "ignore:coroutine '.*_awaitable_result' was never awaited:RuntimeWarning",
++)
++@pytest.mark.parametrize("mode", ["dropped", "replaced"])
++@pytest.mark.parametrize("is_async", [False, True])
++async def test_uncached_var_withheld_by_delta_override_is_resent(
++    mode: str, is_async: bool, monkeypatch: pytest.MonkeyPatch
++):
++    """An uncached var withheld by a `get_delta` override is sent once released.
++
++    Downstream packages wrap `get_delta` to keep vars the current user may not
++    see out of the delta, either by dropping the key or by replacing the value
++    with a public placeholder. Neither value reaches the client, so the real one
++    has to be delivered as soon as the override stops withholding it -- even
++    though the var recomputes to the value that was withheld.
++
++    Args:
++        mode: Whether the override drops the key or replaces its value.
++        is_async: Whether the uncached var is an async one.
++        monkeypatch: Pytest monkeypatch fixture.
++    """
++
++    class WithheldState(BaseState):
++        n: int = 0
++
++        @rx.var(cache=False)
++        def secret(self) -> str:
++            return f"secret-{self.n}"
++
++    class AsyncWithheldState(BaseState):
++        n: int = 0
++
++        @rx.var(cache=False)
++        async def secret(self) -> str:
++            return f"secret-{self.n}"
++
++    state_cls = AsyncWithheldState if is_async else WithheldState
++    full_name = state_cls.get_full_name()
++    key = "secret" + FIELD_MARKER
++    withholding = True
++    # Bound through the base class: neither state overrides `get_delta`, and the
++    # wrapper below replaces it on both, so its `self` is only a `BaseState`.
++    original_get_delta = BaseState.get_delta
++
++    def withholding_get_delta(self: BaseState) -> Delta:
++        delta = original_get_delta(self)
++        if not withholding:
++            return delta
++        filtered: Delta = {}
++        for name, subdelta in delta.items():
++            withheld_subdelta = dict(subdelta)
++            if key in withheld_subdelta:
++                value = withheld_subdelta.pop(key)
++                if inspect.iscoroutine(value):
++                    # Withheld before `_resolve_delta` could await it.
++                    value.close()
++                if mode == "replaced":
++                    withheld_subdelta[key] = "anon"
++            if withheld_subdelta:
++                filtered[name] = withheld_subdelta
++        return filtered
++
++    monkeypatch.setattr(state_cls, "get_delta", withholding_get_delta)
++
++    def expected_withheld(**other_vars: Any) -> Delta:
++        subdelta = {name + FIELD_MARKER: value for name, value in other_vars.items()}
++        if mode == "replaced":
++            subdelta[key] = "anon"
++        return {full_name: subdelta} if subdelta else {}
++
++    state = state_cls()
++    assert await state._get_resolved_delta() == expected_withheld()
++    state._clean()
++
++    # The value changes while it is still withheld: the client never sees it.
++    state.n = 1
++    assert await state._get_resolved_delta() == expected_withheld(n=1)
++    state._clean()
++
++    # The override releases the var: the value the client never got is sent...
++    withholding = False
++    assert await state._get_resolved_delta() == {full_name: {key: "secret-1"}}
++    state._clean()
++
++    # ...and, having been delivered, it is not sent again.
++    assert await state._get_resolved_delta() == {}
++
++
++async def test_uncached_computed_var_recorded_only_once_delivered():
++    """A delta that is built but never delivered does not count as sent.
++
++    `get_delta` may be wrapped downstream by a filter that drops entries from
++    it, so only the delta returned by `_get_resolved_delta` -- what the caller
++    goes on to emit -- records the values the client has.
++    """
++
++    class UndeliveredState(BaseState):
++        @rx.var(cache=False)
++        def v(self) -> int:
++            return 1
++
++    us = UndeliveredState()
++    expected = {UndeliveredState.get_full_name(): {"v" + FIELD_MARKER: 1}}
++
++    # Building a delta is not delivering it: the value is still owed.
++    assert us.get_delta() == expected
++    us._clean()
++    assert us.get_delta() == expected
++    us._clean()
++
++    assert await us._get_resolved_delta() == expected
++    us._clean()
++    assert await us._get_resolved_delta() == {}
++
++
+ def test_get_delta_tolerates_zero_argument_override(test_state: TestState, monkeypatch):
+     """A `get_delta` override taking only `self` still serves the whole state tree.
+ 
+@@ -1751,7 +1887,7 @@ def test_get_delta_tolerates_zero_argument_override(test_state: TestState, monke
+     assert ChildState.get_full_name() in seen
+ 
+ 
+-def test_discarded_delta_does_not_record_values_of_substates():
++async def test_discarded_delta_does_not_record_values_of_substates():
+     """A delta built only for its side effects does not count as sent, at any depth."""
+ 
+     class DiscardedParentState(BaseState):
+@@ -1769,13 +1905,13 @@ def test_discarded_delta_does_not_record_values_of_substates():
+ 
+     # A discarded traversal must not record the values it computed...
+     with _suppress_delta_recording():
+-        assert dps.get_delta() == expected
++        assert await dps._get_resolved_delta() == expected
+     dps._clean()
+ 
+     # ...so the client still receives them on the next real delta.
+-    assert dps.get_delta() == expected
++    assert await dps._get_resolved_delta() == expected
+     dps._clean()
+-    assert dps.get_delta() == {}
++    assert await dps._get_resolved_delta() == {}
+ 
+ 
+ def test_delta_methods_take_no_arguments():
+@@ -3867,7 +4003,7 @@ async def test_get_state(token: str, attached_mock_event_context: EventContext):
+     ])
+     grandchild_state.value2 = "set_value"
+ 
+-    assert test_state.get_delta() == {
++    assert await test_state._get_resolved_delta() == {
+         GrandchildState.get_full_name(): {
+             "value2" + FIELD_MARKER: "set_value",
+         },
+@@ -3918,7 +4054,7 @@ async def test_get_state(token: str, attached_mock_event_context: EventContext):
+         expected_delta[GrandchildState3.get_full_name()] = {
+             "computed" + FIELD_MARKER: "",
+         }
+-    assert new_test_state.get_delta() == expected_delta
++    assert await new_test_state._get_resolved_delta() == expected_delta
+ 
+ 
+ @pytest.mark.asyncio
+-- 
+2.43.0
+

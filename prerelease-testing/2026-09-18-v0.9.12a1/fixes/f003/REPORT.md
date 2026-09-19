@@ -1,6 +1,7 @@
 # f003 — FINDING-003 / issue #7212: withheld `@rx.var(cache=False)` is never re-sent
 
-- Worktree: `/home/user/wt/f003` · Branch: `fix/finding-003-delta-memo` · Commit: `600671cee`
+- Worktree: `/home/user/wt/f003` · Branch: `fix/finding-003-delta-memo` · Commit: `91020caec`
+  (amended from the reviewed `600671cee`; see `## FOLLOW-UP` at the end for what changed)
 - Status: **fixed**, verified end to end (campaign repro fails on published 0.9.12a1, passes on the branch)
 - Files changed: `reflex/state.py`, `packages/reflex-base/src/reflex_base/vars/base.py`,
   `tests/units/test_state.py`, `news/+uncached-var-withheld-from-delta.bugfix.md`,
@@ -332,3 +333,154 @@ returns `original_value` itself on allow, so deferred async checks record correc
   `reflex/istate/shared.py:123`. Everything else (`hydrate_middleware`, `compiler/utils`,
   `state.py:2900`) resolves `dict()`, not a delta. `test_delta_methods_take_no_arguments` still holds for
   both methods.
+
+## FOLLOW-UP
+
+Follow-up pass on the reviewer's verdict, in the same worktree `/home/user/wt/f003` on branch
+`fix/finding-003-delta-memo`. The branch is still **one commit** on top of `origin/main`
+(`4cba00435`), amended in place: `91020caec` (was `600671cee`). Nothing pushed, no PR.
+Ports used: 3920-3922 / 8920-8922, redis on 8929; all released afterwards.
+Scratch: `/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/fixes/f003-followup/`.
+
+**Both blocking issues are accepted and fixed; four of the seven nits are fixed; three are answered
+below.** The reviewer was right on both counts, including that the previous pyright claim in this
+report was wrong: `uv run pyright reflex tests` works fine in this checkout.
+
+### Blocking 1 — pyright regression from the new test (fixed)
+
+Confirmed exactly as reported: on `600671cee`, `uv run pyright reflex tests` gave
+
+```
+tests/units/test_state.py:1780:36 - error: Argument of type "BaseState" cannot be assigned to
+  parameter "self" of type "AsyncWithheldState" in function "get_delta"
+tests/units/test_state.py:1780:36 - error: ... of type "WithheldState" ...
+2 errors, 0 warnings, 0 informations
+```
+
+The earlier "identical 149-error set before and after" / "environment-wide broken pyright (2800
+errors)" claim in the Checks table above does not hold: that was a *module-scoped* invocation
+(`pyright reflex/state.py packages/... tests/units/test_state.py`), which type-checks those files
+without the project's import graph and manufactures `reportMissingImports` noise. The gate CLAUDE.md
+actually specifies, `uv run pyright reflex tests`, is clean on `origin/main` and was not run.
+**Treat the pyright row of the original Checks table as retracted.**
+
+Fix (`tests/units/test_state.py:1787`): bind the original through the base class, which is what the
+wrapper's `self: BaseState` annotation describes, and which is also more robust — `monkeypatch`
+installs the wrapper on the subclass, so the base method is guaranteed to be the unpatched one.
+
+```python
+    # Bound through the base class: neither state overrides `get_delta`, and the
+    # wrapper below replaces it on both, so its `self` is only a `BaseState`.
+    original_get_delta = BaseState.get_delta
+```
+
+`uv run pyright reflex tests` → **0 errors, 0 warnings, 0 informations**
+(`evidence/followup_checks_after_fix.txt`).
+
+### Blocking 2 — two #6946 tests left on the now-non-recording `get_delta()` path (fixed)
+
+Accepted: a test that drives bare `get_delta()` can no longer observe the dedupe at all, so it
+asserts nothing about `_delta_value_key`. Both are now `async def` driving
+`await ..._get_resolved_delta()`, like the other eight:
+
+- `test_uncached_computed_var_scalar_key_distinguishes_types` (`tests/units/test_state.py:1545`)
+- `test_uncached_computed_var_unkeyable_value_always_sent` (`tests/units/test_state.py:1698`)
+
+Re-proved with the reviewer's mutation, plus a second one for the other test
+(`evidence/followup_mutation_tests.txt`), both run on the follow-up HEAD:
+
+| mutation in `reflex-base` `vars/base.py` | test | result on follow-up HEAD |
+| --- | --- | --- |
+| `_delta_value_key` returns bare `value` (drops the 1/`True`/1.0 discrimination) | `..._scalar_key_distinguishes_types` | **FAILED** — `KeyError: 'reflex___istate___dynamic____scalar_state'` (was: passed silently) |
+| `_delta_value_key` returns a constant key instead of `_UNKEYABLE_VALUE` | `..._unkeyable_value_always_sent` | **FAILED** — `KeyError: 'reflex___istate___dynamic____circular_state'` (was: passed silently) |
+
+Both mutations were reverted; `packages/reflex-base/src/reflex_base/vars/base.py` is byte-identical
+to the reviewed commit (the follow-up changes nothing in that package's source).
+
+### Nits fixed
+
+1. **`_get_resolved_delta` no longer leaks an outer collector into a suppressed traversal**
+   (`reflex/state.py:2487`). The early return is gone; the method now always installs the
+   ContextVar, with `None` when `_record_delta_values` is false, so "a suppressed traversal records
+   nothing, at any depth" holds literally:
+
+   ```python
+   pending: list[_DeltaRecord] | None = [] if _record_delta_values.get() else None
+   records_token = _pending_delta_records.set(pending)
+   try:
+       delta = await _resolve_delta(self.get_delta())
+   finally:
+       _pending_delta_records.reset(records_token)
+   if pending:
+       _commit_delta_records(pending, delta)
+   ```
+
+2. **Unkeyable values no longer force a redis write when nothing was removed**
+   (`reflex/state.py:374`): `delattr` is now a `try/except AttributeError: continue`, so
+   `_was_touched` is set only when a record actually went away. This restores the pre-fix behaviour
+   (`_record_delta_value` never touched `_was_touched` on that path) for an app with a
+   non-serializable `cache=False` var.
+
+3. **`packages/reflex-base/news/+uncached-var-withheld-from-delta.bugfix.md`** rewritten for
+   downstream users (it no longer narrates `ComputedVar`'s internal division of labour).
+
+4. **The `RuntimeWarning` no longer pollutes the suite output.** The async cases of the regression
+   test carry a targeted
+   `@pytest.mark.filterwarnings("ignore:coroutine '.*_awaitable_result' was never awaited:RuntimeWarning")`
+   with a comment saying why. The leak itself is *pre-existing*, and I verified that rather than
+   assuming it: running the reviewed test file against `origin/main` sources (fix reverted, test kept)
+   emits the same warning from the same line. A filter that withholds an async uncached var can only
+   `close()` the `_drop_unchanged_delta_value` wrapper — the inner `AsyncComputedVar` coroutine is
+   unreachable from outside, and closing a never-started wrapper runs none of its code, so there is
+   no hook to close it from inside either. Fixing it means not building the inner coroutine before
+   the wrapper runs, which is a separate change to `get_delta`; it stays an issue for the maintainers
+   (open question 5 above).
+
+### Nits answered rather than changed
+
+- **"Two ContextVars encode one idea" — kept, deliberately.** They answer different questions:
+  `_record_delta_values` is set by the `_suppress_delta_recording()` *context manager* around a whole
+  block and read once, at the entry point, to decide whether to collect; `_pending_delta_records`
+  carries *where* to put the records of the one delta currently in flight. Collapsing them needs a
+  third state ("suppressed" vs "no collector installed yet"), i.e. a sentinel list that `get_delta`
+  must then test for by identity before appending — more code and less obvious than the flag. Happy
+  to collapse if a maintainer prefers it; it is a two-line change either way.
+- **"4 params" overclaim — corrected.** Real regression coverage for #7212 is
+  `test_uncached_var_withheld_by_delta_override_is_resent[False-dropped]`, `[False-replaced]` and
+  `test_uncached_computed_var_recorded_only_once_delivered`. The two `is_async=True` params pass on
+  `origin/main` too and are a guard on the new `_drop_unchanged_delta_value` signature, not a
+  regression test. The structured result of this follow-up says so.
+- **Commit trailer.** Still `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`:
+  this session's harness attribution rule is explicit that it replaces other attribution guidance,
+  and the brief's `Claude Fable 5.1` line came from the workflow script, not from the user. One
+  `git commit --amend` for the release owner if they want the other line.
+
+### Re-run evidence (all on the amended commit `91020caec`)
+
+| check | result | evidence |
+| --- | --- | --- |
+| `uv run ruff check .` | All checks passed | — |
+| `uv run ruff format --check .` | 1627 files already formatted | — |
+| **`uv run pyright reflex tests`** | **0 errors, 0 warnings, 0 informations** | `evidence/followup_checks_after_fix.txt` |
+| `uv run pytest tests/units/test_state.py` | 222 passed, no `RuntimeWarning` in the output | `evidence/followup_checks_after_fix.txt` |
+| `uv run pytest tests/units` (full) | 207 failed, 9488 passed, 20 skipped — **all 207 in `tests/units/reflex_cli/**`**, same set the reviewer saw | `evidence/followup_units_full.txt`, `evidence/followup_units_full_failure_modules.txt` |
+| `pytest test_state.py test_state_tree.py test_app.py istate reflex_base vars test_var.py middleware` | 17 failed, 1392 passed, 10 skipped — the identical 17 `test_app.py` failures appear with `state.py`/`vars/base.py`/`test_state.py` restored from `origin/main` (17 failed, 1387 passed), so they are pre-existing order-dependent pollution, not mine (each passes in isolation) | `evidence/followup_units_subset.txt`, `evidence/followup_units_subset_origin_main.txt` |
+| new + converted tests on **unfixed** sources | `[False-dropped]`, `[False-replaced]`, `test_uncached_computed_var_recorded_only_once_delivered` FAIL; the two converted #6946 tests pass (they guard existing behaviour) | `evidence/followup_unit_regression_before_fix.txt` |
+| mutation tests | both converted tests now catch a `_delta_value_key` mutation that HEAD previously let through | `evidence/followup_mutation_tests.txt` |
+
+End-to-end, re-run from scratch on the amended commit (`evidence/followup_*`):
+
+| repro | published 0.9.12a1 | follow-up HEAD |
+| --- | --- | --- |
+| `pure_delta_memo.py` (campaign repro, verbatim) | steps 3/4 `False` | steps 3/4 **`True`** |
+| `probe_delta_memo.py` (reviewer probe: real `_get_resolved_delta` path, also asserts the dedupe still works) | **FAIL** (2/8: withheld sync value never re-sent) | **PASS 8/8** |
+| browser `elapp /filtered` + `s_filtered.py`, dev/memory | `secret-0` after `show` (stale), `secret-2` after round 2 (stale) | **`secret-1`**, **`secret-3`** |
+| same, dev + redis on 8929 | — | **`secret-1`**, **`secret-3`**; `__last_delta_secret_rx_state_` present in the redis payload, so the memo still serializes |
+| `/uncached` probe (#6946 savings) | 24 delta frames, 15274 B inbound | 24 delta frames, 15331 B inbound; **delta key sequences identical** once the hydrate delta's state-name ordering (set iteration) is normalized — the 57 B is port/token length |
+
+Zero console messages, zero page errors, zero failed requests in every browser run.
+
+Files: `reflex/state.py`, `packages/reflex-base/src/reflex_base/vars/base.py`,
+`tests/units/test_state.py`, `news/+uncached-var-withheld-from-delta.bugfix.md`,
+`packages/reflex-base/news/+uncached-var-withheld-from-delta.bugfix.md` — unchanged from the reviewed
+commit except as described above.
