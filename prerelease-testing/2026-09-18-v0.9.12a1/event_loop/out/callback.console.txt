@@ -1,0 +1,15 @@
+[c1][log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+[c1][debug] [vite] connecting...
+[c1][debug] [vite] connected.
+[c1][info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[c1][log] _call_script ReferenceError: filesById is not defined
+    at eval (eval at applyEvent (http://localhost:3180/utils/state.js:386:15), <anonymous>:1:105)
+    at applyEvent (http://localhost:3180/utils/state.js:388:9)
+    at processEvent (http://localhost:3180/utils/state.js:537:11)
+    at queueEvents (http://localhost:3180/utils/state.js:502:9)
+    at Socket.<anonymous> (http://localhost:3180/utils/state.js:758:9)
+    at Emitter.emit (http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:325:70)
+    at Socket.emitEvent (http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:3146:14)
+    at Socket.onevent (http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:3138:28)
+    at Socket.onpacket (http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:3113:10)
+    at Emitter.emit (http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:325:70)

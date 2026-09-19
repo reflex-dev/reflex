@@ -44,12 +44,20 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   lockstep reflex-enterprise release switching to `class OIDCCookieMeta(type(rx.State))` is the downstream
   half, but it does not rescue the already-published 0.9.5 against a released 0.9.12.
 
-- **FINDING-003 — a `@rx.var(cache=False)` withheld from the delivered delta is never re-sent** (MEDIUM,
-  regression claimed by `ent_mcp_oidc`, verification pending; `event_loop` asked for a pure-reflex repro).
-  Arm: confirmed regression if the verifier holds it. Shape: record the "last sent" key after the delta has
-  been filtered/emitted (or expose the memo update to `get_delta` overrides), not at compute time.
+- **FINDING-003 — a `@rx.var(cache=False)` withheld from the delivered delta is never re-sent** (HIGH,
+  regression; confirmed independently by `ent_mcp_oidc` through enterprise auth and by `event_loop` in pure reflex,
+  dev and prod+redis). Arm: confirmed regression. Shape: record the "last sent" key after the delta has been
+  filtered/emitted (or expose `_suppress_delta_recording()` / a post-filter hook to `get_delta` overrides), not
+  while building it in `BaseState.get_delta` (`reflex/state.py` ~2385 → `ComputedVar._record_delta_value`,
+  `reflex_base/vars/base.py:2689`). Regression test: `event_loop/scripts/s_filtered.py` against `elapp`.
 
 ### Trivially small / significant impact
+
+- **FINDING-015 — #7156's advertised scenario (toast action / `call_script` callback triggering an upload handler)
+  still throws `ReferenceError: filesById is not defined`** (HIGH for the scenario, pre-existing; `event_loop`,
+  verification pending). Arm: significant impact on a change this release announces as fixed. Shape: propagate the
+  `UploadFilesContext` hook/VarData to callback sites, or at minimum reword the #7156 changelog and the toast docs
+  so nobody ships `action=` + `rx.upload_files`.
 
 - **FINDING-012 — `rx.data_editor`'s image-preview overlay (the #7081 headline) cannot open in prod while the
   default "Built with Reflex" badge is on; the badge app-wrap swallows the `#portal` div** (HIGH impact,
@@ -66,6 +74,12 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 ### reflex-dev/reflex
 
+- FINDING-016 — cancelled foreground `supersedes=True` handler loses pre-cancellation writes under redis (prod)
+  while dev/memory keeps them; needs a 0.9.11.post1+redis baseline before triage (`event_loop`).
+- `on_load`-started self-chaining loops keep running after the client disconnects, logging one
+  "Attempting to send delta to disconnected client" warning per tick (pre-existing family, `event_loop`).
+- #6946 polish: every uncached var is re-sent once right after hydrate; dict key order defeats the dedupe; the
+  `_UNKEYABLE_VALUE` branch is unreachable (`event_loop`).
 - FINDING-013 — `rx.vars.use_id()` in an `rx.foreach` body yields one id for every item (new API, #6708):
   either derive a per-iteration id or document that `use_id` is per compiled component (`components_bumps`).
 - FINDING-014 — #7124 changelog: the `reflex.components.datadisplay.code` path only works as a module import,

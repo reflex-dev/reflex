@@ -1,0 +1,120 @@
+was held too long time_taken=2.007s, use `@rx.event(background=True)` decorator 
+for long-running tasks. Happened in event: 
+reflex___state____state.elapp___elapp___ss.frefresh
+Warning: Lock for token 
+3f54cfd2-3d0c-4f49-a705-7ee3775fd369_reflex___state____state.elapp___elapp___ss 
+was held too long time_taken=2.008s, use `@rx.event(background=True)` decorator 
+for long-running tasks. Happened in event: 
+reflex___state____state.elapp___elapp___ss.frefresh
+Warning: Lock for token 
+3f54cfd2-3d0c-4f49-a705-7ee3775fd369_reflex___state____state.elapp___elapp___ss 
+was held too long time_taken=2.009s, use `@rx.event(background=True)` decorator 
+for long-running tasks. Happened in event: 
+reflex___state____state.elapp___elapp___ss.frefresh
+Warning: Lock for token 
+3f54cfd2-3d0c-4f49-a705-7ee3775fd369_reflex___state____state.elapp___elapp___ss 
+was held too long time_taken=2.005s, use `@rx.event(background=True)` decorator 
+for long-running tasks. Happened in event: 
+reflex___state____state.elapp___elapp___ss.frefresh
+Warning: Lock for token 
+3f54cfd2-3d0c-4f49-a705-7ee3775fd369_reflex___state____state.elapp___elapp___ss 
+was held too long time_taken=2.006s, use `@rx.event(background=True)` decorator 
+for long-running tasks. Happened in event: 
+reflex___state____state.elapp___elapp___ss.frefresh
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at eval (eval at applyEvent 
+(http://localhost:3190/assets/link-CAMiucc3.js:2:7464), <anonymous>:1:105)
+    at applyEvent (http://localhost:3190/assets/link-CAMiucc3.js:2:7516)
+    at processEvent (http://localhost:3190/assets/link-CAMiucc3.js:2:8861)
+    at queueEvents (http://localhost:3190/assets/link-CAMiucc3.js:2:8595)
+    at Socket.<anonymous> 
+(http://localhost:3190/assets/link-CAMiucc3.js:2:11943)
+    at Emitter.emit (http://localhost:3190/assets/link-CAMiucc3.js:1:19872)
+    at Socket.emitEvent (http://localhost:3190/assets/link-CAMiucc3.js:1:51627)
+    at Socket.onevent (http://localhost:3190/assets/link-CAMiucc3.js:1:51434)
+    at Socket.onpacket (http://localhost:3190/assets/link-CAMiucc3.js:1:51084)
+    at Emitter.emit (http://localhost:3190/assets/link-CAMiucc3.js:1:19872)
+
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at Object.onClick (http://localhost:3190/assets/elapp-Bz8HyAeU.js:5:20488)
+    at onClick (http://localhost:3190/assets/root-CYhcKpKo.js:4:32138)
+    at yd (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:8:125858)
+    at http://localhost:3190/assets/entry.client-PAjQ1ewH.js:8:130852
+    at _n (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:8:15080)
+    at wd (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:8:127085)
+    at up (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:9:28428)
+    at cp (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:9:28250)
+
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at Object.onClick (eval at applyEvent 
+(http://localhost:3190/assets/link-CAMiucc3.js:2:7259), <anonymous>:1:226)
+    at onClick (http://localhost:3190/assets/root-CYhcKpKo.js:4:32138)
+    at yd (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:8:125858)
+    at http://localhost:3190/assets/entry.client-PAjQ1ewH.js:8:130852
+    at _n (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:8:15080)
+    at wd (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:8:127085)
+    at up (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:9:28428)
+    at cp (http://localhost:3190/assets/entry.client-PAjQ1ewH.js:9:28250)
+
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp___elapp___ss.refresh chain for token 
+1f56a300-95b0-40c8-a14a-eb86c6aef11e, superseded by a newer invocation.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp___elapp___ss.refresh chain for token 
+1f56a300-95b0-40c8-a14a-eb86c6aef11e, superseded by a newer invocation.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp___elapp___ss.poll chain for token 
+1f56a300-95b0-40c8-a14a-eb86c6aef11e, superseded by a newer invocation.
+Debug: Dropping stale reflex___state____state.elapp___elapp___ss.refresh 
+invocation for token 1f56a300-95b0-40c8-a14a-eb86c6aef11e, already superseded by
+a newer chain.
+Debug: Cancelling the previous unfinished 
+reflex___state____state.elapp___elapp___ss.frefresh chain for token 
+1f56a300-95b0-40c8-a14a-eb86c6aef11e, superseded by a newer invocation.
+Warning: Lock for token 
+1f56a300-95b0-40c8-a14a-eb86c6aef11e_reflex___state____state.elapp___elapp___ss 
+was held too long time_taken=2.006s, use `@rx.event(background=True)` decorator 
+for long-running tasks. Happened in event: 
+reflex___state____state.elapp___elapp___ss.frefresh
+Warning: Lock for token 
+1f56a300-95b0-40c8-a14a-eb86c6aef11e_reflex___state____state.elapp___elapp___ss 
+was held too long time_taken=2.007s, use `@rx.event(background=True)` decorator 
+for long-running tasks. Happened in event: 
+reflex___state____state.elapp___elapp___ss.frefresh
+Warning: Lock for token 
+1f56a300-95b0-40c8-a14a-eb86c6aef11e_reflex___state____state.elapp___elapp___ss 
+was held too long time_taken=2.005s, use `@rx.event(background=True)` decorator 
+for long-running tasks. Happened in event: 
+reflex___state____state.elapp___elapp___ss.frefresh
+Warning: Lock for token 
+1f56a300-95b0-40c8-a14a-eb86c6aef11e_reflex___state____state.elapp___elapp___ss 
+was held too long time_taken=2.008s, use `@rx.event(background=True)` decorator 
+for long-running tasks. Happened in event: 
+reflex___state____state.elapp___elapp___ss.frefresh
+[INFO] Shutting down granian
+[INFO] Stopping worker-1
+[INFO] Stopping worker-5
+[INFO] Stopping worker-6
+[INFO] Stopping worker-2
+[INFO] Stopping worker-3
+[INFO] Stopping worker-4
+[INFO] Stopping worker-7
+[INFO] Stopping worker-8
+[INFO] Stopping worker-9
+[INFO] Stopped worker-1
+[INFO] Stopped worker-2
+[INFO] Stopped worker-3
+[INFO] Stopped worker-4
+[INFO] Stopped worker-5
+[INFO] Stopped worker-6
+[INFO] Stopped worker-7
+[INFO] Stopped worker-8
+[INFO] Stopped worker-9
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

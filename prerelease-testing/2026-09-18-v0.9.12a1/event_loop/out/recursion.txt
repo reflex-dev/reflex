@@ -1,0 +1,21 @@
+  t+1s n=428 state=running
+  t+2s n=716 state=running
+  t+3s n=1005 state=running
+  t+4s n=1288 state=running
+  t+5s n=1572 state=running
+  t+6s n=1857 state=running
+  t+7s n=2147 state=running
+  t+8s n=2427 state=running
+  t+9s n=2716 state=running
+  t+10s n=3000 state=FINISHED
+loop elapsed: 11.1 s, n = 3000
+superseding-root loop n = 705
+== navigate away (client-side) mid-loop ==
+== navigate back ==
+after nav back: rc.n = 342  rcsuper.n = 1509
+after restart: rcsuper.n = 281
+after reload: rc.n = 455  rcsuper.n = 928
+== console ==
+   [c1][log] Disconnect websocket on page navigation
+== pageerrors == []
+== net == []
