@@ -1,0 +1,24 @@
+Form Designer
+Survey A
+New Form
+Form Name
+Preview
+Responses
+Delete Form
+Add Field
+Built with
+Edit Field
+Name
+Prompt
+Type
+text
+text
+number
+email
+password
+checkbox
+radio
+select
+textarea
+Required
+Save

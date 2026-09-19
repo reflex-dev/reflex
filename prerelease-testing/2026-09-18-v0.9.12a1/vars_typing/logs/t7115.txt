@@ -1,0 +1,185 @@
+########## 0.9.12a1 ##########
+{
+  "literal_var_create_list": {
+    "type": "ReflexRuntimeError",
+    "msg": "Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'",
+    "cause_type": "AttributeError",
+    "cause_msg": "'Point' object has no attribute 'nmae'",
+    "chain": [
+      "ReflexRuntimeError: Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'",
+      "AttributeError: 'Point' object has no attribute 'nmae'"
+    ],
+    "mentions_nmae": true,
+    "user_frame_in_tb": true,
+    "tb_tail": [
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2281, in __getattr__",
+      "    return self._cached_var_name",
+      "           ^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2242, in __get__",
+      "    raise ReflexRuntimeError(msg) from err",
+      "reflex_base.utils.exceptions.ReflexRuntimeError: Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'"
+    ]
+  },
+  "var_create_dict": {
+    "type": "ReflexRuntimeError",
+    "msg": "Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'",
+    "cause_type": "AttributeError",
+    "cause_msg": "'Point' object has no attribute 'nmae'",
+    "chain": [
+      "ReflexRuntimeError: Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'",
+      "AttributeError: 'Point' object has no attribute 'nmae'"
+    ],
+    "mentions_nmae": true,
+    "user_frame_in_tb": true,
+    "tb_tail": [
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2281, in __getattr__",
+      "    return self._cached_var_name",
+      "           ^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2242, in __get__",
+      "    raise ReflexRuntimeError(msg) from err",
+      "reflex_base.utils.exceptions.ReflexRuntimeError: Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'"
+    ]
+  },
+  "foreach": {
+    "type": "ReflexRuntimeError",
+    "msg": "Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'",
+    "cause_type": "AttributeError",
+    "cause_msg": "'Point' object has no attribute 'nmae'",
+    "chain": [
+      "ReflexRuntimeError: Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'",
+      "AttributeError: 'Point' object has no attribute 'nmae'"
+    ],
+    "mentions_nmae": true,
+    "user_frame_in_tb": true,
+    "tb_tail": [
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2281, in __getattr__",
+      "    return self._cached_var_name",
+      "           ^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2242, in __get__",
+      "    raise ReflexRuntimeError(msg) from err",
+      "reflex_base.utils.exceptions.ReflexRuntimeError: Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'"
+    ]
+  },
+  "custom_attrs_mapping": {
+    "type": "ReflexRuntimeError",
+    "msg": "Computing cached property LiteralObjectVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'",
+    "cause_type": "AttributeError",
+    "cause_msg": "'Point' object has no attribute 'nmae'",
+    "chain": [
+      "ReflexRuntimeError: Computing cached property LiteralObjectVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'",
+      "AttributeError: 'Point' object has no attribute 'nmae'"
+    ],
+    "mentions_nmae": true,
+    "user_frame_in_tb": true,
+    "tb_tail": [
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2281, in __getattr__",
+      "    return self._cached_var_name",
+      "           ^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2242, in __get__",
+      "    raise ReflexRuntimeError(msg) from err",
+      "reflex_base.utils.exceptions.ReflexRuntimeError: Computing cached property LiteralObjectVar._cached_var_name raised AttributeError: 'Point' object has no attribute 'nmae'"
+    ]
+  },
+  "computed_var_body_typo": {
+    "raised": null
+  },
+  "hasattr_js_expr": {
+    "type": "ReflexRuntimeError",
+    "msg": "Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Q' object has no attribute 'missing_thing'"
+  },
+  "getattr_default": {
+    "type": "ReflexRuntimeError",
+    "msg": "Computing cached property LiteralArrayVar._cached_var_name raised AttributeError: 'Q' object has no attribute 'missing_thing'"
+  }
+}
+########## 0.9.11.post1 ##########
+{
+  "literal_var_create_list": {
+    "type": "VarAttributeError",
+    "msg": "Attribute _cached_var_name not found.",
+    "cause_type": null,
+    "cause_msg": null,
+    "chain": [
+      "VarAttributeError: Attribute _cached_var_name not found."
+    ],
+    "mentions_nmae": false,
+    "user_frame_in_tb": false,
+    "tb_tail": [
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2120, in __getattr__",
+      "    return next_class.__getattr__(self, name)",
+      "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 1471, in __getattr__",
+      "    raise VarAttributeError(msg)",
+      "reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found."
+    ]
+  },
+  "var_create_dict": {
+    "type": "TypeError",
+    "msg": "__str__ returned non-string (type ArrayCastedVar)",
+    "cause_type": null,
+    "cause_msg": null,
+    "chain": [
+      "TypeError: __str__ returned non-string (type ArrayCastedVar)"
+    ],
+    "mentions_nmae": false,
+    "user_frame_in_tb": false,
+    "tb_tail": [
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/vars_typing/scripts/t7115_attrerror.py\", line 19, in run",
+      "    fn()",
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/vars_typing/scripts/t7115_attrerror.py\", line 40, in <lambda>",
+      "    run(\"var_create_dict\", lambda: str(rx.Var.create({\"k\": [Point()]})))",
+      "                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "TypeError: __str__ returned non-string (type ArrayCastedVar)"
+    ]
+  },
+  "foreach": {
+    "type": "VarAttributeError",
+    "msg": "Attribute _cached_var_name not found.",
+    "cause_type": null,
+    "cause_msg": null,
+    "chain": [
+      "VarAttributeError: Attribute _cached_var_name not found."
+    ],
+    "mentions_nmae": false,
+    "user_frame_in_tb": false,
+    "tb_tail": [
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 2120, in __getattr__",
+      "    return next_class.__getattr__(self, name)",
+      "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex_base/vars/base.py\", line 1471, in __getattr__",
+      "    raise VarAttributeError(msg)",
+      "reflex_base.utils.exceptions.VarAttributeError: Attribute _cached_var_name not found."
+    ]
+  },
+  "custom_attrs_mapping": {
+    "type": "RecursionError",
+    "msg": "maximum recursion depth exceeded",
+    "cause_type": null,
+    "cause_msg": null,
+    "chain": [
+      "RecursionError: maximum recursion depth exceeded",
+      "TypeError: __str__ returned non-string (type ObjectCastedVar)"
+    ],
+    "mentions_nmae": false,
+    "user_frame_in_tb": false,
+    "tb_tail": [
+      "    + \", \".join([",
+      "                ^",
+      "  File \"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex_base/vars/object.py\", line 441, in <listcomp>",
+      "    f\"[{LiteralVar.create(key)!s}] : {LiteralVar.create(value)!s}\"",
+      "        ^^^^^^^^^^^^^^^^^^^^^^",
+      "RecursionError: maximum recursion depth exceeded"
+    ]
+  },
+  "computed_var_body_typo": {
+    "raised": null
+  },
+  "hasattr_js_expr": {
+    "raised": null,
+    "value": false
+  },
+  "getattr_default": {
+    "raised": null,
+    "value": "DEFAULT"
+  }
+}

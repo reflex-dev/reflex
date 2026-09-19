@@ -1,0 +1,98 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `memo_line` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`, `value`. Until removal, a missing return defaults to `rx.Component` and
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (vtapp/vtapp.py:123)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/vt/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2235, in __get__
+    GLOBAL_CACHE[unique_id] = self._func(instance)
+                              ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 655, in _cached_get_all_var_data
+    *[
+     ^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 656, in <listcomp>
+    LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1938, in _get_all_var_data_without_creating_var_dispatch
+    serialized_value = serializers.serialize(value)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/utils/serializers.py", line 204, in serialize
+    serialized = serializer(value)
+                 ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/vars_typing/vtapp/vtapp/vtapp.py", line 249, in serialize_point
+    return f"{p.x},{p.nmae}"  # typo
+                    ^^^^^^
+AttributeError: 'Point' object has no attribute 'nmae'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 426, in compile_or_validate_app
+    get_compiled_app(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex/utils/prerequisites.py", line 338, in get_compiled_app
+    app._compile(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex/app.py", line 1715, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1325, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 840, in compile
+    page_ctx.root_component = self.hooks.compile_component(
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 327, in compile_component
+    return self._compile_component_with_replacements(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 556, in _compile_component_with_replacements
+    return visit(
+           ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 515, in visit
+    compiled_children = visit_children(
+                        ^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 483, in visit_children
+    compiled_child = visit(
+                     ^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 507, in visit
+    hook_impl(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 215, in enter_component
+    hook_impl(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex/compiler/plugins/memoize.py", line 274, in enter_component
+    if not _should_memoize(comp):
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex/compiler/plugins/memoize.py", line 187, in _should_memoize
+    var_data = prop_var._get_all_var_data()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1729, in _get_all_var_data
+    self._original._get_all_var_data(),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2295, in _get_all_var_data
+    return self._cached_get_all_var_data
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vt/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2242, in __get__
+    raise ReflexRuntimeError(msg) from err
+reflex_base.utils.exceptions.ReflexRuntimeError: Computing cached property LiteralArrayVar._cached_get_all_var_data raised AttributeError: 'Point' object has no attribute 'nmae'

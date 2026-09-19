@@ -1,0 +1,23 @@
+########## 0.9.11.post1 baseline ##########
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/vars_typing/scripts/t7189_annotated.py", line 28, in <module>
+    class S(rx.State):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vtprev/lib/python3.11/site-packages/reflex_base/vars/base.py", line 3929, in __new__
+    return super().__new__(cls, name, bases, namespace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen abc>", line 106, in __new__
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vtprev/lib/python3.11/site-packages/reflex/state.py", line 691, in __init_subclass__
+    cls.base_vars = {
+                    ^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vtprev/lib/python3.11/site-packages/reflex/state.py", line 692, in <dictcomp>
+    name: get_var_for_field(cls, name, f)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vtprev/lib/python3.11/site-packages/reflex/state.py", line 266, in get_var_for_field
+    return dispatch(
+           ^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vtprev/lib/python3.11/site-packages/reflex_base/vars/base.py", line 3465, in dispatch
+    ).guess_type()
+      ^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vtprev/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1115, in guess_type
+    raise TypeError(msg)
+TypeError: Unsupported type typing.Annotated[__main__.Cat | __main__.Dog, FieldInfo(annotation=NoneType, required=True, discriminator='kind')] for guess_type.

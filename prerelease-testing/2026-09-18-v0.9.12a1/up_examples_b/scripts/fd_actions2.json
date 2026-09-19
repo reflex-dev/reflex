@@ -1,0 +1,11 @@
+[{"fill":["input[name=username]","alice"]},
+ {"fill":["input[name=password]","hunter2hunter2"]},
+ {"click":"button:has-text('Sign in')"},
+ {"wait":2500},
+ {"dump":"after_login.txt"},
+ {"screenshot":"03_after_login.png"},
+ {"goto":"http://localhost:3500/form/new/edit"},
+ {"wait":2000},
+ {"dump":"form_new.txt"},
+ {"screenshot":"04_form_new.png"},
+ {"html":"form_new.html"}]

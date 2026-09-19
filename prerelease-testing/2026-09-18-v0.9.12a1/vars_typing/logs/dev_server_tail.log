@@ -1,0 +1,80 @@
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: 
+Debug: [7.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-dom@19.2.8', 'sonner@2.0.8', 'isbot@5.2.2', 
+'universal-cookie@8.1.2', 'mergician@v2.0.2', 'react-router@8.4.0', 
+'react-helmet@6.1.0', '@radix-ui/themes@3.3.0', 'socket.io-client@4.8.3', 
+'lucide-react@1.26.0', '@react-router/node@8.4.0', 'react@19.2.8', 
+'react-error-boundary@6.1.2']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed react-dom@19.2.8
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed universal-cookie@8.1.2
+Debug: installed mergician@2.0.2
+Debug: installed react-router@8.4.0
+Debug: installed react-helmet@6.1.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed lucide-react@1.26.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed react@19.2.8
+Debug: installed react-error-boundary@6.1.2
+Debug: 
+Debug: [7.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/vars_typing/vtapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/vars_typing/vtapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.04s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpa
+d/apps/vars_typing/vtapp/vtapp', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/vars_typing/vtapp/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/vars_typing/vtapp/CLAUDE.md', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/vars_typing/vtapp/AGENTS.md', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/vars_typing/vtapp/rxconfig.py']
+[INFO] Starting granian (main PID: 645)
+[INFO] Listening at: http://0.0.0.0:8340
+[INFO] Spawning worker-1 with PID: 675
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `memo_line` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`, `value`. Until removal, a missing return defaults to `rx.Component` and
+missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (vtapp/vtapp.py:123)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: BE Evaluating stateful page: index
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3340/
+App running at: http://localhost:3340/
+Backend running at: http://0.0.0.0:8340
+Debug:   ➜  Network: http://192.0.2.2:3340/  eth0
+Debug: 2:39:08 AM [vite] (ssr) connected.

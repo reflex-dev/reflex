@@ -1,0 +1,21 @@
+────────────────────────── Initializing form_designer ──────────────────────────
+Info: Initializing the web directory.
+Success: Initialized form_designer. Install dependencies from `requirements.txt`
+with `uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 33/32 0:00:00
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://localhost:3500/
+Backend running at: http://0.0.0.0:8500
+Starting frontend failed with exit code -9
+$ react-router dev --host
+  ➜  Local:   http://localhost:3500/
+  ➜  Network: http://192.0.2.2:3500/  eth0
+2:35:13 AM [vite] (ssr) connected.
+error: script "dev" was terminated by signal SIGKILL (Forced quit)
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

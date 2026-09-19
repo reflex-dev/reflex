@@ -1,0 +1,169 @@
+Data App
+Add New Item
+TG
+Total: 36 Items
+Sort By: Name
+Icon	state	zone	total_cases	active	discharged	deaths	active_ratio	discharge_ratio	discharge_avg	death_ratio	death_avg	population	Edit	Delete
+
+DA
+	Andaman and Nicobar	South	7670	7	7534	129	0.09	98.23	Below Average	1.68	Above Average	399001	
+	Delete
+
+DA
+	Andhra Pradesh	South	2069770	3128	2052230	14412	0.15	99.15	Above Average	0.7	Below Average	91702478	
+	Delete
+
+DA
+	Arunachal Pradesh	East	55216	42	54894	280	0.08	99.42	Above Average	0.51	Below Average	1711947	
+	Delete
+
+DA
+	Assam	East	613784	3272	604465	6047	0.53	98.48	Above Average	0.99	Below Average	35998752	
+	Delete
+
+DA
+	Bihar	East	726153	29	716462	9662	0.0	98.67	Above Average	1.33	Above Average	128500364	
+	Delete
+
+DA
+	Chandigarh	North	65380	24	64536	820	0.04	98.71	Above Average	1.25	Below Average	1158040	
+	Delete
+
+DA
+	Chhattisgarh	East	1006326	230	992508	13588	0.02	98.63	Above Average	1.35	Above Average	32199722	
+	Delete
+
+DA
+	Daman and Diu	West	10682	0	10678	4	0.0	99.96	Above Average	0.04	Below Average	773997	
+	Delete
+
+DA
+	Delhi	North	1440388	361	1414934	25093	0.03	98.23	Below Average	1.74	Above Average	19301096	
+	Delete
+
+DA
+	Goa	West	178467	263	174830	3374	0.15	97.96	Below Average	1.89	Above Average	1521992	
+	Delete
+
+DA
+	Gujarat	West	826924	226	816608	10090	0.03	98.75	Above Average	1.22	Below Average	70400153	
+	Delete
+
+DA
+	Haryana	North	771420	140	761230	10050	0.02	98.68	Above Average	1.3	Above Average	28900667	
+	Delete
+
+DA
+	Himachal Pradesh	North	225712	1100	220800	3812	0.49	97.82	Below Average	1.69	Above Average	7503010	
+	Delete
+
+DA
+	Jammu and Kashmir	North	334006	1450	328108	4448	0.43	98.23	Below Average	1.33	Above Average	14999397	
+	Delete
+
+DA
+	Jharkhand	East	348992	141	343713	5138	0.04	98.49	Above Average	1.47	Above Average	40100376	
+	Delete
+
+DA
+	Karnataka	South	2991614	8056	2945415	38143	0.27	98.46	Above Average	1.27	Below Average	69599762	
+	Delete
+
+DA
+	Kerala	South	5055224	69258	4950281	35685	1.37	97.92	Below Average	0.71	Below Average	34698876	
+	Delete
+
+DA
+	Ladakh	North	21148	154	20783	211	0.73	98.27	Below Average	1.0	Below Average	290492	
+	Delete
+
+DA
+	Lakshadweep	South	10365	0	10314	51	0.0	99.51	Above Average	0.49	Below Average	66001	
+	Delete
+
+DA
+	Madhya Pradesh	West	792956	75	782357	10524	0.01	98.66	Above Average	1.33	Above Average	85002417	
+	Delete
+
+DA
+	Maharashtra	West	6623344	15866	6466913	140565	0.24	97.64	Below Average	2.12	Above Average	124904071	
+	Delete
+
+DA
+	Manipur	East	124432	799	121687	1946	0.64	97.79	Below Average	1.56	Above Average	3436948	
+	Delete
+
+DA
+	Meghalaya	East	84013	277	82274	1462	0.33	97.93	Below Average	1.74	Above Average	3772103	
+	Delete
+
+DA
+	Mizoram	East	128604	5651	122494	459	4.39	95.25	Below Average	0.36	Below Average	1308967	
+	Delete
+
+DA
+	Nagaland	East	31978	163	31123	692	0.51	97.33	Below Average	2.16	Above Average	2073074	
+	Delete
+
+DA
+	Odisha	East	1045209	2534	1034300	8375	0.24	98.96	Above Average	0.8	Below Average	47099270	
+	Delete
+
+DA
+	Puducherry	South	128401	275	126263	1863	0.21	98.33	Below Average	1.45	Above Average	1646050	
+	Delete
+
+DA
+	Punjab	North	602778	318	585889	16571	0.05	97.2	Below Average	2.75	Above Average	30501026	
+	Delete
+
+DA
+	Rajasthan	West	954503	71	945478	8954	0.01	99.05	Above Average	0.94	Below Average	79502477	
+	Delete
+
+DA
+	Sikkim	East	32096	121	31575	400	0.38	98.38	Above Average	1.25	Below Average	658019	
+	Delete
+
+DA
+	Tamil Nadu	South	2714025	9751	2668001	36273	0.36	98.3	Below Average	1.34	Above Average	83697770	
+	Delete
+
+DA
+	Telengana	South	673469	3741	665755	3973	0.56	98.85	Above Average	0.59	Below Average	38157311	
+	Delete
+
+DA
+	Tripura	East	84665	116	83732	817	0.14	98.9	Above Average	0.96	Below Average	4184959	
+	Delete
+
+DA
+	Uttar Pradesh	North	1710261	90	1687262	22909	0.01	98.66	Above Average	1.34	Above Average	231502578	
+	Delete
+
+DA
+	Uttarakhand	North	344014	158	336453	7403	0.05	97.8	Below Average	2.15	Above Average	11700099	
+	Delete
+
+DA
+	West Bengal	East	1603318	8031	1575980	19307	0.5	98.29	Below Average	1.2	Below Average	100896618	
+	Delete
+Item Details
+
+Add your item details.
+
+state
+zone
+total_cases
+active
+discharged
+deaths
+active_ratio
+discharge_ratio
+discharge_avg
+death_ratio
+death_avg
+population
+Submit
+Cancel
+Submit Item

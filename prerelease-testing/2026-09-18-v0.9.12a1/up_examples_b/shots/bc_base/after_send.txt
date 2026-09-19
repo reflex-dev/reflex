@@ -1,0 +1,35 @@
+1 products found
+
+(A1) Widget
+
+Stock:5
+
+Category:tools
+
+Seller:acme
+
+Sender:bob
+
+Query:
+
+Body:
+
+Clear
+Send
+
+Status: 200
+
+[
+  {
+    "created": "2026-09-19T02:28:37.967416",
+    "id": 1,
+    "seller": "acme",
+    "updated": "2026-09-19T02:28:37.967416",
+    "label": "Widget",
+    "code": "A1",
+    "image": "/favicon.ico",
+    "quantity": 5,
+    "category": "tools",
+    "sender": "bob"
+  }
+]

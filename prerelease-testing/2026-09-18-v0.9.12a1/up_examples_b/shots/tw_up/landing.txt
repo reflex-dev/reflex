@@ -1,0 +1,8 @@
+Welcome to PySocial!
+Sign in or sign up to get started.
+
+See the source code for this demo app here.
+
+Log in
+
+Don't have an account yet? Sign up here.

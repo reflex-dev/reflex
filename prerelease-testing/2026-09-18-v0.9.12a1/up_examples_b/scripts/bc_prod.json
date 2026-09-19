@@ -1,0 +1,7 @@
+[{"wait":3000},
+ {"dump":"prod_home.txt"},
+ {"screenshot":"03_prod_home.png"},
+ {"click":"button:has-text('Send')"},
+ {"wait":3000},
+ {"dump":"prod_after_send.txt"},
+ {"screenshot":"04_prod_after_send.png"}]
