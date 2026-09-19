@@ -1,0 +1,60 @@
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpa
+d/apps/verify_ent_map_dnd_flow_mantine/tickets_new/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_map_dnd_flow_mantine/tickets_new/tickets.db', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_map_dnd_flow_mantine/tickets_new/tickets', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_map_dnd_flow_mantine/tickets_new/rxconfig.py']
+[INFO] Starting granian (main PID: 18470)
+[INFO] Listening at: http://0.0.0.0:9120
+[INFO] Spawning worker-1 with PID: 18502
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (tickets/tickets.py:54)
+Warning: Database is not initialized, run reflex db init first.
+Debug: Registered lifespan task: _setup_event_processor
+Process granian-worker:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent_tk/lib/python3.11/site-packages/granian/server/mp.py", line 92, in wrapped
+    callback = callback_loader()
+               ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent_tk/lib/python3.11/site-packages/granian/_internal.py", line 70, in load_target
+    rv = rv()
+         ^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent_tk/lib/python3.11/site-packages/reflex/app.py", line 813, in __call__
+    plugin.post_compile(app=self)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent_tk/lib/python3.11/site-packages/reflex_enterprise/plugins/event_handler_api.py", line 1486, in post_compile
+    pages, all_dynamic_args = collect_page_info(app)
+                              ^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent_tk/lib/python3.11/site-packages/reflex_enterprise/plugins/event_handler_api.py", line 596, in collect_page_info
+    if handler is not None and _is_public_handler(handler):
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent_tk/lib/python3.11/site-packages/reflex_enterprise/plugins/event_handler_api.py", line 305, in _is_public_handler
+    return not is_exempt(handler.state)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent_tk/lib/python3.11/site-packages/reflex_enterprise/auth/enforcement.py", line 947, in is_exempt
+    from reflex_enterprise.auth.oidc.state import OIDCAuthState
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent_tk/lib/python3.11/site-packages/reflex_enterprise/auth/oidc/state.py", line 381, in <module>
+    class OIDCAuthState(ConfigMixin, rx.State, mixin=True, metaclass=OIDCCookieMeta):
+TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+[ERROR] Unexpected exit from worker-1
+Debug:   ➜  Local:   http://localhost:4120/
+App running at: http://localhost:4120/
+Backend running at: http://0.0.0.0:9120
+Debug:   ➜  Network: http://192.0.2.2:4120/  eth0
+Debug: 5:13:59 AM [vite] (ssr) connected.
+Debug: error: script "dev" exited with code 143
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.
