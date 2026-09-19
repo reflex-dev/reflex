@@ -231,3 +231,204 @@ perf/                   ~500-component app + time_compile.py
 logs/                   trimmed server + driver logs, driver report.json
 shots/{dev,prev,prod}/  screenshots
 ```
+
+---
+
+## VERIFICATION
+
+Independent adversarial re-run (2026-09-19), working from this NOTES.md + the app sources and
+scripts in this directory only. All servers/builds on the verifier's reserved ports
+(frontend 3640-3659, backend 8640-8659). Everything installed from PyPI; nothing run from the
+checkout.
+
+Versions used (unchanged from the exploration):
+
+```
+$ uv pip freeze --python $SB/envs/shared/bin/python | grep -i reflex
+reflex==0.9.12a1 / reflex-base==0.9.12a1 / -code 0.9.6a1 / -core 0.9.10a1 / -dataeditor 0.9.3a1
+/ -gridjs 0.9.2a1 / -lucide 1.0.4 / -markdown 0.9.4a1 / -moment 0.9.4 / -plotly 0.9.7a1
+/ -radix 0.9.10a1 / -react-player 0.9.2 / -recharts 0.9.4a1 / -sonner 0.9.4a1 / hosting-cli 0.1.72
+
+$ uv pip freeze --python $SB/envs/prev/bin/python | grep -i reflex
+reflex==0.9.11.post1 / reflex-base==0.9.11.post1 / -code 0.9.5 / -core 0.9.9 / -dataeditor 0.9.2
+/ -gridjs 0.9.1 / -lucide 1.0.4 / -markdown 0.9.3 / -moment 0.9.4 / -plotly 0.9.6 / -radix 0.9.9
+/ -react-player 0.9.2 / -recharts 0.9.3 / -sonner 0.9.3 / hosting-cli 0.1.72
+```
+
+Verifier scripts (independent of `scripts/drive.py` and `scripts/probe.py`):
+`verification/scripts/vprobe.py` (triggers + form submit), `verification/scripts/boom_probe2.py`
+(cond-branch laziness). Minimal repro app for issue 2: `verification/app_boomy/`.
+
+### Commands run
+
+```bash
+SB=<scratchpad>
+# 0.9.12a1 dev, full QA app
+cd $SB/apps/verify_memo_aschild/memoaschild
+REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex run --frontend-port 3640 --backend-port 8640
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python vprobe.py http://localhost:3640 <out>
+
+# 0.9.11.post1 dev, same app in a fresh dir (fresh .web)
+cd $SB/apps/verify_memo_aschild/memoaschild_prev
+REFLEX_TELEMETRY_ENABLED=false $SB/envs/prev/bin/reflex run --frontend-port 3641 --backend-port 8641
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python vprobe.py http://localhost:3641 <out>
+
+# minimal cond app (verification/app_boomy), dev on 0.9.12a1
+cd $SB/apps/verify_memo_aschild/boomy
+QA_VAR=1 REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex run --frontend-port 3644 --backend-port 8644
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python boom_probe2.py http://localhost:3644 <out>
+
+# minimal cond app, PROD build on both versions (this is the baseline the exploration skipped)
+QA_VAR=1 REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex run --env prod --frontend-port 3645 --backend-port 3645
+cd $SB/apps/verify_memo_aschild/boomy_prev
+QA_VAR=1 REFLEX_TELEMETRY_ENABLED=false $SB/envs/prev/bin/reflex run --env prod --frontend-port 3646 --backend-port 3646
+```
+
+### Issue 1 — `rx.dropdown_menu.trigger` swallows the child's `on_click` — CONFIRMED (pre-existing, upstream, low)
+
+Reproduced exactly as written on 0.9.12a1 and, identically, on 0.9.11.post1
+(`verification/logs/vprobe_912.log`, `verification/logs/vprobe_prev.log` — both files are
+line-for-line identical for the trigger section):
+
+```
+REALCLICK dialog:    0 -> 1   OK
+REALCLICK popover:   1 -> 2   OK
+REALCLICK tooltip:   2 -> 3   OK
+REALCLICK dropdown:  3 -> 3   NO-EVENT
+REALCLICK hovercard: 3 -> 4   OK
+REALCLICK dropdown(2nd): 4 -> 4
+JSCLICK   dropdown:  4 -> 5   handler-wired-OK      <- el.click() DOES run the handler
+KEYBOARD  dropdown Enter: 5 -> 5                    <- Enter does NOT run it either
+DROPDOWN menu item present after click: 1; body pointer-events=none
+```
+
+Refutation attempts and what they showed:
+
+* **Not a compile/wiring bug.** A synthetic `document.querySelector('#t_dropdown').click()`
+  runs `TrigState.bump("dropdown")` on both versions, so the compiled `onClick` is present and
+  correctly bound. The compiled memo body (`.web/app_components/memoaschild/memoaschild.jsx`)
+  is `DropdownMenu.Trigger > Flex > Button{onClick: addEvents([...])}` — structurally the same
+  as the dialog/popover/hover_card triggers, as the exploration says.
+* **Not app misuse.** The app uses the pattern reflex itself sets up:
+  `RadixThemesTriggerComponent.create` wraps a child that has `on_click` in an inert `Flex`
+  specifically so the child handler survives
+  (`packages/reflex-components-radix/src/reflex_components_radix/themes/base.py:137-163`).
+  So the framework intends the child's `on_click` to run; for `dropdown_menu` it silently
+  does not.
+* **Upstream cause confirmed empirically.** After the real click the menu is open
+  (`#dd_item` present) and `getComputedStyle(document.body).pointerEvents === "none"` — the
+  Radix `DismissableLayer` with `disableOutsidePointerEvents`. `DropdownMenu.Trigger` opens on
+  `pointerdown`, so by `pointerup` the body is `pointer-events:none` and the browser never
+  dispatches the `click` to the button. Keyboard `Enter` fails for the sibling reason (Radix's
+  trigger `onKeyDown` calls `preventDefault`, so no synthetic click is produced).
+  `Dialog.Trigger`/`Popover.Trigger` open on `click`, so the child handler runs first on the
+  way up.
+* **Not a 0.9.12a1 regression** — byte-identical on 0.9.11.post1 with radix components 0.9.9.
+
+Verdict: real, reproducible, user-visible (a silently dropped event handler), but pre-existing
+and caused by upstream Radix semantics. Should NOT block 0.9.12a1. A reflex-side fix is
+possible (bind the child handler to `on_pointer_down` for this trigger, or make
+`DropdownMenuTrigger` default to `as_child=True` so the child button *is* the trigger) — file it
+as an ordinary bug, not a release blocker.
+Evidence: `verification/logs/vprobe_912.log`, `verification/logs/vprobe_prev.log`,
+`verification/shots/dropdown_912.png`, `verification/shots/dropdown_prev.png`.
+
+### Issue 2 — "a component that throws at render fails the whole production build" — REFUTED as written
+
+The *symptom* reproduces, but the stated mechanism ("rx.cond evaluates both branches eagerly",
+"a component that throws at render") is wrong, and the missing baseline turns out to be
+negative.
+
+Minimal app `verification/app_boomy/` puts three different crash shapes in the **untaken (false)**
+branch of an `rx.cond` whose condition is `False`:
+
+| page | untaken branch contains | dev result on 0.9.12a1 | prerendered in prod build? |
+|---|---|---|---|
+| `/boomvar` | `rx.text(rx.Var("undefined_global_thing.nope"))` — raw-JS escape hatch | page dies, `ReferenceError` | **NO — build fails** |
+| `/boommemo` | `crashing_memo()` — an `@rx.memo` component whose own body holds that Var | renders `not exploded`, **0 console errors** | yes |
+| `/boomnull` | `rx.text(S.user["name"])` with `user: dict \| None = None` — the idiomatic null-guard | renders `not exploded`, **0 console errors** | yes |
+
+(`verification/logs/boom_probe2_912_dev.log`, `verification/shots/boom{var,memo,null}_912_dev.png`.)
+
+So components in the untaken branch are **not** rendered, and state-var expressions in the
+untaken branch are **not** evaluated — reflex compiles every state-derived expression into its
+own `Bare_comp_*` memo component, e.g. for `/boomnull`:
+`jsx(Cond_comp_…,{},jsx(Fragment,{},jsx(RadixThemesText,…,jsx(Bare_comp_03c0d5b6…,{},))),…)`.
+The only thing that is evaluated eagerly is a **raw `rx.Var("<js>")` literal**, which is
+inlined verbatim into the parent's JSX call: `jsx(RadixThemesText,{as:"p"},undefined_global_thing.nope)`.
+That is ordinary JavaScript argument evaluation of an unguarded global dereference injected
+through reflex's documented escape hatch — the sample app's `/boom` page is built out of exactly
+that construct, which is what manufactures the crash.
+
+The prod half reproduces but is **not** a regression. Same minimal app, `QA_VAR=1`, prod build:
+
+```
+0.9.12a1      Prerender (html): / , /boommemo , /boomnull  -> ok
+              ReferenceError: undefined_global_thing is not defined
+              Error: Prerender: Request failed for /boomvar/: … Received a 500 status code
+              Creating Production Build failed with exit code 1
+0.9.11.post1  byte-identical: same three routes prerendered, same ReferenceError,
+              same "Prerender: Request failed for /boomvar/", same exit code 1
+```
+
+(`verification/logs/boomy_prod_912.trim.log`, `verification/logs/boomy_prod_prev.trim.log`.)
+Both versions generate the same `.web/react-router.config.js`
+(`{"basename":"/","future":{"unstable_optimizeDeps":true},"ssr":false,"prerender":true,"build":"build"}`),
+and the `.templates/web/react-router.config.js` shipped by `reflex-base` is identical in both
+venvs, so the prerender-on-build behaviour is unchanged by this release.
+
+What the written repro was missing: (a) the baseline prod build, which the exploration itself
+flagged as not run — it is negative, the failure is identical on 0.9.11.post1; (b) a control
+showing that the crash needs a raw `rx.Var`. Without (b) the finding reads as "any crashing
+component breaks the build", which the `/boommemo` and `/boomnull` controls disprove.
+
+Residual, worth one line in docs rather than a bug: an inline raw `rx.Var` JS expression placed
+in an `rx.cond` branch is evaluated even when that branch is not taken (a plain JS ternary would
+not evaluate it), because `rx.cond` compiles to `jsx(Cond_comp_*, {}, <true>, <false>)` and both
+children are ordinary call arguments. Anything reflex generates itself (components, state vars)
+is already lazy.
+
+Verdict: not a defect of 0.9.12a1 — no regression, and the mechanism as written does not hold.
+
+### Issue 3 — `on_submit` form data polluted with id-keyed duplicates and `'None'` entries — REPRODUCED, by design, pre-existing (not actionable for this release)
+
+0.9.12a1 (`verification/logs/vprobe_912.log`):
+
+```
+{"full_name":"Ada Lovelace","controlled":"ctl-typed","nickname":"nick-typed","bio":"bio text",
+ "fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30",
+ "the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed",
+ "inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True",
+ "inp_notify":"True","inp_color":"green","inp_volume":"30","btn_submit":"None"}
+```
+
+0.9.11.post1 (`verification/logs/vprobe_prev.log`): the **extra** keys are identical, including
+`"the_form":"banana"`, `"field_full_name":"None"`, `"inp_fruit":"None"`, `"btn_submit":"None"`
+(0.9.11 additionally *lacks* `full_name`/`controlled`/`nickname`, which is the #6850 fix the
+exploration verified). So the pollution is pre-existing and unchanged.
+
+Root cause, in the release source:
+
+* `packages/reflex-components-core/src/reflex_components_core/el/elements/forms.py:359-380`
+  `Form._get_form_refs()` — "Send all the input refs to the handler": it walks **every** ref in
+  the form subtree (reflex creates a ref for any component given an `id`) and emits
+  `getRefValue(ref_<id>)` per id.
+* `packages/reflex-components-core/src/reflex_components_core/el/elements/forms.py:67`
+  merges them over the real FormData: `{...Object.fromEntries(new FormData($form).entries()), ...<refs>}`.
+* `packages/reflex-base/src/reflex_base/.templates/web/utils/state.js:1469-1491` `getRefValue()`
+  returns `undefined` for elements that are neither inputs nor radix checkbox/switch/slider
+  (→ `"None"` after transport), and for the `<form>` element itself falls through to
+  `ref.current.querySelector(":checked")?.value`, which picks up the radix select's hidden
+  checked input — that is where `"the_form":"banana"` comes from.
+
+So the id-keyed entries are an intentional, long-standing API (it lets fields that carry an `id`
+but no `name` reach the handler); the ugly parts are the `"None"` values for non-input ids.
+Only apps that put `id=` on non-field elements inside a form (as this QA app does on every
+element, for driving) see the noise. Not a regression, not caused by this release; at most a
+cleanup ticket ("skip refs whose `getRefValue` is undefined"), not a fix-before-release item.
+
+### Processes
+
+All servers started by this verification (dev 3640, dev 3641, dev 3644, prod builds 3645/3646)
+were terminated; `ports.py 3640 3641 3644 3645 3646 8640 8641 8644` reports nothing listening and
+no `reflex`/`vite`/`react-router` process of this verification remains.
