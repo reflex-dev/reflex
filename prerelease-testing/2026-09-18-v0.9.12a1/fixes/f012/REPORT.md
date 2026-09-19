@@ -100,9 +100,6 @@ One extra `<Fragment>` in the prod app root (no DOM node). DOM order changes so 
 3. Pre-existing: `reflex-components-dataeditor` uses the fixed global id `portal` and Glide wants it as the last child of `<body>`, while it renders deep inside the app root. Works, but two data-editor-bearing libraries on one page would collide.
 4. Unrelated but worth a look: published 0.9.12a1 fails to start this app with `module 'vapp' has no attribute 'app'` while `main` starts it fine.
 
-## REVIEW` section below was written by the independent
-> reviewer.
-
 ## REVIEW
 
 Independent adversarial review, 2026-09-19. **Verdict: approve — merge as-is.**
