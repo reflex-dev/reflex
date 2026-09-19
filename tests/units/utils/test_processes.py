@@ -266,7 +266,11 @@ def _process_gone(pid: int) -> bool:
         return True
     stat = Path(f"/proc/{pid}/stat")
     if stat.exists():
-        return stat.read_text().split()[2] in ("Z", "X")
+        try:
+            return stat.read_text().split()[2] in ("Z", "X")
+        except FileNotFoundError:
+            # Reaped between the existence check and the read.
+            return True
     return False
 
 
