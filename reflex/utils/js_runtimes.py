@@ -356,23 +356,35 @@ def validate_bun(bun_path: Path | None = None):
             )
 
 
-def _require_supported_node_for_npm() -> None:
+def _require_supported_node_for_npm(install_package_managers: Sequence[str]) -> None:
     """Stop an npm install or run when the system node is too old.
 
     An npm install must never start with an unsupported node: its side
     effects (rewritten package.json and a package-lock.json persisted into
     ``reflex.lock/``) outlive the failed run and silently switch the project
-    to npm management.
+    to npm management. The gate keys on the manager that will actually run,
+    so npm selected as a fallback when bun is unavailable is covered as well
+    as an explicit npm preference.
+
+    Args:
+        install_package_managers: The selected package managers in preference
+            order; the first entry is the manager that runs.
 
     Raises:
-        SystemExit: If npm is preferred and the node version is unsupported.
+        SystemExit: If the selected manager is npm and the node version is
+            unsupported.
     """
-    if prefer_npm_over_bun() and not check_node_version():
-        node_version = get_node_version()
-        logger.error(
-            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-        )
-        raise SystemExit(1)
+    if not install_package_managers:
+        return
+    if Path(install_package_managers[0]).stem.lower() != "npm":
+        return
+    if check_node_version():
+        return
+    node_version = get_node_version()
+    logger.error(
+        f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
+    )
+    raise SystemExit(1)
 
 
 def validate_frontend_dependencies(init: bool = True):
@@ -391,7 +403,9 @@ def validate_frontend_dependencies(init: bool = True):
             logger.error(f"Failed to find a valid package manager due to {e}.")
             raise SystemExit(1) from None
 
-    _require_supported_node_for_npm()
+    _require_supported_node_for_npm(
+        get_nodejs_compatible_package_managers(raise_on_none=False)
+    )
 
 
 def remove_existing_bun_installation():
@@ -797,12 +811,12 @@ def _install_frontend_packages(
 
 def install_frontend_packages(packages: set[str], config: Config):
     """Install frontend packages while respecting the canonical root bun.lock."""
-    # Never start an npm install the run will reject afterwards: its lockfile
-    # side effects persist into reflex.lock/ and break later bun runs.
-    _require_supported_node_for_npm()
     install_package_managers = tuple(
         get_nodejs_compatible_package_managers(raise_on_none=True)
     )
+    # Never start an npm install the run will reject afterwards: its lockfile
+    # side effects persist into reflex.lock/ and break later bun runs.
+    _require_supported_node_for_npm(install_package_managers)
     packages = set(packages)
     development_dependencies: set[str] = set()
     for plugin in config.plugins:
