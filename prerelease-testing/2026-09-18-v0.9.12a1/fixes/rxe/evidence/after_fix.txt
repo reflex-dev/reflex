@@ -1,36 +1,35 @@
 ### fixed tree, v12 (reflex 0.9.12a1) — new regression tests
-
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-9 passed, 149 deselected, 1 warning in 0.44s
+10 passed, 149 deselected, 1 warning in 0.28s
+### fixed tree, v12 — both touched modules in full
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+159 passed, 1 warning in 5.27s
+### fixed tree, v12 — whole tests/units
+26 failed, 890 passed, 9 warnings, 113 errors in 22.48s
 
 ### fixed tree, v11 (reflex 0.9.11.post1) — new regression tests
-
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-9 passed, 149 deselected, 1 warning in 0.28s
+10 passed, 149 deselected, 1 warning in 0.29s
+### fixed tree, v11 — both touched modules in full
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+159 passed, 1 warning in 5.42s
+### fixed tree, v11 — whole tests/units
+26 failed, 890 passed, 9 warnings, 113 errors in 22.06s
 
 ### fixed tree, repo .venv (reflex 0.9.6, the declared floor) — new regression tests
-
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-9 passed, 149 deselected, 1 warning in 0.18s
-
-### fixed tree, v12 — whole module runs
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-158 passed, 1 warning in 5.56s
-
-### fixed tree, v11 — whole module runs
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-158 passed, 1 warning in 5.52s
+10 passed, 149 deselected, 1 warning in 0.20s
+### fixed tree, repo .venv — whole tests/units
+9 failed, 1015 passed, 2 warnings, 5 errors in 26.17s
 
 ### fixed tree — import reflex_enterprise.auth.oidc.state
 v12: OK
 v11: OK
 
-### fixed tree — probe_router_redact.py (campaign script, unmodified)
+### fixed tree — campaign probe_router_redact.py, unmodified
 v12: VERDICT OK
 v11: VERDICT OK
 
-### published reflex-enterprise 0.9.5 + reflex 0.9.12a1 (envs/ent, unchanged) — still broken
-probe: VERDICT LEAK
+### published reflex-enterprise 0.9.5 + reflex 0.9.12a1 (envs/ent, untouched) — still broken
+probe:  VERDICT LEAK
 import: TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
