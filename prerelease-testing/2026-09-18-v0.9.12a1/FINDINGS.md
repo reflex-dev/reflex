@@ -55,7 +55,8 @@ What blocks (each confirmed by an adversarial verifier from the written repro al
 Worth fixing before release on the impact/trivial arm: FINDING-012 (the `rx.data_editor` image-preview overlay
 that #7081 advertises cannot open in prod with the default badge — the badge app-wrap swallows the `#portal` div;
 pre-existing nesting, small fix), FINDING-015 (#7156's headline scenario still throws `filesById is not defined`;
-verification pending), FINDING-019 (a non-UTF-8 marker still wedges startup despite #7142; one-line catch;
+confirmed pre-existing, MEDIUM — the documented upload-button pattern works, so at minimum reword the changelog
+line), FINDING-019 (a non-UTF-8 marker still wedges startup despite #7142; one-line catch;
 verification pending), FINDING-004 (the promised `deps=["router"]` deprecation never fires in the default case).
 
 What works — every headline changelog item was exercised on the published packages, in a real browser, in dev and
@@ -78,9 +79,9 @@ Severity histogram (26 numbered findings; verification status as of this writing
 | | confirmed | claimed, verifier pending | refuted / reclassified |
 |---|---|---|---|
 | critical | 1 (001) | – | – |
-| high | 3 (003, 011, 012) | 2 (015, 023) | – |
-| medium | 2 (017, 018) | 4 (016, 019, 020, 024) | – |
-| low | 4 (002, 004, 006, 008, 013 → 5) | 3 (021, 022, 025) | 6 (005, 007, 009, 010, 014, 026) |
+| high | 3 (003, 011, 012) | 1 (023) | – |
+| medium | 3 (015, 017, 018) | 3 (019, 020, 024) | 1 (016 → pre-existing memory-vs-redis divergence, low) |
+| low | 5 (002, 004, 006, 008, 013) | 3 (021, 022, 025) | 6 (005, 007, 009, 010, 014, 026) |
 
 Regressions vs 0.9.11.post1: 001, 003, 011, 017 (all confirmed). Plus four unnumbered explorer claims refuted by
 verifiers (masked cached-var AttributeError — #7115 actually fixes it; `rx.asession()` failures invisible — a toast
@@ -91,7 +92,7 @@ mixed set is what you get). Previous campaign items closed by this train: FINDIN
 Index:
 - FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — every reflex-enterprise 0.9.5 app using AuthPlugin, MCPPlugin or EventHandlerAPIPlugin fails to start (CRITICAL, regression) — **CONFIRMED** by the orchestrator, two explorers and the adversarial verifier
 - FINDING-002: the #7132 changelog entry describes behavior #7136 made unreachable — a `_get_was_touched` var is now rejected at class creation (LOW, changelog/behavior mismatch, maintainer decision)
-- FINDING-003: a `@rx.var(cache=False)` withheld from a delivered delta by a downstream `get_delta` filter is never re-sent — #6946's last-sent memo is written while the delta is BUILT, not when it is delivered (HIGH, regression; reproduced in pure reflex by `event_loop` in dev and prod+redis, through reflex-enterprise auth by `ent_mcp_oidc`, and by the verifier's own 60-line pure-reflex script) — **CONFIRMED**
+- FINDING-003: a `@rx.var(cache=False)` withheld from a delivered delta by a downstream `get_delta` filter is never re-sent — #6946's last-sent memo is written while the delta is BUILT, not when it is delivered (HIGH, regression; reproduced in pure reflex by `event_loop` in dev and prod+redis, through reflex-enterprise auth by `ent_mcp_oidc`, by the `ent_mcp_oidc` verifier's own 60-line pure-reflex script, and by the `event_loop` verifier verbatim in dev/memory and dev/redis against a correct 0.9.11.post1 baseline) — **CONFIRMED** by both verifiers
 - FINDING-004: the documented `deps=["router"]` deprecation warning never fires in the default case — the guard in `_init_var_dependency_dicts` tests the MERGED dep set after auto-dep detection has added the `rx_router_*` names (LOW, new in #7068) — found by `router_vars` and `up_examples_b`; **CONFIRMED** by the verifier with a corrected diagnosis
 - ~~FINDING-005~~: "a narrow `deps=` cannot narrow" — **REFUTED** by the verifier (`deps=[State.router.url], auto_deps=False` registers only `rx_router_url`; `deps=` is additive by long-standing design; the −47% vs −67% gap compares whole frames with the PR's router-only measurement). Kept in the refuted list below.
 - FINDING-006: a substate shadowing a parent's backend (underscore) var is still silently ignored — `_check_overridden_inherited_vars` skips every `_`-prefixed name (`reflex/state.py:1335`) (LOW, pre-existing gap) — **CONFIRMED** by the verifier on both versions, with the runtime damage characterised (child default discarded, reads/writes resolve to the parent)
@@ -102,8 +103,8 @@ Index:
 - FINDING-012: the `rx.data_editor` overlay editor — the image-preview carousel that is the headline of #7081 — never opens in PROD when the "Built with Reflex" badge is on: the sticky-badge app-wrap nests the dataeditor's `#portal` wrap and drops it (HIGH impact on a headline feature, pre-existing nesting, trivially small to fix) — **CONFIRMED** by the verifier on a fresh 12-line app with an A/B: `show_built_with_reflex=False` restores the portal and the carousel opens
 - FINDING-013: `rx.vars.use_id()` inside an `rx.foreach` body returns one identical id for every item — duplicate DOM ids, every `html_for` label targets the first row (LOW after verification — by-design limitation documented on `use_hook_var` but not on `use_id()` or its three docs pages; a docs fix) — **CONFIRMED** by the verifier
 - ~~FINDING-014~~: "the #7124 changelog's `reflex.components.datadisplay.code` path fails" — **REFUTED** by the verifier: the changelog names a module path, and `import reflex.components.datadisplay.code` works on both versions; only the `from … import code` spelling fails, and it never worked. Kept in the refuted list.
-- FINDING-015: #7156's headline scenario — a toast action or `rx.call_script` callback that triggers an upload handler — still fails: the handler slot is fixed but the payload's `filesById?.["u2"]` is only in scope inside the component that renders `rx.upload`, so the click throws `ReferenceError: filesById is not defined` and no upload starts (HIGH for the advertised scenario, pre-existing, changelog line misleading) — claimed by `event_loop`, verification pending
-- FINDING-016: a cancelled foreground `@rx.event(supersedes=True)` handler loses its pre-cancellation state writes under prod+redis (dev/memory keeps them) — the `yield` before the `await` is not flushed when `CancelledError` propagates (MEDIUM, dev/prod divergence; 0.9.11.post1+redis baseline not measured) — claimed by `event_loop`, verification pending
+- FINDING-015: #7156's headline scenario — a toast action or `rx.call_script` callback that triggers an upload handler — still fails: the handler slot is fixed but the payload's `filesById?.["u2"]` is only in scope inside the component that renders `rx.upload`, so the click throws `ReferenceError: filesById is not defined` and no upload starts (MEDIUM — the verifier lowered it from HIGH: pre-existing on 0.9.11.post1, the documented `rx.upload` + sibling submit-button pattern uploads fine on 0.9.12a1, the failure is confined to scopes outside the component that holds the `UploadFilesContext` hook; the #7156 changelog line overclaims) — **CONFIRMED** by the verifier, not a regression
+- FINDING-016: a cancelled foreground `@rx.event(supersedes=True)` handler loses its pre-cancellation state writes under prod+redis (dev/memory keeps them) — the `yield` before the `await` is not flushed when `CancelledError` propagates (LOW, pre-existing — **REFUTED as a release issue** by the verifier: 0.9.11.post1 + redis loses the same writes; it is a memory-vs-redis divergence, not dev/prod, and `StateManagerRedis._try_modify_state` skips the write-back when `CancelledError` propagates; separate upstream issue)
 - FINDING-017: after a SIGTERM that fails to stop `reflex run` (dev), or while the app module is broken, the backend port stays bound and accepts connections that are never answered — 0.9.11.post1 released the port and clients got an immediate refusal; a side effect of #7114 moving the listening socket into the granian supervisor (MEDIUM after verification — dev-only, self-healing once a worker returns; regression) — **CONFIRMED** by the verifier, who added a signal-free repro (save a broken app file mid-run: 0.9.12a1 hangs for the client timeout, 0.9.11.post1 refuses instantly, both recover once fixed)
 - FINDING-018: `reflex run` (dev) ignores SIGTERM/SIGINT delivered to its pid alone (`docker stop`, `kill <pid>` semantics) — reflex, bun and node survive and the ports stay bound; only a process-group signal (Ctrl-C) exits cleanly (MEDIUM, pre-existing on both versions; #6981's changelog line promises a clean SIGTERM exit) — **CONFIRMED** by the verifier with its own baseline
 - FINDING-019: a stateful-pages marker containing non-UTF-8 bytes still crashes backend startup permanently — `UnicodeDecodeError` escapes `_read_stateful_pages_marker()`'s `except (FileNotFoundError, json.JSONDecodeError)` and the corrupt marker is never replaced (MEDIUM, gap in the #7142 "rebuilt when missing or corrupt" claim; same input crashes 0.9.11.post1) — claimed by `build_prod_export`, verification pending
@@ -189,10 +190,10 @@ Index:
   Decision for the maintainers: reword/drop the #7132 entry (or fold it into #7136's). Also newly rejected
   with clear messages: base vars named `router`, `substates`, `dirty_vars`; handlers named `add_field`.
 
-## FINDING-003: a withheld `@rx.var(cache=False)` is never re-sent once visible (HIGH, regression — CONFIRMED by two clusters)
+## FINDING-003: a withheld `@rx.var(cache=False)` is never re-sent once visible (HIGH, regression — CONFIRMED by two clusters and both verifiers)
 
 - Clusters: `ent_mcp_oidc` (through reflex-enterprise auth) and `event_loop` (pure reflex, dev and prod+redis) |
-  Regression vs 0.9.11.post1: **yes** in both | Adversarial verifier: pending
+  Regression vs 0.9.11.post1: **yes** in both | Adversarial verifiers: `ent_mcp_oidc` CONFIRMED, `event_loop` CONFIRMED
 - Pure-reflex repro (`event_loop/NOTES.md` ISSUE-1, page `/filtered` of `elapp`, driver `scripts/s_filtered.py`): a
   State subclass overrides `get_delta` (the pattern the `get_delta` docstring documents for downstream code) and drops
   the uncached var's key while a flag is set; clear the flag; the client keeps the stale value until the var's value
@@ -204,6 +205,17 @@ Index:
   — a filter on `rx.State.get_delta` clears and the var is delivered on 0.9.11.post1, permanently suppressed on
   0.9.12a1. Repro-quality note: the explorer's four `uncached_*.png` are byte-identical (screenshotted after the final
   reload, the one step where both versions agree).
+- `event_loop` verifier: reproduced the pure-reflex repro verbatim on 0.9.12a1 in dev/in-memory (the delta after
+  `show` is `{fl: ['visible_rx_state_']}` only, the page stays `secret-0`, jumps to `secret-2` on the next bump and
+  `secret-1` is never delivered) and in dev + redis (single worker, `REFLEX_REDIS_URL`; the stale
+  `__last_delta_secret_rx_state_` memo is visible inside the pickled state in redis, so this is neither a prod-build
+  nor a multi-worker artifact); 0.9.11.post1 delivers `secret-1` and `secret-3`. Deterministic across three runs on
+  two transports, zero page/console errors. Strongest point against "API misuse": reflex-enterprise 0.9.5 overrides
+  `BaseState.get_delta` for post-event auth filtering (`reflex_enterprise/auth/oidc/state.py:2529`) and its
+  `redeliver_protected()` (`auth/enforcement.py:960-995`) re-marks withheld vars dirty on the assumption that the
+  end-of-event delta re-delivers them — the assumption #6946 breaks for `cache=False` vars. Evidence:
+  `event_loop/verification/out_dev12/filtered.*`, `out_dev12redis/filtered.stdout.txt`, `out_prev/filtered.*`;
+  commands in `event_loop/NOTES.md` "## VERIFICATION".
 - Mechanism (both agents agree, `event_loop` cites lines): `BaseState.get_delta` (`reflex/state.py` ~2385) calls
   `cvar._record_delta_value(self, value, token)` while building the delta, and `ComputedVar._record_delta_value`
   (`reflex_base/vars/base.py:2689`) writes `instance.__last_delta_<js_expr> = (token, key)` immediately. Nothing rolls
@@ -244,9 +256,10 @@ Index:
   (keep a redactable `router` entry / provide a hook) or in a lockstep reflex-enterprise release is a maintainer
   decision, but a released 0.9.12 against the published rxe 0.9.5 would leak the tokens.
 
-## FINDING-015: #7156's advertised scenario still fails — `filesById is not defined` (HIGH for the scenario, pre-existing — claimed, verification pending)
+## FINDING-015: #7156's advertised scenario still fails — `filesById is not defined` (MEDIUM, pre-existing — CONFIRMED; verifier lowered from HIGH)
 
-- Cluster: `event_loop` | Regression vs 0.9.11.post1: no (both fail; 0.9.11.post1 fails earlier, in the handler slot)
+- Cluster: `event_loop` | Regression vs 0.9.11.post1: no (both fail; 0.9.11.post1 fails earlier, in the handler slot) |
+  Verifier: CONFIRMED as a defect, not a regression
 - Repro: `event_loop/elapp` page `/callback`: `rx.toast("...", action={"label": "Upload", "on_click": CB.handle_upload(rx.upload_files(upload_id="u2"))})`
   fired from a frontend trigger, and `rx.call_script("1", callback=lambda v: CB.handle_upload(rx.upload_files(upload_id="u2")))`;
   select a file in the `u2` zone, click the action. Console: `ReferenceError: filesById is not defined`; no upload
@@ -256,11 +269,25 @@ Index:
   useContext(UploadFilesContext)` is hoisted only into the component that renders `rx.upload`; a toast action or a
   `call_script` callback runs outside it. Either propagate the hook/VarData to the callback site or reword the
   changelog line ("handlers like `uploadFiles` never ran") — as shipped, the headline case does not work end to end.
+- Verifier: reproduced verbatim on 0.9.12a1 (cases 6, 8, 9 fail — `_call_script ReferenceError: filesById is not
+  defined` in the console for the callback, an uncaught `PAGEERROR filesById is not defined` for both toast variants,
+  `uploaded == []`; case 10, plain `rx.upload(on_drop=...)`, passes) and on 0.9.11.post1 (the frontend-fired toast
+  dies earlier on `queueEvents is not defined`, the backend-yielded toast fails with the identical `filesById` error).
+  Checked the claim against the release branch: `packages/reflex-base/CHANGELOG.md` line 30 names exactly this case
+  ("a `rx.call_script` callback or toast action triggering an upload handler … handlers like `uploadFiles` never
+  ran"), so the entry overclaims. New control the explorer did not run (page `/upbtn`,
+  `verification/elapp_with_upbtn_page.py`, `verification/scripts/s_upbtn.py`): the DOCUMENTED pattern —
+  `rx.upload(id="u3")` plus a sibling `rx.button(on_click=UB.handle(rx.upload_files(upload_id="u3")))`, and the
+  same button nested inside `rx.upload` — uploads fine on 0.9.12a1 with no page errors. Severity lowered to MEDIUM:
+  nothing regressed, the documented pattern works, and only scopes that escape the component function holding the
+  `UploadFilesContext` hook (the sonner action/cancel `onClick`, the eval'd backend callback in `.web/utils/state.js`
+  `applyEvent`) fail. Evidence: `event_loop/verification/out_dev12/callback.{stdout,errors,console}.txt`,
+  `callback.frames.jsonl`, `out_prev/callback.stdout.txt`, `out_dev12redis/upbtn.stdout.txt`.
 
-## FINDING-016: cancelled foreground `supersedes=True` handler loses pre-cancellation writes under redis (MEDIUM — claimed, verification pending)
+## FINDING-016: cancelled foreground `supersedes=True` handler loses pre-cancellation writes under redis (LOW, pre-existing — REFUTED as a release issue by the verifier)
 
-- Cluster: `event_loop` | Regression: unknown (dev/memory matches on both versions; a 0.9.11.post1 prod+redis run
-  was not done) | Repro: `elapp` page `/supersede`, handler `frefresh` (foreground, appends `F{tag}:start`, `yield`,
+- Cluster: `event_loop` | Regression: **no** (the verifier ran the missing 0.9.11.post1 + redis baseline: identical
+  loss) | Explorer's repro: `elapp` page `/supersede`, handler `frefresh` (foreground, appends `F{tag}:start`, `yield`,
   `await asyncio.sleep(2)`, appends `:done`); fire A then B within 2 s. Dev/memory: `["FA:start","FA:CANCELLED",
   "FB:start","FB:done"]`. Prod + redis (9 workers): `["FB:start","FB:done"]` — `FA:start` never reaches the client or
   redis despite the `yield` before the sleep (`out/supersede.txt` vs `out_prod/supersede.txt`, two consecutive runs).
@@ -268,6 +295,21 @@ Index:
 - Mechanism guess: with redis the state is written back when the event's `modify_state` context exits normally; a
   foreground handler cancelled mid-`await` (CancelledError propagates) does not flush, so the pre-cancellation
   mutation and its emitted delta are lost together.
+- Verifier: isolated the variable — same dev build, same app, one worker, toggling only `REFLEX_REDIS_URL`
+  (redis-server on 8695). 0.9.12a1 in-memory: `["FA:start","FA:CANCELLED","FB:start","FB:done"]`; 0.9.12a1 + redis:
+  `["FB:start","FB:done"]`; 0.9.11.post1 + redis: `["FB:start","FB:done"]` — identical, so pre-existing. Controls in
+  the same runs: `[g-mixed]` keeps a completed foreground handler's writes under redis on both versions, and the
+  0.9.11.post1 run shows the pre-#7168 shapes for `[b-chains]`/`[d-poll]`/`[e-stale]`, proving the baseline server
+  really was 0.9.11.post1. Root cause: `reflex/istate/manager/redis.py:487-494` (`StateManagerRedis._try_modify_state`)
+  calls `set_state` only after the `yield state` body returns normally, so a `CancelledError` thrown into the body
+  skips the write-back entirely, including what an intervening `yield` appeared to flush; background handlers commit
+  per `async with self` block. The explorer's "dev/prod divergence" framing is imprecise — it is memory-vs-redis, and
+  prod/multi-worker is not a factor. Not a defect for THIS release (arguably intentional: a cancelled event's partial
+  writes are not committed), but worth a separate upstream issue because the two state managers disagree and an
+  intervening `yield` gives a false impression of a flush under redis. Repro-quality note: dev + `REFLEX_REDIS_URL`
+  reproduces it in ~90 s; the written prod+redis+9-workers recipe conflated three variables. Evidence:
+  `event_loop/verification/out_dev12/supersede.*`, `out_dev12redis/supersede.stdout.txt`,
+  `out_prevredis/supersede.stdout.txt`.
 
 ## FINDING-017: backend port stays bound and swallows connections when the worker cannot serve (MEDIUM, regression — CONFIRMED)
 
@@ -345,7 +387,7 @@ Index:
   after a clean SIGTERM flush wrote six pickles, the next `reflex run --env prod` left `.states/` empty
   (`logs/disk_verify.log`). Reasonable in dev (stale schema), surprising for prod disk-backed state.
 
-## FINDING-012: `rx.data_editor` image-preview overlay dead in prod with the default badge (HIGH impact, pre-existing — claimed, verification pending)
+## FINDING-012: `rx.data_editor` image-preview overlay dead in prod with the default badge (HIGH impact, pre-existing — CONFIRMED by the verifier with an A/B)
 
 - Cluster: `components_bumps` | Regression vs 0.9.11.post1: no (identical `root.jsx` nesting on 0.9.11.post1) |
   Newly relevant: #7081 advertises native image cells and PR #7081 "opens Glide Data Grid's built-in image
@@ -446,6 +488,12 @@ Index:
   "Send all the input refs to the handler") emits `getRefValue(ref_<id>)` for every ref in the form subtree and
   merges them over the real `FormData`; identical on 0.9.11.post1. Only apps that put `id=` on non-field elements
   inside a form see the extra keys. Cleanup ticket at most.
+- **FINDING-016 — "a cancelled foreground `supersedes=True` handler loses its pre-cancellation writes under prod+redis
+  (dev/prod divergence)" (`event_loop`)**: refuted as a release issue by the verifier. The behavior is real but identical
+  on 0.9.11.post1 + redis (the baseline the explorer skipped), and the variable is the redis state manager, not prod or
+  worker count: `StateManagerRedis._try_modify_state` (`reflex/istate/manager/redis.py:487-494`) writes back only when
+  the `yield state` body returns normally, so a `CancelledError` discards every mutation of the cancelled foreground
+  handler. Pre-existing, LOW; a separate upstream issue about memory-vs-redis semantics.
 
 ## Cluster summaries
 
@@ -582,7 +630,7 @@ presentation props (`stroke`, `text-anchor`) become emotion styles rather than a
 SVG attribute casing changed to camelCase between core 0.9.9 and 0.9.10a1 without a changelog line; one
 unreproducible 404 console error in a single prod run.
 
-### `event_loop` (pass 26, anomaly 5, fail 2, skipped 1) — #6946/#7168/#7145/#7157/#7187 verified; FINDING-003 confirmed, 015, 016
+### `event_loop` (pass 26, anomaly 5, fail 2, skipped 1) — #6946/#7168/#7145/#7157/#7187 verified; FINDING-003 confirmed, 015 confirmed (MEDIUM), 016 refuted
 Six-page `elapp` plus a websocket-frame-capturing Playwright harness (`scripts/wsdrive.py` + per-scenario drivers),
 run in dev, in prod with redis and 9 granian workers, and as a full 0.9.11.post1 baseline. #6946 dedupes
 constant/derived/alternating/NaN/list/async/substate uncached vars, is per-client-token correct across browser
@@ -592,7 +640,8 @@ eight supersession shapes while the baseline fails three (cross-chain child canc
 stale-late-enqueue). #7145: 3000 self-chained ticks, zero RecursionError in dev, prod and baseline logs. #7157 fixes
 every frontend-fired toast action/cancel shape (plain, `@rx.memo`, `ComponentState`) that threw `queueEvents is
 not defined` on 0.9.11.post1. #7187: one redis connection per worker, flat over 600 `/_health` probes. Issues:
-FINDING-003 (confirmed, pure reflex), FINDING-015, FINDING-016. Anomalies worth a line: an `on_load`-started
+FINDING-003 (confirmed, pure reflex), FINDING-015 (verifier: confirmed, pre-existing, MEDIUM), FINDING-016 (verifier:
+refuted as a release issue — identical on 0.9.11.post1 + redis). Anomalies worth a line: an `on_load`-started
 self-chaining loop is not cancelled on client disconnect and logs `Attempting to send delta to disconnected client`
 once per tick (44×; pre-existing family) — and those undelivered deltas ARE recorded as sent by #6946's memo, safe
 only because reconnect re-hydrates via `dict()`; the `_UNKEYABLE_VALUE` branch of `_delta_value_key` is dead

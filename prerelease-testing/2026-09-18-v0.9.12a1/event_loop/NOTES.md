@@ -341,3 +341,171 @@ One connection per worker, then flat. `/_health` returns `{"status":true,"redis"
 All servers (`3180`, `3181`, `3190`), all `react-router dev` children and the redis on
 `8195` were killed and verified gone with `$SB/bin/ports.py` and `ps`. `.web/`,
 `node_modules/` and `reflex.lock/` are excluded from this directory.
+
+## VERIFICATION
+
+Independent adversarial verification, run from this NOTES.md + `scripts/` + `elapp/` alone
+(no access to the explorer's session). Fresh app dirs, published PyPI packages only,
+nothing installed or run from `/home/user/reflex`.
+
+Versions used (`uv pip freeze --python <venv> | grep -i reflex`):
+
+```
+# under test: $SB/envs/shared
+reflex==0.9.12a1  reflex-base==0.9.12a1  reflex-components-core==0.9.10a1
+reflex-components-radix==0.9.10a1  reflex-components-sonner==0.9.4a1
+reflex-components-code==0.9.6a1  -dataeditor==0.9.3a1  -gridjs==0.9.2a1
+-markdown==0.9.4a1  -plotly==0.9.7a1  -recharts==0.9.4a1  -lucide==1.0.4
+-moment==0.9.4  -react-player==0.9.2  reflex-hosting-cli==0.1.72
+
+# baseline: $SB/envs/prev
+reflex==0.9.11.post1  reflex-base==0.9.11.post1  reflex-components-core==0.9.9
+-radix==0.9.9  -sonner==0.9.3  -recharts==0.9.3  -markdown==0.9.3  -plotly==0.9.6
+-code==0.9.5  -dataeditor==0.9.2  -gridjs==0.9.1
+```
+
+Setup (verifier ports: frontend 3680/3681, backend 8680/8681, redis 8695):
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+V=$SB/apps/verify_event_loop; ART=<this dir>
+mkdir -p $V/elapp $V/elapp_prev $V/scripts && cp $ART/scripts/*.py $V/scripts/
+cd $V/elapp      && REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex init --template blank
+cd $V/elapp_prev && REFLEX_TELEMETRY_ENABLED=false $SB/envs/prev/bin/reflex   init --template blank
+cp $ART/elapp/elapp/elapp.py $V/elapp/elapp/elapp.py
+cp $ART/elapp/elapp/elapp.py $V/elapp_prev/elapp_prev/elapp_prev.py
+# + appended the /upbtn control page (verification/elapp_with_upbtn_page.py, tail of file)
+
+redis-server --port 8695 --save '' &                       # only for the redis runs
+
+# 0.9.12a1 dev, in-memory
+cd $V/elapp && REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex run \
+    --frontend-port 3680 --backend-port 8680 --loglevel debug > $V/logs/dev12.log 2>&1 &
+# 0.9.12a1 dev, redis (same build, ONE worker, only REFLEX_REDIS_URL added)
+REFLEX_REDIS_URL=redis://localhost:8695 ... same command ... > $V/logs/dev12_redis.log
+# 0.9.11.post1 dev, in-memory / redis on 3681/8681 from $V/elapp_prev with $SB/envs/prev/bin/reflex
+
+cd $V/scripts && export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 PYTHONPATH=.
+$SB/envs/driver/bin/python s_filtered.py  http://localhost:3680 $V/out/dev12
+$SB/envs/driver/bin/python s_callback.py  http://localhost:3680 $V/out/dev12
+$SB/envs/driver/bin/python s_supersede.py http://localhost:3680 $V/out/dev12
+$SB/envs/driver/bin/python s_upbtn.py     http://localhost:3680 $V/out/dev12redis   # new control
+# …and the same three against 3681 (0.9.11.post1) and against the redis-backed servers
+```
+
+All evidence under `verification/`: `out_dev12/` (0.9.12a1 dev memory),
+`out_dev12redis/` (0.9.12a1 dev + redis), `out_prev/` (0.9.11.post1 dev memory),
+`out_prevredis/` (0.9.11.post1 dev + redis), each with `*.stdout.txt` (the driver's
+own log lines), `*.frames.jsonl` (every websocket frame), `*.console.txt`,
+`*.errors.txt` and screenshots. `verification/logs/` holds the four server logs.
+
+### ISSUE-1 (uncached var dropped by a downstream `get_delta` is never re-sent) — CONFIRMED, regression, HIGH
+
+Reproduced verbatim from the written steps, first try, no additions needed.
+
+- 0.9.12a1 dev/memory (`verification/out_dev12/filtered.stdout.txt`): after `show` the page
+  shows `secret-0`; the delta for that event is `{fl: ['visible_rx_state_']}` only. After
+  `bump` it jumps to `secret-2`; after hide/bump(n=3)/show it stays `secret-2` while `n=3`.
+- 0.9.11.post1 dev/memory (`verification/out_prev/filtered.stdout.txt`): after `show` the
+  delta is `{fl: ['secret_rx_state_','visible_rx_state_']}` and the page shows `secret-1`;
+  the final value is `secret-3`. **Baseline correct → regression confirmed.**
+- Also reproduced with the redis state manager in dev
+  (`verification/out_dev12redis/filtered.stdout.txt`), and the stale memo is in redis:
+  `redis-cli -p 8695 get <token>_..._fl` contains `__last_delta_secret_rx_state_`.
+  So it is neither a prod-build nor a multi-worker artifact — it is the state manager
+  -independent memo.
+
+Refutation attempts that failed to refute it:
+
+- *Is the monkeypatch API misuse?* No. `BaseState.get_delta`'s own docstring
+  (`reflex/state.py:2349-2356`) says the method "is monkeypatched downstream with a
+  signature accepting only `self`", and **reflex-enterprise 0.9.5 does exactly that**:
+  `reflex_enterprise/auth/oidc/state.py:2529` overrides `get_delta` to "perform post-event
+  filtering", and `reflex_enterprise/auth/enforcement.py:960-995` (`redeliver_protected`)
+  is built on the assumption that re-marking a withheld var dirty makes "the end-of-event
+  delta carry them". With #6946 that assumption breaks for `cache=False` vars: the value was
+  already recorded as sent, so the re-delivery attempt produces the same value and is
+  dropped. This is a live downstream breakage, not a synthetic one.
+- *Environment quirk?* No — same result under two state managers, two transports
+  (memory/redis) and a clean browser context; zero page errors and zero failed requests.
+- Root cause confirmed by reading the release source: `reflex/state.py:2380-2386` records
+  the value while **building** the delta
+  (`cvar._record_delta_value(self, value, token)` / `_drop_unchanged_delta_value`, and
+  `packages/reflex-base/src/reflex_base/vars/base.py:2689-2723` writes
+  `instance.__last_delta_<js_expr> = (token, key)` plus `instance._was_touched = True`
+  immediately). Nothing reverses it when the entry is later removed from the returned
+  delta or when the delta is never delivered. `_suppress_delta_recording()`
+  (`reflex/state.py:317-330`) is the right primitive and is private, wired only into
+  `reflex/istate/shared.py:122`.
+
+### ISSUE-2 (`filesById is not defined` from a toast action / call_script callback) — CONFIRMED, not a regression, MEDIUM
+
+Reproduced verbatim (`verification/out_dev12/callback.stdout.txt`): cases 6, 8 and 9 leave
+`uploaded == []`; cases 8 and 9 raise an uncaught `ReferenceError: filesById is not defined`
+(`out_dev12/callback.errors.txt`), and case 6 logs the same ReferenceError from
+`_call_script` (`out_dev12/callback.console.txt`). Case 10 (`rx.upload(on_drop=…)`) passes.
+
+Baseline 0.9.11.post1 (`verification/out_prev/callback.stdout.txt`) fails too: the
+frontend-fired variants die earlier on `queueEvents is not defined` (#7157) and the
+backend-yielded variant fails with the identical `filesById is not defined`.
+**Not a regression** — but the shipped changelog line for #7156 is
+"Fix client-side event routing for events queued from callbacks (e.g. a `rx.call_script`
+callback **or toast action triggering an upload handler**): the client handler name was
+passed in the `event_actions` slot, so handlers like `uploadFiles` never ran", and the
+named case still does not run. The routing half of that fix is real and verified
+(`ReflexEvent("…handle_upload", {...}, {}, "uploadFiles")`, handler in the 4th slot); the
+payload half is missing.
+
+New control the explorer did not run — **the documented upload pattern is fine**
+(`verification/out_dev12redis/upbtn.stdout.txt`, page `/upbtn`, source appended in
+`verification/elapp_with_upbtn_page.py`):
+
+```
+[A sibling button -> upload_files] got= ["upload_me.txt"]  pageerrors= []   # rx.upload(id="u3") + sibling rx.button(on_click=UB.handle(rx.upload_files(upload_id="u3")))
+[B button inside rx.upload  -> upload_files] got= ["upload_me.txt"]  pageerrors= []
+```
+
+So `rx.upload_files` outside `on_drop` works whenever the emitting component is compiled
+into the same function as the `rx.upload` (where
+`const [filesById, setFilesById] = useContext(UploadFilesContext)` is hoisted). Only the
+scopes that escape that function — a sonner toast `action`/`cancel` `onClick`, and a
+backend-serialized `call_script` callback that is `eval`'d in `utils/state.js` — lose the
+binding. That makes the defect precisely "the `rx.upload_files` var's hook/import VarData is
+not propagated into toast-action / callback serialization", and rules out a general upload
+regression. Severity lowered from the explorer's *high* to **medium**: nothing regressed,
+no supported documented pattern is broken, but a case the changelog claims fixed is not.
+
+### ISSUE-3 (cancelled foreground `supersedes=True` handler loses writes under redis) — REFUTED as a release issue (behaviour confirmed, but NOT a regression)
+
+The explorer's missing baseline is the whole finding. I ran it.
+
+Isolating the variable: instead of a prod build with 9 workers, I ran the **same dev build,
+same port, one worker**, toggling only `REFLEX_REDIS_URL`:
+
+| run | `[f-foreground]` |
+| --- | --- |
+| 0.9.12a1 dev, in-memory | `["FA:start","FA:CANCELLED","FB:start","FB:done"]` |
+| 0.9.12a1 dev, redis | `["FB:start","FB:done"]` |
+| **0.9.11.post1 dev, redis** | **`["FB:start","FB:done"]`** |
+
+(`verification/out_dev12/supersede.stdout.txt`, `out_dev12redis/supersede.stdout.txt`,
+`out_prevredis/supersede.stdout.txt`; the same runs' `[g-mixed]` control keeps
+`FA:start, FA:done` under redis on both versions, and 0.9.11.post1's `[b-chains]`,
+`[d-poll]` and `[e-stale]` show the pre-#7168 behaviour, which confirms the baseline
+server really is 0.9.11.post1.)
+
+The loss is **identical on the previous stable**, so it is not introduced by 0.9.12a1 and
+does not belong in a release decision for this train. It is also not specific to
+`supersedes=True`: the mechanism is `StateManagerRedis._try_modify_state`
+(`reflex/istate/manager/redis.py:487-494`), where `await self.set_state(...)` runs only
+after the `async with` body returns normally — a `CancelledError` thrown into the body
+propagates out of the `yield` and skips the write-back entirely, so *any* foreground
+handler cancelled mid-`await` loses everything it wrote, including what an intervening
+`yield` appeared to flush. Background handlers use `async with self`, which commits per
+block, which is why they keep their markers. Worth a separate upstream issue (dev/redis
+divergence on a cancelled handler), not a 0.9.12a1 blocker.
+
+### Cleanup
+
+Servers on 3680/8680 and 3681/8681, their `react-router dev` children and the redis on
+8695 were killed and verified gone with `$SB/bin/ports.py` and `ps`.

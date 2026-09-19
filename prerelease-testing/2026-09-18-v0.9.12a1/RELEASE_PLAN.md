@@ -50,10 +50,12 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 - **FINDING-003 — a `@rx.var(cache=False)` withheld from the delivered delta is never re-sent** (HIGH,
   regression; confirmed independently by `ent_mcp_oidc` through enterprise auth and by `event_loop` in pure reflex,
-  dev and prod+redis). Arm: confirmed regression. Shape: record the "last sent" key after the delta has been
+  dev and prod+redis, and by both clusters' adversarial verifiers — the `event_loop` verifier adds dev+redis and the
+  point that rxe 0.9.5's `redeliver_protected()` relies on the re-delivery #6946 removed). Arm: confirmed regression. Shape: record the "last sent" key after the delta has been
   filtered/emitted (or expose `_suppress_delta_recording()` / a post-filter hook to `get_delta` overrides), not
   while building it in `BaseState.get_delta` (`reflex/state.py` ~2385 → `ComputedVar._record_delta_value`,
-  `reflex_base/vars/base.py:2689`). Regression test: `event_loop/scripts/s_filtered.py` against `elapp`.
+  `reflex_base/vars/base.py:2689`). Regression test: `event_loop/scripts/s_filtered.py` against `elapp`, or the
+  browser-free `ent_mcp_oidc/verification/2026-09-19-adversarial/pure_delta_memo.py`.
 
 - **FINDING-017 — with #7114 the supervisor keeps the dev backend port bound while no worker can serve, so a wedged
   shutdown or a broken app module turns immediate connection refusals into requests that hang for the client's
@@ -70,8 +72,10 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   fall through to the rebuild path.
 
 - **FINDING-015 — #7156's advertised scenario (toast action / `call_script` callback triggering an upload handler)
-  still throws `ReferenceError: filesById is not defined`** (HIGH for the scenario, pre-existing; `event_loop`,
-  verification pending). Arm: significant impact on a change this release announces as fixed. Shape: propagate the
+  still throws `ReferenceError: filesById is not defined`** (MEDIUM, pre-existing; `event_loop`, CONFIRMED by the
+  verifier, who lowered it from HIGH because the documented `rx.upload` + sibling submit-button pattern works on
+  0.9.12a1). Arm: significant impact on a change this release announces as fixed — the #7156 changelog line names
+  exactly this case. Shape: propagate the
   `UploadFilesContext` hook/VarData to callback sites, or at minimum reword the #7156 changelog and the toast docs
   so nobody ships `action=` + `rx.upload_files`.
 
@@ -108,8 +112,10 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   a visible error (`render_ctx_statemgr`).
 - FINDING-024 — `app.modify_state("<bare client token>")` raises `ValueError: Invalid path: ('',)` (pre-existing).
 - FINDING-025 — `reflex run` wipes `.states/` at startup in prod too (pre-existing; document or gate on env).
-- FINDING-016 — cancelled foreground `supersedes=True` handler loses pre-cancellation writes under redis (prod)
-  while dev/memory keeps them; needs a 0.9.11.post1+redis baseline before triage (`event_loop`).
+- FINDING-016 — a cancelled foreground `supersedes=True` handler loses ALL its writes under the redis state manager
+  while the in-memory manager keeps them (pre-existing: identical on 0.9.11.post1 + redis;
+  `StateManagerRedis._try_modify_state` skips the write-back on `CancelledError`). Memory vs redis, not dev vs prod.
+  Upstream issue about the divergence (`event_loop`, verifier).
 - `on_load`-started self-chaining loops keep running after the client disconnects, logging one
   "Attempting to send delta to disconnected client" warning per tick (pre-existing family, `event_loop`).
 - #6946 polish: every uncached var is re-sent once right after hydrate; dict key order defeats the dedupe; the
@@ -183,6 +189,6 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 1. FINDING-001 framework fix first (one PR, regression test from `orch_probes/metaclass_probe.py`), then
    re-run `orch_probes/ent_import_probe.py` and the `ent_mcp_oidc` harness without the shim.
-2. FINDING-003 once the `event_loop` verifier reports (independent files: `reflex/state.py` delta path vs
+2. FINDING-003 (both verifiers have reported; independent files: `reflex/state.py` delta path vs
    `reflex/istate/validation.py`, so it can land in parallel with 1).
 3. FINDING-004 and the changelog decisions (002, 007, metaclass note) can ride one docs/changelog PR.
