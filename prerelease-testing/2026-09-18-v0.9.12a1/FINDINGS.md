@@ -78,6 +78,7 @@ Index:
 - FINDING-023: a hydrate/event delta naming a substate the compiled frontend has no dispatcher for sets `backend_state_mismatch=true` in `state.js` and every later event is discarded — zero websocket frames leave the browser until the frontend is recompiled (HIGH, pre-existing on both versions; the previous campaign's FINDING-036, re-tested because #6181 rewrote the dispatcher registry and did not change the latch) — re-confirmed by `render_ctx_statemgr`
 - FINDING-024: `app.modify_state("<client token>")` with the bare token raises `ValueError: Invalid path: ('',)` from `BaseStateToken.from_legacy_token` — the deprecated string form is broken for its most obvious argument (MEDIUM, pre-existing) — claimed by `render_ctx_statemgr`, verification pending
 - FINDING-025: `reflex run` deletes the whole `.states/` directory at startup in `--env prod` as well as dev, whatever `REFLEX_STATE_MANAGER_MODE` is, so disk-backed state never survives a restart (LOW, pre-existing, intentional-looking `reset_disk_state_manager()` call) — claimed by `render_ctx_statemgr`
+- FINDING-026: the #7083 changelog understates the behavior change — on a bare install a plain `class Item(rx.Model)` (no `table=True`) now fails at class-definition time with the guided ImportError, where 0.9.11.post1 let it define and failed only at instantiation; intended per the PR discussion, but the entry cites only the `table=True` form (LOW, changelog wording) — claimed by `db_optional_imports`
 - FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package; currently masked by FINDING-001) — claimed by `ent_map_dnd_flow_mantine`, verification pending
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
@@ -370,11 +371,11 @@ The train on Python 3.10, 3.14 and 3.15.0rc2: install, import, `reflex init`, de
 clean; the lazy loader's native PEP 810 path is active on 3.15 (#6930 provisional support holds); 3.10 prints its
 deprecation notice. `orch_pymatrix/NOTES.md`.
 
-### `orch_startup` (pass 1, anomaly 1, fail 0)
+### `orch_startup` (pass 1, anomaly 0, fail 0)
 #7049 relative baseline on the `dev_server_cli` probe app, backend-only, three cold starts each: time to `/ping`
-0.67/0.45/0.46 s on BOTH versions, RSS 109–123 MB on both, `import reflex` 2 ms / 57 modules on both. No measurable
-startup or memory difference in this scenario (anomaly: the changelog's startup/memory claim is not observable here;
-dev reload and large apps not measured). `orch_startup/NOTES.md`.
+0.67/0.45/0.46 s on BOTH versions, RSS 109–123 MB on both. No difference — but that app has no optional heavy
+libraries installed for #7049 to defer; `db_optional_imports` measured the intended scenario (heavy libraries
+installed but unused) and found the claimed savings. `orch_startup/NOTES.md`.
 
 ### `orch_otel` (pass 4, anomaly 0, fail 0)
 reflex-otel 0.1.0 on 0.9.12a1: the initial dev compile worker now exports the complete `reflex.compile`
@@ -625,5 +626,27 @@ tree; `REFLEX_API_URL` did not reach the compiled bundle for `reflex run --front
 `--backend-port`); SIGTERM to `reflex run` did not exit and SIGKILL orphaned the react-router process (FINDING-018);
 the vite dev server was SIGKILLed at startup twice (`exit code -9`) under concurrent load — environmental. Skipped:
 0.9.11.post1 prod baseline; redis half of #7132 (unreachable).
+
+### `db_optional_imports` (pass 22, anomaly 3, fail 0, skipped 1) — #7049 and #7083 verified with numbers, no defects
+Three apps on PyPI-only venvs: a SQLModel relationship app (Author 1-N Book, Book N-N Tag via a link table, sync
+`rx.session` + async `rx.asession` with `selectinload`, relationship-bearing state vars, ObjectVar access through
+relationships in `rx.foreach`, background tasks, event chains, dynamic model classes, custom serializers), a
+pandas/Plotly/Pillow app (`rx.data_table`/`rx.plotly`/`rx.image` over DataFrame/Figure/Image state vars with
+`@rx.memo`, `ComponentState`, `rx.cond`, and a background task performing the FIRST serialization), and a bare app for
+db-extra-less CLI behavior. #7083: the guided "pip install reflex[db]" ImportError covers both the `table=True` and
+plain-subclass paths (baseline: bare `TypeError`). #7049: with pandas/Pillow/Plotly/SQLModel/SQLAlchemy/alembic all
+INSTALLED but unused, building the app loads NONE of them on 0.9.12a1 vs all seven on 0.9.11.post1 — `sys.modules`
+1509 → 645, max RSS 133.0 → 46.5 MB, build 0.78 → 0.24 s (medians of 3; `scripts/startup_measure.py`) — this is the
+scenario the changelog line describes, and it supersedes the orchestrator's `orch_startup` probe, whose app had no
+heavy libraries installed to defer. Relationship payloads semantically identical to the baseline; database usage
+accounting still counts direct-SQLModel apps without importing `reflex.model`; prod with 4 forked granian workers
+served 20 concurrent browser contexts doing DB reads 20/20 with no hangs or registry tracebacks. Bonus fix confirmed:
+on 0.9.11.post1 a later `import reflex.model` silently replaced a user's custom `@rx.serializer` for `SQLModel`;
+0.9.12a1 preserves it (`scripts/serializer_override.py`). Issues: FINDING-026 (changelog wording); pre-existing lows:
+`reflex db init` without the extra prints a raw ~20-line click traceback instead of the guided message;
+`rx.asession()` with only `db_url` set raises `No async database url configured`, invisible client-side inside a
+background task. Latent fragility noted: optional-library serializers are matched by identity against hard-coded
+module paths (`pandas.core.frame`, `plotly.graph_objs._figure`, `PIL.Image`, `sqlmodel.main`) — a library reorg would
+disable serialization silently. Skipped: reflex-local-auth (covered by `up_examples_b`).
 
 _(other clusters pending)_

@@ -1,0 +1,26 @@
+VERSION: 0.9.12a1
+A. after import reflex: []
+B. after import pandas: ['numpy', 'pandas']
+   pandas.DataFrame module: pandas | identity in vars(pandas): True
+   _get_optional_type_name(DataFrame): DataFrame
+   get_serializer(DataFrame): <function serialize_dataframe at 0x7f17fe49bc40>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/db_optional_imports/scripts/data_serializers.py", line 18, in <module>
+    out = rx.utils.format.json_dumps(S.serialize(df))
+          ^^^^^^^^^^^^^^^
+AttributeError: module 'reflex.utils' has no attribute 'format'
+C. after import plotly: ['numpy', 'pandas', 'plotly']
+   go.Figure module: plotly.graph_objs._figure
+   'plotly.graph_objs._figure' in sys.modules: True
+   vars(plotly.graph_objs._figure)['Figure'] is go.Figure: True
+   _get_optional_type_name(go.Figure): Figure
+   get_serializer(go.Figure): <function serialize_figure at 0x7f17fe49bce0>
+   serialize(fig) OK type: dict keys: ['data', 'layout']
+   go.layout.Template module: plotly.graph_objs.layout._template
+   _get_optional_type_name(Template): Template
+   get_serializer(Template): <function serialize_template at 0x7f17fe49bd80>
+D. after import PIL: ['PIL', 'numpy', 'pandas', 'plotly']
+   Image class: Image PIL.Image
+   _get_optional_type_name(Image.Image): Image
+   get_serializer(type(im)): <function serialize_image at 0x7f17fe49be20>
+   serialize(im) OK: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAA

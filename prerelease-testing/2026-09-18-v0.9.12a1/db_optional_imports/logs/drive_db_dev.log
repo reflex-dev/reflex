@@ -1,0 +1,130 @@
+=== modules at import: modules at import: alembic,sqlalchemy,sqlmodel
+=== modules now (on_load): modules now: alembic,sqlalchemy,sqlmodel
+--- after seed: log=log:
+--- after sync load: log=log: sync loaded 3 books
+count: 3
+books text: Solaris
+
+(
+
+1961
+
+)
+
+by
+
+Stanislaw Lem
+
+/
+
+PL
+
+tags:
+
+A Wizard of Earthsea
+
+(
+
+1968
+
+)
+
+by
+
+Ursula Le Guin
+
+/
+
+US
+
+tags:
+
+The Dispossessed
+
+(
+
+1974
+
+)
+
+by
+
+Ursula Le Guin
+
+/
+
+US
+
+tags:
+single-book: Solaris -> Stanislaw Lem
+AUTHOR_NAMES: ['Stanislaw Lem', 'Ursula Le Guin', 'Ursula Le Guin']
+AUTHOR_COUNTRIES: ['PL', 'US', 'US']
+TAG_BADGES: []
+--- after async load: log=log: sync loaded 3 books
+authors box: 
+--- after dyn: log=log: sync loaded 3 books
+DYN: dyn: OK mod_state=deleted module='sqlmodel.main' row=The Dispossessed -> {"title": "dyn"}
+--- after custom: log=log: sync loaded 3 books
+CUSTOM: custom: {"CUSTOM": true, "name": "hello"}
+--- after fields: log=log: sync loaded 3 books
+FIELDS: fields: __fields__=['author_id', 'id', 'title', 'year'] | dict_keys=['author_id', 'id', 'title', 'year'] | relationships=['author', 'tags'] | serialize_keys=['author', 'author_id', 'id', 'tags', 'title', 'year']
+--- after no-eager: log=log: sync loaded 3 books | lazy(no eager) loaded 3 books
+books after no-eager: Solaris
+
+(
+
+1961
+
+)
+
+by
+
+/
+
+tags:
+
+A Wizard of Earthsea
+
+(
+
+1968
+
+)
+
+by
+
+/
+
+tags:
+
+The Dispossessed
+
+(
+
+1974
+
+)
+
+by
+
+/
+
+tags:
+AUTHOR_NAMES_NOEAGER: ['', '', '']
+--- after bg load: log=log: sync loaded 3 books | lazy(no eager) loaded 3 books
+BG: bg: starting
+AUTHOR_NAMES_BG: ['', '', '']
+--- after chain: log=log: sync loaded 3 books | lazy(no eager) loaded 3 books | already seeded | sync loaded 3 books
+after chain, count: 3 | authors: 
+modules now: modules now: alembic,sqlalchemy,sqlmodel
+after reload modules-now: modules now: alembic,sqlalchemy,sqlmodel
+SECOND TAB author names: ['Stanislaw Lem', 'Ursula Le Guin', 'Ursula Le Guin']
+
+=== CONSOLE (errors/warnings) ===
+=== PAGE ERRORS === []
+=== BAD RESPONSES === []
+=== WS frames containing 'author' (first 3) ===
+42/_event,["event",{"delta":{"reflex___state____state":{"is_hydrated_rx_state_":false,"rx_router_headers_rx_state_":{"host":"localhost:8420","origin":"http://localhost:3420","upgrade":"websocket","connection":"Upgrade","cookie":"","pragma":"no-cache","cache_control":"no-cache","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36","sec_websocket_version":"13","sec_websocket_key":"daIKb0g9/uZU6Q2BS25yzg==","sec_websocket_extensions":"permessage-deflate; client_max_window_bits","accept_encoding":"gzip, deflate, br, zstd","accept_language":"en-US,en;q=0.9","raw_headers":{"accept-encoding":"gzip, deflate, br, zstd","accept-language":"en-US,en;q=0.9","asgi-scope-client":"127.0.0.1","cache-control":"no-cache","connection":"Upgrade","host":"localhost:8420","origin":"http://localhost:3420","pragma":"no-cache","sec-websocket-extensions":"permessage-deflate; client_max_window_bits","sec-websocket-key":"daIKb0g9/uZU6Q2BS25yzg==","sec-websocket-protocol":"0.9.12a1","sec-websocket-version":"13","upgrade":"websocket","user-agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36"}},"rx_router_page_rx_state_":{"host":"http://localhost:3420","path":"/index","raw_path":"/","full_path":"http://localhost:3420/index","full_raw_path":"http://localhost:3420/","params":{}},"rx_router_route_id_rx_state_":"/index","rx_router_session_rx_state_":{"client_token":"613447e8-31
+42/_event,["event",{"delta":{"reflex___state____state.dbapp___dbapp____state":{"log_rx_state_":["sync loaded 3 books"],"modules_now_rx_state_":["alembic","sqlalchemy","sqlmodel"],"single_book_rx_state_":{"id":3,"author_id":2,"year":1961,"title":"Solaris","author":{"id":2,"country":"PL","name":"Stanislaw Lem"},"tags":[]},"seed_count_rx_state_":3,"books_rx_state_":[{"id":3,"author_id":2,"year":1961,"title":"Solaris","author":{"id":2,"country":"PL","name":"Stanislaw Lem"},"tags":[]},{"id":2,"author_id":1,"year":1968,"title":"A Wizard of Earthsea","author":{"id":1,"country":"US","name":"Ursula Le Guin"},"tags":[]},{"id":1,"author_id":1,"year":1974,"title":"The Dispossessed","author":{"id":1,"country":"US","name":"Ursula Le Guin"},"tags":[]}]}}}]
+42/_event,["event",{"delta":{"reflex___state____state.dbapp___dbapp____state":{"fields_dump_rx_state_":"__fields__=['author_id', 'id', 'title', 'year'] | dict_keys=['author_id', 'id', 'title', 'year'] | relationships=['author', 'tags'] | serialize_keys=['author', 'author_id', 'id', 'tags', 'title', 'year']"}}}]
+TOTAL_CONSOLE: 9 TOTAL_WS: 27

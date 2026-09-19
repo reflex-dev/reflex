@@ -237,3 +237,204 @@ Evidence: `logs/a2_authonly_new.log`.
   0.9.12a1 without the shim.
 * Enterprise ag-grid / map / dnd / flow / mantine were import-checked only (all OK); their
   end-to-end behaviour belongs to another cluster.
+
+## VERIFICATION
+
+Independent adversarial verification, 2026-09-19, by a second agent working **only** from this
+NOTES.md + the app sources/scripts in this directory (no access to the explorer's conversation).
+Own working copy: `$SB/apps/verify_ent_mcp_oidc/` (sources copied from this directory).
+Own ports: frontend 4160/4161, backend 9160-9163, fake IdP 9170. All processes killed afterwards.
+Evidence: `verification/2026-09-19-adversarial/`.
+
+Envs reused (`$SB/envs/ent` = 0.9.12a1 train + rxe 0.9.5 wheel, `$SB/envs/entprev` = 0.9.11.post1
+train + the same rxe wheel). Before trusting them I verified they were not doctored: every file
+of `reflex-0.9.12a1` and `reflex_base-0.9.12a1` in `$SB/envs/ent` matches the `RECORD` hashes of
+the installed wheels (248 files, 0 mismatches), and neither venv has a `sitecustomize.py` or any
+`.pth` beyond `_virtualenv.pth`.
+Freezes: `verification/2026-09-19-adversarial/freeze_ent_verifier.txt`,
+`freeze_entprev_verifier.txt` (identical to the explorer's `logs/freeze_*`).
+
+### ISSUE-1 — CONFIRMED (critical, regression)
+
+Commands run (all from a neutral cwd, never the checkout):
+
+```
+# smallest repro
+cd /tmp && $SB/envs/ent/bin/python     -c "import reflex_enterprise.auth.oidc.state"
+#   -> TypeError: metaclass conflict ... at reflex_enterprise/auth/oidc/state.py:381
+cd /tmp && $SB/envs/entprev/bin/python -c "import reflex_enterprise.auth.oidc.state; print('IMPORT OK')"
+#   -> IMPORT OK
+# metaclass identity
+#   0.9.12a1    type(rx.State) = reflex.istate.validation._StateMeta
+#               reflex.vars.BaseStateMeta = reflex_base.vars.base.BaseStateMeta
+#               issubclass(BaseStateMeta, type(rx.State)) = False
+#   0.9.11.post1 type(rx.State) = reflex.vars.BaseStateMeta   (same object)
+#   -> verification/2026-09-19-adversarial/metaclass_probe_output.txt
+
+# user-facing repro A: MCPPlugin-only app (apps/mcpapp, rxconfig plugins=[rxe.MCPPlugin()])
+cd $V/apps/mcpapp && REFLEX_TELEMETRY_ENABLED=false CI=true \
+  $SB/envs/ent/bin/reflex run --backend-only --backend-port 9160
+curl --noproxy '*' -o /dev/null -w '%{http_code}\n' http://localhost:9160/ping     # -> 000
+#   verification/2026-09-19-adversarial/v1_mcpapp_new.log  (granian worker dies, full traceback)
+cd $V/apps/mcpapp && REFLEX_TELEMETRY_ENABLED=false CI=true \
+  $SB/envs/entprev/bin/reflex run --backend-only --backend-port 9161
+curl --noproxy '*' -o /dev/null -w '%{http_code}\n' http://localhost:9161/ping     # -> 200
+#   verification/2026-09-19-adversarial/v1_mcpapp_prev.log (0 traceback/metaclass lines)
+```
+
+The traceback reproduces byte-for-byte as written:
+`reflex/app.py:813 App.__call__ -> reflex_enterprise/plugins/mcp.py:1779 post_compile ->
+event_handler_api.py:468 build_event_handler_index -> :320 iter_public_event_handlers ->
+:279 is_public_event_handler -> :305 _is_public_handler -> auth/enforcement.py:947 is_exempt ->
+auth/oidc/state.py:381 -> TypeError: metaclass conflict`.
+
+Root cause, in the release source (read-only, `/home/user/reflex`, branch content ==
+`origin/r/pre-2026.09.18-35410916948`):
+
+* `reflex/istate/validation.py:90` — `class _StateMeta(BaseStateMeta)` (new in #7136)
+* `reflex/state.py:629` — `class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta)`
+* rxe 0.9.5 `auth/oidc/state.py:26` `from reflex.vars import BaseStateMeta`, `:347`
+  `class OIDCCookieMeta(BaseStateMeta)`, `:381` `class OIDCAuthState(..., metaclass=OIDCCookieMeta)`
+
+Refutation attempts, all failed:
+
+* **Not env-specific.** Nothing about ports/proxy/bun/this container is involved; the failure is a
+  single `import` with no server.
+* **Not sample-app misuse.** `apps/mcpapp/rxconfig.py` is four lines with `plugins=[rxe.MCPPlugin()]`;
+  the crash happens inside reflex-enterprise's own plugin, before any app code runs.
+* **Not an unsupported combination.** `reflex_enterprise-0.9.5.dist-info/METADATA` declares
+  `Requires-Dist: reflex[db]>=0.9.6` with **no upper bound**, so a plain `pip install -U reflex` in
+  an existing rxe 0.9.5 app resolves to 0.9.12 and bricks it. The resolver will not protect anyone.
+* **Not an intended documented change.** The 0.9.12a1 CHANGELOG entry for #7136 is about rejecting
+  reserved *names*; nothing in the changelog, the news fragment, or `docs/state/overview.md`
+  mentions `type(BaseState)` changing or third-party `BaseStateMeta` subclasses.
+* **Not pre-existing.** 0.9.11.post1 imports and serves `/ping` 200 with the identical rxe wheel.
+
+Additions to the written repro (it was otherwise complete and accurate):
+
+* The `is_exempt` import in the MCP path is the *lazy* import at `enforcement.py:947`, so the crash
+  surfaces at first request/compile rather than at `import reflex_enterprise` — which is why
+  `rxe.MCPPlugin()` still constructs fine in isolation. Worth stating, because it makes a
+  "just import rxe and see" check pass while real apps still die.
+* `BaseStateMeta` is re-exported through `reflex.vars` via `from reflex_base.vars import *` and is
+  in `reflex_base.vars.__all__` — i.e. rxe is importing a name the framework publicly exports, so
+  "enterprise reached into a private API" is not available as a defence.
+
+Severity for the release decision: **critical / release blocker**. Every published
+reflex-enterprise (0.9.5 is current) stops working the moment a user upgrades reflex, with no
+opt-out, and the failure mode is a dead worker behind a cheerful "Backend running at ..." banner.
+
+### ISSUE-2 — CONFIRMED (medium, regression)
+
+Browser repro rerun exactly as written, on my own ports:
+
+```
+cd $V/idp && NO_PROXY=localhost,127.0.0.1 $SB/envs/ent/bin/python fake_idp.py 9170 &
+cd $V/apps12/authapp && REFLEX_TELEMETRY_ENABLED=false CI=true OIDC_ISSUER_URI=http://localhost:9170 \
+  OIDC_CLIENT_ID=test-client OIDC_CLIENT_SECRET=test-secret \
+  $SB/envs/ent/bin/reflex run --frontend-port 4160 --backend-port 9162 &
+cd $V/scripts2 && NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python uncached_after_login.py 4160 vnew 9170
+# baseline
+cd $V/apps/authapp && ... $SB/envs/entprev/bin/reflex run --frontend-port 4161 --backend-port 9163 &
+cd $V/scripts2 && NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python uncached_after_login.py 4161 vprev 9170
+```
+
+| step | 0.9.11.post1 (`uncached_vprev.json`) | 0.9.12a1 (`uncached_vnew.json`) |
+| --- | --- | --- |
+| anon_initial | shared=default-shared | shared=default-shared |
+| anon_after_poison_shared | shared=default-shared | shared=default-shared |
+| right_after_login | **shared=SERVER-ONLY-SECRET** | **shared=default-shared** |
+| after_unrelated_event | shared=SERVER-ONLY-SECRET | shared=default-shared |
+| after_second_event | shared=SERVER-ONLY-SECRET | shared=default-shared |
+| after_reload | shared=SERVER-ONLY-SECRET | shared=SERVER-ONLY-SECRET |
+
+0 page errors, 0 console errors, 0 responses >= 400 in both runs — silently stale, as written.
+
+**Strengthened repro (this is the part the written one was missing).** The written repro only
+exists on top of the ISSUE-1 shim and reflex-enterprise, which leaves two obvious refutations
+open ("the shim did it" / "it is an enterprise bug"). Both are now closed by a pure-reflex,
+no-enterprise, no-shim, no-browser repro:
+`verification/2026-09-19-adversarial/pure_delta_memo.py` (output in `pure_delta_memo_output.txt`).
+It declares a plain `@rx.var(cache=False)` over server-side data and wraps `rx.State.get_delta`
+with a filter that drops the key while "anonymous" — i.e. exactly what
+`reflex_enterprise.auth.enforcement.install_delta_filter` does — then flips the flag:
+
+```
+                                  0.9.12a1          0.9.11.post1
+1 anon initial                    dropped           dropped
+2 anon event (value changed)      dropped           dropped
+3 after login                     STILL DROPPED     delivered  <-- the regression
+4 after another event             STILL DROPPED     delivered
+```
+
+Root cause in the release source:
+
+* `packages/reflex-base/src/reflex_base/vars/base.py:2689` `ComputedVar._record_delta_value()`
+  stores `(token, key_of(value))` on the state instance and returns False when unchanged (new
+  in #6946; the method does not exist in 0.9.11.post1).
+* `reflex/state.py:2385` `elif not cvar._record_delta_value(self, value, token): continue` —
+  the value is recorded as sent at the moment it is **computed**, inside `get_delta()`.
+* Anything that removes a key from the returned delta afterwards desynchronises that memory
+  permanently. reflex already has the machinery for the whole-delta case
+  (`_suppress_delta_recording()` / `_record_delta_values` ContextVar, `reflex/state.py:304-329`,
+  and `_DROP_FROM_DELTA` at `:301`) — and the `get_delta` docstring at `reflex/state.py:2346`
+  explicitly acknowledges that "the method is monkeypatched downstream" — but there is no
+  equivalent for a *partial* filter, which is the common case.
+
+Refutation attempts, all failed: not flaky (4/4 runs, two per version, deterministic); not the
+shim (the pure-reflex probe has no shim and no enterprise); not enterprise-only (the probe is 60
+lines of plain reflex); not a documented change (the #6946 changelog entry promises only that an
+unchanged value is omitted, not that a filtered-out value is treated as delivered); not
+pre-existing (0.9.11.post1 delivers it).
+
+Repro-quality notes for whoever fixes it:
+
+* `shots/uncached_new.png` and `shots/uncached_prev.png` are **byte-identical**
+  (md5 `545e954a1d81fb9b2f5544ef00ef57e3`, as are my `uncached_vnew.png` / `uncached_vprev.png`).
+  The driver screenshots only after `after_reload`, the one step where both versions agree, so
+  the PNGs prove nothing. The JSON step logs are the real evidence; the screenshots should be
+  taken at `right_after_login`.
+* The `<idp_port>` argument of `uncached_after_login.py` is read and never used; the IdP port only
+  matters through the server's `OIDC_ISSUER_URI`. Harmless, but it misleads.
+
+Severity: **medium**. Fail-closed (the client keeps the older/compiled-default value rather than
+leaking), no error surfaced anywhere, fixed by a reload. But it silently shows stale data in the
+one place that matters for an auth product — right after login — and the hazard is generic to any
+downstream delta filter.
+
+### ISSUE-3 — NOT CONFIRMED as a defect (facts verified; the framing is wrong)
+
+```
+grep -rn 'ALLOW_RESERVED\|allow_reserved' $SB/envs/ent/lib/python3.11/site-packages/reflex/ \
+    $SB/envs/ent/lib/python3.11/site-packages/reflex_base/ --include='*.py'    # rc=1, no matches
+git -C /home/user/reflex grep -ni 'allow_reserved' origin/r/pre-2026.09.18-35410916948   # rc=1, no matches
+```
+
+Both facts hold: `REFLEX_STATE_ALLOW_RESERVED_NAMES` exists nowhere in the published 0.9.12a1 /
+reflex-base 0.9.12a1 wheels, nor anywhere on the release branch (any file type, not just `*.py`).
+
+But the issue as filed says the flag is **documented**, and that is not true. I read the merged
+PR #7136 file list: the only user-facing text it ships is `news/+reserved-state-names.breaking.md`
+("... now reject names reserved by framework methods and bookkeeping before registration. Rename
+conflicting members.") and a six-line paragraph added to `docs/state/overview.md` — **neither
+mentions any opt-in flag**, and neither does the 0.9.12a1 CHANGELOG entry. The promise
+("Existing apps can temporarily set `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` ... Migration guidance
+and fragments for both affected packages are included") exists **only in the PR description**,
+which is not shipped to users. The explorer's inference that the shipped migration doc repeats
+the promise ("and, judging by it, the migration guidance shipped with the PR") is incorrect —
+I checked, it does not.
+
+So: no shipped artifact is wrong, nothing is broken by the flag's absence, and it would not have
+helped ISSUE-1 anyway (the metaclass is installed unconditionally at `reflex/state.py:629`,
+independent of any name-validation opt-in). There is nothing here for a fix agent to change in
+code or docs. What remains is a release-management observation worth one line in the release
+notes review: **#7136 shipped as a breaking change with no compatibility opt-in, contrary to its
+own PR description and its "Breaking change with a temporary compatibility opt-in" checklist item.**
+Decide whether to implement the opt-in or correct the PR/record; do not file it as a product bug.
+
+Baseline: not applicable (new-in-train by construction), consistent with the explorer's note.
+
+### Cleanup
+
+All processes started by this verification were killed (ports 4160/4161/9160-9163/9170 verified
+free via `$SB/bin/ports.py`; no leftover `reflex`/`vite`/`granian`/`bun run dev`/`fake_idp`).

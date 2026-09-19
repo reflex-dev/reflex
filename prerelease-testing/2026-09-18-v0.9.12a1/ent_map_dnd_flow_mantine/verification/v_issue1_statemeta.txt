@@ -1,0 +1,17 @@
+### 0.9.11.post1 (vf_b)
+reflex 0.9.11.post1 /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vf_b/lib/python3.11/site-packages/reflex/__init__.py
+type(rx.State) = reflex_base.vars.base.BaseStateMeta
+BaseStateMeta  = reflex_base.vars.base.BaseStateMeta
+is subclass ok = True
+meta usable    = True
+RESULT PASS  class created; injected = reflex___state____state____main______my_state.injected_rx_state_
+exit=0
+
+### 0.9.12a1 (vf_a)
+reflex 0.9.12a1 /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/vf_a/lib/python3.11/site-packages/reflex/__init__.py
+type(rx.State) = reflex.istate.validation._StateMeta
+BaseStateMeta  = reflex_base.vars.base.BaseStateMeta
+is subclass ok = True
+meta usable    = False
+RESULT FAIL  TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+exit=1
