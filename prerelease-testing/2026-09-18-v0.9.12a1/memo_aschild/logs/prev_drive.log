@@ -1,0 +1,50 @@
+PASS forms: #inp_name exists :: count=1
+INP_NAME_ATTRS={"tag": "INPUT", "spellcheck": "false", "id": "inp_name", "class": "rt-reset rt-TextFieldInput", "type": "text", "value": "", "_computedBorder": "rgb(28, 32, 36)", "_computedBorderWidth": "0px"}
+FAIL forms/#6850: slot-injected name= reaches memoized input :: {'tag': 'INPUT', 'spellcheck': 'false', 'id': 'inp_name', 'class': 'rt-reset rt-TextFieldInput', 'type': 'text', 'value': '', '_computedBorder': 'rgb(28, 32, 36)', '_computedBorderWidth': '0px'}
+FAIL forms/#6850: own class_name preserved and radix class merged :: rt-reset rt-TextFieldInput
+FAIL forms/#6850: own style survives slot merge (teal 2px border) :: rgb(28, 32, 36)
+FAIL forms/#6850: aria-describedby injected by radix Field :: None
+PASS forms/#7133: no forceMatch attribute on DOM :: []
+PASS forms: typing into as_child input updates State :: Ada Lovelace
+PASS forms: fully-controlled (debounce) input updates State :: ctl-typed
+PASS forms: client_state-bound as_child input updates ClientStateVar :: nick-typed
+PASS forms: @rx.memo-wrapped input inside form field updates State :: memo-typed
+SUBMITTED={"bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30","btn_submit":"None"}
+PASS forms/#6850: submitted form data contains as_child input value :: {"bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30","btn_submit":"None"}
+PASS forms: submitted contains controlled :: {"bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30","btn_submit":"None"}
+PASS forms: submitted contains client_state nickname :: {"bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30","btn_submit":"None"}
+PASS forms: submitted contains non-control fields (bio/fruit/agree) :: {"bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30","the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed","inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True","inp_notify":"True","inp_color":"green","inp_volume":"30","btn_submit":"None"}
+PASS triggers/#6850: dialog.trigger opens overlay :: 
+PASS triggers/#6850: dialog.trigger also runs child on_click :: 0->1
+PASS triggers: popover.trigger opens :: 
+PASS triggers: popover.trigger runs on_click :: 1->2
+PASS triggers: tooltip shows on hover :: 
+PASS triggers: tooltip child on_click runs :: 2->3
+PASS triggers: dropdown_menu opens :: 
+FAIL triggers: dropdown trigger on_click runs :: 3->3
+PASS triggers: hover_card opens on hover :: 
+PASS triggers: hover_card trigger on_click runs :: 3->4
+PASS triggers: foreach popover trigger runs handler with right arg :: ["dialog","popover","tooltip","hovercard","foreach-b"]
+PASS triggers: ComponentState dialog trigger opens + increments :: 'cs-0'->'cs-1' dialog=True
+PASS triggers: state-var label re-renders inside as_child trigger :: label-5
+FAIL memoapp: upload[plain] file input located by id :: no input under #plain; page has 0
+FAIL memoapp: upload[nested] file input located by id :: no input under #nested; page has 0
+FAIL memoapp: upload[cs_up] file input located by id :: no input under #cs_up; page has 0
+FAIL memoapp: toast :: TimeoutError('Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator("#btn_toast")\n')
+FAIL memoapp: foreach memo row :: TimeoutError('Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator("#btn_toast_fe2")\n')
+FAIL memoapp: color mode :: TimeoutError('Locator.inner_text: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator("#cm_text")\n')
+SVG_INFO={"top": {"found": true, "gradInSameSvg": true, "gradStops": 2, "fill": null, "w": 120, "h": 40, "stop0": "#ff0000"}, "memo": {"found": true, "gradInSameSvg": true, "gradStops": 2, "fill": null, "w": 120, "h": 40, "stop0": "#ff00ff"}, "feCount": 5, "feRects": [null, null, null, null, null], "defsCount": 5}
+PASS svg/#6708: top-level gradient defs live in the same <svg> as the rect :: {'found': True, 'gradInSameSvg': True, 'gradStops': 2, 'fill': None, 'w': 120, 'h': 40, 'stop0': '#ff0000'}
+PASS svg/#6708: memo-wrapped svg keeps defs in the same <svg> :: {'found': True, 'gradInSameSvg': True, 'gradStops': 2, 'fill': None, 'w': 120, 'h': 40, 'stop0': '#ff00ff'}
+PASS svg/#6708: foreach svgs each render a linearGradient :: 5
+PASS svg: rect renders with non-zero size :: {'found': True, 'gradInSameSvg': True, 'gradStops': 2, 'fill': None, 'w': 120, 'h': 40, 'stop0': '#ff0000'}
+PASS svg: state-driven stop-color updates inside memoized svg scope :: #0000ff
+PASS chains/#7122: shared bare chain fires from first and last call site :: 0->2 last=bare
+PASS chains/#7122: arg-bearing chain passes its own call-site arg (i=7) :: count=7 last=by-7
+PASS chains/#7122: second arg call-site does not leak the first's arg :: count=49 last=by-42
+PASS chains: stop_propagation / prevent_default variants still dispatch :: 2
+PASS chains: throttle(500) collapses 5 rapid clicks :: count=1
+PASS chains: debounce(300) collapses 5 rapid clicks :: count=1
+PASS chains/#7122: same handler on on_click AND on_mouse_enter fires for both :: hover=1 click=2
+
+[exited with code 0]

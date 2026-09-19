@@ -1,0 +1,22 @@
+# scripts/boom_probe.py against reflex 0.9.11.post1 (baseline), http://localhost:3141
+# captured 2026-09-19
+
+MEMOAPP_BODY="An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nTypeError: useContext is not a function or its return value is not iterable\nTypeError: useContext is not a function or its return value is not iterable\n    at MemoUpload (http://localhost:3141/app_components/memoaschild/memoaschild.jsx:291:37)\n    at Object.react_stack_bottom_frame ..."
+MEMOAPP_FILEINPUTS= 0
+MEMOAPP_CONSOLE_ERR= [{"t": "error", "x": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap"},
+                      {"t": "error", "x": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin"},
+                      {"t": "error", "x": "Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth"},
+                      {"t": "error", "x": "... TypeError: useContext is not a function or its return value is not iterable at MemoUpload ..."}]
+
+BOOM_BODY="An error occurred while rendering this page.\n\nThis is an error with the application itself. Refreshing the page might help.\n\nReferenceError: undefined_global_thing is not defined ..."
+INVALID_DOM_PROPERTY_COUNT= 3
+INVALID= [
+ {"t": "error", "x": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linecap strokeLinecap"},
+ {"t": "error", "x": "Invalid DOM property `%s`. Did you mean `%s`? stroke-linejoin strokeLinejoin"},
+ {"t": "error", "x": "Invalid DOM property `%s`. Did you mean `%s`? stroke-width strokeWidth"}
+]
+
+# ---------------------------------------------------------------------------
+# Same script against reflex 0.9.12a1 (dev, :3140 and prod, :3142):
+# INVALID_DOM_PROPERTY_MSGS=[]   (zero)  -> #7130 fixed
+# /memoapp renders, 3 file inputs present, uploads work -> #7176 fixed
