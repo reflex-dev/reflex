@@ -1,3 +1,10 @@
+## v0.9.4a1 (2026-09-18)
+
+### Bug Fixes
+
+- Fix `rx.toast` `action` and `cancel` buttons not triggering their `on_click` events when the toast is fired from a frontend event trigger. ([#7157](https://github.com/reflex-dev/reflex/issues/7157))
+
+
 ## v0.9.3 (2026-09-11)
 
 ### Miscellaneous

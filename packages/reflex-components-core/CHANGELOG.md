@@ -1,3 +1,19 @@
+## v0.9.10a1 (2026-09-18)
+
+### Bug Fixes
+
+- `rx.el.svg` and its children now render as one memoized component, so `defs` such as gradients and the elements that reference them by id always share one render scope. ([#6708](https://github.com/reflex-dev/reflex/issues/6708))
+- `rx.debounce_input` (which fully-controlled inputs compile to) now delivers a parent-provided ref to the underlying input element instead of the component instance, fixing crashes under `rx.form.control(..., as_child=True)`. ([#6850](https://github.com/reflex-dev/reflex/issues/6850))
+- Return a controlled 400 response when an upload request references an unknown event handler. ([#6860](https://github.com/reflex-dev/reflex/issues/6860))
+- Give the Built with Reflex badge an accessible name when its visual text is hidden on small screens. ([#7078](https://github.com/reflex-dev/reflex/issues/7078))
+- `reflex_components_core.datadisplay` no longer advertises `code_block`, `data_editor` and friends: those moved to the standalone `reflex-components-code` and `reflex-components-dataeditor` packages, so accessing them here raised `ModuleNotFoundError`. Reach them as before via `rx.code_block` / `rx.data_editor`, or `reflex.components.datadisplay.code`. ([#7124](https://github.com/reflex-dev/reflex/issues/7124))
+- Stop the default error boundary fallback from logging invalid DOM property warnings for its SVG icon. ([#7130](https://github.com/reflex-dev/reflex/issues/7130))
+
+### Miscellaneous
+
+- Annotate `_render` overrides as returning `CommonTag`, the new base of every tag class. ([#7121](https://github.com/reflex-dev/reflex/issues/7121))
+
+
 ## v0.9.9 (2026-08-28)
 
 ### Features

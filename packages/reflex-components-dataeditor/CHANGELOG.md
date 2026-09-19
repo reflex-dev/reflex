@@ -1,3 +1,10 @@
+## v0.9.3a1 (2026-09-18)
+
+### Features
+
+- Ensure `rx.data_editor` image previews include Glide Data Grid's required carousel styles. ([#7081](https://github.com/reflex-dev/reflex/issues/7081))
+
+
 ## v0.9.2 (2026-08-28)
 
 ### Miscellaneous
