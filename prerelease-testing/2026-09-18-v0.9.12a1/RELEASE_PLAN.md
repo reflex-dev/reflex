@@ -20,11 +20,21 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 ## Fix before release
 
+### Security
+
+- **FINDING-011 — reflex-enterprise's REST `redact_router_session()` is a no-op against reflex 0.9.12a1's split
+  router vars; server-generated `client_token`/`session_id` reach REST responses and event deltas** (HIGH, claimed
+  by `ent_map_dnd_flow_mantine`, verification pending; currently masked by FINDING-001 because the app cannot
+  start). Arm: security-relevant. Shape: decide where the redaction lives — reflex could expose the
+  connection-scoped vars under a stable name the plugin can redact, or a lockstep reflex-enterprise release
+  redacts `rx_router_session` — and re-verify over HTTP (`retrieve_state`, `/_reflex/event/...`) on the next alpha.
+
 ### Confirmed regressions
 
 - **FINDING-001 — `rx.State`'s new metaclass breaks downstream `BaseStateMeta` subclasses; reflex-enterprise
   0.9.5 AuthPlugin and MCPPlugin apps cannot start on 0.9.12a1** (CRITICAL). Arm: confirmed regression
   (import sweep + framework-only repro on both versions; blast radius measured end to end by `ent_mcp_oidc`).
+  Also kills the `tickets` demo (no auth configured) through `EventHandlerAPIPlugin.post_compile`.
   Shape of the fix, framework side: keep `type(rx.State) is reflex.vars.BaseStateMeta` — run #7136's
   `_validate_state_name`/`_validate_inherited_members` from `BaseStateMeta.__new__` (guarded on "a base is a
   `BaseState`") instead of introducing `reflex.istate.validation._StateMeta`; or make `_StateMeta` compose

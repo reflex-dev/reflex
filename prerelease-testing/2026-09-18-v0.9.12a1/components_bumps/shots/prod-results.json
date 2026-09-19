@@ -1,0 +1,340 @@
+{
+  "sankey": {
+    "static_paths": 9,
+    "static_rects": 0,
+    "stateful_rects": 0,
+    "custom_texts": 11,
+    "custom_gradients": 6,
+    "custom_gradient_ids": [
+      "_r_g_",
+      "_r_h_",
+      "_r_i_",
+      "_r_j_",
+      "_r_k_",
+      "_r_l_"
+    ],
+    "custom_gradient_ids_unique": true,
+    "custom_path_strokes": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "gradients_referenced": false,
+    "custom_text_anchors": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "has_end_anchor": false,
+    "foreach_charts": 2,
+    "foreach_gradient_ids": [
+      "_r_3_",
+      "_r_4_",
+      "_r_5_",
+      "_r_6_",
+      "_r_7_",
+      "_r_8_",
+      "_r_9_",
+      "_r_a_",
+      "_r_b_",
+      "_r_c_",
+      "_r_d_",
+      "_r_e_"
+    ],
+    "width_outside": "outside-chart width:",
+    "width_cond": "cond: falsy(None outside chart)",
+    "stateful_widths_changed": true,
+    "seed_text": "seed=1",
+    "stateful_rects_after_add": 0,
+    "anchors_wide": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "anchors_narrow": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "xs_wide": [
+      "317",
+      "317",
+      "317",
+      "931",
+      "931",
+      "931",
+      "21",
+      "635"
+    ],
+    "xs_narrow": [
+      "127",
+      "127",
+      "127",
+      "361",
+      "361",
+      "361",
+      "21",
+      "255"
+    ],
+    "width_reacts_to_resize": true
+  },
+  "props": {
+    "grid_dash": [
+      "4 4",
+      "4 4",
+      "4 4"
+    ],
+    "line_dash": [
+      "5 5",
+      null
+    ],
+    "refline_dash": [
+      "3 3"
+    ],
+    "x_ticks": [],
+    "y_ticks": [],
+    "wrapper_style_attr": "width:100%;height:300px;min-width:10px;min-height:10px",
+    "wrapper_inner_style": [
+      "width:100%;height:300px;min-width:10px;min-height:10px",
+      "width:0;overflow-x:visible",
+      "position: relative; cursor: default; width: 1248px; height: 300px;",
+      "visibility: visible; pointer-events: none; position: absolute; top: 0px; left: 0px; transition: transform 400ms; transform: translate(75px, 137px);",
+      "margin: 0px; padding: 10px; background: var(--gray-1); border-width: 1px; border-style: solid; border-color: var(--gray-4); border-image: initial; white-space: nowrap; border-radius: 8px;"
+    ],
+    "refline_dash_after_toggle": [
+      "8 2"
+    ],
+    "dash_value": "dash=8 2"
+  },
+  "editor": {
+    "canvas_count": 2,
+    "memo_canvas_count": 2,
+    "carousel_css_in_dom": [
+      ".gdg-mnuv029 { word-break: break-word; padding-top: 6px; }",
+      ".gdg-mnuv029 > * { margin: 0px; }",
+      ".gdg-mnuv029 :last-child { margin-bottom: 0px; }",
+      ".gdg-mnuv029 p img { width: 100%; }",
+      ".gdg-d19meir1 { box-sizing: border-box; --overlay-top: var(--d19meir1-0); left: var(--d19meir1-1); top: var(--d19meir1-0",
+      "@keyframes glide_fade_in-gdg-d19meir1 { \n  0% { opacity: 0; }\n  100% { opacity: 1; }\n}",
+      ".gdg-d19meir1.gdg-style { background-color: var(--gdg-bg-cell); box-shadow: 0 0 0 1px var(--gdg-accent-color), 0px 0px 1",
+      ".gdg-d19meir1.gdg-pad { padding: var(--d19meir1-5) 8.5px 3px; }",
+      ".gdg-d19meir1 .gdg-clip-region { border-radius: 2px; flex-direction: column; flex-grow: 1; display: flex; overflow: hidd",
+      ".gdg-d19meir1 .gdg-clip-region .gdg-growing-entry { height: 100%; }",
+      ".gdg-d19meir1 .gdg-clip-region input.gdg-input { border: 0px; outline: none; width: 100%; }",
+      ".gdg-d19meir1 .gdg-clip-region textarea.gdg-input { border: 0px; outline: none; }"
+    ],
+    "clicks_after_single": "clicks=1",
+    "lastcell": "[0, 0]",
+    "overlay_present": 4,
+    "overlay_imgs": [],
+    "overlay_html_snippet": null,
+    "clicks_final": "clicks=3"
+  },
+  "plotly": {
+    "myplot_exists": true,
+    "stateplot_exists": true,
+    "fe_one": true,
+    "fe_two": true,
+    "plotly_divs": [
+      "myplot",
+      "stateplot",
+      "fe-one",
+      "fe-two"
+    ],
+    "svg_count": 52,
+    "n_after_bump": "n=2",
+    "stateplot_still_exists": true,
+    "stateplot_bar_heights": [
+      "M22,172V117.53H198V172Z",
+      "M242,172V63.07H418V172Z",
+      "M462,172V8.6H638V172Z"
+    ]
+  },
+  "toast": {
+    "fe_action_button_visible": true,
+    "fe_action_action_hits": "action_hits=1",
+    "fe_action_cancel_hits": "cancel_hits=0",
+    "fe_cancel_visible": true,
+    "after_fe_cancel": "cancel_hits=1",
+    "memo_button_visible": true,
+    "memo_action_hits": "action_hits=2",
+    "memo_cancel_hits": "cancel_hits=1",
+    "cs_button_visible": true,
+    "cs_action_hits": "action_hits=2",
+    "cs_cancel_hits": "cancel_hits=1",
+    "cs_local": "local=1",
+    "backend_button_visible": true,
+    "backend_action_hits": "action_hits=3",
+    "backend_cancel_hits": "cancel_hits=1",
+    "bg_button_visible": true,
+    "bg_action_hits": "action_hits=4",
+    "bg_cancel_hits": "cancel_hits=1",
+    "log": "[\"action:fe\",\"cancel:fe\",\"action:memo\",\"action:backend\",\"bg:start\",\"action:bg\"]",
+    "foreach_buttons": 6,
+    "foreach_action_visible": true,
+    "foreach_action_hits": "action_hits=5",
+    "toasts_before_dismiss": 2,
+    "toasts_after_dismiss": 0
+  },
+  "code": {
+    "copy_btn_count": 1,
+    "copy_btn_attrs": [
+      {
+        "aria": "Copy code",
+        "type": "button",
+        "text": ""
+      }
+    ],
+    "submits_before": "submits=0",
+    "submits_after_copy": "submits=0",
+    "clipboard": "def greet(name: str) -> str:\n    return f\"hello {name}\"\n",
+    "submits_after_submit": "submits=1",
+    "lang": "javascript",
+    "dynamic_code_text": "def greet(name: str) -> str:\n    return f\"hello {name}\"\n",
+    "dynamic_code_text_after_theme": "def greet(name: str) -> str:\n    return f\"hello {name}\"\n",
+    "belowfold_text": "print('below the fold')\nprint('second line')",
+    "belowfold_tokens": 10
+  },
+  "misc": {
+    "md_text": "Markdown\n\nSome bold and a link.\n\na\tb\n1\t2\nx = 1\n\nInline math \n\ud835\udc65\n2\nx\n2\n and block:\n\n\u222b\n0\n1\n\ud835\udc65\n\ud835\udc51\n\ud835\udc65\n\u222b\n0\n1\n\t\u200b\n\nxdx",
+    "md_table_rows": 2,
+    "md_code_blocks": 1,
+    "table_rows": 4,
+    "table_rows_after_add": 5,
+    "table_rows_after_search": 2,
+    "seg_value": "choice=two",
+    "seg_value2": "choice=three",
+    "foreach_ids": [
+      "_R_eiqj5_",
+      "_R_eiqj5_",
+      "_R_eiqj5_"
+    ],
+    "foreach_html_for": [
+      "_R_eiqj5_",
+      "_R_eiqj5_",
+      "_R_eiqj5_"
+    ],
+    "foreach_ids_unique": false,
+    "foreach_ids_match_labels": true,
+    "memo_hook_id": "memo id: _R_fiqj5_",
+    "memo_input_id": "_R_fiqj5_",
+    "hookvar_text": "page-level use_hook_var(react,useId): _R_2giqj5_",
+    "hookvar_cond": "hookvar truthy",
+    "foreach_ids_stable": true,
+    "foreach_ids_2": [
+      "_R_eiqj5_",
+      "_R_eiqj5_",
+      "_R_eiqj5_"
+    ],
+    "badge_a11y": [
+      {
+        "aria": null,
+        "text": "Built with Reflex",
+        "title": null
+      },
+      {
+        "aria": "Built with Reflex",
+        "text": "Built with Reflex",
+        "title": null
+      },
+      {
+        "aria": "Built with Reflex",
+        "text": "Built with Reflex",
+        "title": null
+      }
+    ]
+  },
+  "nav": {
+    "url": "http://localhost:3301/sankey",
+    "sankey_rects": 0,
+    "code_copy_btns": 1,
+    "plotly_myplot": true
+  },
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://localhost:3301/sankey/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:3301/sankey/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:3301/props/"
+    },
+    {
+      "type": "error",
+      "text": "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`.",
+      "url": "http://localhost:3301/editor/"
+    },
+    {
+      "type": "error",
+      "text": "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`.",
+      "url": "http://localhost:3301/editor/"
+    },
+    {
+      "type": "error",
+      "text": "Cannot open Data Grid overlay editor, because portal not found.  Please add `<div id=\"portal\" />` as the last child of your `<body>`.",
+      "url": "http://localhost:3301/editor/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:3301/editor/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:3301/plotly/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:3301/toast/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:3301/code/"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation",
+      "url": "http://localhost:3301/misc/"
+    }
+  ],
+  "pageerrors": [],
+  "failed_requests": [],
+  "bad_responses": []
+}

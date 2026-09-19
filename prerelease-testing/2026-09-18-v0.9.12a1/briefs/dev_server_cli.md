@@ -58,3 +58,13 @@ Changelog lines (verbatim):
     `starlette_admin`, `pandas`, `httpx` are present) on both versions; RSS of the backend worker.
 12. `reflex cloud --help`, `reflex cloud apps list --json` and `reflex deploy --help` with no token,
     stdout piped: exit code and message (0.1.72 semantics: non-interactive refused with exit 1).
+
+## Lead handed over from the `ent_map_dnd_flow_mantine` cluster (please baseline)
+
+While iterating on an app in dev, a module that raised at page-evaluation time (a `TypeError` from a component
+constructor, then an `AttributeError`) logged the traceback followed by `[ERROR] Unexpected exit from worker-1`,
+and the backend did NOT come back after the source was fixed — the server had to be restarted by hand. Seen on
+0.9.12a1, not baselined. Reproduce deliberately (introduce a page-evaluation error, save, fix, save) on both
+versions and record whether the reload worker recovers; #7114 ("keep the backend port open while hot reload
+restarts the worker") makes this path more visible. Related, both versions: when the app module raises at
+import, `reflex run` still prints "Backend running at …" and keeps running with a dead backend.

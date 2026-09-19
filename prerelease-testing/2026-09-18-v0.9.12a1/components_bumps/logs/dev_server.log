@@ -1,0 +1,392 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/cb/lib/python3.11/site-packages/reflex_base/config.py'
+Debug: Config: Config(app_name='gallery', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url=None, redis_url=None, telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+frontend_lazy_bundled_libraries=False, 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'telemetry_enabled', 'app_name'}, 
+env_file=None, state_auto_setters=False, default_color_mode='system', 
+show_built_with_reflex=None, is_reflex_cloud=False, extra_overlay_function=None,
+hydrate_fallback=None, plugins=[SitemapPlugin(trailing_slash='preserve')], 
+disable_plugins=[], transport='websocket')
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.12a1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+envs/cb/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=3300
+Debug: Overriding config value backend_port with env var BACKEND_PORT=8300
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 3300 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 3300 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 3300 is not in use.
+Debug: Checking if Backend port: 8300 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 8300 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 8300 is not in use.
+DeprecationWarning: `@rx.memo` on `memo_sankey` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (gallery/gallery.py:149)
+DeprecationWarning: `@rx.memo` on `hook_probe` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (gallery/gallery.py:670)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/cb/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.35s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 30/29 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 699 installs across 712 packages (no changes) [17.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'autoprefixer@10.5.4', 'vite@8.2.2', 
+'postcss@8.5.26', '@react-router/dev@8.4.0', '@emotion/react@11.14.0', 
+'@react-router/fs-routes@8.4.0', 'postcss-import@17.0.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss-import@17.0.0
+Debug: 
+Debug: [16.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'rehype-katex@7.0.1', 'socket.io-client@4.8.3', 
+'gridjs@6.2.0', 'react-plotly.js@4.1.0', '@glideapps/glide-data-grid@6.0.3', 
+'plotly.js@3.7.0', 'react@19.2.8', 'react-helmet@6.1.0', 
+'react-dropzone@15.0.0', 'remark-gfm@4.0.1', 'react-error-boundary@6.1.2', 
+'gridjs-react@6.1.1', 'rehype-raw@7.0.0', '@react-router/node@8.4.0', 
+'rehype-unwrap-images@1.0.0', 'react-router@8.4.0', 
+'react-responsive-carousel@3.2.23', 'react-markdown@10.1.0', 'sonner@2.0.8', 
+'isbot@5.2.2', 'remark-math@6.0.0', 'recharts@3.10.1', '@radix-ui/themes@3.3.0',
+'lucide-react@1.26.0', '@radix-ui/react-form@0.1.16', 'react-dom@19.2.8', 
+'universal-cookie@8.1.2', 'lodash@4.18.1', 'mergician@v2.0.2', 
+'react-syntax-highlighter@16.1.1']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed rehype-katex@7.0.1
+Debug: installed socket.io-client@4.8.3
+Debug: installed gridjs@6.2.0
+Debug: installed react-plotly.js@4.1.0
+Debug: installed @glideapps/glide-data-grid@6.0.3
+Debug: installed plotly.js@3.7.0
+Debug: installed react@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: installed react-dropzone@15.0.0
+Debug: installed remark-gfm@4.0.1
+Debug: installed react-error-boundary@6.1.2
+Debug: installed gridjs-react@6.1.1
+Debug: installed rehype-raw@7.0.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed rehype-unwrap-images@1.0.0
+Debug: installed react-router@8.4.0
+Debug: installed react-responsive-carousel@3.2.23
+Debug: installed react-markdown@10.1.0
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed remark-math@6.0.0
+Debug: installed recharts@3.10.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed lucide-react@1.26.0
+Debug: installed @radix-ui/react-form@0.1.16
+Debug: installed react-dom@19.2.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed lodash@4.18.1
+Debug: installed mergician@2.0.2
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: 
+Debug: [14.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/components_bumps/gallery/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/components_bumps/gallery/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.07s
+Debug: [timing] Write to Disk: 0.00s
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpa
+d/apps/components_bumps/gallery/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/components_bumps/gallery/assets', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/components_bumps/gallery/gallery', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/components_bumps/gallery/rxconfig.py']
+[INFO] Starting granian (main PID: 16255)
+[INFO] Listening at: http://0.0.0.0:8300
+[INFO] Spawning worker-1 with PID: 16290
+DeprecationWarning: `@rx.memo` on `memo_sankey` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (gallery/gallery.py:149)
+DeprecationWarning: `@rx.memo` on `hook_probe` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (gallery/gallery.py:670)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: BE Evaluating stateful page: toast
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug:   ➜  Local:   http://localhost:3300/
+App running at: http://localhost:3300/
+Backend running at: http://0.0.0.0:8300
+Debug:   ➜  Network: http://192.0.2.2:3300/  eth0
+Debug: 2:09:22 AM [vite] (client) [optimizer] bundling dependencies...
+Debug: 2:09:53 AM [vite] (ssr) connected.
+Expected field 'CodeState.dark' to receive type '<class 'bool'>', but got '-1' 
+of type '<class 'int'>'.
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/components_bumps/gallery/gallery/gallery.py
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18812
+DeprecationWarning: `@rx.memo` on `memo_sankey` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (gallery/gallery.py:149)
+DeprecationWarning: `@rx.memo` on `hook_probe` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (gallery/gallery.py:670)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+Debug: [timing] Compile pages: 0.18s
+Process granian-worker:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/granian/server/mp.py", line 92, in wrapped
+    callback = callback_loader()
+               ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/granian/_internal.py", line 70, in load_target
+    rv = rv()
+         ^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex/app.py", line 791, in __call__
+    self._compile(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex/app.py", line 1715, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1325, in compile_app
+    compile_ctx.compile(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 809, in compile
+    page_ctx = self.hooks.eval_page(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex_base/plugins/compiler.py", line 271, in eval_page
+    result = hook_impl(page_fn, page=page, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex/compiler/plugins/builtin.py", line 42, in eval_page
+    component = compiler.into_component(page_fn)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 968, in into_component
+    component_called = component()
+                       ^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/components_bumps/gallery/gallery/gallery.py", line 734, in misc_page
+    rx.sticky(),
+    ^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex/__init__.py", line 267, in __getattr__
+    return getattr(name)
+           ^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/cb/lib/python3.11/site-packages/reflex_base/utils/lazy_loader.py", line 164, in __getattr__
+    raise AttributeError(msg)
+AttributeError: No reflex attribute sticky
+Happened while evaluating page 'misc'
+[ERROR] Unexpected exit from worker-1
+[INFO] Changes detected, reloading workers..
+[INFO] Modified: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/components_bumps/gallery/gallery/gallery.py
+[INFO] Stopped worker-1
+[INFO] Spawning worker-1 with PID: 18852
+DeprecationWarning: `@rx.memo` on `memo_sankey` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (gallery/gallery.py:150)
+DeprecationWarning: `@rx.memo` on `hook_probe` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (gallery/gallery.py:671)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/envs/cb/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.37s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 30/29 0:00:00
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'install', 
+'--legacy-peer-deps', '--frozen-lockfile']
+Debug: Installing base frontend packages
+Debug: bun install v1.4.0 (34cbb9a40)
+Debug: 
+Debug: Checked 699 installs across 712 packages (no changes) [16.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', 'autoprefixer@10.5.4', 'vite@8.2.2', 
+'postcss@8.5.26', '@react-router/dev@8.4.0', '@emotion/react@11.14.0', 
+'@react-router/fs-routes@8.4.0', 'postcss-import@17.0.0']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss@8.5.26
+Debug: installed @react-router/dev@8.4.0 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@8.4.0
+Debug: installed postcss-import@17.0.0
+Debug: 
+Debug: [16.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'rehype-katex@7.0.1', 'socket.io-client@4.8.3', 
+'gridjs@6.2.0', 'react-plotly.js@4.1.0', '@glideapps/glide-data-grid@6.0.3', 
+'plotly.js@3.7.0', 'react@19.2.8', 'react-helmet@6.1.0', 
+'react-dropzone@15.0.0', 'remark-gfm@4.0.1', 'react-error-boundary@6.1.2', 
+'gridjs-react@6.1.1', 'rehype-raw@7.0.0', '@react-router/node@8.4.0', 
+'rehype-unwrap-images@1.0.0', 'react-router@8.4.0', 
+'react-responsive-carousel@3.2.23', 'react-markdown@10.1.0', 'sonner@2.0.8', 
+'isbot@5.2.2', 'remark-math@6.0.0', 'recharts@3.10.1', '@radix-ui/themes@3.3.0',
+'lucide-react@1.26.0', '@radix-ui/react-form@0.1.16', 'react-dom@19.2.8', 
+'universal-cookie@8.1.2', 'lodash@4.18.1', 'mergician@v2.0.2', 
+'react-syntax-highlighter@16.1.1']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed rehype-katex@7.0.1
+Debug: installed socket.io-client@4.8.3
+Debug: installed gridjs@6.2.0
+Debug: installed react-plotly.js@4.1.0
+Debug: installed @glideapps/glide-data-grid@6.0.3
+Debug: installed plotly.js@3.7.0
+Debug: installed react@19.2.8
+Debug: installed react-helmet@6.1.0
+Debug: installed react-dropzone@15.0.0
+Debug: installed remark-gfm@4.0.1
+Debug: installed react-error-boundary@6.1.2
+Debug: installed gridjs-react@6.1.1
+Debug: installed rehype-raw@7.0.0
+Debug: installed @react-router/node@8.4.0
+Debug: installed rehype-unwrap-images@1.0.0
+Debug: installed react-router@8.4.0
+Debug: installed react-responsive-carousel@3.2.23
+Debug: installed react-markdown@10.1.0
+Debug: installed sonner@2.0.8
+Debug: installed isbot@5.2.2
+Debug: installed remark-math@6.0.0
+Debug: installed recharts@3.10.1
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed lucide-react@1.26.0
+Debug: installed @radix-ui/react-form@0.1.16
+Debug: installed react-dom@19.2.8
+Debug: installed universal-cookie@8.1.2
+Debug: installed lodash@4.18.1
+Debug: installed mergician@2.0.2
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: 
+Debug: [14.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/components_bumps/gallery/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/components_bumps/gallery/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.07s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 2:15:19 AM [vite] (client) hmr update /app_components/gallery/gallery.jsx
+Debug: 2:15:19 AM [vite] (client) hmr update /app_components/gallery/gallery.jsx
+Debug: 2:15:19 AM [vite] (client) hmr update /app/routes/[misc]._index.jsx
+Debug: 2:15:19 AM [vite] (client) hmr update /app/routes/[misc]._index.jsx

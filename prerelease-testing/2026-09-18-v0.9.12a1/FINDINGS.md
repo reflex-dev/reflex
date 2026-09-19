@@ -60,6 +60,7 @@ Index:
 - FINDING-008: `rx.dropdown_menu.trigger` swallows its child button's `on_click` — the menu opens, the handler never runs; the other four Radix triggers compose correctly (MEDIUM, pre-existing, Radix pointerdown/dismissable-layer interaction) — claimed by `memo_aschild`, verification pending
 - FINDING-009: `rx.cond` renders both branches eagerly, so a render-time throw in the untaken branch fails the prod build at the prerender step (`Prerender: Request failed for /boom/: 500`, exit 1); dev only shows the error boundary (MEDIUM, pre-existing shape; prod half not baselined) — claimed by `memo_aschild`, verification pending
 - FINDING-010: `on_submit` form data carries id-keyed duplicates and stray entries (`the_form: banana`, `btn_submit: None`) besides the name-keyed fields (LOW, pre-existing) — claimed by `memo_aschild`, verification pending
+- FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package; currently masked by FINDING-001) — claimed by `ent_map_dnd_flow_mantine`, verification pending
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
 
@@ -95,7 +96,12 @@ Index:
   `build_event_handler_index` → `auth/enforcement.is_exempt` imports `reflex_enterprise.auth.oidc.state`
   (`logs/a2_mcpapp.log`); an app with only `rxe.AuthPlugin()` dies at `from reflex_enterprise.auth import
   AuthUserState, GenericOIDCAuthState` (`logs/a2_authonly_new.log`); the shipped `demos/oidc` cannot import.
-  All three start on 0.9.11.post1. With a test-only shim that forces the one class definition through
+  All three start on 0.9.11.post1. The `ent_map_dnd_flow_mantine` cluster adds a fourth victim that configures
+  **no auth at all**: the `tickets` demo's backend worker exits during `EventHandlerAPIPlugin.post_compile`
+  (`ent_map_dnd_flow_mantine/logs/tickets_new_dev.TRACEBACK.txt`), while the vite frontend keeps answering 200 so
+  the page loads and never connects; same demo + same wheel starts cleanly on 0.9.11.post1. Their pure-reflex
+  repro `ent_map_dnd_flow_mantine/scripts/repro_statemeta.py` is equivalent to `orch_probes/metaclass_probe.py`.
+  With a test-only shim that forces the one class definition through
   (`scripts2/oidc_meta_shim.py`, clearly not a fix), the entire MCP + OIDC surface passes end to end, so
   the metaclass is the only #7136 incompatibility in reflex-enterprise 0.9.5. Any third-party State
   metaclass written the same way breaks. Nothing in the changelog announces the metaclass change. Also
@@ -133,6 +139,22 @@ Index:
   entry out of the delta, so the memo says "sent" for a value the browser never received, and the next
   recomputation (same value) is deduped away. Any downstream delta filter, or any delivery failure between
   compute and emit, has the same exposure.
+
+## FINDING-011: reflex-enterprise REST session-token redaction is a no-op after the router split (HIGH, security-relevant, regression — claimed, verification pending)
+
+- Cluster: `ent_map_dnd_flow_mantine` | Regression vs 0.9.11.post1: yes (probe run on both) | Verifier: pending
+- Repro: `ent_map_dnd_flow_mantine/scripts/probe_router_redact.py` from a neutral cwd on the `ent` and `entprev`
+  venvs: it builds router data exactly as `EventHandlerAPIPlugin` does (`router_data_for_token(...)`, then
+  `state.router = RouterData.from_router_data(...)`), runs rxe's `redact_router_session()` over `state.dict()`
+  and searches for the token. 0.9.11.post1: the root state carries `router_rx_state_ = RouterData(session=
+  SessionData(client_token=''...))` — redacted. 0.9.12a1: the dict has `rx_router_session_rx_state_` with the
+  real `client_token`/`session_id` and no `router` key, so nothing is redacted. Evidence: NOTES.md "ISSUE 2".
+- Mechanism: #7068 made `router` a property with no backing field, so it no longer appears in `state.dict()`;
+  rxe 0.9.5 `plugins/event_handler_api.py:733` redacts by looking up that key. Nothing over HTTP can be shown
+  until FINDING-001 is fixed (the tickets demo cannot start), so this MUST be re-verified end to end over the REST
+  surface (`/_reflex/event/<state>/<handler>`, `retrieve_state`) on the next alpha. Whether the fix lands in reflex
+  (keep a redactable `router` entry / provide a hook) or in a lockstep reflex-enterprise release is a maintainer
+  decision, but a released 0.9.12 against the published rxe 0.9.5 would leak the tokens.
 
 ## FINDING-004 … FINDING-007 (LOW; claimed, details in the cluster NOTES)
 
@@ -251,5 +273,21 @@ dev route-by-route A/B against 0.9.11.post1 is not possible because the baseline
 no-regression call rests on the prod A/B (valid, diff zero) and on the previous campaign's 0.9.11a1 dev sweep.
 Process note: this agent ran `pkill -f "reflex run"` once around 01:50 UTC before switching to pid-scoped kills;
 `memo_aschild` and `ent_map_dnd_flow_mantine` were running at the time and reported no unexplained server death.
+
+### `ent_map_dnd_flow_mantine` (pass 10, anomaly 6, fail 3, skipped 3) — FINDING-001 widened, FINDING-011 found
+Six rxe 0.9.5 demos on 0.9.12a1 vs 0.9.11.post1. An offline compiled-JS differ (`scripts/compile_dump.py`,
+compiles any app in-process on either version without bun or the licence gate) diffed all 12 builds: no dropped
+or duplicated hooks/imports (the #7015/#7198 risk). Browser drives: dnd 18/18, flow 11/11 + 9/9, map 13/13,
+mantine `/dates` 52/52 — 0 page errors, 0 non-benign console messages, 0 4xx/5xx. A purpose-built mantine
+`/qa-slot` page combining #6850 and #7068 with State vars, `client_state`, `@rx.memo`, `rx.foreach`/`rx.cond`,
+an event chain, a background task, SPA navigation and hard reload: 13/13. Failures: the tickets demo cannot
+start (FINDING-001 via `EventHandlerAPIPlugin.post_compile`), the pure-reflex metaclass repro, and the
+redaction no-op (FINDING-011). Skipped: highcharts browser drive (compiled-JS diff only), tickets REST/OpenAPI
+(blocked), and prod for every demo — `reflex run --env prod`/`export` are refused by rxe's paid-tier gate for an
+anonymous tier and the agent declined to bypass it with reflex's `APP_HARNESS_FLAG` (the previous campaign did;
+a policy call for the team). Anomalies worth a line: dev hot reload did not recover after an app-module error
+(worker exited permanently; handed to `dev_server_cli` to baseline); `rx.form.control` rejects non-Radix
+children so #6850 cannot be exercised with third-party widgets through it; OSM tile requests blocked by the
+sandbox proxy (environmental).
 
 _(other clusters pending)_
