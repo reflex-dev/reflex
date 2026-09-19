@@ -67,7 +67,10 @@ server's environment).
 
 `RenderProbe` is a `rx.el.Span` subclass whose `add_hooks` bumps
 `window.__renders["<name>"]` on every render, so render counts are read straight out of the page.
-Counts are doubled by React StrictMode in dev — a count of 2 is one logical render.
+Dev mode roughly doubles counts (React StrictMode); prod does not. The tables below therefore
+compare **same mode, different version** only. Do not compare a dev number against a prod number:
+prod is exactly half of dev for every event-driven scenario, but *not* for the initial load
+(see the prod section), so "dev = 2 x prod" is not a safe general rule here.
 
 ## Rerun commands
 
@@ -211,6 +214,36 @@ but #7136 made the name reserved at class creation, so no app on 0.9.12a1 can re
 path the changelog line describes. Note this is also an undocumented breaking change: an app
 that declared `_get_was_touched` on a state now fails to import.
 
+### Prod mode (`reflex run --env prod --frontend-port 3223 --backend-port 3223`)
+
+The whole `drive_render.py` script was replayed against a production build
+(`out/new_prod_result.json`). Everything functional matches dev: colour-mode toggling, the
+background storm (A=17, B=51), the background task pushing to a page-2-only substate (11 on
+arrival, 12 after a click), the dynamic route (`pid` = `abc`), all three client-storage kinds
+surviving a reload, `client_state` correctly empty after a reload, the second tab getting its
+own token, and direct-loading `/page2`. `page_errors`, `failed_requests` and `bad_responses`
+are all empty; 127 received / 54 sent websocket frames against 129/54 in dev.
+
+Render counts are exactly **half** of dev for every event-driven scenario (5 x `bump` = 5
+renders, colour-mode x4 = 4, storm = 50 on B, 300-row rebuild = 300 rows) — i.e. one render per
+delta per affected provider, with no unrelated provider touched. Nav to /page2 and back remounts
+the page (300 `foreach_row` renders), same as dev.
+
+The initial load differs from dev in a way worth recording: in prod, `A` and `B` render **2x**
+while `C`-`H`, `PAGE`, `colormode`, `evloop` and `componentstate` render **1x** — the hydrate
+delta and the `on_load` delta land as two separate commits because prod is fast enough that the
+first render completes before the second delta arrives. In dev all probes read 2, i.e. the two
+deltas coalesce into a single extra render. Either way only the two substates the `on_load`
+actually touched re-render; the isolation claim holds in both modes.
+
+No prod-mode baseline was captured on 0.9.11.post1 (out of timebox), so the prod numbers are
+absolute, not a comparison.
+
+One prod-only console error appears and is **my app's fault, not the framework's**:
+`Failed to load resource: ... 404`. It is `GET /favicon.ico`, which 404s because `renderapp/`
+was hand-written rather than produced by `reflex init` and has no `assets/` directory.
+`/manifest.json`, `/sw.js` and `/robots.txt` also 404; `/sitemap.xml` returns 200.
+
 ## Issues found
 
 ### I-1 (HIGH, **pre-existing, not a regression**) — a delta for a substate the compiled frontend does not know about latches the frontend permanently dead
@@ -330,10 +363,8 @@ surprising for `--env prod`. Identical line in 0.9.11.post1 (`reflex.py:570` the
 
 ## Not covered
 
-* **Prod mode (`reflex run --env prod`) render counts.** Started, but the cluster ran out of
-  timebox before the production bundle was driven; see `tests` entry `prod_mode_render_counts`
-  (skipped). Everything above is dev mode. Prod is worth a pass because it removes StrictMode
-  double-rendering and changes the SSR/hydration path that `useIsomorphicLayoutEffect` guards.
+* **A prod-mode 0.9.11.post1 baseline.** Prod was exercised on 0.9.12a1 only, so the prod
+  numbers above stand alone and no prod-mode regression claim is made.
 * **Redis.** `#7132`'s redis half was not exercised — the reserved-name error (see above) makes
   the scenario unreachable regardless of backend.
 * **A late-mounted first consumer across a real code-split boundary.** `rx.cond`-gated and
@@ -357,6 +388,7 @@ out/new_dev_result.json     render counts + everything observed, 0.9.12a1
 out/prev_dev_result.json    same on 0.9.11.post1
 out/disk_new3_result.json   StateManagerDisk results (the authoritative run)
 out/disk_new2_result.json   the wrong-token-class run (evidence for the token anomaly)
+out/new_prod_result.json    render counts + everything observed, 0.9.12a1 prod build
 out/mismatch_new_result.json / out/mismatch_prev_result.json   FINDING-036 re-test, both versions
 out/*.png                   screenshots
 logs/                       server logs (dev_new, dev_prev, disk_*, mismatch_*)

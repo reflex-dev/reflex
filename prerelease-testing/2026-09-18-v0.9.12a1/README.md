@@ -52,6 +52,19 @@ rerun commands, observations, verification appendix), trimmed logs and screensho
 | `ent_aggrid/` `ent_map_dnd_flow_mantine/` `ent_mcp_oidc/` | reflex-enterprise 0.9.5 demos, MCP plugin and OIDC auth on both reflex versions |
 | `tools/` | `ports.py` (listening ports → pids; no `ss` in the container), `checkin.sh` (workflow/process/disk summary) |
 
+## Campaign notes for the next run
+
+- `ss`/`netstat` are not installed in this container; `tools/ports.py` lists listening ports with pids.
+- Never `pkill -f "reflex run"` here: the pattern matches the invoking shell and kills it (exit 144). Kill by pid, or
+  by listening port via `tools/ports.py`. Terminating `reflex run` orphans the react-router dev process, which keeps
+  the frontend port bound and silently serves the previous app to the next test.
+- `uv pip install --prerelease=allow sentry-sdk` resolves sentry-sdk 3.0.0a7, which crashes inside `sentry_sdk.init()`
+  against the opentelemetry-api reflex pulls in — pin `sentry-sdk<3`. Likewise pin `pydantic<2.14` (2.14.0b2 otherwise).
+- Enterprise prod mode is gated by the paid-tier check; `CI=true` bypasses only the dev login gate. The 2026-09-10
+  campaign used reflex's `APP_HARNESS_FLAG` to get past it; this one did not (policy call for the team).
+- The org's monthly spend limit interrupted the fan-out once; `Workflow({scriptPath, resumeFromRunId})` replayed the
+  finished agents from cache and re-ran only the failed ones.
+
 ## Reusing for future pre-releases
 
 The apps and drivers are version-agnostic: create a venv **from a neutral cwd** (running uv inside
