@@ -1,0 +1,22 @@
+reflex_global_hotkey-1.2.3-py3-none-any.whl
+reflex_local_auth-0.5.0-py3-none-any.whl
+reflex_global_hotkey
+reflex_local_auth
+=== reflex import lines used by the third-party packages ===
+      6 import reflex
+      1 from reflex.utils import imports
+      1 from reflex.event import EventSpec
+      1 from reflex.event import EventHandler, EventType, key_event, KeyInputInfo
+      1 from reflex import Fragment, Var
+
+=== every import line exec'd on 0.9.12a1 (shared) and 0.9.11.post1 (prev) ===
+-- 0.9.12a1:
+reflex 0.9.12a1 /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+checked 5 import lines; failures: 0
+-- 0.9.11.post1:
+reflex 0.9.11.post1 /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/__init__.py
+checked 5 import lines; failures: 0
+
+=== attribute-level probe: names these packages access on rx / reflex modules ===
+rx.Component rx.LocalStorage rx.State rx.app.ComponentCallable rx.button rx.callout rx.card rx.center rx.cond rx.event rx.form rx.fragment rx.heading rx.input rx.link rx.redirect rx.session rx.set_focus rx.set_value rx.text rx.var rx.vstack 
+[exited with code 0]
