@@ -1,0 +1,289 @@
+WARNING: there is a new pyright version available (v1.1.409 -> v1.1.414).
+Please install the new version or set PYRIGHT_PYTHON_FORCE_VERSION to `latest`
+
+/home/user/wt/rxe/reflex_enterprise/auth/decorators.py
+  /home/user/wt/rxe/reflex_enterprise/auth/decorators.py:16:6 - warning: Import "typing_extensions" could not be resolved from source (reportMissingModuleSource)
+  /home/user/wt/rxe/reflex_enterprise/auth/decorators.py:36:10 - warning: Import "typing_extensions" could not be resolved from source (reportMissingModuleSource)
+  /home/user/wt/rxe/reflex_enterprise/auth/decorators.py:53:13 - error: Overload 2 for "__call__" will never be used because its parameters overlap overload 1 (reportOverlappingOverload)
+  /home/user/wt/rxe/reflex_enterprise/auth/decorators.py:299:5 - error: Overload 3 for "event" will never be used because its parameters overlap overload 2 (reportOverlappingOverload)
+/home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:381:7 - error: Incorrect keyword arguments for __init_subclass__ method (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:381:44 - error: No parameter named "mixin" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:530:32 - error: Cannot access attribute "access_token" for class "MethodType"
+    Attribute "access_token" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:547:48 - error: Cannot access attribute "sha256_hash" for class "MethodType"
+    Attribute "sha256_hash" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:572:17 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:573:17 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:574:17 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:576:16 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:582:48 - error: Cannot access attribute "sha256_hash" for class "MethodType"
+    Attribute "sha256_hash" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:593:66 - error: Argument of type "bool" cannot be assigned to parameter "self" of type "Self@OIDCAuthState" in function "on_access_token_change"
+    Type "bool" is not assignable to type "Self@OIDCAuthState" (reportArgumentType)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:607:68 - error: Argument of type "str | None" cannot be assigned to parameter "self" of type "Self@OIDCAuthState" in function "update_access_token_hash_in_browser"
+    Type "str | None" is not assignable to type "Self@OIDCAuthState" (reportArgumentType)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:643:71 - error: Cannot access attribute "sha256_hash" for class "MethodType"
+    Attribute "sha256_hash" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:661:35 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:664:35 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:672:39 - error: Cannot access attribute "expires_at" for class "MethodType"
+    Attribute "expires_at" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:681:33 - error: Cannot access attribute "expires_at" for class "MethodType"
+    Attribute "expires_at" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:692:37 - error: "() -> CoroutineType[Any, Any, str]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:900:30 - error: "() -> CoroutineType[Any, Any, OIDCUserInfo | None]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:963:22 - error: "() -> CoroutineType[Any, Any, str]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:993:40 - error: "() -> CoroutineType[Any, Any, str]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1009:28 - error: "() -> CoroutineType[Any, Any, str]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1174:39 - error: "() -> CoroutineType[Any, Any, str]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1206:25 - error: Cannot access attribute "expires_at" for class "MethodType"
+    Attribute "expires_at" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1290:26 - error: "() -> CoroutineType[Any, Any, str]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1299:52 - error: Cannot access attribute "sha256_hash" for class "MethodType"
+    Attribute "sha256_hash" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1305:66 - error: Cannot access attribute "sha256_hash" for class "MethodType"
+    Attribute "sha256_hash" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1440:20 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1628:20 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1631:23 - error: "() -> CoroutineType[Any, Any, OIDCUserInfo | None]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1638:54 - error: Argument of type "str" cannot be assigned to parameter "self" of type "Self@OIDCAuthState" in function "post_auth_message"
+    Type "str" is not assignable to type "Self@OIDCAuthState" (reportArgumentType)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1643:18 - error: "() -> CoroutineType[Any, Any, bool]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1738:41 - error: "() -> CoroutineType[Any, Any, bool]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:1940:20 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2170:67 - error: Argument of type "str" cannot be assigned to parameter "self" of type "Self@OIDCAuthState" in function "post_auth_message"
+    Type "str" is not assignable to type "Self@OIDCAuthState" (reportArgumentType)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2266:38 - error: Cannot access attribute "expires_at" for class "MethodType"
+    Attribute "expires_at" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2288:42 - error: Cannot access attribute "expires_at" for class "MethodType"
+    Attribute "expires_at" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2291:24 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2360:66 - error: Cannot access attribute "access_token" for class "MethodType"
+    Attribute "access_token" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2362:71 - error: Cannot access attribute "access_token" for class "MethodType"
+    Attribute "access_token" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2385:29 - error: Cannot access attribute "expires_at" for class "MethodType"
+    Attribute "expires_at" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2388:32 - error: Cannot access attribute "access_token" for class "MethodType"
+    Attribute "access_token" is unknown (reportAttributeAccessIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2500:49 - error: "() -> CoroutineType[Any, Any, str]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2560:49 - error: Cannot access attribute "throttle" for class "FunctionType"
+    Attribute "throttle" is unknown (reportFunctionMemberAccess)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2688:21 - error: Operator "~" not supported for type "(self: Self@OIDCAuthState) -> CoroutineType[Any, Any, OIDCUserInfo | None]" (reportOperatorIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2780:17 - error: Argument missing for parameter "from_popup" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py:2791:17 - error: Argument missing for parameter "from_popup" (reportCallIssue)
+/home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1841:44 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1844:39 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1847:38 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1850:38 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1853:41 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1856:40 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1859:45 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1862:43 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1865:44 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1868:37 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1871:44 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1874:38 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1880:43 - error: Expected class but received "(event: Unknown) -> tuple[Unknown, Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1883:48 - error: Expected class but received "(event: Unknown) -> tuple[Unknown, Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1886:47 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1889:40 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1892:38 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1895:39 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1898:52 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1901:40 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1904:45 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1907:39 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1910:40 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1913:41 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1916:43 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1919:52 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/aggrid.py:1923:9 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+/home/user/wt/rxe/reflex_enterprise/components/ag_grid/datasource.py
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/datasource.py:16:6 - warning: Import "typing_extensions" could not be resolved from source (reportMissingModuleSource)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/datasource.py:154:30 - error: Expected 0 positional arguments (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/datasource.py:255:13 - error: Expected 0 positional arguments (reportCallIssue)
+/home/user/wt/rxe/reflex_enterprise/components/ag_grid/wrapper.py
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/wrapper.py:579:40 - error: "() -> CoroutineType[Any, Any, int]" is not awaitable (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/ag_grid/wrapper.py:640:35 - error: "() -> CoroutineType[Any, Any, int]" is not awaitable (reportGeneralTypeIssues)
+/home/user/wt/rxe/reflex_enterprise/components/dnd/dnd.py
+  /home/user/wt/rxe/reflex_enterprise/components/dnd/dnd.py:382:29 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/dnd/dnd.py:609:30 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/dnd/dnd.py:612:31 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+/home/user/wt/rxe/reflex_enterprise/components/flow/flow.py
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:190:45 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:259:35 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:265:36 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:271:40 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:274:47 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:277:46 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:280:39 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:283:44 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:286:46 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:289:45 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:292:46 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:295:47 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:298:42 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:301:42 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:304:40 - error: Expected class but received "(event: Unknown, edge: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:307:47 - error: Expected class but received "(event: Unknown, edge: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:310:46 - error: Expected class but received "(event: Unknown, edge: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:313:45 - error: Expected class but received "(event: Unknown, edge: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:316:46 - error: Expected class but received "(event: Unknown, edge: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:319:47 - error: Expected class but received "(event: Unknown, edge: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:322:39 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:328:45 - error: Expected class but received "(event: Unknown, edge: Unknown, handle_type: Unknown) -> tuple[Unknown, Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:331:43 - error: Expected class but received "(event: Unknown, edge: Unknown, handle_type: Unknown, connection_state: Unknown) -> tuple[Unknown, Unknown, Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:334:42 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:337:42 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:340:37 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:346:43 - error: Expected class but received "(event: Unknown, params: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:349:41 - error: Expected class but received "(event: Unknown, connection_state: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:352:49 - error: Expected class but received "(event: Unknown, params: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:353:47 - error: Expected class but received "(event: Unknown, connection_state: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:358:34 - error: Expected class but received "(event: Unknown, viewport: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:361:40 - error: Expected class but received "(event: Unknown, viewport: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:364:38 - error: Expected class but received "(event: Unknown, viewport: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:699:48 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:778:37 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:801:35 - error: Expected class but received "(event: Unknown, position: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:834:40 - error: Expected class but received "(event: Unknown, node: Unknown) -> tuple[Unknown, Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:920:42 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:923:36 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:926:40 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:991:42 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:994:36 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/flow/flow.py:997:40 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+/home/user/wt/rxe/reflex_enterprise/components/flow/types.py
+  /home/user/wt/rxe/reflex_enterprise/components/flow/types.py:7:6 - warning: Import "typing_extensions" could not be resolved from source (reportMissingModuleSource)
+/home/user/wt/rxe/reflex_enterprise/components/highcharts/base.py
+  /home/user/wt/rxe/reflex_enterprise/components/highcharts/base.py:86:22 - error: Cannot access attribute "_var_value" for class "object"
+    Attribute "_var_value" is unknown (reportAttributeAccessIssue)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/autocomplete.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/autocomplete.py:65:39 - error: Expected class but received "(item: Unknown) -> list[Unknown]" (reportGeneralTypeIssues)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/base.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/base.py:8:52 - error: "Component" is unknown import symbol (reportAttributeAccessIssue)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/combobox.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/combobox.py:127:9 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/combobox.py:131:41 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:50:32 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:53:37 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:56:38 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:59:38 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:62:37 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:65:36 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:68:35 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:71:41 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:74:40 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:77:39 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:80:50 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:83:37 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/dates.py:224:51 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/json_input.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/json_input.py:82:32 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/multi_select.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/multi_select.py:125:32 - error: Expected class but received "(value: Unknown) -> list[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/multi_select.py:134:45 - error: Expected class but received "(value: Unknown) -> list[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/multi_select.py:137:39 - error: Expected class but received "(value: Unknown) -> list[Unknown]" (reportGeneralTypeIssues)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/pill.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/pill.py:35:32 - error: Expected class but received "() -> list[Unknown]" (reportGeneralTypeIssues)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/spoiler.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/spoiler.py:38:41 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/tags_input.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tags_input.py:134:32 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tags_input.py:137:31 - error: Expected class but received "() -> list[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tags_input.py:140:39 - error: Expected class but received "() -> list[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tags_input.py:143:40 - error: Expected class but received "() -> list[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tags_input.py:146:35 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tags_input.py:149:39 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tags_input.py:152:32 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tags_input.py:155:39 - error: Expected class but received "(value: Unknown) -> list[Unknown]" (reportGeneralTypeIssues)
+/home/user/wt/rxe/reflex_enterprise/components/mantine/tree.py
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tree.py:84:36 - error: Expected class but received "(node_dict: Unknown) -> list[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tree.py:87:39 - error: Expected class but received "(node_dict: Unknown) -> list[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tree.py:90:37 - error: Expected class but received "(node_dict: Unknown) -> list[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/mantine/tree.py:93:32 - error: Expected class but received "(value_list: Unknown) -> list[Unknown]" (reportGeneralTypeIssues)
+/home/user/wt/rxe/reflex_enterprise/components/map/base.py
+  /home/user/wt/rxe/reflex_enterprise/components/map/base.py:95:31 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/base.py:96:34 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/base.py:97:35 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/base.py:98:33 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/base.py:99:35 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/base.py:100:34 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/base.py:101:37 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+/home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:45:30 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:46:36 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:47:34 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:50:31 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:51:34 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:52:35 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:53:33 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:54:35 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:55:34 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:56:35 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:57:37 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:60:30 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:61:36 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:62:34 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:63:44 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:66:39 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:67:39 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:70:32 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:71:30 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:72:32 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:73:35 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:76:34 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:77:37 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:80:35 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:81:36 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:82:37 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/components/map/map_consumer.py:83:38 - error: Expected class but received "(event: Unknown) -> tuple[Unknown]" (reportGeneralTypeIssues)
+/home/user/wt/rxe/reflex_enterprise/components/message_listener/__init__.py
+  /home/user/wt/rxe/reflex_enterprise/components/message_listener/__init__.py:44:33 - error: Call expression not allowed in type expression (reportInvalidTypeForm)
+/home/user/wt/rxe/reflex_enterprise/plugins/auth.py
+  /home/user/wt/rxe/reflex_enterprise/plugins/auth.py:30:10 - warning: Import "typing_extensions" could not be resolved from source (reportMissingModuleSource)
+/home/user/wt/rxe/reflex_enterprise/plugins/mcp_auth/pages.py
+  /home/user/wt/rxe/reflex_enterprise/plugins/mcp_auth/pages.py:35:41 - error: Cannot access attribute "throttle" for class "FunctionType"
+    Attribute "throttle" is unknown (reportFunctionMemberAccess)
+/home/user/wt/rxe/reflex_enterprise/testing/_runner.py
+  /home/user/wt/rxe/reflex_enterprise/testing/_runner.py:31:8 - warning: Import "psutil" could not be resolved from source (reportMissingModuleSource)
+/home/user/wt/rxe/reflex_enterprise/utils.py
+  /home/user/wt/rxe/reflex_enterprise/utils.py:8:8 - warning: Import "psutil" could not be resolved from source (reportMissingModuleSource)
+/home/user/wt/rxe/reflex_enterprise/vars.py
+  /home/user/wt/rxe/reflex_enterprise/vars.py:113:7 - error: Incorrect keyword arguments for __init_subclass__ method (reportGeneralTypeIssues)
+  /home/user/wt/rxe/reflex_enterprise/vars.py:113:40 - error: No parameter named "python_types" (reportCallIssue)
+  /home/user/wt/rxe/reflex_enterprise/vars.py:328:17 - error: Expected 0 positional arguments (reportCallIssue)
+/home/user/wt/rxe/tests/integration/test_runner.py
+  /home/user/wt/rxe/tests/integration/test_runner.py:76:12 - warning: Import "psutil" could not be resolved from source (reportMissingModuleSource)
+/home/user/wt/rxe/tests/units/auth/test_decorators.py
+  /home/user/wt/rxe/tests/units/auth/test_decorators.py:281:14 - error: Cannot access attribute "fn" for class "_AuthEventDecorator"
+    Attribute "fn" is unknown (reportAttributeAccessIssue)
+/home/user/wt/rxe/tests/units/auth/test_enforcement.py
+  /home/user/wt/rxe/tests/units/auth/test_enforcement.py:473:7 - error: Incorrect keyword arguments for __init_subclass__ method (reportGeneralTypeIssues)
+  /home/user/wt/rxe/tests/units/auth/test_enforcement.py:473:28 - error: No parameter named "mixin" (reportCallIssue)
+/home/user/wt/rxe/tests/units/auth/test_gate.py
+  /home/user/wt/rxe/tests/units/auth/test_gate.py:110:48 - error: "events" is not a known attribute of "None" (reportOptionalMemberAccess)
+/home/user/wt/rxe/tests/units/components/map/test_base.py
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:42:18 - error: Argument missing for parameter "id" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:65:34 - error: Argument missing for parameter "id" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:79:15 - error: Argument missing for parameter "id" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:95:35 - error: Argument missing for parameter "id" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:95:55 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:107:21 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:108:34 - error: Argument missing for parameter "id" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:120:38 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:131:36 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:143:22 - error: Argument missing for parameter "id" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:144:38 - error: Argument missing for parameter "id" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:153:52 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:159:26 - error: Argument missing for parameter "id" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:162:21 - error: Argument missing for parameter "self" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:191:22 - error: Argument missing for parameter "id" (reportCallIssue)
+  /home/user/wt/rxe/tests/units/components/map/test_base.py:200:34 - error: Argument missing for parameter "id" (reportCallIssue)
+/home/user/wt/rxe/tests/units/testing/test_runner_helpers.py
+  /home/user/wt/rxe/tests/units/testing/test_runner_helpers.py:463:12 - warning: Import "psutil" could not be resolved from source (reportMissingModuleSource)
+220 errors, 9 warnings, 0 informations

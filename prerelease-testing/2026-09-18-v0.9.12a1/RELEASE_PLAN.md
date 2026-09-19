@@ -18,6 +18,23 @@ arm of the rubric that put it there, so a maintainer can disagree with a specifi
 
 No open PR addresses FINDING-001, -003, -004 or -007.
 
+## Tracking issues (filed 2026-09-19)
+
+| finding | issue | fix work |
+|---|---|---|
+| FINDING-001 State metaclass conflict (CRITICAL, regression) | [#7211](https://github.com/reflex-dev/reflex/issues/7211) | **FIXED, reviewed** — reflex `fix/finding-001-state-metaclass` (`6ab3edbc9`, `4290548fe`); reflex-enterprise `fix/reflex-0.9.12-compat` (`038c613`) |
+| FINDING-003 withheld uncached var never re-sent (HIGH, regression) | [#7212](https://github.com/reflex-dev/reflex/issues/7212) | **FIXED, reviewed (after one follow-up)** — reflex `fix/finding-003-delta-memo` (`91020caec`) |
+| FINDING-011 REST session-token redaction no-op (HIGH, security, regression) | [#7214](https://github.com/reflex-dev/reflex/issues/7214) | **FIXED, reviewed** — reflex-enterprise `fix/reflex-0.9.12-compat` (`c0e6b5d`); reflex breaking-change note in `4290548fe` |
+| FINDING-017 supervisor socket hang in dev (MEDIUM, regression) | [#7213](https://github.com/reflex-dev/reflex/issues/7213) | **FIXED, reviewed** — reflex `fix/finding-017-supervisor-socket` (`eaf3f4822`) |
+| FINDING-012 data_editor portal swallowed by the badge (HIGH impact, pre-existing) | [#6143](https://github.com/reflex-dev/reflex/issues/6143) (existing issue, root cause posted as a comment) | **FIXED, reviewed** — reflex `fix/finding-012-badge-portal` (`94554d771`) |
+
+Fix agents (Opus, xhigh) worked in `/home/user/wt/<name>` worktrees from `origin/main`; briefs under `fixes/briefs/`,
+reports, patches and evidence under `fixes/<name>/`, overview in `fixes/README.md`. All five fixes are done and passed
+an independent adversarial review (f003 after one follow-up). The fix branches are local; the reflex commits are
+cherry-picked onto `claude/upbeat-feynman-m41a1u` and every fix is exported as `fixes/<name>/patches/*.patch`.
+Remaining release work: land the four reflex fixes on `main` and cut 0.9.12a2, and release reflex-enterprise 0.9.6
+with the two `rxe` commits no later than reflex 0.9.12 (see `fixes/README.md`, "Release sequencing").
+
 ## Fix before release
 
 ### Security

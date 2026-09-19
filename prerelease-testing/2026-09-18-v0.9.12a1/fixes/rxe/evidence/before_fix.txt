@@ -1,0 +1,31 @@
+### unfixed SOURCE + new tests, v12 (reflex 0.9.12a1)
+=========================== short test summary info ============================
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_serialized_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_real_root_state_dict
+FAILED tests/units/plugins/test_event_handler_api.py::test_sanitize_agent_delta_blanks_session_and_strips_markers
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_proxied_session_under_any_var_name
+5 failed, 2 passed, 47 deselected in 0.13s
+
+### unfixed SOURCE + new tests, v11 (reflex 0.9.11.post1)
+=========================== short test summary info ============================
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_serialized_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_sanitize_agent_delta_blanks_session_and_strips_markers
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_proxied_session_under_any_var_name
+4 failed, 3 passed, 47 deselected in 0.15s
+
+### unfixed SOURCE + new tests, repo .venv (reflex 0.9.6)
+=========================== short test summary info ============================
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_serialized_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_sanitize_agent_delta_blanks_session_and_strips_markers
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_proxied_session_under_any_var_name
+4 failed, 3 passed, 47 deselected in 0.10s
+
+### unfixed SOURCE, v12 — metaclass test module cannot even be collected
+E   TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+=========================== short test summary info ============================
+ERROR tests/units/auth/test_oidc_state.py - TypeError: metaclass conflict: th...
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.35s

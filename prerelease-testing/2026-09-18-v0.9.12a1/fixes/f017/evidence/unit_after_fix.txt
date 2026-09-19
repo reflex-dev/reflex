@@ -1,0 +1,35 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- /home/user/wt/f017/.venv/bin/python
+codspeed: 5.0.3 (disabled, mode: walltime, callgraph: enabled, timer_resolution: 1.0ns)
+cachedir: .pytest_cache
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/user/wt/f017
+configfile: pyproject.toml
+plugins: split-0.11.0, playwright-0.9.0, anyio-4.14.2, benchmark-5.2.3, asyncio-1.4.0, mock-3.15.1, codspeed-5.0.3, rerunfailures-16.6, cov-7.1.0, base-url-2.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 22 items
+
+tests/units/utils/test_exec.py::test_run_backend_manages_nocompile_marker[False] PASSED [  4%]
+tests/units/utils/test_exec.py::test_run_backend_manages_nocompile_marker[True] PASSED [  9%]
+tests/units/utils/test_exec.py::test_run_backend_skips_app_preload_for_spawn PASSED [ 13%]
+tests/units/utils/test_exec.py::test_run_backend_preloads_app_for_fork PASSED [ 18%]
+tests/units/utils/test_exec.py::test_run_uvicorn_backend_sets_reload_env_var_and_clears_marker PASSED [ 22%]
+tests/units/utils/test_exec.py::test_run_granian_backend_sets_reload_env_var_and_clears_marker PASSED [ 27%]
+tests/units/utils/test_exec.py::test_run_granian_backend_binds_listen_socket_in_supervisor PASSED [ 31%]
+tests/units/utils/test_exec.py::test_run_granian_backend_holds_requests_across_reload PASSED [ 36%]
+tests/units/utils/test_exec.py::test_frontend_env_defaults_mimalloc_and_no_color PASSED [ 40%]
+tests/units/utils/test_exec.py::test_with_development_condition_sets_node_and_bun_options PASSED [ 45%]
+tests/units/utils/test_exec.py::test_with_development_condition_preserves_existing_options PASSED [ 50%]
+tests/units/utils/test_exec.py::test_arbitrate_ssr_stores_flag_when_env_unset PASSED [ 54%]
+tests/units/utils/test_exec.py::test_arbitrate_ssr_env_var_wins PASSED   [ 59%]
+tests/units/utils/test_exec.py::test_run_granian_backend_json_logs_in_json_mode[False] PASSED [ 63%]
+tests/units/utils/test_exec.py::test_run_granian_backend_json_logs_in_json_mode[True] PASSED [ 68%]
+tests/units/utils/test_exec.py::test_run_granian_backend_prod_json_logs_in_json_mode[False] PASSED [ 72%]
+tests/units/utils/test_exec.py::test_run_granian_backend_prod_json_logs_in_json_mode[True] PASSED [ 77%]
+tests/units/utils/test_exec.py::test_run_granian_backend_releases_socket_when_worker_dies PASSED [ 81%]
+tests/units/utils/test_exec.py::test_run_granian_backend_keeps_socket_across_worker_restart PASSED [ 86%]
+tests/units/utils/test_exec.py::test_run_granian_backend_rebinds_socket_for_the_next_worker PASSED [ 90%]
+tests/units/utils/test_exec.py::test_run_granian_backend_releases_socket_on_shutdown PASSED [ 95%]
+tests/units/utils/test_exec.py::test_run_granian_backend_refuses_requests_while_the_app_is_broken PASSED [100%]
+
+============================== 22 passed in 3.88s ==============================

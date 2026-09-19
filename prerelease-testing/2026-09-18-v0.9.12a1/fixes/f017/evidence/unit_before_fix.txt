@@ -1,0 +1,72 @@
+F.FF                                                                     [100%]
+=================================== FAILURES ===================================
+__________ test_run_granian_backend_releases_socket_when_worker_dies ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-26/test_run_granian_backend_relea0')
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7fee606e0ad0>
+
+    def test_run_granian_backend_releases_socket_when_worker_dies(
+        tmp_path: Path, mocker: MockerFixture
+    ):
+        """A worker that dies on its own leaves the port refusing connections."""
+        port = _free_port()
+        server = _dev_granian_supervisor(mocker, tmp_path, port)
+        try:
+            server._init_shared_socket()
+            assert not _port_is_bindable(port)
+    
+            worker = _spawn_supervisor_worker(server)
+            worker.alive = False
+            worker._watcher()
+    
+>           assert _port_is_bindable(port)
+E           assert False
+E            +  where False = _port_is_bindable(35855)
+
+tests/units/utils/test_exec.py:607: AssertionError
+_________ test_run_granian_backend_rebinds_socket_for_the_next_worker __________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-26/test_run_granian_backend_rebin0')
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7fee605c4f50>
+
+    def test_run_granian_backend_rebinds_socket_for_the_next_worker(
+        tmp_path: Path, mocker: MockerFixture
+    ):
+        """The socket released by a dead worker is re-created for the next one."""
+        port = _free_port()
+        server = _dev_granian_supervisor(mocker, tmp_path, port)
+        try:
+            server._init_shared_socket()
+            worker = _spawn_supervisor_worker(server)
+            worker.alive = False
+            worker._watcher()
+>           assert _port_is_bindable(port)
+E           assert False
+E            +  where False = _port_is_bindable(37233)
+
+tests/units/utils/test_exec.py:643: AssertionError
+_____________ test_run_granian_backend_releases_socket_on_shutdown _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-26/test_run_granian_backend_relea1')
+mocker = <pytest_mock.plugin.MockerFixture object at 0x7fee605e5cd0>
+
+    def test_run_granian_backend_releases_socket_on_shutdown(
+        tmp_path: Path, mocker: MockerFixture
+    ):
+        """Shutting the supervisor down frees the port it holds."""
+        port = _free_port()
+        server = _dev_granian_supervisor(mocker, tmp_path, port)
+        try:
+            server._init_shared_socket()
+            server.shutdown()
+    
+>           assert _port_is_bindable(port)
+E           assert False
+E            +  where False = _port_is_bindable(36077)
+
+tests/units/utils/test_exec.py:664: AssertionError
+=========================== short test summary info ============================
+FAILED tests/units/utils/test_exec.py::test_run_granian_backend_releases_socket_when_worker_dies
+FAILED tests/units/utils/test_exec.py::test_run_granian_backend_rebinds_socket_for_the_next_worker
+FAILED tests/units/utils/test_exec.py::test_run_granian_backend_releases_socket_on_shutdown
+3 failed, 1 passed, 18 deselected in 0.14s

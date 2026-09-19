@@ -1,0 +1,68 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+..................................FFFF                                   [100%]
+=================================== FAILURES ===================================
+___________________ test_state_metaclass_is_base_state_meta ____________________
+
+    def test_state_metaclass_is_base_state_meta():
+        """Keep the exported `BaseStateMeta` as the metaclass of every state."""
+>       assert type(BaseState) is BaseStateMeta
+E       AssertionError: assert <class 'reflex.istate.validation._StateMeta'> is BaseStateMeta
+E        +  where <class 'reflex.istate.validation._StateMeta'> = type(BaseState)
+
+tests/units/istate/test_validation.py:222: AssertionError
+______________________ test_custom_state_metaclass[False] ______________________
+
+mixin = False, clean_registration_context = RegistrationContext()
+
+    @pytest.mark.parametrize("mixin", [False, True])
+    def test_custom_state_metaclass(mixin: bool, clean_registration_context):
+        """Allow a `BaseStateMeta` subclass as the metaclass of a state.
+    
+        Args:
+            mixin: Whether the state is declared as a state mixin.
+            clean_registration_context: An isolated state registry.
+        """
+    
+>       class CustomState(State, mixin=mixin, metaclass=_CookieMeta):
+E       TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+
+tests/units/istate/test_validation.py:235: TypeError
+______________________ test_custom_state_metaclass[True] _______________________
+
+mixin = True, clean_registration_context = RegistrationContext()
+
+    @pytest.mark.parametrize("mixin", [False, True])
+    def test_custom_state_metaclass(mixin: bool, clean_registration_context):
+        """Allow a `BaseStateMeta` subclass as the metaclass of a state.
+    
+        Args:
+            mixin: Whether the state is declared as a state mixin.
+            clean_registration_context: An isolated state registry.
+        """
+    
+>       class CustomState(State, mixin=mixin, metaclass=_CookieMeta):
+E       TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+
+tests/units/istate/test_validation.py:235: TypeError
+_____________ test_custom_state_metaclass_validates_reserved_names _____________
+
+clean_registration_context = RegistrationContext()
+
+    def test_custom_state_metaclass_validates_reserved_names(clean_registration_context):
+        """Keep rejecting reserved names declared through a custom metaclass.
+    
+        Args:
+            clean_registration_context: An isolated state registry.
+        """
+        with pytest.raises(StateValueError, match="get_fields"):
+    
+>           class ShadowState(BaseState, metaclass=_CookieMeta):
+E           TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+
+tests/units/istate/test_validation.py:252: TypeError
+=========================== short test summary info ============================
+FAILED tests/units/istate/test_validation.py::test_state_metaclass_is_base_state_meta
+FAILED tests/units/istate/test_validation.py::test_custom_state_metaclass[False]
+FAILED tests/units/istate/test_validation.py::test_custom_state_metaclass[True]
+FAILED tests/units/istate/test_validation.py::test_custom_state_metaclass_validates_reserved_names
+4 failed, 34 passed in 0.12s

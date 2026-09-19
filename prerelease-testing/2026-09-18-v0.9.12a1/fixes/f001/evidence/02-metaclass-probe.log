@@ -1,0 +1,17 @@
+=== prev stable 0.9.11.post1 ===
+reflex 0.9.11.post1 | type(rx.State) = reflex_base.vars.base.BaseStateMeta | BaseStateMeta is type(rx.State): True
+OK   metaclass derived from BaseStateMeta: reflex___state____state____main______with_base_state_meta.added_by_meta_rx_state_
+OK   metaclass derived from type(rx.State): reflex___state____state____main______with_current_meta.added_by_meta_rx_state_
+OK   mixin=True with BaseStateMeta-derived metaclass
+
+=== published 0.9.12a1 (envs/shared) ===
+reflex 0.9.12a1 | type(rx.State) = reflex.istate.validation._StateMeta | BaseStateMeta is type(rx.State): False
+FAIL metaclass derived from BaseStateMeta -> metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+OK   metaclass derived from type(rx.State): reflex___state____state____main______with_current_meta.added_by_meta_rx_state_
+FAIL mixin=True with BaseStateMeta-derived metaclass -> metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+
+=== fixed worktree (/home/user/wt/f001/.venv) ===
+reflex 0.0.0.post50.dev0+4cba00435 | type(rx.State) = reflex_base.vars.base.BaseStateMeta | BaseStateMeta is type(rx.State): True
+OK   metaclass derived from BaseStateMeta: reflex___state____state____main______with_base_state_meta.added_by_meta_rx_state_
+OK   metaclass derived from type(rx.State): reflex___state____state____main______with_current_meta.added_by_meta_rx_state_
+OK   mixin=True with BaseStateMeta-derived metaclass

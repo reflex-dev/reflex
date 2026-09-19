@@ -1,0 +1,310 @@
+From 6ab3edbc941c0bc3cfc2e2443a65347c6af03045 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 19 Sep 2026 16:52:17 +0000
+Subject: [PATCH 1/2] fix: keep BaseStateMeta as the metaclass of State
+
+#7136 added `_StateMeta(BaseStateMeta)` and made
+`class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta)`, so
+`type(rx.State)` stopped being `reflex_base.vars.BaseStateMeta`. A downstream
+metaclass written as `class M(BaseStateMeta)` is then a sibling of `_StateMeta`
+rather than a subclass, and `class S(rx.State, metaclass=M)` fails with
+`TypeError: metaclass conflict`. reflex-enterprise 0.9.5 does exactly that in
+`reflex_enterprise/auth/oidc/state.py`, so every AuthPlugin / MCPPlugin /
+EventHandlerAPIPlugin app dies at startup.
+
+The conflict is raised by `__build_class__` while it resolves the most derived
+metaclass, before any metaclass code runs, so nothing on `_StateMeta` can
+intercept it: `type(rx.State)` has to be `BaseStateMeta` again. The
+reserved-name validation therefore moves into `BaseStateMeta.__new__`, as a
+hook `reflex.state` installs once `BaseState` exists, and `BaseState` goes back
+to inheriting `BaseStateMeta`. The check is guarded on "a base is a BaseState",
+so plain models built on the same metaclass keep their own namespace.
+
+Fixes #7211
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NeyxWsuC9hqSKq8YcEwZyY
+---
+ news/+state-metaclass-conflict.bugfix.md      |  1 +
+ .../news/+state-metaclass-conflict.bugfix.md  |  1 +
+ .../reflex-base/src/reflex_base/vars/base.py  | 24 ++++++
+ reflex/istate/validation.py                   | 74 ++++++++++---------
+ reflex/state.py                               |  9 ++-
+ tests/units/istate/test_validation.py         | 69 ++++++++++++++++-
+ 6 files changed, 141 insertions(+), 37 deletions(-)
+ create mode 100644 news/+state-metaclass-conflict.bugfix.md
+ create mode 100644 packages/reflex-base/news/+state-metaclass-conflict.bugfix.md
+
+diff --git a/news/+state-metaclass-conflict.bugfix.md b/news/+state-metaclass-conflict.bugfix.md
+new file mode 100644
+index 000000000..0ffdfd86c
+--- /dev/null
++++ b/news/+state-metaclass-conflict.bugfix.md
+@@ -0,0 +1 @@
++`type(rx.State)` is `reflex.vars.BaseStateMeta` again, so a state declared with its own metaclass derived from `BaseStateMeta` (`class MyState(rx.State, metaclass=MyMeta)`) no longer raises `TypeError: metaclass conflict`. The reserved-state-name validation is unchanged; it now runs from `BaseStateMeta` itself instead of from a subclass of it.
+diff --git a/packages/reflex-base/news/+state-metaclass-conflict.bugfix.md b/packages/reflex-base/news/+state-metaclass-conflict.bugfix.md
+new file mode 100644
+index 000000000..28fcd883c
+--- /dev/null
++++ b/packages/reflex-base/news/+state-metaclass-conflict.bugfix.md
+@@ -0,0 +1 @@
++`BaseStateMeta` now runs the reserved-state-name check that `reflex` installs on it, so `reflex` no longer needs a `BaseStateMeta` subclass as the metaclass of `BaseState` and a third-party metaclass derived from `BaseStateMeta` composes with state classes again.
+diff --git a/packages/reflex-base/src/reflex_base/vars/base.py b/packages/reflex-base/src/reflex_base/vars/base.py
+index 026ba4bb7..ee6d8db1c 100644
+--- a/packages/reflex-base/src/reflex_base/vars/base.py
++++ b/packages/reflex-base/src/reflex_base/vars/base.py
+@@ -4032,6 +4032,27 @@ def _inherited_value(lookup_order: list[type], name: str) -> Any:
+     return MISSING
+ 
+ 
++# Check run on every class this metaclass creates, installed by `reflex` once
++# its BaseState exists (see `reflex.istate.validation`). It is a hook rather
++# than a `BaseStateMeta` subclass so that `BaseStateMeta` stays the metaclass
++# of every state and downstream metaclasses derived from it keep composing.
++_state_declaration_validator: (
++    Callable[[tuple[type, ...], dict[str, Any]], None] | None
++) = None
++
++
++def _set_state_declaration_validator(
++    validator: Callable[[tuple[type, ...], dict[str, Any]], None],
++) -> None:
++    """Install the check run before any class of this metaclass is constructed.
++
++    Args:
++        validator: Called with the bases and the unmodified class namespace.
++    """
++    global _state_declaration_validator
++    _state_declaration_validator = validator
++
++
+ @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
+ class BaseStateMeta(ABCMeta):
+     """Meta class for BaseState."""
+@@ -4062,6 +4083,9 @@ class BaseStateMeta(ABCMeta):
+         Returns:
+             The new class.
+         """
++        if _state_declaration_validator is not None:
++            _state_declaration_validator(bases, namespace)
++
+         state_bases = [
+             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
+         ]
+diff --git a/reflex/istate/validation.py b/reflex/istate/validation.py
+index 85b83f071..c9a5e3e94 100644
+--- a/reflex/istate/validation.py
++++ b/reflex/istate/validation.py
+@@ -13,10 +13,14 @@ from reflex_base.vars.base import (
+     BaseStateMeta,
+     EvenMoreBasicBaseState,
+     _linearize_bases,
++    _set_state_declaration_validator,
+ )
+ 
+ _FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
+ 
++# The state class whose subclasses are validated, set by `_install_state_validation`.
++_validated_state_base: type | None = None
++
+ 
+ @cache
+ def _reserved_state_members() -> dict[str, Any]:
+@@ -87,36 +91,40 @@ def _validate_inherited_members(base: type, seen: set[str]) -> None:
+             _validate_state_name(member, value)
+ 
+ 
+-class _StateMeta(BaseStateMeta):
+-    """Check state declarations before field collection and subclass initialization."""
+-
+-    def __new__(
+-        cls,
+-        name: str,
+-        bases: tuple[type, ...],
+-        namespace: dict[str, Any],
+-        mixin: bool = False,
+-    ) -> type:
+-        """Construct a state after checking its declarations and Python mixins.
+-
+-        Args:
+-            name: The class name.
+-            bases: The parent classes.
+-            namespace: The unmodified class namespace.
+-            mixin: Whether the class is a state mixin.
+-
+-        Returns:
+-            The validated state class.
+-        """
+-        if any(isinstance(base, _StateMeta) for base in bases):
+-            seen = namespace.keys() | annotations_from_namespace(namespace).keys()
+-            for member in seen:
+-                _validate_state_name(member, namespace.get(member))
+-            for base in _linearize_bases(bases):
+-                if not isinstance(base, _StateMeta) and base not in (
+-                    EvenMoreBasicBaseState,
+-                    object,
+-                ):
+-                    _validate_inherited_members(base, seen)
+-                seen.update(vars(base))
+-        return super().__new__(cls, name, bases, namespace, mixin=mixin)
++def _validate_state_declaration(
++    bases: tuple[type, ...], namespace: dict[str, Any]
++) -> None:
++    """Check a state's declarations and Python mixins before it is constructed.
++
++    Classes that do not inherit from the validated state base, such as plain
++    models built on the same metaclass, keep their own namespace.
++
++    Args:
++        bases: The parent classes of the class being created.
++        namespace: The unmodified class namespace.
++    """
++    base_state = _validated_state_base
++    if base_state is None or not any(issubclass(base, base_state) for base in bases):
++        return
++    seen = namespace.keys() | annotations_from_namespace(namespace).keys()
++    for member in seen:
++        _validate_state_name(member, namespace.get(member))
++    for base in _linearize_bases(bases):
++        if (
++            not issubclass(base, base_state)
++            and base is not EvenMoreBasicBaseState
++            and base is not object
++        ):
++            _validate_inherited_members(base, seen)
++        seen.update(vars(base))
++
++
++def _install_state_validation(base_state: type) -> None:
++    """Validate every state declared after this call.
++
++    Args:
++        base_state: The state class whose subclasses must be validated.
++    """
++    global _validated_state_base
++    _validated_state_base = base_state
++    _set_state_declaration_validator(_validate_state_declaration)
+diff --git a/reflex/state.py b/reflex/state.py
+index d332aef5a..eb3be12fc 100644
+--- a/reflex/state.py
++++ b/reflex/state.py
+@@ -88,7 +88,7 @@ from reflex.istate.data import (
+ from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
+ from reflex.istate.proxy import MutableProxy, is_mutable_type
+ from reflex.istate.storage import ClientStorageBase
+-from reflex.istate.validation import _StateMeta, _validate_state_name
++from reflex.istate.validation import _install_state_validation, _validate_state_name
+ from reflex.utils import console, format, types
+ from reflex.utils.exec import is_testing_env
+ 
+@@ -626,7 +626,7 @@ CLASS_VAR_NAMES = frozenset({
+ })
+ 
+ 
+-class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
++class BaseState(EvenMoreBasicBaseState):
+     """The state of the app."""
+ 
+     # A map from the var name to the var.
+@@ -2733,6 +2733,11 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
+         return state
+ 
+ 
++# Installed after the class body: BaseState's own namespace is what defines
++# the names its subclasses may not shadow.
++_install_state_validation(BaseState)
++
++
+ def _serialize_type(type_: Any) -> str:
+     """Serialize a type.
+ 
+diff --git a/tests/units/istate/test_validation.py b/tests/units/istate/test_validation.py
+index ec567b602..daa5c3ac0 100644
+--- a/tests/units/istate/test_validation.py
++++ b/tests/units/istate/test_validation.py
+@@ -1,11 +1,18 @@
+ """Tests for reserved state names at class creation and dynamic registration."""
+ 
++from typing import Any
++
+ import pytest
+ from reflex_base.constants import RouteArgType
+ from reflex_base.utils.exceptions import StateValueError
+-from reflex_base.vars.base import EvenMoreBasicBaseState, LiteralVar, computed_var
++from reflex_base.vars.base import (
++    BaseStateMeta,
++    EvenMoreBasicBaseState,
++    LiteralVar,
++    computed_var,
++)
+ 
+-from reflex.state import BaseState, _override_base_method
++from reflex.state import BaseState, State, _override_base_method
+ 
+ 
+ @pytest.mark.parametrize(
+@@ -186,3 +193,61 @@ def test_reserved_descriptor(clean_registration_context):
+             (BaseState,),
+             {"__module__": __name__, "get_fields": Descriptor()},
+         )
++
++
++class _CookieMeta(BaseStateMeta):
++    """A downstream-style metaclass that injects fields into the declaration."""
++
++    def __new__(
++        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs
++    ):
++        """Add an annotated backend var before the state is constructed.
++
++        Args:
++            name: The class name.
++            bases: The parent classes.
++            namespace: The class namespace.
++            **kwargs: Class creation keywords, e.g. `mixin`.
++
++        Returns:
++            The new state class.
++        """
++        namespace.setdefault("__annotations__", {})["_injected"] = str
++        namespace["_injected"] = "by the metaclass"
++        return super().__new__(cls, name, bases, namespace, **kwargs)
++
++
++def test_state_metaclass_is_base_state_meta():
++    """Keep the exported `BaseStateMeta` as the metaclass of every state."""
++    assert type(BaseState) is BaseStateMeta
++    assert type(State) is BaseStateMeta
++
++
++@pytest.mark.parametrize("mixin", [False, True])
++def test_custom_state_metaclass(mixin: bool, clean_registration_context):
++    """Allow a `BaseStateMeta` subclass as the metaclass of a state.
++
++    Args:
++        mixin: Whether the state is declared as a state mixin.
++        clean_registration_context: An isolated state registry.
++    """
++
++    class CustomState(State, mixin=mixin, metaclass=_CookieMeta):
++        value: int = 1
++
++    assert type(CustomState) is _CookieMeta
++    assert CustomState._mixin is mixin
++    assert CustomState.__fields__["_injected"].default == "by the metaclass"
++    assert CustomState.__fields__["value"].default == 1
++
++
++def test_custom_state_metaclass_validates_reserved_names(clean_registration_context):
++    """Keep rejecting reserved names declared through a custom metaclass.
++
++    Args:
++        clean_registration_context: An isolated state registry.
++    """
++    with pytest.raises(StateValueError, match="get_fields"):
++
++        class ShadowState(BaseState, metaclass=_CookieMeta):
++            get_fields: int = 7
+-- 
+2.43.0
+
