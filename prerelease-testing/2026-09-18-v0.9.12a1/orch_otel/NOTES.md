@@ -45,3 +45,17 @@ In-process compile: one `reflex.compile trigger=export` tree, as before.
 ## Result — dev hot reload (`dumps/dev_hot/`, `logs/dev_hot-spantree.txt`)
 
 See the appended section below (re-run after a runner path bug; the edit is applied with an absolute path).
+
+### Hot reload (re-run, `dumps/dev_hot/`, `logs/dev_hot-spantree.txt`, `logs/probe_run3_hot_output.txt`)
+
+Dev server up, then `sed` the heading in `otelapp/otelapp.py` → granian "Changes detected, reloading
+workers.." → a new worker (pid 8267) exported a complete `reflex.compile trigger=hot_reload` tree with the
+three stage children, alongside the `initial` tree from the compile worker (pid 8204) and the
+`backend_startup` tree (pid 8233). 0 orphans.
+
+## Verdict
+
+#7155 holds on the published packages: every compile trigger kind (`initial`, `backend_startup`,
+`hot_reload`, `export`) exports a complete, parented `reflex.compile` tree with reflex-otel 0.1.0 on
+reflex 0.9.12a1. The previous campaign's FINDING-028 (issue #7095) is fixed. No anomalies in the server
+logs or browser console across the four runs.

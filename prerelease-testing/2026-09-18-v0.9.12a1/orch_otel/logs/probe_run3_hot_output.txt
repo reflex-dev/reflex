@@ -1,0 +1,29 @@
+ports free
+[dev_hot] 200 after 2s
+1
+flush 200
+/bin/bash: line 1:  8199 Killed                  OTEL_TEST_MODE=programmatic OTEL_DUMP_DIR=$O/dumps/dev_hot setsid $OT/reflex run --frontend-port 3052 --backend-port 8052 --loglevel debug > $O/logs/dev_hot.log 2>&1
+[dev_hot] triggers:
+      1 "reflex.compile.trigger": "backend_startup"
+      1 "reflex.compile.trigger": "hot_reload"
+      1 "reflex.compile.trigger": "initial"
+1:- reflex.compile [INTERNAL] trace=b3b4acfa span=39d210 parent=ROOT pid=spans-8204.jsonl
+2:  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "initial"}
+3:  - reflex.compile.pages [INTERNAL] trace=b3b4acfa span=b05097 parent=39d210 pid=spans-8204.jsonl
+4:  - reflex.compile.install_frontend_packages [INTERNAL] trace=b3b4acfa span=5b0c8b parent=39d210 pid=spans-8204.jsonl
+5:  - reflex.compile.write [INTERNAL] trace=b3b4acfa span=9de19b parent=39d210 pid=spans-8204.jsonl
+6:- reflex.compile [INTERNAL] trace=92a55571 span=7e40fa parent=ROOT pid=spans-8233.jsonl
+7:  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "backend_startup"}
+8:- reflex.compile [INTERNAL] trace=9f74ba5d span=95bde6 parent=ROOT pid=spans-8267.jsonl
+9:  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "hot_reload"}
+10:  - reflex.compile.pages [INTERNAL] trace=9f74ba5d span=aa23c9 parent=95bde6 pid=spans-8267.jsonl
+11:  - reflex.compile.install_frontend_packages [INTERNAL] trace=9f74ba5d span=b7b72c parent=95bde6 pid=spans-8267.jsonl
+12:  - reflex.compile.write [INTERNAL] trace=9f74ba5d span=80341a parent=95bde6 pid=spans-8267.jsonl
+65:[telemetry] pid=8204 argv=['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/otel/bin/reflex', 'run', '--frontend-port', 
+154:Debug: Reload paths: 
+166:[telemetry] pid=8233 argv=['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/otel/bin/reflex', 'run', '--frontend-port',
+187:[INFO] Changes detected, reloading workers..
+192:[telemetry] pid=8267 argv=['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/otel/bin/reflex', 'run', '--frontend-port',
+ports free at end
+
+[exited with code 0]
