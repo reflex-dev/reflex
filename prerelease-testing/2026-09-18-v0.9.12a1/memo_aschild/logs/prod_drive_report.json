@@ -1,0 +1,309 @@
+{
+ "results": [
+  {
+   "name": "forms: #inp_name exists",
+   "ok": true,
+   "detail": "count=1"
+  },
+  {
+   "name": "forms/#6850: slot-injected name= reaches memoized input",
+   "ok": true,
+   "detail": "{'tag': 'INPUT', 'spellcheck': 'false', 'title': '', 'id': 'inp_name', 'type': 'text', 'class': 'rt-reset rt-TextFieldInput', 'name': 'full_name', 'value': '', 'aria-describedby': 'radix-_R_2j1gsqj5_ radix-_R_2n1gsqj5_', '_computedBorder': 'rgb(28, 32, 36)', '_computedBorderWidth': '0px'}"
+  },
+  {
+   "name": "forms/#6850: own class_name preserved and radix class merged",
+   "ok": false,
+   "detail": "rt-reset rt-TextFieldInput"
+  },
+  {
+   "name": "forms/#6850: own style survives slot merge (teal 2px border)",
+   "ok": false,
+   "detail": "rgb(28, 32, 36)"
+  },
+  {
+   "name": "forms/#6850: aria-describedby injected by radix Field",
+   "ok": true,
+   "detail": "radix-_R_2j1gsqj5_ radix-_R_2n1gsqj5_"
+  },
+  {
+   "name": "forms/#7133: no forceMatch attribute on DOM",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "forms: typing into as_child input updates State",
+   "ok": true,
+   "detail": "Ada Lovelace"
+  },
+  {
+   "name": "forms: fully-controlled (debounce) input updates State",
+   "ok": true,
+   "detail": "ctl-typed"
+  },
+  {
+   "name": "forms: client_state-bound as_child input updates ClientStateVar",
+   "ok": true,
+   "detail": "nick-typed"
+  },
+  {
+   "name": "forms: @rx.memo-wrapped input inside form field updates State",
+   "ok": true,
+   "detail": "memo-typed"
+  },
+  {
+   "name": "forms/#6850: submitted form data contains as_child input value",
+   "ok": true,
+   "detail": "{\"full_name\":\"Ada Lovelace\",\"controlled\":\"ctl-typed\",\"nickname\":\"nick-typed\",\"bio\":\"bio text\",\"fruit\":\"banana\",\"agree\":\"on\",\"notify\":\"on\",\"color\":\"green\",\"volume\":\"30\",\"the_form\":\"banana\",\"field_full_name\":\"None\",\"inp_name\":\"Ada Lovelace\",\"inp_ctl\":\"ctl-typed\",\"inp_nick\":\"nick-typed\",\"inp_bio\":\"bio text\",\"inp_fruit\":\"None\",\"inp_agree\":\"True\",\"inp_notify\":\"True\",\"inp_color\":\"green\",\"inp_volume\":\"30\",\"btn_submit\":\"None\"}"
+  },
+  {
+   "name": "forms: submitted contains controlled",
+   "ok": true,
+   "detail": "{\"full_name\":\"Ada Lovelace\",\"controlled\":\"ctl-typed\",\"nickname\":\"nick-typed\",\"bio\":\"bio text\",\"fruit\":\"banana\",\"agree\":\"on\",\"notify\":\"on\",\"color\":\"green\",\"volume\":\"30\",\"the_form\":\"banana\",\"field_full_name\":\"None\",\"inp_name\":\"Ada Lovelace\",\"inp_ctl\":\"ctl-typed\",\"inp_nick\":\"nick-typed\",\"inp_bio\":\"bio text\",\"inp_fruit\":\"None\",\"inp_agree\":\"True\",\"inp_notify\":\"True\",\"inp_color\":\"green\",\"inp_volume\":\"30\",\"btn_submit\":\"None\"}"
+  },
+  {
+   "name": "forms: submitted contains client_state nickname",
+   "ok": true,
+   "detail": "{\"full_name\":\"Ada Lovelace\",\"controlled\":\"ctl-typed\",\"nickname\":\"nick-typed\",\"bio\":\"bio text\",\"fruit\":\"banana\",\"agree\":\"on\",\"notify\":\"on\",\"color\":\"green\",\"volume\":\"30\",\"the_form\":\"banana\",\"field_full_name\":\"None\",\"inp_name\":\"Ada Lovelace\",\"inp_ctl\":\"ctl-typed\",\"inp_nick\":\"nick-typed\",\"inp_bio\":\"bio text\",\"inp_fruit\":\"None\",\"inp_agree\":\"True\",\"inp_notify\":\"True\",\"inp_color\":\"green\",\"inp_volume\":\"30\",\"btn_submit\":\"None\"}"
+  },
+  {
+   "name": "forms: submitted contains non-control fields (bio/fruit/agree)",
+   "ok": true,
+   "detail": "{\"full_name\":\"Ada Lovelace\",\"controlled\":\"ctl-typed\",\"nickname\":\"nick-typed\",\"bio\":\"bio text\",\"fruit\":\"banana\",\"agree\":\"on\",\"notify\":\"on\",\"color\":\"green\",\"volume\":\"30\",\"the_form\":\"banana\",\"field_full_name\":\"None\",\"inp_name\":\"Ada Lovelace\",\"inp_ctl\":\"ctl-typed\",\"inp_nick\":\"nick-typed\",\"inp_bio\":\"bio text\",\"inp_fruit\":\"None\",\"inp_agree\":\"True\",\"inp_notify\":\"True\",\"inp_color\":\"green\",\"inp_volume\":\"30\",\"btn_submit\":\"None\"}"
+  },
+  {
+   "name": "triggers/#6850: dialog.trigger opens overlay",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "triggers/#6850: dialog.trigger also runs child on_click",
+   "ok": true,
+   "detail": "0->1"
+  },
+  {
+   "name": "triggers: popover.trigger opens",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "triggers: popover.trigger runs on_click",
+   "ok": true,
+   "detail": "1->2"
+  },
+  {
+   "name": "triggers: tooltip shows on hover",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "triggers: tooltip child on_click runs",
+   "ok": true,
+   "detail": "2->3"
+  },
+  {
+   "name": "triggers: dropdown_menu opens",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "triggers: dropdown trigger on_click runs",
+   "ok": false,
+   "detail": "3->3"
+  },
+  {
+   "name": "triggers: hover_card opens on hover",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "triggers: hover_card trigger on_click runs",
+   "ok": true,
+   "detail": "3->4"
+  },
+  {
+   "name": "triggers: foreach popover trigger runs handler with right arg",
+   "ok": true,
+   "detail": "[\"dialog\",\"popover\",\"tooltip\",\"hovercard\",\"foreach-b\"]"
+  },
+  {
+   "name": "triggers: ComponentState dialog trigger opens + increments",
+   "ok": true,
+   "detail": "'cs-0'->'cs-1' dialog=True"
+  },
+  {
+   "name": "triggers: state-var label re-renders inside as_child trigger",
+   "ok": true,
+   "detail": "label-5"
+  },
+  {
+   "name": "memoapp/#7176: selected_files populated for upload[plain] in memo",
+   "ok": true,
+   "detail": "[\"sample_upload.txt\"]"
+  },
+  {
+   "name": "memoapp/#7176: upload_files handler received file for [plain]",
+   "ok": true,
+   "detail": "[\"sample_upload.txt:69\"]"
+  },
+  {
+   "name": "memoapp/#7176: selected_files populated for upload[nested] in memo",
+   "ok": true,
+   "detail": "[\"sample_upload.txt\"]"
+  },
+  {
+   "name": "memoapp/#7176: upload_files handler received file for [nested]",
+   "ok": true,
+   "detail": "[\"sample_upload.txt:69\",\"sample_upload.txt:69\"]"
+  },
+  {
+   "name": "memoapp/#7176: selected_files populated for upload[cs_up] in memo",
+   "ok": true,
+   "detail": "[\"sample_upload.txt\"]"
+  },
+  {
+   "name": "memoapp/#7176: upload_files handler received file for [cs_up]",
+   "ok": true,
+   "detail": "[\"sample_upload.txt:69\",\"sample_upload.txt:69\",\"sample_upload.txt:69\"]"
+  },
+  {
+   "name": "memoapp/#7176: toast from inside a memo renders (toaster provider wrap)",
+   "ok": true,
+   "detail": "toast elements=1"
+  },
+  {
+   "name": "memoapp: foreach-rendered memo row button works",
+   "ok": true,
+   "detail": "2"
+  },
+  {
+   "name": "memoapp: color_mode_cond inside memo flips with color mode",
+   "ok": true,
+   "detail": "LIGHT->DARK"
+  },
+  {
+   "name": "svg/#6708: top-level gradient defs live in the same <svg> as the rect",
+   "ok": true,
+   "detail": "{'found': True, 'gradInSameSvg': True, 'gradStops': 2, 'fill': None, 'w': 120, 'h': 40, 'stop0': '#ff0000'}"
+  },
+  {
+   "name": "svg/#6708: memo-wrapped svg keeps defs in the same <svg>",
+   "ok": true,
+   "detail": "{'found': True, 'gradInSameSvg': True, 'gradStops': 2, 'fill': None, 'w': 120, 'h': 40, 'stop0': '#ff00ff'}"
+  },
+  {
+   "name": "svg/#6708: foreach svgs each render a linearGradient",
+   "ok": true,
+   "detail": "5"
+  },
+  {
+   "name": "svg: rect renders with non-zero size",
+   "ok": true,
+   "detail": "{'found': True, 'gradInSameSvg': True, 'gradStops': 2, 'fill': None, 'w': 120, 'h': 40, 'stop0': '#ff0000'}"
+  },
+  {
+   "name": "svg: state-driven stop-color updates inside memoized svg scope",
+   "ok": true,
+   "detail": "#0000ff"
+  },
+  {
+   "name": "chains/#7122: shared bare chain fires from first and last call site",
+   "ok": true,
+   "detail": "0->2 last=bare"
+  },
+  {
+   "name": "chains/#7122: arg-bearing chain passes its own call-site arg (i=7)",
+   "ok": true,
+   "detail": "count=7 last=by-7"
+  },
+  {
+   "name": "chains/#7122: second arg call-site does not leak the first's arg",
+   "ok": true,
+   "detail": "count=49 last=by-42"
+  },
+  {
+   "name": "chains: stop_propagation / prevent_default variants still dispatch",
+   "ok": true,
+   "detail": "2"
+  },
+  {
+   "name": "chains: throttle(500) collapses 5 rapid clicks",
+   "ok": true,
+   "detail": "count=1"
+  },
+  {
+   "name": "chains: debounce(300) collapses 5 rapid clicks",
+   "ok": true,
+   "detail": "count=1"
+  },
+  {
+   "name": "chains/#7122: same handler on on_click AND on_mouse_enter fires for both",
+   "ok": true,
+   "detail": "hover=1 click=2"
+  },
+  {
+   "name": "boom/#7130: no 'Invalid DOM property' warnings from fallback SVG",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "boom: error boundary fallback rendered",
+   "ok": true,
+   "detail": "error boundary (#7130)\n< indexexplode\n\nboom disabled (set QA_BOOM=1)"
+  },
+  {
+   "name": "nav: client-side navigation to /memoapp keeps upload working",
+   "ok": true,
+   "detail": "http://localhost:3142/memoapp"
+  },
+  {
+   "name": "nav: selected_files after client-side nav",
+   "ok": true,
+   "detail": "[\"sample_upload.txt\"]"
+  }
+ ],
+ "console": [
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+   "url": "http://localhost:3142/forms/"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/forms/"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/triggers/"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/memoapp/"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/svg/"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/chains/"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation",
+   "url": "http://localhost:3142/boom/"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on pagehide",
+   "url": "http://localhost:3142/memoapp"
+  }
+ ],
+ "page_errors": [],
+ "failed_requests": [],
+ "bad_responses": []
+}

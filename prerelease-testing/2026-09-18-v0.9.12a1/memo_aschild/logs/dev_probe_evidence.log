@@ -1,0 +1,37 @@
+# scripts/probe.py + scripts/drive.py highlights, reflex 0.9.12a1 dev (:3140)
+
+INP_NAME_ATTRS={"tag": "INPUT", "spellcheck": "false", "title": "", "id": "inp_name",
+ "class": "rt-reset rt-TextFieldInput", "type": "text", "value": "",
+ "name": "full_name", "aria-describedby": "radix-_r_1_ radix-_r_2_"}
+#   -> 0.9.11.post1 for the same element:
+# INP_NAME_ATTRS={"tag": "INPUT", "spellcheck": "false", "id": "inp_name",
+#  "class": "rt-reset rt-TextFieldInput", "type": "text", "value": ""}   (no name, no aria-describedby)
+
+ANCESTRY (0.9.12a1) - parent of #inp_name:
+ {"tag":"DIV","cls":"rt-TextFieldRoot rt-r-size-2 rt-variant-surface Control own-class css-7mzzu5",
+  "borderW":"2px","borderC":"rgb(0, 128, 128)"}
+#   radix's injected "Control" class CONCATENATED with the own "own-class";
+#   own style (2px solid teal) applied. Identical in prod build.
+
+SUBMITTED (0.9.12a1) = {"full_name":"Ada Lovelace","controlled":"ctl-typed","nickname":"nick-typed",
+ "bio":"bio text","fruit":"banana","agree":"on","notify":"on","color":"green","volume":"30",
+ "the_form":"banana","field_full_name":"None","inp_name":"Ada Lovelace","inp_ctl":"ctl-typed",
+ "inp_nick":"nick-typed","inp_bio":"bio text","inp_fruit":"None","inp_agree":"True",
+ "inp_notify":"True","inp_color":"green","inp_volume":"30","btn_submit":"None"}
+SUBMITTED (0.9.11.post1) = {"bio":"bio text","fruit":"banana","agree":"on","notify":"on",
+ "color":"green","volume":"30","the_form":"banana","field_full_name":"None", ...}
+#   -> full_name / controlled / nickname MISSING on 0.9.11.post1 (the #6850 bug)
+
+focus_probe.py (0.9.12a1): ACTIVE_AFTER_SET_FOCUS= {"id": "inp_name", "tag": "INPUT"}
+#   rx.set_focus reaches the real input through the Slot-composed ref (mergeRefs)
+
+DROPDOWN_TRIGGER outerHTML (both versions):
+ <button data-accent-color="" id="t_dropdown" class="rt-reset rt-BaseButton ...">click-me</button>
+ parent DIV attrs: ["type","id","aria-haspopup","aria-expanded","data-state","class"]
+DROPDOWN clicks 0 -> 0   (own on_click never runs; SAME on 0.9.11.post1)
+
+Compiled-output counts, 0.9.12a1, .web/app_components/memoaschild/memoaschild.jsx:
+ exported memo components: 257   (209 Button wrappers)
+ bodies referencing chain_state.bump    : 105
+ bodies referencing chain_state.bump_by : 100
+ mergeSlotProps call sites: 228
