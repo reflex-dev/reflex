@@ -1,0 +1,32 @@
+From 4290548fe328e0ca010e3cbb106c6ac263116826 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 19 Sep 2026 16:53:06 +0000
+Subject: [PATCH 2/2] docs: note the router state-dict shape change from #7068
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+#7068 replaced the root state's single `router` var with five `rx_router_*`
+vars, which changed the shape of `state.dict()` and of every delta. The
+existing 7068 fragments describe the new vars and the shadowing error, but
+nothing told downstream code that inspects a serialized state — such as
+reflex-enterprise's REST redaction, reflex-dev/reflex#7214 — which keys to
+read now.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01NeyxWsuC9hqSKq8YcEwZyY
+---
+ news/+router-split-dict-shape.breaking.md | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 100644 news/+router-split-dict-shape.breaking.md
+
+diff --git a/news/+router-split-dict-shape.breaking.md b/news/+router-split-dict-shape.breaking.md
+new file mode 100644
+index 000000000..cc5fa75b9
+--- /dev/null
++++ b/news/+router-split-dict-shape.breaking.md
+@@ -0,0 +1 @@
++`state.dict()` and the state deltas no longer carry a single `router` entry: the root state now serializes `rx_router_session`, `rx_router_headers`, `rx_router_page`, `rx_router_url` and `rx_router_route_id` instead (each with the usual field-marker suffix). Code that read or rewrote the `router` entry of a state dict or delta — for example to redact request headers before returning state over an API — must read those five entries instead. `State.router` itself is unchanged for app code.
+-- 
+2.43.0
+
