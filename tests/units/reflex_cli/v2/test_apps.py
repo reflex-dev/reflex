@@ -1309,22 +1309,6 @@ def test_resolve_app_id_explicit_id_wins(mocker: MockFixture):
     read_config.assert_not_called()
 
 
-def _authed(mocker: MockFixture) -> hosting.AuthenticatedClient:
-    """Patch the client lookup and return the client it hands back.
-
-    Args:
-        mocker: The pytest-mock fixture.
-
-    Returns:
-        The authenticated client every command under test will receive.
-    """
-    client = fake_client()
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
-    )
-    return client
-
-
 def test_app_logs_does_not_follow_by_default(mocker: MockFixture):
     """One page is fetched and the command returns, with nothing to answer.
 

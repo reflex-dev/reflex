@@ -25,7 +25,7 @@ from reflex_build_sdk.types import (
 )
 from reflex_cli.v2 import cli
 
-from .utils import api_error, fake_client
+from .utils import FakeClient, api_error, fake_client
 
 _APP_ID = uuid.UUID(int=51)
 _PROJECT_ID = uuid.UUID(int=52)
@@ -865,7 +865,7 @@ def test_deploy_empty_project_in_config_is_not_forwarded_to_create_app(
     assert client.api.apps.create.call_args.kwargs.get("project_id") is None
 
 
-def _deploy_call_recorder(mocker: MockerFixture) -> MagicMock:
+def _deploy_call_recorder(mocker: MockerFixture) -> tuple[MagicMock, FakeClient]:
     """Set up a succeeding non-interactive deploy on an existing app.
 
     Returns:

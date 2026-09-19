@@ -67,7 +67,10 @@ def get_secrets(
         if secrets:
             console.print_table([[key] for key in secrets], headers=["Keys"])
         else:
-            console.print(str(secrets))
+            # Said in words rather than as an empty listing: the names are the
+            # only part of a secret the CLI ever renders, and a value that
+            # reaches a log record has left the process for good.
+            console.print("This app has no secrets.")
 
 
 @secrets_cli.command(name="update")

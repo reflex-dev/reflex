@@ -8,6 +8,7 @@ import click
 from typer import Typer
 from typer.main import get_command
 
+from tests.units.reflex_cli.sdk import FakeClient as FakeClient
 from tests.units.reflex_cli.sdk import api_error as api_error
 from tests.units.reflex_cli.sdk import fake_client as fake_client
 from tests.units.reflex_cli.sdk import gcp_connection as gcp_connection

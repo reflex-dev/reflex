@@ -7,17 +7,16 @@ import pytest
 from click.testing import CliRunner
 from pytest_mock import MockFixture
 from reflex_base.utils.log import SUCCESS
-from reflex_cli.utils import hosting
 from reflex_cli.v2.deployments import hosting_cli
 
-from .utils import api_error, as_click_command, fake_client
+from .utils import FakeClient, api_error, as_click_command, fake_client
 
 hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
 
 
-def _authed(mocker: MockFixture) -> hosting.AuthenticatedClient:
+def _authed(mocker: MockFixture) -> FakeClient:
     """Patch the client lookup and return the client it hands back.
 
     Args:
@@ -296,3 +295,15 @@ def test_delete_secret_json_output(mocker: MockFixture):
         "deleted": True,
         "rebooted": False,
     }
+
+
+def test_get_secrets_empty(mocker: MockFixture):
+    """An app with no secrets is told so in words, not as an empty listing."""
+    client = _authed(mocker)
+    client.api.apps.secrets.list.return_value = []
+    mock_print = mocker.patch("reflex_cli.utils.console.print")
+
+    result = runner.invoke(hosting_cli, ["secrets", "list", "app_id"])
+
+    assert result.exit_code == 0, result.output
+    mock_print.assert_called_once_with("This app has no secrets.")
