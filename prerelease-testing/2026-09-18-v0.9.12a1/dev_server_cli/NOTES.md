@@ -360,3 +360,251 @@ All servers and browsers started here were killed by pid/pgid. Verified with
 `python3 $SB/bin/ports.py $(seq 3380 3399) $(seq 8380 8399)` → empty, and
 `ps aux | grep chrome-linux/chrome` → 0. Processes on 3220/8220/3540/8540 belong to other
 agents and were left alone. `.web/` and `node_modules/` are excluded from the copied artifacts.
+
+## VERIFICATION
+
+Independent adversarial verifier, run 2026-09-19 from the written material only (this NOTES.md
++ `scripts/` + `dsc/`), in a fresh working dir
+`$SB/apps/verify_dev_server_cli/` with its own copies of `dsc/` and `dsc_prev/`.
+Ports used: frontend 3882-3895, backend 8882-8895 (reserved range 3880-3899 / 8880-8899).
+All processes killed; `python3 $SB/bin/ports.py $(seq 3880 3899) $(seq 8880 8899)` exits 0 (nothing bound).
+
+Venvs are the prebuilt shared ones, unchanged:
+
+```
+$ uv pip freeze --python $SB/envs/shared/bin/python | grep -i reflex
+reflex==0.9.12a1  reflex-base==0.9.12a1  reflex-components-code==0.9.6a1
+reflex-components-core==0.9.10a1  reflex-components-dataeditor==0.9.3a1
+reflex-components-gridjs==0.9.2a1  reflex-components-lucide==1.0.4
+reflex-components-markdown==0.9.4a1  reflex-components-moment==0.9.4
+reflex-components-plotly==0.9.7a1  reflex-components-radix==0.9.10a1
+reflex-components-react-player==0.9.2  reflex-components-recharts==0.9.4a1
+reflex-components-sonner==0.9.4a1  reflex-hosting-cli==0.1.72
+
+$ uv pip freeze --python $SB/envs/prev/bin/python | grep -i reflex
+reflex==0.9.11.post1  reflex-base==0.9.11.post1  reflex-components-core==0.9.9  (etc.)
+```
+
+Both venvs carry **granian==2.8.3**, so every new-vs-old difference below is reflex's own code,
+not a granian upgrade.
+
+Setup:
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+W=$SB/apps/verify_dev_server_cli ; D=/home/user/reflex/prerelease-testing/2026-09-18-v0.9.12a1/dev_server_cli
+mkdir -p $W/logs $W/scripts ; cp -r $D/dsc $W/dsc ; cp -r $D/dsc_prev $W/dsc_prev ; cp $D/scripts/* $W/scripts/
+export REFLEX_TELEMETRY_ENABLED=false PORTS_PY=$SB/bin/ports.py
+```
+
+New scripts written by the verifier live in `verification/scripts/`; new evidence in
+`verification/logs/`.
+
+---
+
+### Issue 1 — backend port accepts-but-never-answers after the worker is gone — **CONFIRMED, REGRESSION**
+
+```bash
+python3 $W/scripts/sigterm_port_probe.py $SB/envs/shared $W/dsc      3882 8882 new  $W/logs
+python3 $W/scripts/sigterm_port_probe.py $SB/envs/prev   $W/dsc_prev 3883 8883 prev $W/logs
+```
+
+Reproduced exactly as written, on my own ports, first try:
+
+| | before | +8 s | +18 s | after SIGKILL to group |
+|---|---|---|---|---|
+| 0.9.12a1 | `200` / 0.00 s | `TIMEOUT_NO_REPLY_6s` | `TIMEOUT_NO_REPLY_6s` | `CONNECTION_REFUSED` |
+| 0.9.11.post1 | `200` / 0.00 s | `CONNECTION_REFUSED` | `CONNECTION_REFUSED` | `CONNECTION_REFUSED` |
+
+`verification/logs/portprobe_new.json`, `verification/logs/portprobe_prev.json`.
+
+**The repro as written was incomplete in one way that matters, and I completed it.** It leads with
+the SIGTERM case, which only occurs together with issue 2 (SIGTERM being ignored) and so looks
+like a corner case. The NOTES' own parenthetical — the same hang via a broken hot reload — is
+the real-world form, and it was only evidenced indirectly (`shots/reloaderr_new_events.json`,
+a curl `000`, from a run whose purpose was something else). I wrote a dedicated probe,
+`verification/scripts/break_reload_probe.py`, that involves **no signal at all**: start the dev
+server, confirm `/ping` 200, append `raise RuntimeError(...)` to `dsc/dsc.py` (an ordinary
+"developer saved a file with an error"), then open a raw socket to the backend port.
+
+```bash
+python3 $W/scripts/break_reload_probe.py $SB/envs/shared $W/dsc      3888 8888 new  $W/logs
+python3 $W/scripts/break_reload_probe.py $SB/envs/prev   $W/dsc_prev 3889 8889 prev $W/logs
+```
+
+| | before break | +10 s | +24 s | after the file is fixed |
+|---|---|---|---|---|
+| 0.9.12a1 | `200` | `TIMEOUT_NO_REPLY_6s` | `TIMEOUT_NO_REPLY_6s` | `200` / 0.02 s |
+| 0.9.11.post1 | `200` | `CONNECTION_REFUSED` | `CONNECTION_REFUSED` | `200` / 0.02 s |
+
+`verification/logs/breakreload_new.json`, `verification/logs/breakreload_prev.json`,
+`verification/logs/breakreload_summary.txt`. Both versions recover fully once the error is
+fixed, so this is a stall, not a wedge.
+
+Refutation attempts, all failed:
+* Not an environment/proxy artifact — the probe is a raw `socket.create_connection` to
+  127.0.0.1, no curl, no proxy, no bun involved.
+* Not ports/flakiness — four independent runs (two mechanisms x two versions) on four different
+  port pairs, consistent every time.
+* Not a granian upgrade — granian is 2.8.3 in both venvs.
+* Not app misuse — the same app source produces `CONNECTION_REFUSED` on 0.9.11.post1.
+* Partly intended: the #7114 changelog line explicitly wants requests to "wait for the new worker
+  instead of being refused". The defect is the missing bound — nothing ever gives up.
+
+Root cause confirmed in the release source: `reflex/utils/exec.py:726-741`,
+`ParentBoundGranian._init_shared_socket`, which builds the listening socket in the supervisor.
+0.9.11.post1 has no such subclass (`$SB/envs/prev/.../reflex/utils/exec.py:678` constructs a plain
+`Granian(...)`), so there the worker owned the socket and its death released the port.
+Corroborated independently by `verification/logs/sigres_V_N_proc.json` vs `sigres_V_P_proc.json`:
+after the stuck SIGTERM, 0.9.12a1 still lists `8884  pids=26295  .../bin/python` as bound by the
+supervisor, while 0.9.11.post1 lists only the frontend port.
+
+**Severity: medium** (explorer said high). Dev mode only — `run_granian_backend_prod`
+(`reflex/utils/exec.py:857`) uses plain `Granian`, so no deployed app is affected — and it
+self-heals the moment the app imports again. But it is unbounded: a `/ping` health check against
+a dev backend with a broken module blocks until the *client's* timeout, forever. Worth a bounded
+wait (return 503 after N seconds with no live worker) but not a release blocker.
+
+### Issue 2 — dev `reflex run` ignores SIGTERM sent to the pid alone — **CONFIRMED, NOT a regression**
+
+```bash
+python3 $W/scripts/signal_test.py $SB/envs/shared $W/dsc      V_N_proc TERM proc $W/logs 3884 8884
+python3 $W/scripts/signal_test.py $SB/envs/prev   $W/dsc_prev V_P_proc TERM proc $W/logs 3886 8886
+```
+
+| | exit | after | survivors | ports still bound |
+|---|---|---|---|---|
+| 0.9.12a1 | `TIMEOUT_30s` | 30.11 s | `reflex`, `bun`, `node` | 3884 (node), **8884 (reflex)** |
+| 0.9.11.post1 | `TIMEOUT_30s` | 30.08 s | `reflex`, `bun`, `node` | 3886 (node) only |
+
+`verification/logs/sigres_V_N_proc.json`, `verification/logs/sigres_V_P_proc.json`. Identical on
+both versions, so pre-existing and not introduced by this release — the explorer's call is right.
+The one new detail my baseline adds is the `ports_after` column, which is the cleanest single
+piece of evidence for issue 1: same stuck process, backend port bound only on 0.9.12a1.
+
+**Severity: medium**, unchanged. It is a real defect (`docker stop` / `kill <pid>` never stops a
+dev server, and the #7140 changelog line advertises "clean SIGTERM shutdown" for the docker
+examples), but it ships in every recent release and it is not a reason to hold 0.9.12a1.
+
+### Issue 3 — `[ERROR] Unexpected exit from worker-1` on a clean shutdown — **CONFIRMED, NOT a regression** (explorer had not baselined this; I did)
+
+```bash
+python3 $W/scripts/signal_test.py $SB/envs/shared $W/dsc      V_N_group TERM group $W/logs 3885 8885
+python3 $W/scripts/signal_test.py $SB/envs/prev   $W/dsc_prev V_P_group TERM group $W/logs 3887 8887
+```
+
+0.9.12a1 (`verification/logs/sigres_V_N_group.json`): `exit_code: 0` in 0.15 s, no survivors,
+log tail
+
+```
+App running at: http://localhost:3885/
+Backend running at: http://0.0.0.0:8885
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.
+```
+
+0.9.11.post1 (`verification/logs/sigres_V_P_group.json`) — the baseline the explorer skipped —
+**logs the same ERROR line**, so the line itself is not new:
+
+```
+"exit_code": 1, "log_has_143": ["Starting frontend failed with exit code 143",
+                                "error: script \"dev\" exited with code 143"],
+"log_has_error": ["[ERROR] Unexpected exit from worker-1"]
+```
+
+Two consequences. First, regression status is settled: **no**. Second, this run independently
+**confirms the #6981 fix** — 0.9.11.post1 exits 1 with the "exit code 143" lines, 0.9.12a1 exits 0
+with none (`verification/logs/sig_V_P_group.log` vs `sig_V_N_group.log`).
+
+The message is not reflex's: it is granian's own, `granian/server/common.py:61`
+(`logger.error(f'Unexpected exit from worker-{self.idx + 1}')`), byte-identical in both venvs'
+granian 2.8.3. A fix in reflex would mean filtering/downgrading that record in
+`_granian_log_dictconfig()` (`reflex/utils/exec.py:689`) or fixing the shutdown ordering upstream.
+
+**Severity: low**, cosmetic. Still a genuine defect worth a ticket: on 0.9.12a1 the shutdown
+really is clean, so an ERROR line on every Ctrl-C is now purely false. It was masked on
+0.9.11.post1 where the shutdown genuinely failed.
+
+### Issue 4 — "one `REFLEX_USE_NPM=1` run permanently switches a project to npm with no documented way back" — **REFUTED** (the stickiness is real and intended; the "no way back" claim is wrong)
+
+```bash
+# verification/scripts/lock_probe.sh: runs `reflex run --loglevel debug`, records the chosen
+# installer and what reflex.lock/ holds afterwards, then kills the process group.
+$W/scripts/lock_probe.sh $SB/envs/shared $W/dsc L0_baseline_bun 3890 8890 $W/logs
+$W/scripts/lock_probe.sh $SB/envs/shared $W/dsc L1_npm1         3891 8891 $W/logs 1
+$W/scripts/lock_probe.sh $SB/envs/shared $W/dsc L2_plain        3892 8892 $W/logs
+$W/scripts/lock_probe.sh $SB/envs/shared $W/dsc L3_npm0         3893 8893 $W/logs 0
+$W/scripts/lock_probe.sh $SB/envs/shared $W/dsc L4_plain_again  3894 8894 $W/logs
+```
+
+| step | `REFLEX_USE_NPM` | installer chosen | `reflex.lock/` after |
+|---|---|---|---|
+| L0 | unset | **bun** first | `bun.lock` |
+| L1 | `1` | **npm** first | `package-lock.json` |
+| L2 | unset | **npm** first | `package-lock.json` |
+| L3 | **`0`** | **bun** first (`bun install v1.4.0` ran) | **`bun.lock`** |
+| L4 | unset | **bun** first | `bun.lock` |
+
+`verification/logs/lockswitch_summary.txt`, `verification/logs/lockv_L*.trimmed.log`.
+
+The first half of the claim holds: L2 shows a plain run still choosing npm after one
+`REFLEX_USE_NPM=1` run. But the headline — *"no documented way back"*, *"no `REFLEX_USE_NPM=0` /
+`--package-manager` escape hatch documented"*, recovery only by deleting `package-lock.json` from
+two places — **is false**. `REFLEX_USE_NPM=0` is an explicit escape hatch and it works in one run:
+
+`reflex/utils/js_runtimes.py:115-132`
+
+```python
+def prefer_npm_over_bun() -> bool:
+    """...
+      2. ``REFLEX_USE_NPM`` set — honor the explicit value.
+      3. Persisted lockfile state — implicit npm if only a npm lock is present in ``reflex.lock/``.
+    """
+    if constants.IS_WINDOWS and windows_check_onedrive_in_path():
+        return True
+    explicit = environment.REFLEX_USE_NPM.getenv()
+    if explicit is not None:
+        return explicit
+    return _persisted_lockfile_implies_npm()
+```
+
+`getenv()` returns `None` only when the variable is unset, so `REFLEX_USE_NPM=0` takes precedence
+over the lockfile heuristic (step 2 beats step 3). L3 proves it end to end: bun was selected,
+`bun install v1.4.0` ran, and `reflex.lock/` went back to `bun.lock` — no file deletion. L4 then
+confirms the project stays on bun afterwards.
+
+The behaviour the explorer calls undocumented is also deliberate and documented in the code it
+comes from, `_persisted_lockfile_implies_npm` (`reflex/utils/js_runtimes.py:99-112`): *"A project
+is treated as npm-managed when `reflex.lock/` carries an npm lockfile but no bun lockfile, so
+committing only `package-lock.json` is enough to opt in without setting `REFLEX_USE_NPM=1`."*
+That is a feature (check in a `package-lock.json`, the whole team gets npm), not a trap.
+
+A final full run with everything unset (`verification/logs/lockv_L5_final.trimmed.log`) served the
+frontend 200 in 3 s and `/ping` 200, so the npm→bun round trip leaves a fully working project.
+
+What survives as a real, much smaller point: **nothing tells the user their project was
+converted**, and `REFLEX_USE_NPM=0` is not mentioned in the changelog or user docs. That is a
+docs/console-message nit, not a code defect. The explorer's re-grading of the previous campaign's
+FINDING-021 from "fails" to "sticky but functional" is confirmed; its recovery advice (delete two
+lockfiles) should be replaced with "run once with `REFLEX_USE_NPM=0`".
+
+**Severity: not-a-defect.**
+
+### Verifier notes on the material
+
+* `scripts/sigterm_port_probe.py` and `scripts/signal_test.py` are self-contained and ran
+  unmodified against fresh app copies — good repro quality.
+* One gap worth fixing for a fix agent: the high-severity issue is written as "after a SIGTERM
+  that fails to stop `reflex run`", which buries it behind issue 2. It should lead with the
+  broken-hot-reload form, which needs no signal and is what a developer hits daily. See
+  `verification/scripts/break_reload_probe.py`.
+* Caveat on my own `lock_probe.sh`: its readiness loop greps for `frozen-lockfile`, which also
+  matches bun's own `'--frozen-lockfile'` argument in the debug log, so bun runs report
+  `frontend200=ERROR(2s)` spuriously. The installer choice and the resulting `reflex.lock/`
+  contents (what the test is about) are unaffected; L1, L2 and L5 reached `App running at`.
+
+### Cleanup
+
+All verifier processes killed by pid/pgid. `python3 $SB/bin/ports.py $(seq 3880 3899) $(seq 8880 8899)`
+returns nothing (exit 0); `ps -eo pid,pgid,comm | grep -E 'reflex|bun|node|granian'` shows no
+process belonging to this verifier.
