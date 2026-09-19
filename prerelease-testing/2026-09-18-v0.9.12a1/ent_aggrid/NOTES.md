@@ -345,3 +345,180 @@ cd $A/demo_shipped && CI=1 REFLEX_TELEMETRY_ENABLED=false $A/venv_new/bin/reflex
 
 Full log: `artifacts/shipped_unpatched_demo_0912a1_export_fail.log`.
 Fix belongs in the reflex-enterprise demo, not in reflex.
+
+## VERIFICATION (independent adversarial verifier, 2026-09-19)
+
+Reproduced every claimed issue from this NOTES.md + `scripts/` alone, in a fresh scratch
+dir with **new venvs built from PyPI + the published rxe 0.9.5 wheel** (nothing installed
+from or run inside `/home/user/reflex`). Ports 4080/9080 (new) and 4081/9081 (prev).
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+A=$SB/apps/verify_ent_aggrid && mkdir -p $A/{logs,shots,artifacts}
+tar -C <this dir> --exclude=.web --exclude=node_modules --exclude='*.db' -cf - demo_new finance_new scripts | tar -C $A -xf -
+cd $SB && uv venv $A/venv_new  --python 3.11
+cd $SB && UV_HTTP_TIMEOUT=300 uv pip install --python $A/venv_new/bin/python --prerelease=allow \
+   'reflex==0.9.12a1' 'reflex-components-core==0.9.10a1' 'reflex-components-radix==0.9.10a1' \
+   'reflex-components-code==0.9.6a1' 'reflex-components-dataeditor==0.9.3a1' 'reflex-components-gridjs==0.9.2a1' \
+   'reflex-components-markdown==0.9.4a1' 'reflex-components-plotly==0.9.7a1' 'reflex-components-recharts==0.9.4a1' \
+   'reflex-components-sonner==0.9.4a1' "reflex-enterprise[mcp] @ file://$SB/wheels/reflex_enterprise-0.9.5-py3-none-any.whl" \
+   'faker==36.2.2' 'pandas==2.2.3' aiosqlite greenlet 'yfinance==0.2.54'
+cd $SB && uv venv $A/venv_prev --python 3.11
+cd $SB && UV_HTTP_TIMEOUT=300 uv pip install --python $A/venv_prev/bin/python 'reflex==0.9.11.post1' \
+   "reflex-enterprise[mcp] @ file://$SB/wheels/reflex_enterprise-0.9.5-py3-none-any.whl" \
+   'faker==36.2.2' 'pandas==2.2.3' aiosqlite greenlet 'yfinance==0.2.54'
+cp -r $A/demo_new $A/demo_prev
+cp -r /home/user/reflex-enterprise/demos/ag_grid $A/demo_shipped        # unpatched, for issue 2
+for d in demo_prev demo_new; do (cd $A/$d && CI=1 $A/venv_${d#demo_}/bin/alembic upgrade head && \
+   CI=1 $A/venv_${d#demo_}/bin/python $A/scripts/seed_db.py 200); done
+```
+
+`uv pip freeze | grep -i reflex` — `verification/freeze_venv_new.txt` (reflex/reflex-base
+0.9.12a1, radix/core 0.9.10a1, code 0.9.6a1, recharts 0.9.4a1, rxe 0.9.5 wheel) and
+`verification/freeze_venv_prev.txt` (reflex/reflex-base 0.9.11.post1, radix/core 0.9.9,
+code 0.9.5, recharts 0.9.3, same rxe wheel). All evidence under `verification/`.
+
+### 1. [high] 0.9.11.post1 granian worker dies at startup — **CONFIRMED (reproduced verbatim)**
+
+```bash
+cd $A/demo_prev && CI=1 REFLEX_TELEMETRY_ENABLED=false $A/venv_prev/bin/reflex run \
+    --loglevel debug --frontend-port 4081 --backend-port 9081 > $A/logs/run_prev_dev.log 2>&1 &
+python3 $SB/bin/ports.py 4081 9081
+curl -s --noproxy '*' -o /dev/null -w '%{http_code}\n' --max-time 5 http://localhost:9081/ping   # 000
+cd $A && NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python \
+    $A/scripts/verify_probe.py http://localhost:4081 $A/shots/prev /,/editable,/model
+```
+Observed exactly as written: `ValueError: Library @radix-ui/themes is not bundled.` from
+`reflex_enterprise/vars.py:166` inside `compile_app() -> _compile_initial_state()`, then
+`[ERROR] Unexpected exit from worker-1`; `reflex run` still prints *"App running at
+http://localhost:4081/ / Backend running at http://0.0.0.0:9081"*; only the node frontend
+listens (`ports.py` shows 4081 only), `/ping` returns 000, the browser toasts *"Cannot
+connect to server: websocket error. Check if server is reachable at ws://localhost:9081/_event"*
+and grids show "No Rows To Show". Evidence: `verification/issue1_prev_worker_traceback.txt`,
+`verification/issue1_prev_browser_report.json`, `verification/issue1_prev_index.png`.
+The same app/venv layout on 0.9.12a1 (4080/9080): backend `/ping` 200, **0** occurrences of
+"Unexpected exit" in the log, all probed routes render.
+
+**Root cause is more specific than the note claims.** It is not the RegistrationContext /
+#7121 / #6850 work: the 0.9.12a1 changelog carries an explicit fix,
+*"Persist bundled-library metadata for backend-only workers so state hydration can serialize
+values that reference libraries included in the frontend build"* (**#7096**,
+`git show origin/r/pre-2026.09.18-35410916948:CHANGELOG.md`). 0.9.11's #7109 ("Preserve
+explicit bundle_library() registrations through frontend compilation") was the partial fix;
+#7096 is the one that covers the dev worker. So this is a **known, already-fixed** defect of
+the previous stable — it argues for shipping 0.9.12a1 and needs no action from a fix agent.
+The only residual reflex-side item is the UX: a granian worker that dies during
+`_compile` leaves "Backend running at ..." on screen and no non-zero exit. That residual
+was **not** re-verified on 0.9.12a1 (no way to kill its worker with this app).
+
+### 2. [medium] shipped ag_grid demo cannot start (`$/utils/components`) — **CONFIRMED, pre-existing**
+
+```bash
+sed -i 's|^sqlalchemy.url = .*|sqlalchemy.url = sqlite:///reflex.db|' $A/demo_shipped/alembic.ini
+cd $A/demo_shipped && CI=1 $A/venv_new/bin/alembic upgrade head
+cd $A/demo_shipped && CI=1 REFLEX_TELEMETRY_ENABLED=false $A/venv_new/bin/reflex export --frontend-only --no-zip
+# exit 1: ValueError: Library $/app_components/ag_grid/formatters is not bundled.
+cp -r /home/user/reflex-enterprise/demos/ag_grid $A/demo_shipped_prev   # same, venv_prev
+```
+Exit 1 on **both** 0.9.12a1 and 0.9.11.post1 with the identical message
+(`verification/issue2_shipped_export_{new,prev}_tail.txt`), so not a regression. The patch
+carried in `demo_new/ag_grid/formatters.py` is a 13-line diff against the shipped file and
+nothing else differs (`diff -rq` shows only formatters.py, alembic.ini, requirements.txt).
+Downstream fix (reflex-enterprise demo). Secondary claim upheld: the remedy printed in rxe's
+own message (an import-time `bundle_library()`) is insufficient, because `compile_app()`
+calls `reset_bundled_libraries()` after importing the app module.
+
+### 3. [medium] ModelWrapper datasource URL percent-encodes `?` — **CONFIRMED, downstream (rxe)**
+
+```bash
+cd $A/demo_new && CI=1 REFLEX_TELEMETRY_ENABLED=false $A/venv_new/bin/reflex run \
+    --frontend-port 4080 --backend-port 9080 > $A/logs/run_new_dev2.log 2>&1 &
+cd $A && NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python \
+    $A/scripts/verify_probe.py http://localhost:4080 $A/shots/new /model,/model-ssrm
+curl -s --noproxy '*' -o /dev/null -w '%{http_code}\n' "http://localhost:9080/abstract-wrapper-data?startRow=0&endRow=5&...state=...model_wrapper_n1"   # 200
+curl -s --noproxy '*' -o /dev/null -w '%{http_code}\n' "http://localhost:9080/abstract-wrapper-data%3FstartRow=0&endRow=5"                             # 404
+```
+Both routes issue `404 http://localhost:9080/abstract-wrapper-data%3FstartRow=0&endRow=50&…`
+and stay empty (`verification/issue3_new_model_routes_report.json`). The two curls above are
+the decisive pair: the same path with a real `?` is a live 200 route, the `%3F` form 404s.
+Root cause verified in the wheel, and it is purely client-side JS generated by rxe, so it
+cannot depend on the reflex version:
+`reflex_enterprise/components/ag_grid/datasource.py:181-183` builds `"<endpoint>?<query>"`,
+passes it to `get_backend_url()` at `datasource.py:189` (and `:303`), and
+`reflex_enterprise/utils.py:153-161` assigns it to `backendUrl.pathname`; Node confirms
+`u.pathname = 'abstract-wrapper-data?startRow=0'` yields `/abstract-wrapper-data%3FstartRow=0`.
+A dev baseline on 0.9.11.post1 is impossible (issue 1 kills that backend), but the generated
+code and the wheel are identical, so "pre-existing" stands on that basis rather than on an
+A/B run.
+
+### 4. [medium] `ag_grid.column_def()` silently discards unknown kwargs — **CONFIRMED, downstream (rxe)**
+
+```bash
+cd $A && $A/venv_new/bin/python  -c "from reflex_enterprise import ag_grid; print(ag_grid.column_def(field='ticker', header_name='Ticker', checkbox_selection=True).dict()); print(ag_grid.column_def(field='x', totally_bogus_kwarg=123).dict())"
+cd $A && $A/venv_prev/bin/python -c "...same..."
+# both: {'headerName': 'Ticker', 'field': 'ticker'}   /   {'field': 'x'}
+```
+Identical on 0.9.12a1 and 0.9.11.post1. Mechanism pinned down: `ColumnDef`
+(`reflex_enterprise/components/ag_grid/resources/column.py:467`) derives from
+`reflex_base.components.props.PropsBase`, whose `__init__` `setattr`s any kwarg but whose
+`dict()` iterates only over declared fields, so the extra silently disappears at render time;
+`ColumnDef` has no `checkbox_selection` field at all (`'checkbox_selection' in ColumnDef.__fields__`
+is False). reflex-base already ships the strict variant `NoExtrasAllowedProps`, which raises
+`InvalidPropValueError` on unknown props — rxe simply did not use it for `ColumnDef`. So the
+one-line downstream fix is to base `ColumnDef` on `NoExtrasAllowedProps` (plus the AG Grid 34
+`rowSelection: {mode, checkboxes}` migration in the finance example). The browser half of the
+repro (`drive_finance_sel.py`) was not re-run — the offline probe plus the missing field is
+conclusive, and the finance app was not started in this verification.
+
+### 5. [medium] AttributeError in a cached var masked as VarAttributeError — **REFUTED on 0.9.12a1**
+
+```bash
+cd $A && $A/venv_new/bin/python  $A/scripts/probe_masked_attrerror.py   # verification/issue5_probe_new.txt
+cd $A && $A/venv_prev/bin/python $A/scripts/probe_masked_attrerror.py   # verification/issue5_probe_prev.txt
+```
+The claim "observed on 0.9.12a1 AND 0.9.11.post1" does not hold. Running the explorer's own
+unmodified script:
+
+| stack | result |
+|---|---|
+| reflex-base **0.9.12a1** | `ReflexRuntimeError: Computing cached property BoomVar._cached_get_all_var_data raised AttributeError: REAL ERROR: module 'x' has no attribute 'y'`, `__cause__` = the real `AttributeError`, full chained traceback |
+| reflex-base **0.9.11.post1** | `VarAttributeError: Attribute _cached_get_all_var_data not found.`, `__cause__ = None` (as described) |
+
+0.9.12a1 already contains the fix, with the explanatory comment, at
+`packages/reflex-base/src/reflex_base/vars/base.py:2234-2242`:
+`except AttributeError as err: … raise ReflexRuntimeError(msg) from err`
+("CPython would swallow an AttributeError here and fall back to `__getattr__`"). Nothing for
+a fix agent to do; if anything this is another argument for shipping. The likely cause of the
+wrong claim is that the probe was run against the prev venv twice.
+
+### 6. [low] `/integrated-charts` ag-grid 34.3.1 vs ag-charts 11.2.4 — **CONFIRMED on 0.9.12a1, downstream (rxe pins)**
+
+```bash
+cd $A && NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $A/scripts/drive_deep.py http://localhost:4080 $A/shots/new
+```
+`verification/issue6_new_deep_report.json`: console `error: AG Grid: AG Grid version 34.3.1
+and AG Charts version 11.2.4 is not supported. AG Grid version 34.3.x should be used with AG
+Chart 12.3.x.`, pageerror `Cannot assign to read only property 'api' of object '#<Object>'`,
+`chart_wrappers = 0` (range select and the "Chart Range" context menu themselves work).
+Pins come from the wheel, not from reflex:
+`reflex_enterprise/components/ag_grid/constants.py:4-5` — `AG_GRID_VERSION = "34.3.1"`,
+`CHARTS_VERSION = "11.2.4"` — and both `.web/package.json` files are identical
+(`verification/issue6_package_pins_{new,prev}.txt`).
+**Gap in the original repro:** it claims an "identical failure on 0.9.11.post1", but that
+cannot be produced — that backend is dead (issue 1) and `drive_deep.py` times out on
+`.ag-cell` there (`verification/issue6_prev_deep_probe_timeout.txt`). What *is* verified on
+0.9.11.post1 is the version-mismatch console error itself, identical text, on
+`/integrated-charts` (`verification/issue1_6_prev_browser_report.json`), plus identical pins.
+The `Cannot assign to read only property 'api'` page error was only observed on 0.9.12a1;
+its baseline is unverified, and the cited 2026-08-27 / 2026-09-10 artifacts are not in this
+checkout (only `prerelease-testing/2026-09-18-v0.9.12a1/` exists), so that part of the
+evidence could not be checked.
+
+### Verifier's notes on the repro quality
+
+- Issues 1, 2, 3, 4, 6 reproduce from the written material alone — good repros.
+- Issue 5's "on 0.9.12a1 AND 0.9.11.post1" is wrong; the script is fine, the conclusion is not.
+- Issue 1's root-cause guess should be replaced by #7096 (changelogged).
+- Issue 6's baseline claim is unsupported for the page error.
+- Environment quirk seen here, not a finding: a `pkill -f <path>` whose pattern also matches
+  the issuing shell kills that shell (exit 144) and the vite child; kill by PID instead.

@@ -1,0 +1,33 @@
+{
+ "label": "V_N_group",
+ "sig": "TERM",
+ "target": "group",
+ "extra": [],
+ "fp": "3885",
+ "bp": "8885",
+ "pid": 27035,
+ "pgid": 27035,
+ "ready_after_s": 1.98,
+ "READY": true,
+ "members_before": [
+  "27035:reflex",
+  "27054:bun",
+  "27056:node",
+  "27064:reflex"
+ ],
+ "exit_code": 0,
+ "exit_after_s": 0.15,
+ "survivors": [],
+ "log_has_143": [],
+ "log_has_error": [
+  "[ERROR] Unexpected exit from worker-1"
+ ],
+ "log_tail": [
+  "App running at: http://localhost:3885/",
+  "Backend running at: http://0.0.0.0:8885",
+  "[ERROR] Unexpected exit from worker-1",
+  "Info: Reflex app stopped."
+ ],
+ "ports_after": [],
+ "ports_after_force": []
+}

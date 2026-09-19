@@ -367,6 +367,10 @@ Index:
   (`news/+reserved-state-names.breaking.md`, the `docs/state/overview.md` paragraph) and the changelog never mention
   it, so nothing shipped is inconsistent — and the metaclass is installed unconditionally, so the flag would not have
   rescued FINDING-001. Note for the release manager only.
+- **"AttributeError inside a cached var is still masked as `VarAttributeError`" (`ent_aggrid`, carried from two earlier
+  campaigns as reflex-dev/reflex#6978)**: refuted for 0.9.12a1 by the verifier — the explorer's own
+  `scripts/probe_masked_attrerror.py` yields a chained `ReflexRuntimeError` on reflex-base 0.9.12a1 and the masked
+  error only on 0.9.11.post1. #7115 fixes #6978; `vars_typing` reached the same conclusion independently.
 - **FINDING-009 — "`rx.cond` evaluates both branches eagerly; a throwing untaken branch fails the prod build"
   (`memo_aschild`)**: refuted by the verifier with a minimal app (`memo_aschild/verification/app_boomy`): an
   `@rx.memo` component containing the throwing Var and an idiomatic `rx.text(S.user["name"])` with `user=None` both
@@ -466,8 +470,15 @@ ag-grid wrapper caused no render/ref/gridApi breakage; `ag_grid_finance` is byte
 The six "fail" rows are all pre-existing and downstream: the shipped demo's stale `$/utils/components` bundle
 path, the ModelWrapper datasource URL percent-encoding `?` (every `/model*` fetch 404s — that code path has
 never loaded a row in any campaign), ag-grid 34.3.1 vs ag-charts 11.2.4, `column_def()` silently dropping
-unknown kwargs (kills row selection in `ag_grid_finance`), and the `CachedVarOperation` AttributeError still
-masked as `VarAttributeError` with no `__cause__` (reflex-dev/reflex#6978). Caveat carried from the agent: the
+unknown kwargs (kills row selection in `ag_grid_finance`) — all four CONFIRMED by the verifier as pre-existing
+downstream defects (with the decisive curl pair for the `%3F` bug: the same path with a real `?` returns 200; and
+`column_def` pinned to `ColumnDef` deriving from `PropsBase` instead of the strict `NoExtrasAllowedProps`). The
+explorer's sixth claim — the `CachedVarOperation` AttributeError "still masked as `VarAttributeError`" — was
+**REFUTED**: running the explorer's own probe on 0.9.12a1 gives `ReflexRuntimeError: Computing cached property …
+raised AttributeError: REAL ERROR …` with the real error as `__cause__` (#7115 works, `reflex_base/vars/base.py:
+2234-2242`); only 0.9.11.post1 masks it (the explorer most likely ran the probe twice against the old venv). The
+0.9.11.post1 worker death is the previous stable's defect that #7096 fixes, not anything in this release. Caveat
+carried from the agent: the
 dev route-by-route A/B against 0.9.11.post1 is not possible because the baseline backend never comes up; the
 no-regression call rests on the prod A/B (valid, diff zero) and on the previous campaign's 0.9.11a1 dev sweep.
 Process note: this agent ran `pkill -f "reflex run"` once around 01:50 UTC before switching to pid-scoped kills;
