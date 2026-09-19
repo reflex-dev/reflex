@@ -1,0 +1,5 @@
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library $/app_components/ag_grid/formatters is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('$/app_components/ag_grid/formatters') to enable it it.
+EXPORT_PREV_EXIT=1
