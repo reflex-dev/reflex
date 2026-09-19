@@ -13,6 +13,11 @@ Previous stable used for baselines: **reflex 0.9.11.post1**. Published reflex-en
 evidence + regression status, refuted claims, cluster summaries) and
 [RELEASE_PLAN.md](./RELEASE_PLAN.md) (what blocks the release vs what gets filed).
 
+Campaign status: **complete** (2026-09-19 06:00 UTC). 15/15 explorer clusters plus the orchestrator's own
+probes; 14 independent adversarial verifier runs re-executed every claimed issue from the written repro alone,
+with a 0.9.11.post1 baseline. Each verifier's commands, versions and evidence live in the cluster's `NOTES.md`
+(`## VERIFICATION`) and `verification/` directory; FINDINGS.md carries the verdict per finding.
+
 ## Method
 
 - All installs PyPI-only in isolated uv venvs — never from a checkout. The ground rules given to
