@@ -1,5 +1,6 @@
-<!-- Written by the orchestrator from the fix agent's final response: the harness does not let subagents write
-report files. Structured result and evidence: fixes/f012/evidence/, workflow wf_e6187de4-84e. -->
+<!-- Assembled by the orchestrator: the harness does not let subagents write report files, so the fix agent's
+report (from its final response) is followed by the independent reviewer's section. Structured results and
+evidence: fixes/f012/evidence/, workflow wf_e6187de4-84e. -->
 
 # f012 — FINDING-012 / reflex-dev/reflex#6143 — FIXED, E2E VERIFIED
 
@@ -98,3 +99,152 @@ One extra `<Fragment>` in the prod app root (no DOM node). DOM order changes so 
 2. The rule "a leaf app wrap must wrap itself in `Fragment`" is tribal knowledge across two call sites — it belongs in the `app_wraps` docstring at `reflex/app.py:406`.
 3. Pre-existing: `reflex-components-dataeditor` uses the fixed global id `portal` and Glide wants it as the last child of `<body>`, while it renders deep inside the app root. Works, but two data-editor-bearing libraries on one page would collide.
 4. Unrelated but worth a look: published 0.9.12a1 fails to start this app with `module 'vapp' has no attribute 'app'` while `main` starts it fine.
+
+## REVIEW` section below was written by the independent
+> reviewer.
+
+## REVIEW
+
+Independent adversarial review, 2026-09-19. **Verdict: approve — merge as-is.**
+
+### What the change is
+
+One line of product code (`reflex/app.py:1653`), plus a four-line inline comment:
+
+```python
+self.app_wraps[0, "StickyBadge"] = lambda _: Fragment.create(memoized_badge())
+```
+
+Plus `tests/units/test_app.py::test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable`
+and `news/+sticky-badge-app-wrap-children.bugfix.md`. Nothing else is touched.
+
+### Root cause independently confirmed
+
+`_app_root` (`reflex/app.py:1574-1590`) sorts the wrap registry by priority
+descending and appends each next wrap as a **child** of the previous one, so the
+chain is strictly linear. `(0, "AppWrap")` is seeded first in
+`_resolve_app_wrap_components` (`reflex/compiler/compiler.py:1088`) and
+`(0, "StickyBadge")` is registered later, so with a stable sort the badge lands
+directly under `AppWrap` and `rx.data_editor`'s `(-1, "DataEditorPortal")`
+(`packages/reflex-components-dataeditor/.../dataeditor.py:582-601`) lands under
+the badge. `StickyBadge.create` takes no `*children`, so the compiled memo drops
+them. Confirmed from the two real `root.jsx` files built in this review:
+
+unfixed (`vapp_unfixed/.web/app/root.jsx:48`):
+
+```
+jsx(Fragment,{},children,jsx(MemoizedBadge_04c36749,{},jsx("div",{...,id:"portal"},)))
+```
+
+fixed (`vapp/.web/app/root.jsx:48`):
+
+```
+jsx(Fragment,{},children,jsx(Fragment,{},jsx(MemoizedBadge_04c36749,{},),jsx("div",{...,id:"portal"},)))
+```
+
+### Regression test: seen to fail, then pass
+
+Run by the reviewer in the worktree, restoring `reflex/app.py` from `HEAD~1`
+(the source only — the test file stayed at `HEAD`), then restoring via
+`git checkout --`:
+
+- pre-fix source: `FAILED ... assert 'jsx(MemoizedBadge_04c36749,{},)' in chain` (1 failed)
+- fixed source: `1 passed`
+- `git status --porcelain` empty before and after; branch still
+  `fix/finding-012-badge-portal` at `94554d771`.
+
+The two assertions together (`'id:"portal"' in chain` and the badge memo being
+childless) are exactly the invariant — it is a structural assertion, which is
+right, because the portal is present in `root.jsx` either way.
+
+### End-to-end A/B, re-run by the reviewer
+
+Same tree, same app (a copy of `components_bumps/verification/vapp`, default
+`show_built_with_reflex`), same probe (`editor_probe.py`), prod builds on ports
+3970 (fixed) and 3971 (pre-fix source), both from `/home/user/wt/f012/.venv`:
+
+| | pre-fix (3971) | fixed (3970) |
+|---|---|---|
+| `portal_exists` | `false` | `true` |
+| `badge_present` | `true` | `true` |
+| `overlay_imgs` | `[]` | 4 images |
+| `carousel_root` | `null` | `.carousel-root` present |
+| "portal not found" | 2x | none |
+
+The fixed-side JSON is byte-identical to the fix agent's
+`evidence/logs/fixed_prod_editor.json`. The two console errors that remain on
+both sides (a 404, and a `no dispatch function for substate` warning) are present
+in the pre-fix run too and in the campaign's own baselines — unrelated.
+
+A second probe on the fixed build confirms no collateral damage to the badge:
+on `/`, `/ids` and `/editor` the anchor renders with text "Built with Reflex",
+`position: fixed`, `z-index: 9998`, bottom-right at 1121x846 in a 1280x900
+viewport, and `#portal` is the same empty `div#portal.css-7zxn5u` the
+`show_built_with_reflex=False` control produced in the campaign.
+
+### Checks re-run by the reviewer (worktree root)
+
+- `uv run ruff check .` — All checks passed
+- `uv run ruff format --check .` — 1626 files already formatted
+- `uv run pyright reflex tests` (full) — 0 errors, 0 warnings
+- `uv run pytest tests/units --ignore=tests/units/reflex_cli` — 9123 passed, 20 skipped
+- `tests/units/reflex_cli` failures spot-checked and reproduced as environmental:
+  `Reflex version 0.0.0.post50.dev0+4cba00435 is not compatible with
+  reflex-hosting-cli` — the tagless-worktree version gate, not this change.
+
+### Regression hunting
+
+- The `Fragment.create(memo(...))` shape is already the house idiom for leaf app
+  wraps: `(44, "ToasterProvider")` at `reflex/compiler/compiler.py:1104`,
+  `default_overlay_component()` at `reflex/app.py:259`,
+  `_component_from_import_path` (the `extra_overlay_function` wrap) at
+  `reflex/app.py:212`. This fix makes the badge consistent with them.
+- Every other framework wrap renders children (`StrictMode` 200,
+  `ErrorBoundary` 55, `ToasterProvider` 44, `Overlay` 5, `ExtraOverlay` 4,
+  `AppWrap` 0, the event-driven `StateProvider`/`EventLoopProvider`/
+  `UploadFilesProvider`), so the badge was the only leaf and
+  `(-1, "DataEditorPortal")` the only wrap below it. After the fix no framework
+  combination is broken.
+- reflex-enterprise 0.9.5 registers only `(30, "DnDProvider")` and
+  `(44, "MantineProvider")`, both above the badge and both children-rendering —
+  nothing that was previously swallowed starts rendering unexpectedly.
+- No public API, no component signature, no prop changed, so no `make_pyi.py`
+  run and no `pyi_hashes.json` churn is needed — correct.
+- Dev mode is untouched (`_setup_sticky_badge` is only called from
+  `reflex/compiler/compiler.py:1357` under `is_prod_mode()`), and the change is
+  purely compile-time, so it is orthogonal to redis vs memory state managers.
+- The extra `Fragment` adds no DOM node and no JS module (it compiles inline),
+  so there is no cost beyond one more component object per compile.
+- Nothing else in the tree reads `app_wraps[0, "StickyBadge"]`.
+
+### On the shape of the fix
+
+The brief's preferred shape was to give `StickyBadge.create` a `*children`
+parameter. The agent's rejection of that is right and worth recording: the badge
+is an `<a href="https://reflex.dev" target="_blank">`, so children rendered
+inside it would be inside the anchor, and a click anywhere in a data-editor
+overlay would navigate away. Re-prioritising the portal only moves the collision
+and would need a component-package release. Wrapping in a `Fragment` is the
+smallest change that fixes the defect, is cherry-pickable on its own, and needs
+no stub regeneration.
+
+### Blocking issues
+
+None.
+
+### Nits (non-blocking, for the maintainer)
+
+1. The contract the fix relies on — "an app wrap that cannot render children must
+   wrap itself in a `Fragment`" — is now tribal knowledge at three call sites. One
+   sentence in the `app_wraps` docstring (`reflex/app.py:406`) would be cheap
+   insurance. The agent raised the same point.
+2. The regression test registers the portal through `app.extra_app_wraps` rather
+   than through a component's `_get_app_wrap_components`, which is the path
+   `rx.data_editor` actually uses. Both merge into the same registry before
+   `_app_root` sorts, so the coverage of the nesting logic is equivalent, but a
+   component-provided wrap would be closer to the real failure.
+3. The general defect remains: a childless wrap registered *above* another wrap
+   still silently drops it. Out of scope for a release blocker (no such
+   combination ships), but worth a follow-up issue — `_app_root` could warn.
+4. The news fragment is five lines where two would do; the last clause reads a
+   little like a changelog narrative. Harmless.
