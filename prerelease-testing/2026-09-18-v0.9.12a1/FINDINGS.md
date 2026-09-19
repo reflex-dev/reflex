@@ -28,30 +28,65 @@ Environment: Linux container (Ubuntu 24.04), 4 CPU / 15 GB, Node v22.22.2, refle
 
 ## Executive summary
 
-_(pending — written when the clusters finish)_
+**Recommendation: do not release 0.9.12 from this train as-is.** Four regressions against 0.9.11.post1 were
+confirmed by independent verifiers; two of them break the published reflex-enterprise 0.9.5 outright and one of
+those is security-relevant. Everything else the train ships was exercised end to end and works, several items
+measurably better than the previous stable.
 
-Confirmed so far:
-- **FINDING-001 (HIGH, regression, downstream-breaking, CONFIRMED by orchestrator on both versions):**
-  `rx.State` gained a new metaclass (`reflex.istate.validation._StateMeta`, from #7136), so any metaclass
-  derived from `reflex.vars.BaseStateMeta` — the metaclass `rx.State` had through 0.9.11.post1 — can no
-  longer be applied to a State subclass. Published reflex-enterprise 0.9.5 does exactly that in
-  `auth/oidc/state.py`, so `import reflex_enterprise.auth.oidc.state` raises `TypeError: metaclass
-  conflict` on 0.9.12a1 and imports cleanly on 0.9.11.post1.
+What blocks (each confirmed by an adversarial verifier from the written repro alone):
 
-Verified by clusters so far (details in the cluster summaries): #7068 router split end to end (`router_vars`,
-`ent_aggrid`); #6850 as_child transparency, #7176 memo app-wraps, #6708 svg memo, #7122 shared chains, #7121
-compile speed-up, #7130, #7133 (`memo_aschild`); #7096/#7049 — the reflex-enterprise ag-grid demo's dev backend,
-dead on 0.9.11.post1, runs on 0.9.12a1 (`ent_aggrid`); the whole MCP + OIDC surface behind the FINDING-001
-shim (`ent_mcp_oidc`); #7155 otel compile spans (`orch_otel`).
+- **FINDING-001 (CRITICAL, regression)** — `rx.State`'s new metaclass (`_StateMeta`, #7136) makes any metaclass derived
+  from the public `reflex.vars.BaseStateMeta` unusable on a State subclass. reflex-enterprise 0.9.5 derives one for
+  its OIDC state, so **every enterprise app using `AuthPlugin`, `MCPPlugin` or `EventHandlerAPIPlugin` dies at
+  startup** (the MCP and REST plugins import the OIDC module from `post_compile`), the shipped `demos/oidc` and
+  `demos/tickets` included. rxe 0.9.5 pins `reflex[db]>=0.9.6` with no upper bound, so a routine `pip install -U
+  reflex` after release bricks deployed apps. Nothing in the changelog announces the metaclass change.
+- **FINDING-011 (HIGH, security, regression)** — with #7068's router split there is no `router` key in `state.dict()`
+  for reflex-enterprise's REST `redact_router_session()` to find, so `/_reflex/retrieve_state` and the event
+  endpoint's ndjson deltas return the server-side `client_token`/`session_id` (confirmed over HTTP with the
+  metaclass shimmed; blanked on 0.9.11.post1). Live the moment FINDING-001 is fixed against the published rxe 0.9.5.
+- **FINDING-003 (HIGH, regression)** — #6946 records an uncached var as "sent" while the delta is built, so a var a
+  downstream `get_delta` filter withholds is never re-sent: the client stays stale until the value changes again.
+  Reproduced three ways (enterprise auth, pure reflex in dev and prod+redis, the verifier's own 60-line script).
+- **FINDING-017 (MEDIUM, regression, dev-only)** — #7114's supervisor-owned socket keeps the dev backend port
+  accepting connections while no worker can serve (a broken file saved mid-run, a wedged shutdown); requests hang
+  for the client timeout where 0.9.11.post1 refused instantly. Self-healing, but it turns fast failures into hangs.
 
-Verified changelog claims (orchestrator, not findings): all 19 packages published with wheel + sdist;
-122 `.pyi` stubs ship identically in wheel and sdist; the wheel pins `reflex-base==0.9.12a1` exactly and
-`reflex-components-moment>=0.9.4`; blank app dev and prod are clean with react-router 8.4.0 (#7202) and
-mergician 2.0.2 (#6850) in the generated `package.json`; `reflex-build-sdk` 0.0.2 exposes the renamed
-clients and honors `REFLEX_BUILD_BACKEND_URL` over `REFLEX_CLOUD_BACKEND_URL` (#7201); `reflex cloud`
-refuses non-interactive use without a token (0.1.72, #6917); reflex-local-auth 0.5.0 and
-reflex-global-hotkey 1.2.3 import surfaces resolve on 0.9.12a1; reflex-otel 0.1.0 exports the initial dev
-compile span tree that 0.9.11 lost (#7155).
+Worth fixing before release on the impact/trivial arm: FINDING-012 (the `rx.data_editor` image-preview overlay
+that #7081 advertises cannot open in prod with the default badge — the badge app-wrap swallows the `#portal` div;
+pre-existing nesting, small fix), FINDING-015 (#7156's headline scenario still throws `filesById is not defined`;
+verification pending), FINDING-019 (a non-UTF-8 marker still wedges startup despite #7142; one-line catch;
+verification pending), FINDING-004 (the promised `deps=["router"]` deprecation never fires in the default case).
+
+What works — every headline changelog item was exercised on the published packages, in a real browser, in dev and
+prod, against a 0.9.11.post1 baseline: the #7068 router split (navigation-delta matrix matches the PR table, −47%
+whole-frame bytes, redis/disk pickles store the URL once, old pickles discarded cleanly on upgrade); #6850 Slot
+transparency and #7176 memo app-wraps (a page that crashed outright on 0.9.11.post1 now works); #6946 (−42% inbound
+websocket bytes), #7168 (8/8 supersession shapes, baseline fails 3), #7145, #7157, #7187; #6181 (on_load render count
+halved); #7159 both halves; #7015/#7189/#7198 (80 006-entry var leak gone, 1.5–3.8× faster ops), #7115, #7131,
+#6930 (PEP 810 path active on 3.15), #7080, #6923; #7153/#7078 (three route URLs that 404 on the previous stable now
+serve prerendered HTML), #7165, #7112, #7096 (the enterprise ag-grid demo's dev backend, dead on 0.9.11.post1, runs),
+#7142, #7139; #7089/#7114/#7117/#7129/#7202/#7193/#7152/#7075; #7049 (with heavy libraries installed but unused:
+`sys.modules` 1509 → 645, RSS 133 → 46.5 MB); #7083; the whole component train (sankey, `use_chart_width`, #6833 at
+the render level, data_editor image cells, plotly `divId`, toast callbacks, code copy button); #7155 otel compile
+spans; Python 3.10/3.14/3.15 install + run. Eleven reflex-examples apps upgraded in place with no regression, and
+the enterprise ag-grid, map, dnd, flow, mantine and (behind the metaclass shim) MCP + OIDC surfaces behave
+identically to the previous stable. Packaging: 19/19 published, 122 stubs correct, pins as intended.
+
+Severity histogram (26 numbered findings; verification status as of this writing):
+
+| | confirmed | claimed, verifier pending | refuted / reclassified |
+|---|---|---|---|
+| critical | 1 (001) | – | – |
+| high | 3 (003, 011, 012) | 2 (015, 023) | – |
+| medium | 2 (017, 018) | 4 (016, 019, 020, 024) | – |
+| low | 4 (002, 004, 006, 008, 013 → 5) | 3 (021, 022, 025) | 6 (005, 007, 009, 010, 014, 026) |
+
+Regressions vs 0.9.11.post1: 001, 003, 011, 017 (all confirmed). Plus four unnumbered explorer claims refuted by
+verifiers (masked cached-var AttributeError — #7115 actually fixes it; `rx.asession()` failures invisible — a toast
+is shown; npm stickiness with no way back — `REFLEX_USE_NPM=0`; "no alpha at all without the prerelease flag" — the
+mixed set is what you get). Previous campaign items closed by this train: FINDING-016 (JSON lines), FINDING-018
+(hydrate dropped by an unserializable var, via #7096), FINDING-021 (npm lockfile), #6978 (masked AttributeError).
 
 Index:
 - FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — every reflex-enterprise 0.9.5 app using AuthPlugin, MCPPlugin or EventHandlerAPIPlugin fails to start (CRITICAL, regression) — **CONFIRMED** by the orchestrator, two explorers and the adversarial verifier

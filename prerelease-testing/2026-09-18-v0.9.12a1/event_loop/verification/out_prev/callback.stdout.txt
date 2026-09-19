@@ -1,0 +1,17 @@
+# s_callback.py against reflex 0.9.11.post1, dev (ports 3681/8681) -- BASELINE
+[1a fe-toast action] events= []  pageerrors= ['[c1] PAGEERROR queueEvents is not defined']
+[1b fe-toast cancel] events= []  pageerrors= ['[c1] PAGEERROR queueEvents is not defined']
+[2 fe-toast js callback] window.__alerted= False  pageerrors= ['[c1] PAGEERROR queueEvents is not defined']
+[3a be-toast action] events= ["be:fired","be-action"]  pageerrors= []
+[3b be-toast cancel] events= ["be:fired","be-action","be:fired","be-cancel"]  pageerrors= []
+[4a memo toast action] events= []  pageerrors= ['[c1] PAGEERROR queueEvents is not defined']
+[4b memo toast cancel] events= []  pageerrors= ['[c1] PAGEERROR queueEvents is not defined']
+[5a component-state toast action] cshits= 0  pageerrors= ['[c1] PAGEERROR queueEvents is not defined']
+[5b component-state toast cancel (set_clipboard)] pageerrors= ['[c1] PAGEERROR queueEvents is not defined']
+[6 call_script cb -> uploadFiles] __cb_ran= 1  events= []  uploaded= []                       <-- FAIL (same as 0.9.12a1)
+[7 call_script cb -> state handler] events= ["script:from-script"]
+[8 fe-toast action -> uploadFiles] events= []  uploaded= []  pageerrors= ['[c1] PAGEERROR queueEvents is not defined']
+[9 be-toast action -> uploadFiles] events= []  uploaded= []  pageerrors= ['[c1] PAGEERROR filesById is not defined']   <-- identical failure
+[10 direct on_drop upload] events= ["upload:1"]  uploaded= ["upload_me.txt"]
+== console ==
+   [c1][log] _call_script ReferenceError: filesById is not defined

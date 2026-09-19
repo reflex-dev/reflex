@@ -1,0 +1,14 @@
+# s_filtered.py against reflex 0.9.11.post1, dev, in-memory state manager (ports 3681/8681)
+# (delta lines trimmed to the FL state; on 0.9.11 every uncached var of every state is
+#  re-sent on every event, so the full lines also carry UC/_unkeyable keys.)
+  [load] n='0' secret='secret-0' visible='false'
+    delta: {... 'fl': ['n_rx_state_'] ...}
+  [after bump n=1] n='1' secret='secret-0' visible='false'
+    delta: {... 'fl': ['secret_rx_state_', 'visible_rx_state_'] ...}
+  [after show] n='1' secret='secret-1' visible='true'          <-- CORRECT
+    delta: {... 'fl': ['n_rx_state_', 'secret_rx_state_'] ...}
+  [after bump n=2] n='2' secret='secret-2' visible='true'
+    delta: {... 'fl': ['visible_rx_state_'] ...}
+    delta: {... 'fl': ['n_rx_state_'] ...}
+    delta: {... 'fl': ['secret_rx_state_', 'visible_rx_state_'] ...}
+  [after 2nd round] n='3' secret='secret-3' visible='true'     <-- CORRECT
