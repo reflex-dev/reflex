@@ -57,9 +57,9 @@ Index:
 - FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — every reflex-enterprise 0.9.5 app using AuthPlugin OR MCPPlugin fails to start (CRITICAL, regression) — CONFIRMED (orchestrator + `ent_mcp_oidc` explorer; verifier pending)
 - FINDING-002: the #7132 changelog entry describes behavior #7136 made unreachable — a `_get_was_touched` var is now rejected at class creation (LOW, changelog/behavior mismatch, maintainer decision)
 - FINDING-003: a `@rx.var(cache=False)` withheld from a delivered delta by a downstream `get_delta` filter is never re-sent — #6946's last-sent memo is written while the delta is BUILT, not when it is delivered (HIGH, regression; reproduced in pure reflex by `event_loop` in dev and prod+redis, and through reflex-enterprise auth by `ent_mcp_oidc`) — CONFIRMED by two independent clusters; adversarial verifier pending
-- FINDING-004: the documented `deps=["router"]` deprecation warning never fires — the guard in `_init_var_dependency_dicts` is dead code (LOW, new in #7068) — found independently by `router_vars` and `up_examples_b`; verification pending
-- FINDING-005: any computed var reading `self.router` depends on all five router fields; a narrow `deps=[State.router.url]` cannot narrow; measured navigation delta −47% vs the PR's −67% (LOW, perf claim gap, #7068) — claimed by `router_vars`, verification pending
-- FINDING-006: a substate shadowing a parent's backend (underscore) var is still silently ignored — #7077's guard covers base vars only (LOW, pre-existing gap) — claimed by `router_vars`, verification pending
+- FINDING-004: the documented `deps=["router"]` deprecation warning never fires in the default case — the guard in `_init_var_dependency_dicts` tests the MERGED dep set after auto-dep detection has added the `rx_router_*` names (LOW, new in #7068) — found by `router_vars` and `up_examples_b`; **CONFIRMED** by the verifier with a corrected diagnosis
+- ~~FINDING-005~~: "a narrow `deps=` cannot narrow" — **REFUTED** by the verifier (`deps=[State.router.url], auto_deps=False` registers only `rx_router_url`; `deps=` is additive by long-standing design; the −47% vs −67% gap compares whole frames with the PR's router-only measurement). Kept in the refuted list below.
+- FINDING-006: a substate shadowing a parent's backend (underscore) var is still silently ignored — `_check_overridden_inherited_vars` skips every `_`-prefixed name (`reflex/state.py:1335`) (LOW, pre-existing gap) — **CONFIRMED** by the verifier on both versions, with the runtime damage characterised (child default discarded, reads/writes resolve to the parent)
 - FINDING-007: PR #7136's description promises a `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` escape hatch that does not exist in the published packages or the release branch (LOW, PR/migration-doc mismatch, maintainer decision) — claimed by `ent_mcp_oidc`
 - FINDING-008: `rx.dropdown_menu.trigger` swallows its child button's `on_click` — the menu opens, the handler never runs; the other four Radix triggers compose correctly (MEDIUM, pre-existing, Radix pointerdown/dismissable-layer interaction) — claimed by `memo_aschild`, verification pending
 - FINDING-009: `rx.cond` renders both branches eagerly, so a render-time throw in the untaken branch fails the prod build at the prerender step (`Prerender: Request failed for /boom/: 500`, exit 1); dev only shows the error boundary (MEDIUM, pre-existing shape; prod half not baselined) — claimed by `memo_aschild`, verification pending
@@ -289,17 +289,19 @@ Index:
 
 ## FINDING-004 … FINDING-007 (LOW; claimed, details in the cluster NOTES)
 
-- FINDING-004 (`router_vars`, ISSUE 1): `deps=["router"]` on a computed var raises no deprecation warning
-  at class creation or app start; `reflex/state.py:1205-1219` guards on `dvar_set.isdisjoint(ROUTER_VARS)`,
-  which is never true because the string dep is already resolved to the router Var carrying all five
-  fields. Both changelog and PR promise the warning. Repro: `router_vars/scripts/deps_legacy.py`.
-- FINDING-005 (`router_vars`, ISSUE 2): auto-deps through the `router` property record all five
-  `rx_router_*` fields whatever the body reads, and an explicit narrow `deps=` does not suppress
-  `_auto_deps`; measured whole-frame navigation delta 2535 B → 1334 B (−47%) vs the PR's −67% router-delta
-  claim. Repro: `router_vars/scripts/deps_probe.py`, `logs/matrix_dev.txt`.
-- FINDING-006 (`router_vars`, ISSUE 3): `class P(rx.State): _priv: int = 1` / `class C(P): _priv: str = "x"`
-  raises nothing on either version; `C.backend_vars["_priv"]` is the parent's. `_check_overridden_inherited_vars`
-  never sees backend vars. Repro: `router_vars/scripts/backend_shadow.py`.
+- FINDING-004 (`router_vars`, ISSUE 1; CONFIRMED, diagnosis corrected by the verifier): `@rx.var(deps=["router"])`
+  with a body that reads `self.router` (the default `auto_deps=True` case) raises no deprecation warning; the
+  guard at `reflex/state.py:1205-1221` tests `dvar_set.isdisjoint(ROUTER_VARS)` on the dep set that
+  `ComputedVar._deps()` returns, and `reflex_base/vars/base.py:2876-2895` seeds the dependency tracker with the
+  very set objects from `_static_deps`, so the auto-detected `rx_router_*` names are merged in place and the
+  legacy string becomes indistinguishable from the Var form. The guard DOES fire for `auto_deps=False`, and for
+  bodies that do not read the router (`router_vars/verification/scripts/v_deps_legacy_matrix.py`). Fix at
+  declaration time (`_add_static_dep`), not after `_deps()`. Repro: `router_vars/scripts/deps_legacy.py`.
+- FINDING-006 (`router_vars`, ISSUE 3; CONFIRMED, pre-existing): `class P(rx.State): _priv: int = 1` /
+  `class C(P): _priv: str = "x"` raises nothing on either version; `C.backend_vars["_priv"]` is the parent's
+  and in a real state tree the child's default is discarded and writes go to the parent
+  (`verification/scripts/v_backend_shadow_tree.py`). `_check_overridden_inherited_vars` skips `_`-prefixed
+  names at `reflex/state.py:1335`; a fix must restrict itself to `inherited_backend_vars`.
 - FINDING-007 (`ent_mcp_oidc`, ISSUE 3): `grep -rn ALLOW_RESERVED` over the installed 0.9.12a1 packages and
   `git grep` over the release branch find nothing, while PR #7136's description tells users to set
   `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` for legacy handling until 1.0. Either ship the flag or fix the text.
@@ -320,7 +322,13 @@ Index:
 
 ## Refuted / reclassified claims
 
-_(pending)_
+- **FINDING-005 — "any computed var reading the router is invalidated by all five fields; a narrow `deps=` cannot
+  narrow" (`router_vars`)**: refuted by the verifier. The measurement is accurate (auto-deps through the composed
+  `State.router` Var record all five fields, by design), but `@rx.var(deps=[State.router.url], auto_deps=False)`
+  registers only `rx_router_url` (`router_vars/verification/scripts/v_narrow_deps.py`); `deps=` has always been
+  additive unless `auto_deps=False`; the 0.9.11.post1 baseline was strictly coarser (everything depended on the
+  single `router` var); and the −47% (whole websocket frame) vs −67% (router-only delta) numbers measure different
+  things. Not a defect; at most a future optimisation of auto-dep tracking through composite Vars.
 
 ## Cluster summaries
 

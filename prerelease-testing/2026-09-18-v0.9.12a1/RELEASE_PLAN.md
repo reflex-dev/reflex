@@ -76,10 +76,10 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   release advertises, and the fix (forward children in the StickyBadge wrap / keep the portal a sibling) is
   small. Minimum: document `show_built_with_reflex=False` for image cells until fixed.
 
-- **FINDING-004 — `deps=["router"]` deprecation warning is dead code** (LOW, `router_vars`, pending
-  verification). Arm: trivially small — the changelog promises the warning; the guard at
-  `reflex/state.py:1205-1219` can never be true. Either emit the warning from where the string dep is
-  resolved, or drop the deprecation line from the changelog.
+- **FINDING-004 — the `deps=["router"]` deprecation warning never fires in the default case** (LOW,
+  `router_vars`, CONFIRMED). Arm: trivially small — the changelog promises the warning. Emit it where the legacy
+  string dep is declared (`_add_static_dep`) instead of testing the merged dep set in
+  `_init_var_dependency_dicts`; the verifier's matrix script is the regression test.
 
 ## File as issues, fix after release
 
@@ -117,10 +117,9 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   not `from reflex.components.datadisplay import code` (`components_bumps`).
 - `Axis.tick_formatter` accepts only a literal JS string; a `FunctionStringVar` raises `TypeError` (pre-existing,
   `components_bumps`).
-- FINDING-005 — computed vars reading `self.router` depend on all five router fields; narrow `deps=` cannot
-  narrow; navigation delta −47% measured vs −67% claimed (LOW, perf gap, `router_vars`).
 - FINDING-006 — backend (underscore) var shadowing across substates still silently ignored (LOW,
-  pre-existing gap in #7077's scope, `router_vars`).
+  pre-existing gap in #7077's scope, `router_vars`, CONFIRMED): extend `_check_overridden_inherited_vars` to
+  `inherited_backend_vars`, or narrow `news/7077.breaking.md` to base vars.
 - Pre-existing, re-observed: `uv pip install reflex-<ver>.tar.gz` fails on the workspace `tool.uv.sources`
   (issue #7088); `reflex run` keeps running and prints "Backend running at …" after the app module raised at
   import (both versions; makes FINDING-001 look like a hang).
