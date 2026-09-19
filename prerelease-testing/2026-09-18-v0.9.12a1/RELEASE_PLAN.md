@@ -51,6 +51,12 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   while building it in `BaseState.get_delta` (`reflex/state.py` ~2385 → `ComputedVar._record_delta_value`,
   `reflex_base/vars/base.py:2689`). Regression test: `event_loop/scripts/s_filtered.py` against `elapp`.
 
+- **FINDING-017 — with #7114 the supervisor keeps the dev backend port bound while no worker can serve, so a wedged
+  shutdown or a broken app module turns immediate connection refusals into requests that hang forever** (HIGH,
+  regression baselined both ways; `dev_server_cli`, verification pending). Arm: confirmed regression. Shape: keep
+  #7114 but add a give-up path — refuse (or 503) once no worker has come back within a bound, and release the socket
+  when the supervisor itself is shutting down.
+
 ### Trivially small / significant impact
 
 - **FINDING-015 — #7156's advertised scenario (toast action / `call_script` callback triggering an upload handler)
@@ -74,6 +80,11 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 ### reflex-dev/reflex
 
+- FINDING-018 — `reflex run` (dev) never exits on SIGTERM/SIGINT sent to its pid alone (pre-existing on both
+  versions; #6981 covers only the process-group path). `docker stop` / `kill <pid>` leave reflex, bun and node
+  running. (`dev_server_cli`)
+- Clean group-SIGTERM shutdown logs `[ERROR] Unexpected exit from worker-1`; one `REFLEX_USE_NPM=1` run switches a
+  project to npm with no documented way back (`dev_server_cli`).
 - FINDING-016 — cancelled foreground `supersedes=True` handler loses pre-cancellation writes under redis (prod)
   while dev/memory keeps them; needs a 0.9.11.post1+redis baseline before triage (`event_loop`).
 - `on_load`-started self-chaining loops keep running after the client disconnects, logging one

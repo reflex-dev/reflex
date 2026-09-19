@@ -69,6 +69,8 @@ Index:
 - FINDING-014: the #7124 changelog's suggested path `reflex.components.datadisplay.code` fails in the `from reflex.components.datadisplay import code` spelling (`ImportError`); `import reflex.components.datadisplay.code` works (LOW, changelog wording) — claimed by `components_bumps`
 - FINDING-015: #7156's headline scenario — a toast action or `rx.call_script` callback that triggers an upload handler — still fails: the handler slot is fixed but the payload's `filesById?.["u2"]` is only in scope inside the component that renders `rx.upload`, so the click throws `ReferenceError: filesById is not defined` and no upload starts (HIGH for the advertised scenario, pre-existing, changelog line misleading) — claimed by `event_loop`, verification pending
 - FINDING-016: a cancelled foreground `@rx.event(supersedes=True)` handler loses its pre-cancellation state writes under prod+redis (dev/memory keeps them) — the `yield` before the `await` is not flushed when `CancelledError` propagates (MEDIUM, dev/prod divergence; 0.9.11.post1+redis baseline not measured) — claimed by `event_loop`, verification pending
+- FINDING-017: after a SIGTERM that fails to stop `reflex run` (dev), or while the app module is broken, the backend port stays bound and accepts connections that are never answered — 0.9.11.post1 released the port and clients got an immediate refusal; a side effect of #7114 moving the listening socket into the granian supervisor (HIGH, regression) — claimed by `dev_server_cli`, verification pending
+- FINDING-018: `reflex run` (dev) ignores SIGTERM/SIGINT delivered to its pid alone (`docker stop`, `kill <pid>` semantics) — reflex, bun and node survive and the ports stay bound; only a process-group signal (Ctrl-C) exits cleanly (MEDIUM, pre-existing on both versions; #6981's changelog line promises a clean SIGTERM exit) — claimed by `dev_server_cli`, verification pending
 - FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package; currently masked by FINDING-001) — claimed by `ent_map_dnd_flow_mantine`, verification pending
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
@@ -200,6 +202,32 @@ Index:
 - Mechanism guess: with redis the state is written back when the event's `modify_state` context exits normally; a
   foreground handler cancelled mid-`await` (CancelledError propagates) does not flush, so the pre-cancellation
   mutation and its emitted delta are lost together.
+
+## FINDING-017: backend port stays bound and swallows connections when the worker cannot serve (HIGH, regression — claimed, verification pending)
+
+- Cluster: `dev_server_cli` | Regression vs 0.9.11.post1: **yes**, baselined in both directions
+- Repro: `dev_server_cli/scripts/sigterm_port_probe.py <venv> <dsc dir> <FP> <BP> <tag> <logdir>` on both venvs. After
+  `kill -TERM <reflex pid>` (which neither version acts on — FINDING-018), 0.9.12a1: `/ping` → `TIMEOUT_NO_REPLY_6s` at
+  +8 s and +18 s (`logs/portprobe_new.json`); 0.9.11.post1: `CONNECTION_REFUSED` immediately (`logs/portprobe_prev.json`).
+  Second route to the same state: a module that raises at page-evaluation time during dev — `/ping` blocks for the
+  full client timeout instead of refusing (`shots/reloaderr_new_events.json`), then 200 after the fix.
+- Mechanism: #7114 moved the listening socket into the granian supervisor so it stays bound while a worker is
+  replaced (which works as designed: 623 pings at 20 Hz across a live hot reload, 0 refused, max 166 ms). When the
+  supervisor is wedged or the worker cannot come back, the accept queue swallows connections with no worker to
+  serve them. Suggested shape: a give-up/timeout path in the supervisor (refuse or 503 after N seconds without a
+  worker) rather than reverting #7114. This is also what made the `ent_map_dnd_flow_mantine` "hot reload does not
+  recover" lead look real: the worker DOES recover after the source is fixed; the server merely looked dead because
+  requests hung instead of failing fast.
+
+## FINDING-018: `reflex run` ignores SIGTERM/SIGINT sent to its pid alone (MEDIUM, pre-existing — claimed)
+
+- Cluster: `dev_server_cli` | Both versions: `exit_code=TIMEOUT_30s`, survivors reflex+bun+node, ports bound
+  (`logs/sigres_N1_new_dev_TERM_proc.json`, `logs/sigres_P1_prev_dev_TERM_proc.json`); the process-GROUP signal exits 0
+  in 0.2 s on 0.9.12a1 with no "exit code 143" line (#6981 verified for that path) but logs `[ERROR] Unexpected exit
+  from worker-1` on the clean stop. Repro: `scripts/signal_test.py <venv> <dsc dir> L TERM proc <logdir> <FP> <BP>`
+  (the `.sh` version in the same dir is superseded — it signalled the `setsid` wrapper).
+- Impact: `docker stop`, systemd and `kill <pid>` never terminate a dev server; combined with FINDING-017 the port
+  then hangs instead of refusing. Prod-mode signal handling was not exercised (out of timebox).
 
 ## FINDING-012: `rx.data_editor` image-preview overlay dead in prod with the default badge (HIGH impact, pre-existing — claimed, verification pending)
 
@@ -466,5 +494,24 @@ pulls the whole alpha train; without `--prerelease=allow` the explicit `==0.9.12
 reflex-base (exact pin) but every component package stays at its stable release — the mixed state.
 Anomalies (pre-existing): `SitemapPlugin ... enabled by default, but not explicitly added to the config` printed
 five times per run on both versions; the quiz checkbox warning (app usage, no `checked` prop).
+
+### `dev_server_cli` (pass 17, anomaly 5, fail 2, skipped 4) — CLI/dev-server changes verified; FINDING-017 (regression), 018
+Probe app `dsc` (State, event chain, background task, `client_state`, `@rx.memo`, `ComponentState`, foreach/cond,
+three pages incl. a dynamic route, a `modules_report` var exposing the worker's pid/`sys.modules`/RSS), an
+`rxconfig.py` importing a sibling `settings.py` (#7075), `hrapp` wrapping a real local React package by directory
+AND tarball (#7117), a blank app for the node-less test. Verified: #7089 (no `nocompile` after backend-only; an edit
+between runs recompiles), #7114 (623 pings at 20 Hz across a live hot reload, 0 refused, max 166 ms), #7117 (both
+specifiers intact and rendering; 0.9.11.post1 reproduces the `@masenf/hello-react@..` truncation), #7129 (`lockfile
+had changes` gone across bun↔npm switches), #7202 (init + run with node/npm/bun stripped from PATH, no
+`restartWithMergedOptions`; react-router family at 8.4.0), #7193 (every granian lifecycle line a JSON record — the
+previous campaign's FINDING-016 is fixed; the only non-JSON lines are the app's own stdlib `logging` calls), #7152
+(deprecations via `reflex.deprecation`, once per process), #7075 (sibling module imported once, no duplicate
+registration), #7049 absolute numbers (backend-only `/ping` 200 in 0.85 s, 55–59 MB RSS, only `reflex.compiler` of
+the probed heavy modules imported — relative baseline closed by the orchestrator's `orch_startup` probe). Issues:
+FINDING-017, FINDING-018; plus (low) a clean group-SIGTERM stop logs `[ERROR] Unexpected exit from worker-1`, and one
+`REFLEX_USE_NPM=1` run sticks the project on npm until `package-lock.json` is deleted from `.web/` and `reflex.lock/`
+(re-grade of the previous campaign's FINDING-021: the failure is gone, the stickiness remains, undocumented).
+Anomaly: `reflex cloud ... --json` emits its error path as plain text (hosting-cli 0.1.72, almost certainly
+pre-existing). Not covered: prod-mode signal handling, `reflex export/init --json`, #7166 logging under `reflex run`.
 
 _(other clusters pending)_
