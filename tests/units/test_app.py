@@ -3032,6 +3032,32 @@ def test_minimal_static_app_wrap_omits_state_providers(
     assert "jsx(EventLoopProvider" not in root_contents
 
 
+def test_sticky_badge_wrap_keeps_lower_priority_wrap_renderable(
+    mocker: MockerFixture,
+) -> None:
+    """The sticky badge wrap must not adopt a lower-priority wrap as its child.
+
+    ``_app_root`` nests each lower-priority wrap inside the previous one, and
+    the badge compiles to a memo that never reads ``props.children``. A wrap
+    below it -- ``rx.data_editor`` registers its ``<div id="portal">`` at
+    priority -1 -- would therefore be emitted into the app root but never
+    reach the DOM, so the badge wrap has to keep it as a sibling.
+    """
+    conf = rx.Config(app_name="testing")
+    mocker.patch("reflex_base.config._get_config", return_value=conf)
+    app = App(theme=None, enable_state=False)
+    app._setup_sticky_badge()
+    app.extra_app_wraps[-1, "DataEditorPortal"] = lambda _: rx.el.div(id="portal")
+
+    root_contents = compile_app_root_from_page_wraps(app, {})
+    chain = root_contents[root_contents.index("function AppWrap({children})") :]
+    badge_symbol = _find_mirrored_memo_symbol(chain, "MemoizedBadge")
+
+    assert 'id:"portal"' in chain
+    # The badge memo renders no children, so it must be childless in the chain.
+    assert f"jsx({badge_symbol},{{}},)" in chain
+
+
 def test_event_triggers_collect_state_providers_via_var_app_wrap() -> None:
     """A component with event triggers collects ``StateProvider`` and
     ``EventLoopProvider`` into the page-level app_wrap registry through the
