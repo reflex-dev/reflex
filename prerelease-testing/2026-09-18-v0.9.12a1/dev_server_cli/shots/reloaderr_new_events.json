@@ -1,0 +1,84 @@
+[
+ {
+  "t": 1789786450.11,
+  "k": "heading_before",
+  "d": "dsc v2"
+ },
+ {
+  "t": 1789786450.56,
+  "k": "count_before",
+  "d": "1"
+ },
+ {
+  "t": 1789786450.57,
+  "k": "ping_before",
+  "d": [
+   "200",
+   0.01
+  ]
+ },
+ {
+  "t": 1789786450.57,
+  "k": "edit",
+  "d": "introduced page-eval TypeError"
+ },
+ {
+  "t": 1789786466.58,
+  "k": "ping_after_break",
+  "d": [
+   "000",
+   8.01
+  ]
+ },
+ {
+  "t": 1789786468.1,
+  "k": "count_after_break",
+  "d": "1"
+ },
+ {
+  "t": 1789786468.13,
+  "k": "edit",
+  "d": "introduced AttributeError"
+ },
+ {
+  "t": 1789786484.14,
+  "k": "ping_after_break2",
+  "d": [
+   "000",
+   8.01
+  ]
+ },
+ {
+  "t": 1789786484.14,
+  "k": "edit",
+  "d": "fixed source (HEADING -> dsc v3-fixed)"
+ },
+ {
+  "t": 1789786496.16,
+  "k": "ping_after_fix",
+  "d": [
+   "200",
+   0.02
+  ]
+ },
+ {
+  "t": 1789786496.16,
+  "k": "console",
+  "d": "warning: WebSocket connection to 'ws://localhost:8380/_event/?token=0ccdea95-6902-4b53-a72b-9098027b4ba3&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established."
+ },
+ {
+  "t": 1789786499.34,
+  "k": "heading_after_fix",
+  "d": "dsc v3-fixed"
+ },
+ {
+  "t": 1789786500.58,
+  "k": "count_after_fix",
+  "d": "3"
+ },
+ {
+  "t": 1789786500.58,
+  "k": "RECOVERED",
+  "d": true
+ }
+]
