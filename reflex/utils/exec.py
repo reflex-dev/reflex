@@ -290,10 +290,17 @@ def run_process_and_launch_url(
             }
             if constants.IS_WINDOWS and backend_present:
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # pyright: ignore [reportAttributeAccessIssue]
+            elif not constants.IS_WINDOWS:
+                # Run the frontend in its own session so shutdown can signal
+                # its whole process group (bun/node and their children); the
+                # terminal's Ctrl+C delivery to the group is replaced by
+                # explicit teardown in run_concurrently_context.
+                kwargs["start_new_session"] = True
             process = processes.new_process(
                 run_command,
                 cwd=get_web_dir(),
                 shell=constants.IS_WINDOWS,
+                run_managed=True,
                 **kwargs,
             )
             global frontend_process
