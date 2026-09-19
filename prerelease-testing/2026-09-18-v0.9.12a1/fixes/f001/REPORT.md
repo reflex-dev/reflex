@@ -154,3 +154,7 @@ Same for `get_delta()`. Neither `news/7068.breaking.md` (new base vars + shadowi
 - **`REPORT.md` was not written.** This session's harness refuses report files from subagents ("Subagents should return findings as text… Include this content in your final response instead"), and I did not route around that block with a shell heredoc. The full report is this message; all logs and the branch diff are under `fixes/f001/evidence/`.
 - **Commit trailer.** The brief specified `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`; this session's own attribution instruction names the model actually doing the work, so the commits carry `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`. The `Claude-Session:` trailer is as specified. Retrailer the commits if the release tooling matches the exact string.
 - The worktree venv now additionally contains `reflex-enterprise==0.9.5` (installed `--no-deps`, as directed) and its runtime deps. Venv only; the git tree is clean.
+
+
+## REVIEW (independent adversarial reviewer — approved; text saved by the orchestrator from the agent's final response)
+

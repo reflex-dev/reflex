@@ -1,0 +1,76 @@
+{
+ "reflex___state____state": {
+  "is_hydrated": false,
+  "router": {
+   "session": {
+    "client_token": "",
+    "client_ip": "0.0.0.0",
+    "session_id": ""
+   },
+   "headers": {
+    "host": "",
+    "origin": "",
+    "upgrade": "",
+    "connection": "",
+    "cookie": "",
+    "pragma": "",
+    "cache_control": "",
+    "user_agent": "",
+    "sec_websocket_version": "",
+    "sec_websocket_key": "",
+    "sec_websocket_extensions": "",
+    "accept_encoding": "",
+    "accept_language": "",
+    "raw_headers": {}
+   },
+   "page": {
+    "host": "",
+    "path": "",
+    "raw_path": "",
+    "full_path": "",
+    "full_raw_path": "",
+    "params": {}
+   },
+   "url": {
+    "scheme": "",
+    "netloc": "",
+    "origin": "://",
+    "path": "",
+    "query": "",
+    "query_parameters": {},
+    "fragment": "",
+    "href": ""
+   },
+   "route_id": ""
+  }
+ },
+ "reflex___state____state.tickets___tickets____ticket_state": {
+  "current_ticket_id": "",
+  "detail_error": "",
+  "detail_loading": false,
+  "draft_assignee": "",
+  "draft_description": "",
+  "draft_priority": "medium",
+  "draft_title": "",
+  "edit_assignee": "",
+  "edit_description": "",
+  "edit_priority": "medium",
+  "edit_status": "open",
+  "edit_title": "",
+  "has_active_filters": false,
+  "has_next_page": false,
+  "has_prev_page": false,
+  "open_count": 0,
+  "page": 1,
+  "page_count": 1,
+  "page_size": 20,
+  "priority_filter": "all",
+  "q": "",
+  "show_new_ticket_form": false,
+  "sort_by": "created_at",
+  "sort_dir": "desc",
+  "status_filter": "all",
+  "tickets": [],
+  "total_count": 0
+ }
+}

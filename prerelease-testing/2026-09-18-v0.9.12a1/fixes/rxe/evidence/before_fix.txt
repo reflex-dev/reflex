@@ -1,0 +1,47 @@
+### unfixed tree, v12 (reflex 0.9.12a1) — redaction tests
+
+tests/units/plugins/test_event_handler_api.py:670: AssertionError
+=========================== short test summary info ============================
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_serialized_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_real_root_state_dict
+FAILED tests/units/plugins/test_event_handler_api.py::test_sanitize_agent_delta_blanks_session_and_strips_markers
+4 failed, 2 passed, 47 deselected in 0.12s
+
+### unfixed tree, v11 (reflex 0.9.11.post1) — redaction tests
+tests/units/plugins/test_event_handler_api.py:670: AssertionError
+=========================== short test summary info ============================
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_redact_router_session_blanks_serialized_split_session_var
+FAILED tests/units/plugins/test_event_handler_api.py::test_sanitize_agent_delta_blanks_session_and_strips_markers
+3 failed, 3 passed, 47 deselected in 0.14s
+
+### unfixed tree, v12 — metaclass tests
+    class OIDCAuthState(ConfigMixin, rx.State, mixin=True, metaclass=OIDCCookieMeta):
+E   TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+=========================== short test summary info ============================
+ERROR tests/units/auth/test_oidc_state.py - TypeError: metaclass conflict: th...
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.35s
+
+### unfixed tree, v11 — metaclass tests
+...                                                                      [100%]
+3 passed, 102 deselected in 0.29s
+
+### unfixed tree, v12 — import reflex_enterprise.auth.oidc.state
+  File "<string>", line 1, in <module>
+  File "/home/user/wt/rxe/reflex_enterprise/auth/oidc/state.py", line 381, in <module>
+    class OIDCAuthState(ConfigMixin, rx.State, mixin=True, metaclass=OIDCCookieMeta):
+TypeError: metaclass conflict: the metaclass of a derived class must be a (non-strict) subclass of the metaclasses of all its bases
+
+### unfixed tree, v12 — probe_router_redact.py
+  reflex___state____state.reflex___state____frontend_event_exception_state:
+--- after redact_router_session() ---
+  SECRET-CLIENT-TOKEN still present at: ['.reflex___state____state.rx_router_session_rx_state_.client_token']
+VERDICT LEAK
+
+### unfixed tree, v11 — probe_router_redact.py
+  reflex___state____state.reflex___state____update_vars_internal_state:
+--- after redact_router_session() ---
+  SECRET-CLIENT-TOKEN still present at: NOWHERE (redacted ok)
+VERDICT OK
