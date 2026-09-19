@@ -1,0 +1,23 @@
+{
+  "phase": "write",
+  "items_on_load": [
+    "Write Code",
+    "Sleep",
+    "Have Fun"
+  ],
+  "token": "d8e5ef60-c877-495a-89dd-c21ba2c82974",
+  "items_after_write": [
+    "Write Code",
+    "Sleep",
+    "Have Fun",
+    "OLDSTATE-alpha",
+    "OLDSTATE-beta"
+  ],
+  "console": [
+    "[log] \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+    "[debug] [vite] connecting...",
+    "[debug] [vite] connected.",
+    "[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  ],
+  "page_errors": []
+}

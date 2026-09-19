@@ -1,0 +1,23 @@
+{
+  "app": "upload",
+  "url": "http://localhost:3460/",
+  "tag": "base",
+  "load_seconds": 0.77,
+  "selected_files_text": 1,
+  "links": [],
+  "progress_value": "100",
+  "links_after_reload": [],
+  "hrefs": [],
+  "flow_ok": true,
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-base-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-base-selected.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-base-uploaded.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-base-after_reload.png"
+  ]
+}

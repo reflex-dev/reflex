@@ -1,0 +1,48 @@
+{
+  "app": "todo",
+  "url": "http://localhost:3461/",
+  "tag": "prod",
+  "load_seconds": 0.08,
+  "initial_items": [
+    "Write Code",
+    "Sleep",
+    "Have Fun"
+  ],
+  "after_add": [
+    "Write Code",
+    "Sleep",
+    "Have Fun",
+    "buy milk",
+    "walk dog",
+    "ship 0.9.12"
+  ],
+  "after_finish_first": [
+    "Sleep",
+    "Have Fun",
+    "buy milk",
+    "walk dog",
+    "ship 0.9.12"
+  ],
+  "after_reload": [
+    "Sleep",
+    "Have Fun",
+    "buy milk",
+    "walk dog",
+    "ship 0.9.12"
+  ],
+  "flow_ok": true,
+  "console_all": [
+    "[log] Disconnect websocket on page navigation",
+    "[log] Disconnect websocket on pagehide"
+  ],
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/todo-prod-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/todo-prod-added.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/todo-prod-after_reload.png"
+  ]
+}

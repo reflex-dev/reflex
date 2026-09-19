@@ -80,6 +80,8 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   "Attempting to send delta to disconnected client" warning per tick (pre-existing family, `event_loop`).
 - #6946 polish: every uncached var is re-sent once right after hydrate; dict key order defeats the dedupe; the
   `_UNKEYABLE_VALUE` branch is unreachable (`event_loop`).
+- Generated `package.json` pins `"mergician": "v2.0.2"` (leading `v`; every other pin is bare semver) — cosmetic,
+  new in #6850 (`up_examples_a`).
 - Missing app-package `__init__.py` → silent frontend/backend state-name mismatch, every event a no-op, only a browser
   console error (`vars_typing`; pre-existing; `reflex init` skips the file when the app dir exists).
 - `rx.Var.create(x)._replace(_var_data=...)` raises `TypeError` on both versions (`vars_typing`; pre-existing).
@@ -96,6 +98,12 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 - Pre-existing, re-observed: `uv pip install reflex-<ver>.tar.gz` fails on the workspace `tool.uv.sources`
   (issue #7088); `reflex run` keeps running and prints "Backend running at …" after the app module raised at
   import (both versions; makes FINDING-001 look like a hang).
+
+### reflex-dev/reflex-examples
+
+- `upload`: `@rx.var def files()` reads the upload dir with no state dependency, so the rendered list never refreshes
+  (`@rx.var(cache=False)` fixes it); `form-designer`: `/form/<id>` places `rx.form.message` outside `rx.form.field`
+  and crashes; `basic_crud`/`twitter`/`data_visualisation` ship no alembic directory (`up_examples_a`, `up_examples_b`).
 
 ### reflex-dev/reflex-enterprise
 
