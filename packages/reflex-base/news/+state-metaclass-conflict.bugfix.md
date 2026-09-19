@@ -1,0 +1,1 @@
+`BaseStateMeta` now runs the reserved-state-name check that `reflex` installs on it, so `reflex` no longer needs a `BaseStateMeta` subclass as the metaclass of `BaseState` and a third-party metaclass derived from `BaseStateMeta` composes with state classes again.

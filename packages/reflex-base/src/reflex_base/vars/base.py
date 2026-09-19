@@ -4032,6 +4032,27 @@ def _inherited_value(lookup_order: list[type], name: str) -> Any:
     return MISSING
 
 
+# Check run on every class this metaclass creates, installed by `reflex` once
+# its BaseState exists (see `reflex.istate.validation`). It is a hook rather
+# than a `BaseStateMeta` subclass so that `BaseStateMeta` stays the metaclass
+# of every state and downstream metaclasses derived from it keep composing.
+_state_declaration_validator: (
+    Callable[[tuple[type, ...], dict[str, Any]], None] | None
+) = None
+
+
+def _set_state_declaration_validator(
+    validator: Callable[[tuple[type, ...], dict[str, Any]], None],
+) -> None:
+    """Install the check run before any class of this metaclass is constructed.
+
+    Args:
+        validator: Called with the bases and the unmodified class namespace.
+    """
+    global _state_declaration_validator
+    _state_declaration_validator = validator
+
+
 @dataclass_transform(kw_only_default=True, field_specifiers=(field,))
 class BaseStateMeta(ABCMeta):
     """Meta class for BaseState."""
@@ -4062,6 +4083,9 @@ class BaseStateMeta(ABCMeta):
         Returns:
             The new class.
         """
+        if _state_declaration_validator is not None:
+            _state_declaration_validator(bases, namespace)
+
         state_bases = [
             base for base in bases if issubclass(base, EvenMoreBasicBaseState)
         ]

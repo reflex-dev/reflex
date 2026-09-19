@@ -88,7 +88,7 @@ from reflex.istate.data import (
 from reflex.istate.proxy import ImmutableMutableProxy as ImmutableMutableProxy
 from reflex.istate.proxy import MutableProxy, is_mutable_type
 from reflex.istate.storage import ClientStorageBase
-from reflex.istate.validation import _StateMeta, _validate_state_name
+from reflex.istate.validation import _install_state_validation, _validate_state_name
 from reflex.utils import console, format, types
 from reflex.utils.exec import is_testing_env
 
@@ -626,7 +626,7 @@ CLASS_VAR_NAMES = frozenset({
 })
 
 
-class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
+class BaseState(EvenMoreBasicBaseState):
     """The state of the app."""
 
     # A map from the var name to the var.
@@ -2731,6 +2731,11 @@ class BaseState(EvenMoreBasicBaseState, metaclass=_StateMeta):
         if substate_schema != state._to_schema():
             raise StateSchemaMismatchError
         return state
+
+
+# Installed after the class body: BaseState's own namespace is what defines
+# the names its subclasses may not shadow.
+_install_state_validation(BaseState)
 
 
 def _serialize_type(type_: Any) -> str:
