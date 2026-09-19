@@ -34,7 +34,10 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 - **FINDING-001 — `rx.State`'s new metaclass breaks downstream `BaseStateMeta` subclasses; reflex-enterprise
   0.9.5 AuthPlugin and MCPPlugin apps cannot start on 0.9.12a1** (CRITICAL). Arm: confirmed regression
   (import sweep + framework-only repro on both versions; blast radius measured end to end by `ent_mcp_oidc`).
-  Also kills the `tickets` demo (no auth configured) through `EventHandlerAPIPlugin.post_compile`.
+  Also kills the `tickets` demo (no auth configured) through `EventHandlerAPIPlugin.post_compile`. The verifier
+  adds the deployment angle: rxe 0.9.5 pins `reflex[db]>=0.9.6` with no upper bound, so `pip install -U reflex`
+  after 0.9.12 ships bricks every deployed enterprise auth/MCP/REST app — a lockstep enterprise release with an
+  upper bound would be needed even if the framework fix lands.
   Shape of the fix, framework side: keep `type(rx.State) is reflex.vars.BaseStateMeta` — run #7136's
   `_validate_state_name`/`_validate_inherited_members` from `BaseStateMeta.__new__` (guarded on "a base is a
   `BaseState`") instead of introducing `reflex.istate.validation._StateMeta`; or make `_StateMeta` compose
@@ -159,8 +162,9 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 - FINDING-002 — the #7132 changelog entry ("keep saving state … when a state defines a var named
   `_get_was_touched`") describes behavior #7136 made unreachable: the declaration now raises
   `StateValueError`. Reword/drop the entry, or fold it into #7136's breaking note.
-- FINDING-007 — PR #7136's description promises `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` as a temporary escape
-  hatch; nothing in the published packages reads it. Ship the flag or correct the migration text.
+- (was FINDING-007, refuted) PR #7136's description promised a `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` opt-in that
+  was never shipped or documented; nothing published is inconsistent, but #7136 landed a breaking change with no
+  opt-in contrary to its own description — worth knowing when judging FINDING-001's fix.
 - #7077 ships a hard `BaseVarShadowsInheritedVarError` (the PR discussion considered a warning). Intended?
   Apps that silently redeclared an inherited var on 0.9.11.post1 now fail at import with no opt-out.
 - #7115 also changes `hasattr`/`getattr(var, name, default)` on a var whose computation is broken from returning

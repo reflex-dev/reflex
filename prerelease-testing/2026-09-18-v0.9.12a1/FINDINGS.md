@@ -54,13 +54,13 @@ reflex-global-hotkey 1.2.3 import surfaces resolve on 0.9.12a1; reflex-otel 0.1.
 compile span tree that 0.9.11 lost (#7155).
 
 Index:
-- FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — every reflex-enterprise 0.9.5 app using AuthPlugin OR MCPPlugin fails to start (CRITICAL, regression) — CONFIRMED (orchestrator + `ent_mcp_oidc` explorer; verifier pending)
+- FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — every reflex-enterprise 0.9.5 app using AuthPlugin, MCPPlugin or EventHandlerAPIPlugin fails to start (CRITICAL, regression) — **CONFIRMED** by the orchestrator, two explorers and the adversarial verifier
 - FINDING-002: the #7132 changelog entry describes behavior #7136 made unreachable — a `_get_was_touched` var is now rejected at class creation (LOW, changelog/behavior mismatch, maintainer decision)
-- FINDING-003: a `@rx.var(cache=False)` withheld from a delivered delta by a downstream `get_delta` filter is never re-sent — #6946's last-sent memo is written while the delta is BUILT, not when it is delivered (HIGH, regression; reproduced in pure reflex by `event_loop` in dev and prod+redis, and through reflex-enterprise auth by `ent_mcp_oidc`) — CONFIRMED by two independent clusters; adversarial verifier pending
+- FINDING-003: a `@rx.var(cache=False)` withheld from a delivered delta by a downstream `get_delta` filter is never re-sent — #6946's last-sent memo is written while the delta is BUILT, not when it is delivered (HIGH, regression; reproduced in pure reflex by `event_loop` in dev and prod+redis, through reflex-enterprise auth by `ent_mcp_oidc`, and by the verifier's own 60-line pure-reflex script) — **CONFIRMED**
 - FINDING-004: the documented `deps=["router"]` deprecation warning never fires in the default case — the guard in `_init_var_dependency_dicts` tests the MERGED dep set after auto-dep detection has added the `rx_router_*` names (LOW, new in #7068) — found by `router_vars` and `up_examples_b`; **CONFIRMED** by the verifier with a corrected diagnosis
 - ~~FINDING-005~~: "a narrow `deps=` cannot narrow" — **REFUTED** by the verifier (`deps=[State.router.url], auto_deps=False` registers only `rx_router_url`; `deps=` is additive by long-standing design; the −47% vs −67% gap compares whole frames with the PR's router-only measurement). Kept in the refuted list below.
 - FINDING-006: a substate shadowing a parent's backend (underscore) var is still silently ignored — `_check_overridden_inherited_vars` skips every `_`-prefixed name (`reflex/state.py:1335`) (LOW, pre-existing gap) — **CONFIRMED** by the verifier on both versions, with the runtime damage characterised (child default discarded, reads/writes resolve to the parent)
-- FINDING-007: PR #7136's description promises a `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` escape hatch that does not exist in the published packages or the release branch (LOW, PR/migration-doc mismatch, maintainer decision) — claimed by `ent_mcp_oidc`
+- ~~FINDING-007~~: "PR #7136's documented `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` escape hatch is missing" — **REFUTED as a defect** by the verifier: the flag is promised only in the PR description; the news fragment, the docs paragraph and the changelog never mention it (so nothing shipped is wrong), and it would not have helped FINDING-001 anyway. Kept as a note for the release manager: #7136 shipped a breaking change with no opt-in, contrary to its own description.
 - FINDING-008: `rx.dropdown_menu.trigger` swallows its child button's `on_click` — the menu opens, the handler never runs; the other four Radix triggers compose correctly (MEDIUM, pre-existing, Radix pointerdown/dismissable-layer interaction) — claimed by `memo_aschild`, verification pending
 - FINDING-009: `rx.cond` renders both branches eagerly, so a render-time throw in the untaken branch fails the prod build at the prerender step (`Prerender: Request failed for /boom/: 500`, exit 1); dev only shows the error boundary (MEDIUM, pre-existing shape; prod half not baselined) — claimed by `memo_aschild`, verification pending
 - FINDING-010: `on_submit` form data carries id-keyed duplicates and stray entries (`the_form: banana`, `btn_submit: None`) besides the name-keyed fields (LOW, pre-existing) — claimed by `memo_aschild`, verification pending
@@ -126,6 +126,12 @@ Index:
   metaclass written the same way breaks. Nothing in the changelog announces the metaclass change. Also
   noted by both agents: when the app module raises at import, `reflex run` still prints "Backend running
   at ..." and keeps running (pre-existing, both versions) — which makes this failure look like a hang.
+- Verifier (`ent_mcp_oidc/verification/2026-09-19-adversarial/`): reproduced the one-line import, the MCPPlugin-only
+  app (`/ping` 000 on 0.9.12a1 vs 200 on 0.9.11.post1) and the byte-for-byte traceback chain on its own ports;
+  hash-verified the shared venv against the wheel RECORDs (248 files, 0 mismatches). Two facts every refutation ran
+  into: **reflex-enterprise 0.9.5 declares `reflex[db]>=0.9.6` with no upper bound, so a routine `pip install -U
+  reflex` after 0.9.12 ships bricks every deployed enterprise auth/MCP/REST app**; and `BaseStateMeta` is exported in
+  `reflex_base.vars.__all__`, so "enterprise relied on a private API" is not a defence.
 - Suggested fix shape (for the maintainers, not applied here): perform the #7136 validation inside
   `BaseStateMeta.__new__` (guarded on "a base is a BaseState") so `rx.State` keeps `BaseStateMeta` as its
   metaclass, or make the validating metaclass compose with sibling `BaseStateMeta` subclasses; and add a
@@ -154,6 +160,12 @@ Index:
   the uncached var's key while a flag is set; clear the flag; the client keeps the stale value until the var's value
   changes again. 0.9.11.post1 delivers it. Evidence: `event_loop/out/filtered.txt`, `out_prod/filtered.txt`,
   `out_prev/filtered.txt`, `screenshots/dev_filtered_after_show*.png`.
+- Verifier: reran the browser table exactly as written (stale through login and two events, correct after reload,
+  0.9.11.post1 correct immediately) and closed the gap the written repro left ("only reproducible on top of the
+  FINDING-001 shim") with `verification/2026-09-19-adversarial/pure_delta_memo.py`: no enterprise, no shim, no browser
+  — a filter on `rx.State.get_delta` clears and the var is delivered on 0.9.11.post1, permanently suppressed on
+  0.9.12a1. Repro-quality note: the explorer's four `uncached_*.png` are byte-identical (screenshotted after the final
+  reload, the one step where both versions agree).
 - Mechanism (both agents agree, `event_loop` cites lines): `BaseState.get_delta` (`reflex/state.py` ~2385) calls
   `cvar._record_delta_value(self, value, token)` while building the delta, and `ComputedVar._record_delta_value`
   (`reflex_base/vars/base.py:2689`) writes `instance.__last_delta_<js_expr> = (token, key)` immediately. Nothing rolls
@@ -300,7 +312,7 @@ Index:
 - Shape of fix: make the StickyBadge wrap forward its children (or register the portal so it stays a sibling).
   At minimum the #7081 docs need the `show_built_with_reflex=False` caveat.
 
-## FINDING-004 … FINDING-007 (LOW; claimed, details in the cluster NOTES)
+## FINDING-004, FINDING-006 (LOW; CONFIRMED by the verifier, details in the cluster NOTES)
 
 - FINDING-004 (`router_vars`, ISSUE 1; CONFIRMED, diagnosis corrected by the verifier): `@rx.var(deps=["router"])`
   with a body that reads `self.router` (the default `auto_deps=True` case) raises no deprecation warning; the
@@ -315,9 +327,7 @@ Index:
   and in a real state tree the child's default is discarded and writes go to the parent
   (`verification/scripts/v_backend_shadow_tree.py`). `_check_overridden_inherited_vars` skips `_`-prefixed
   names at `reflex/state.py:1335`; a fix must restrict itself to `inherited_backend_vars`.
-- FINDING-007 (`ent_mcp_oidc`, ISSUE 3): `grep -rn ALLOW_RESERVED` over the installed 0.9.12a1 packages and
-  `git grep` over the release branch find nothing, while PR #7136's description tells users to set
-  `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` for legacy handling until 1.0. Either ship the flag or fix the text.
+- (FINDING-007 refuted — see the refuted list.)
 
 ## FINDING-008 … FINDING-010 (`memo_aschild`, all pre-existing on 0.9.11.post1; claimed, details in `memo_aschild/NOTES.md`)
 
@@ -347,6 +357,12 @@ Index:
   (and `from reflex.components.datadisplay.code import CodeBlock`) work on both versions. The `from
   reflex.components.datadisplay import code` spelling fails identically on 0.9.11.post1 because the lazy loader
   lists attributes, not submodule names — optional loader polish, not a release item.
+- **FINDING-007 — "#7136's documented `REFLEX_STATE_ALLOW_RESERVED_NAMES` escape hatch is missing" (`ent_mcp_oidc`)**:
+  refuted as a defect by the verifier. The greps are right (the name exists nowhere in the wheels or on the release
+  branch), but the flag is promised only in PR #7136's description; the merged PR's user-facing text
+  (`news/+reserved-state-names.breaking.md`, the `docs/state/overview.md` paragraph) and the changelog never mention
+  it, so nothing shipped is inconsistent — and the metaclass is installed unconditionally, so the flag would not have
+  rescued FINDING-001. Note for the release manager only.
 
 ## Cluster summaries
 
