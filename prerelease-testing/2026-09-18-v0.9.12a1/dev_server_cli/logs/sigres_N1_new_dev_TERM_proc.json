@@ -1,0 +1,38 @@
+{
+ "label": "N1_new_dev_TERM_proc",
+ "sig": "TERM",
+ "target": "proc",
+ "extra": [],
+ "fp": "3380",
+ "bp": "8380",
+ "pid": 3413,
+ "pgid": 3413,
+ "ready_after_s": 1.89,
+ "READY": true,
+ "members_before": [
+  "3413:reflex",
+  "3454:bun",
+  "3456:node",
+  "3463:reflex"
+ ],
+ "exit_code": "TIMEOUT_30s",
+ "exit_after_s": 30.08,
+ "survivors": [
+  "3413:reflex",
+  "3454:bun",
+  "3456:node"
+ ],
+ "log_has_143": [],
+ "log_has_error": [],
+ "log_tail": [
+  "add it to the `plugins` list in your config inside of `rxconfig.py`. To disable ",
+  "this plugin, add `SitemapPlugin` to the `disable_plugins` list.",
+  "App running at: http://localhost:3380/",
+  "Backend running at: http://0.0.0.0:8380"
+ ],
+ "ports_after": [
+  "3380\tpids=3456\tnode /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/dev_server_cli/dsc/.",
+  "8380\tpids=3413\t/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/bin/python /tmp/cl"
+ ],
+ "ports_after_force": []
+}

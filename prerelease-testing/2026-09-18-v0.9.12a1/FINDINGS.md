@@ -450,4 +450,21 @@ delta when its dependency changes even if its value did not — matches #6946's 
 easy to misread; killing `reflex run` orphans the react-router dev process and keeps the frontend port bound (both
 versions), which silently served a previous app in the agent's first pass — `scripts/run_app.sh` now sweeps ports.
 
+### `up_examples_c` (pass 13, anomaly 5, fail 0, skipped 1) — no upgrade regression on the component/routing/custom-JS apps
+local-component (full protocol: 0.9.11.post1 baseline, in-place upgrade with `.web/` preserved, cold rebuild, prod —
+nine flows field-for-field identical across all four runs, zero console/page/network errors), quiz (baselined flow
+for flow, identical incl. a pre-existing React checkbox warning), traversal (a 7×7 pathfinding grid with a
+self-chaining async handler — ~42 iterations, no RecursionError, #7145) and nba (gridjs DataFrame table + two plotly
+charts recompute under filtering, #7049; its upstream CSV host is proxy-blocked, stubbed with a same-shape local
+file). Confirmed in the browser: #6850 (the id survives auto-memoization so `rx.scroll_to` works, identical scroll
+offsets on both versions), the #7068 rename across an in-place upgrade (the preserved 0.9.11 `.web/` recompiles
+silently to `rx_router_*`, no hydration/schema warning a user would see), #6977 (`id="scatter-chart"` reaches the DOM
+as the `.js-plotly-plot` element and survives re-render and reload). Skipped for time: github-stats, linkinbio,
+json-tree, overkey — the #6833 item this batch was to cover through github-stats is verified by `components_bumps`.
+Upgrade-command nuance (reconciling `up_examples_b`): `uv pip install --upgrade --prerelease=allow 'reflex==0.9.12a1'`
+pulls the whole alpha train; without `--prerelease=allow` the explicit `==0.9.12a1` pin still resolves reflex and
+reflex-base (exact pin) but every component package stays at its stable release — the mixed state.
+Anomalies (pre-existing): `SitemapPlugin ... enabled by default, but not explicitly added to the config` printed
+five times per run on both versions; the quiz checkbox warning (app usage, no `checked` prop).
+
 _(other clusters pending)_

@@ -1,0 +1,54 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+───────────────────────────────── App Running ──────────────────────────────────
+App running at: http://0.0.0.0:8260/
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+DeprecationWarning: `@rx.memo` on `memo_card` without explicit annotations has 
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`label`, `icon_tag`. Until removal, a missing return defaults to `rx.Component` 
+and missing or bare-type parameters are coerced to `rx.Var[...]`. It will be 
+completely removed in 1.0. (bpapp/bpapp.py:143)
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: The _evaluate method is experimental and may be removed in future 
+versions.
+[Reflex Frontend Exception]
+ TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideBug%
+20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2Bes
+m%2Fdist%2Fesm%2Ficons%2Fbug.mjs%22%0Aconst%20React%20%3D%20window.__reflex.reac
+t%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0Acon
+st%20%7BFragment%2CuseEffect%7D%20%3D%20window.__reflex%5B'react'%5D%0Aconst%20%
+7BFlex%3A%20RadixThemesFlex%2CText%3A%20RadixThemesText%7D%20%3D%20window.__refl
+ex%5B'%40radix-ui%2Fthemes'%5D%0Aconst%20%7BpyOr%7D%20%3D%20window.__reflex%5B'%
+24%2Futils%2Fstate'%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20
+%7B%0A%20%20%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixThemesFlex%2C%2
+0(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdirection%3A%22row%22%2C
+gap%3A%223%22%7D)%2C%20(jsx(LucideBug%2C%20(%7Bsize%3A24%7D)))%2C%20(jsx(RadixTh
+emesText%2C%20(%7Bas%3A%22p%22%7D)%2C%20%22dyn%3Abug%22))))%0A%20%20)%0A%7D
+TypeError: Failed to fetch dynamically imported module: 
+data:text/javascript;charset=utf-8,%2F%2F__reflex_evaluate%0Aimport%20LucideBug%
+20from%20%22https%3A%2F%2Fcdn.jsdelivr.net%2Fnpm%2Flucide-react%401.26.0%2F%2Bes
+m%2Fdist%2Fesm%2Ficons%2Fbug.mjs%22%0Aconst%20React%20%3D%20window.__reflex.reac
+t%3B%0Aconst%20%7Bjsx%7D%20%3D%20window.__reflex%5B'%40emotion%2Freact'%5D%0Acon
+st%20%7BFragment%2CuseEffect%7D%20%3D%20window.__reflex%5B'react'%5D%0Aconst%20%
+7BFlex%3A%20RadixThemesFlex%2CText%3A%20RadixThemesText%7D%20%3D%20window.__refl
+ex%5B'%40radix-ui%2Fthemes'%5D%0Aconst%20%7BpyOr%7D%20%3D%20window.__reflex%5B'%
+24%2Futils%2Fstate'%5D%0A%0Aexport%20default%20function%20MySSRComponent%20()%20
+%7B%0A%20%20%0A%0A%0A%0A%20%20return%20(%0A%20%20%20%20(jsx(RadixThemesFlex%2C%2
+0(%7Balign%3A%22start%22%2CclassName%3A%22rx-Stack%22%2Cdirection%3A%22row%22%2C
+gap%3A%223%22%7D)%2C%20(jsx(LucideBug%2C%20(%7Bsize%3A24%7D)))%2C%20(jsx(RadixTh
+emesText%2C%20(%7Bas%3A%22p%22%7D)%2C%20%22dyn%3Abug%22))))%0A%20%20)%0A%7D
+
+[ERROR] Unexpected exit from worker-1
+Info: Reflex app stopped.

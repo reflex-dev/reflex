@@ -1,0 +1,67 @@
+{
+  "label": "backend-only-0912a1",
+  "base": "http://localhost:3262",
+  "steps": [
+    {
+      "step": "dyn_loaded",
+      "title": "Dyn Page",
+      "widget_text": "dyn:rocket",
+      "widget_svgs": 1,
+      "widget_html": "<div class=\"rt-Flex rt-r-fd-row rt-r-ai-start rt-r-gap-3 rx-Stack\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rocket\" aria-hidden=\"true\"><pat",
+      "tag": "tag: rocket",
+      "plain": "plain: hello"
+    },
+    {
+      "step": "after_flip",
+      "widget_text": "dyn:rocket",
+      "widget_svgs": 1,
+      "widget_html": "<div class=\"rt-Flex rt-r-fd-row rt-r-ai-start rt-r-gap-3 rx-Stack\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rocket\" aria-hidden=\"true\"><pat",
+      "tag": "tag: bug"
+    },
+    {
+      "step": "components_page",
+      "cs_idx": "ComponentState idx: 1",
+      "icon_name": "rocket",
+      "dyn_icon_svgs": 1
+    },
+    {
+      "step": "index_page",
+      "counter": "counter: 1",
+      "modules": "modules: granian"
+    }
+  ],
+  "console": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    }
+  ],
+  "bad": [
+    {
+      "url": "http://localhost:3262/components/logo.svg",
+      "status": 404
+    }
+  ],
+  "ws": [
+    "0{\"sid\":\"d-m3GJNkPohpUpb_AAAA\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"Sv2pzpFsdnl03fXpAAAB\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"id_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8260\",\"origin\":\"http://localhost:3262\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"iKs/uRSp1eZ9fOKuvpqq/g==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflat",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.bpapp___bpapp____dyn_state\":{\"tag_rx_state_\":\"bug\"}}}]",
+    "0{\"sid\":\"FSn0XM0XtsyngLT5AAAC\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"fNAn8eKSGUhLtgUWAAAD\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"id_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8260\",\"origin\":\"http://localhost:3262\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"SiSRBTCEjcAw4T+C+wp5lw==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflat",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.reflex___istate___dynamic____comp_state_n1\":{\"idx_rx_state_\":1}}}]",
+    "0{\"sid\":\"ad0ldYrzdPkfiLkYAAAE\",\"upgrades\":[],\"pingTimeout\":120000,\"pingInterval\":25000,\"maxPayload\":1000000}",
+    "40/_event,{\"sid\":\"luuR-7MiswYEQG8CAAAF\"}",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"id_rx_state_\":\"\",\"is_hydrated_rx_state_\":false,\"rx_router_headers_rx_state_\":{\"host\":\"localhost:8260\",\"origin\":\"http://localhost:3262\",\"upgrade\":\"websocket\",\"connection\":\"Upgrade\",\"cookie\":\"\",\"pragma\":\"no-cache\",\"cache_control\":\"no-cache\",\"user_agent\":\"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.0.0 Safari/537.36\",\"sec_websocket_version\":\"13\",\"sec_websocket_key\":\"xaEQLn0e+qF13MJhG2IyXg==\",\"sec_websocket_extensions\":\"permessage-deflate; client_max_window_bits\",\"accept_encoding\":\"gzip, deflat",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state\":{\"is_hydrated_rx_state_\":true}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.bpapp___bpapp___s\":{\"counter_rx_state_\":1}}}]",
+    "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.bpapp___bpapp___s\":{\"modules_rx_state_\":[\"granian\"]}}}]"
+  ]
+}
