@@ -597,9 +597,13 @@ offsets on both versions), the #7068 rename across an in-place upgrade (the pres
 silently to `rx_router_*`, no hydration/schema warning a user would see), #6977 (`id="scatter-chart"` reaches the DOM
 as the `.js-plotly-plot` element and survives re-render and reload). Skipped for time: github-stats, linkinbio,
 json-tree, overkey — the #6833 item this batch was to cover through github-stats is verified by `components_bumps`.
-Upgrade-command nuance (reconciling `up_examples_b`): `uv pip install --upgrade --prerelease=allow 'reflex==0.9.12a1'`
-pulls the whole alpha train; without `--prerelease=allow` the explicit `==0.9.12a1` pin still resolves reflex and
-reflex-base (exact pin) but every component package stays at its stable release — the mixed state.
+Upgrade-command nuance (settled by the verifier, who ran the no-flag control the explorer had only reasoned about —
+`up_examples_c/verification/upgrade_resolution_dryruns.txt`): `uv pip install --upgrade --prerelease=allow
+'reflex==0.9.12a1'` pulls the whole alpha train; WITHOUT `--prerelease=allow` the explicit `==0.9.12a1` pin still
+resolves reflex and reflex-base (exact pin) but every component package stays at its stable release — the mixed
+state `up_examples_b` observed. The explorer's "no alpha at all" conclusion was refuted; the checkbox warning claim
+was confirmed as third-party dev-only noise (`@radix-ui/react-use-controllable-state`, identical on both versions, no
+`checked` prop is emitted by either).
 Anomalies (pre-existing): `SitemapPlugin ... enabled by default, but not explicitly added to the config` printed
 five times per run on both versions; the quiz checkbox warning (app usage, no `checked` prop).
 
