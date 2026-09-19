@@ -1,0 +1,17 @@
+REFLEX /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex/__init__.py
+Passing strings to disable_plugins has been deprecated in version 0.8.28. pass Plugin classes directly instead, e.g. disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. (rxconfig.py:3)
+Progress: 1/11
+Progress: 2/11
+Implicit Radix Themes enablement has been deprecated in version 0.9.0. a Radix Themes component was detected, which enables the full Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to make this explicit, or remove Radix components to avoid loading the stylesheet. It will be completely removed in 1.0. (/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/ent/lib/python3.11/site-packages/reflex_components_radix/plugin.py:76)
+Progress: 3/11
+Progress: 4/11
+Progress: 5/11
+Progress: 6/11
+Progress: 7/11
+Progress: 8/11
+Progress: 8/11
+Progress: 9/11
+Progress: 10/11
+Progress: 11/11
+Progress: 12/11
+WROTE /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_map_dnd_flow_mantine/out/js_highcharts_new

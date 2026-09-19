@@ -66,6 +66,11 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   wheel depends on.
 - `/_reflex/cookies/sync` answers 405 (new) / 404 (prev) with two `net::ERR_ABORTED` per browser run
   (pre-existing, previous campaign).
+- Re-confirmed on 0.9.12a1 by `ent_aggrid` (all pre-existing, previous campaign's FINDING-019): `demos/ag_grid`
+  stale `$/utils/components` bundle path; ModelWrapper `get_backend_url()` percent-encodes `?` so `/model*`
+  datasource fetches 404; ag-grid 34.3.1 pinned with ag-charts 11.2.4 (integrated charts unusable);
+  `ag_grid.column_def(**kwargs)` silently drops unknown kwargs (`checkbox_selection` → no row selection in
+  `ag_grid_finance`).
 
 ## Decisions needed from a maintainer
 

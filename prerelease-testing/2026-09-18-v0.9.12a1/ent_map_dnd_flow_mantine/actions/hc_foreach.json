@@ -1,0 +1,6 @@
+[
+ {"goto": "/state-foreach"},
+ {"wait": 3000},
+ {"shot": "hcforeach"},
+ {"eval": "() => ({charts: document.querySelectorAll('.highcharts-container').length, series: document.querySelectorAll('.highcharts-series').length, legend: Array.from(document.querySelectorAll('.highcharts-legend-item text')).map(e=>e.textContent), body: document.body.innerText.replace(/\\n/g,' | ').slice(0,200)})"}
+]

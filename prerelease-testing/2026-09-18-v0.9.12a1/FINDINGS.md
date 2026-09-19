@@ -34,6 +34,12 @@ Confirmed so far:
   `auth/oidc/state.py`, so `import reflex_enterprise.auth.oidc.state` raises `TypeError: metaclass
   conflict` on 0.9.12a1 and imports cleanly on 0.9.11.post1.
 
+Verified by clusters so far (details in the cluster summaries): #7068 router split end to end (`router_vars`,
+`ent_aggrid`); #6850 as_child transparency, #7176 memo app-wraps, #6708 svg memo, #7122 shared chains, #7121
+compile speed-up, #7130, #7133 (`memo_aschild`); #7096/#7049 — the reflex-enterprise ag-grid demo's dev backend,
+dead on 0.9.11.post1, runs on 0.9.12a1 (`ent_aggrid`); the whole MCP + OIDC surface behind the FINDING-001
+shim (`ent_mcp_oidc`); #7155 otel compile spans (`orch_otel`).
+
 Verified changelog claims (orchestrator, not findings): all 19 packages published with wheel + sdist;
 122 `.pyi` stubs ship identically in wheel and sdist; the wheel pins `reflex-base==0.9.12a1` exactly and
 `reflex-components-moment>=0.9.4`; blank app dev and prod are clean with react-router 8.4.0 (#7202) and
@@ -222,5 +228,28 @@ stop_propagation do not leak; one handler on two triggers works. #7121: median p
 ~500-component page 0.582 s → 0.493 s (~15%). Pre-existing defects recorded as FINDING-008/009/010. Note:
 `rx.form.control` only accepts TextFieldRoot/DebounceInput children (both versions), so the other controls
 were exercised as direct field children.
+
+### `ent_aggrid` (pass 16, anomaly 2, fail 6, skipped 2) — NO regression; 0.9.12a1 fixes a 0.9.11.post1 dev outage
+reflex-enterprise 0.9.5 ag_grid demo (17 routes, the previous campaign's patched copy) and reflex-examples
+`ag_grid_finance` on 0.9.12a1 dev + prod and on 0.9.11.post1, driven route by route with the previous
+campaign's Playwright drivers plus a new router-navigation driver with websocket capture. **On the current
+stable 0.9.11.post1 the demo has no backend at all**: the granian dev worker dies in `_compile_initial_state`
+serializing `FormatterState.cols_defs` (rxe `LiteralLambdaVar` → "Library @radix-ui/themes is not bundled"),
+while `reflex run` still prints "App running at" — 10/17 routes show 0 rows and `/editable` toasts a websocket
+error (`ent_aggrid/artifacts/prev_0911post1_worker_crash.txt`). On 0.9.12a1 the worker starts, the 17-route
+sweep logs 0 backend exceptions, all routes render data, the `@rx.memo` row counter survives a reload, and the
+prod sweep diffs to zero against the previous campaign's prod run (#7096/#7049 fix confirmed). The #7068 router
+split works through the demo's `State.router.page.path`-bound nav select (direct load, redirect, link nav,
+back/forward; 527-byte navigation delta vs a 20 162-byte first event); #6850's `mergeSlotProps` in every
+ag-grid wrapper caused no render/ref/gridApi breakage; `ag_grid_finance` is byte-identical on both versions.
+The six "fail" rows are all pre-existing and downstream: the shipped demo's stale `$/utils/components` bundle
+path, the ModelWrapper datasource URL percent-encoding `?` (every `/model*` fetch 404s — that code path has
+never loaded a row in any campaign), ag-grid 34.3.1 vs ag-charts 11.2.4, `column_def()` silently dropping
+unknown kwargs (kills row selection in `ag_grid_finance`), and the `CachedVarOperation` AttributeError still
+masked as `VarAttributeError` with no `__cause__` (reflex-dev/reflex#6978). Caveat carried from the agent: the
+dev route-by-route A/B against 0.9.11.post1 is not possible because the baseline backend never comes up; the
+no-regression call rests on the prod A/B (valid, diff zero) and on the previous campaign's 0.9.11a1 dev sweep.
+Process note: this agent ran `pkill -f "reflex run"` once around 01:50 UTC before switching to pid-scoped kills;
+`memo_aschild` and `ent_map_dnd_flow_mantine` were running at the time and reported no unexplained server death.
 
 _(other clusters pending)_

@@ -1,0 +1,178 @@
+Grid State Serialization (Advanced)
+AgGrid demo
+
+AG Grid with column state serialization.
+
+Example
+
+Source
+
+No Rows To Show. 1 to 31 of 31. Page 1 of 1
+Athlete
+Age
+Country
+Year
+Date
+Sport
+Gold
+Natalie Coughlin
+25
+United States
+2008
+2008-08-24 00:00:00
+Swimming
+1
+Aleksey Nemov
+24
+2000
+Gymnastics
+2
+Alicia Coutts
+24
+Australia
+2012
+2012-12-08 00:00:00
+Swimming
+1
+Missy Franklin
+17
+2012
+2012-12-08 00:00:00
+Swimming
+4
+Ryan Lochte
+Invalid Number
+United States
+2012
+Swimming
+2
+Allison Schmitt
+22
+United States
+2012
+2012-12-08 00:00:00
+Swimming
+3
+Natalie Coughlin
+21
+United States
+2004
+2004-08-29 00:00:00
+Swimming
+2
+Dara Torres
+33
+United States
+2000
+2000-01-10 00:00:00
+Swimming
+2
+Cindy Klassen
+Invalid Number
+Canada
+2006
+2006-02-26 00:00:00
+Speed Skating
+1
+Nastia Liukin
+18
+2008
+2008-08-24 00:00:00
+Gymnastics
+1
+Marit Bjørgen
+29
+Norway
+2010
+Cross Country Skiing
+3
+Sun Yang
+Invalid Number
+China
+2012
+2012-12-08 00:00:00
+Swimming
+2
+Kirsty Coventry
+24
+Zimbabwe
+2008
+2008-08-24 00:00:00
+Swimming
+1
+Libby Lenton-Trickett
+23
+Australia
+2008
+2008-08-24 00:00:00
+Swimming
+2
+Ryan Lochte
+24
+2008
+Swimming
+2
+Inge de Bruijn
+Invalid Number
+Netherlands
+2004
+2004-08-29 00:00:00
+Swimming
+1
+Petria Thomas
+28
+Australia
+2004
+2004-08-29 00:00:00
+Swimming
+3
+Ian Thorpe
+21
+Australia
+2004
+2004-08-29 00:00:00
+Swimming
+2
+Inge de Bruijn
+27
+Netherlands
+2000
+2000-01-10 00:00:00
+Swimming
+3
+Gary Hall Jr.
+25
+United States
+2000
+Swimming
+2
+Michael Klim
+23
+Australia
+2000
+2000-01-10 00:00:00
+Swimming
+2
+Susie O'Neill
+27
+Australia
+2000
+2000-01-10 00:00:00
+Swimming
+1
+Columns
+Filters
+Athlete
+Age
+Country
+Year
+Date
+Sport
+Gold
+Silver
+Bronze
+Total
+Page Size:
+100
+1 to 31 of 31
+Page 1 of 1
