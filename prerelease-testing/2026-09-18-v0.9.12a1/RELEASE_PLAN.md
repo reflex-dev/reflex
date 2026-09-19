@@ -56,10 +56,11 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   `reflex_base/vars/base.py:2689`). Regression test: `event_loop/scripts/s_filtered.py` against `elapp`.
 
 - **FINDING-017 — with #7114 the supervisor keeps the dev backend port bound while no worker can serve, so a wedged
-  shutdown or a broken app module turns immediate connection refusals into requests that hang forever** (HIGH,
-  regression baselined both ways; `dev_server_cli`, verification pending). Arm: confirmed regression. Shape: keep
-  #7114 but add a give-up path — refuse (or 503) once no worker has come back within a bound, and release the socket
-  when the supervisor itself is shutting down.
+  shutdown or a broken app module turns immediate connection refusals into requests that hang for the client's
+  timeout** (MEDIUM, dev-only, self-healing; regression CONFIRMED both ways by `dev_server_cli` explorer and verifier,
+  `verification/scripts/break_reload_probe.py`). Arm: confirmed regression. Shape: keep #7114 but add a give-up path in
+  `ParentBoundGranian` (`reflex/utils/exec.py:726-741`) — refuse or 503 once no worker has come back within a bound,
+  and release the socket when the supervisor itself is shutting down.
 
 ### Trivially small / significant impact
 
@@ -94,8 +95,9 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 - FINDING-018 — `reflex run` (dev) never exits on SIGTERM/SIGINT sent to its pid alone (pre-existing on both
   versions; #6981 covers only the process-group path). `docker stop` / `kill <pid>` leave reflex, bun and node
   running. (`dev_server_cli`)
-- Clean group-SIGTERM shutdown logs `[ERROR] Unexpected exit from worker-1`; one `REFLEX_USE_NPM=1` run switches a
-  project to npm with no documented way back (`dev_server_cli`).
+- Clean group-SIGTERM shutdown logs `[ERROR] Unexpected exit from worker-1` — granian's own message, identical on
+  0.9.11.post1; a reflex-side fix would filter it in `_granian_log_dictconfig` (`exec.py:689`) (`dev_server_cli`).
+  The npm-stickiness claim was refuted (`REFLEX_USE_NPM=0` switches back); document the flag if it is not already.
 - FINDING-020 — `@rx.dynamic` components never re-render on state change (pre-existing; `build_prod_export`).
 - FINDING-021 — literal asset `src` paths not prefixed with `frontend_path` (pre-existing; docs or compile-time prefix).
 - FINDING-022 — `frontend_lazy_bundled_libraries=True` added ~65 KB of initial JS on every page of the test app;

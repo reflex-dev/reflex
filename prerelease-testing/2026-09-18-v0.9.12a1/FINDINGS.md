@@ -69,8 +69,8 @@ Index:
 - ~~FINDING-014~~: "the #7124 changelog's `reflex.components.datadisplay.code` path fails" — **REFUTED** by the verifier: the changelog names a module path, and `import reflex.components.datadisplay.code` works on both versions; only the `from … import code` spelling fails, and it never worked. Kept in the refuted list.
 - FINDING-015: #7156's headline scenario — a toast action or `rx.call_script` callback that triggers an upload handler — still fails: the handler slot is fixed but the payload's `filesById?.["u2"]` is only in scope inside the component that renders `rx.upload`, so the click throws `ReferenceError: filesById is not defined` and no upload starts (HIGH for the advertised scenario, pre-existing, changelog line misleading) — claimed by `event_loop`, verification pending
 - FINDING-016: a cancelled foreground `@rx.event(supersedes=True)` handler loses its pre-cancellation state writes under prod+redis (dev/memory keeps them) — the `yield` before the `await` is not flushed when `CancelledError` propagates (MEDIUM, dev/prod divergence; 0.9.11.post1+redis baseline not measured) — claimed by `event_loop`, verification pending
-- FINDING-017: after a SIGTERM that fails to stop `reflex run` (dev), or while the app module is broken, the backend port stays bound and accepts connections that are never answered — 0.9.11.post1 released the port and clients got an immediate refusal; a side effect of #7114 moving the listening socket into the granian supervisor (HIGH, regression) — claimed by `dev_server_cli`, verification pending
-- FINDING-018: `reflex run` (dev) ignores SIGTERM/SIGINT delivered to its pid alone (`docker stop`, `kill <pid>` semantics) — reflex, bun and node survive and the ports stay bound; only a process-group signal (Ctrl-C) exits cleanly (MEDIUM, pre-existing on both versions; #6981's changelog line promises a clean SIGTERM exit) — claimed by `dev_server_cli`, verification pending
+- FINDING-017: after a SIGTERM that fails to stop `reflex run` (dev), or while the app module is broken, the backend port stays bound and accepts connections that are never answered — 0.9.11.post1 released the port and clients got an immediate refusal; a side effect of #7114 moving the listening socket into the granian supervisor (MEDIUM after verification — dev-only, self-healing once a worker returns; regression) — **CONFIRMED** by the verifier, who added a signal-free repro (save a broken app file mid-run: 0.9.12a1 hangs for the client timeout, 0.9.11.post1 refuses instantly, both recover once fixed)
+- FINDING-018: `reflex run` (dev) ignores SIGTERM/SIGINT delivered to its pid alone (`docker stop`, `kill <pid>` semantics) — reflex, bun and node survive and the ports stay bound; only a process-group signal (Ctrl-C) exits cleanly (MEDIUM, pre-existing on both versions; #6981's changelog line promises a clean SIGTERM exit) — **CONFIRMED** by the verifier with its own baseline
 - FINDING-019: a stateful-pages marker containing non-UTF-8 bytes still crashes backend startup permanently — `UnicodeDecodeError` escapes `_read_stateful_pages_marker()`'s `except (FileNotFoundError, json.JSONDecodeError)` and the corrupt marker is never replaced (MEDIUM, gap in the #7142 "rebuilt when missing or corrupt" claim; same input crashes 0.9.11.post1) — claimed by `build_prod_export`, verification pending
 - FINDING-020: a `@rx.dynamic` component never re-renders when the state it reads changes — the delta carries only the plain field, never the recomputed component var (MEDIUM, pre-existing, dev and prod) — claimed by `build_prod_export`, verification pending
 - FINDING-021: literal asset `src` paths (`rx.image(src="/components/logo.svg")`) are not prefixed with `frontend_path`, so the image 404s while the file is served under `/app/...` (LOW, pre-existing) — claimed by `build_prod_export`
@@ -234,9 +234,19 @@ Index:
   foreground handler cancelled mid-`await` (CancelledError propagates) does not flush, so the pre-cancellation
   mutation and its emitted delta are lost together.
 
-## FINDING-017: backend port stays bound and swallows connections when the worker cannot serve (HIGH, regression — claimed, verification pending)
+## FINDING-017: backend port stays bound and swallows connections when the worker cannot serve (MEDIUM, regression — CONFIRMED)
 
-- Cluster: `dev_server_cli` | Regression vs 0.9.11.post1: **yes**, baselined in both directions
+- Cluster: `dev_server_cli` | Regression vs 0.9.11.post1: **yes**, baselined in both directions by explorer and verifier
+- Verifier: reproduced verbatim on its own ports (4 runs, 4 port pairs, raw sockets, granian 2.8.3 in BOTH venvs so
+  the only delta is reflex's code) and closed the repro's gap — the SIGTERM lead-in only arises together with
+  FINDING-018, so it wrote `verification/scripts/break_reload_probe.py`, which appends `raise RuntimeError(...)` to
+  the app module mid-run (the ordinary "developer saved a broken file" case): 0.9.12a1 hangs for the full client
+  timeout at +10 s and +24 s, 0.9.11.post1 refuses instantly, both recover to 200 once fixed. Downgraded HIGH → MEDIUM:
+  dev-only (prod uses plain Granian, `exec.py:857`) and self-healing; the defect is the missing bound, not #7114.
+- Root cause (verifier): `reflex/utils/exec.py:726-741` — `ParentBoundGranian._init_shared_socket` builds the
+  listening socket in the granian supervisor (`SocketSpec(...).build()`, `sock.set_inheritable(True)`) instead of
+  letting each worker bind, so the kernel keeps accepting whenever no worker is alive; 0.9.11.post1 has no such
+  subclass.
 - Repro: `dev_server_cli/scripts/sigterm_port_probe.py <venv> <dsc dir> <FP> <BP> <tag> <logdir>` on both venvs. After
   `kill -TERM <reflex pid>` (which neither version acts on — FINDING-018), 0.9.12a1: `/ping` → `TIMEOUT_NO_REPLY_6s` at
   +8 s and +18 s (`logs/portprobe_new.json`); 0.9.11.post1: `CONNECTION_REFUSED` immediately (`logs/portprobe_prev.json`).
@@ -250,13 +260,18 @@ Index:
   recover" lead look real: the worker DOES recover after the source is fixed; the server merely looked dead because
   requests hung instead of failing fast.
 
-## FINDING-018: `reflex run` ignores SIGTERM/SIGINT sent to its pid alone (MEDIUM, pre-existing — claimed)
+## FINDING-018: `reflex run` ignores SIGTERM/SIGINT sent to its pid alone (MEDIUM, pre-existing — CONFIRMED)
 
 - Cluster: `dev_server_cli` | Both versions: `exit_code=TIMEOUT_30s`, survivors reflex+bun+node, ports bound
   (`logs/sigres_N1_new_dev_TERM_proc.json`, `logs/sigres_P1_prev_dev_TERM_proc.json`); the process-GROUP signal exits 0
   in 0.2 s on 0.9.12a1 with no "exit code 143" line (#6981 verified for that path) but logs `[ERROR] Unexpected exit
   from worker-1` on the clean stop. Repro: `scripts/signal_test.py <venv> <dsc dir> L TERM proc <logdir> <FP> <BP>`
-  (the `.sh` version in the same dir is superseded — it signalled the `setsid` wrapper).
+  (the `.sh` version in the same dir is superseded — it signalled the `setsid` wrapper). Verifier: both versions
+  time out at 30 s with reflex+bun+node survivors; its `ports_after` column is the cleanest single evidence for
+  FINDING-017 (same stuck process, backend port bound only on 0.9.12a1). Mechanism guess: `reflex/reflex.py:428-451`
+  runs the frontend on a thread pool while `exec.run_backend` blocks the main thread, so granian's SIGTERM handling
+  never tears down the bun/vite children the CLI spawned. The `[ERROR] Unexpected exit from worker-1` on a clean
+  group stop is granian's own message (`granian/server/common.py:61`), identical on 0.9.11.post1 — not a regression.
 - Impact: `docker stop`, systemd and `kill <pid>` never terminate a dev server; combined with FINDING-017 the port
   then hangs instead of refusing. Prod-mode signal handling was not exercised (out of timebox).
 
@@ -381,6 +396,10 @@ Index:
   foreground handler and the background task (`db_optional_imports/verification/shots/noasync_new_*.png`); the
   explorer's driver watched console/pageerror/HTTP/deltas only, and the toast (`id="backend_error"`, ~4 s) had gone
   before its assertions. The underlying "requires `async_db_url`, nothing hints at it" remains a docs nit.
+- **"One `REFLEX_USE_NPM=1` run permanently switches a project to npm with no documented way back" (`dev_server_cli`)**:
+  refuted by the verifier — `REFLEX_USE_NPM=0` is an explicit escape hatch (`reflex/utils/js_runtimes.py:115-132`
+  `prefer_npm_over_bun`, step 2) and restores bun in one run; the lockfile-driven stickiness itself is deliberate
+  and works (`verification/scripts/lock_probe.sh`, five runs). Closes the previous campaign's FINDING-021.
 - **FINDING-009 — "`rx.cond` evaluates both branches eagerly; a throwing untaken branch fails the prod build"
   (`memo_aschild`)**: refuted by the verifier with a minimal app (`memo_aschild/verification/app_boomy`): an
   `@rx.memo` component containing the throwing Var and an idiomatic `rx.text(S.user["name"])` with `user=None` both
@@ -641,9 +660,11 @@ previous campaign's FINDING-016 is fixed; the only non-JSON lines are the app's 
 (deprecations via `reflex.deprecation`, once per process), #7075 (sibling module imported once, no duplicate
 registration), #7049 absolute numbers (backend-only `/ping` 200 in 0.85 s, 55–59 MB RSS, only `reflex.compiler` of
 the probed heavy modules imported — relative baseline closed by the orchestrator's `orch_startup` probe). Issues:
-FINDING-017, FINDING-018; plus (low) a clean group-SIGTERM stop logs `[ERROR] Unexpected exit from worker-1`, and one
-`REFLEX_USE_NPM=1` run sticks the project on npm until `package-lock.json` is deleted from `.web/` and `reflex.lock/`
-(re-grade of the previous campaign's FINDING-021: the failure is gone, the stickiness remains, undocumented).
+FINDING-017 (confirmed, medium), FINDING-018 (confirmed, pre-existing); the clean-stop `[ERROR] Unexpected exit from
+worker-1` line is granian's own and identical on 0.9.11.post1 (verifier); the "one `REFLEX_USE_NPM=1` run sticks the
+project on npm with no way back" claim was REFUTED — the stickiness is deliberate (`js_runtimes.py:99-132`,
+`_persisted_lockfile_implies_npm`) and `REFLEX_USE_NPM=0` switches back in a single run (the previous campaign's
+FINDING-021 can be closed).
 Anomaly: `reflex cloud ... --json` emits its error path as plain text (hosting-cli 0.1.72, almost certainly
 pre-existing). Not covered: prod-mode signal handling, `reflex export/init --json`, #7166 logging under `reflex run`.
 
