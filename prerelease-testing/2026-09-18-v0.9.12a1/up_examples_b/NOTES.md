@@ -279,3 +279,127 @@ status code, but it is pre-existing, so it is context, not a release blocker.
 * The `/form/<id>` end-user entry + response-collection half of form-designer, blocked by the
   pre-existing `FormMessage` app bug described above.
 * Redis-backed state manager across the upgrade (no redis instance was needed by these apps).
+
+## VERIFICATION
+
+Independent adversarial verification (2026-09-19), working from this NOTES.md + the app
+sources/scripts in this directory only. Evidence under `verification/`. Ports 4000/4001.
+Venvs used read-only: `$SB/envs/shared` (0.9.12a1 train) and `$SB/envs/prev`
+(0.9.11.post1); resolved versions in `verification/freeze_verify.txt`:
+`reflex==0.9.12a1 / reflex-base==0.9.12a1 / reflex-components-core==0.9.10a1 /
+reflex-components-radix==0.9.10a1 ...` vs `reflex==0.9.11.post1 / reflex-components-core==0.9.9`.
+
+Working copy: `$SB/apps/verify_up_examples_b/{uc_new,uc_prev}` — a copy of `uncached_prev/`
+with one extra page appended (`verification/ucapp_verify.py`):
+
+```python
+class RouterDepNoAuto(rx.State):
+    @rx.var(deps=["router"], auto_deps=False, cache=True)
+    def legacy_router_dep_noauto(self) -> str:
+        return self.router.url.path
+
+@rx.page(route="/routerdep2")
+def routerdep2_page():
+    return rx.text(RouterDepNoAuto.legacy_router_dep_noauto, id="rd2")
+```
+
+### Issue 1 — `deps=["router"]` deprecation "unreachable / never fires" — **REFUTED**
+
+The deprecation is alive and fires. The written repro reproduces *its own output* exactly, but
+that output is an artifact of the repro, not of the string form: it declares
+`@rx.var(deps=["router"], cache=True)` and leaves `auto_deps` at its default `True`, with a body
+that reads `self.router.url.path`. On 0.9.12a1 the auto dep scanner resolves `self.router` to all
+five per-field `rx_router_*` vars and merges them into the same dep set the guard inspects, so
+`dvar_set.isdisjoint(constants.ROUTER_VARS)` is False — because of the *auto* deps, not because
+the string form carries them. The guard's comment is therefore imprecise, but the branch is not
+dead.
+
+Commands (from `$SB/apps/verify_up_examples_b`, neutral cwd; full output in
+`verification/rdvar_variants.txt`):
+
+```
+for v in A B C D E; do EXPECT_VENV=/envs/shared/ $SB/envs/shared/bin/python scripts/rdvar.py $v; done
+for v in A B C;     do EXPECT_VENV=/envs/prev/   $SB/envs/prev/bin/python   scripts/rdvar.py $v; done
+```
+
+| variant | declaration | body reads router | 0.9.12a1 resolved deps | deprecation |
+|---|---|---|---|---|
+| A (the written repro) | `deps=["router"], cache=True` | yes | `router` + all 5 `rx_router_*` | **no** |
+| B | `deps=["router"], auto_deps=False` | no | `{router}` | **YES** |
+| C | `deps=["router"]` (auto on) | no | `{router}` | **YES** |
+| D | `deps=[State.router], auto_deps=False` | no | `router` + all 5 | no (correct) |
+| E | `deps=["router"], auto_deps=False` | yes | `{router}` | **YES** |
+
+Exact warning text emitted (B/C/E):
+
+```
+ComputedVar deps=["router"] on RD.p has been deprecated in version 0.9.12. the router var was
+split; depend on the router Var instead (e.g. deps=[State.router.url] for one field, or
+deps=[State.router] for all of them). It will be completely removed in 1.0.
+```
+
+End-to-end, not just in a script: `reflex run --env prod --frontend-port 4000 --backend-port 4000`
+on `uc_new` prints the same DeprecationWarning twice during compile for
+`RouterDepNoAuto.legacy_router_dep_noauto` (`verification/uc_new_prod.verify.log`), and
+`/routerdep2` renders `/routerdep2/` correctly in Chromium. The 0.9.11.post1 run of the same app
+prints no such line (`verification/uc_prev_prod.verify.log`, only the unrelated Radix one), and
+the release source has a unit test pinning this behaviour:
+`tests/units/test_state.py:4184` `test_router_var_dep_does_not_warn_for_the_var_form` asserts
+exactly one deprecation for `deps=["router"], auto_deps=False` and none for `deps=[State.router]`.
+
+Residual gap (real, but not worth a fix): variant A — the string form plus default auto deps plus
+a body that touches the router — stays silent. That is also the case where the declaration is
+redundant and nothing breaks at removal: auto tracking alone already registers all five
+`rx_router_*` names, and an unrecognised string dep is silently accepted rather than raising
+(`verification/bogusdep.py`: `deps=["no_such_var"]` is accepted on both 0.9.12a1 and
+0.9.11.post1). So the users who would actually break at 1.0 (`auto_deps=False`, or a body that
+never mentions the router) are precisely the ones who do get the warning today.
+
+Side observation while probing (not a finding, not release-relevant): `ComputedVar._deps` does
+`d.update(self._static_deps)` and hands `d` to `DependencyTracker`, which mutates the *same* set
+objects (`packages/reflex-base/src/reflex_base/vars/base.py:2878` +
+`packages/reflex-base/src/reflex_base/vars/dep_tracking.py:127,215,392`), so after the first dep
+scan `_static_deps` contains auto-discovered names the user never declared — visible in variant A
+above (`static_deps: {None: {'router', 'rx_router_url', ...}}` for a declared `deps=["router"]`).
+Same union either way, so no behavioural impact observed.
+
+### Issue 2 — prod returns 404 for dynamic routes — **REPRODUCED EXACTLY, pre-existing, not a release defect**
+
+Reproduced with the minimal app rather than form-designer (same routes, no DB/auth needed):
+
+```
+bash scripts/runapp.sh $W/uc_new  $SB/envs/shared 4000 4000 logs/uc_new_prod.log  --env prod
+for u in / /item/ /item/42 /item/42/ /routerdep /routerdep2 /nope /_nonexistent_deep/x; do
+  curl -s --noproxy '*' -o /dev/null -w "$u %{http_code} %{size_download}\n" "http://localhost:4000$u"; done
+```
+
+0.9.12a1 (`verification/curl_new_prod.txt`) and 0.9.11.post1 on port 4001
+(`verification/curl_prev_prod.txt`) are identical in status:
+
+```
+/ 200 | /item/ 200 | /item/42 404 | /item/42/ 404 | /routerdep 307 | /nope 404
+```
+
+Chromium (`verification/pwcheck.py`) on both versions: `/item/42` is served with HTTP **404** and
+still renders `item page / /item/42`; `/nope` is 404 and renders `404: Page not found`
+(`verification/new_prod_item_42.png`, `verification/prev_prod_item_42.png` — byte-identical
+screenshots). So the explorer's description is accurate, including the browser behaviour.
+
+Root cause (release source): prod serves the built client dir through Starlette's
+`StaticFiles(..., html=True)` — `reflex/utils/exec.py:383` (`PrecompressedStaticFiles`,
+directory `.web/build/client`, `reflex_base/constants/base.py:44`). In html mode Starlette answers
+a miss with `404.html` at status 404. The build emits `404.html` and `__spa-fallback.html`
+**byte-identical** (5374 B each here), i.e. the SPA shell is served either way; only the status
+line differs, and the router-aware SPA fallback file is never used. Nothing here is 0.9.12-specific
+(no `frontend_path` set; it reproduces unchanged on 0.9.11.post1), so this is a long-standing
+static-serving wart, not a regression and not a release blocker. A fix would mean matching the
+request against the compiled route table (dynamic segments included) and serving the fallback with
+200 for a known route.
+
+Note on the extra 307s: `/routerdep` and `/routerdep2` answer 307 to the trailing-slash form on
+**both** versions (directory-style static files) — expected, mentioned only because the written
+repro's route list did not include them.
+
+### Cleanup
+Both prod servers (pids 30873, 31288) killed; `python3 $SB/bin/ports.py 4000 4001` reports nothing
+listening. No process left behind, nothing installed into the shared venvs, no git commands run.

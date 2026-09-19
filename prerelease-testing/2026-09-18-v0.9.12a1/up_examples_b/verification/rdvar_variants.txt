@@ -1,0 +1,71 @@
+=== 0.9.12a1 variant A ===
+reflex file: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a1
+variant: A
+static_deps: {None: {'router', 'rx_router_session', 'rx_router_headers', 'rx_router_url', 'rx_router_route_id', 'rx_router_page'}}
+raw _deps: {'reflex___state____state.__main_____rd': {'router', 'rx_router_url', 'rx_router_page', 'rx_router_session', 'rx_router_headers', 'rx_router_route_id'}}
+DEPRECATE CALLS: []
+registered deps: ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']
+=== 0.9.12a1 variant B ===
+reflex file: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a1
+ComputedVar deps=["router"] on RD.p has been deprecated in version 0.9.12. the router var was split; depend on the router Var instead (e.g. deps=[State.router.url] for one field, or deps=[State.router] for all of them). It will be completely removed in 1.0. (scripts/rdvar.py:24)
+variant: B
+static_deps: {None: {'router'}}
+raw _deps: {'reflex___state____state.__main_____rd': {'router'}}
+DEPRECATE CALLS: ['ComputedVar deps=["router"] on RD.p']
+registered deps: ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']
+=== 0.9.12a1 variant C ===
+reflex file: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a1
+ComputedVar deps=["router"] on RD.p has been deprecated in version 0.9.12. the router var was split; depend on the router Var instead (e.g. deps=[State.router.url] for one field, or deps=[State.router] for all of them). It will be completely removed in 1.0. (scripts/rdvar.py:24)
+variant: C
+static_deps: {None: {'router'}}
+raw _deps: {'reflex___state____state.__main_____rd': {'router'}}
+DEPRECATE CALLS: ['ComputedVar deps=["router"] on RD.p']
+registered deps: ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']
+=== 0.9.12a1 variant D ===
+reflex file: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a1
+variant: D
+static_deps: {'reflex___state____state': {'rx_router_headers', 'rx_router_route_id', 'rx_router_session', 'rx_router_url', 'router', 'rx_router_page'}}
+raw _deps: {'reflex___state____state': {'rx_router_headers', 'rx_router_route_id', 'rx_router_session', 'rx_router_url', 'router', 'rx_router_page'}}
+DEPRECATE CALLS: []
+registered deps: ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']
+=== 0.9.12a1 variant E ===
+reflex file: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a1
+ComputedVar deps=["router"] on RD.p has been deprecated in version 0.9.12. the router var was split; depend on the router Var instead (e.g. deps=[State.router.url] for one field, or deps=[State.router] for all of them). It will be completely removed in 1.0. (scripts/rdvar.py:24)
+variant: E
+static_deps: {None: {'router'}}
+raw _deps: {'reflex___state____state.__main_____rd': {'router'}}
+DEPRECATE CALLS: ['ComputedVar deps=["router"] on RD.p']
+registered deps: ['rx_router_headers', 'rx_router_page', 'rx_router_route_id', 'rx_router_session', 'rx_router_url']
+=== 0.9.11.post1 variant A ===
+reflex file: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.11.post1
+variant: A
+static_deps: {None: {'router'}}
+raw _deps: {'reflex___state____state.__main_____rd': {'router'}}
+DEPRECATE CALLS: []
+registered deps: ['router']
+=== 0.9.11.post1 variant B ===
+reflex file: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.11.post1
+variant: B
+static_deps: {None: {'router'}}
+raw _deps: {'reflex___state____state.__main_____rd': {'router'}}
+DEPRECATE CALLS: []
+registered deps: ['router']
+=== 0.9.11.post1 variant C ===
+reflex file: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.11.post1
+variant: C
+static_deps: {None: {'router'}}
+raw _deps: {'reflex___state____state.__main_____rd': {'router'}}
+DEPRECATE CALLS: []
+registered deps: ['router']
+=== unknown string dep 0.9.12a1 ===
+accepted; deps: {'reflex___state____state.__main_____b': {'no_such_var'}}
+=== unknown string dep 0.9.11.post1 ===
+accepted; deps: {'reflex___state____state.__main_____b': {'no_such_var'}}
