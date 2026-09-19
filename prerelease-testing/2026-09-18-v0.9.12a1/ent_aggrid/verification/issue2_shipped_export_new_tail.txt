@@ -1,0 +1,30 @@
+                              ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 655, in _cached_get_all_var_data
+    *[
+     ^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 656, in <listcomp>
+    LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1941, in _get_all_var_data_without_creating_var_dispatch
+    return LiteralObjectVar._get_all_var_data_without_creating_var(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/object.py", line 481, in _get_all_var_data_without_creating_var
+    LiteralArrayVar._get_all_var_data_without_creating_var(value.values()),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 642, in _get_all_var_data_without_creating_var
+    return VarData.merge(*[
+                          ^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/sequence.py", line 643, in <listcomp>
+    LiteralVar._get_all_var_data_without_creating_var_dispatch(element)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1921, in _get_all_var_data_without_creating_var_dispatch
+    return literal_subclass._get_all_var_data_without_creating_var(value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/base.py", line 1896, in _get_all_var_data_without_creating_var
+    return cls.create(value)._get_all_var_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 244, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library $/app_components/ag_grid/formatters is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('$/app_components/ag_grid/formatters') to enable it it.
+EXPORT_EXIT=1
