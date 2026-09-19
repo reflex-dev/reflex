@@ -1,0 +1,56 @@
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/compon
+ents/ag_grid/aggrid.py:1736)
+Process granian-worker:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/granian/server/mp.py", line 92, in wrapped
+    callback = callback_loader()
+               ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/granian/_internal.py", line 70, in load_target
+    rv = rv()
+         ^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/app.py", line 766, in __call__
+    self._compile(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/app.py", line 1682, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1234, in compile_app
+    utils._compile_initial_state(app._state)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/compiler/utils.py", line 269, in _compile_initial_state
+    return initial_state, format.json_dumps(
+                          ^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_base/utils/format.py", line 734, in json_dumps
+    return json.dumps(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/compiler/utils.py", line 266, in serialize_initial_value
+    return serializers.serialize(value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_base/utils/serializers.py", line 176, in serialize
+    serialized = serializer(value)
+                 ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 284, in serialize_lambda
+    return serialize_lambda_var(LiteralLambdaVar.create(func))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 244, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@radix-ui/themes') to enable it it.
+Debug:   ➜  Local:   http://localhost:3581/
+[ERROR] Unexpected exit from worker-1
+App running at: http://localhost:3581/

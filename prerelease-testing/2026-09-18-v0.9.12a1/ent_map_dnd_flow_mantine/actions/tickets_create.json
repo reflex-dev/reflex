@@ -1,0 +1,23 @@
+[
+ {"goto": "/ref"},
+ {"wait": 3500},
+ {"click_text": "New Ticket"},
+ {"wait": 1000},
+ {"fill": ["input[placeholder='Title']", "FILLED title"]},
+ {"wait": 200},
+ {"eval": "() => ({title_now: document.querySelector(\"input[placeholder='Title']\").value})", "note": "immediately after fill()"},
+ {"wait": 1500},
+ {"eval": "() => ({title_after: document.querySelector(\"input[placeholder='Title']\").value})", "note": "1.5s after fill() — controlled input may revert"},
+ {"type": ["input[placeholder='Title']", " typed"], "note": "keyboard typing on top"},
+ {"wait": 1500},
+ {"eval": "() => ({title_after_typing: document.querySelector(\"input[placeholder='Title']\").value})"},
+ {"type": ["textarea[placeholder='Description']", "typed description"]},
+ {"type": ["input[placeholder='Assignee']", "qa-typed"]},
+ {"wait": 1200},
+ {"eval": "() => ({vals: Array.from(document.querySelectorAll('input, textarea')).map(e=>[e.placeholder, e.value])})"},
+ {"shot": "create_typed_form"},
+ {"click_text": "Create"},
+ {"wait": 2500},
+ {"eval": "() => ({rows: document.querySelectorAll('tbody tr').length, badges: Array.from(document.querySelectorAll('.rt-Badge')).map(e=>e.innerText).slice(0,2), first: (document.querySelector('tbody tr')||{}).innerText.replace(/\\n/g,' | ')})", "note": "created?"},
+ {"shot": "create_typed_result"}
+]

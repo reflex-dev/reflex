@@ -1,0 +1,4 @@
+faker==36.2.2
+pandas==2.2.3
+aiosqlite
+greenlet
