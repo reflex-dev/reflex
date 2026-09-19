@@ -1,0 +1,51 @@
+### L0_baseline_bun  REFLEX_USE_NPM=<unset>
+### reflex.lock BEFORE: bun.lock package.json 
+### frontend200=ERROR(2s)
+### installer line: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+### install cmd:    
+### reflex.lock AFTER:  bun.lock package.json 
+### .web locks AFTER:   .web/bun.lock 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_dev_server_cli/scripts/lock_probe.sh: line 29: 28681 Killed                  REFLEX_TELEMETRY_ENABLED=false setsid "$VENV/bin/reflex" run --loglevel debug --frontend-port "$FP" --backend-port "$BP" > "$LOG" 2>&1
+### ports after kill:
+###END_L0_baseline_bun
+### L1_npm1  REFLEX_USE_NPM=1
+### reflex.lock BEFORE: bun.lock package.json 
+### frontend200=yes(8s)
+### installer line: Using package installer at: ['/opt/node22/bin/npm', 
+### install cmd:    
+### reflex.lock AFTER:  package-lock.json package.json 
+### .web locks AFTER:   .web/package-lock.json 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_dev_server_cli/scripts/lock_probe.sh: line 29: 28762 Killed                  REFLEX_TELEMETRY_ENABLED=false setsid "$VENV/bin/reflex" run --loglevel debug --frontend-port "$FP" --backend-port "$BP" > "$LOG" 2>&1
+### ports after kill:
+###END_L1_npm1
+### L2_plain  REFLEX_USE_NPM=<unset>
+### reflex.lock BEFORE: package-lock.json package.json 
+### frontend200=yes(5s)
+### installer line: Using package installer at: ['/opt/node22/bin/npm', 
+### install cmd:    
+### reflex.lock AFTER:  package-lock.json package.json 
+### .web locks AFTER:   .web/package-lock.json 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_dev_server_cli/scripts/lock_probe.sh: line 29: 28936 Killed                  REFLEX_TELEMETRY_ENABLED=false setsid "$VENV/bin/reflex" run --loglevel debug --frontend-port "$FP" --backend-port "$BP" > "$LOG" 2>&1
+### ports after kill:
+###END_L2_plain
+### L3_npm0  REFLEX_USE_NPM=0
+### reflex.lock BEFORE: package-lock.json package.json 
+### frontend200=ERROR(2s)
+### installer line: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+### install cmd:    
+### reflex.lock AFTER:  bun.lock package.json 
+### .web locks AFTER:   .web/bun.lock 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_dev_server_cli/scripts/lock_probe.sh: line 29: 29084 Killed                  REFLEX_TELEMETRY_ENABLED=false setsid "$VENV/bin/reflex" run --loglevel debug --frontend-port "$FP" --backend-port "$BP" > "$LOG" 2>&1
+### ports after kill:
+###END_L3_npm0
+### L4_plain_again  REFLEX_USE_NPM=<unset>
+### reflex.lock BEFORE: bun.lock package.json 
+### frontend200=ERROR(2s)
+### installer line: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+### install cmd:    
+### reflex.lock AFTER:  bun.lock package.json 
+### .web locks AFTER:   .web/bun.lock 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_dev_server_cli/scripts/lock_probe.sh: line 29: 29174 Killed                  REFLEX_TELEMETRY_ENABLED=false setsid "$VENV/bin/reflex" run --loglevel debug --frontend-port "$FP" --backend-port "$BP" > "$LOG" 2>&1
+### ports after kill:
+###END_L4_plain_again
+LOCKDONE

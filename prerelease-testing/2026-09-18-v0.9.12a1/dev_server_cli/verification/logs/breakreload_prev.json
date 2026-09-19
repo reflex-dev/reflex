@@ -1,0 +1,27 @@
+{
+ "label": "prev",
+ "pid": 28325,
+ "before_break": [
+  "200",
+  0.0
+ ],
+ "edited_at": 1789795878.42,
+ "supervisor_alive_10s": true,
+ "after_break_10s": [
+  "CONNECTION_REFUSED",
+  0.0
+ ],
+ "after_break_24s": [
+  "CONNECTION_REFUSED",
+  0.0
+ ],
+ "after_fix_12s": [
+  "200",
+  0.02
+ ],
+ "after_fix_20s": [
+  "200",
+  0.0
+ ],
+ "supervisor_alive_end": true
+}

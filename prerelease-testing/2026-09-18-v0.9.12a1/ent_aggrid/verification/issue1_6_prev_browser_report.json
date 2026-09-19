@@ -1,0 +1,25 @@
+{
+  "/integrated-charts": {
+    "rows": 26,
+    "toasts": [
+      "Cannot connect to server: websocket error.\nCheck if server is reachable at ws://localhost:9081/_event"
+    ],
+    "body_head": "Cannot connect to server: websocket error. | Check if server is reachable at ws://localhost:9081/_event | Select Demo | AgGrid demo |  | Select a range of data, then right-click to create a chart. |  | Example |  | Sou",
+    "console": [
+      "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "error: WebSocket connection to 'ws://localhost:9081/_event/?token=6606f693-c365-42a9-fcc4-f109ea92e1f9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: WebSocket connection to 'ws://localhost:9081/_event/?token=6606f693-c365-42a9-fcc4-f109ea92e1f9&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
+      "error: AG Grid: AG Grid version 34.3.1 and AG Charts version 11.2.4 is not supported. AG Grid version 34.3.x should be used with AG Chart 12.3.x. Please see https://www.ag-grid.com/javascript-data-grid/modules/ for more information.",
+      "error: ****************************************************************************************************************************",
+      "error: ***************************************** AG Grid and AG Charts Enterprise License *****************************************",
+      "error: ************************************************** License Key Not Found ***************************************************",
+      "error: * All AG Grid and AG Charts Enterprise features are unlocked for trial.                                                    *",
+      "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+      "error: ****************************************************************************************************************************",
+      "error: ****************************************************************************************************************************",
+      "error: ****************************************************************************************************************************"
+    ],
+    "failed_requests": [],
+    "bad_responses": []
+  }
+}

@@ -336,3 +336,174 @@ explicitly added" warning appears on every run. Both are pre-existing and presen
 All servers killed by PID; `python3 $SB/bin/ports.py 3420 3421 3422 8420 8421 8422` reports
 nothing listening. No redis was started. `.web/` and `node_modules/` were excluded from this
 artifact copy but still exist under the scratchpad app dirs.
+
+---
+
+## VERIFICATION
+
+Independent adversarial verification, run 2026-09-19 from the written material only
+(this NOTES.md + the app sources/scripts in this directory). Nothing was installed from or
+run inside `/home/user/reflex`. Work dir
+`$SB/apps/verify_db_optional_imports/` (fresh copy of `scripts/`, `bareapp/`, `dbapp/`);
+reserved ports frontend 3920, backend 8920. Evidence under `verification/`.
+
+Versions (`uv pip freeze --python <venv> | grep -iE 'reflex|sqlmodel|sqlalchemy|alembic|aiosqlite'`,
+full output in `verification/v_freeze.txt`):
+
+```
+shared   reflex==0.9.12a1      reflex-base==0.9.12a1      + 0.9.12a1 component alphas (no db extra)
+prev     reflex==0.9.11.post1  reflex-base==0.9.11.post1  + matching stable components (no db extra)
+dbi_db   reflex==0.9.12a1      reflex-base==0.9.12a1      + alphas, sqlalchemy==2.0.54 sqlmodel==0.0.42
+         alembic==1.20.0 aiosqlite==0.22.1
+```
+
+### A1 — changelog understates the `rx.Model` behavior change — **NOT CONFIRMED** (observation accurate, framing does not hold)
+
+Commands:
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+W=$SB/apps/verify_db_optional_imports
+cd $W && $SB/envs/shared/bin/python $W/scripts/bare_model.py   # -> verification/v1_bare_model_new.log
+cd $W && $SB/envs/prev/bin/python   $W/scripts/bare_model.py   # -> verification/v1_bare_model_prev.log
+```
+
+The *behavior* reproduces exactly as written, 100% deterministic:
+
+| case | 0.9.11.post1 | 0.9.12a1 |
+| --- | --- | --- |
+| `class Item2(rx.Model): id: int` | `NO_ERROR -> <class '...Item2'>` | `RAISED: ImportError` (`pip install reflex[db]`) |
+
+Root cause confirmed in the release source: `reflex/model.py:53-63` defines
+`_ClassThatErrorsOnInit.__init_subclass__`, which Python calls for **every** subclass
+regardless of class keywords. PR #7083's body confirms the explorer's account verbatim —
+the author wrote "a plain `class Item(rx.Model)` without keywords used to define fine on a
+bare install and only failed at instantiation; it now fails at definition ... if you would
+rather keep plain subclasses lazy I can gate the check on the presence of class keywords",
+and the maintainers merged it unchanged.
+
+Why this is nevertheless **not** a defect a fix agent should act on:
+
+1. The claim is that the changelog implies "only the `table=True` form changes behavior".
+   The actual v0.9.12a1 entry reads: *"Subclassing `rx.Model` (e.g. `class Item(rx.Model,
+   table=True)`) without the `db` extra installed now raises the guided "pip install
+   reflex[db]" `ImportError` instead of a bare `TypeError` from `__init_subclass__`."*
+   The scope clause is **"Subclassing `rx.Model`"** — general — and `table=True` is
+   introduced with "e.g.", i.e. explicitly as an example, not as the scope. The changelog
+   therefore already covers the plain-subclass case.
+2. The only genuinely imprecise words are the trailing "instead of a bare `TypeError`",
+   which is true for the keyword form and not for the plain form (which previously raised
+   nothing). That is a one-clause wording nit, not a documentation gap about the change.
+3. The newly-broken population is vanishingly small: only a **bare** install (no `db`
+   extra) importing a module that defines an `rx.Model` subclass it never instantiates.
+   Any such module that actually *uses* the model already failed on 0.9.11.post1, and now
+   fails earlier with a strictly better message. Installs *with* the `db` extra are
+   unaffected (`rx.Model` is the real model class there).
+
+Optional polish only: drop or qualify the "instead of a bare `TypeError`" clause. No code
+change warranted. Severity: not a defect.
+
+### A2 — `reflex db init` without the `db` extra prints a raw traceback — **CONFIRMED** (low, pre-existing, not a release blocker)
+
+Commands:
+
+```bash
+cd $W/bareapp && REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex db init
+cd $W/bareapp && REFLEX_TELEMETRY_ENABLED=false $SB/envs/prev/bin/reflex db init
+```
+
+Evidence: `verification/v2_dbinit_new.log`, `verification/v2_dbinit_prev.log`.
+Both are 35 lines, exit 1, and after normalizing venv paths and line numbers the two
+tracebacks are **byte-for-byte identical** (`diff` clean) — confirming the explorer's
+"not a regression". Frames: `click/core.py` ×5 -> `reflex/reflex.py:986 db_init` ->
+`reflex/model.py:47 _print_db_not_available` -> `ImportError: Database is not available.
+Please install the required packages: 'pip install reflex[db]'.` (0.9.11.post1:
+`reflex.py:960` / `model.py:49`.)
+
+Confirmed as a genuine, if minor, defect because it is **inconsistent with the same
+command's own error style**: `db_init` (`reflex/reflex.py:960-987`) already handles its
+other two foreseeable failures — `db_url` unset, and alembic already initialized — with a
+clean `logger.error(...)` + `return`, but lets the missing-extra `ImportError` escape to
+click.
+
+Additional evidence the explorer missed, which strengthens the case: on a bare install
+`reflex db makemigrations` is **worse** — it dies in
+`reflex/reflex.py:1044` on `from alembic.util.exc import CommandError` with
+`ModuleNotFoundError: No module named 'alembic'` and **no `reflex[db]` guidance at all**.
+Identical on 0.9.11.post1 (`reflex.py:1018`). Evidence: `verification/v2_dbmakemig_new.log`,
+`verification/v2_dbmakemig_prev.log`. (`reflex db migrate` is fine — it exits 0 with the
+clean "Database is not initialized. Run reflex db init first.": `verification/v2_dbmigrate_new.log`.)
+
+Regression: **no** — pre-existing on 0.9.11.post1. Should not block 0.9.12; worth a
+follow-up that wraps the `reflex db *` commands so both the `ImportError` and the
+`alembic` `ModuleNotFoundError` render as one guided CLI line.
+
+### A3 — failing `rx.asession()` in a background task is "invisible to the client" — **REFUTED**
+
+Setup reproduced exactly as written (`async_db_url` removed from `dbapp/rxconfig.py`,
+leaving only `db_url="sqlite:///reflex.db"`):
+
+```bash
+cd $W/dbapp && REFLEX_TELEMETRY_ENABLED=false $SB/envs/dbi_db/bin/reflex db migrate
+cd $W/dbapp && REFLEX_TELEMETRY_ENABLED=false $SB/envs/dbi_db/bin/reflex run \
+    --frontend-port 3920 --backend-port 8920 --loglevel debug   # verification/v3_dbapp_noasync.log
+cd $W && NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 \
+    $SB/envs/driver/bin/python $W/scripts/drive_db.py http://localhost:3920/ \
+    verification/shots noasync                                   # verification/v3_drive_noasync.log
+cd $W && NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 \
+    $SB/envs/driver/bin/python $W/scripts/verify_async_err.py http://localhost:3920/ \
+    verification/shots noasync_new                               # verification/v3_async_err_new.log
+```
+
+Everything **except the headline** reproduces: `#btn-async` adds no log line and leaves the
+authors box empty, `#btn-bg` stops at `bg: starting`, the server log holds exactly three
+`ValueError: No async database url configured` tracebacks
+(`reflex/model.py:165 get_async_engine`, reached from `model.py:698 asession`), and
+`drive_db.py` reports empty PAGE ERRORS / BAD RESPONSES / console errors — identical to
+`logs/drive_db_dev.log`.
+
+**But the failure is not invisible to the client.** The same server log contains three
+`[Reflex Backend Exception]` markers, i.e. `default_backend_exception_handler`
+(`reflex/app.py:136-168`) ran and returned a sonner toast. `drive_db.py` never looks for
+one — it only inspects `console`, `pageerror`, HTTP status and the state delta, none of
+which a toast touches, and the toast carries `id="backend_error"` with the sonner default
+~4 s duration, so it is also gone by the time the script's later steps run. That is the gap
+in the written repro.
+
+`scripts/verify_async_err.py` (copied to `verification/verify_async_err.py`) adds a
+`page.on("dialog")` listener, a `[data-sonner-toast]` / `[role=alert]` DOM probe and a raw
+websocket dump. Result — after **both** `#btn-async` and `#btn-bg`:
+
+```
+toast_els: ["", "An error occurred.ValueError: No async database url configured\nSee logs for details.",
+                "An error occurred.ValueError: No async database url configured\nSee logs for details."]
+body_has_error_text: true
+```
+
+and the matching websocket frame:
+
+```
+42/_event,["event",{"events":[{"name":"_call_function","payload":{"function":
+"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\"error\"](\"An error occurred.\",
+({ \"description\" : \"ValueError: No async database url configured\\nSee logs for details.\", ... }))
+ : (window.alert(...))))"}}]}]
+```
+
+Screenshots: `verification/shots/noasync_new_async_click.png` (foreground handler) and
+`verification/shots/noasync_new_bg_click.png` (background task) — both show a red toast at
+top-center reading *"An error occurred. / ValueError: No async database url configured /
+See logs for details."* while `bg: starting` is still on the page.
+
+So the background-task exception **is** surfaced to the browser, in dev mode, with the exact
+exception text, by the framework's documented default backend exception handler. The
+remaining true parts of A3 — that `rx.asession()` requires `async_db_url` to be configured
+explicitly and derives nothing from `db_url` (`reflex/model.py:150-165`), and that the
+background task aborts leaving `bg: starting` — are pre-existing, intended design, and are
+accompanied by an actionable client-side error. Not a defect.
+
+### Cleanup
+
+`reflex run` pid 27288 killed, orphaned backend pids 27290/27338 killed with `kill -9`;
+`python3 $SB/bin/ports.py 3920 3921 8920 8921` reports nothing listening. No redis, no
+browser processes left. Everything installed came from PyPI; nothing was run with
+`/home/user/reflex` as cwd (`bare_model.py` asserts `"/envs/" in reflex.__file__`).

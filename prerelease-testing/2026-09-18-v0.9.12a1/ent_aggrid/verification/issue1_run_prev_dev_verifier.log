@@ -1,0 +1,455 @@
+Debug: Overriding config value loglevel with env var LOGLEVEL=debug
+Debug: Overriding config value telemetry_enabled with env var 
+TELEMETRY_ENABLED=false
+DeprecationWarning: Passing strings to disable_plugins has been deprecated in 
+version 0.8.28. pass Plugin classes directly instead, e.g. 
+disable_plugins=[SitemapPlugin]. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise
+/config.py:22)
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise
+/config.py'
+Debug: Config: ConfigEnterprise(app_name='ag_grid', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url='sqlite+aiosqlite:///reflex.db', redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'disable_plugins', 'async_db_url', 
+'app_name', 'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=True)
+Debug: Running command: [PosixPath('/opt/node22/bin/node'), '--version']
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11.post1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_ent_aggrid/venv_prev/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────────── System Info ──────────────────────────────────
+Debug: Config file: 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise
+/config.py'
+Debug: Config: ConfigEnterprise(app_name='ag_grid', app_module_import=None, 
+loglevel=<LogLevel.DEBUG: 'debug'>, frontend_port=None, frontend_path='', 
+backend_port=None, backend_path='', api_url='http://localhost:8000', 
+deploy_url='http://localhost:3000', backend_host='0.0.0.0', db_url=None, 
+async_db_url='sqlite+aiosqlite:///reflex.db', redis_url=None, 
+telemetry_enabled=False, 
+bun_path=PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+frozen_lockfile=True, static_page_generation_timeout=60, 
+cors_allowed_origins=('*',), vite_allowed_hosts=False, react_strict_mode=True, 
+frontend_compression_formats=['gzip'], frontend_packages=[], 
+state_manager_mode=<StateManagerMode.DISK: 'disk'>, redis_lock_expiration=10000,
+redis_lock_warning_threshold=1000, redis_token_expiration=3600, 
+_non_default_attributes={'loglevel', 'disable_plugins', 'async_db_url', 
+'app_name', 'telemetry_enabled'}, env_file=None, state_auto_setters=False, 
+default_color_mode='system', show_built_with_reflex=None, is_reflex_cloud=False,
+extra_overlay_function=None, hydrate_fallback=None, plugins=[], 
+disable_plugins=[<class 'reflex_base.plugins.sitemap.SitemapPlugin'>], 
+transport='websocket', use_single_port=True)
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: [Reflex 0.9.11.post1 with Python 3.11.15 (PATH: 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_ent_aggrid/venv_prev/bin/python)]
+Debug: [Node 22.22.2 (Minimum: 22.22.0) (PATH:/opt/node22/bin/node)]
+Debug: [Bun 1.4.0 (Minimum: 1.4.0) (PATH: 
+/root/.local/share/reflex/bun/bin/bun)]
+Debug: [OS Linux Ubuntu 24.04.4 LTS]
+Debug: Using package installer at: ['/root/.local/share/reflex/bun/bin/bun', 
+'/opt/node22/bin/npm']
+Debug: Using package executer at: [['/root/.local/share/reflex/bun/bin/bun'], 
+['/opt/node22/bin/npm']]
+Debug: Unzip path: /usr/bin/unzip
+───────────────────────────── Initializing ag_grid ─────────────────────────────
+Debug: Creating /root/.local/share/reflex
+Debug: Ensuring reflex installation id.
+Debug: Creating /root/.local/share/reflex
+Debug: Validating frontend dependencies.
+Debug: Installing or validating bun.
+Debug: Running command: [PosixPath('/root/.local/share/reflex/bun/bin/bun'), 
+'--version']
+Debug: Skipping bun installation as it is already installed.
+Info: Initializing the web directory.
+Debug: Copying 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_base/.templ
+ates/web to .web
+Debug: Restoring lockfiles.
+Debug: Initializing the web directory.
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_ent_aggrid/demo_prev/reflex.lock/package.json
+Debug: Initializing the bun config file.
+Debug: Using cached value for _get_best_registry with payload: constant
+Debug: Initializing the .npmrc file.
+Debug: Initializing the public directory.
+Debug: Initializing the react-router.config.js file.
+Debug: Initializing the vite.config.js file.
+Debug: Initializing the reflex.json file.
+Debug: Setting project hash to 201725816872382562326827949467398616013.
+Debug: Checking for the latest version of reflex...
+Debug: Sending HTTPS request to https://pypi.org/pypi/reflex/json
+Debug: Received response from https://pypi.org/pypi/reflex/json in 0.031 seconds
+Debug: Latest version of reflex: 0.9.11.post1
+Debug: Creating .gitignore
+Debug: requirements.txt already has reflex as dependency.
+Success: Initialized ag_grid. Install dependencies from `requirements.txt` with 
+`uv pip install -r requirements.txt` (or your preferred installer) before 
+running `uv run reflex run`.
+Debug: Resetting disk state manager.
+Debug: Overriding config value frontend_port with env var FRONTEND_PORT=4081
+Debug: Overriding config value backend_port with env var BACKEND_PORT=9081
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Debug: Checking if Frontend port: 4081 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Frontend port: 4081 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Frontend port: 4081 is not in use.
+Debug: Checking if Backend port: 9081 is in use.
+Debug: Unable to bind to any port for 10: [Errno 97] Address family not 
+supported by protocol
+Debug: Checking if Backend port: 9081 is in use for families: 
+[<AddressFamily.AF_INET: 2>].
+Debug: Backend port: 9081 is not in use.
+DeprecationWarning: `@rx.memo` on `row_counter` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`rowid`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (ag_grid/formatters.py:219)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+Debug: Registered lifespan task: _setup_event_processor
+DeprecationWarning: console.info has been deprecated in version 0.9.9. use 
+logger.info(msg) on logging.getLogger(__name__) instead. It will be completely 
+removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise
+/app.py:154)
+Info: Single port proxy mode enabled
+Debug: Registered lifespan task: proxy_middleware
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise
+/components/ag_grid/aggrid.py:1736)
+DeprecationWarning: Implicit Radix Themes enablement has been deprecated in 
+version 0.9.0. a Radix Themes component was detected, which enables the full 
+Radix CSS bundle. Configure `rx.plugins.RadixThemesPlugin()` in `rxconfig.py` to
+make this explicit, or remove Radix components to avoid loading the stylesheet. 
+It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_components
+_radix/plugin.py:76)
+Debug: [timing] Compile pages: 0.97s
+Debug: [timing] Copy assets: 0.00s
+Compiling: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 44/43 0:00:01
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', '-d', '@react-router/dev@8.3.1', '@emotion/react@11.14.0',
+'@react-router/fs-routes@8.3.1', 'postcss@8.5.26', 'vite@8.2.2', 
+'postcss-import@17.0.0', 'autoprefixer@10.5.4']
+Debug: Installing frontend development dependencies
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [12]
+Debug: warn: incorrect peer dependency "react-router@8.4.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed @react-router/dev@8.3.1 with binaries:
+Debug:  - react-router
+Debug: installed @emotion/react@11.14.0
+Debug: installed @react-router/fs-routes@8.3.1
+Debug: installed postcss@8.5.26
+Debug: installed vite@8.2.2 with binaries:
+Debug:  - vite
+Debug: installed postcss-import@17.0.0
+Debug: installed autoprefixer@10.5.4 with binaries:
+Debug:  - autoprefixer
+Debug: 
+Debug: 128 packages installed [228.00ms]
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'react-helmet@6.1.0', '@radix-ui/themes@3.3.0', 
+'socket.io-client@4.8.3', 'lucide-react@1.26.0', '@mantine/core@8.3.9', 
+'react-router@8.3.1', 'react-dom@19.2.8', 'react@19.2.8', 
+'ag-grid-enterprise@34.3.1', 'moment-duration-format@2.2.2', 'moment@2.30.1', 
+'universal-cookie@8.1.2', 'react-error-boundary@6.1.2', 
+'ag-charts-enterprise@11.2.4', 'react-syntax-highlighter@16.1.1', 
+'ag-grid-react@34.3.1', '@radix-ui/react-form@0.1.16', 'sonner@2.0.8', 
+'react-moment@2.0.2', 'ag-grid-community@34.3.1', 'isbot@5.2.2', 
+'@react-router/node@8.3.1']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: Resolving dependencies
+Debug: Resolved, downloaded and extracted [10]
+Debug: warn: incorrect peer dependency "react@19.3.0"
+Debug: Saved lockfile
+Debug: 
+Debug: installed react-helmet@6.1.0
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed lucide-react@1.26.0
+Debug: installed @mantine/core@8.3.9
+Debug: installed react-router@8.3.1
+Debug: installed react-dom@19.2.8
+Debug: installed react@19.2.8
+Debug: installed ag-grid-enterprise@34.3.1
+Debug: installed moment-duration-format@2.2.2
+Debug: installed moment@2.30.1
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-error-boundary@6.1.2
+Debug: installed ag-charts-enterprise@11.2.4
+Debug: installed react-syntax-highlighter@16.1.1
+Debug: installed ag-grid-react@34.3.1
+Debug: installed @radix-ui/react-form@0.1.16
+Debug: installed sonner@2.0.8
+Debug: installed react-moment@2.0.2
+Debug: installed ag-grid-community@34.3.1
+Debug: installed isbot@5.2.2
+Debug: installed @react-router/node@8.3.1
+Debug: 
+Debug: 152 packages installed [336.00ms]
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_ent_aggrid/demo_prev/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/verify_ent_aggrid/demo_prev/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.58s
+Debug: [timing] Write to Disk: 0.00s
+───────────────────────────────── App Running ──────────────────────────────────
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'run', 'dev']
+Debug: Starting frontend
+Debug: $ react-router dev --host
+Debug: Using Granian for backend
+Debug: Reload paths: 
+['/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpa
+d/apps/verify_ent_aggrid/demo_prev/requirements.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/demo_prev/alembic.ini', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/demo_prev/assets', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/demo_prev/requirements_norx.txt', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/demo_prev/reflex.db', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/demo_prev/alembic', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/demo_prev/rxconfig.py', 
+'/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/demo_prev/ag_grid']
+[INFO] Starting granian (main PID: 21722)
+[INFO] Listening at: http://0.0.0.0:9081
+[INFO] Spawning worker-1 with PID: 21808
+DeprecationWarning: `@rx.memo` on `row_counter` without explicit annotations has
+been deprecated in version 0.9.3. Add `rx.Var[...]` annotations on parameter(s) 
+`rowid`. Until removal, a missing return defaults to `rx.Component` and missing 
+or bare-type parameters are coerced to `rx.Var[...]`. It will be completely 
+removed in 1.0. (ag_grid/formatters.py:219)
+DeprecationWarning: reflex.Model has been deprecated in version 0.9.2. Directly 
+use database ORM layer, like sqlalchemy or SQLModel. It will be completely 
+removed in 1.0.0. (<frozen abc>:106)
+Debug: Registered lifespan task: _setup_event_processor
+Debug: Registered lifespan task: proxy_middleware
+Debug: BE Evaluating stateful page: model
+Debug:   ➜  Local:   http://localhost:4081/
+App running at: http://localhost:4081/
+Backend running at: http://0.0.0.0:9081
+Debug:   ➜  Network: http://192.0.2.2:4081/  eth0
+Debug: BE Evaluating stateful page: model-auth
+Debug: BE Evaluating stateful page: model-ssrm
+DeprecationWarning: ArrayVar.foreach has been deprecated in version 0.9.7. Use 
+ArrayVar.map instead. It will be completely removed in 1.0. 
+(/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise
+/components/ag_grid/aggrid.py:1736)
+Process granian-worker:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.11/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/granian/server/mp.py", line 92, in wrapped
+    callback = callback_loader()
+               ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/granian/_internal.py", line 70, in load_target
+    rv = rv()
+         ^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/app.py", line 766, in __call__
+    self._compile(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/app.py", line 1682, in _compile
+    compiler.compile_app(
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/compiler/compiler.py", line 1234, in compile_app
+    utils._compile_initial_state(app._state)
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/compiler/utils.py", line 269, in _compile_initial_state
+    return initial_state, format.json_dumps(
+                          ^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_base/utils/format.py", line 734, in json_dumps
+    return json.dumps(obj, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex/compiler/utils.py", line 266, in serialize_initial_value
+    return serializers.serialize(value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_base/utils/serializers.py", line 176, in serialize
+    serialized = serializer(value)
+                 ^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 284, in serialize_lambda
+    return serialize_lambda_var(LiteralLambdaVar.create(func))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 244, in create
+    return_expr = cls._validate_and_extend_return_expr(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_prev/lib/python3.11/site-packages/reflex_enterprise/vars.py", line 166, in _validate_and_extend_return_expr
+    raise ValueError(
+ValueError: Library @radix-ui/themes is not bundled. Use `from reflex.components.dynamic import bundle_library; bundle_library('@radix-ui/themes') to enable it it.
+[ERROR] Unexpected exit from worker-1
+Debug: 5:21:18 AM [vite] (client) [optimizer] bundling dependencies...
+Debug: 5:21:57 AM [vite] (ssr) connected.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js, 
+use /external/reflex_enterprise/components/mantine/base/mantine_provider.js.
+Debug: Files in the public directory are served at the root path.
+Debug: Instead of 
+/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js, 
+use /external/reflex_enterprise/components/mantine/base/mantine_provider.js.
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:23:08 AM [vite] (client) [console.error] * All AG Grid Enterprise 
+features are unlocked for trial.                                                
+*
+Debug: 5:23:08 AM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+Debug: 5:23:08 AM [vite] (client) [console.error] * All AG Grid Enterprise 
+features are unlocked for trial.                                                
+*
+Debug: 5:23:08 AM [vite] (client) [console.error] * If you want to hide the 
+watermark please email info@ag-grid.com for a trial license key.                
+*
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: 5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+Debug: error: script "dev" exited with code 143
+Starting frontend failed with exit code 143
+$ react-router dev --host
+  ➜  Local:   http://localhost:4081/
+  ➜  Network: http://192.0.2.2:4081/  eth0
+5:21:18 AM [vite] (client) [optimizer] bundling dependencies...
+5:21:57 AM [vite] (ssr) connected.
+Files in the public directory are served at the root path.
+Instead of 
+/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js, 
+use /external/reflex_enterprise/components/mantine/base/mantine_provider.js.
+Files in the public directory are served at the root path.
+Instead of 
+/public/external/reflex_enterprise/components/mantine/base/mantine_provider.js, 
+use /external/reflex_enterprise/components/mantine/base/mantine_provider.js.
+5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+5:23:08 AM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+5:23:08 AM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+5:23:08 AM [vite] (client) [console.error] * All AG Grid Enterprise features are
+unlocked for trial.                                                             
+*
+5:23:08 AM [vite] (client) [console.error] * If you want to hide the watermark 
+please email info@ag-grid.com for a trial license key.                          
+*
+5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+5:23:08 AM [vite] (client) [console.error] 
+************************************************ AG Grid Enterprise License 
+************************************************
+5:23:08 AM [vite] (client) [console.error] 
+************************************************** License Key Not Found 
+***************************************************
+5:23:08 AM [vite] (client) [console.error] * All AG Grid Enterprise features are
+unlocked for trial.                                                             
+*
+5:23:08 AM [vite] (client) [console.error] * If you want to hide the watermark 
+please email info@ag-grid.com for a trial license key.                          
+*
+5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+5:23:08 AM [vite] (client) [console.error] 
+********************************************************************************
+********************************************
+error: script "dev" exited with code 143
+
+
+
+Run with --loglevel debug  for the full log.
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
+Info: Reflex app stopped.

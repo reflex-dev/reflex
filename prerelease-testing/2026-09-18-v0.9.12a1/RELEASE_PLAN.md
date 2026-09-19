@@ -150,7 +150,9 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   stale `$/utils/components` bundle path; ModelWrapper `get_backend_url()` percent-encodes `?` so `/model*`
   datasource fetches 404; ag-grid 34.3.1 pinned with ag-charts 11.2.4 (integrated charts unusable);
   `ag_grid.column_def(**kwargs)` silently drops unknown kwargs (`checkbox_selection` → no row selection in
-  `ag_grid_finance`).
+  `ag_grid_finance`; `ColumnDef` derives from `PropsBase` rather than the strict `NoExtrasAllowedProps`). All four
+  CONFIRMED by the verifier. Also: issue reflex-dev/reflex#6978 (masked AttributeError in cached vars) can be closed —
+  #7115 fixes it on 0.9.12a1.
 
 ## Decisions needed from a maintainer
 

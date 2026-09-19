@@ -1,0 +1,45 @@
+== BEFORE == {
+ "label": "before",
+ "dialogs": [],
+ "toast_els": [],
+ "body_has_error_text": false,
+ "bg_out": "bg:",
+ "authors": "",
+ "console_err": [],
+ "page_errors": [],
+ "bad": []
+}
+== AFTER #btn-async == {
+ "label": "async",
+ "dialogs": [],
+ "toast_els": [
+  "",
+  "An error occurred.ValueError: No async database url configured\nSee logs for details.",
+  "An error occurred.ValueError: No async database url configured\nSee logs for details."
+ ],
+ "body_has_error_text": true,
+ "bg_out": "bg:",
+ "authors": "",
+ "console_err": [],
+ "page_errors": [],
+ "bad": []
+}
+== AFTER #btn-bg == {
+ "label": "bg",
+ "dialogs": [],
+ "toast_els": [
+  "",
+  "An error occurred.ValueError: No async database url configured\nSee logs for details.",
+  "An error occurred.ValueError: No async database url configured\nSee logs for details."
+ ],
+ "body_has_error_text": true,
+ "bg_out": "bg: starting",
+ "authors": "",
+ "console_err": [],
+ "page_errors": [],
+ "bad": []
+}
+== WS frames mentioning toast/alert/error ==
+42/_event,["event",{"events":[{"name":"_call_function","router_data":{},"payload":{"function":"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\"error\"](\"An error occurred.\", ({ [\"description\"] : \"ValueError: No async database url configured\\nSee logs for details.\", [\"position\"] : \"top-center\", [\"id\"] : \"backend_error\", [\"style\"] : ({ [\"width\"] : \"500px\", [\"whiteSpace\"] : \"pre-wrap\" }) }))) : (window.alert(\"An error occurred.\".replaceAll(\"<br/>\", \"\\n\")))))","callback":null}}]}]
+42/_event,["event",{"events":[{"name":"_call_function","router_data":{},"payload":{"function":"(() => (isTrue(refs['__toast']) ? (refs['__toast']?.[\"error\"](\"An error occurred.\", ({ [\"description\"] : \"ValueError: No async database url configured\\nSee logs for details.\", [\"position\"] : \"top-center\", [\"id\"] : \"backend_error\", [\"style\"] : ({ [\"width\"] : \"500px\", [\"whiteSpace\"] : \"pre-wrap\" }) }))) : (window.alert(\"An error occurred.\".replaceAll(\"<br/>\", \"\\n\")))))","callback":null}}]}]
+TOTAL_WS: 11 TOTAL_CONSOLE: 4

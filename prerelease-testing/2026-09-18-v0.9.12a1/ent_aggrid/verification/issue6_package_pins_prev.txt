@@ -1,0 +1,4 @@
+13:    "ag-charts-enterprise": "11.2.4",
+14:    "ag-grid-community": "34.3.1",
+15:    "ag-grid-enterprise": "34.3.1",
+16:    "ag-grid-react": "34.3.1",
