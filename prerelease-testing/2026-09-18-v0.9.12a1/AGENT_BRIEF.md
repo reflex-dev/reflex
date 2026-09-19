@@ -32,10 +32,10 @@ You REPORT issues; you never fix framework code.
    The orchestrator commits artifacts.
 5. Do NOT fix bugs you find — record precise repro steps instead.
 6. Kill every server/browser/redis process you started before you finish (track PIDs; verify
-   with `ps aux | grep -E 'reflex|vite|granian|bun|chrom|redis'`). Other agents share this
+   with `ps aux | grep -E "reflex|vite|granian|bun|chrom|redis"` and `python3 $SB/bin/ports.py`). Other agents share this
    4-CPU/15GB machine — run at most ONE dev server at a time unless your cluster needs two
    simultaneously. Terminating `reflex run` can orphan the vite process and keep the port
-   bound: after killing, check `ss -ltnp | grep <port>` and kill the leftover pid.
+   bound: after killing, check `python3 $SB/bin/ports.py <port> ...` (lists listening ports with pids; `ss`/`netstat` are NOT installed here) and kill the leftover pid.
 
 ## Environment
 
