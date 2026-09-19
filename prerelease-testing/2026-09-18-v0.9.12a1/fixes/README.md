@@ -64,7 +64,34 @@ orchestrator from the agents' final responses; the text is theirs.
 
 ## Integration
 
-INTEGRATION_PLACEHOLDER
+All five reflex commits were cherry-picked (in the order f001, f003, f017, f012) onto a clean `origin/main`
+(`4cba00435`) in a scratch worktree and checked together on 2026-09-19 18:05–18:08 UTC:
+
+| check | result |
+|---|---|
+| `git cherry-pick` of all five commits | clean, no conflicts (f001 and f003 both touch `reflex/state.py` and `reflex_base/vars/base.py`, in different regions) |
+| `uv run ruff check .` | All checks passed |
+| `uv run ruff format --check .` | 1632 files already formatted |
+| `uv run pyright reflex tests` | 0 errors, 0 warnings |
+| `uv run pytest tests/units --ignore=tests/units/reflex_cli` | 9137 passed, 20 skipped (2 min 05 s) |
+
+`tests/units/reflex_cli` is excluded because it fails identically on an untouched `origin/main` checkout here: the
+hosting-cli version gate rejects the tagless worktree version `0.0.0.post50.dev0+4cba00435` (207 environmental
+failures, seen by every agent and reviewer). Selenium integration tests cannot run in this container (no
+chromedriver download); the Playwright-driven campaign repros are the end-to-end evidence.
+
+The same five commits are cherry-picked (with `-x` origin lines) onto `claude/upbeat-feynman-m41a1u`, on top of the
+campaign artifacts, as:
+
+`  - `4f9bfdf5c fix: keep app wraps below the sticky badge renderable
+`  - `8b043a331 fix: release the dev backend socket when no worker can serve it
+`  - `dc7da49dc fix: only record an uncached var as sent once its delta is delivered
+`  - `4b6508cd6 docs: note the router state-dict shape change from #7068
+`  - `29800e39a fix: keep BaseStateMeta as the metaclass of State
+
+They touch only framework files, so each can be cherry-picked from there onto `main` or a fresh branch; the
+`patches/` directories carry the same content for `git am`. The reflex-enterprise commits are in
+`rxe/patches/` only (that repository has no designated branch in this session).
 
 ## Points the reviewers want a maintainer to weigh (none blocking)
 
