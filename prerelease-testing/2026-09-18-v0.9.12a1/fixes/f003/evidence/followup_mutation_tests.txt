@@ -1,0 +1,49 @@
+=== MUTATION A: _delta_value_key returns bare value (drops the 1/True/1.0 discrimination) ===
+    
+        class ScalarState(BaseState):
+            @rx.var(cache=False)
+            def v(self) -> int | float:
+                return next(values)
+    
+        ss = ScalarState()
+        key = "v" + FIELD_MARKER
+        # 1, True and 1.0 are all Python-equal, but the client would receive 1,
+        # true and 1.0, so each one has to be sent.
+        for expected_type in (int, bool, float):
+            delta = await ss._get_resolved_delta()
+>           assert type(delta[ss.get_name()][key]) is expected_type
+                        ^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'reflex___istate___dynamic____scalar_state'
+
+tests/units/test_state.py:1560: KeyError
+=============================== warnings summary ===============================
+tests/units/test_state.py:142
+    class TestMixin(BaseState, mixin=True):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/units/test_state.py::test_uncached_computed_var_scalar_key_distinguishes_types
+1 failed, 221 deselected, 1 warning in 0.35s
+=== MUTATION B: unkeyable values get a constant key instead of _UNKEYABLE_VALUE ===
+            def circular(self) -> list:
+                value = []
+                value.append(value)
+                return value
+    
+        cs = CircularState()
+        for _ in range(2):
+            # Compare the keys only: the values are self-referential.
+            delta = await cs._get_resolved_delta()
+>           assert list(delta[cs.get_name()]) == ["circular" + FIELD_MARKER]
+                        ^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'reflex___istate___dynamic____circular_state'
+
+tests/units/test_state.py:1712: KeyError
+=============================== warnings summary ===============================
+tests/units/test_state.py:142
+    class TestMixin(BaseState, mixin=True):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/units/test_state.py::test_uncached_computed_var_unkeyable_value_always_sent
+1 failed, 221 deselected, 1 warning in 0.35s
