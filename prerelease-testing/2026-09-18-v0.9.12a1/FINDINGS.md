@@ -61,9 +61,9 @@ Index:
 - ~~FINDING-005~~: "a narrow `deps=` cannot narrow" — **REFUTED** by the verifier (`deps=[State.router.url], auto_deps=False` registers only `rx_router_url`; `deps=` is additive by long-standing design; the −47% vs −67% gap compares whole frames with the PR's router-only measurement). Kept in the refuted list below.
 - FINDING-006: a substate shadowing a parent's backend (underscore) var is still silently ignored — `_check_overridden_inherited_vars` skips every `_`-prefixed name (`reflex/state.py:1335`) (LOW, pre-existing gap) — **CONFIRMED** by the verifier on both versions, with the runtime damage characterised (child default discarded, reads/writes resolve to the parent)
 - ~~FINDING-007~~: "PR #7136's documented `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` escape hatch is missing" — **REFUTED as a defect** by the verifier: the flag is promised only in the PR description; the news fragment, the docs paragraph and the changelog never mention it (so nothing shipped is wrong), and it would not have helped FINDING-001 anyway. Kept as a note for the release manager: #7136 shipped a breaking change with no opt-in, contrary to its own description.
-- FINDING-008: `rx.dropdown_menu.trigger` swallows its child button's `on_click` — the menu opens, the handler never runs; the other four Radix triggers compose correctly (MEDIUM, pre-existing, Radix pointerdown/dismissable-layer interaction) — claimed by `memo_aschild`, verification pending
-- FINDING-009: `rx.cond` renders both branches eagerly, so a render-time throw in the untaken branch fails the prod build at the prerender step (`Prerender: Request failed for /boom/: 500`, exit 1); dev only shows the error boundary (MEDIUM, pre-existing shape; prod half not baselined) — claimed by `memo_aschild`, verification pending
-- FINDING-010: `on_submit` form data carries id-keyed duplicates and stray entries (`the_form: banana`, `btn_submit: None`) besides the name-keyed fields (LOW, pre-existing) — claimed by `memo_aschild`, verification pending
+- FINDING-008: `rx.dropdown_menu.trigger` swallows its child button's `on_click` — the menu opens, the handler never runs; the other four Radix triggers compose correctly (LOW after verification: pre-existing, upstream Radix — the menu opens on pointerdown and the dismissable layer sets `pointer-events:none`, a synthetic `el.click()` runs the handler, so reflex's wiring is correct) — **CONFIRMED** by the verifier as a bug to file, not a release item
+- ~~FINDING-009~~: "`rx.cond` evaluates both branches eagerly; a render-time throw in the untaken branch fails the prod build" — **REFUTED** by the verifier: an `@rx.memo` component that throws and an idiomatic `None`-deref state expression both sit unharmed in the untaken branch (dev renders, prod prerenders); only a raw `rx.Var("<js>")` literal is inlined into the parent JSX and evaluated, which is plain JS semantics through reflex's escape hatch, and the prod build fails byte-identically on 0.9.11.post1. Kept in the refuted list.
+- ~~FINDING-010~~: "`on_submit` form data is polluted with id-keyed duplicates" — **reclassified** by the verifier: intentional, long-standing API (`Form._get_form_refs()` sends every ref in the form subtree so an id-only field reaches the handler; the `None`s are `getRefValue` on non-input ids); byte-identical on 0.9.11.post1. A cleanup ticket at most; kept in the refuted list.
 - FINDING-012: the `rx.data_editor` overlay editor — the image-preview carousel that is the headline of #7081 — never opens in PROD when the "Built with Reflex" badge is on: the sticky-badge app-wrap nests the dataeditor's `#portal` wrap and drops it (HIGH impact on a headline feature, pre-existing nesting, trivially small to fix) — **CONFIRMED** by the verifier on a fresh 12-line app with an A/B: `show_built_with_reflex=False` restores the portal and the carousel opens
 - FINDING-013: `rx.vars.use_id()` inside an `rx.foreach` body returns one identical id for every item — duplicate DOM ids, every `html_for` label targets the first row (LOW after verification — by-design limitation documented on `use_hook_var` but not on `use_id()` or its three docs pages; a docs fix) — **CONFIRMED** by the verifier
 - ~~FINDING-014~~: "the #7124 changelog's `reflex.components.datadisplay.code` path fails" — **REFUTED** by the verifier: the changelog names a module path, and `import reflex.components.datadisplay.code` works on both versions; only the `from … import code` spelling fails, and it never worked. Kept in the refuted list.
@@ -340,19 +340,12 @@ Index:
   names at `reflex/state.py:1335`; a fix must restrict itself to `inherited_backend_vars`.
 - (FINDING-007 refuted — see the refuted list.)
 
-## FINDING-008 … FINDING-010 (`memo_aschild`, all pre-existing on 0.9.11.post1; claimed, details in `memo_aschild/NOTES.md`)
+## FINDING-008 (`memo_aschild`; CONFIRMED low, pre-existing; FINDING-009/010 refuted — see the refuted list)
 
 - FINDING-008: `/triggers` page — `rx.button(on_click=TrigState.bump("dropdown"))` inside `rx.dropdown_menu.trigger`
   opens the menu but never runs the handler; dialog/popover/tooltip/hover_card triggers run both. Identical
   on 0.9.11.post1. Evidence: `memo_aschild/logs/dev_probe_evidence.log`, `shots/dev/dropdown.png`.
-- FINDING-009: `rx.cond(BoomState.boom, rx.box(rx.text(rx.Var("undefined_global_thing.nope"))), rx.text("not exploded"))`
-  with `boom=False` compiles to `jsx(Cond_comp_*, {}, <true>, <false>)`, both branches evaluated as arguments;
-  the untaken branch throws on first render. Dev: error boundary. Prod: React Router prerender returns 500
-  and `reflex run --env prod` exits 1. Evidence: `memo_aschild/logs/prod_server.trim.log`, `logs/prev_boom_probe.log`.
-  A user's typo in a `rx.cond` branch that is never shown makes the whole site unbuildable — worth a maintainer's eye
-  even though the shape is not new.
-- FINDING-010: `/forms` submit yields the nine name-keyed fields plus one entry per element id and
-  `'the_form': 'banana'` (the form's own id absorbing the select's hidden value). Byte-identical on 0.9.11.post1.
+- (FINDING-009 and FINDING-010 refuted/reclassified — see the refuted list.)
 
 ## Refuted / reclassified claims
 
@@ -374,6 +367,17 @@ Index:
   (`news/+reserved-state-names.breaking.md`, the `docs/state/overview.md` paragraph) and the changelog never mention
   it, so nothing shipped is inconsistent — and the metaclass is installed unconditionally, so the flag would not have
   rescued FINDING-001. Note for the release manager only.
+- **FINDING-009 — "`rx.cond` evaluates both branches eagerly; a throwing untaken branch fails the prod build"
+  (`memo_aschild`)**: refuted by the verifier with a minimal app (`memo_aschild/verification/app_boomy`): an
+  `@rx.memo` component containing the throwing Var and an idiomatic `rx.text(S.user["name"])` with `user=None` both
+  render "not exploded" with zero console errors in the untaken branch; only a raw `rx.Var("undefined_global_thing.nope")`
+  literal is inlined verbatim into the parent JSX (`jsx(RadixThemesText, {as:"p"}, undefined_global_thing.nope)`),
+  so it is evaluated as any JS argument would be. The prod prerender failure is byte-identical on 0.9.11.post1.
+- **FINDING-010 — "`on_submit` form data carries id-keyed duplicates and `None` entries" (`memo_aschild`)**:
+  reclassified as intentional API. `Form._get_form_refs()` (`reflex_components_core/el/elements/forms.py:359-380`,
+  "Send all the input refs to the handler") emits `getRefValue(ref_<id>)` for every ref in the form subtree and
+  merges them over the real `FormData`; identical on 0.9.11.post1. Only apps that put `id=` on non-field elements
+  inside a form see the extra keys. Cleanup ticket at most.
 
 ## Cluster summaries
 
@@ -442,7 +446,7 @@ memo under a ComponentState) with real file delivery. #7130: no `Invalid DOM pro
 boundary's SVG. #7133: no `force_match` without `match`. #6708: svg `defs`/gradients paint at top level, in
 `rx.foreach` and in a memo. #7122: 200 call sites sharing handlers dispatch the right args; throttle/debounce/
 stop_propagation do not leak; one handler on two triggers works. #7121: median python-side compile of a
-~500-component page 0.582 s → 0.493 s (~15%). Pre-existing defects recorded as FINDING-008/009/010. Note:
+~500-component page 0.582 s → 0.493 s (~15%). Pre-existing defects recorded as FINDING-008 (confirmed) and two claims the verifier refuted (009, 010). Note:
 `rx.form.control` only accepts TextFieldRoot/DebounceInput children (both versions), so the other controls
 were exercised as direct field children.
 

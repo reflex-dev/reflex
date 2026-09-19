@@ -1,0 +1,49 @@
+{
+  "/model": {
+    "rows": 1,
+    "toasts": [],
+    "body_head": "Simple ModelWrapper | AgGrid demo |  | Basic example of an infinite-row ModelWrapper with no customization. |  | Example |  | Source |  | Loading... | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_annoying | Met",
+    "console": [
+      "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "error: ****************************************************************************************************************************",
+      "error: ************************************************ AG Grid Enterprise License ************************************************",
+      "error: ************************************************** License Key Not Found ***************************************************",
+      "error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+      "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+      "error: ****************************************************************************************************************************",
+      "error: ****************************************************************************************************************************",
+      "error: ****************************************************************************************************************************",
+      "error: ************************************************ AG Grid Enterprise License ************************************************",
+      "error: ************************************************** License Key Not Found ***************************************************",
+      "error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *"
+    ],
+    "failed_requests": [],
+    "bad_responses": [
+      "404 http://localhost:9080/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1",
+      "404 http://localhost:9080/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&state=reflex___state____state.reflex___istate___dynamic____model_wrapper_n1"
+    ]
+  },
+  "/model-ssrm": {
+    "rows": 0,
+    "toasts": [],
+    "body_head": "SSRM ModelWrapper | AgGrid demo |  | Extended SSRM ModelWrapper with custom behavior and auth. |  | Example |  | Source |  | Login | Enable Advanced Filter | Loading... | Id | Name | Age | Years_known | Owes_me | Has_a_dog | Spouse_is_a",
+    "console": [
+      "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.",
+      "error: ****************************************************************************************************************************",
+      "error: ************************************************ AG Grid Enterprise License ************************************************",
+      "error: ************************************************** License Key Not Found ***************************************************",
+      "error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *",
+      "error: * If you want to hide the watermark please email info@ag-grid.com for a trial license key.                                 *",
+      "error: ****************************************************************************************************************************",
+      "error: ****************************************************************************************************************************",
+      "error: ****************************************************************************************************************************",
+      "error: ************************************************ AG Grid Enterprise License ************************************************",
+      "error: ************************************************** License Key Not Found ***************************************************",
+      "error: * All AG Grid Enterprise features are unlocked for trial.                                                                  *"
+    ],
+    "failed_requests": [],
+    "bad_responses": [
+      "404 http://localhost:9080/abstract-wrapper-data%3FstartRow=0&endRow=50&sortModel=%5B%5D&filterModel=%7B%7D&rowGroupCols=%5B%5D&groupKeys=%5B%5D&valueCols=%5B%5D&pivotMode=false&pivotCols=%5B%5D&state=reflex___state____state."
+    ]
+  }
+}
