@@ -1,0 +1,234 @@
+"""vars_typing cluster app: #7015 var hashing, #7189 Annotated, #6923 State page titles,
+#7198 var-op volume, plus client_state / memo / ComponentState / foreach / background tasks."""
+
+from typing import Annotated, Literal
+
+import reflex as rx
+from pydantic import BaseModel, Field
+from reflex.vars import Var, VarData
+from reflex.vars.base import ImportVar
+
+assert "/envs/" in rx.__file__, rx.__file__
+
+
+# ---------- #7189: pydantic discriminated union ----------
+class Cat(BaseModel):
+    kind: Literal["cat"] = "cat"
+    name: str
+    lives: int = 9
+
+
+class Dog(BaseModel):
+    kind: Literal["dog"] = "dog"
+    name: str
+    good: bool = True
+
+
+Pet = Annotated[Cat | Dog, Field(discriminator="kind")]
+
+
+# ---------- #7015: a literal var that carries a hook + import ----------
+_HOOK = (
+    "const vtHookRan = useMemo(() => { "
+    "if (typeof window !== 'undefined') { window.__vt_hook_ran = true; } return 1; }, []);"
+)
+HOOKED_ONE = Var.create(
+    1,
+    _var_data=VarData(
+        hooks={_HOOK: None},
+        imports={"react": [ImportVar(tag="useMemo")]},
+    ),
+)
+PLAIN_ONE = Var.create(1)
+
+
+class State(rx.State):
+    title: str = "VT Home"
+    desc: str = "vars_typing default description"
+    count: int = 0
+    pet: Pet = Cat(name="Momo")
+    pets: list[Pet] = [Cat(name="Momo"), Dog(name="Rex")]
+    limit: Annotated[int, Field(gt=0)] = 5
+    tags: Annotated[list[str], Field(min_length=0)] = ["a", "b"]
+    log: list[str] = []
+    bg_ticks: int = 0
+
+    @rx.var
+    def doubled(self) -> int:
+        return self.count * 2
+
+    @rx.var
+    def title_fstring(self) -> str:
+        return f"{self.count} items"
+
+    @rx.event
+    def inc(self):
+        self.count += 1
+
+    @rx.event
+    def set_title_and_desc(self):
+        self.title = f"VT {self.count} items"
+        self.desc = f"description for {self.count}"
+
+    @rx.event
+    def to_dog(self):
+        self.pet = Dog(name="Rex")
+
+    @rx.event
+    def to_cat(self):
+        self.pet = Cat(name="Momo")
+
+    @rx.event
+    def add_pet(self):
+        self.pets = [*self.pets, Dog(name=f"Pup{len(self.pets)}")]
+
+    @rx.event
+    def take(self, n: Annotated[int, Field(gt=0)]):
+        """Handler arg typed with Annotated."""
+        self.limit = n
+        self.log = [*self.log, f"take({n})"]
+
+    @rx.event
+    def chain(self):
+        self.log = [*self.log, "chain-start"]
+        yield State.inc()
+        yield State.set_title_and_desc()
+
+    @rx.event(background=True)
+    async def bg(self):
+        for _ in range(3):
+            async with self:
+                self.bg_ticks += 1
+
+
+CS = rx._x.client_state(var_name="vt_cs", default="cs-initial")
+
+
+class Counter(rx.ComponentState):
+    n: int = 0
+
+    @rx.event
+    def bump(self):
+        self.n += 1
+
+    @classmethod
+    def get_component(cls, **props):
+        return rx.hstack(
+            rx.text(f"cs-counter: {cls.n}", id=props.pop("text_id", "cs_counter")),
+            rx.button("bump", on_click=cls.bump, id=props.pop("btn_id", "cs_bump")),
+            **props,
+        )
+
+
+@rx.memo
+def memo_line(label: str, value: str) -> rx.Component:
+    return rx.text(f"{label}={value}", id="memo_line")
+
+
+def nav():
+    return rx.hstack(
+        rx.link("home", href="/", id="nav_home"),
+        rx.link("pets", href="/pets", id="nav_pets"),
+        rx.link("second", href="/second", id="nav_second"),
+        rx.link("heavy", href="/heavy", id="nav_heavy"),
+        rx.link("plain", href="/plain", id="nav_plain"),
+    )
+
+
+@rx.page(route="/", title=State.title, description=State.desc)
+def index():
+    return rx.vstack(
+        nav(),
+        rx.heading("vars_typing", id="heading"),
+        # #7015: hooked literal FIRST, then the identical plain literal
+        rx.text(f"{HOOKED_ONE} and {PLAIN_ONE}", id="hash_line"),
+        rx.text(f"{rx.color_mode} / {Var.create(str(rx.color_mode))}", id="colormode_line"),
+        rx.text(State.count, id="count"),
+        rx.text(State.doubled, id="doubled"),
+        rx.text(State.title, id="title_val"),
+        rx.button("inc", on_click=State.inc, id="inc"),
+        rx.button("settitle", on_click=State.set_title_and_desc, id="settitle"),
+        rx.button("chain", on_click=State.chain, id="chain"),
+        rx.button("bg", on_click=State.bg, id="bg"),
+        rx.text(State.bg_ticks, id="bg_ticks"),
+        rx.button("take5", on_click=lambda: State.take(7), id="take"),
+        rx.text(State.limit, id="limit"),
+        rx.cond(State.count > 2, rx.text("big", id="cond_line"), rx.text("small", id="cond_line")),
+        rx.foreach(State.tags, lambda t, i: rx.text(f"tag{i}:{t}")),
+        memo_line(label="memo", value=State.title),
+        Counter.create(),
+        rx.hstack(
+            CS,
+            rx.text(CS.value, id="cs_value"),
+            rx.button("set-cs", on_click=CS.set_value("cs-changed"), id="cs_btn"),
+        ),
+        rx.text(State.log.join(","), id="log"),
+    )
+
+
+@rx.page(route="/pets", title=State.title_fstring, description="pets page")
+def pets():
+    return rx.vstack(
+        nav(),
+        rx.heading("pets", id="heading"),
+        rx.text(State.pet.name, id="pet_name"),
+        rx.text(State.pet.kind, id="pet_kind"),
+        rx.match(
+            State.pet.kind,
+            ("cat", rx.text("meow", id="pet_sound")),
+            ("dog", rx.text("woof", id="pet_sound")),
+            rx.text("???", id="pet_sound"),
+        ),
+        rx.cond(State.pet.kind == "cat", rx.text("is-cat", id="pet_cond"), rx.text("is-dog", id="pet_cond")),
+        rx.foreach(State.pets, lambda p, i: rx.text(f"{i}:{p.name}:{p.kind}", id=f"pet_{i}")),
+        rx.button("to-dog", on_click=State.to_dog, id="to_dog"),
+        rx.button("to-cat", on_click=State.to_cat, id="to_cat"),
+        rx.button("add-pet", on_click=State.add_pet, id="add_pet"),
+        rx.text(State.pets.length(), id="pets_len"),
+    )
+
+
+@rx.page(route="/second", title=State.title, description=State.desc)
+def second():
+    return rx.vstack(
+        nav(),
+        rx.heading("second", id="heading"),
+        rx.text(State.title, id="title_val"),
+        rx.text(State.count, id="count"),
+        rx.button("inc", on_click=State.inc, id="inc"),
+    )
+
+
+def _heavy_children():
+    out = []
+    for i in range(400):
+        out.append(
+            rx.text(
+                rx.cond(
+                    (State.count + i) > (i // 2),
+                    (State.count + i).to_string() + "-" + State.tags[i % 2].upper(),
+                    State.title + str(i),
+                ),
+                id=f"heavy_{i}" if i < 3 else None,
+            )
+        )
+    return out
+
+
+@rx.page(route="/heavy", title="heavy")
+def heavy():
+    return rx.vstack(nav(), rx.heading("heavy", id="heading"), *_heavy_children())
+
+
+@rx.page(route="/plain", title="plain static title")
+def plain():
+    return rx.vstack(
+        nav(),
+        rx.heading("plain", id="heading"),
+        rx.text(State.count, id="count"),
+        rx.text(State.doubled, id="doubled"),
+        rx.button("inc", on_click=State.inc, id="inc"),
+    )
+
+
+app = rx.App()

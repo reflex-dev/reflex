@@ -80,6 +80,9 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   "Attempting to send delta to disconnected client" warning per tick (pre-existing family, `event_loop`).
 - #6946 polish: every uncached var is re-sent once right after hydrate; dict key order defeats the dedupe; the
   `_UNKEYABLE_VALUE` branch is unreachable (`event_loop`).
+- Missing app-package `__init__.py` → silent frontend/backend state-name mismatch, every event a no-op, only a browser
+  console error (`vars_typing`; pre-existing; `reflex init` skips the file when the app dir exists).
+- `rx.Var.create(x)._replace(_var_data=...)` raises `TypeError` on both versions (`vars_typing`; pre-existing).
 - FINDING-013 — `rx.vars.use_id()` in an `rx.foreach` body yields one id for every item (new API, #6708):
   either derive a per-iteration id or document that `use_id` is per compiled component (`components_bumps`).
 - FINDING-014 — #7124 changelog: the `reflex.components.datadisplay.code` path only works as a module import,
@@ -117,6 +120,10 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   hatch; nothing in the published packages reads it. Ship the flag or correct the migration text.
 - #7077 ships a hard `BaseVarShadowsInheritedVarError` (the PR discussion considered a warning). Intended?
   Apps that silently redeclared an inherited var on 0.9.11.post1 now fail at import with no opt-out.
+- #7115 also changes `hasattr`/`getattr(var, name, default)` on a var whose computation is broken from returning
+  False/the default to raising `ReflexRuntimeError` (PR body only) — add to the changelog or not? (`vars_typing`)
+- #7131's changelog line reads as if an existing env var changed; nothing shipped uses `EnvVar[timedelta]` yet
+  (#7138 is the follow-up). Consider rewording. (`vars_typing`)
 - The metaclass change itself (FINDING-001) is unannounced; if it is kept, it needs a Breaking Changes
   entry naming `BaseStateMeta` and the `type(rx.State)` spelling.
 

@@ -1,0 +1,35 @@
+1 products found
+
+(B2) Gadget
+
+Stock:2
+
+Category:toys
+
+Seller:zed
+
+Sender:eve
+
+Query:
+
+Body:
+
+Clear
+Send
+
+Status: 200
+
+[
+  {
+    "updated": "2026-09-19T02:35:53.912828",
+    "quantity": 2,
+    "seller": "zed",
+    "created": "2026-09-19T02:35:53.912828",
+    "code": "B2",
+    "id": 2,
+    "label": "Gadget",
+    "image": "/favicon.ico",
+    "category": "toys",
+    "sender": "eve"
+  }
+]

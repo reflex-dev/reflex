@@ -1,0 +1,62 @@
+REFLEX: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex/__init__.py
+reflex_base: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/prev/lib/python3.11/site-packages/reflex_base/__init__.py
+{
+  "fstring_same_value_diff_vardata": {
+    "js": "(myval+\" + \"+myval)",
+    "hooks": [
+      "const myval = useFancyHook();"
+    ],
+    "imports": "(('$/fancy', (ImportVar(tag='useFancyHook', is_default=False, alias=None, install=True, render=True, package_path='/'),)),)",
+    "hash_differs": true,
+    "equals": false
+  },
+  "fstring_reverse_order_hooks": [
+    "const myval = useFancyHook();"
+  ],
+  "color_mode_plus_plain": {
+    "js": "(rawColorMode+\"|\"+rawColorMode)",
+    "hooks": [
+      "const { rawColorMode } = useContext(ColorModeContext)"
+    ],
+    "n_imports": 2,
+    "imports": "(('$/utils/context', (ImportVar(tag='ColorModeContext', is_default=False, alias=None, install=True, render=True, package_path='/'),)), ('react', (ImportVar(tag='useContext', is_default=False, alias=None, install=True, render=True, package_path='/'),)))"
+  },
+  "hash_numbervar_op": {
+    "ok": true,
+    "hash": "8012313523473573403"
+  },
+  "set_of_vars": {
+    "ok": true,
+    "len": 5
+  },
+  "dict_keys_number_bool": {
+    "ok": true,
+    "len": 3
+  },
+  "computed_equals_self": {
+    "ok": true,
+    "val": true
+  },
+  "computed_equals_other": {
+    "ok": true,
+    "val": false
+  },
+  "computed_hash_consistency": {
+    "ok": true,
+    "same": true,
+    "diff_from_other": true
+  },
+  "match_ok": {
+    "ok": true,
+    "js_len": 226
+  },
+  "to_hash_consistency": {
+    "ok": true,
+    "equal_hash": true,
+    "equals": true
+  },
+  "hash_key_no_vars": {
+    "ok": false,
+    "err": "VarAttributeError: Attribute _hash_key not found."
+  }
+}

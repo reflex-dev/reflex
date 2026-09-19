@@ -1,0 +1,181 @@
+{
+  "base": "http://localhost:3340",
+  "tag": "dev",
+  "steps": [
+    {
+      "step": "index_loaded",
+      "title": "VT Home",
+      "desc": "vars_typing default description",
+      "hash_line": "1 and 1",
+      "hook_ran": true,
+      "colormode": "system / rawColorMode",
+      "count": "0",
+      "doubled": "0",
+      "cs_value": "cs-initial",
+      "memo": "memo=VT Home",
+      "cond": "small"
+    },
+    {
+      "step": "after_inc3",
+      "count": "3",
+      "doubled": "6",
+      "cond": "big"
+    },
+    {
+      "step": "after_settitle",
+      "doc_title": "VT 3 items",
+      "meta_desc": "description for 3",
+      "title_val": "VT 3 items"
+    },
+    {
+      "step": "after_chain",
+      "count": "4",
+      "doc_title": "VT 4 items",
+      "log": "chain-start"
+    },
+    {
+      "step": "after_bg",
+      "bg_ticks": "3"
+    },
+    {
+      "step": "after_take",
+      "limit": "7",
+      "log": "chain-start,take(7)"
+    },
+    {
+      "step": "after_cs_bump",
+      "cs_counter": "cs-counter: 2"
+    },
+    {
+      "step": "after_client_state",
+      "cs_value": "cs-changed"
+    },
+    {
+      "step": "pets_loaded",
+      "doc_title": "4 items",
+      "pet_name": "Momo",
+      "pet_kind": "cat",
+      "sound": "meow",
+      "cond": "is-cat",
+      "pet0": "0:Momo:cat",
+      "pet1": "1:Rex:dog",
+      "pets_len": "2"
+    },
+    {
+      "step": "pets_to_dog",
+      "pet_name": "Rex",
+      "pet_kind": "dog",
+      "sound": "woof",
+      "cond": "is-dog"
+    },
+    {
+      "step": "pets_add",
+      "pets_len": "3",
+      "pet2": "2:Pup2:dog"
+    },
+    {
+      "step": "pets_to_cat",
+      "pet_name": "Momo",
+      "sound": "meow"
+    },
+    {
+      "step": "second_loaded",
+      "doc_title": "VT 4 items",
+      "title_val": "VT 4 items",
+      "count": "4",
+      "meta_desc": "description for 4"
+    },
+    {
+      "step": "back_home",
+      "doc_title": "VT 4 items",
+      "count": "5",
+      "hook_ran": true
+    },
+    {
+      "step": "heavy_loaded",
+      "load_s": 2.47,
+      "h0": "5-A",
+      "h1": "6-B",
+      "h2": "7-A",
+      "n_texts": 405
+    },
+    {
+      "step": "pets_direct",
+      "doc_title": "5 items",
+      "pet_name": "Momo",
+      "sound": "meow"
+    },
+    {
+      "step": "second_tab",
+      "doc_title": "VT Home",
+      "count": "0",
+      "hook_ran": true,
+      "desc": "vars_typing default description"
+    }
+  ],
+  "console": [
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on page navigation"
+    },
+    {
+      "type": "log",
+      "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "log",
+      "text": "Disconnect websocket on pagehide"
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": []
+}

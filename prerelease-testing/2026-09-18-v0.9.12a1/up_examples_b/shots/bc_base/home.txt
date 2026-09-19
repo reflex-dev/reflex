@@ -1,0 +1,22 @@
+1 products found
+
+(A1) Widget
+
+Stock:5
+
+Category:tools
+
+Seller:acme
+
+Sender:bob
+
+Query:
+
+Body:
+
+Clear
+Send
+
+Status:
+
+undefined

@@ -1,0 +1,51 @@
+pandas + sqlmodel serializer probe
+bump
+load rows
+
+tick=1
+
+steady=constant
+
+literal DataFrame
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+state-computed DataFrame
+zone
+	
+n
+
+North	1
+South	2
+East	3
+memo(DataFrame prop)
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+ComponentState
+cs 1
+zone
+	
+n
+
+North	1
+South	2
+East	3
+West	4
+model rows (relationship serialization)
+
+Andaman and Nicobar / South / 7670
+
+Andhra Pradesh / South / 2069770
+
+Arunachal Pradesh / East / 55216

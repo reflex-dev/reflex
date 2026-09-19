@@ -383,4 +383,27 @@ only because reconnect re-hydrates via `dict()`; the `_UNKEYABLE_VALUE` branch o
 defeats the dedupe (digest of the JSON text); every uncached var is re-sent once right after hydrate (`hydrate`
 emits `dict()` without recording, so the following `on_load_internal` frame carries all of them).
 
+### `vars_typing` (pass 24, anomaly 6, fail 0, skipped 2) — all eight changes verified, no defects
+Five-page `vtapp` plus seven repro scripts on a dedicated venv (train + pydantic 2.13.5 + pyright 1.1.414), dev and
+prod in Chromium, six of eight changes baselined on 0.9.11.post1. #7015: the same-value/different-metadata
+f-string case silently drops a hook+import on 0.9.11.post1 and keeps both on 0.9.12a1. #7189: an `Annotated`
+pydantic discriminated-union state var cannot even be class-defined on 0.9.11.post1; on 0.9.12a1 it renders,
+`rx.match`es and switches Cat↔Dog at runtime in dev and prod. #7198: 40 000 var operations leave 80 006 stale
+`_global_vars` entries and ~78 MB RSS on 0.9.11.post1 vs 0 on 0.9.12a1; the touched operations are 1.53×–3.77×
+faster and the untouched ones ~1.0×. #7115: a serializer typo surfaces as a chained `ReflexRuntimeError` naming the
+user's frame (prev: `VarAttributeError` / `TypeError` / `RecursionError`). #7131: `EnvVar[timedelta]` parses every
+documented form and rejects bad input with a useful message — but no shipped env var uses it yet (the open PR #7138
+migrates them), so the changelog line reads as if an existing variable changed. #6930: lazy attribute access 20×
+faster (0.049 s vs 0.986 s per 1e6). #7080: the markdown union props type-check under pyright where prev errors.
+#6923: State-var page titles/descriptions update live in dev and prod and are carried in the prerendered HTML (no
+0.9.11.post1 baseline). Skipped: Python 3.10/3.14/3.15 runs (closed by the orchestrator's `orch_pymatrix` probe).
+Anomalies worth tickets, all pre-existing: a missing app-package `__init__.py` makes the compiler emit
+`vtapp___vtapp____state` while the backend emits `vtapp____state`, so every event silently no-ops with only a
+browser console error and no server signal; `rx.Var.create(5)._replace(_var_data=...)` raises `TypeError:
+dataclasses.replace() got multiple values` on both versions; prod logs "Page X is being redefined with the same
+component" once per page (same code on both versions — the third cluster to see it); the blank template's
+`og:image` points at a `favicon.ico` that does not ship (prod 404). Changelog note: #7115 also changes
+`hasattr`/`getattr(var, name, default)` on a broken var from returning False/the default to raising (in the PR body,
+not the changelog). Environment: `--prerelease=allow` pulls pydantic 2.14.0b2 — pin `pydantic<2.14` in test venvs.
+
 _(other clusters pending)_

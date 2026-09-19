@@ -1,0 +1,1 @@
+[{"wait":2000},{"dump":"rd.txt"},{"reload":null},{"wait":2000},{"dump":"rd2.txt"}]

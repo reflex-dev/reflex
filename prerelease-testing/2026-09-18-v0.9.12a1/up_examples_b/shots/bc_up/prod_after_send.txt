@@ -1,0 +1,58 @@
+2 products found
+
+(B2) Gadget
+
+Stock:2
+
+Category:toys
+
+Seller:zed
+
+Sender:eve
+
+(C3) ProdItem
+
+Stock:1
+
+Category:x
+
+Seller:y
+
+Sender:z
+
+Query:
+
+Body:
+
+Clear
+Send
+
+Status: 200
+
+[
+  {
+    "created": "2026-09-19T02:35:53.912828",
+    "code": "B2",
+    "id": 2,
+    "label": "Gadget",
+    "image": "/favicon.ico",
+    "category": "toys",
+    "sender": "eve",
+    "updated": "2026-09-19T02:35:53.912828",
+    "quantity": 2,
+    "seller": "zed"
+  },
+  {
+    "created": "2026-09-19T02:42:06.541104",
+    "code": "C3",
+    "id": 3,
+    "label": "ProdItem",
+    "image": "/favicon.ico",
+    "category": "x",
+    "sender": "z",
+    "updated": "2026-09-19T02:42:06.541104",
+    "quantity": 1,
+    "seller": "y"
+  }
+]
+Built with Reflex

@@ -1,0 +1,249 @@
+########## 0.9.12a1 ##########
+{
+  "number_literal_5": {
+    "hash_equal": false,
+    "meta_first": {
+      "js": "(5+\"|\"+5)",
+      "hooks": [
+        "const hN = useHookN();"
+      ],
+      "imports": [
+        "$/libN"
+      ]
+    },
+    "plain_first": {
+      "js": "(5+\"|\"+5)",
+      "hooks": [
+        "const hN = useHookN();"
+      ],
+      "imports": [
+        "$/libN"
+      ]
+    }
+  },
+  "bool_literal_true": {
+    "hash_equal": false,
+    "meta_first": {
+      "js": "(true+\"|\"+true)",
+      "hooks": [
+        "const hB = useHookB();"
+      ],
+      "imports": [
+        "$/libB"
+      ]
+    },
+    "plain_first": {
+      "js": "(true+\"|\"+true)",
+      "hooks": [
+        "const hB = useHookB();"
+      ],
+      "imports": [
+        "$/libB"
+      ]
+    }
+  },
+  "string_literal": {
+    "hash_equal": false,
+    "meta_first": {
+      "js": "\"abc|abc\"",
+      "hooks": [
+        "const hS = useHookS();"
+      ],
+      "imports": [
+        "$/libS"
+      ]
+    },
+    "plain_first": {
+      "js": "\"abc|abc\"",
+      "hooks": [
+        "const hS = useHookS();"
+      ],
+      "imports": [
+        "$/libS"
+      ]
+    }
+  },
+  "array_literal": {
+    "hash_equal": false,
+    "meta_first": {
+      "js": "([1, 2]+\"|\"+[1, 2])",
+      "hooks": [
+        "const hA = useHookA();"
+      ],
+      "imports": [
+        "$/libA"
+      ]
+    },
+    "plain_first": {
+      "js": "([1, 2]+\"|\"+[1, 2])",
+      "hooks": [
+        "const hA = useHookA();"
+      ],
+      "imports": [
+        "$/libA"
+      ]
+    }
+  },
+  "object_literal": {
+    "hash_equal": false,
+    "meta_first": {
+      "js": "(({ [\"k\"] : 1 })+\"|\"+({ [\"k\"] : 1 }))",
+      "hooks": [
+        "const hO = useHookO();"
+      ],
+      "imports": [
+        "$/libO"
+      ]
+    },
+    "plain_first": {
+      "js": "(({ [\"k\"] : 1 })+\"|\"+({ [\"k\"] : 1 }))",
+      "hooks": [
+        "const hO = useHookO();"
+      ],
+      "imports": [
+        "$/libO"
+      ]
+    }
+  },
+  "component_box_fstring": {
+    "hooks": [
+      "const myRef = useRef(null);"
+    ],
+    "imports": [
+      "@radix-ui/themes@3.3.0",
+      "react"
+    ]
+  },
+  "component_box_fstring_rev": {
+    "hooks": [
+      "const myRef = useRef(null);"
+    ],
+    "imports": [
+      "@radix-ui/themes@3.3.0",
+      "react"
+    ]
+  }
+}
+########## 0.9.11.post1 ##########
+{
+  "number_literal_5": {
+    "hash_equal": true,
+    "meta_first": {
+      "js": "(5+\"|\"+5)",
+      "hooks": [
+        "const hN = useHookN();"
+      ],
+      "imports": [
+        "$/libN"
+      ]
+    },
+    "plain_first": {
+      "js": "(5+\"|\"+5)",
+      "hooks": [
+        "const hN = useHookN();"
+      ],
+      "imports": [
+        "$/libN"
+      ]
+    }
+  },
+  "bool_literal_true": {
+    "hash_equal": true,
+    "meta_first": {
+      "js": "(true+\"|\"+true)",
+      "hooks": [
+        "const hB = useHookB();"
+      ],
+      "imports": [
+        "$/libB"
+      ]
+    },
+    "plain_first": {
+      "js": "(true+\"|\"+true)",
+      "hooks": [
+        "const hB = useHookB();"
+      ],
+      "imports": [
+        "$/libB"
+      ]
+    }
+  },
+  "string_literal": {
+    "hash_equal": true,
+    "meta_first": {
+      "js": "\"abc|abc\"",
+      "hooks": [
+        "const hS = useHookS();"
+      ],
+      "imports": [
+        "$/libS"
+      ]
+    },
+    "plain_first": {
+      "js": "\"abc|abc\"",
+      "hooks": [
+        "const hS = useHookS();"
+      ],
+      "imports": [
+        "$/libS"
+      ]
+    }
+  },
+  "array_literal": {
+    "hash_equal": true,
+    "meta_first": {
+      "js": "([1, 2]+\"|\"+[1, 2])",
+      "hooks": [
+        "const hA = useHookA();"
+      ],
+      "imports": [
+        "$/libA"
+      ]
+    },
+    "plain_first": {
+      "js": "([1, 2]+\"|\"+[1, 2])",
+      "hooks": [
+        "const hA = useHookA();"
+      ],
+      "imports": [
+        "$/libA"
+      ]
+    }
+  },
+  "object_literal": {
+    "hash_equal": true,
+    "meta_first": {
+      "js": "(({ [\"k\"] : 1 })+\"|\"+({ [\"k\"] : 1 }))",
+      "hooks": [
+        "const hO = useHookO();"
+      ],
+      "imports": [
+        "$/libO"
+      ]
+    },
+    "plain_first": {
+      "js": "(({ [\"k\"] : 1 })+\"|\"+({ [\"k\"] : 1 }))",
+      "hooks": [
+        "const hO = useHookO();"
+      ],
+      "imports": [
+        "$/libO"
+      ]
+    }
+  },
+  "component_box_fstring": {
+    "hooks": [],
+    "imports": [
+      "@radix-ui/themes@3.3.0"
+    ]
+  },
+  "component_box_fstring_rev": {
+    "hooks": [
+      "const myRef = useRef(null);"
+    ],
+    "imports": [
+      "@radix-ui/themes@3.3.0",
+      "react"
+    ]
+  }
+}

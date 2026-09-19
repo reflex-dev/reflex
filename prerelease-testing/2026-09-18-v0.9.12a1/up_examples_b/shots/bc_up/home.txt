@@ -1,0 +1,22 @@
+1 products found
+
+(B2) Gadget
+
+Stock:2
+
+Category:toys
+
+Seller:zed
+
+Sender:eve
+
+Query:
+
+Body:
+
+Clear
+Send
+
+Status:
+
+undefined

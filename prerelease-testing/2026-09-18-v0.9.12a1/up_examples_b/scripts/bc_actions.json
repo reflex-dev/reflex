@@ -1,0 +1,8 @@
+[{"wait":2500},
+ {"dump":"home.txt"},
+ {"screenshot":"01_home.png"},
+ {"expect_text":"Widget"},
+ {"click":"button:has-text('Send')"},
+ {"wait":2500},
+ {"dump":"after_send.txt"},
+ {"screenshot":"02_after_send.png"}]

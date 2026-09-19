@@ -1,0 +1,11 @@
+[{"wait":1500},
+ {"goto":"http://localhost:3500/login"},
+ {"wait":1500},
+ {"fill":["input[name=username]","alice"]},
+ {"fill":["input[name=password]","hunter2hunter2"]},
+ {"click":"button:has-text('Sign in')"},
+ {"wait":2500},
+ {"goto":"http://localhost:3500/edit/form/2"},
+ {"wait":2500},
+ {"dump":"cold_form2.txt"},
+ {"screenshot":"06_cold_form2.png"}]
