@@ -72,9 +72,11 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 - **FINDING-012 — `rx.data_editor`'s image-preview overlay (the #7081 headline) cannot open in prod while the
   default "Built with Reflex" badge is on; the badge app-wrap swallows the `#portal` div** (HIGH impact,
-  pre-existing nesting; `components_bumps`, verification pending). Arm: significant user impact on a feature this
-  release advertises, and the fix (forward children in the StickyBadge wrap / keep the portal a sibling) is
-  small. Minimum: document `show_built_with_reflex=False` for image cells until fixed.
+  pre-existing nesting; `components_bumps`, CONFIRMED with an A/B). Arm: significant user impact on a feature this
+  release advertises (0.9.12a1 is the version that ships the carousel CSS), and the fix is small: let
+  `StickyBadge.create` accept and render children (`reflex_components_core/core/sticky.py:90-107`) or have
+  `_app_root` (`reflex/app.py:1574-1590`) keep negative-priority wraps as siblings. Minimum: document
+  `show_built_with_reflex=False` for image cells until fixed.
 
 - **FINDING-004 — the `deps=["router"]` deprecation warning never fires in the default case** (LOW,
   `router_vars`, CONFIRMED). Arm: trivially small — the changelog promises the warning. Emit it where the legacy
@@ -111,10 +113,9 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 - Missing app-package `__init__.py` → silent frontend/backend state-name mismatch, every event a no-op, only a browser
   console error (`vars_typing`; pre-existing; `reflex init` skips the file when the app dir exists).
 - `rx.Var.create(x)._replace(_var_data=...)` raises `TypeError` on both versions (`vars_typing`; pre-existing).
-- FINDING-013 — `rx.vars.use_id()` in an `rx.foreach` body yields one id for every item (new API, #6708):
-  either derive a per-iteration id or document that `use_id` is per compiled component (`components_bumps`).
-- FINDING-014 — #7124 changelog: the `reflex.components.datadisplay.code` path only works as a module import,
-  not `from reflex.components.datadisplay import code` (`components_bumps`).
+- FINDING-013 — `rx.vars.use_id()` in an `rx.foreach` body yields one id for every item (new API, #6708; docs
+  gap — the constraint is stated on `use_hook_var` but not on `use_id()` or its docs pages; `components_bumps`,
+  CONFIRMED, LOW).
 - `Axis.tick_formatter` accepts only a literal JS string; a `FunctionStringVar` raises `TypeError` (pre-existing,
   `components_bumps`).
 - FINDING-006 — backend (underscore) var shadowing across substates still silently ignored (LOW,
