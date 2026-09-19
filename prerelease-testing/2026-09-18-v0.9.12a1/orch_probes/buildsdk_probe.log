@@ -1,0 +1,24 @@
+buildsdk venv exit=0
+Using Python 3.11.15 environment at: envs/buildsdk
+reflex==0.9.12a1
+reflex-base==0.9.12a1
+reflex-build-sdk==0.0.2
+reflex_build_sdk version: ? file: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/buildsdk/lib/python3.11/site-packages/reflex_build_sdk/__init__.py
+new names OK: <class 'reflex_build_sdk._sync._client.ReflexBuild'> <class 'reflex_build_sdk._async._client.AsyncReflexBuild'> <class 'reflex_build_sdk._errors.ReflexBuildError'>
+old name gone: ReflexCloud -> module 'reflex_build_sdk' has no attribute 'ReflexCloud'
+old name gone: AsyncReflexCloud -> module 'reflex_build_sdk' has no attribute 'AsyncReflexCloud'
+old name gone: ReflexCloudError -> module 'reflex_build_sdk' has no attribute 'ReflexCloudError'
+old name gone: Reflex -> module 'reflex_build_sdk' has no attribute 'Reflex'
+old name gone: AsyncReflex -> module 'reflex_build_sdk' has no attribute 'AsyncReflex'
+old name gone: ReflexError -> module 'reflex_build_sdk' has no attribute 'ReflexError'
+old name gone: Client -> module 'reflex_build_sdk' has no attribute 'Client'
+old name gone: AsyncClient -> module 'reflex_build_sdk' has no attribute 'AsyncClient'
+logger name/level/propagate/handlers: reflex_build_sdk 0 True [] parent: root
+  logger: reflex_build_sdk
+  logger: reflex_build_sdk._base
+  logger: reflex_build_sdk.credentials
+client base_url = http://build-backend.invalid
+client _base_url = http://build-backend.invalid
+client dir: ['_api_url', '_base_url', '_build_request', '_max_retries', '_owns_transport', '_request', '_retry_delay', '_timeout', '_token', '_transport', 'apps', 'auth', 'base_url', 'close', 'deployments', 'max_retries', 'projects', 'providers', 'security_reviews', 'token', 'usage']
+
+[exited with code 0]
