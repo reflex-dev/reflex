@@ -1,0 +1,26 @@
+{
+  "app": "snakegame",
+  "url": "http://localhost:3460/",
+  "tag": "base",
+  "load_seconds": 0.84,
+  "score_initial": "SCORE\n0",
+  "score_after_moves": "SCORE\n0",
+  "grid_cells": 361,
+  "paused_board_static": true,
+  "switch_state_paused": "unchecked",
+  "switch_state_after_escape": "checked",
+  "score_after_escape": "SCORE\n0",
+  "score_after_reload": "SCORE\n0",
+  "flow_ok": true,
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/snakegame-base-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/snakegame-base-playing.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/snakegame-base-after_escape.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/snakegame-base-after_reload.png"
+  ]
+}

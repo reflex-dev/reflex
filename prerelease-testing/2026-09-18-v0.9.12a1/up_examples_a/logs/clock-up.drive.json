@@ -1,0 +1,48 @@
+{
+  "app": "clock",
+  "url": "http://localhost:3460/",
+  "tag": "up",
+  "load_seconds": 0.73,
+  "zone_initial": "US/Pacific",
+  "ticking_t0": [
+    "7",
+    ":",
+    "36",
+    ":",
+    "19",
+    "PM"
+  ],
+  "ticking_t1": [
+    "7",
+    ":",
+    "36",
+    ":",
+    "21",
+    "PM"
+  ],
+  "ticked": true,
+  "zone_after": "Europe/Paris",
+  "time_after_zone": [
+    "4",
+    ":",
+    "36",
+    ":",
+    "23",
+    "AM"
+  ],
+  "stopped_no_tick": true,
+  "zone_after_reload": "Europe/Paris",
+  "switch_after_reload_checked": "unchecked",
+  "flow_ok": true,
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/clock-up-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/clock-up-running.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/clock-up-paris.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/clock-up-after_reload.png"
+  ]
+}

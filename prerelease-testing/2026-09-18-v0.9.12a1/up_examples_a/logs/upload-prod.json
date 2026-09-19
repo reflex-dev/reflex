@@ -1,0 +1,44 @@
+{
+  "app": "upload",
+  "url": "http://localhost:3461/",
+  "tag": "prod",
+  "load_seconds": 0.08,
+  "selected_files_text": 2,
+  "links": [
+    "probe-base.txt",
+    "beta.txt",
+    "alpha.txt",
+    "Built with Reflex"
+  ],
+  "progress_value": "100",
+  "links_after_reload": [
+    "probe-base.txt",
+    "beta.txt",
+    "alpha.txt",
+    "Built with Reflex"
+  ],
+  "hrefs": [
+    "http://localhost:3461/_upload/probe-base.txt",
+    "http://localhost:3461/_upload/beta.txt",
+    "http://localhost:3461/_upload/alpha.txt",
+    "https://reflex.dev"
+  ],
+  "fetch_status": 200,
+  "fetch_body": "probe base\n",
+  "flow_ok": true,
+  "console_all": [
+    "[log] Disconnect websocket on page navigation",
+    "[log] Disconnect websocket on pagehide"
+  ],
+  "console_notable": [],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "bad_responses": [],
+  "screenshots": [
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-prod-load.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-prod-selected.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-prod-uploaded.png",
+    "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/up_examples_a/shots/upload-prod-after_reload.png"
+  ]
+}

@@ -428,4 +428,22 @@ component alphas; form-designer's `/form/<id>` page crashes on both versions (an
 `rx.form.message` outside `rx.form.field`); three examples ship no alembic dir so `reflex db init/makemigrations/
 migrate` is needed on both versions. Skipped for time: cold `.web` rebuilds for four apps, prod for three, redis.
 
+### `up_examples_a` (pass 20, anomaly 5, fail 1, skipped 1) — no upgrade regression on the core-interaction apps
+counter, todo, clock, upload, lorem-stream, snakegame: baseline on 0.9.11.post1, in-place `--upgrade` of the same
+venv with `.web/` + `reflex.lock/` preserved, cold run, prod run — 24 app runs, each driven in Chromium, zero console
+errors, page errors or ≥400 responses everywhere. Counter arithmetic + reload persistence, todo add/finish/reload,
+clock's background tick with a timezone change mid-run and its `rx.Cookie` surviving reload, a two-file upload with
+served bytes matching disk, three concurrent lorem-stream background streams surviving client-side navigation, and
+snakegame's `GlobalKeyWatcher` (arrows/hjkl/Escape) all identical across phases. The first post-upgrade run recompiled
+the 0.9.11-built `.web/` cleanly with no state/schema mismatch despite the #7068 key split; the lockfile migrated to
+react-router 8.4.0; `reflex init` on snakegame exited 0 with no migration warnings. An added `/extras` page on counter
+confirmed #6946 from the websocket frames, `rx.upload` inside `@rx.memo` (#7176), `client_state`, two
+`ComponentState`s, an event chain into a background task, `rx.foreach`/`rx.cond`. Issues (both pre-existing or
+cosmetic): the `upload` example's `@rx.var` file list never refreshes (cached var with no deps — an example bug on
+both versions); the generated `package.json` pins `"mergician": "v2.0.2"` with a leading `v` unlike every other
+dependency (new in this train, bun resolves it, cosmetic). Notes: a cached `@rx.var` twin is still re-sent on every
+delta when its dependency changes even if its value did not — matches #6946's `cache=False`-only wording but is
+easy to misread; killing `reflex run` orphans the react-router dev process and keeps the frontend port bound (both
+versions), which silently served a previous app in the agent's first pass — `scripts/run_app.sh` now sweeps ports.
+
 _(other clusters pending)_
