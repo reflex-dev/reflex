@@ -326,6 +326,12 @@ The train on Python 3.10, 3.14 and 3.15.0rc2: install, import, `reflex init`, de
 clean; the lazy loader's native PEP 810 path is active on 3.15 (#6930 provisional support holds); 3.10 prints its
 deprecation notice. `orch_pymatrix/NOTES.md`.
 
+### `orch_startup` (pass 1, anomaly 1, fail 0)
+#7049 relative baseline on the `dev_server_cli` probe app, backend-only, three cold starts each: time to `/ping`
+0.67/0.45/0.46 s on BOTH versions, RSS 109–123 MB on both, `import reflex` 2 ms / 57 modules on both. No measurable
+startup or memory difference in this scenario (anomaly: the changelog's startup/memory claim is not observable here;
+dev reload and large apps not measured). `orch_startup/NOTES.md`.
+
 ### `orch_otel` (pass 4, anomaly 0, fail 0)
 reflex-otel 0.1.0 on 0.9.12a1: the initial dev compile worker now exports the complete `reflex.compile`
 `trigger=initial` tree (3 stage children, 0 orphans) on a first and a second run; `hot_reload` and `export`
