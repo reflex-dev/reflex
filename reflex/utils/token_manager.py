@@ -24,6 +24,10 @@ if TYPE_CHECKING:
     from redis.asyncio import Redis
 
 
+class _TokenNotConnectedError(Exception):
+    """Raised when a token is not connected."""
+
+
 def _get_new_token() -> str:
     """Generate a new unique token.
 
@@ -60,6 +64,9 @@ class TokenManager(ABC):
         self.token_to_socket: dict[str, SocketRecord] = {}
         # Keep a mapping between socket ID and client token.
         self.sid_to_token: dict[str, str] = {}
+        # Lifecycle events for disconnect notifications.
+        self._token_disconnect_events: dict[str, list[asyncio.Event]] = {}
+        self._sid_disconnect_events: dict[str, list[asyncio.Event]] = {}
 
     def _reset_instance_id(self) -> None:
         """Assign a fresh socket-owner identity when a server worker starts."""
@@ -143,6 +150,112 @@ class TokenManager(ABC):
         for token, sid in token_sid_pairs:
             await self.disconnect_token(token, sid)
 
+    def _notify_disconnect(self, token: str, sid: str) -> None:
+        """Notify lifecycle watchers that a token/sid has disconnected.
+
+        Args:
+            token: The client token.
+            sid: The Socket.IO session ID.
+        """
+        for event in self._token_disconnect_events.pop(token, []):
+            event.set()
+        for event in self._sid_disconnect_events.pop(sid, []):
+            event.set()
+
+    async def session_is_connected(self, sid: str) -> AsyncIterator[str]:
+        """Yield the client token, then block until the session disconnects.
+
+        Yields the client token once, then suspends until the session
+        disconnects. Use with ``async for`` or ``contextlib.aclosing``.
+
+        Args:
+            sid: The Socket.IO session ID.
+
+        Yields:
+            The client token associated with the session.
+
+        Raises:
+            _TokenNotConnectedError: If the session is not currently connected.
+        """
+        token = self.sid_to_token.get(sid)
+        if token is None:
+            msg = f"Session {sid!r} is not currently connected."
+            raise _TokenNotConnectedError(msg)
+        disconnect_event = asyncio.Event()
+        self._sid_disconnect_events.setdefault(sid, []).append(disconnect_event)
+        try:
+            yield token
+            await disconnect_event.wait()
+        finally:
+            events = self._sid_disconnect_events.get(sid, [])
+            if disconnect_event in events:
+                events.remove(disconnect_event)
+
+    async def token_is_connected(self, client_token: str) -> AsyncIterator[str]:
+        """Yield the session ID, then block until the token disconnects.
+
+        Yields the session ID once, then suspends until the token
+        disconnects. Use with ``async for`` or ``contextlib.aclosing``.
+
+        Args:
+            client_token: The client token.
+
+        Yields:
+            The session ID associated with the token.
+
+        Raises:
+            _TokenNotConnectedError: If the token is not currently connected.
+        """
+        socket_record = self.token_to_socket.get(client_token)
+        if socket_record is None:
+            msg = f"Token {client_token!r} is not currently connected."
+            raise _TokenNotConnectedError(msg)
+        disconnect_event = asyncio.Event()
+        self._token_disconnect_events.setdefault(client_token, []).append(
+            disconnect_event
+        )
+        try:
+            yield socket_record.sid
+            await disconnect_event.wait()
+        finally:
+            events = self._token_disconnect_events.get(client_token, [])
+            if disconnect_event in events:
+                events.remove(disconnect_event)
+
+    def when_session_disconnects(self, sid: str) -> asyncio.Event:
+        """Return an asyncio.Event that is set when the session disconnects.
+
+        Args:
+            sid: The Socket.IO session ID.
+
+        Returns:
+            An asyncio.Event that will be set on disconnect.
+        """
+        event = asyncio.Event()
+        if sid not in self.sid_to_token:
+            # Already disconnected, set immediately.
+            event.set()
+        else:
+            self._sid_disconnect_events.setdefault(sid, []).append(event)
+        return event
+
+    def when_token_disconnects(self, client_token: str) -> asyncio.Event:
+        """Return an asyncio.Event that is set when the token disconnects.
+
+        Args:
+            client_token: The client token.
+
+        Returns:
+            An asyncio.Event that will be set on disconnect.
+        """
+        event = asyncio.Event()
+        if client_token not in self.token_to_socket:
+            # Already disconnected, set immediately.
+            event.set()
+        else:
+            self._token_disconnect_events.setdefault(client_token, []).append(event)
+        return event
+
     @abstractmethod
     async def close(self) -> None:
         """Release any resources held by the token manager."""
@@ -190,9 +303,10 @@ class LocalTokenManager(TokenManager):
             token: The client token.
             sid: The Socket.IO session ID.
         """
-        # Clean up both mappings
+        # Clean up both mappings, then wake watchers that see them gone.
         self.token_to_socket.pop(token, None)
         self.sid_to_token.pop(sid, None)
+        self._notify_disconnect(token, sid)
 
     async def close(self) -> None:
         """Release any resources held by the token manager (no-op)."""
@@ -584,3 +698,21 @@ class RedisTokenManager(LocalTokenManager):
         self._socket_record_task = None
         self._lost_and_found_task = None
         await self.redis.aclose()
+
+
+def get_token_manager() -> TokenManager:
+    """Get the token manager for the currently running app.
+
+    Returns:
+        The active TokenManager instance.
+
+    Raises:
+        RuntimeError: If the app or event namespace is not initialized.
+    """
+    app_mod = prerequisites.get_and_validate_app()
+    app = app_mod.app
+    event_namespace = app.event_namespace
+    if event_namespace is None:
+        msg = "Event namespace is not initialized. Is the app running?"
+        raise RuntimeError(msg)
+    return event_namespace._token_manager
