@@ -1,6 +1,6 @@
 # Release plan — what blocks reflex 0.9.12a1 → 0.9.12 vs what gets filed
 
-**Status: IN PROGRESS** — updated as clusters and verifiers finish. Rubric (from the campaign playbook):
+**Status: FINAL (2026-09-19 06:00 UTC)** — every cluster and every adversarial verifier has reported; nothing below is pending. Rubric (from the campaign playbook):
 fix before release = confirmed regression vs 0.9.11.post1, OR security-relevant, OR significant user
 impact / trivially small. Everything else is filed as an issue and fixed after. Each entry names the
 arm of the rubric that put it there, so a maintainer can disagree with a specific judgment.
@@ -89,10 +89,11 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   `_app_root` (`reflex/app.py:1574-1590`) keep negative-priority wraps as siblings. Minimum: document
   `show_built_with_reflex=False` for image cells until fixed.
 
-- **FINDING-004 — the `deps=["router"]` deprecation warning never fires in the default case** (LOW,
-  `router_vars`, CONFIRMED). Arm: trivially small — the changelog promises the warning. Emit it where the legacy
-  string dep is declared (`_add_static_dep`) instead of testing the merged dep set in
-  `_init_var_dependency_dicts`; the verifier's matrix script is the regression test.
+- ~~FINDING-004~~ — dropped from this list after the second verifier: the `deps=["router"]` deprecation fires for
+  every shape that would break at removal (`auto_deps=False`, or a body that does not read the router; pinned by
+  `tests/units/test_state.py:4184`) and is silent only in the redundant `auto_deps=True` + router-reading-body shape,
+  where auto tracking already registers all five `rx_router_*` fields and an unknown string dep is silently accepted
+  on both versions. Still a one-line nit if wanted — see the nits below.
 
 ## File as issues, fix after release
 
@@ -110,14 +111,26 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   (`build_prod_export`).
 - FINDING-021 (refuted as a defect; docs gap) — nothing under `docs/` mentions `frontend_path` together with assets;
   document that `rx.asset()` is what applies the prefix, so a literal `src` breaks silently (`build_prod_export`).
+- FINDING-004 (nit) — make the `deps=["router"]` deprecation fire in the redundant `auto_deps=True` shape too by
+  keying on the declaration-time string in `_add_static_dep` rather than the merged set in
+  `_init_var_dependency_dicts`; the `router_vars` verifier's matrix script is the test (`router_vars`/`up_examples_b`).
 - FINDING-022 — `frontend_lazy_bundled_libraries=True` added ~65 KB of initial JS on every page of the test app;
   confirm with wire bytes on a larger app before deciding whether the #7078 claim needs rewording (`build_prod_export`).
 - FINDING-023 — the `backend_state_mismatch` latch in `state.js` (previous campaign's FINDING-036) still deadens the
   whole frontend after one delta for an unregistered substate, on both versions; a recompile is the only way out.
-  Pre-existing, but HIGH impact and now easier to hit with backend-only workers — worth an issue with a reset path or
-  a visible error (`render_ctx_statemgr`).
-- FINDING-024 — `app.modify_state("<bare client token>")` raises `ValueError: Invalid path: ('',)` (pre-existing).
-- FINDING-025 — `reflex run` wipes `.states/` at startup in prod too (pre-existing; document or gate on env).
+  Pre-existing and deliberate (commented as fatal-by-design in both versions); the verifier lowered it to MEDIUM because
+  a reload does recover in the realistic cached-bundle shape (the "no recovery" result was an artifact of
+  `.web/nocompile`) — what stays broken is the within-session case (mixed-version backends behind a load balancer,
+  `api_url` at a different backend). Worth an issue: drop/warn on the unknown substate and apply the rest, or never
+  send substates the page did not register (`render_ctx_statemgr`, verifier).
+- FINDING-024 — `app.modify_state("<bare client token>")` raises `ValueError: Invalid path: ('',)` → a bare HTTP 500
+  from an API route (pre-existing, CONFIRMED); `App.modify_state` still carries an un-deprecated `token: str` overload
+  (`reflex/app.py:1801`), so type checkers accept the call. Default an empty state path to the root state, or raise a
+  message naming the `BaseStateToken` replacement (`render_ctx_statemgr`, verifier).
+- FINDING-025 — `reflex run` wipes `.states/` at startup in `--env prod` too (pre-existing, CONFIRMED by execution on
+  both versions); scope widened by the verifier: `StateManagerDisk` is the default whenever no redis URL is configured,
+  so every restart drops every live session's state in the default configuration. Document it, or gate
+  `reset_disk_state_manager()` (`reflex/reflex.py:597`) on env (`render_ctx_statemgr`, verifier).
 - FINDING-016 — a cancelled foreground `supersedes=True` handler loses ALL its writes under the redis state manager
   while the in-memory manager keeps them (pre-existing: identical on 0.9.11.post1 + redis;
   `StateManagerRedis._try_modify_state` skips the write-back on `CancelledError`). Memory vs redis, not dev vs prod.
@@ -197,4 +210,5 @@ No open PR addresses FINDING-001, -003, -004 or -007.
    re-run `orch_probes/ent_import_probe.py` and the `ent_mcp_oidc` harness without the shim.
 2. FINDING-003 (both verifiers have reported; independent files: `reflex/state.py` delta path vs
    `reflex/istate/validation.py`, so it can land in parallel with 1).
-3. FINDING-004 and the changelog decisions (002, 007, metaclass note) can ride one docs/changelog PR.
+3. The changelog decisions (002, 007, the metaclass note, the #7156 line behind FINDING-015) can ride one
+   docs/changelog PR; the FINDING-004 one-liner is optional.

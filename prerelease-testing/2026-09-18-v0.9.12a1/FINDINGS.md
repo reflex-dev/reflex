@@ -7,12 +7,13 @@ capture; claimed issues re-reproduced by independent adversarial verifier agents
 alone. Baselines against the previous stable, reflex 0.9.11.post1. Orchestrator + 15 explorer agents +
 one verifier per cluster with claims (Opus 5, xhigh effort), two at a time.
 
-**Campaign status: IN PROGRESS** — this file is updated as clusters finish. Sections marked _(pending)_
-are not yet written. Process note: the fan-out was interrupted at ~03:00 UTC by the organisation's monthly
-spend limit after 10 of 15 explorers had finished; every adversarial verifier and the remaining five explorers
-(build_prod_export, render_ctx_statemgr, dev_server_cli, up_examples_c, db_optional_imports) died with the
-limit error. Both workflows were resumed from cache at 04:38 UTC once the limit reset (completed agents replay,
-the failed ones re-run), so "verification pending" below means the verifier had not yet run at the time of writing.
+**Campaign status: COMPLETE (2026-09-19 06:00 UTC)** — 15/15 explorer clusters finished, all 14 clusters that raised
+claims were re-run by an independent adversarial verifier from the written repro alone (`vars_typing` raised none),
+and every numbered finding below carries its verifier's verdict. Process note: the fan-out was interrupted at
+~03:00 UTC by the organisation's monthly spend limit after 10 of 15 explorers had finished; every adversarial
+verifier and the remaining five explorers (build_prod_export, render_ctx_statemgr, dev_server_cli, up_examples_c,
+db_optional_imports) died with the limit error. Both workflows were resumed from cache at 04:38 UTC once the limit
+reset (completed agents replay, the failed ones re-run) and finished at 05:57 UTC.
 
 ## Versions under test (all published on PyPI, verified with check_release_versions.py)
 
@@ -57,8 +58,11 @@ that #7081 advertises cannot open in prod with the default badge — the badge a
 pre-existing nesting, small fix), FINDING-015 (#7156's headline scenario still throws `filesById is not defined`;
 confirmed pre-existing, MEDIUM — the documented upload-button pattern works, so at minimum reword the changelog
 line), FINDING-019 (a non-UTF-8 marker still wedges startup despite #7142; one-line catch;
-confirmed, not a regression — the verifier lowered it to LOW because only external corruption produces that marker),
-FINDING-004 (the promised `deps=["router"]` deprecation never fires in the default case).
+confirmed, not a regression — the verifier lowered it to LOW because only external corruption produces that marker).
+FINDING-004 (the `deps=["router"]` deprecation is silent in the default `auto_deps=True` shape) drops off this list:
+the `up_examples_b` verifier showed the warning fires for every shape that would break at removal and is silent only
+where auto-deps already cover the router — a one-line nit, not a release item; the `router_vars` verifier still calls
+it a (LOW) defect.
 
 What works — every headline changelog item was exercised on the published packages, in a real browser, in dev and
 prod, against a 0.9.11.post1 baseline: the #7068 router split (navigation-delta matrix matches the PR table, −47%
@@ -75,14 +79,14 @@ spans; Python 3.10/3.14/3.15 install + run. Eleven reflex-examples apps upgraded
 the enterprise ag-grid, map, dnd, flow, mantine and (behind the metaclass shim) MCP + OIDC surfaces behave
 identically to the previous stable. Packaging: 19/19 published, 122 stubs correct, pins as intended.
 
-Severity histogram (27 numbered findings; verification status as of this writing):
+Severity histogram (27 numbered findings, final; severities are post-verification):
 
-| | confirmed | claimed, verifier pending | refuted / reclassified |
+| | confirmed by a verifier | claimed only (measurement / not re-verifiable here) | refuted or reclassified |
 |---|---|---|---|
 | critical | 1 (001) | – | – |
-| high | 3 (003, 011, 012) | 1 (023) | – |
-| medium | 3 (015, 017, 018) | 1 (024) | 2 (016 → pre-existing memory-vs-redis divergence, low; 020 → the test app under-bundled, not a defect) |
-| low | 6 (002, 004, 006, 008, 013, 019 ↓ from medium) | 3 (022, 025, 027 new from the verifier) | 7 (005, 007, 009, 010, 014, 021, 026) |
+| high | 3 (003, 011, 012) | – | – |
+| medium | 5 (015, 017, 018, 023 ↓ from high, 024) | – | 2 (016 → pre-existing memory-vs-redis divergence, low; 020 → the test app under-bundled, not a defect) |
+| low | 6 (006, 008, 013, 019 ↓ from medium, 025, 004 — behaviour confirmed by both verifiers, defect status disputed) | 3 (002 changelog wording, 022 bundle-size measurement, 027 CDN blocked here) | 7 (005, 007, 009, 010, 014, 021, 026) |
 
 Regressions vs 0.9.11.post1: 001, 003, 011, 017 (all confirmed). Plus four unnumbered explorer claims refuted by
 verifiers (masked cached-var AttributeError — #7115 actually fixes it; `rx.asession()` failures invisible — a toast
@@ -94,7 +98,7 @@ Index:
 - FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — every reflex-enterprise 0.9.5 app using AuthPlugin, MCPPlugin or EventHandlerAPIPlugin fails to start (CRITICAL, regression) — **CONFIRMED** by the orchestrator, two explorers and the adversarial verifier
 - FINDING-002: the #7132 changelog entry describes behavior #7136 made unreachable — a `_get_was_touched` var is now rejected at class creation (LOW, changelog/behavior mismatch, maintainer decision)
 - FINDING-003: a `@rx.var(cache=False)` withheld from a delivered delta by a downstream `get_delta` filter is never re-sent — #6946's last-sent memo is written while the delta is BUILT, not when it is delivered (HIGH, regression; reproduced in pure reflex by `event_loop` in dev and prod+redis, through reflex-enterprise auth by `ent_mcp_oidc`, by the `ent_mcp_oidc` verifier's own 60-line pure-reflex script, and by the `event_loop` verifier verbatim in dev/memory and dev/redis against a correct 0.9.11.post1 baseline) — **CONFIRMED** by both verifiers
-- FINDING-004: the documented `deps=["router"]` deprecation warning never fires in the default case — the guard in `_init_var_dependency_dicts` tests the MERGED dep set after auto-dep detection has added the `rx_router_*` names (LOW, new in #7068) — found by `router_vars` and `up_examples_b`; **CONFIRMED** by the verifier with a corrected diagnosis
+- FINDING-004: the documented `deps=["router"]` deprecation warning never fires in the default case — the guard in `_init_var_dependency_dicts` tests the MERGED dep set after auto-dep detection has added the `rx_router_*` names (LOW, new in #7068) — found by `router_vars` and `up_examples_b`; behaviour **CONFIRMED** by both clusters' verifiers (only the `auto_deps=True` + router-reading-body shape is silent; `auto_deps=False` and non-router bodies warn with the documented text, pinned by `tests/units/test_state.py:4184`), defect status **disputed**: the `router_vars` verifier keeps it as a LOW defect (the common legacy form gets no migration signal), the `up_examples_b` verifier calls it not-a-defect (in the silent shape auto-deps already register all five `rx_router_*` fields and unknown string deps are silently accepted on both versions, so nothing breaks at removal). Triage: a one-line nit in `_add_static_dep`, not a release item
 - ~~FINDING-005~~: "a narrow `deps=` cannot narrow" — **REFUTED** by the verifier (`deps=[State.router.url], auto_deps=False` registers only `rx_router_url`; `deps=` is additive by long-standing design; the −47% vs −67% gap compares whole frames with the PR's router-only measurement). Kept in the refuted list below.
 - FINDING-006: a substate shadowing a parent's backend (underscore) var is still silently ignored — `_check_overridden_inherited_vars` skips every `_`-prefixed name (`reflex/state.py:1335`) (LOW, pre-existing gap) — **CONFIRMED** by the verifier on both versions, with the runtime damage characterised (child default discarded, reads/writes resolve to the parent)
 - ~~FINDING-007~~: "PR #7136's documented `REFLEX_STATE_ALLOW_RESERVED_NAMES=1` escape hatch is missing" — **REFUTED as a defect** by the verifier: the flag is promised only in the PR description; the news fragment, the docs paragraph and the changelog never mention it (so nothing shipped is wrong), and it would not have helped FINDING-001 anyway. Kept as a note for the release manager: #7136 shipped a breaking change with no opt-in, contrary to its own description.
@@ -113,9 +117,9 @@ Index:
 - FINDING-021: literal asset `src` paths (`rx.image(src="/components/logo.svg")`) are not prefixed with `frontend_path`, so the image 404s while the file is served under `/app/...` (**REFUTED as a defect** by the verifier: by design — `rx.asset()` applies the prefix at `reflex/assets.py:95`, a literal string is indistinguishable from any other URL; pre-existing; the residue is a docs gap, nothing under `docs/` mentions `frontend_path` together with assets)
 - FINDING-022: `frontend_lazy_bundled_libraries=True` INCREASED decoded initial JS bytes by ~65 KB (+3.7–5.5%) on every page of the test app, including pages that use no optional library — the #7078 "reducing JavaScript loaded by ordinary pages" claim did not hold (LOW, perf-claim gap; measured as decoded bodies on one app, needs a wire-bytes/larger-app confirmation) — claimed by `build_prod_export`; a measurement, not re-verified by the verifier
 - FINDING-027: the CDN fallback URL a `@rx.dynamic` component generates for an unbundled sub-path import is malformed — `reflex_base/components/dynamic.py:205-214` computes `get_cdn_url()` for the root library (`…/lucide-react@1.26.0/+esm`) and appends the import's `package_path`, giving `…/+esm/dist/esm/icons/bug.mjs`, while jsdelivr needs `/+esm` to terminate the path, so the designed fallback cannot load even with CDN access (LOW, pre-existing — `dynamic.py` is byte-identical on 0.9.11.post1; found by the `build_prod_export` verifier while refuting FINDING-020) — claimed from the URL in the delivered delta; jsdelivr's behaviour could not be tested because the container's egress proxy blocks the CDN
-- FINDING-023: a hydrate/event delta naming a substate the compiled frontend has no dispatcher for sets `backend_state_mismatch=true` in `state.js` and every later event is discarded — zero websocket frames leave the browser until the frontend is recompiled (HIGH, pre-existing on both versions; the previous campaign's FINDING-036, re-tested because #6181 rewrote the dispatcher registry and did not change the latch) — re-confirmed by `render_ctx_statemgr`
-- FINDING-024: `app.modify_state("<client token>")` with the bare token raises `ValueError: Invalid path: ('',)` from `BaseStateToken.from_legacy_token` — the deprecated string form is broken for its most obvious argument (MEDIUM, pre-existing) — claimed by `render_ctx_statemgr`, verification pending
-- FINDING-025: `reflex run` deletes the whole `.states/` directory at startup in `--env prod` as well as dev, whatever `REFLEX_STATE_MANAGER_MODE` is, so disk-backed state never survives a restart (LOW, pre-existing, intentional-looking `reset_disk_state_manager()` call) — claimed by `render_ctx_statemgr`
+- FINDING-023: a hydrate/event delta naming a substate the compiled frontend has no dispatcher for sets `backend_state_mismatch=true` in `state.js` and every later event is discarded — zero websocket frames leave the browser until the frontend is recompiled (MEDIUM after verification — the verifier reproduced it field for field on both versions but lowered it from HIGH: the latch is deliberate and commented as fatal-by-design in both versions, the "a reload does not recover" sub-claim is an artifact of `.web/nocompile` pinning the stale bundle — in the realistic cached-bundle shape a reload fetches the new bundle and recovers as the error message advises — and the #6181 timing caveat is weak because all 21 `SubstateProvider`s are statically nested in one `useMemo`; pre-existing, the previous campaign's FINDING-036) — **CONFIRMED** by `render_ctx_statemgr` and its verifier; a genuine defect for the mixed-version / load-balancer shape, not a release blocker
+- FINDING-024: `app.modify_state("<client token>")` with the bare token raises `ValueError: Invalid path: ('',)` from `BaseStateToken.from_legacy_token` — the deprecated string form is broken for its most obvious argument (MEDIUM, pre-existing — the verifier reproduced the 500 and the 200 control, proved the baseline two ways, and adds that `App.modify_state` still carries an un-deprecated `token: str` overload at `reflex/app.py:1801`, so type checkers accept the call the runtime rejects) — **CONFIRMED** by the verifier
+- FINDING-025: `reflex run` deletes the whole `.states/` directory at startup in `--env prod` as well as dev, whatever `REFLEX_STATE_MANAGER_MODE` is, so disk-backed state never survives a restart (LOW, pre-existing, intentional-looking `reset_disk_state_manager()` call at `reflex/reflex.py:597`; the verifier executed the 0.9.11.post1 baseline and the `--env prod` case and widened the scope: `StateManagerDisk` is the default whenever no redis URL is configured, so every `reflex run` restart drops every live session's state in the default single-process configuration, not only under `REFLEX_STATE_MANAGER_MODE=disk`) — **CONFIRMED** by the verifier
 - ~~FINDING-026~~: "the #7083 changelog understates the `rx.Model` change" — **REFUTED** as a defect by the verifier: the behavior reproduces (a plain `class Item(rx.Model)` now raises the guided ImportError at definition time on a bare install), but the changelog's scope clause "Subclassing `rx.Model` (e.g. `class Item(rx.Model, table=True)`)" already covers every subclass; the `table=True` form is an example, not a restriction. Kept in the refuted list.
 - FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package) — **CONFIRMED** by the verifier in-process AND over real HTTP (`/_reflex/retrieve_state` and the event endpoint's ndjson delta return the server-side `client_token` on 0.9.12a1; blanked on 0.9.11.post1)
 
@@ -412,7 +416,7 @@ Index:
   worker-1`) right after four of those frontend exceptions while the browser was idle; the bundled, exception-free run
   stayed up (single occurrence on a shared 4-CPU host, `verification/logs/prod_new_unbundled.log`).
 
-## FINDING-023 … FINDING-025 (`render_ctx_statemgr`; all pre-existing, details in `render_ctx_statemgr/NOTES.md`)
+## FINDING-023 … FINDING-025 (`render_ctx_statemgr`; all pre-existing, all CONFIRMED by the verifier — 023 lowered to MEDIUM; details in `render_ctx_statemgr/NOTES.md` and its `## VERIFICATION`)
 
 - FINDING-023 (standing HIGH from the previous campaign): `renderapp` with `RENDERAPP_EXTRA_STATE=1` defines a backend
   state class the compiled frontend does not know about; the hydrate delta names it, `.web/utils/state.js` sets
@@ -421,12 +425,43 @@ Index:
   `out/mismatch_prev_result.json`). A one-way latch with no reset path; #6181 moved dispatcher registration into a
   `useLayoutEffect` with `delete` on unmount but left the latch. Realistic trigger: a stale `.web/` after adding a
   State class with the frontend compile skipped (backend-only workers, `nocompile`).
+  - Verifier: **CONFIRMED** field for field on both versions (`verification/v_mismatch_new_result.json` vs
+    `v_mismatch_prev_result.json`: `A_after_load '0'`, `sent_frames_from_clicks 0`, `events_reach_backend false`,
+    `after_reload_sent_frames 0`, `recv_frames 14`, no page errors; the server logs show the `CLIENT_ERROR` round-tripping
+    with the backend healthy). Lowered HIGH → MEDIUM on three grounds: (1) the latch is deliberate — both versions'
+    `state.js` say "Validate the whole delta before dispatching anything…" and "A backend/frontend state mismatch is
+    fatal; do not send further events", so a fix is a design change, not a regression repair; (2) "a reload does not
+    recover" is an artifact of the repro — `.web/nocompile` pins the server to the stale bundle, whereas in the realistic
+    shape (backend redeployed with a new substate, browser holding a cached old bundle) a reload fetches the new bundle
+    and recovers exactly as the error message advises; what stays broken is the within-session case a reload cannot fix
+    (mixed-version backends behind a load balancer, `api_url` pointed at a different backend); (3) the "#6181 makes it
+    newly reachable by timing" caveat is weak — all 21 `SubstateProvider`s are statically nested in `StateProvider`'s
+    single `useMemo` (`context.jsx:189-213`) and can only unmount with the whole tree, socket included. Latch at
+    `state.js:730` (0.9.12a1) / `:749` (0.9.11.post1); early returns at `:706`/`:725`, `processEvent()` at `:520`/`:532`.
+    Worth fixing (drop/warn on the unknown substate and apply the rest, or never send substates the page did not
+    register), not a release blocker.
 - FINDING-024: `_split_substate_key` partitions the legacy token on `_`; a bare UUID yields an empty state path and
   `get_class_substate` rejects `['']`. The deprecation warning fired just before names the right format, but the API
   route gets a bare 500 (`evidence/modify_state_legacy_token_traceback.txt`).
+  - Verifier: **CONFIRMED** — `GET /api/poke?token=$T&value=x&legacy=1` → bare `Internal Server Error` 500, the control
+    without `legacy=1` → 200 `{"ok":true,…}`; the traceback matches line for line (`app.py:1842` → `token.py:247` →
+    `state.py:1477`, `verification/v_issue2_traceback.txt`). Baseline proven two ways (`verification/legacy_token_check.py`
+    raises the identical `ValueError` on both venvs; `from_legacy_token`'s source is character-identical). Missed by the
+    explorer: `App.modify_state` still advertises an un-deprecated `token: str` overload (`reflex/app.py:1801`), so a
+    type checker accepts the call the runtime rejects with a message naming a path the caller never wrote; `docs/` never
+    mentions the string form, so the fix is API-surface only (default an empty state path to the root state, or raise a
+    message that names the `BaseStateToken` replacement).
 - FINDING-025: `reflex/reflex.py::_run` calls `reset_disk_state_manager()` unconditionally before the app starts;
   after a clean SIGTERM flush wrote six pickles, the next `reflex run --env prod` left `.states/` empty
   (`logs/disk_verify.log`). Reasonable in dev (stale schema), surprising for prod disk-backed state.
+  - Verifier: **CONFIRMED** and extended — SIGTERM then SIGKILL left two pickles intact (md5s recorded), the next
+    `reflex run` emptied `.states/` and `/api/disk_read` returned `{"disk":null,"cache":null}`; the 0.9.11.post1
+    baseline (seeded pickles emptied by `reflex run`, `verification/v_reset_prev_tail.log`) and the `--env prod` case
+    (seeded pickles emptied while the prod build was still compiling, `v_reset_prod_tail.log`) were executed rather than
+    argued from source. Scope correction: `StateManagerDisk` is the default whenever no redis URL is configured —
+    `renderapp` accumulated `.states/*.pkl` with no state-manager variable set — so every `reflex run` restart drops
+    every live session's state in the default configuration; defensible in dev, a decision for `--env prod`. Call site
+    `reflex/reflex.py:597` (0.9.11.post1: `:571`, not `:570` as the notes say).
 
 ## FINDING-012: `rx.data_editor` image-preview overlay dead in prod with the default badge (HIGH impact, pre-existing — CONFIRMED by the verifier with an A/B)
 
@@ -456,7 +491,7 @@ Index:
 - Shape of fix: make the StickyBadge wrap forward its children (or register the portal so it stays a sibling).
   At minimum the #7081 docs need the `show_built_with_reflex=False` caveat.
 
-## FINDING-004, FINDING-006 (LOW; CONFIRMED by the verifier, details in the cluster NOTES)
+## FINDING-004, FINDING-006 (LOW; behaviour CONFIRMED by the verifiers — 004's defect status disputed; details in the cluster NOTES)
 
 - FINDING-004 (`router_vars`, ISSUE 1; CONFIRMED, diagnosis corrected by the verifier): `@rx.var(deps=["router"])`
   with a body that reads `self.router` (the default `auto_deps=True` case) raises no deprecation warning; the
@@ -466,6 +501,20 @@ Index:
   legacy string becomes indistinguishable from the Var form. The guard DOES fire for `auto_deps=False`, and for
   bodies that do not read the router (`router_vars/verification/scripts/v_deps_legacy_matrix.py`). Fix at
   declaration time (`_add_static_dep`), not after `_deps()`. Repro: `router_vars/scripts/deps_legacy.py`.
+  - Second verifier (`up_examples_b`, independent): the same matrix result (`verification/rdvar.py`, five variants —
+    `deps=["router"], auto_deps=False` warns with the documented text whether or not the body reads the router, a
+    non-router body warns, `deps=[State.router], auto_deps=False` correctly stays silent, and the written repro is the
+    only silent shape), plus end to end: a `/routerdep2` page with `@rx.var(deps=["router"], auto_deps=False,
+    cache=True)` logs the `DeprecationWarning` twice in a real `reflex run --env prod` server log
+    (`verification/uc_new_prod.verify.log`) and still renders. The release source pins it: `tests/units/test_state.py:4184`
+    asserts exactly one deprecation for the string + `auto_deps=False` form and none for the Var form. This verifier's
+    judgment: **not a defect** — the silent shape is the redundant one (auto tracking already registers all five
+    `rx_router_*` names there) and an unknown string dep is silently accepted on both versions (`verification/bogusdep.py`:
+    `deps=["no_such_var"]` accepted on 0.9.12a1 and 0.9.11.post1), so those users break neither at 0.9.12 nor at the
+    1.0 removal, while the users who would break do get the warning. The `router_vars` verifier's counter-argument
+    (`tests/units/test_state.py:4141`: the string only keeps working while `router` is still a var) holds only if
+    unknown string deps start raising. Triage: a nit, one line in `_add_static_dep`; dropped from the fix-before-release
+    list.
 - FINDING-006 (`router_vars`, ISSUE 3; CONFIRMED, pre-existing): `class P(rx.State): _priv: int = 1` /
   `class C(P): _priv: str = "x"` raises nothing on either version; `C.backend_vars["_priv"]` is the parent's
   and in a real state tree the child's default is discarded and writes go to the parent
@@ -730,8 +779,12 @@ works, rows survive, no new console/page errors or 4xx/5xx, and the preserved 0.
 despite the #7068 state-key rename. #6946 verified from websocket frames (an unchanged uncached var re-sent on
 0.9.11.post1, omitted on 0.9.12a1); #7068/#7077/#7136 declaration errors fire as documented. Added a reusable
 `/pandas` probe page to data_visualisation (DataFrame through a literal, a State-driven computed var, an `@rx.memo`
-prop, a `ComponentState`, `rx.foreach` over sqlmodel rows). Issues: FINDING-004 (independently), and prod 404s for
-dynamic routes (pre-existing on both, issue #6983 / PR #6996). Notes: a naive `uv pip install --upgrade
+prop, a `ComponentState`, `rx.foreach` over sqlmodel rows). Issues: FINDING-004 (independently; this cluster's
+verifier refuted it as a defect — the warning fires for every shape that would break), and prod 404s for dynamic routes
+(pre-existing on both, issue #6983 / PR #6996; the verifier reproduced it with a 12-line app on both versions —
+byte-identical screenshots, the SPA shell still hydrates into the right page but with status 404 — and roots it in
+`reflex/utils/exec.py:383` serving `.web/build/client` through Starlette `PrecompressedStaticFiles(html=True)`, which
+answers a miss with `404.html` at 404; the build's `__spa-fallback.html` is byte-identical to `404.html` and never used). Notes: a naive `uv pip install --upgrade
 'reflex==0.9.12a1'` without `--prerelease=allow` upgrades only reflex/reflex-base and leaves every component
 package at its stable release — it happened to work, but the release notes should tell users to name the
 component alphas; form-designer's `/form/<id>` page crashes on both versions (an app bug in the example:
@@ -822,7 +875,7 @@ app plus a blocked CDN), 021 (refuted — by design), 022 (measurement), 027 (ne
 trap: `uv pip install --prerelease=allow sentry-sdk` resolves 3.0.0a7, which crashes in `sentry_sdk.init()` against
 opentelemetry-api 1.44.0 before any reflex code runs — pin `sentry-sdk<3`.
 
-### `render_ctx_statemgr` (pass 21, anomaly 8, fail 4, skipped 3) — #6181 and #7159 verified; #6180 not observable; FINDING-023..025
+### `render_ctx_statemgr` (pass 21, anomaly 8, fail 4, skipped 3) — #6181 and #7159 verified; #6180 not observable; FINDING-023 (MEDIUM), 024, 025 confirmed pre-existing
 Render-count probe app (10 substates, memo sections, two ComponentStates, foreach over 300 rows, colour-mode and
 event-loop consumers, LocalStorage/Cookie/SessionStorage, client_state, background tasks, event chains, a second page
 and a dynamic route), a byte-identical 0.9.11.post1 copy, and a StateManagerDisk probe app with Starlette routes
@@ -834,7 +887,8 @@ from `get_state` is persisted; `modify_state` from an API route pushes live and 
 the shutdown flush wrote at the SIGTERM second with a 30 s debounce. #6180: not contradicted but not observable — the
 colour-mode and event-loop probes recorded 0 extra renders on 0.9.11.post1 too because they sit behind memo boundaries;
 do not count #6180 as verified. #7132: FINDING-002 confirmed in one line (both a var and a computed var named
-`_get_was_touched` raise; both allowed on 0.9.11.post1). Issues: FINDING-023/024/025. Anomalies: `BaseStateToken` vs
+`_get_was_touched` raise; both allowed on 0.9.11.post1). Issues: FINDING-023/024/025 (all confirmed by the verifier; 023
+lowered to MEDIUM, 025's scope widened to the default state manager). Anomalies: `BaseStateToken` vs
 `StateToken` have different `cache_key`/`token_path()` shapes and using the wrong one silently writes a parallel state
 tree; `REFLEX_API_URL` did not reach the compiled bundle for `reflex run --frontend-only` (which also rejects
 `--backend-port`); SIGTERM to `reflex run` did not exit and SIGKILL orphaned the react-router process (FINDING-018);
@@ -861,5 +915,3 @@ were refuted (see the refuted list); `reflex db init` without the extra printing
 lines, identical on both versions) was CONFIRMED as a pre-existing low. Latent fragility noted: optional-library serializers are matched by identity against hard-coded
 module paths (`pandas.core.frame`, `plotly.graph_objs._figure`, `PIL.Image`, `sqlmodel.main`) — a library reorg would
 disable serialization silently. Skipped: reflex-local-auth (covered by `up_examples_b`).
-
-_(other clusters pending)_
