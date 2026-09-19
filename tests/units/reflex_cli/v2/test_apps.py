@@ -1,207 +1,235 @@
 from __future__ import annotations
 
+import datetime
 import json
 import logging
-from unittest import mock
+import uuid
+from collections.abc import Iterator
 
-import httpx
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
 from reflex_base.utils.log import SUCCESS
+from reflex_build_sdk.types import App, AppSummary, DeploymentRecord, LogRecord
 from reflex_cli.core.config import Config
 from reflex_cli.utils import hosting
-from reflex_cli.utils.exceptions import GetAppError
 from reflex_cli.v2.apps import _resolve_app_id, apps_cli
 from reflex_cli.v2.deployments import hosting_cli
 
-from .utils import as_click_command
+from .utils import api_error, as_click_command, fake_client
 
 hosting_cli = as_click_command(hosting_cli)
 
 runner = CliRunner()
 
+_APP_ID = uuid.UUID(int=21)
+_PROJECT_ID = uuid.UUID(int=22)
+_DEPLOYMENT_ID = uuid.UUID(int=31)
+
+
+def _authed(mocker: MockFixture):
+    """Patch the client lookup and hand back a client with a fresh API mock.
+
+    Args:
+        mocker: The pytest-mock fixture.
+
+    Returns:
+        The client every command under test will receive.
+    """
+    client = fake_client()
+    mocker.patch(
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
+    )
+    return client
+
+
+def app_summary(name: str = "test-app", **fields) -> AppSummary:
+    """Build an app as a listing or a search reports one.
+
+    Args:
+        name: The app's name.
+        fields: Overrides for its other fields.
+
+    Returns:
+        The app.
+    """
+    return AppSummary(**{
+        "id": _APP_ID,
+        "name": name,
+        "description": "",
+        "project_id": _PROJECT_ID,
+        "provider": "fly",
+        **fields,
+    })
+
+
+def app(name: str = "test-app", **fields) -> App:
+    """Build an app as `apps inspect` reports one.
+
+    Args:
+        name: The app's name.
+        fields: Overrides for its other fields.
+
+    Returns:
+        The app.
+    """
+    return App(**{
+        "id": _APP_ID,
+        "name": name,
+        "description": "",
+        "project_id": _PROJECT_ID,
+        "org_id": None,
+        "provider": "fly",
+        "full_deploy": False,
+        "min_instances": None,
+        "max_instances": None,
+        "has_deployments": True,
+        "latest_deployment": None,
+        **fields,
+    })
+
+
+def deployment_record(**fields) -> DeploymentRecord:
+    """Build a deployment as an app's history reports one.
+
+    Args:
+        fields: Overrides for the record's fields.
+
+    Returns:
+        The deployment.
+    """
+    return DeploymentRecord(**{
+        "id": _DEPLOYMENT_ID,
+        "url": "https://example.com",
+        "backend_url": "https://api.example.com",
+        "status": "success",
+        "pause_reason": None,
+        "failure_code": None,
+        "failure_reason": None,
+        "description": None,
+        "reflex_version": "1.2.3",
+        "python_version": "3.10",
+        "created_at": datetime.datetime(2024, 11, 29, 12, tzinfo=datetime.timezone.utc),
+        "updated_at": None,
+        "deployed_by": None,
+        "vm_type": None,
+        "environment_id": None,
+        "environment_name": None,
+        "can_rollback": True,
+        **fields,
+    })
+
+
+def log_records(*messages: str) -> Iterator[LogRecord]:
+    """Yield log lines the way the client does: once, lazily.
+
+    A list would let a caller that reads the whole iterator pass a test it
+    should fail, which is the paging contract `--follow` rests on.
+
+    Args:
+        messages: The lines that were logged.
+
+    Yields:
+        The records.
+    """
+    for message in messages:
+        yield log_record(message)
+
+
+def log_record(message: str) -> LogRecord:
+    """Build one line of an app's runtime logs.
+
+    Args:
+        message: The line that was logged.
+
+    Returns:
+        The record.
+    """
+    return LogRecord(
+        ns=0, timestamp="2024-11-29T12:00:00Z", name="app", message=message
+    )
+
 
 def test_app_history_success(mocker: MockFixture):
     """Test retrieving deployment history successfully."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_app_history = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_history",
-        return_value=[
-            {
-                "id": "deployment1",
-                "status": "success",
-                "hostname": "example.com",
-                "python version": "3.10",
-                "reflex version": "1.2.3",
-                "vm type": "small",
-                "timestamp": "2024-11-29T12:00:00Z",
-            },
-            {
-                "id": "deployment2",
-                "status": "failure",
-                "hostname": "example.org",
-                "python version": "3.11",
-                "reflex version": "1.1.0",
-                "vm type": "medium",
-                "timestamp": "2024-11-28T10:00:00Z",
-            },
-        ],
-    )
+    client = _authed(mocker)
+    client.api.apps.history.return_value = [deployment_record()]
     mock_console_print_table = mocker.patch("reflex_cli.utils.console.print_table")
 
     result = runner.invoke(hosting_cli, ["apps", "history", "test_app_id"])
 
     assert result.exit_code == 0, result.output
-    mock_get_app_history.assert_called_once_with(
-        app_id="test_app_id",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.history.assert_called_once_with("test_app_id")
     mock_console_print_table.assert_called_once()
 
 
 def test_app_history_as_json(mocker: MockFixture):
     """Test retrieving deployment history with JSON output."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_app_history = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_history",
-        return_value=[
-            {
-                "id": "deployment1",
-                "status": "success",
-                "hostname": "example.com",
-                "python version": "3.10",
-                "reflex version": "1.2.3",
-                "vm type": "small",
-                "timestamp": "2024-11-29T12:00:00Z",
-            }
-        ],
-    )
+    client = _authed(mocker)
+    client.api.apps.history.return_value = [deployment_record()]
     result = runner.invoke(
         hosting_cli,
         ["apps", "history", "test_app_id", "--json"],
     )
 
     assert result.exit_code == 0, result.output
-    mock_get_app_history.assert_called_once_with(
-        app_id="test_app_id",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.history.assert_called_once_with("test_app_id")
     assert json.loads(result.stdout) == [
         {
-            "id": "deployment1",
+            "id": str(_DEPLOYMENT_ID),
             "status": "success",
-            "hostname": "example.com",
+            "url": "https://example.com",
             "python version": "3.10",
             "reflex version": "1.2.3",
-            "vm type": "small",
-            "timestamp": "2024-11-29T12:00:00Z",
+            "vm type": None,
+            "timestamp": "2024-11-29T12:00:00+00:00",
+            "description": "",
+            "can rollback": True,
         }
     ]
 
 
 def test_app_history_no_deployments(mocker: MockFixture):
     """Test retrieving deployment history when there are no deployments."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_app_history = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_history",
-        return_value=[],
-    )
+    client = _authed(mocker)
+    client.api.apps.history.return_value = []
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(hosting_cli, ["apps", "history", "test_app_id"])
 
     assert result.exit_code == 0, result.output
-    mock_get_app_history.assert_called_once_with(
-        app_id="test_app_id",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.history.assert_called_once_with("test_app_id")
     mock_console_print.assert_called_once_with("[]")
 
 
 def test_app_history_http_error(mocker: MockFixture):
     """Test retrieving deployment history when an HTTP error occurs."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_app_history = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_history",
-        side_effect=Exception("HTTP request failed"),
-    )
+    client = _authed(mocker)
+    client.api.apps.history.side_effect = api_error(500, "HTTP request failed")
 
     result = runner.invoke(hosting_cli, ["apps", "history", "test_app_id"])
 
     assert result.exit_code == 1
-    mock_get_app_history.assert_called_once_with(
-        app_id="test_app_id",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.history.assert_called_once_with("test_app_id")
 
 
 def test_deployment_build_logs_success(mocker: MockFixture):
     """Test successful retrieval of build logs."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_deployment_build_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_deployment_build_logs",
-        return_value={"log": "Build completed successfully."},
-    )
+    client = _authed(mocker)
+    client.api.deployments.build_logs.return_value = "Build completed successfully."
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(hosting_cli, ["apps", "build-logs", "test_deployment_id"])
 
     assert result.exit_code == 0, result.output
-    mock_get_deployment_build_logs.assert_called_once_with(
-        deployment_id="test_deployment_id",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_console_print.assert_called_once_with({"log": "Build completed successfully."})
+    client.api.deployments.build_logs.assert_called_once_with("test_deployment_id")
+    mock_console_print.assert_called_once_with("Build completed successfully.")
 
 
 def test_deployment_build_logs_with_token(mocker: MockFixture):
     """Test retrieval of build logs with a provided token."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_deployment_build_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_deployment_build_logs",
-        return_value={"log": "Build completed successfully."},
-    )
+    client = _authed(mocker)
+    client.api.deployments.build_logs.return_value = "Build completed successfully."
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(
@@ -210,104 +238,57 @@ def test_deployment_build_logs_with_token(mocker: MockFixture):
     )
 
     assert result.exit_code == 0, result.output
-    mock_get_deployment_build_logs.assert_called_once_with(
-        deployment_id="test_deployment_id",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_console_print.assert_called_once_with({"log": "Build completed successfully."})
+    client.api.deployments.build_logs.assert_called_once_with("test_deployment_id")
+    mock_console_print.assert_called_once_with("Build completed successfully.")
 
 
 def test_deployment_build_logs_not_authenticated(mocker: MockFixture):
     """Test retrieval of build logs when not authenticated."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_deployment_build_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_deployment_build_logs",
-        side_effect=Exception("not authenticated"),
-    )
+    client = _authed(mocker)
+    client.api.deployments.build_logs.side_effect = api_error(500, "not authenticated")
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(hosting_cli, ["apps", "build-logs", "test_deployment_id"])
 
     assert result.exit_code == 1  # Command should fail due to exception
-    mock_get_deployment_build_logs.assert_called_once_with(
-        deployment_id="test_deployment_id",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.deployments.build_logs.assert_called_once_with("test_deployment_id")
     mock_console_print.assert_not_called()
 
 
 def test_deployment_build_logs_http_error(mocker: MockFixture):
     """Test retrieval of build logs when an HTTP error occurs."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_deployment_build_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_deployment_build_logs",
-        side_effect=Exception("HTTP error: bad response from server"),
+    client = _authed(mocker)
+    client.api.deployments.build_logs.side_effect = api_error(
+        500, "HTTP error: bad response from server"
     )
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(hosting_cli, ["apps", "build-logs", "test_deployment_id"])
 
     assert result.exit_code == 1
-    mock_get_deployment_build_logs.assert_called_once_with(
-        deployment_id="test_deployment_id",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.deployments.build_logs.assert_called_once_with("test_deployment_id")
     mock_console_print.assert_not_called()
 
 
 def test_deployment_status_success(mocker: MockFixture):
     """Test successful retrieval of a deployment's status."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_status = mocker.patch(
-        "reflex_cli.utils.hosting.get_deployment_status",
-        return_value="Deployment is running smoothly.",
-    )
+    client = _authed(mocker)
+    client.api.deployments.status.return_value = "Deployment is running smoothly."
     mock_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(hosting_cli, ["apps", "status", "12345"])
 
     assert result.exit_code == 0, result.output
-    mock_get_status.assert_called_once_with(
-        deployment_id="12345",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.deployments.status.assert_called_once_with("12345")
     mock_print.assert_called_once_with("Deployment is running smoothly.")
 
 
 def test_deployment_status_watch_success(mocker: MockFixture):
     """Test continuous status watching for a deployment."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client = _authed(mocker)
     mock_watch_status = mocker.patch(
         "reflex_cli.utils.hosting.watch_deployment_status",
-        return_value=None,
+        return_value=hosting.WatchResult(hosting.WatchOutcome.SUCCEEDED, "ready"),
     )
 
     result = runner.invoke(hosting_cli, ["apps", "status", "12345", "--watch"])
@@ -315,9 +296,7 @@ def test_deployment_status_watch_success(mocker: MockFixture):
     assert result.exit_code == 0, result.output
     mock_watch_status.assert_called_once_with(
         deployment_id="12345",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
+        client=client,
     )
 
 
@@ -330,34 +309,14 @@ def test_deployment_status_http_error(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get = mocker.patch("httpx.get")
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "HTTP Error",
-        request=mocker.Mock(),
-        response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
-    )
-    mock_get.return_value = mock_response
-    mocker.patch(
-        "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
-    )
-    mocker.patch("reflex_cli.utils.hosting.get_app", return_value={"id": "fake_app_id"})
-    mocker.patch(
-        "reflex_cli.utils.hosting.authorization_header",
-        return_value={"X-API-TOKEN": "fake_token"},
-    )
+    client = _authed(mocker)
+    client.api.deployments.status.side_effect = api_error(400, "Invalid token")
 
     result = runner.invoke(hosting_cli, ["apps", "status", "12345"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["get status failed: Invalid token"]
+    assert errors == ["Invalid token"]
 
 
 def test_stop_app_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -367,28 +326,14 @@ def test_stop_app_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture)
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_stop_app = mocker.patch(
-        "reflex_cli.utils.hosting.stop_app",
-        return_value="App stopped successfully",
-    )
+    client = _authed(mocker)
 
     result = runner.invoke(hosting_cli, ["apps", "stop", "app123"])
 
     assert result.exit_code == 0, result.output
-    mock_stop_app.assert_called_once_with(
-        app_id="app123",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.stop.assert_called_once_with("app123")
     successes = [r.getMessage() for r in caplog.records if r.levelno == SUCCESS]
-    assert successes == ["App stopped successfully"]
+    assert successes == ["app stopped"]
 
 
 def test_stop_app_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -398,28 +343,17 @@ def test_stop_app_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture)
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_stop_app = mocker.patch(
-        "reflex_cli.utils.hosting.stop_app",
-        return_value="stop app failed: Unable to stop app due to server error",
+    client = _authed(mocker)
+    client.api.apps.stop.side_effect = api_error(
+        500, "Unable to stop app due to server error"
     )
 
     result = runner.invoke(hosting_cli, ["apps", "stop", "app123"])
 
-    assert result.exit_code == 0, result.output
-    mock_stop_app.assert_called_once_with(
-        app_id="app123",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    assert result.exit_code == 1
+    client.api.apps.stop.assert_called_once_with("app123")
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["stop app failed: Unable to stop app due to server error"]
+    assert errors == ["Unable to stop app due to server error"]
 
 
 def test_stop_app_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -429,34 +363,14 @@ def test_stop_app_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixtu
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_post = mocker.patch("httpx.post")
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "HTTP Error",
-        request=mocker.Mock(),
-        response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
-    )
-    mock_post.return_value = mock_response
-    mocker.patch(
-        "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
-    )
-    mocker.patch("reflex_cli.utils.hosting.get_app", return_value={"id": "fake_app_id"})
-    mocker.patch(
-        "reflex_cli.utils.hosting.authorization_header",
-        return_value={"X-API-TOKEN": "fake_token"},
-    )
+    client = _authed(mocker)
+    client.api.apps.stop.side_effect = api_error(401, "Invalid token")
 
     result = runner.invoke(hosting_cli, ["apps", "stop", "app123"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["stop app failed: Invalid token"]
+    assert errors == ["You are not authenticated. Run `reflex login` to authenticate."]
 
 
 def test_start_app_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -466,30 +380,14 @@ def test_start_app_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_start_app = mocker.patch(
-        "reflex_cli.utils.hosting.start_app",
-        return_value={"status": "success", "message": "App started successfully"},
-    )
+    client = _authed(mocker)
 
     result = runner.invoke(hosting_cli, ["apps", "start", "app123"])
 
     assert result.exit_code == 0, result.output
-    mock_start_app.assert_called_once_with(
-        app_id="app123",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.start.assert_called_once_with("app123")
     successes = [r.getMessage() for r in caplog.records if r.levelno == SUCCESS]
-    assert successes == [
-        str({"status": "success", "message": "App started successfully"})
-    ]
+    assert successes == ["app started"]
 
 
 def test_start_app_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -499,28 +397,17 @@ def test_start_app_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_start_app = mocker.patch(
-        "reflex_cli.utils.hosting.start_app",
-        return_value="start app failed: Unable to start app due to server error",
+    client = _authed(mocker)
+    client.api.apps.start.side_effect = api_error(
+        500, "Unable to start app due to server error"
     )
 
     result = runner.invoke(hosting_cli, ["apps", "start", "app123"])
 
-    assert result.exit_code == 0, result.output
-    mock_start_app.assert_called_once_with(
-        app_id="app123",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    assert result.exit_code == 1
+    client.api.apps.start.assert_called_once_with("app123")
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["start app failed: Unable to start app due to server error"]
+    assert errors == ["Unable to start app due to server error"]
 
 
 def test_start_app_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -530,34 +417,14 @@ def test_start_app_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixt
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_post = mocker.patch("httpx.post")
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "HTTP Error",
-        request=mocker.Mock(),
-        response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
-    )
-    mock_post.return_value = mock_response
-    mocker.patch(
-        "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
-    )
-    mocker.patch("reflex_cli.utils.hosting.get_app", return_value={"id": "fake_app_id"})
-    mocker.patch(
-        "reflex_cli.utils.hosting.authorization_header",
-        return_value={"X-API-TOKEN": "fake_token"},
-    )
+    client = _authed(mocker)
+    client.api.apps.start.side_effect = api_error(401, "Invalid token")
 
     result = runner.invoke(hosting_cli, ["apps", "start", "app123"])
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code == 1
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["start app failed: Invalid token"]
+    assert errors == ["You are not authenticated. Run `reflex login` to authenticate."]
 
 
 def test_delete_app_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -567,58 +434,23 @@ def test_delete_app_success(mocker: MockFixture, caplog: pytest.LogCaptureFixtur
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_delete_app = mocker.patch(
-        "reflex_cli.utils.hosting.delete_app",
-        return_value={"status": "success", "message": "App deleted successfully"},
-    )
-    mock_get_app = mocker.patch(
-        "reflex_cli.utils.hosting.get_app",
-        return_value={"id": "app123", "name": "test-app"},
-    )
+    client = _authed(mocker)
+    client.api.apps.get.return_value = app("test-app")
     mock_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
 
     result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--interactive"])
 
     assert result.exit_code == 0, result.output
-    assert mock_get_app.call_count == 2
-    mock_get_app.assert_has_calls(
-        [
-            mock.call(
-                client=hosting.AuthenticatedClient(
-                    token="fake-token", validated_data={"foo": "bar"}
-                ),
-                app_id="app123",
-            ),
-            mock.call(
-                app_id="app123",
-                client=hosting.AuthenticatedClient(
-                    token="fake-token", validated_data={"foo": "bar"}
-                ),
-            ),
-        ],
-        any_order=True,
-    )
+    assert client.api.apps.get.call_count == 1
+    client.api.apps.get.assert_called_once_with("app123")
     mock_ask.assert_called_once_with(
         "Are you sure you want to delete app 'test-app' (ID: app123)?",
         choices=["y", "n"],
         default="n",
     )
-    mock_delete_app.assert_called_once_with(
-        app_id="app123",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert warnings == [
-        str({"status": "success", "message": "App deleted successfully"})
-    ]
+    client.api.apps.delete.assert_called_once_with("app123")
+    successes = [r.getMessage() for r in caplog.records if r.levelno == SUCCESS]
+    assert successes == ["app deleted"]
 
 
 def test_delete_app_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -628,56 +460,25 @@ def test_delete_app_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixtur
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
+    client = _authed(mocker)
+    client.api.apps.delete.side_effect = api_error(
+        500, "Unable to delete app due to server error"
     )
-    mock_delete_app = mocker.patch(
-        "reflex_cli.utils.hosting.delete_app",
-        return_value="delete app failed: Unable to delete app due to server error",
-    )
-    mock_get_app = mocker.patch(
-        "reflex_cli.utils.hosting.get_app",
-        return_value={"id": "app123", "name": "test-app"},
-    )
+    client.api.apps.get.return_value = app("test-app")
     mock_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
 
     result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--interactive"])
 
-    assert result.exit_code == 0, result.output
-    assert mock_get_app.call_count == 2
-    mock_get_app.assert_has_calls(
-        [
-            mock.call(
-                client=hosting.AuthenticatedClient(
-                    token="fake-token", validated_data={"foo": "bar"}
-                ),
-                app_id="app123",
-            ),
-            mock.call(
-                app_id="app123",
-                client=hosting.AuthenticatedClient(
-                    token="fake-token", validated_data={"foo": "bar"}
-                ),
-            ),
-        ],
-        any_order=True,
-    )
+    assert result.exit_code == 1
+    client.api.apps.get.assert_called_once_with("app123")
     mock_ask.assert_called_once_with(
         "Are you sure you want to delete app 'test-app' (ID: app123)?",
         choices=["y", "n"],
         default="n",
     )
-    mock_delete_app.assert_called_once_with(
-        app_id="app123",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert warnings == ["delete app failed: Unable to delete app due to server error"]
+    client.api.apps.delete.assert_called_once_with("app123")
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Unable to delete app due to server error"]
 
 
 def test_delete_app_no_app_id(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -687,12 +488,7 @@ def test_delete_app_no_app_id(mocker: MockFixture, caplog: pytest.LogCaptureFixt
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    _authed(mocker)
     result = runner.invoke(hosting_cli, ["apps", "delete", ""])
 
     assert result.exit_code == 1
@@ -707,45 +503,23 @@ def test_delete_app_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFix
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_delete = mocker.patch("httpx.delete")
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "HTTP Error",
-        request=mocker.Mock(),
-        response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
-    )
-    mock_delete.return_value = mock_response
+    client = _authed(mocker)
+    client.api.apps.delete.side_effect = api_error(400, "Invalid token")
 
-    mock_get_app = mocker.patch(
-        "reflex_cli.utils.hosting.get_app",
-        return_value={"id": "app123", "name": "test-app"},
-    )
+    client.api.apps.get.return_value = app("test-app")
     mock_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
-    mocker.patch(
-        "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
-    )
-    mocker.patch(
-        "reflex_cli.utils.hosting.authorization_header",
-        return_value={"X-API-TOKEN": "fake_token"},
-    )
 
     result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--interactive"])
 
-    assert result.exit_code == 0, result.output
-    assert mock_get_app.call_count >= 1
+    assert result.exit_code == 1
+    assert client.api.apps.get.call_count >= 1
     mock_ask.assert_called_once_with(
         "Are you sure you want to delete app 'test-app' (ID: app123)?",
         choices=["y", "n"],
         default="n",
     )
-    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert warnings == ["delete app failed: Invalid token"]
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["Invalid token"]
 
 
 def test_delete_app_confirmation_cancelled(
@@ -757,40 +531,15 @@ def test_delete_app_confirmation_cancelled(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_delete_app = mocker.patch("reflex_cli.utils.hosting.delete_app")
-    mock_get_app = mocker.patch(
-        "reflex_cli.utils.hosting.get_app",
-        return_value={"id": "app123", "name": "test-app"},
-    )
+    client = _authed(mocker)
+    client.api.apps.get.return_value = app("test-app")
     mock_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="n")
 
     result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--interactive"])
 
     assert result.exit_code == 0, result.output
-    assert mock_get_app.call_count == 2
-    mock_get_app.assert_has_calls(
-        [
-            mock.call(
-                client=hosting.AuthenticatedClient(
-                    token="fake-token", validated_data={"foo": "bar"}
-                ),
-                app_id="app123",
-            ),
-            mock.call(
-                app_id="app123",
-                client=hosting.AuthenticatedClient(
-                    token="fake-token", validated_data={"foo": "bar"}
-                ),
-            ),
-        ],
-        any_order=True,
-    )
+    assert client.api.apps.get.call_count == 1
+    client.api.apps.get.assert_called_once_with("app123")
     mock_ask.assert_called_once_with(
         "Are you sure you want to delete app 'test-app' (ID: app123)?",
         choices=["y", "n"],
@@ -798,7 +547,7 @@ def test_delete_app_confirmation_cancelled(
     )
     infos = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
     assert infos == ["Deletion cancelled."]
-    mock_delete_app.assert_not_called()
+    client.api.apps.delete.assert_not_called()
 
 
 def test_delete_app_non_interactive_skips_confirmation(
@@ -810,17 +559,7 @@ def test_delete_app_non_interactive_skips_confirmation(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_delete_app = mocker.patch(
-        "reflex_cli.utils.hosting.delete_app",
-        return_value={"status": "success", "message": "App deleted successfully"},
-    )
-    mock_get_app = mocker.patch("reflex_cli.utils.hosting.get_app")
+    client = _authed(mocker)
     mock_ask = mocker.patch("reflex_cli.utils.console.ask")
 
     result = runner.invoke(
@@ -829,17 +568,10 @@ def test_delete_app_non_interactive_skips_confirmation(
 
     assert result.exit_code == 0, result.output
     mock_ask.assert_not_called()
-    assert mock_get_app.call_count == 1
-    mock_delete_app.assert_called_once_with(
-        app_id="app123",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert warnings == [
-        str({"status": "success", "message": "App deleted successfully"})
-    ]
+    assert client.api.apps.get.call_count == 1
+    client.api.apps.delete.assert_called_once_with("app123")
+    successes = [r.getMessage() for r in caplog.records if r.levelno == SUCCESS]
+    assert successes == ["app deleted"]
 
 
 def test_delete_app_get_app_fails_fallback_to_unknown(
@@ -851,31 +583,19 @@ def test_delete_app_get_app_fails_fallback_to_unknown(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_delete_app = mocker.patch(
-        "reflex_cli.utils.hosting.delete_app",
-        return_value={"status": "success", "message": "App deleted successfully"},
-    )
-    mock_get_app = mocker.patch(
-        "reflex_cli.utils.hosting.get_app",
-        side_effect=[
-            GetAppError("Failed to fetch app"),
-            {"id": "app123", "name": "Unknown"},
-        ],
-    )
+    client = _authed(mocker)
+    client.api.apps.get.side_effect = [
+        api_error(404, "Failed to fetch app"),
+        {"id": "app123", "name": "Unknown"},
+    ]
     mock_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
 
     result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--interactive"])
 
     assert result.exit_code == 0, result.output
-    assert mock_get_app.call_count == 1
+    assert client.api.apps.get.call_count == 1
     mock_ask.assert_not_called()
-    mock_delete_app.assert_not_called()
+    client.api.apps.delete.assert_not_called()
     warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
     assert warnings == ["No application found with ID 'app123'"]
 
@@ -889,19 +609,10 @@ def test_delete_app_with_app_name_confirmation(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client = _authed(mocker)
     mock_search_app = mocker.patch(
         "reflex_cli.utils.hosting.search_app",
-        return_value={"id": "app123", "name": "my-test-app"},
-    )
-    mock_delete_app = mocker.patch(
-        "reflex_cli.utils.hosting.delete_app",
-        return_value={"status": "success", "message": "App deleted successfully"},
+        return_value=app_summary("my-test-app"),
     )
     mock_ask = mocker.patch("reflex_cli.utils.console.ask", return_value="y")
 
@@ -912,20 +623,13 @@ def test_delete_app_with_app_name_confirmation(
     assert result.exit_code == 0, result.output
     mock_search_app.assert_called_once()
     mock_ask.assert_called_once_with(
-        "Are you sure you want to delete app 'my-test-app' (ID: app123)?",
+        f"Are you sure you want to delete app 'my-test-app' (ID: {_APP_ID})?",
         choices=["y", "n"],
         default="n",
     )
-    mock_delete_app.assert_called_once_with(
-        app_id="app123",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert warnings == [
-        str({"status": "success", "message": "App deleted successfully"})
-    ]
+    client.api.apps.delete.assert_called_once_with(str(_APP_ID))
+    successes = [r.getMessage() for r in caplog.records if r.levelno == SUCCESS]
+    assert successes == ["app deleted"]
 
 
 def test_delete_app_not_found_early_exit(
@@ -937,17 +641,11 @@ def test_delete_app_not_found_early_exit(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client = _authed(mocker)
     mock_search_app = mocker.patch(
         "reflex_cli.utils.hosting.search_app",
         return_value=None,
     )
-    mock_delete_app = mocker.patch("reflex_cli.utils.hosting.delete_app")
     mock_ask = mocker.patch("reflex_cli.utils.console.ask")
 
     result = runner.invoke(
@@ -959,7 +657,7 @@ def test_delete_app_not_found_early_exit(
     warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
     assert warnings == ["App 'nonexistent-app' not found."]
     mock_ask.assert_not_called()
-    mock_delete_app.assert_not_called()
+    client.api.apps.delete.assert_not_called()
 
 
 def test_app_logs_no_app_id(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -969,12 +667,7 @@ def test_app_logs_no_app_id(mocker: MockFixture, caplog: pytest.LogCaptureFixtur
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    _authed(mocker)
     result = runner.invoke(hosting_cli, ["apps", "logs", ""])
 
     assert result.exit_code == 1
@@ -991,12 +684,7 @@ def test_app_logs_invalid_time_range(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    _authed(mocker)
     result = runner.invoke(
         hosting_cli,
         [
@@ -1020,34 +708,18 @@ def test_app_logs_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture)
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_app_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_logs",
-        return_value=["log1", "log2", "log3"],
-    )
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records("log1", "log2", "log3")
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--follow", "false"])
 
     assert result.exit_code == 0, result.output
-    mock_get_app_logs.assert_called_once_with(
-        app_id="app123",
-        offset=3600,
-        start=None,
-        end=None,
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-        cursor=None,
-    )
+    assert client.api.apps.logs.call_args.args == ("app123",)
+    # An hour back from now by default, which the SDK pages through.
+    window = client.api.apps.logs.call_args.kwargs
+    assert (window["end"] - window["start"]).total_seconds() == 3600
     infos = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
-    assert "log3" in infos
-    assert "log2" in infos
-    assert "log1" in infos
+    assert sum("log" in message for message in infos) == 3
 
 
 def test_app_logs_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -1057,58 +729,26 @@ def test_app_logs_failure(mocker: MockFixture, caplog: pytest.LogCaptureFixture)
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get_app_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_logs",
-        return_value="get app logs failed: Unable to retrieve logs",
-    )
+    client = _authed(mocker)
+    client.api.apps.logs.side_effect = api_error(409, "Unable to retrieve logs")
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--follow", "false"])
 
-    assert result.exit_code == 0, result.output
-    mock_get_app_logs.assert_called_once_with(
-        app_id="app123",
-        offset=3600,
-        start=None,
-        end=None,
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-        cursor=None,
-    )
-    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert result.exit_code == 1
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
     # The server said why; our own generic line would lose it.
-    assert warnings == ["get app logs failed: Unable to retrieve logs"]
+    assert errors == ["Unable to retrieve logs"]
 
 
-def test_app_logs_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_get = mocker.patch("httpx.get")
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "HTTP Error",
-        request=mocker.Mock(),
-        response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
-    )
-    mock_get.return_value = mock_response
-    mocker.patch(
-        "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
-    )
-    mocker.patch("reflex_cli.utils.hosting.get_app", return_value={"id": "fake_app_id"})
-    mocker.patch(
-        "reflex_cli.utils.hosting.authorization_header",
-        return_value={"X-API-TOKEN": "fake_token"},
-    )
+def test_app_logs_empty(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """A window with nothing in it says so rather than printing nothing.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records()
 
     result = runner.invoke(
         hosting_cli,
@@ -1117,94 +757,69 @@ def test_app_logs_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixtu
 
     assert result.exit_code == 0, result.output
     warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
-    assert warnings == ["get app logs failed: Invalid token"]
+    assert warnings == ["No logs found for the specified criteria."]
 
 
 def test_list_apps_no_project(mocker: MockFixture):
     """Test case when no project is provided."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client = _authed(mocker)
     mock_get_selected_project = mocker.patch(
         "reflex_cli.utils.hosting.get_selected_project",
         return_value="default_project",
     )
-    mock_list_apps = mocker.patch(
-        "reflex_cli.utils.hosting.list_apps",
-        return_value=[{"id": "1", "name": "App1"}, {"id": "2", "name": "App2"}],
-    )
+    client.api.apps.list.return_value = [
+        app_summary("App1"),
+        app_summary("App2", id=uuid.UUID(int=23)),
+    ]
     mock_print_table = mocker.patch("reflex_cli.utils.console.print_table")
 
     result = runner.invoke(hosting_cli, ["apps", "list"])
 
     assert result.exit_code == 0, result.output
     mock_get_selected_project.assert_called_once()
-    mock_list_apps.assert_called_once_with(
-        project="default_project",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.list.assert_called_once_with(project_id="default_project")
     mock_print_table.assert_called_once_with(
-        [["1", "App1"], ["2", "App2"]],
-        headers=["id", "name"],
+        [
+            [str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly"],
+            [str(uuid.UUID(int=23)), "App2", "", str(_PROJECT_ID), "fly"],
+        ],
+        headers=["id", "name", "description", "project_id", "provider"],
     )
 
 
 def test_list_apps_with_project(mocker: MockFixture):
     """Test case when a project is provided."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_list_apps = mocker.patch(
-        "reflex_cli.utils.hosting.list_apps",
-        return_value=[{"id": "1", "name": "App1"}],
-    )
+    client = _authed(mocker)
+    client.api.apps.list.return_value = [app_summary("App1")]
     mock_print_table = mocker.patch("reflex_cli.utils.console.print_table")
 
     result = runner.invoke(hosting_cli, ["apps", "list", "--project", "project123"])
 
     assert result.exit_code == 0, result.output
-    mock_list_apps.assert_called_once_with(
-        project="project123",
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.list.assert_called_once_with(project_id="project123")
     mock_print_table.assert_called_once_with(
-        [["1", "App1"]],
-        headers=["id", "name"],
+        [[str(_APP_ID), "App1", "", str(_PROJECT_ID), "fly"]],
+        headers=["id", "name", "description", "project_id", "provider"],
     )
 
 
 def test_list_apps_json_output(mocker: MockFixture):
     """Test case for JSON output."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_list_apps = mocker.patch(
-        "reflex_cli.utils.hosting.list_apps",
-        return_value=[{"id": "1", "name": "App1"}],
-    )
+    client = _authed(mocker)
+    client.api.apps.list.return_value = [app_summary("App1")]
     result = runner.invoke(hosting_cli, ["apps", "list", "--json"])
 
     assert result.exit_code == 0, result.output
-    mock_list_apps.assert_called_once_with(
-        project=None,
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    assert json.loads(result.stdout) == [{"id": "1", "name": "App1"}]
+    client.api.apps.list.assert_called_once_with(project_id=None)
+    assert json.loads(result.stdout) == [
+        {
+            "id": str(_APP_ID),
+            "name": "App1",
+            "description": "",
+            "project_id": str(_PROJECT_ID),
+            "provider": "fly",
+        }
+    ]
 
 
 def test_list_apps_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
@@ -1214,50 +829,28 @@ def test_list_apps_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_list_apps = mocker.patch(
-        "reflex_cli.utils.hosting.list_apps",
-        side_effect=Exception("Unable to list deployments"),
-    )
+    client = _authed(mocker)
+    client.api.apps.list.side_effect = api_error(500, "Unable to list deployments")
 
     result = runner.invoke(hosting_cli, ["apps", "list"])
 
     assert result.exit_code == 1
-    mock_list_apps.assert_called_once_with(
-        project=None,
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.list.assert_called_once_with(project_id=None)
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    # The API's own explanation, not a line of the CLI's own.
     assert errors == ["Unable to list deployments"]
 
 
 def test_list_apps_empty_response(mocker: MockFixture):
     """Test case when no deployments are found."""
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mock_list_apps = mocker.patch("reflex_cli.utils.hosting.list_apps", return_value=[])
+    client = _authed(mocker)
+    client.api.apps.list.return_value = []
     mock_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(hosting_cli, ["apps", "list"])
 
     assert result.exit_code == 0, result.output
-    mock_list_apps.assert_called_once_with(
-        project=None,
-        client=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    client.api.apps.list.assert_called_once_with(project_id=None)
     mock_print.assert_called_once_with("[]")
 
 
@@ -1268,12 +861,7 @@ def test_scale_no_args_or_config(mocker: MockFixture, caplog: pytest.LogCaptureF
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    _authed(mocker)
     mocker.patch(
         "reflex_cli.core.config.Config.from_yaml_or_toml_or_default",
         return_value=Config(),
@@ -1298,12 +886,7 @@ def test_scale_both_vmtype_and_regions(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    _authed(mocker)
 
     result = runner.invoke(
         hosting_cli, ["apps", "scale", "--vmtype", "c1m1", "--regions", "sjc"]
@@ -1323,19 +906,10 @@ def test_scale_args_override_config(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
+    _authed(mocker)
     mocker.patch(
         "reflex_cli.utils.hosting.search_app",
-        return_value={
-            "name": "fake-app",
-            "id": "fake-id",
-            "project_id": "fake-project",
-        },
+        return_value=app_summary("fake-app"),
     )
     mocker.patch(
         "reflex_cli.utils.hosting.scale_app",
@@ -1372,13 +946,7 @@ def test_scale_warn_cli_args_with_scale_type(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token",
-            validated_data={"foo": "bar"},
-        ),
-    )
+    _authed(mocker)
     mocker.patch(
         "reflex_cli.utils.hosting.scale_app",
     )
@@ -1390,11 +958,7 @@ def test_scale_warn_cli_args_with_scale_type(
     )
     mocker.patch(
         "reflex_cli.utils.hosting.search_app",
-        return_value={
-            "name": "fake-app",
-            "id": "fake-id",
-            "project_id": "fake-project",
-        },
+        return_value=app_summary("fake-app"),
     )
 
     mocker.patch("reflex_cli.core.config.Config.exists", return_value=True)
@@ -1433,13 +997,7 @@ def test_scale_regions_via_config_no_scaletype(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token",
-            validated_data={"foo": "bar"},
-        ),
-    )
+    _authed(mocker)
 
     mocker.patch("reflex_cli.core.config.Config.exists", return_value=True)
     mocker.patch(
@@ -1465,13 +1023,7 @@ def test_scale_regions_via_config_without_regions(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token",
-            validated_data={"foo": "bar"},
-        ),
-    )
+    _authed(mocker)
 
     mocker.patch("reflex_cli.core.config.Config.exists", return_value=True)
     mocker.patch(
@@ -1499,13 +1051,7 @@ def test_scale_size_via_config_without_vmtype(
         mocker: The pytest-mock fixture.
         caplog: The pytest log capture fixture.
     """
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token",
-            validated_data={"foo": "bar"},
-        ),
-    )
+    _authed(mocker)
 
     mocker.patch("reflex_cli.core.config.Config.exists", return_value=True)
     mocker.patch(
@@ -1568,22 +1114,9 @@ def test_scale_correct_post_request_cli_args(
     mocker.patch("reflex_cli.core.config.Config.exists", return_value=False)
     mocker.patch(
         "reflex_cli.utils.hosting.search_app",
-        return_value={
-            "name": "fake-app",
-            "id": "fake-id",
-            "project_id": "fake-project",
-        },
+        return_value=app_summary("fake-app"),
     )
-    mock_authenticated_client = mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=mock_authenticated_client,
-    )
+    client = _authed(mocker)
     mocker.patch(
         "reflex_cli.core.config.Config.from_yaml_or_toml_or_default",
         return_value=config,
@@ -1596,7 +1129,7 @@ def test_scale_correct_post_request_cli_args(
 
     assert result.exit_code == 0, result.output
     mock_post.assert_called_with(
-        app_id="fake-id", scale_params=scale_params, client=mock_authenticated_client
+        app_id=str(_APP_ID), scale_params=scale_params, client=client
     )
 
 
@@ -1632,22 +1165,9 @@ def test_scale_correct_post_request_config(
     mocker.patch("reflex_cli.core.config.Config.exists", return_value=True)
     mocker.patch(
         "reflex_cli.utils.hosting.search_app",
-        return_value={
-            "name": "fake-app",
-            "id": "fake-id",
-            "project_id": "fake-project",
-        },
+        return_value=app_summary("fake-app"),
     )
-    mock_authenticated_client = mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=hosting.AuthenticatedClient(
-            token="fake-token", validated_data={"foo": "bar"}
-        ),
-    )
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=mock_authenticated_client,
-    )
+    client = _authed(mocker)
     mocker.patch(
         "reflex_cli.core.config.Config.from_yaml_or_toml_or_default",
         return_value=config,
@@ -1666,9 +1186,9 @@ def test_scale_correct_post_request_config(
 
     assert result.exit_code == 0, result.output
     mock_post.assert_called_with(
-        app_id="fake-id",
+        app_id=str(_APP_ID),
         scale_params=mock_scale_params.return_value,
-        client=mock_authenticated_client,
+        client=client,
     )
 
 
@@ -1679,13 +1199,8 @@ def test_scale_correct_post_request_config(
 
 def test_app_rollback_success(mocker: MockFixture):
     """A confirmed rollback calls the API with the resolved app + deployment."""
-    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
-    )
-    mock_rollback = mocker.patch(
-        "reflex_cli.utils.hosting.rollback_deployment", return_value=None
-    )
+    client = _authed(mocker)
+    client.api.apps.rollback.return_value = None
 
     result = runner.invoke(
         apps_cli,
@@ -1693,18 +1208,12 @@ def test_app_rollback_success(mocker: MockFixture):
     )
 
     assert result.exit_code == 0, result.output
-    mock_rollback.assert_called_once_with(
-        app_id="app-1", deployment_id="dep-1", client=mock_client
-    )
+    client.api.apps.rollback.assert_called_once_with("app-1", "dep-1")
 
 
 def test_app_rollback_defaults_to_cancel(mocker: MockFixture):
     """Pressing Enter at the confirm prompt cancels rather than rolling back."""
-    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
-    )
-    mock_rollback = mocker.patch("reflex_cli.utils.hosting.rollback_deployment")
+    client = _authed(mocker)
 
     result = runner.invoke(
         apps_cli,
@@ -1713,19 +1222,13 @@ def test_app_rollback_defaults_to_cancel(mocker: MockFixture):
     )
 
     assert result.exit_code == 0, result.output
-    mock_rollback.assert_not_called()
+    client.api.apps.rollback.assert_not_called()
 
 
 def test_app_rollback_error_exits_nonzero(mocker: MockFixture):
-    """An API error string surfaces and the command exits non-zero."""
-    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
-    )
-    mocker.patch(
-        "reflex_cli.utils.hosting.rollback_deployment",
-        return_value="rollback failed: no image",
-    )
+    """A refused rollback surfaces and the command exits non-zero."""
+    client = _authed(mocker)
+    client.api.apps.rollback.side_effect = api_error(409, "rollback failed: nope")
 
     result = runner.invoke(
         apps_cli,
@@ -1737,16 +1240,9 @@ def test_app_rollback_error_exits_nonzero(mocker: MockFixture):
 
 def test_app_rollback_resolves_app_name(mocker: MockFixture):
     """--app-name is resolved to an app id before rolling back."""
-    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
-    )
-    mocker.patch(
-        "reflex_cli.utils.hosting.search_app", return_value={"id": "resolved-id"}
-    )
-    mock_rollback = mocker.patch(
-        "reflex_cli.utils.hosting.rollback_deployment", return_value=None
-    )
+    client = _authed(mocker)
+    mocker.patch("reflex_cli.utils.hosting.search_app", return_value=app_summary())
+    client.api.apps.rollback.return_value = None
 
     result = runner.invoke(
         apps_cli,
@@ -1754,18 +1250,13 @@ def test_app_rollback_resolves_app_name(mocker: MockFixture):
     )
 
     assert result.exit_code == 0, result.output
-    assert mock_rollback.call_args.kwargs["app_id"] == "resolved-id"
+    assert client.api.apps.rollback.call_args.args[0] == str(_APP_ID)
 
 
 def test_app_describe_sets_note(mocker: MockFixture):
     """Describe forwards the note to the description endpoint."""
-    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
-    )
-    mock_desc = mocker.patch(
-        "reflex_cli.utils.hosting.update_deployment_description", return_value=None
-    )
+    client = _authed(mocker)
+    client.api.deployments.set_description.return_value = None
 
     result = runner.invoke(
         apps_cli,
@@ -1773,21 +1264,15 @@ def test_app_describe_sets_note(mocker: MockFixture):
     )
 
     assert result.exit_code == 0, result.output
-    mock_desc.assert_called_once_with(
-        app_id="app-1", deployment_id="dep-1", description="hotfix", client=mock_client
+    client.api.deployments.set_description.assert_called_once_with(
+        "app-1", "dep-1", "hotfix"
     )
 
 
 def test_app_describe_error_exits_nonzero(mocker: MockFixture):
     """A failed description update exits non-zero."""
-    mock_client = hosting.AuthenticatedClient(token="t", validated_data={})
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client", return_value=mock_client
-    )
-    mocker.patch(
-        "reflex_cli.utils.hosting.update_deployment_description",
-        return_value="update description failed: no deployment",
-    )
+    client = _authed(mocker)
+    client.api.deployments.set_description.side_effect = api_error(404, "no deployment")
 
     result = runner.invoke(
         apps_cli,
@@ -1799,22 +1284,22 @@ def test_app_describe_error_exits_nonzero(mocker: MockFixture):
 
 def test_resolve_app_id_prefers_app_name_over_config(mocker: MockFixture):
     """An explicit --app-name overrides a configured appid rather than being ignored."""
-    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    client = fake_client()
     mocker.patch(
         "reflex_cli.utils.hosting.read_config",
         return_value=Config(appid="config-app-id"),
     )
     search = mocker.patch(
-        "reflex_cli.utils.hosting.search_app", return_value={"id": "named-app-id"}
+        "reflex_cli.utils.hosting.search_app", return_value=app_summary()
     )
 
-    assert _resolve_app_id(None, "myapp", client, interactive=False) == "named-app-id"
+    assert _resolve_app_id(None, "myapp", client, interactive=False) == str(_APP_ID)
     search.assert_called_once()
 
 
 def test_resolve_app_id_falls_back_to_config(mocker: MockFixture):
     """With no explicit app id or name, the configured appid is used."""
-    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    client = fake_client()
     mocker.patch(
         "reflex_cli.utils.hosting.read_config",
         return_value=Config(appid="config-app-id"),
@@ -1827,7 +1312,7 @@ def test_resolve_app_id_falls_back_to_config(mocker: MockFixture):
 
 def test_resolve_app_id_explicit_id_wins(mocker: MockFixture):
     """An explicit app id short-circuits both name lookup and config."""
-    client = hosting.AuthenticatedClient(token="t", validated_data={})
+    client = fake_client()
     read_config = mocker.patch("reflex_cli.utils.hosting.read_config")
     search = mocker.patch("reflex_cli.utils.hosting.search_app")
 
@@ -1838,49 +1323,27 @@ def test_resolve_app_id_explicit_id_wins(mocker: MockFixture):
     read_config.assert_not_called()
 
 
-def _authed(mocker: MockFixture) -> hosting.AuthenticatedClient:
-    """Patch the client lookup and return the client it hands back.
-
-    Args:
-        mocker: The pytest-mock fixture.
-
-    Returns:
-        The authenticated client every command under test will receive.
-    """
-    client = hosting.AuthenticatedClient(token="fake-token", validated_data={})
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
-    )
-    return client
-
-
 def test_app_logs_does_not_follow_by_default(mocker: MockFixture):
     """One page is fetched and the command returns, with nothing to answer.
 
     Following prompts between pages, and a prompt nobody answers is a command
     that never exits -- which is why it is opt-in.
     """
-    _authed(mocker)
-    mock_get_app_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_logs",
-        return_value=[["log1"], "next-cursor"],
-    )
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records(*(f"log{n}" for n in range(150)))
     prompt = mocker.patch("rich.prompt.Prompt.ask", return_value="")
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--interactive"])
 
     assert result.exit_code == 0, result.output
-    mock_get_app_logs.assert_called_once()
+    client.api.apps.logs.assert_called_once()
     prompt.assert_not_called()
 
 
 def test_app_logs_follow_needs_a_person_to_answer_the_prompt(mocker: MockFixture):
     """--follow is ignored without interactive mode rather than hanging."""
-    _authed(mocker)
-    mock_get_app_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_logs",
-        return_value=[["log1"], "next-cursor"],
-    )
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records(*(f"log{n}" for n in range(150)))
     prompt = mocker.patch("rich.prompt.Prompt.ask", return_value="")
 
     result = runner.invoke(
@@ -1889,17 +1352,14 @@ def test_app_logs_follow_needs_a_person_to_answer_the_prompt(mocker: MockFixture
     )
 
     assert result.exit_code == 0, result.output
-    mock_get_app_logs.assert_called_once()
+    client.api.apps.logs.assert_called_once()
     prompt.assert_not_called()
 
 
 def test_app_logs_follow_pages_when_asked_interactively(mocker: MockFixture):
     """Passing --follow at a terminal still walks the pages."""
-    _authed(mocker)
-    mock_get_app_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_logs",
-        return_value=[["log1"], "next-cursor"],
-    )
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records(*(f"log{n}" for n in range(150)))
     prompt = mocker.patch("rich.prompt.Prompt.ask", return_value="exit")
 
     result = runner.invoke(
@@ -1908,37 +1368,30 @@ def test_app_logs_follow_pages_when_asked_interactively(mocker: MockFixture):
     )
 
     assert result.exit_code == 0, result.output
-    mock_get_app_logs.assert_called_once()
+    client.api.apps.logs.assert_called_once()
     prompt.assert_called_once()
 
 
 def test_app_logs_json_output(mocker: MockFixture):
     """The page and its next cursor come back as one document."""
-    _authed(mocker)
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_app_logs",
-        return_value=[["log1", "log2"], "next-cursor"],
-    )
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records("log1", "log2")
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--json"])
 
     assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == {
-        "app_id": "app123",
-        # Reversed into chronological order, the same as the rendered form.
-        "entries": ["log2", "log1"],
-        "cursor": "next-cursor",
-        "error": None,
-    }
+    document = json.loads(result.stdout)
+    assert document["app_id"] == "app123"
+    assert [entry["message"] for entry in document["entries"]] == ["log1", "log2"]
+    # The SDK paged the whole window, so there is no cursor to hand back.
+    assert document["cursor"] is None
+    assert document["error"] is None
 
 
 def test_app_logs_json_output_never_follows(mocker: MockFixture):
     """--follow cannot page a document that is only complete once."""
-    _authed(mocker)
-    mock_get_app_logs = mocker.patch(
-        "reflex_cli.utils.hosting.get_app_logs",
-        return_value=[["log1"], "next-cursor"],
-    )
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records(*(f"log{n}" for n in range(150)))
     prompt = mocker.patch("rich.prompt.Prompt.ask", return_value="")
 
     result = runner.invoke(
@@ -1947,15 +1400,15 @@ def test_app_logs_json_output_never_follows(mocker: MockFixture):
     )
 
     assert result.exit_code == 0, result.output
-    mock_get_app_logs.assert_called_once()
+    client.api.apps.logs.assert_called_once()
     prompt.assert_not_called()
-    assert json.loads(result.stdout)["cursor"] == "next-cursor"
+    assert json.loads(result.stdout)["cursor"] is None
 
 
 def test_app_logs_json_output_when_empty(mocker: MockFixture):
     """No logs is an empty document rather than a warning to parse."""
-    _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.get_app_logs", return_value=[])
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records()
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--json"])
 
@@ -1971,7 +1424,6 @@ def test_app_logs_json_output_when_empty(mocker: MockFixture):
 def test_stop_app_json_output(mocker: MockFixture):
     """Stopping an app reports the outcome as a document."""
     _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.stop_app", return_value="app stopped")
 
     result = runner.invoke(hosting_cli, ["apps", "stop", "app123", "--json"])
 
@@ -1983,21 +1435,29 @@ def test_stop_app_json_output(mocker: MockFixture):
     }
 
 
-def test_stop_app_json_output_on_failure(mocker: MockFixture):
-    """A refusal is reported in the document, not only in the log."""
-    _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.stop_app", return_value="stop failed")
+def test_stop_app_json_output_on_failure(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """A refusal exits non-zero rather than claiming the app was stopped.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
+    client = _authed(mocker)
+    client.api.apps.stop.side_effect = api_error(409, "app is deploying")
 
     result = runner.invoke(hosting_cli, ["apps", "stop", "app123", "--json"])
 
-    assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout)["stopped"] is False
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["app is deploying"]
 
 
 def test_start_app_json_output(mocker: MockFixture):
     """Starting an app reports the outcome as a document."""
     _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.start_app", return_value="app started")
 
     result = runner.invoke(hosting_cli, ["apps", "start", "app123", "--json"])
 
@@ -2011,12 +1471,8 @@ def test_start_app_json_output(mocker: MockFixture):
 
 def test_delete_app_json_output(mocker: MockFixture):
     """Deleting an app reports the outcome as a document."""
-    _authed(mocker)
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_app",
-        return_value={"id": "app123", "name": "test-app"},
-    )
-    mocker.patch("reflex_cli.utils.hosting.delete_app", return_value="")
+    client = _authed(mocker)
+    client.api.apps.get.return_value = app("test-app")
 
     result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--json"])
 
@@ -2024,56 +1480,46 @@ def test_delete_app_json_output(mocker: MockFixture):
     assert json.loads(result.stdout) == {
         "app_id": "app123",
         "deleted": True,
-        "message": "",
+        "message": "app deleted",
     }
 
 
-def test_delete_app_json_output_on_failure(mocker: MockFixture):
-    """A refusal is reported as a failed deletion, not as a deleted app."""
-    _authed(mocker)
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_app",
-        return_value={"id": "app123", "name": "test-app"},
-    )
-    mocker.patch(
-        "reflex_cli.utils.hosting.delete_app",
-        return_value="delete app failed: app is deploying",
-    )
+def test_delete_app_json_output_on_failure(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """A refusal exits non-zero rather than claiming the app was deleted.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
+    client = _authed(mocker)
+    client.api.apps.get.return_value = app("test-app")
+    client.api.apps.delete.side_effect = api_error(409, "app is deploying")
 
     result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--json"])
 
-    assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == {
-        "app_id": "app123",
-        "deleted": False,
-        "message": "delete app failed: app is deploying",
-    }
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["app is deploying"]
 
 
 def test_app_logs_json_output_when_unreadable(mocker: MockFixture):
     """Logs that could not be read are distinguishable from none existing."""
-    _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.get_app_logs", return_value=None)
+    client = _authed(mocker)
+    client.api.apps.logs.side_effect = api_error(500, "Unable to retrieve logs.")
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--json"])
 
-    assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == {
-        "app_id": "app123",
-        "entries": [],
-        "cursor": None,
-        "error": "Unable to retrieve logs.",
-    }
+    assert result.exit_code == 1
+    assert result.stdout == ""
 
 
 def test_delete_app_json_output_when_cancelled(mocker: MockFixture):
     """Declining the confirmation is reported rather than left silent."""
-    _authed(mocker)
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_app",
-        return_value={"id": "app123", "name": "test-app"},
-    )
-    delete = mocker.patch("reflex_cli.utils.hosting.delete_app")
+    client = _authed(mocker)
+    client.api.apps.get.return_value = app("test-app")
     mocker.patch("reflex_cli.utils.console.ask", return_value="n")
 
     result = runner.invoke(
@@ -2086,13 +1532,12 @@ def test_delete_app_json_output_when_cancelled(mocker: MockFixture):
         "deleted": False,
         "cancelled": True,
     }
-    delete.assert_not_called()
+    client.api.apps.delete.assert_not_called()
 
 
 def test_app_rollback_json_output(mocker: MockFixture):
     """A rollback reports what it rolled back to."""
     _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.rollback_deployment", return_value="")
 
     result = runner.invoke(
         hosting_cli,
@@ -2111,9 +1556,6 @@ def test_app_rollback_json_output(mocker: MockFixture):
 def test_app_describe_json_output(mocker: MockFixture):
     """Setting a changelog note reports the note it set."""
     _authed(mocker)
-    mocker.patch(
-        "reflex_cli.utils.hosting.update_deployment_description", return_value=""
-    )
 
     result = runner.invoke(
         hosting_cli,
@@ -2139,11 +1581,8 @@ def test_app_describe_json_output(mocker: MockFixture):
 
 def test_deployment_build_logs_json_output(mocker: MockFixture):
     """Build logs come back as a field rather than as raw console text."""
-    _authed(mocker)
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_deployment_build_logs",
-        return_value="step 1\nstep 2",
-    )
+    client = _authed(mocker)
+    client.api.deployments.build_logs.return_value = "step 1\nstep 2"
 
     result = runner.invoke(hosting_cli, ["apps", "build-logs", "dep-1", "--json"])
 
@@ -2156,10 +1595,8 @@ def test_deployment_build_logs_json_output(mocker: MockFixture):
 
 def test_deployment_status_json_output(mocker: MockFixture):
     """A status read reports the status and whether it is a failure."""
-    _authed(mocker)
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_deployment_status", return_value="deploying"
-    )
+    client = _authed(mocker)
+    client.api.deployments.status.return_value = "deploying"
 
     result = runner.invoke(hosting_cli, ["apps", "status", "dep-1", "--json"])
 
@@ -2172,12 +1609,13 @@ def test_deployment_status_json_output(mocker: MockFixture):
 
 
 def test_deployment_status_json_output_while_watching(mocker: MockFixture):
-    """Watching re-reads the status once it ends, since the watch returns a bool."""
-    _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.watch_deployment_status", return_value=True)
+    """The watch hands back its last status, so nothing is asked again."""
+    client = _authed(mocker)
     mocker.patch(
-        "reflex_cli.utils.hosting.get_deployment_status",
-        return_value="completed successfully",
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        return_value=hosting.WatchResult(
+            hosting.WatchOutcome.SUCCEEDED, "completed successfully"
+        ),
     )
 
     result = runner.invoke(
@@ -2189,6 +1627,52 @@ def test_deployment_status_json_output_while_watching(mocker: MockFixture):
         "deployment_id": "dep-1",
         "status": "completed successfully",
         "success": True,
+    }
+    client.api.deployments.status.assert_not_called()
+
+
+def test_deployment_status_json_output_when_the_watch_stopped_early(
+    mocker: MockFixture,
+):
+    """A watch that could not see the end says so rather than claiming success."""
+    client = _authed(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        return_value=hosting.WatchResult(hosting.WatchOutcome.UNFINISHED, "Building"),
+    )
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "status", "dep-1", "--watch", "--json"]
+    )
+
+    # Not a failure: the deployment is still running, and the document says so
+    # by refusing to answer rather than by guessing.
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {
+        "deployment_id": "dep-1",
+        "status": "Building",
+        "success": None,
+    }
+    client.api.deployments.status.assert_not_called()
+
+
+def test_deployment_status_json_output_when_the_watch_failed(mocker: MockFixture):
+    """A deployment that ended without going live exits non-zero."""
+    _authed(mocker)
+    mocker.patch(
+        "reflex_cli.utils.hosting.watch_deployment_status",
+        return_value=hosting.WatchResult(hosting.WatchOutcome.FAILED, "Failed"),
+    )
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "status", "dep-1", "--watch", "--json"]
+    )
+
+    assert result.exit_code == 1
+    assert json.loads(result.stdout) == {
+        "deployment_id": "dep-1",
+        "status": "Failed",
+        "success": False,
     }
 
 
@@ -2217,22 +1701,24 @@ def test_scale_app_json_output(mocker: MockFixture):
 
 def test_json_output_keeps_human_messages_off_stdout(mocker: MockFixture):
     """A log line from the command body never lands inside the document."""
-    _authed(mocker)
-    mocker.patch(
-        "reflex_cli.utils.hosting.list_apps", return_value=[{"id": "1", "name": "App1"}]
-    )
+    client = _authed(mocker)
+    client.api.apps.list.return_value = [app_summary("App1")]
     mocker.patch(
         "reflex_cli.utils.hosting.get_selected_project", return_value="project-1"
-    )
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_project",
-        return_value={"id": "project-1", "name": "My Project"},
     )
 
     result = runner.invoke(hosting_cli, ["apps", "list", "--json"])
 
     assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == [{"id": "1", "name": "App1"}]
+    assert json.loads(result.stdout) == [
+        {
+            "id": str(_APP_ID),
+            "name": "App1",
+            "description": "",
+            "project_id": str(_PROJECT_ID),
+            "provider": "fly",
+        }
+    ]
 
 
 @pytest.mark.parametrize(
@@ -2257,8 +1743,8 @@ def test_deployment_status_json_agrees_with_watch(
         status: The status string the hosting service returned.
         success: Whether that status should be reported as a success.
     """
-    _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.get_deployment_status", return_value=status)
+    client = _authed(mocker)
+    client.api.deployments.status.return_value = status
 
     result = runner.invoke(hosting_cli, ["apps", "status", "12345", "--json"])
 
@@ -2272,28 +1758,19 @@ def test_deployment_status_json_agrees_with_watch(
 
 def test_app_logs_json_output_names_the_servers_reason(mocker: MockFixture):
     """A refusal the server explained is reported in its own words."""
-    _authed(mocker)
-    mocker.patch(
-        "reflex_cli.utils.hosting.get_app_logs",
-        return_value="get app logs failed: app is not running",
-    )
+    client = _authed(mocker)
+    client.api.apps.logs.side_effect = api_error(409, "app is not running")
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--json"])
 
-    assert result.exit_code == 0, result.output
-    assert json.loads(result.stdout) == {
-        "app_id": "app123",
-        "entries": [],
-        "cursor": None,
-        "error": "get app logs failed: app is not running",
-    }
+    assert result.exit_code == 1
+    assert result.stdout == ""
 
 
 def test_delete_app_json_output_when_app_is_gone(mocker: MockFixture):
     """The one exit here that is zero still says the app was not deleted."""
-    _authed(mocker)
-    mocker.patch("reflex_cli.utils.hosting.get_app", return_value=None)
-    delete = mocker.patch("reflex_cli.utils.hosting.delete_app")
+    client = _authed(mocker)
+    client.api.apps.get.side_effect = api_error(404, "no such app")
 
     result = runner.invoke(hosting_cli, ["apps", "delete", "app123", "--json"])
 
@@ -2301,6 +1778,77 @@ def test_delete_app_json_output_when_app_is_gone(mocker: MockFixture):
     assert json.loads(result.stdout) == {
         "app_id": "app123",
         "deleted": False,
-        "message": "App with ID 'app123' not found.",
+        "message": "No application found with ID 'app123'",
     }
-    delete.assert_not_called()
+    client.api.apps.delete.assert_not_called()
+
+
+def test_list_apps_expired_token(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """A token that expired since it was validated says what to do about it.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
+    client = _authed(mocker)
+    client.api.apps.list.side_effect = api_error(401, "expired")
+
+    result = runner.invoke(hosting_cli, ["apps", "list"])
+
+    assert result.exit_code == 1
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["You are not authenticated. Run `reflex login` to authenticate."]
+
+
+def test_scale_app_expired_token_says_to_log_in(
+    mocker: MockFixture, caplog: pytest.LogCaptureFixture
+):
+    """An unusable token is not reported as a scale that failed.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
+    client = _authed(mocker)
+    mocker.patch("reflex_cli.core.config.Config.exists", return_value=False)
+    mocker.patch(
+        "reflex_cli.utils.hosting.search_app", return_value=app_summary("fake-app")
+    )
+    client.api.apps.scale.side_effect = api_error(401, "expired")
+
+    result = runner.invoke(
+        hosting_cli, ["apps", "scale", "--app-name", "random", "--vmtype", "c1m1"]
+    )
+
+    assert result.exit_code == 1
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["You are not authenticated. Run `reflex login` to authenticate."]
+
+
+def test_app_logs_stops_after_one_page(mocker: MockFixture):
+    """Without --follow the command reads a page, not the whole window."""
+    client = _authed(mocker)
+    pulled = 0
+
+    def records() -> Iterator[LogRecord]:
+        nonlocal pulled
+        for n in range(500):
+            pulled += 1
+            yield log_record(f"log{n}")
+
+    client.api.apps.logs.return_value = records()
+
+    result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--follow", "false"])
+
+    assert result.exit_code == 0, result.output
+    assert pulled == 100
+
+
+def test_app_logs_reads_newest_first(mocker: MockFixture):
+    """The most recent lines are the ones a single page should carry."""
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records("newest")
+
+    runner.invoke(hosting_cli, ["apps", "logs", "app123", "--follow", "false"])
+
+    assert client.api.apps.logs.call_args.kwargs["order"] == "newest_first"

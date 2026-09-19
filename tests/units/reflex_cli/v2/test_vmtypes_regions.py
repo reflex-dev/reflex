@@ -1,13 +1,12 @@
 import json
 import logging
 
-import httpx
 import pytest
 from click.testing import CliRunner
 from pytest_mock import MockerFixture, MockFixture
 from reflex_cli.v2.deployments import hosting_cli
 
-from .utils import as_click_command
+from .utils import api_error, as_click_command, fake_client
 
 hosting_cli = as_click_command(hosting_cli)
 
@@ -90,35 +89,23 @@ def test_get_vm_types_invalid_response(mocker: MockFixture):
 
 
 def test_get_vm_types_http_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
-    """Test handling of an HTTP error.
+    """A failed read is reported rather than raised at the user.
 
     Args:
         mocker: Pytest mocker fixture.
         caplog: Pytest log capture fixture.
     """
-    mock_get = mocker.patch("httpx.get")
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "HTTP Error",
-        request=mocker.Mock(),
-        response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
-    )
-    mock_get.return_value = mock_response
-    mocker.patch(
-        "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
-    )
-    mocker.patch("reflex_cli.utils.hosting.get_app", return_value={"id": "fake_app_id"})
-    mocker.patch(
-        "reflex_cli.utils.hosting.authorization_header",
-        return_value={"X-API-TOKEN": "fake_token"},
-    )
+    client = mocker.MagicMock()
+    client.deployments.vm_types.side_effect = api_error(500, "Invalid token")
+    client.__enter__.return_value = client
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
 
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
     result = runner.invoke(hosting_cli, ["vmtypes"])
 
     assert result.exit_code == 0, result.output
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["Unable to get vmtypes due to HTTP Error."]
+    assert errors == ["Unable to get vmtypes due to 500 : Invalid token."]
     mock_console_print.assert_called_once_with("[]")
 
 
@@ -185,37 +172,25 @@ def test_get_deployment_regions_http_error(
         mocker: Pytest mocker fixture.
         caplog: Pytest log capture fixture.
     """
-    mock_get = mocker.patch("httpx.get")
-    mock_response = mocker.Mock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "HTTP Error",
-        request=mocker.Mock(),
-        response=mocker.Mock(json=lambda: {"detail": "Invalid token"}),
-    )
-    mock_get.return_value = mock_response
-    mocker.patch(
-        "reflex_cli.utils.hosting.requires_authenticated", return_value="fake_token"
-    )
-    mocker.patch("reflex_cli.utils.hosting.get_app", return_value={"id": "fake_app_id"})
-    mocker.patch(
-        "reflex_cli.utils.hosting.authorization_header",
-        return_value={"X-API-TOKEN": "fake_token"},
-    )
+    client = mocker.MagicMock()
+    client.deployments.regions.side_effect = api_error(500, "Invalid token")
+    client.__enter__.return_value = client
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
 
     result = runner.invoke(hosting_cli, ["regions"])
 
     assert result.exit_code == 0, result.output
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert errors == ["Unable to get regions due to HTTP Error."]
+    assert errors == ["Unable to get regions due to 500 : Invalid token."]
 
 
 def test_create_token_json_output(mocker: MockFixture):
     """Minting a token reports it as a field rather than in a log line."""
+    client = fake_client()
+    client.api.auth.tokens.create.return_value = "tok-1"
     mocker.patch(
-        "reflex_cli.utils.hosting.get_authenticated_client",
-        return_value=mocker.MagicMock(),
+        "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
     )
-    mocker.patch("reflex_cli.utils.hosting.create_token", return_value="tok-1")
 
     result = runner.invoke(hosting_cli, ["create-token", "ci", "--json"])
 

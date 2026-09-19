@@ -53,9 +53,10 @@ def create_token(
         duration = 90  # Default duration is 90 days
         logger.info("No duration specified. Using default duration of 90 days.")
 
-    token = hosting.create_token(
-        name=name, expiration=duration, client=authenticated_client
-    )
+    with hosting.reporting_api_errors():
+        token = authenticated_client.api.auth.tokens.create(
+            name, expires_in_days=duration
+        )
     if as_json:
         print_json({"name": name, "token": token, "expires_in_days": duration})
         return
