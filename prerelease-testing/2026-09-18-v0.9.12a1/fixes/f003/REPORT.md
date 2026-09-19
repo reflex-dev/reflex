@@ -230,3 +230,105 @@ length, not an extra delta. `evidence/uncached.*.stdout.txt`, `evidence/uncached
 6. **Attribution trailer.** The shared brief asked for `Co-Authored-By: Claude Fable 5.1`; this session's
    harness attribution rule specifies `Co-Authored-By: Claude Opus 5 (1M context)`, which is what the
    commit carries. Trivially amendable if the release wants the other line.
+
+## REVIEW
+
+Independent adversarial review of `600671cee` on `fix/finding-003-delta-memo`, run from
+`/home/user/wt/f003` (worktree untouched: `git status` clean, HEAD unchanged) with servers on
+ports 3930-3932 / 8930-8932 and redis on 8939. Scratch:
+`/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/fixes/f003-review/`.
+
+**Verdict: the fix is correct and I would merge it after two small changes. Not approved as-is.**
+
+### What I verified myself
+
+| check | result |
+| --- | --- |
+| `uv run ruff check .` / `ruff format --check .` | clean; 1627 files already formatted |
+| `uv run pytest tests/units/test_state.py` | 222 passed |
+| `uv run pytest tests/units` (full) | 207 failed, 9488 passed — **every** failure in `tests/units/reflex_cli/**`, none in or near the changed code |
+| `uv run pytest tests/units/{test_app.py,test_state_tree.py,istate,reflex_base,vars,test_var.py,middleware}` | 1187 passed, 10 skipped |
+| **`uv run pyright reflex tests`** | **2 errors, both introduced by this change** (see blocking issue 1) |
+| regression test fails without the fix | yes — sources restored from `origin/main` with `git show origin/main:<path> >`, test file kept: `[False-dropped]`, `[False-replaced]` and `test_uncached_computed_var_recorded_only_once_delivered` fail (`assert {} == {...'secret-1'}`); restored afterwards, `git status` clean |
+| e2e, in-process, on the real delivery path | my own `probe_delta_memo.py` (uses `_get_resolved_delta`, not a bare `get_delta`, and also asserts the dedupe still works): **fixed worktree PASS 8/8**, published 0.9.12a1 FAIL (withheld sync value never re-sent), 0.9.11.post1 FAIL (delivers, but no dedupe at all) |
+| e2e, browser, `elapp` `/filtered` + `s_filtered.py`, dev/memory | published 0.9.12a1: stale `secret-0` after `show`, stale `secret-2` after round 2. Fixed worktree: `secret-1` and `secret-3`. Zero console/page/network errors both runs |
+| same, dev + redis (8939) | fixed worktree: `secret-1` / `secret-3` |
+| #6946 savings intact | `/uncached` via `s_uncached.py`: 33 inbound frames, 24 delta frames, **identical delta key sets** on published 0.9.12a1 and the fixed tree (15778 B vs 15331 B, token-length noise) |
+| `test_state_manager_lock_warning_threshold_contend` | flaked 5x under load, then passed 4x in a row on the fixed tree; unrelated timing test, not a regression |
+
+I also read `reflex_enterprise` 0.9.5 out of the offline wheel and can close open question 1: rxe does
+**not** override `_get_resolved_delta`. It wraps `state_cls.get_delta` and `state_cls.dict`
+(`auth/enforcement.py:install_delta_filter`), wraps `reflex.state._resolve_delta` only on an older core
+(`install_delta_prune` is a no-op here because core owns `_DROP_FROM_DELTA`), and `filter_protected_delta`
+rebuilds the subdelta dict while passing surviving values through **by reference** — so the identity test
+holds for allowed values and fails for dropped/placeholder ones, exactly as the fix needs. `_guarded_value`
+returns `original_value` itself on allow, so deferred async checks record correctly too.
+
+### Blocking issues
+
+1. **`uv run pyright reflex tests` now fails — 2 errors, both from the new test.**
+   `tests/units/test_state.py:1780` (`delta = original_get_delta(self)`):
+   `Argument of type "BaseState" cannot be assigned to parameter "self" of type "WithheldState"` /
+   `"AsyncWithheldState"`. The report's claim that pyright shows an "identical 149-error set before and
+   after" and is "broken environment-wide (2800 errors)" does not hold in this checkout: with
+   `reflex/state.py`, `vars/base.py` and `tests/units/test_state.py` restored from `origin/main`, the same
+   command reports **0 errors, 0 warnings**, and the full `uv run pyright reflex tests` on HEAD reports
+   exactly these 2. CLAUDE.md's checklist gates on this. Fix: bind the original through the base class
+   (`original_get_delta = BaseState.get_delta`) or annotate `self: Any`.
+
+2. **`test_uncached_computed_var_scalar_key_distinguishes_types` is now vacuous.**
+   Eight #6946 tests were moved to `await state._get_resolved_delta()`, but this one (line 1545) and
+   `test_uncached_computed_var_unkeyable_value_always_sent` (line 1697) still drive bare `get_delta()`,
+   which by design no longer records anything — so nothing can ever be deduped on that path and the
+   assertions cannot fail. Proven by mutation: replacing `_delta_value_key`'s
+   `return (value_type, value)` with `return value` (i.e. dropping the `1` / `True` / `1.0`
+   discrimination the test exists to guard) is **caught on `origin/main`**
+   (`KeyError: 'reflex___istate___dynamic____scalar_state'`) and **passes silently on HEAD**. The fix
+   therefore disarms a guard test for the exact keying machinery it touches. Fix: convert both to
+   `await ..._get_resolved_delta()` like the other eight (they are already `async` neighbours).
+
+### Nits (non-blocking)
+
+- `_get_resolved_delta`'s suppressed early-return path leaves `_pending_delta_records` pointing at an
+  outer collector, so a `_suppress_delta_recording()` traversal nested inside a recording one (possible
+  via `istate/shared.py:_patch_state` reached from an async computed var) appends into the outer list.
+  Harmless today — a record only commits when the delivered delta holds that identical object under that
+  key, in which case the outer traversal appended an identical record anyway — but it breaks the stated
+  "a suppressed traversal records nothing" invariant. One line: set `_pending_delta_records` to `None` in
+  that branch.
+- Unkeyable values: `_commit_delta_records` sets `instance._was_touched = True` unconditionally in the
+  `stored is None` branch, including when the `delattr` found nothing to remove. `_record_delta_value`
+  never did. An app with a non-serializable `cache=False` var now forces a redis write on every delivered
+  delta. Guard it on the `delattr` actually succeeding.
+- The structured claim lists the regression test as "4 params"; the two `is_async=True` params pass on
+  `origin/main` as well (the filter closes the coroutine before it can reach the memo). Real regression
+  coverage is the 2 sync params plus `test_uncached_computed_var_recorded_only_once_delivered` — which the
+  report itself says, but the summary does not.
+- Two ContextVars now encode one idea (`_record_delta_values` is read in exactly one place, and
+  `_pending_delta_records is None` already means "not recording"). A maintainer may ask to collapse them.
+- `packages/reflex-base/news/+uncached-var-withheld-from-delta.bugfix.md` reads as an internal
+  implementation note (`ComputedVar` no longer records..., it reports to `BaseState`) rather than a
+  downstream-user statement.
+- The new async test cases emit `RuntimeWarning: coroutine '...._awaitable_result' was never awaited` into
+  the suite output (the pre-existing wrapper-close nit the report flags as item 5), now visible on every
+  `tests/units/test_state.py` run.
+- Commit trailer says `Co-Authored-By: Claude Opus 5 (1M context)`; the shared brief asked for
+  `Claude Fable 5.1`. Harness rule vs brief — the release owner should pick one before cherry-picking.
+
+### Things I tried and could not break
+
+- Override that mutates the subdelta in place (what `elapp` does) vs. one that rebuilds it (what the unit
+  test and rxe do): both work, because surviving values keep their identity.
+- An override calling `super().get_delta()` twice and returning the second delta: correct under the fix
+  (it was broken under the eager memo, which deduped the second call to empty).
+- Placeholder substitution where the placeholder is the same interned object as the computed value
+  (`None`, `True`, small ints, `""`): records, but correctly — `is` implies the client received exactly
+  that object.
+- Concurrency: `_drop_unchanged_delta_value` takes `pending` as an argument, so `asyncio.create_task`
+  context copying inside `_resolve_delta` cannot cross-contaminate collectors;
+  `_do_update_other_tokens` spawns its tasks from `_clean()`, after the collector is reset.
+- `_get_resolved_delta` really is the only delivery chokepoint: `reflex/app.py:1864`,
+  `reflex/istate/proxy.py:223`, `reflex-base .../base_state_processor.py:226`,
+  `reflex/istate/shared.py:123`. Everything else (`hydrate_middleware`, `compiler/utils`,
+  `state.py:2900`) resolves `dict()`, not a delta. `test_delta_methods_take_no_arguments` still holds for
+  both methods.
