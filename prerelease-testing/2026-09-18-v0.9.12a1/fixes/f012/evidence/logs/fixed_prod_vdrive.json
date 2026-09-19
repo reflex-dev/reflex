@@ -1,0 +1,104 @@
+{
+  "foreach_ids": [
+    "_R_2iqj5_",
+    "_R_2iqj5_",
+    "_R_2iqj5_"
+  ],
+  "foreach_labels": [
+    {
+      "for": "_R_2iqj5_",
+      "text": "ia"
+    },
+    {
+      "for": "_R_2iqj5_",
+      "text": "ib"
+    },
+    {
+      "for": "_R_2iqj5_",
+      "text": "ic"
+    }
+  ],
+  "memo_ids": [
+    "_R_7iqj5_",
+    "_R_biqj5_",
+    "_R_fiqj5_"
+  ],
+  "label_resolution": [
+    {
+      "for": "_R_2iqj5_",
+      "text": "ia",
+      "targetValue": "ia"
+    },
+    {
+      "for": "_R_2iqj5_",
+      "text": "ib",
+      "targetValue": "ia"
+    },
+    {
+      "for": "_R_2iqj5_",
+      "text": "ic",
+      "targetValue": "ia"
+    }
+  ],
+  "label_click_focus_values": [
+    "ia",
+    "ia",
+    "ia"
+  ],
+  "dup_id_check": {
+    "total": 10,
+    "dups": [
+      "_R_2iqj5_"
+    ]
+  },
+  "portal_exists": true,
+  "portal_html": "<div id=\"portal\" class=\"css-7zxn5u\"></div>",
+  "portal_parent": "DIV#",
+  "body_children": [
+    "SECTION#.",
+    "DIV#.radix-themes css-0 light",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "SCRIPT#_R_.",
+    "SCRIPT#.",
+    "SCRIPT#.",
+    "DIV#."
+  ],
+  "badge_present": true,
+  "carousel_css_rules": 40,
+  "canvas_box": {
+    "x": 16,
+    "y": 46,
+    "width": 150,
+    "height": 260
+  },
+  "overlay_imgs": [
+    "/green.png",
+    "/red.png",
+    "/green.png",
+    "/red.png"
+  ],
+  "carousel_root": "<div class=\"carousel-root\"><div class=\"carousel carousel-slider\" style=\"width: 100%;\"><ul class=\"control-dots\"><li class=\"dot selected\" value=\"0\" role=\"button\" tabindex=\"0\" aria-label=\"slide item 1\"></li><li class=\"dot\" value=\"1\" role=\"button\" tabind",
+  "gdg_overlay": null,
+  "console": [
+    [
+      "error",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    [
+      "error",
+      "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.vapp____misc_state\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between fron"
+    ],
+    [
+      "log",
+      "Disconnect websocket on page navigation"
+    ],
+    [
+      "error",
+      "Cannot process state update: no dispatch function for substate(s) \"reflex___state____state.vapp____misc_state\". Try refreshing the page or clearing your browser cache. This error usually indicates a mismatch between fron"
+    ]
+  ]
+}

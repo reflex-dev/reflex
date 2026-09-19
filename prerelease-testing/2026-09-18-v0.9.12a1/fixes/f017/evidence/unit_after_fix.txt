@@ -1,0 +1,13 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0
+codspeed: 5.0.3 (disabled, mode: walltime, callgraph: enabled, timer_resolution: 1.0ns)
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /home/user/wt/f017
+configfile: pyproject.toml
+plugins: split-0.11.0, playwright-0.9.0, anyio-4.14.2, benchmark-5.2.3, asyncio-1.4.0, mock-3.15.1, codspeed-5.0.3, rerunfailures-16.6, cov-7.1.0, base-url-2.1.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 22 items
+
+tests/units/utils/test_exec.py ......................                    [100%]
+
+============================== 22 passed in 3.49s ==============================

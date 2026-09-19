@@ -1,0 +1,7 @@
+{
+ "label": "fixed_worktree",
+ "pid": 6123,
+ "edited_at": 1789836559.73,
+ "restored_at": 1789836569.73,
+ "ping_summary": "total=546 refused=0 errors=0 ok=546\nrefused windows: []\nerrors: []\nslowest (t_offset, latency, code): [(15.15, 0.951, '200'), (5.156, 0.929, '200'), (0.0, 0.01, '200'), (24.097, 0.009, '200'), (19.137, 0.008, '200'), (9.786, 0.006, '200'), (27.088, 0.006, '200'), (19.557, 0.005, '200')]\n"
+}

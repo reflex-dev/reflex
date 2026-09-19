@@ -1,0 +1,394 @@
+diff --git a/reflex/utils/exec.py b/reflex/utils/exec.py
+index 0b70669bc..d381947e5 100644
+--- a/reflex/utils/exec.py
++++ b/reflex/utils/exec.py
+@@ -13,6 +13,7 @@ import re
+ import socket
+ import subprocess
+ import sys
++import threading
+ from collections.abc import Mapping, Sequence
+ from pathlib import Path
+ from typing import Any, NamedTuple, TypedDict
+@@ -729,8 +730,25 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
+         On Linux each worker otherwise binds only after loading the app, so
+         requests during a reload are refused. With the supervisor holding the
+         socket they wait in the accept backlog for the new worker.
++
++        The socket is released again whenever no worker is left to serve it --
++        a worker that died on its own (an app module that raises on import), or
++        the supervisor shutting down -- so that clients are refused right away
++        instead of waiting in the accept backlog. The next worker spawn
++        re-creates it.
+         """
+ 
++        def __init__(self, *args, **kwargs):
++            """Create the supervisor.
++
++            Args:
++                args: Positional arguments for the Granian server.
++                kwargs: Keyword arguments for the Granian server.
++            """
++            super().__init__(*args, **kwargs)
++            self._socket_lock = threading.RLock()
++            self._spawn_count = 0
++
+         def _init_shared_socket(self):
+             self._ssp = SocketSpec(self.bind_addr, self.bind_port, self.backlog)
+             self._shd = self._ssp.build()
+@@ -739,6 +757,76 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
+             sock = socket.socket(fileno=self._sfd)
+             sock.set_inheritable(True)
+             self._sso = sock
++            # Resolve port 0 so a re-created socket keeps the same port.
++            self.bind_port = sock.getsockname()[1]
++
++        def _close_shared_socket(self):
++            """Release the listening socket, so the port refuses connections."""
++            with self._socket_lock:
++                if self._sso is None:
++                    return
++                # Granian's SocketHolder does not own the descriptor, so
++                # closing the socket object is what frees the port.
++                self._sso.close()
++                self._sso = self._shd = self._sfd = None
++
++        def _release_socket_unless_served(self, wrk: Any, spawn_count: int):
++            """Release the socket when an exited worker leaves nobody serving.
++
++            Workers stopped by the supervisor keep the socket bound: their
++            replacement is already on its way and requests should queue for it.
++
++            Args:
++                wrk: The worker that exited.
++                spawn_count: The spawn counter when that worker was created.
++            """
++            if wrk.interrupt_by_parent:
++                return
++            with self._socket_lock:
++                if spawn_count == self._spawn_count and not any(
++                    worker.is_alive() for worker in self.wrks
++                ):
++                    self._close_shared_socket()
++
++        def _spawn_worker(self, idx: int, target: Any, callback_loader: Any):
++            """Spawn a worker, re-creating the socket if it has been released.
++
++            Args:
++                idx: The index of the worker.
++                target: The worker entrypoint.
++                callback_loader: The loader for the ASGI app.
++
++            Returns:
++                The spawned worker.
++            """
++            with self._socket_lock:
++                if self._sso is None:
++                    self._init_shared_socket()
++                self._spawn_count += 1
++                spawn_count = self._spawn_count
++                wrk = super()._spawn_worker(
++                    idx=idx, target=target, callback_loader=callback_loader
++                )
++            granian_watcher = wrk._watcher
++
++            def watcher():
++                granian_watcher()
++                self._release_socket_unless_served(wrk, spawn_count)
++
++            wrk._watcher = watcher
++            return wrk
++
++        def shutdown(self, exit_code: int = 0):
++            """Release the listening socket, then shut the supervisor down.
++
++            Granian only detaches the socket object, which leaves the port
++            bound for as long as the supervisor process lives.
++
++            Args:
++                exit_code: The exit code to terminate with.
++            """
++            self._close_shared_socket()
++            super().shutdown(exit_code)
+ 
+     reset_dev_backend_reload_marker()
+     environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
+diff --git a/tests/units/utils/test_exec.py b/tests/units/utils/test_exec.py
+index f53a14c13..fc78389cf 100644
+--- a/tests/units/utils/test_exec.py
++++ b/tests/units/utils/test_exec.py
+@@ -9,6 +9,7 @@ import time
+ from http.client import HTTPConnection
+ from multiprocessing.queues import Queue
+ from pathlib import Path
++from typing import Any
+ from unittest.mock import patch
+ 
+ import pytest
+@@ -476,3 +477,266 @@ def test_run_granian_backend_prod_json_logs_in_json_mode(
+         if json_mode
+         else None
+     )
++
++
++def _free_port() -> int:
++    """Pick a TCP port that is currently unused.
++
++    Returns:
++        A free port on the loopback interface.
++    """
++    with socket.socket() as probe:
++        probe.bind(("127.0.0.1", 0))
++        return probe.getsockname()[1]
++
++
++def _port_is_bindable(port: int) -> bool:
++    """Report whether a port is free to bind, i.e. nothing is listening on it.
++
++    Args:
++        port: The TCP port to check.
++
++    Returns:
++        Whether the port could be bound.
++    """
++    probe = socket.socket()
++    try:
++        probe.bind(("127.0.0.1", port))
++    except OSError:
++        return False
++    else:
++        return True
++    finally:
++        probe.close()
++
++
++def _dev_granian_supervisor(mocker: MockerFixture, tmp_path: Path, port: int):
++    """Build the dev Granian supervisor on top of a stand-in granian server.
++
++    Args:
++        mocker: The mocker fixture.
++        tmp_path: Directory holding the reload marker.
++        port: The TCP port the supervisor binds.
++
++    Returns:
++        The supervisor instance created by ``run_granian_backend``.
++    """
++    mocker.patch.object(
++        exec_utils,
++        "get_dev_backend_reload_marker",
++        return_value=tmp_path / exec_utils.DEV_BACKEND_RELOAD_MARKER,
++    )
++    mocker.patch.object(
++        exec_utils, "get_app_instance_from_file", return_value="app:app"
++    )
++    mocker.patch.object(exec_utils, "get_reload_paths", return_value=[])
++    granian_server = pytest.importorskip("granian.server")
++    servers: list[Any] = []
++
++    class FakeWorker:
++        def __init__(self):
++            self.interrupt_by_parent = False
++            self.alive = True
++
++        def _watcher(self):
++            """Stand in for granian's watcher body, which joins the process."""
++
++        def is_alive(self):
++            return self.alive
++
++    class FakeGranian:
++        def __init__(self, *_args, **kwargs):
++            self.bind_addr = kwargs["address"]
++            self.bind_port = kwargs["port"]
++            self.backlog = 16
++            self.wrks = []
++            self.shutdowns = []
++            self._ssp = self._shd = self._sfd = self._sso = None
++            servers.append(self)
++
++        def _spawn_worker(self, idx, target, callback_loader):
++            return FakeWorker()
++
++        def on_reload(self, _callback):
++            pass
++
++        def serve(self):
++            pass
++
++        def shutdown(self, exit_code=0):
++            self.shutdowns.append(exit_code)
++
++    mocker.patch.object(granian_server, "Server", FakeGranian)
++    exec_utils.run_granian_backend(
++        host="127.0.0.1", port=port, loglevel=exec_utils.LogLevel.ERROR
++    )
++    (server,) = servers
++    return server
++
++
++def _spawn_supervisor_worker(server) -> Any:
++    """Spawn a worker on the supervisor and register it like granian does.
++
++    Args:
++        server: The supervisor under test.
++
++    Returns:
++        The spawned worker.
++    """
++    worker = server._spawn_worker(idx=0, target=None, callback_loader=None)
++    server.wrks.append(worker)
++    return worker
++
++
++def test_run_granian_backend_releases_socket_when_worker_dies(
++    tmp_path: Path, mocker: MockerFixture
++):
++    """A worker that dies on its own leaves the port refusing connections."""
++    port = _free_port()
++    server = _dev_granian_supervisor(mocker, tmp_path, port)
++    try:
++        server._init_shared_socket()
++        assert not _port_is_bindable(port)
++
++        worker = _spawn_supervisor_worker(server)
++        worker.alive = False
++        worker._watcher()
++
++        assert _port_is_bindable(port)
++    finally:
++        if server._sso is not None:
++            server._sso.close()
++
++
++def test_run_granian_backend_keeps_socket_across_worker_restart(
++    tmp_path: Path, mocker: MockerFixture
++):
++    """A worker stopped by the supervisor keeps the port bound for its successor."""
++    port = _free_port()
++    server = _dev_granian_supervisor(mocker, tmp_path, port)
++    try:
++        server._init_shared_socket()
++        worker = _spawn_supervisor_worker(server)
++        worker.interrupt_by_parent = True
++        worker.alive = False
++        worker._watcher()
++
++        assert not _port_is_bindable(port)
++    finally:
++        if server._sso is not None:
++            server._sso.close()
++
++
++def test_run_granian_backend_rebinds_socket_for_the_next_worker(
++    tmp_path: Path, mocker: MockerFixture
++):
++    """The socket released by a dead worker is re-created for the next one."""
++    port = _free_port()
++    server = _dev_granian_supervisor(mocker, tmp_path, port)
++    try:
++        server._init_shared_socket()
++        worker = _spawn_supervisor_worker(server)
++        worker.alive = False
++        worker._watcher()
++        assert _port_is_bindable(port)
++
++        _spawn_supervisor_worker(server)
++
++        assert not _port_is_bindable(port)
++        assert server._sso.get_inheritable()
++    finally:
++        if server._sso is not None:
++            server._sso.close()
++
++
++def test_run_granian_backend_releases_socket_on_shutdown(
++    tmp_path: Path, mocker: MockerFixture
++):
++    """Shutting the supervisor down frees the port it holds."""
++    port = _free_port()
++    server = _dev_granian_supervisor(mocker, tmp_path, port)
++    try:
++        server._init_shared_socket()
++        server.shutdown()
++
++        assert _port_is_bindable(port)
++        assert server.shutdowns == [0]
++    finally:
++        if server._sso is not None:
++            server._sso.close()
++
++
++def _wait_for_refused_connection(port: int, timeout: float = 20) -> bool:
++    """Poll a port until it refuses a connection.
++
++    Args:
++        port: TCP port for the test server.
++        timeout: Seconds to keep polling.
++
++    Returns:
++        Whether the port refused a connection within the timeout.
++    """
++    deadline = time.monotonic() + timeout
++    while time.monotonic() < deadline:
++        try:
++            with socket.create_connection(("127.0.0.1", port), timeout=1):
++                pass
++        except ConnectionRefusedError:
++            return True
++        except OSError:
++            pass
++        time.sleep(0.1)
++    return False
++
++
++def _wait_for_ok_response(port: int, timeout: float = 20) -> bool:
++    """Poll a port until the test app answers it.
++
++    Args:
++        port: TCP port for the test server.
++        timeout: Seconds to keep polling.
++
++    Returns:
++        Whether the app answered with a 200 within the timeout.
++    """
++    deadline = time.monotonic() + timeout
++    while time.monotonic() < deadline:
++        try:
++            if _request_reload_test_app(port)[0] == 200:
++                return True
++        except OSError:
++            pass
++        time.sleep(0.1)
++    return False
++
++
++@pytest.mark.skipif(sys.platform != "linux", reason="Granian uses this path on Linux")
++def test_run_granian_backend_refuses_requests_while_the_app_is_broken(tmp_path: Path):
++    """A module that raises on import makes requests fail fast, then recover."""
++    app_file = tmp_path / "reload_app.py"
++    app_file.write_text(_reload_test_app_source(0))
++    context = multiprocessing.get_context("spawn")
++    port_queue: Queue = context.Queue()
++    process = context.Process(
++        target=_run_granian_reload_test_app,
++        args=(str(tmp_path), port_queue),
++    )
++    process.start()
++    try:
++        port = port_queue.get(timeout=20)
++        assert _wait_for_ok_response(port), "Granian did not start"
++
++        app_file.write_text('raise RuntimeError("broken test app")\n')
++        assert _wait_for_refused_connection(port), (
++            "the backend port kept accepting connections with no worker to serve them"
++        )
++
++        app_file.write_text(_reload_test_app_source(0))
++        assert _wait_for_ok_response(port), "the backend did not recover"
++    finally:
++        process.terminate()
++        process.join(timeout=10)
++        if process.is_alive():
++            process.kill()
++            process.join()
++        port_queue.close()

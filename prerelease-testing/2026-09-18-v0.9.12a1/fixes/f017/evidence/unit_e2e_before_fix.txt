@@ -1,0 +1,55 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_run_granian_backend_refuses_requests_while_the_app_is_broken _______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-27/test_run_granian_backend_refus0')
+
+    @pytest.mark.skipif(sys.platform != "linux", reason="Granian uses this path on Linux")
+    def test_run_granian_backend_refuses_requests_while_the_app_is_broken(tmp_path: Path):
+        """A module that raises on import makes requests fail fast, then recover."""
+        app_file = tmp_path / "reload_app.py"
+        app_file.write_text(_reload_test_app_source(0))
+        context = multiprocessing.get_context("spawn")
+        port_queue: Queue = context.Queue()
+        process = context.Process(
+            target=_run_granian_reload_test_app,
+            args=(str(tmp_path), port_queue),
+        )
+        process.start()
+        try:
+            port = port_queue.get(timeout=20)
+            assert _wait_for_ok_response(port), "Granian did not start"
+    
+            app_file.write_text('raise RuntimeError("broken test app")\n')
+>           assert _wait_for_refused_connection(port), (
+                "the backend port kept accepting connections with no worker to serve them"
+            )
+E           AssertionError: the backend port kept accepting connections with no worker to serve them
+E           assert False
+E            +  where False = _wait_for_refused_connection(43583)
+
+tests/units/utils/test_exec.py:732: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[ERROR] Unexpected exit from worker-1
+----------------------------- Captured stderr call -----------------------------
+Process granian-worker:
+Traceback (most recent call last):
+  File "/root/.local/share/uv/python/cpython-3.14.7-linux-x86_64-gnu/lib/python3.14/multiprocessing/process.py", line 320, in _bootstrap
+    self.run()
+    ~~~~~~~~^^
+  File "/root/.local/share/uv/python/cpython-3.14.7-linux-x86_64-gnu/lib/python3.14/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/wt/f017/.venv/lib/python3.14/site-packages/granian/server/mp.py", line 92, in wrapped
+    callback = callback_loader()
+  File "/home/user/wt/f017/.venv/lib/python3.14/site-packages/granian/_internal.py", line 65, in load_target
+    module = load_module(path)
+  File "/home/user/wt/f017/.venv/lib/python3.14/site-packages/granian/_internal.py", line 47, in load_module
+    __import__(module_name)
+    ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/pytest-of-root/pytest-27/test_run_granian_backend_refus0/reload_app.py", line 1, in <module>
+    raise RuntimeError("broken test app")
+RuntimeError: broken test app
+=========================== short test summary info ============================
+FAILED tests/units/utils/test_exec.py::test_run_granian_backend_refuses_requests_while_the_app_is_broken
+1 failed, 21 deselected in 20.82s
