@@ -66,3 +66,12 @@ for the FINDING-018 repro).
 9. rxconfig isolation: from an EMPTY directory (no rxconfig.py) with the app installed as a package
    on `sys.path`/`PYTHONPATH`, `reflex run` must fail with a clear error rather than pick up the
    other project's config.
+
+## Leads handed over from the `router_vars` cluster (please baseline on 0.9.11.post1 prod)
+
+1. In `--env prod`, a direct load of a dynamic route (`GET /items/7?x=1`) logs a 404 in the network log
+   before the page renders, and a prod reload rewrites `/search?q=hello` to `/search/?q=hello` so
+   `self.router.url.path` reads `/search/` (dev: `/search`). Likely pre-existing static-export behavior,
+   but nobody has run it on 0.9.11.post1 prod — you are doing prod work anyway: settle regression vs pre-existing.
+2. Every prod start logs `Page X is being redefined with the same component` for each `@rx.page` route
+   when the app also calls `app.add_page(index, route="/")`; dev logs nothing. Baseline it.

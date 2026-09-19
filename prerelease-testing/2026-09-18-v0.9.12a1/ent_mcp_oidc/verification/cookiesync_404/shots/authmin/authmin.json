@@ -1,0 +1,34 @@
+{
+ "sync": [
+  {
+   "url": "http://localhost:10361/_reflex/cookies/sync",
+   "status": 404
+  },
+  {
+   "url": "http://localhost:10361/_reflex/cookies/sync",
+   "status": 404
+  }
+ ],
+ "console": [
+  "log: \ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module",
+  "debug: [vite] connecting...",
+  "debug: [vite] connected.",
+  "info: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "after_load": [],
+ "after_sync_click": [
+  {
+   "url": "http://localhost:10361/_reflex/cookies/sync",
+   "status": 404
+  }
+ ],
+ "after_bump": [],
+ "after_sync_click2": [
+  {
+   "url": "http://localhost:10361/_reflex/cookies/sync",
+   "status": 404
+  }
+ ]
+}

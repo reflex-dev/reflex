@@ -1,0 +1,400 @@
+   delta 2567B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_']}
+        cv_auto_path: auto:/search
+        cv_deps_whole_router: whole:/search|/search|sid=IF6Psc
+        cv_deps_router_url: urlonly:/search?q=hello
+        cv_deps_legacy_string: legacy:/search
+        cv_query_params: qp={'q': 'hello'}
+        cv_route_id: route_id=/search
+        cv_page_params: params={'q': 'hello'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/search|/search
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /search
+        cs_path: CS path: /search
+        direct_path: /search
+        direct_rid: /search
+
+=== 07_substate_handler_read_router ===  url=http://localhost:3101/search?q=hello
+   delta 207B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_note_rx_state_']}
+        cv_auto_path: auto:/search
+        cv_deps_whole_router: whole:/search|/search|sid=IF6Psc
+        cv_deps_router_url: urlonly:/search?q=hello
+        cv_deps_legacy_string: legacy:/search
+        cv_query_params: qp={'q': 'hello'}
+        cv_route_id: route_id=/search
+        cv_page_params: params={'q': 'hello'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/search|/search
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /search
+        cs_path: CS path: /search
+        direct_path: /search
+        direct_rid: /search
+
+=== 08_background_task_read_router ===  url=http://localhost:3101/search?q=hello
+   delta 133B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____state': ['nav_log_rx_state_']}
+        cv_auto_path: auto:/search
+        cv_deps_whole_router: whole:/search|/search|sid=IF6Psc
+        cv_deps_router_url: urlonly:/search?q=hello
+        cv_deps_legacy_string: legacy:/search
+        cv_query_params: qp={'q': 'hello'}
+        cv_route_id: route_id=/search
+        cv_page_params: params={'q': 'hello'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/search|/search
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /search
+        cs_path: CS path: /search
+        direct_path: /search
+        direct_rid: /search
+
+=== 09_componentstate_click ===  url=http://localhost:3101/search?q=hello
+   delta 135B router_keys={}
+        all={'reflex___state____state.reflex___istate___dynamic____router_component_state_n4': ['clicks_rx_state_']}
+        cv_auto_path: auto:/search
+        cv_deps_whole_router: whole:/search|/search|sid=IF6Psc
+        cv_deps_router_url: urlonly:/search?q=hello
+        cv_deps_legacy_string: legacy:/search
+        cv_query_params: qp={'q': 'hello'}
+        cv_route_id: route_id=/search
+        cv_page_params: params={'q': 'hello'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/search|/search
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /search
+        cs_path: CS path: /search
+        direct_path: /search
+        direct_rid: /search
+
+=== 10_client_state_set_from_router ===  url=http://localhost:3101/search?q=hello
+        cv_auto_path: auto:/search
+        cv_deps_whole_router: whole:/search|/search|sid=IF6Psc
+        cv_deps_router_url: urlonly:/search?q=hello
+        cv_deps_legacy_string: legacy:/search
+        cv_query_params: qp={'q': 'hello'}
+        cv_route_id: route_id=/search
+        cv_page_params: params={'q': 'hello'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/search|/search
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /search
+        cs_path: CS path: /search
+        direct_path: /search
+        direct_rid: /search
+
+=== 11_back ===  url=http://localhost:3101/docs/a/b
+   delta 2624B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_']}
+        cv_auto_path: auto:/docs/a/b
+        cv_deps_whole_router: whole:/docs/a/b|/docs/[[...splat]]|sid=IF6Psc
+        cv_deps_router_url: urlonly:/docs/a/b?
+        cv_deps_legacy_string: legacy:/docs/a/b
+        cv_query_params: qp={}
+        cv_route_id: route_id=/docs/[[...splat]]
+        cv_page_params: params={'splat': MutableProxy(['a', 'b'])}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/docs/a/b|/docs/[[...splat]]
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /docs/a/b
+        cs_path: CS path: /docs/a/b
+        direct_path: /docs/a/b
+        direct_rid: /docs/[[...splat]]
+
+=== 12_forward ===  url=http://localhost:3101/search?q=hello
+   delta 2567B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_']}
+        cv_auto_path: auto:/search
+        cv_deps_whole_router: whole:/search|/search|sid=IF6Psc
+        cv_deps_router_url: urlonly:/search?q=hello
+        cv_deps_legacy_string: legacy:/search
+        cv_query_params: qp={'q': 'hello'}
+        cv_route_id: route_id=/search
+        cv_page_params: params={'q': 'hello'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/search|/search
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /search
+        cs_path: CS path: /search
+        direct_path: /search
+        direct_rid: /search
+
+=== 13_reload_on_search ===  url=http://localhost:3101/search?q=hello
+   delta 3631B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n1': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n2': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n3': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n4': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n5': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___shared____shared_state_base_internal': [], 'reflex___state____state.reflex___state____frontend_event_exception_state': [], 'reflex___state____state.reflex___state____on_load_internal_state': [], 'reflex___state____state.reflex___state____update_vars_internal_state': [], 'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['counter_rx_state_', 'cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_', 'nav_log_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_', 'sub_note_rx_state_']}
+   delta 88B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+        cv_auto_path: auto:/search
+        cv_deps_whole_router: whole:/search|/search|sid=-Uz6cY
+        cv_deps_router_url: urlonly:/search?q=hello
+        cv_deps_legacy_string: legacy:/search
+        cv_query_params: qp={'q': 'hello'}
+        cv_route_id: route_id=/search
+        cv_page_params: params={'q': 'hello'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/search|/search
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /search
+        cs_path: CS path: /search
+        direct_path: /search
+        direct_rid: /search
+
+=== 14_mutate_headers_handler ===  url=http://localhost:3101/search?q=hello
+   delta 112B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____state': ['counter_rx_state_']}
+        cv_auto_path: auto:/search
+        cv_deps_whole_router: whole:/search|/search|sid=-Uz6cY
+        cv_deps_router_url: urlonly:/search?q=hello
+        cv_deps_legacy_string: legacy:/search
+        cv_query_params: qp={'q': 'hello'}
+        cv_route_id: route_id=/search
+        cv_page_params: params={'q': 'hello'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/search|/search
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /search
+        cs_path: CS path: /search
+        direct_path: /search
+        direct_rid: /search
+
+=== 15_bump_after_header_mutation ===  url=http://localhost:3101/search?q=hello
+   delta 112B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____state': ['counter_rx_state_']}
+        cv_auto_path: auto:/search
+        cv_deps_whole_router: whole:/search|/search|sid=-Uz6cY
+        cv_deps_router_url: urlonly:/search?q=hello
+        cv_deps_legacy_string: legacy:/search
+        cv_query_params: qp={'q': 'hello'}
+        cv_route_id: route_id=/search
+        cv_page_params: params={'q': 'hello'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/search|/search
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /search
+        cs_path: CS path: /search
+        direct_path: /search
+        direct_rid: /search
+
+=== 16_direct_load_/items/7?x=1#frag ===  url=http://localhost:3101/items/7?x=1#frag
+   delta 3672B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n1': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n2': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n3': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n4': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n5': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___shared____shared_state_base_internal': [], 'reflex___state____state.reflex___state____frontend_event_exception_state': [], 'reflex___state____state.reflex___state____on_load_internal_state': [], 'reflex___state____state.reflex___state____update_vars_internal_state': [], 'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['counter_rx_state_', 'cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_', 'nav_log_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_', 'sub_note_rx_state_']}
+   delta 89B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+   delta 121B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_']}
+   delta 88B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+        cv_auto_path: auto:/items/7
+        cv_deps_whole_router: whole:/items/7|/items/[id]|sid=qKKjB8
+        cv_deps_router_url: urlonly:/items/7?x=1
+        cv_deps_legacy_string: legacy:/items/7
+        cv_query_params: qp={'x': '1'}
+        cv_route_id: route_id=/items/[id]
+        cv_page_params: params={'x': '1', 'id': '7'}
+        cv_frag: frag=frag|origin=http://localhost:3101
+        sub_cv: sub:/items/7|/items/[id]
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /items/7
+        cs_path: CS path: /items/7
+        direct_path: /items/7
+        direct_rid: /items/[id]
+
+=== 17_event_chain_redirect ===  url=http://localhost:3101/items/chained
+   delta 113B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____state': ['counter_rx_state_']}
+   delta 144B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____state': ['nav_log_rx_state_']}
+   delta 2607B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_']}
+   delta 127B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_']}
+   delta 88B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+        cv_auto_path: auto:/items/chained
+        cv_deps_whole_router: whole:/items/chained|/items/[id]|sid=qKKjB8
+        cv_deps_router_url: urlonly:/items/chained?
+        cv_deps_legacy_string: legacy:/items/chained
+        cv_query_params: qp={}
+        cv_route_id: route_id=/items/[id]
+        cv_page_params: params={'id': 'chained'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/items/chained|/items/[id]
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /items/chained
+        cs_path: CS path: /items/chained
+        direct_path: /items/chained
+        direct_rid: /items/[id]
+
+=== 18_redirect_about ===  url=http://localhost:3101/about
+   delta 2468B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_']}
+        cv_auto_path: auto:/about
+        cv_deps_whole_router: whole:/about|/about|sid=qKKjB8
+        cv_deps_router_url: urlonly:/about?
+        cv_deps_legacy_string: legacy:/about
+        cv_query_params: qp={}
+        cv_route_id: route_id=/about
+        cv_page_params: params={}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/about|/about
+        cond_out: COND: not home
+        match_out: MATCH:about
+        memo_path: memo[A]: /about
+        cs_path: CS path: /about
+        direct_path: /about
+        direct_rid: /about
+
+=== 19_onload_redirect_/items/redirectme ===  url=http://localhost:3101/about
+   delta 3724B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n1': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n2': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n3': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n4': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n5': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___shared____shared_state_base_internal': [], 'reflex___state____state.reflex___state____frontend_event_exception_state': [], 'reflex___state____state.reflex___state____on_load_internal_state': [], 'reflex___state____state.reflex___state____update_vars_internal_state': [], 'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['counter_rx_state_', 'cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_', 'nav_log_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_', 'sub_note_rx_state_']}
+   delta 89B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+   delta 130B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_']}
+   delta 88B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+   delta 2468B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_']}
+        cv_auto_path: auto:/about
+        cv_deps_whole_router: whole:/about|/about|sid=gC-wqL
+        cv_deps_router_url: urlonly:/about?
+        cv_deps_legacy_string: legacy:/about
+        cv_query_params: qp={}
+        cv_route_id: route_id=/about
+        cv_page_params: params={}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/about|/about
+        cond_out: COND: not home
+        match_out: MATCH:about
+        memo_path: memo[A]: /about
+        cs_path: CS path: /about
+        direct_path: /about
+        direct_rid: /about
+
+=== 20_second_tab_load_/items/99 ===  url=http://localhost:3101/items/99
+   delta 3531B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n1': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n2': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n3': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n4': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n5': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___shared____shared_state_base_internal': [], 'reflex___state____state.reflex___state____frontend_event_exception_state': [], 'reflex___state____state.reflex___state____on_load_internal_state': [], 'reflex___state____state.reflex___state____update_vars_internal_state': [], 'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['counter_rx_state_', 'cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_', 'nav_log_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_', 'sub_note_rx_state_']}
+   delta 89B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+   delta 122B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_']}
+   delta 88B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+        cv_auto_path: auto:/items/99
+        cv_deps_whole_router: whole:/items/99|/items/[id]|sid=3BEwoy
+        cv_deps_router_url: urlonly:/items/99?
+        cv_deps_legacy_string: legacy:/items/99
+        cv_query_params: qp={}
+        cv_route_id: route_id=/items/[id]
+        cv_page_params: params={'id': '99'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/items/99|/items/[id]
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /items/99
+        cs_path: CS path: /items/99
+        direct_path: /items/99
+        direct_rid: /items/[id]
+
+=== 21_second_tab_nav_/about ===  url=http://localhost:3101/about
+   delta 2468B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_']}
+        cv_auto_path: auto:/about
+        cv_deps_whole_router: whole:/about|/about|sid=3BEwoy
+        cv_deps_router_url: urlonly:/about?
+        cv_deps_legacy_string: legacy:/about
+        cv_query_params: qp={}
+        cv_route_id: route_id=/about
+        cv_page_params: params={}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/about|/about
+        cond_out: COND: not home
+        match_out: MATCH:about
+        memo_path: memo[A]: /about
+        cs_path: CS path: /about
+        direct_path: /about
+        direct_rid: /about
+
+=== 22_second_context_load_home ===  url=http://localhost:3101/
+   delta 3408B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n1': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n2': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n3': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n4': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___dynamic____router_component_state_n5': ['clicks_rx_state_'], 'reflex___state____state.reflex___istate___shared____shared_state_base_internal': [], 'reflex___state____state.reflex___state____frontend_event_exception_state': [], 'reflex___state____state.reflex___state____on_load_internal_state': [], 'reflex___state____state.reflex___state____update_vars_internal_state': [], 'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['counter_rx_state_', 'cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_', 'nav_log_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_', 'sub_note_rx_state_']}
+   delta 88B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+        cv_auto_path: auto:/
+        cv_deps_whole_router: whole:/|/index|sid=C-o7Ok
+        cv_deps_router_url: urlonly:/?
+        cv_deps_legacy_string: legacy:/
+        cv_query_params: qp={}
+        cv_route_id: route_id=/index
+        cv_page_params: params={}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/|/index
+        cond_out: COND: on home
+        match_out: MATCH:other
+        memo_path: memo[A]: /
+        cs_path: CS path: /
+        direct_path: /
+        direct_rid: /index
+
+=== 23_second_context_nav_item1 ===  url=http://localhost:3101/items/1
+   delta 2535B router_keys={}
+        all={'reflex___state____state': ['id_rx_state_', 'is_hydrated_rx_state_', 'router_rx_state_', 'splat_rx_state_'], 'reflex___state____state.routerlab___routerlab____state': ['cv_auto_path_rx_state_', 'cv_deps_legacy_string_rx_state_', 'cv_deps_router_url_rx_state_', 'cv_deps_whole_router_rx_state_', 'cv_frag_rx_state_', 'cv_headers_rx_state_', 'cv_page_params_rx_state_', 'cv_query_params_rx_state_', 'cv_route_id_rx_state_', 'cv_session_rx_state_'], 'reflex___state____state.routerlab___routerlab____state.routerlab___routerlab____sub_state': ['sub_cv_rx_state_']}
+   delta 121B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____item_state': ['loaded_id_rx_state_']}
+   delta 88B router_keys={}
+        all={'reflex___state____state': ['is_hydrated_rx_state_']}
+        cv_auto_path: auto:/items/1
+        cv_deps_whole_router: whole:/items/1|/items/[id]|sid=C-o7Ok
+        cv_deps_router_url: urlonly:/items/1?
+        cv_deps_legacy_string: legacy:/items/1
+        cv_query_params: qp={}
+        cv_route_id: route_id=/items/[id]
+        cv_page_params: params={'id': '1'}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/items/1|/items/[id]
+        cond_out: COND: not home
+        match_out: MATCH:other
+        memo_path: memo[A]: /items/1
+        cs_path: CS path: /items/1
+        direct_path: /items/1
+        direct_rid: /items/[id]
+
+=== 24_final_bump ===  url=http://localhost:3101/about
+   delta 113B router_keys={}
+        all={'reflex___state____state.routerlab___routerlab____state': ['counter_rx_state_']}
+        cv_auto_path: auto:/about
+        cv_deps_whole_router: whole:/about|/about|sid=gC-wqL
+        cv_deps_router_url: urlonly:/about?
+        cv_deps_legacy_string: legacy:/about
+        cv_query_params: qp={}
+        cv_route_id: route_id=/about
+        cv_page_params: params={}
+        cv_frag: frag=|origin=http://localhost:3101
+        sub_cv: sub:/about|/about
+        cond_out: COND: not home
+        match_out: MATCH:about
+        memo_path: memo[A]: /about
+        cs_path: CS path: /about
+        direct_path: /about
+        direct_rid: /about
+
+
+================ CONSOLE ================
+(total console msgs: 29)
+================ PAGE ERRORS ================
+================ BAD RESPONSES ================
+DONE

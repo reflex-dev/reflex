@@ -1,0 +1,155 @@
+reflex from: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/envs/shared/lib/python3.11/site-packages/reflex/__init__.py
+reflex version: 0.9.12a1
+======================================================================
+
+### substate declares rx_router_url: str
+  RAISED BaseVarShadowsInheritedVarError: The var `rx_router_url` in reflex.istate.dynamic.C1 shadows a var inherited from reflex.istate.dynamic.P1; use a different name instead
+
+### substate declares rx_router_session: dict
+  RAISED BaseVarShadowsInheritedVarError: The var `rx_router_session` in reflex.istate.dynamic.C1b shadows a var inherited from reflex.istate.dynamic.P1b; use a different name instead
+
+### substate declares rx_router_page / headers / route_id
+  RAISED BaseVarShadowsInheritedVarError: The var `rx_router_headers` in reflex.istate.dynamic.C1c shadows a var inherited from reflex.istate.dynamic.P1c; use a different name instead
+
+### substate declares a base var named 'router'
+  RAISED StateValueError: State name `router` is reserved by BaseState; use a different name instead.
+
+### computed var named 'router'
+  RAISED StateValueError: State name `router` is reserved by BaseState; use a different name instead.
+
+### substate shadows parent base var (int -> str) [issue 7074 repro]
+  RAISED BaseVarShadowsInheritedVarError: The var `x` in reflex.istate.dynamic.Child3 shadows a var inherited from reflex.istate.dynamic.Parent3; use a different name instead
+
+### substate shadows parent base var (same type/default)
+  RAISED BaseVarShadowsInheritedVarError: The var `count` in reflex.istate.dynamic.Child3b shadows a var inherited from reflex.istate.dynamic.Parent3b; use a different name instead
+
+### grandchild shadows grandparent base var
+  RAISED BaseVarShadowsInheritedVarError: The var `val` in reflex.istate.dynamic.GC shadows a var inherited from reflex.istate.dynamic.Mid; use a different name instead
+
+### substate shadows inherited 'is_hydrated' from root State
+  RAISED BaseVarShadowsInheritedVarError: The var `is_hydrated` in reflex.istate.dynamic.C3c shadows a var inherited from reflex.state.State; use a different name instead
+
+### substate shadows a parent BACKEND var (_x)
+   Child3d backend vars: ['_reflex_internal_links', '_priv']
+  NO EXCEPTION (class created)
+
+### state var named 'dirty_vars'
+  RAISED StateValueError: State name `dirty_vars` is reserved by BaseState; use a different name instead.
+
+### state var named 'get_delta'
+  RAISED StateValueError: State name `get_delta` is reserved by BaseState; use a different name instead.
+
+### state var named 'process'
+  RAISED KeyError: '__module__'
+
+### state var named 'router_data'
+  RAISED StateValueError: State name `router_data` is reserved by BaseState; use a different name instead.
+
+### state var named 'parent_state'
+  RAISED StateValueError: State name `parent_state` is reserved by BaseState; use a different name instead.
+
+### state var named 'substates'
+  RAISED StateValueError: State name `substates` is reserved by BaseState; use a different name instead.
+
+### state var named 'get_value'
+  RAISED StateValueError: State name `get_value` is reserved by BaseState; use a different name instead.
+
+### state var named 'dict'
+  RAISED StateValueError: State name `dict` is reserved by BaseState; use a different name instead.
+
+### state var named 'set'
+  RAISED StateValueError: State name `set` is reserved by BaseState; use a different name instead.
+
+### state var named 'get_fields'
+  RAISED StateValueError: State name `get_fields` is reserved by BaseState; use a different name instead.
+
+### state var named '_get_was_touched'
+  RAISED StateValueError: State name `_get_was_touched` is reserved by BaseState; use a different name instead.
+
+### state var named '_update_was_touched'
+  RAISED StateValueError: State name `_update_was_touched` is reserved by BaseState; use a different name instead.
+
+### state var named 'setvar'
+  RAISED StateValueError: State name `setvar` is reserved by BaseState; use a different name instead.
+
+### state var named 'reset'
+  RAISED StateValueError: State name `reset` is reserved by BaseState; use a different name instead.
+
+### state var named 'get_name'
+  RAISED StateValueError: State name `get_name` is reserved by BaseState; use a different name instead.
+
+### state var named 'json'
+  RAISED KeyError: '__module__'
+
+### event handler named 'dirty_vars'
+  RAISED EventHandlerShadowsBuiltInStateMethodError: The event handler name `dirty_vars` shadows a builtin State method; use a different name instead
+
+### event handler named 'process'
+  RAISED KeyError: '__module__'
+
+### event handler named 'get_delta'
+  RAISED EventHandlerShadowsBuiltInStateMethodError: The event handler name `get_delta` shadows a builtin State method; use a different name instead
+
+### event handler named 'set'
+  RAISED EventHandlerShadowsBuiltInStateMethodError: The event handler name `set` shadows a builtin State method; use a different name instead
+
+### event handler named 'dict'
+  RAISED EventHandlerShadowsBuiltInStateMethodError: The event handler name `dict` shadows a builtin State method; use a different name instead
+
+### event handler named 'reset'
+  RAISED EventHandlerShadowsBuiltInStateMethodError: The event handler name `reset` shadows a builtin State method; use a different name instead
+
+### event handler named 'setvar'
+  RAISED EventHandlerShadowsBuiltInStateMethodError: The event handler name `setvar` shadows a builtin State method; use a different name instead
+
+### dynamic route arg named 'router'
+  RAISED StateValueError: State name `router` is reserved by BaseState; use a different name instead.
+
+### dynamic route arg named 'state'
+  RAISED ReflexRuntimeError: A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the current context before instantiating the new App; forking preserves existing state and event handler registrations, which a bare RegistrationContext() would lose.
+
+### dynamic route arg named 'dirty_vars'
+  RAISED ReflexRuntimeError: A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the current context before instantiating the new App; forking preserves existing state and event handler registrations, which a bare RegistrationContext() would lose.
+
+### dynamic route arg named 'rx_router_url'
+  RAISED ReflexRuntimeError: A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the current context before instantiating the new App; forking preserves existing state and event handler registrations, which a bare RegistrationContext() would lose.
+
+======================================================================
+SUMMARY
+RAISE | substate declares rx_router_url: str | BaseVarShadowsInheritedVarError | The var `rx_router_url` in reflex.istate.dynamic.C1 shadows a var inherited from reflex.istate.dynamic.P1; use a different name instead
+RAISE | substate declares rx_router_session: dict | BaseVarShadowsInheritedVarError | The var `rx_router_session` in reflex.istate.dynamic.C1b shadows a var inherited from reflex.istate.dynamic.P1b; use a different name instead
+RAISE | substate declares rx_router_page / headers / route_id | BaseVarShadowsInheritedVarError | The var `rx_router_headers` in reflex.istate.dynamic.C1c shadows a var inherited from reflex.istate.dynamic.P1c; use a different name instead
+RAISE | substate declares a base var named 'router' | StateValueError | State name `router` is reserved by BaseState; use a different name instead.
+RAISE | computed var named 'router' | StateValueError | State name `router` is reserved by BaseState; use a different name instead.
+RAISE | substate shadows parent base var (int -> str) [issue 7074 repro] | BaseVarShadowsInheritedVarError | The var `x` in reflex.istate.dynamic.Child3 shadows a var inherited from reflex.istate.dynamic.Parent3; use a different name instead
+RAISE | substate shadows parent base var (same type/default) | BaseVarShadowsInheritedVarError | The var `count` in reflex.istate.dynamic.Child3b shadows a var inherited from reflex.istate.dynamic.Parent3b; use a different name instead
+RAISE | grandchild shadows grandparent base var | BaseVarShadowsInheritedVarError | The var `val` in reflex.istate.dynamic.GC shadows a var inherited from reflex.istate.dynamic.Mid; use a different name instead
+RAISE | substate shadows inherited 'is_hydrated' from root State | BaseVarShadowsInheritedVarError | The var `is_hydrated` in reflex.istate.dynamic.C3c shadows a var inherited from reflex.state.State; use a different name instead
+ok    | substate shadows a parent BACKEND var (_x) |  | 
+RAISE | state var named 'dirty_vars' | StateValueError | State name `dirty_vars` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'get_delta' | StateValueError | State name `get_delta` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'process' | KeyError | '__module__'
+RAISE | state var named 'router_data' | StateValueError | State name `router_data` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'parent_state' | StateValueError | State name `parent_state` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'substates' | StateValueError | State name `substates` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'get_value' | StateValueError | State name `get_value` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'dict' | StateValueError | State name `dict` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'set' | StateValueError | State name `set` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'get_fields' | StateValueError | State name `get_fields` is reserved by BaseState; use a different name instead.
+RAISE | state var named '_get_was_touched' | StateValueError | State name `_get_was_touched` is reserved by BaseState; use a different name instead.
+RAISE | state var named '_update_was_touched' | StateValueError | State name `_update_was_touched` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'setvar' | StateValueError | State name `setvar` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'reset' | StateValueError | State name `reset` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'get_name' | StateValueError | State name `get_name` is reserved by BaseState; use a different name instead.
+RAISE | state var named 'json' | KeyError | '__module__'
+RAISE | event handler named 'dirty_vars' | EventHandlerShadowsBuiltInStateMethodError | The event handler name `dirty_vars` shadows a builtin State method; use a different name instead
+RAISE | event handler named 'process' | KeyError | '__module__'
+RAISE | event handler named 'get_delta' | EventHandlerShadowsBuiltInStateMethodError | The event handler name `get_delta` shadows a builtin State method; use a different name instead
+RAISE | event handler named 'set' | EventHandlerShadowsBuiltInStateMethodError | The event handler name `set` shadows a builtin State method; use a different name instead
+RAISE | event handler named 'dict' | EventHandlerShadowsBuiltInStateMethodError | The event handler name `dict` shadows a builtin State method; use a different name instead
+RAISE | event handler named 'reset' | EventHandlerShadowsBuiltInStateMethodError | The event handler name `reset` shadows a builtin State method; use a different name instead
+RAISE | event handler named 'setvar' | EventHandlerShadowsBuiltInStateMethodError | The event handler name `setvar` shadows a builtin State method; use a different name instead
+RAISE | dynamic route arg named 'router' | StateValueError | State name `router` is reserved by BaseState; use a different name instead.
+RAISE | dynamic route arg named 'state' | ReflexRuntimeError | A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the 
+RAISE | dynamic route arg named 'dirty_vars' | ReflexRuntimeError | A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the 
+RAISE | dynamic route arg named 'rx_router_url' | ReflexRuntimeError | A RegistrationContext can only be associated with a single App instance. To create another App, call `.fork()` on the current RegistrationContext and set the fork as the 

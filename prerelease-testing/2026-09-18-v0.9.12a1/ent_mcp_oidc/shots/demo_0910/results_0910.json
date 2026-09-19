@@ -1,0 +1,591 @@
+{
+ "label": "0910",
+ "steps": [
+  {
+   "step": "index_anon",
+   "has_okta_btn": true,
+   "has_dbx_btn": true,
+   "buttons": 5,
+   "text": "OIDC Demo\nLogin with Okta\nLogin with Databricks\nDo Nothing\nCookie Sync"
+  },
+  {
+   "step": "do_nothing",
+   "new_page_errors": 0
+  },
+  {
+   "step": "cookie_sync",
+   "requests": [
+    "http://localhost:9661/_reflex/cookies/sync"
+   ],
+   "http_errors": [
+    {
+     "url": "http://localhost:9661/_reflex/cookies/sync",
+     "status": 404
+    }
+   ],
+   "new_http_errors": 1
+  },
+  {
+   "step": "okta_after_login",
+   "url": "http://localhost:5261/",
+   "has_userinfo": true,
+   "has_email": true,
+   "has_logout": true,
+   "text": "OIDC Demo\nOkta User Info\n\nsub: alice\n\nemail: alice@example.test\n\nname: User alice\n\npreferred_username: alice\n\niat: 1789097675\n\nexp: 1789097745\n\nLog AT\nLogout\nLogin with Databricks\nDo Nothing\nCookie Sync"
+  },
+  {
+   "step": "log_at_buttons",
+   "count": 1
+  },
+  {
+   "step": "log_at_clicked",
+   "page_errors": 0
+  },
+  {
+   "step": "after_reload",
+   "still_logged_in": true,
+   "has_login_btn": false
+  },
+  {
+   "step": "databricks_after_login",
+   "url": "http://localhost:5261/",
+   "has_dbx_userinfo": true,
+   "both_logged_in": true,
+   "text": "OIDC Demo\nOkta User Info\n\nsub: alice\n\nemail: alice@example.test\n\nname: User alice\n\npreferred_username: alice\n\niat: 1789097675\n\nexp: 1789097745\n\nLog AT\nLogout\nDatabricks User Info\n\nsub: alice\n\nemail: alice@example.test\n\nname: User alice\n\npreferred_username: alice\n\niat: 1789097687\n\nexp: 1789097757\n\nFri Sep 11 2026 03:34:47 GMT+0000\nFri Sep 11 2026 03:35:57 GMT+0000\n99fb2f3e282d0edd8218bc09605de442c429be95d214d8dea02bd77e61c48ea9\n99fb2f3e282d0edd8218bc09605de442c429be95d214d8dea02bd77e61c48ea9\nLog AT\nLogout\nDo Nothing\nCookie Sync"
+  },
+  {
+   "step": "second_tab",
+   "logged_in": true
+  },
+  {
+   "step": "logout_buttons",
+   "count": 2
+  },
+  {
+   "step": "after_logout",
+   "url": "http://localhost:5261/",
+   "has_login_btn": true,
+   "okta_userinfo_gone": true,
+   "text": "OIDC Demo\nLogin with Okta\nDatabricks User Info\n\nsub: alice\n\nemail: alice@example.test\n\nname: User alice\n\npreferred_username: alice\n\niat: 1789097687\n\nexp: 1789097757\n\nFri Sep 11 2026 03:34:47 GMT+0000\nFri Sep 11 2026 03:35:57 GMT+0000\n99fb2f3e282d0edd8218bc09605de442c429be95d214d8dea02bd77e61c48ea9\n9"
+  },
+  {
+   "step": "iframe_route",
+   "frames": [
+    "http://localhost:5261/iframe",
+    "http://localhost:5261/"
+   ],
+   "text": "Iframed Auth"
+  }
+ ],
+ "console": [
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "Disconnect websocket on page navigation"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  },
+  {
+   "type": "info",
+   "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+   "type": "log",
+   "text": "\ud83d\udcbf Hey developer \ud83d\udc4b. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connecting..."
+  },
+  {
+   "type": "debug",
+   "text": "[vite] connected."
+  }
+ ],
+ "pageerrors": [],
+ "failed_requests": [
+  {
+   "url": "http://localhost:9661/_reflex/cookies/sync",
+   "err": "net::ERR_ABORTED"
+  },
+  {
+   "url": "http://localhost:9661/_reflex/cookies/sync",
+   "err": "net::ERR_ABORTED"
+  },
+  {
+   "url": "http://localhost:9661/_reflex/cookies/sync",
+   "err": "net::ERR_ABORTED"
+  },
+  {
+   "url": "http://localhost:9661/_reflex/cookies/sync",
+   "err": "net::ERR_ABORTED"
+  },
+  {
+   "url": "http://localhost:9661/_reflex/cookies/sync",
+   "err": "net::ERR_ABORTED"
+  }
+ ],
+ "http_errors": [
+  {
+   "url": "http://localhost:9661/_reflex/cookies/sync",
+   "status": 404
+  }
+ ],
+ "requests": [
+  "http://localhost:5261/",
+  "http://localhost:5261/@id/__x00__virtual:react-router/browser-manifest",
+  "http://localhost:5261/app/entry.client.js",
+  "http://localhost:5261/app/root.jsx",
+  "http://localhost:5261/styles/__reflex_global_styles.css",
+  "http://localhost:5261/@react-router/critical.css?pathname=/",
+  "http://localhost:5261/@id/__x00__virtual:react-router/inject-hmr-runtime",
+  "http://localhost:5261/@vite/client",
+  "http://localhost:5261/@id/__x00__virtual:react-router/hmr-runtime",
+  "http://localhost:5261/node_modules/.vite/deps/react-router.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react.js?v=fa6dc3e9",
+  "http://localhost:5261/utils/context.js",
+  "http://localhost:5261/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx",
+  "http://localhost:5261/components/reflex/radix_themes_color_mode_provider.js",
+  "http://localhost:5261/app_components/reflex/compiler/compiler.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@radix-ui_themes.js?v=ca575dad",
+  "http://localhost:5261/utils/theme.js",
+  "http://localhost:5261/app_components/reflex/app.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@emotion_react.js?v=b0359e4c",
+  "http://localhost:5261/utils/react-theme.js",
+  "http://localhost:5261/app/_document.js",
+  "http://localhost:5261/utils/state.js",
+  "http://localhost:5261/node_modules/.vite/deps/development-BSTWgjgX.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/rolldown-runtime-B-lAHAz2.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/react-error-boundary.js?v=1cf6ec3e",
+  "http://localhost:5261/node_modules/.vite/deps/sonner.js?v=cec0ddc1",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=0502d9ad",
+  "http://localhost:5261/env.json?import",
+  "http://localhost:5261/node_modules/vite/dist/client/env.mjs",
+  "http://localhost:5261/styles/__reflex_global_styles.css?url",
+  "http://localhost:5261/node_modules/.vite/deps/socket__io-client.js?v=d94dc74d",
+  "http://localhost:5261/reflex.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/universal-cookie.js?v=33524dda",
+  "http://localhost:5261/utils/helpers/debounce.js",
+  "http://localhost:5261/utils/helpers/throttle.js",
+  "http://localhost:5261/utils/helpers/upload.js",
+  "http://localhost:5261/node_modules/.vite/deps/createLucideIcon-B4MQ2rJG.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react_jsx-runtime.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/json5.js?v=de79cd9b",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom_client.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-router_dom.js?v=fa6dc3e9",
+  "http://localhost:5261/app/routes/_index.jsx?import",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_sun__mjs.js?v=9ecf460e",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_moon__mjs.js?v=4fdabb8d",
+  "http://localhost:5261/app_components/oidc/oidc.jsx",
+  "http://localhost:5261/public/external/reflex_enterprise/components/message_listener/messageListener.js",
+  "http://localhost:9661/_reflex/cookies/sync",
+  "http://localhost:9670/authorize?client_id=okta-client&redirect_uri=http%3A%2F%2Flocalhost%3A5261%2F_reflex_oidc_okta%2Fauthorization-code%2Fcallback&scope=openid+email+profile&state=IaIjp-OSfMdIBf5rVdrGRLmwu_1-FpxqoVqxCdF8uMyKpInjXNtE2-qO_Y4JY5vPkZRh",
+  "http://localhost:5261/_reflex_oidc_okta/authorization-code/callback?code=LhvkzkJSKIqxWE2wHSrj3g&state=IaIjp-OSfMdIBf5rVdrGRLmwu_1-FpxqoVqxCdF8uMyKpInjXNtE2-qO_Y4JY5vPkZRh4_qHTd-gCeT6X4mxIw",
+  "http://localhost:5261/@id/__x00__virtual:react-router/browser-manifest",
+  "http://localhost:5261/app/entry.client.js",
+  "http://localhost:5261/app/root.jsx",
+  "http://localhost:5261/styles/__reflex_global_styles.css",
+  "http://localhost:5261/@react-router/critical.css?pathname=/_reflex_oidc_okta/authorization-code/callback",
+  "http://localhost:5261/@id/__x00__virtual:react-router/inject-hmr-runtime",
+  "http://localhost:5261/@vite/client",
+  "http://localhost:5261/@id/__x00__virtual:react-router/hmr-runtime",
+  "http://localhost:5261/node_modules/.vite/deps/react-router.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react.js?v=fa6dc3e9",
+  "http://localhost:5261/utils/context.js",
+  "http://localhost:5261/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx",
+  "http://localhost:5261/components/reflex/radix_themes_color_mode_provider.js",
+  "http://localhost:5261/app_components/reflex/compiler/compiler.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@radix-ui_themes.js?v=ca575dad",
+  "http://localhost:5261/utils/theme.js",
+  "http://localhost:5261/app_components/reflex/app.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@emotion_react.js?v=b0359e4c",
+  "http://localhost:5261/utils/react-theme.js",
+  "http://localhost:5261/app/_document.js",
+  "http://localhost:5261/utils/state.js",
+  "http://localhost:5261/node_modules/.vite/deps/development-BSTWgjgX.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/rolldown-runtime-B-lAHAz2.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/react_jsx-runtime.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/vite/dist/client/env.mjs",
+  "http://localhost:5261/node_modules/.vite/deps/react-error-boundary.js?v=1cf6ec3e",
+  "http://localhost:5261/node_modules/.vite/deps/sonner.js?v=cec0ddc1",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=0502d9ad",
+  "http://localhost:5261/env.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/createLucideIcon-B4MQ2rJG.js?v=3d1e7b0f",
+  "http://localhost:5261/styles/__reflex_global_styles.css?url",
+  "http://localhost:5261/node_modules/.vite/deps/socket__io-client.js?v=d94dc74d",
+  "http://localhost:5261/reflex.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/universal-cookie.js?v=33524dda",
+  "http://localhost:5261/utils/helpers/debounce.js",
+  "http://localhost:5261/utils/helpers/throttle.js",
+  "http://localhost:5261/utils/helpers/upload.js",
+  "http://localhost:5261/node_modules/.vite/deps/json5.js?v=de79cd9b",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom_client.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-router_dom.js?v=fa6dc3e9",
+  "http://localhost:5261/app/routes/[_reflex_oidc_okta].[authorization-code].[callback]._index.jsx?import",
+  "http://localhost:5261/app_components/reflex_enterprise/app.jsx",
+  "http://localhost:9661/_reflex/cookies/sync",
+  "http://localhost:5261/app/routes/_index.jsx?import",
+  "http://localhost:9661/_reflex/cookies/sync",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_sun__mjs.js?v=9ecf460e",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_moon__mjs.js?v=4fdabb8d",
+  "http://localhost:5261/app_components/oidc/oidc.jsx",
+  "http://localhost:5261/public/external/reflex_enterprise/components/message_listener/messageListener.js",
+  "http://localhost:5261/",
+  "http://localhost:5261/@id/__x00__virtual:react-router/browser-manifest",
+  "http://localhost:5261/app/entry.client.js",
+  "http://localhost:5261/app/root.jsx",
+  "http://localhost:5261/styles/__reflex_global_styles.css",
+  "http://localhost:5261/@react-router/critical.css?pathname=/",
+  "http://localhost:5261/@id/__x00__virtual:react-router/inject-hmr-runtime",
+  "http://localhost:5261/@vite/client",
+  "http://localhost:5261/@id/__x00__virtual:react-router/hmr-runtime",
+  "http://localhost:5261/node_modules/.vite/deps/react-router.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react.js?v=fa6dc3e9",
+  "http://localhost:5261/utils/context.js",
+  "http://localhost:5261/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx",
+  "http://localhost:5261/components/reflex/radix_themes_color_mode_provider.js",
+  "http://localhost:5261/app_components/reflex/compiler/compiler.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@radix-ui_themes.js?v=ca575dad",
+  "http://localhost:5261/utils/theme.js",
+  "http://localhost:5261/app_components/reflex/app.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@emotion_react.js?v=b0359e4c",
+  "http://localhost:5261/utils/react-theme.js",
+  "http://localhost:5261/app/_document.js",
+  "http://localhost:5261/utils/state.js",
+  "http://localhost:5261/node_modules/.vite/deps/development-BSTWgjgX.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/rolldown-runtime-B-lAHAz2.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/react_jsx-runtime.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/vite/dist/client/env.mjs",
+  "http://localhost:5261/node_modules/.vite/deps/react-error-boundary.js?v=1cf6ec3e",
+  "http://localhost:5261/node_modules/.vite/deps/sonner.js?v=cec0ddc1",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=0502d9ad",
+  "http://localhost:5261/env.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/createLucideIcon-B4MQ2rJG.js?v=3d1e7b0f",
+  "http://localhost:5261/styles/__reflex_global_styles.css?url",
+  "http://localhost:5261/node_modules/.vite/deps/socket__io-client.js?v=d94dc74d",
+  "http://localhost:5261/reflex.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/universal-cookie.js?v=33524dda",
+  "http://localhost:5261/utils/helpers/debounce.js",
+  "http://localhost:5261/utils/helpers/throttle.js",
+  "http://localhost:5261/utils/helpers/upload.js",
+  "http://localhost:5261/node_modules/.vite/deps/json5.js?v=de79cd9b",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom_client.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-router_dom.js?v=fa6dc3e9",
+  "http://localhost:5261/app/routes/_index.jsx?import",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_sun__mjs.js?v=9ecf460e",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_moon__mjs.js?v=4fdabb8d",
+  "http://localhost:5261/app_components/oidc/oidc.jsx",
+  "http://localhost:5261/public/external/reflex_enterprise/components/message_listener/messageListener.js",
+  "http://localhost:9670/authorize?client_id=databricks-client&redirect_uri=http%3A%2F%2Flocalhost%3A5261%2F_reflex_oidc_databricks%2Fauthorization-code%2Fcallback&scope=all-apis+offline_access+openid+email+profile&state=Cd-Y3hnwg5nv1sv8t5FJHGIHf91Ra92k",
+  "http://localhost:5261/_reflex_oidc_databricks/authorization-code/callback?code=LNm-wHWWv1iR_IETANZdiA&state=Cd-Y3hnwg5nv1sv8t5FJHGIHf91Ra92ksRj8UEDvjQw0KWfnaXH1IqDfN63A9gq8KmGnqaBY1_BaybP8XjkkHQ",
+  "http://localhost:5261/@id/__x00__virtual:react-router/browser-manifest",
+  "http://localhost:5261/app/entry.client.js",
+  "http://localhost:5261/app/root.jsx",
+  "http://localhost:5261/styles/__reflex_global_styles.css",
+  "http://localhost:5261/@react-router/critical.css?pathname=/_reflex_oidc_databricks/authorization-code/callback",
+  "http://localhost:5261/@id/__x00__virtual:react-router/inject-hmr-runtime",
+  "http://localhost:5261/@vite/client",
+  "http://localhost:5261/@id/__x00__virtual:react-router/hmr-runtime",
+  "http://localhost:5261/node_modules/.vite/deps/react-router.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react.js?v=fa6dc3e9",
+  "http://localhost:5261/utils/context.js",
+  "http://localhost:5261/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx",
+  "http://localhost:5261/components/reflex/radix_themes_color_mode_provider.js",
+  "http://localhost:5261/app_components/reflex/compiler/compiler.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@radix-ui_themes.js?v=ca575dad",
+  "http://localhost:5261/utils/theme.js",
+  "http://localhost:5261/app_components/reflex/app.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@emotion_react.js?v=b0359e4c",
+  "http://localhost:5261/utils/react-theme.js",
+  "http://localhost:5261/app/_document.js",
+  "http://localhost:5261/utils/state.js",
+  "http://localhost:5261/node_modules/.vite/deps/development-BSTWgjgX.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/rolldown-runtime-B-lAHAz2.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/react_jsx-runtime.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/vite/dist/client/env.mjs",
+  "http://localhost:5261/node_modules/.vite/deps/react-error-boundary.js?v=1cf6ec3e",
+  "http://localhost:5261/node_modules/.vite/deps/sonner.js?v=cec0ddc1",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=0502d9ad",
+  "http://localhost:5261/env.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/createLucideIcon-B4MQ2rJG.js?v=3d1e7b0f",
+  "http://localhost:5261/styles/__reflex_global_styles.css?url",
+  "http://localhost:5261/node_modules/.vite/deps/socket__io-client.js?v=d94dc74d",
+  "http://localhost:5261/reflex.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/universal-cookie.js?v=33524dda",
+  "http://localhost:5261/utils/helpers/debounce.js",
+  "http://localhost:5261/utils/helpers/throttle.js",
+  "http://localhost:5261/utils/helpers/upload.js",
+  "http://localhost:5261/node_modules/.vite/deps/json5.js?v=de79cd9b",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom_client.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-router_dom.js?v=fa6dc3e9",
+  "http://localhost:5261/app/routes/[_reflex_oidc_databricks].[authorization-code].[callback]._index.jsx?import",
+  "http://localhost:5261/app_components/reflex_enterprise/app.jsx",
+  "http://localhost:9661/_reflex/cookies/sync",
+  "http://localhost:5261/app/routes/_index.jsx?import",
+  "http://localhost:9661/_reflex/cookies/sync",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_sun__mjs.js?v=9ecf460e",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_moon__mjs.js?v=4fdabb8d",
+  "http://localhost:5261/app_components/oidc/oidc.jsx",
+  "http://localhost:5261/public/external/reflex_enterprise/components/message_listener/messageListener.js",
+  "http://localhost:5261/node_modules/.vite/deps/react-moment.js?v=591e07fd",
+  "http://localhost:9661/_reflex/cookies/sync",
+  "http://localhost:9670/logout?state=omTtjBa6Kl1xXfMLcIdSz3eEBAU_TCqckeTEn9609fSqvuppFf3UVIVIP53YXR5oMrQI1RsOQxIfIJoD-gU4Jw&id_token_hint=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5LTEifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0Ojk2NzAiLCJzdWIiOiJ",
+  "http://localhost:5261/",
+  "http://localhost:5261/@id/__x00__virtual:react-router/browser-manifest",
+  "http://localhost:5261/app/entry.client.js",
+  "http://localhost:5261/app/root.jsx",
+  "http://localhost:5261/styles/__reflex_global_styles.css",
+  "http://localhost:5261/@react-router/critical.css?pathname=/",
+  "http://localhost:5261/@id/__x00__virtual:react-router/inject-hmr-runtime",
+  "http://localhost:5261/@vite/client",
+  "http://localhost:5261/@id/__x00__virtual:react-router/hmr-runtime",
+  "http://localhost:5261/node_modules/.vite/deps/react-router.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react.js?v=fa6dc3e9",
+  "http://localhost:5261/utils/context.js",
+  "http://localhost:5261/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx",
+  "http://localhost:5261/components/reflex/radix_themes_color_mode_provider.js",
+  "http://localhost:5261/app_components/reflex/compiler/compiler.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@radix-ui_themes.js?v=ca575dad",
+  "http://localhost:5261/utils/theme.js",
+  "http://localhost:5261/app_components/reflex/app.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@emotion_react.js?v=b0359e4c",
+  "http://localhost:5261/utils/react-theme.js",
+  "http://localhost:5261/app/_document.js",
+  "http://localhost:5261/utils/state.js",
+  "http://localhost:5261/node_modules/.vite/deps/development-BSTWgjgX.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/rolldown-runtime-B-lAHAz2.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/react_jsx-runtime.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-error-boundary.js?v=1cf6ec3e",
+  "http://localhost:5261/node_modules/.vite/deps/sonner.js?v=cec0ddc1",
+  "http://localhost:5261/node_modules/vite/dist/client/env.mjs",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=0502d9ad",
+  "http://localhost:5261/env.json?import",
+  "http://localhost:5261/styles/__reflex_global_styles.css?url",
+  "http://localhost:5261/node_modules/.vite/deps/createLucideIcon-B4MQ2rJG.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/socket__io-client.js?v=d94dc74d",
+  "http://localhost:5261/reflex.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/universal-cookie.js?v=33524dda",
+  "http://localhost:5261/utils/helpers/debounce.js",
+  "http://localhost:5261/utils/helpers/throttle.js",
+  "http://localhost:5261/utils/helpers/upload.js",
+  "http://localhost:5261/node_modules/.vite/deps/json5.js?v=de79cd9b",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom_client.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-router_dom.js?v=fa6dc3e9",
+  "http://localhost:5261/app/routes/_index.jsx?import",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_sun__mjs.js?v=9ecf460e",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_moon__mjs.js?v=4fdabb8d",
+  "http://localhost:5261/app_components/oidc/oidc.jsx",
+  "http://localhost:5261/public/external/reflex_enterprise/components/message_listener/messageListener.js",
+  "http://localhost:5261/node_modules/.vite/deps/react-moment.js?v=591e07fd",
+  "http://localhost:5261/iframe",
+  "http://localhost:5261/@id/__x00__virtual:react-router/browser-manifest",
+  "http://localhost:5261/app/entry.client.js",
+  "http://localhost:5261/app/root.jsx",
+  "http://localhost:5261/styles/__reflex_global_styles.css",
+  "http://localhost:5261/@react-router/critical.css?pathname=/iframe",
+  "http://localhost:5261/@id/__x00__virtual:react-router/inject-hmr-runtime",
+  "http://localhost:5261/@vite/client",
+  "http://localhost:5261/@id/__x00__virtual:react-router/hmr-runtime",
+  "http://localhost:5261/node_modules/.vite/deps/react-router.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react.js?v=fa6dc3e9",
+  "http://localhost:5261/utils/context.js",
+  "http://localhost:5261/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx",
+  "http://localhost:5261/components/reflex/radix_themes_color_mode_provider.js",
+  "http://localhost:5261/app_components/reflex/compiler/compiler.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@radix-ui_themes.js?v=ca575dad",
+  "http://localhost:5261/utils/theme.js",
+  "http://localhost:5261/app_components/reflex/app.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@emotion_react.js?v=b0359e4c",
+  "http://localhost:5261/utils/react-theme.js",
+  "http://localhost:5261/app/_document.js",
+  "http://localhost:5261/utils/state.js",
+  "http://localhost:5261/node_modules/.vite/deps/development-BSTWgjgX.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/rolldown-runtime-B-lAHAz2.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/react_jsx-runtime.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/vite/dist/client/env.mjs",
+  "http://localhost:5261/node_modules/.vite/deps/react-error-boundary.js?v=1cf6ec3e",
+  "http://localhost:5261/node_modules/.vite/deps/sonner.js?v=cec0ddc1",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=0502d9ad",
+  "http://localhost:5261/env.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/createLucideIcon-B4MQ2rJG.js?v=3d1e7b0f",
+  "http://localhost:5261/styles/__reflex_global_styles.css?url",
+  "http://localhost:5261/node_modules/.vite/deps/socket__io-client.js?v=d94dc74d",
+  "http://localhost:5261/reflex.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/universal-cookie.js?v=33524dda",
+  "http://localhost:5261/utils/helpers/debounce.js",
+  "http://localhost:5261/utils/helpers/throttle.js",
+  "http://localhost:5261/utils/helpers/upload.js",
+  "http://localhost:5261/node_modules/.vite/deps/json5.js?v=de79cd9b",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom_client.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-router_dom.js?v=fa6dc3e9",
+  "http://localhost:5261/app/routes/[iframe]._index.jsx?import",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_sun__mjs.js?v=9ecf460e",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_moon__mjs.js?v=4fdabb8d",
+  "http://localhost:5261/app_components/oidc/oidc.jsx",
+  "http://localhost:5261/public/external/reflex_enterprise/components/message_listener/messageListener.js",
+  "http://localhost:5261/",
+  "http://localhost:5261/@id/__x00__virtual:react-router/browser-manifest",
+  "http://localhost:5261/app/entry.client.js",
+  "http://localhost:5261/app/root.jsx",
+  "http://localhost:5261/styles/__reflex_global_styles.css",
+  "http://localhost:5261/@react-router/critical.css?pathname=/",
+  "http://localhost:5261/@id/__x00__virtual:react-router/inject-hmr-runtime",
+  "http://localhost:5261/@vite/client",
+  "http://localhost:5261/@id/__x00__virtual:react-router/hmr-runtime",
+  "http://localhost:5261/node_modules/.vite/deps/react-router.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react.js?v=fa6dc3e9",
+  "http://localhost:5261/utils/context.js",
+  "http://localhost:5261/utils/components/Errorboundary_errorboundary_ad430eb9ef763ec324d29701c1abc345.jsx",
+  "http://localhost:5261/components/reflex/radix_themes_color_mode_provider.js",
+  "http://localhost:5261/app_components/reflex/compiler/compiler.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@radix-ui_themes.js?v=ca575dad",
+  "http://localhost:5261/utils/theme.js",
+  "http://localhost:5261/app_components/reflex/app.jsx",
+  "http://localhost:5261/node_modules/.vite/deps/@emotion_react.js?v=b0359e4c",
+  "http://localhost:5261/utils/react-theme.js",
+  "http://localhost:5261/app/_document.js",
+  "http://localhost:5261/utils/state.js",
+  "http://localhost:5261/node_modules/.vite/deps/development-BSTWgjgX.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/rolldown-runtime-B-lAHAz2.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/react_jsx-runtime.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/vite/dist/client/env.mjs",
+  "http://localhost:5261/node_modules/.vite/deps/react-error-boundary.js?v=1cf6ec3e",
+  "http://localhost:5261/node_modules/.vite/deps/sonner.js?v=cec0ddc1",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_wifi-off__mjs.js?v=0502d9ad",
+  "http://localhost:5261/env.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/createLucideIcon-B4MQ2rJG.js?v=3d1e7b0f",
+  "http://localhost:5261/node_modules/.vite/deps/socket__io-client.js?v=d94dc74d",
+  "http://localhost:5261/reflex.json?import",
+  "http://localhost:5261/node_modules/.vite/deps/universal-cookie.js?v=33524dda",
+  "http://localhost:5261/utils/helpers/debounce.js",
+  "http://localhost:5261/utils/helpers/throttle.js",
+  "http://localhost:5261/utils/helpers/upload.js",
+  "http://localhost:5261/styles/__reflex_global_styles.css?url",
+  "http://localhost:5261/node_modules/.vite/deps/json5.js?v=de79cd9b",
+  "http://localhost:5261/node_modules/.vite/deps/react-dom_client.js?v=fa6dc3e9",
+  "http://localhost:5261/node_modules/.vite/deps/react-router_dom.js?v=fa6dc3e9",
+  "http://localhost:5261/app/routes/_index.jsx?import",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_sun__mjs.js?v=9ecf460e",
+  "http://localhost:5261/node_modules/.vite/deps/lucide-react_dist_esm_icons_moon__mjs.js?v=4fdabb8d",
+  "http://localhost:5261/app_components/oidc/oidc.jsx",
+  "http://localhost:5261/public/external/reflex_enterprise/components/message_listener/messageListener.js",
+  "http://localhost:5261/node_modules/.vite/deps/react-moment.js?v=591e07fd"
+ ],
+ "end_time": "03:35:07"
+}
