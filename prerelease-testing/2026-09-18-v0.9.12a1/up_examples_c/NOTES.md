@@ -358,3 +358,203 @@ not mine, and were left alone.
 
 `.web/` and `node_modules/` are excluded from `apps/` in this artifact dir; they remain
 in the scratchpad for a follow-up agent and should be deleted when the campaign ends.
+
+---
+
+## VERIFICATION
+
+Independent adversarial verification of the two findings above, run from the written
+material alone (NOTES.md + `scripts/drive_quiz.py`), no access to the explorer's session.
+Working dir `$SB/apps/verify_up_examples_c/`, reserved ports frontend 4040-4042 /
+backend 9040-9042. Everything from PyPI; nothing installed from or run inside
+`/home/user/reflex`. All processes killed and ports verified free at the end.
+
+`SB=/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad`
+
+Evidence: `verification/`.
+
+### Venvs used
+
+| venv | contents | how made |
+|---|---|---|
+| `$SB/envs/shared` | reflex 0.9.12a1 + full alpha train (prebuilt, read-only) | campaign-provided |
+| `$SB/envs/prev` | reflex 0.9.11.post1 + stable components (prebuilt, read-only) | campaign-provided |
+| `$SB/envs/vupc_prev` | reflex 0.9.11.post1 (mine, for the resolution experiments) | `cd $SB && uv venv $SB/envs/vupc_prev --python 3.11 && uv pip install --python $SB/envs/vupc_prev/bin/python 'reflex==0.9.11.post1'` |
+| `$SB/envs/vupc_mixed` | reflex 0.9.12a1 core + STABLE components (the naive-upgrade outcome) | `cd $SB && uv venv $SB/envs/vupc_mixed --python 3.11 && uv pip install --python .../bin/python 'reflex==0.9.11.post1' && uv pip install --python .../bin/python --upgrade 'reflex==0.9.12a1'` |
+
+```
+$ uv pip freeze --python $SB/envs/shared/bin/python | grep -i reflex
+reflex==0.9.12a1  reflex-base==0.9.12a1  reflex-components-code==0.9.6a1
+reflex-components-core==0.9.10a1  reflex-components-dataeditor==0.9.3a1
+reflex-components-gridjs==0.9.2a1  reflex-components-lucide==1.0.4
+reflex-components-markdown==0.9.4a1  reflex-components-moment==0.9.4
+reflex-components-plotly==0.9.7a1  reflex-components-radix==0.9.10a1
+reflex-components-react-player==0.9.2  reflex-components-recharts==0.9.4a1
+reflex-components-sonner==0.9.4a1  reflex-hosting-cli==0.1.72
+
+$ uv pip freeze --python $SB/envs/prev/bin/python | grep -i reflex
+reflex==0.9.11.post1  reflex-base==0.9.11.post1  reflex-components-code==0.9.5
+reflex-components-core==0.9.9  reflex-components-dataeditor==0.9.2
+reflex-components-gridjs==0.9.1  reflex-components-lucide==1.0.4
+reflex-components-markdown==0.9.3  reflex-components-moment==0.9.4
+reflex-components-plotly==0.9.6  reflex-components-radix==0.9.9
+reflex-components-react-player==0.9.2  reflex-components-recharts==0.9.3
+reflex-components-sonner==0.9.3  reflex-hosting-cli==0.1.72
+
+$ uv pip freeze --python $SB/envs/vupc_mixed/bin/python | grep -i reflex
+reflex==0.9.12a1  reflex-base==0.9.12a1  reflex-components-code==0.9.5
+reflex-components-core==0.9.9  reflex-components-dataeditor==0.9.2
+reflex-components-gridjs==0.9.1  reflex-components-lucide==1.0.4
+reflex-components-markdown==0.9.3  reflex-components-moment==0.9.4
+reflex-components-plotly==0.9.6  reflex-components-radix==0.9.9
+reflex-components-react-player==0.9.2  reflex-components-recharts==0.9.3
+reflex-components-sonner==0.9.3  reflex-hosting-cli==0.1.72
+```
+
+### Commands run
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+D=$SB/apps/verify_up_examples_c
+mkdir -p $D/_logs $D/_shots $D/_scripts
+for v in new prev mixed; do cp -r /home/user/reflex-dev/reflex-examples/quiz $D/quiz_$v; done
+cp <cluster>/scripts/drive_quiz.py $D/_scripts/
+
+# three servers, one at a time, each killed before the next
+cd $D/quiz_new   && REFLEX_TELEMETRY_ENABLED=false nohup $SB/envs/shared/bin/reflex     run --frontend-port 4040 --backend-port 9040 > $D/_logs/quiz_new.log   2>&1 &
+cd $D/quiz_prev  && REFLEX_TELEMETRY_ENABLED=false nohup $SB/envs/prev/bin/reflex       run --frontend-port 4041 --backend-port 9041 > $D/_logs/quiz_prev.log  2>&1 &
+cd $D/quiz_mixed && REFLEX_TELEMETRY_ENABLED=false nohup $SB/envs/vupc_mixed/bin/reflex run --frontend-port 4042 --backend-port 9042 > $D/_logs/quiz_mixed.log 2>&1 &
+
+cd $D && NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 \
+  $SB/envs/driver/bin/python $D/_scripts/drive_quiz.py http://localhost:4040 vquiz_new   $D/_shots
+# ... same for 4041 -> vquiz_prev and 4042 -> vquiz_mixed
+```
+
+---
+
+### Issue 1 — React "uncontrolled to controlled" warning on `rx.checkbox` (quiz): **CONFIRMED as written, NOT a regression, not a release defect**
+
+The repro in finding (A) is complete and reproduced on the first attempt.
+
+- **0.9.12a1** (`$SB/envs/shared`, port 4040): exactly 3 `console_warnings`, all the
+  claimed text, one per checkbox clicked. All 13 flow assertions pass, `score_text`
+  `100%`, `table_rows` 3, `checkboxes_checked_after_back` 0, zero console errors, zero
+  page errors, zero failed requests, zero 4xx/5xx.
+- **0.9.11.post1** (`$SB/envs/prev`, port 4041): **identical** — same 3 warnings, same
+  text, same `results` block field-for-field (only the port differs in the two URL
+  fields). The post-click screenshots are **byte-identical** across versions
+  (md5 `ae68a21046d1217bb7073d28eef743c3`).
+
+Evidence: `verification/drive_quiz_results.md`, `verification/vquiz_{new,prev,mixed}_02_answered.png`,
+`verification/vquiz_{new,prev,mixed}.tail.log`.
+
+Attempts to refute it as *not* pre-existing all failed, and the frontend evidence
+explains why the version cannot matter:
+
+- `.web/package.json` is identical on the two versions for everything involved:
+  `@radix-ui/themes` 3.3.0, `react`/`react-dom` 19.2.8, `lucide-react` 1.26.0. The train
+  did not move the component library that emits the warning.
+- The warning string is not React's; it comes from the bundled
+  `@radix-ui/react-use-controllable-state/dist/index.mjs:22-31`, a dev-only
+  `console.warn` fired from `useControllableState` when `prop` flips from `undefined` to
+  defined, with `caller = "Checkbox"`
+  (`@radix-ui/react-checkbox/dist/index.mjs:33-38` passes `prop: checkedProp`,
+  `caller: CHECKBOX_NAME`). It is third-party dev-mode noise, absent from a prod build.
+- **Correction to the explorer's root-cause sentence.** The direction is right ("the
+  app's own usage, no `checked` prop") but the mechanism as written — "flips to
+  controlled the first time state flows back from the backend" — is not what the
+  compiled output shows. Reflex emits *no* `checked` prop at all, on either version:
+
+  ```
+  # 0.9.12a1  .web/app_components/quiz/quiz.jsx:100
+  jsx(RadixThemesCheckbox,{...mergeSlotProps(rest, ({ onCheckedChange:on_change_…, size:"2" }))},)
+  # 0.9.11.post1 .web/app_components/quiz/quiz.jsx:84
+  jsx(RadixThemesCheckbox,{onCheckedChange:on_change_…, size:"2"},)
+  ```
+
+  No Reflex state var is bound to `checked`, so the flip happens inside
+  `@radix-ui/themes`' own Checkbox wrapper on first interaction, not on a backend delta.
+  This does not change the verdict; it matters only so a fix agent does not go looking
+  for a Reflex state round-trip that isn't there.
+
+Incidental datapoint from the same diff: the generated checkbox is the clearest small
+example of #6850 in the compiled output (`mergeSlotProps(rest, …)` replacing direct prop
+spreading, 12 occurrences in this one file vs 0 on the previous stable), and it changed
+nothing observable here.
+
+**Verdict: confirmed as described, severity low, NOT a regression, NOT actionable for
+this release.** Correctly filed as a "do not re-discover this" note. No fix agent action.
+
+---
+
+### Issue 2 — naive `--upgrade --prerelease=allow` pulls every component alpha: **OBSERVATION REPRODUCES, CONCLUSION AND ROOT CAUSE REFUTED**
+
+The dry run in finding (B) reproduces exactly — with `--prerelease=allow`, all eleven
+packages move to the alpha set (full output: `verification/upgrade_resolution_dryruns.txt`,
+section A). That part is correct.
+
+But the finding's *conclusion* — "the mixed-version hazard the protocol warns about did
+not reproduce here", and the root cause "a user who omits `--prerelease=allow` gets no
+alpha at all rather than a mixed set" — is **wrong**. The explorer only ran the command
+with the flag. Running it without the flag, which is what a real user upgrading to a
+named alpha types, produces precisely the mixed set the protocol warns about:
+
+```
+$ uv pip install --python $SB/envs/vupc_prev/bin/python --upgrade --dry-run 'reflex==0.9.12a1'
+Resolved 40 packages in 198ms
+ - reflex==0.9.11.post1        + reflex==0.9.12a1
+ - reflex-base==0.9.11.post1   + reflex-base==0.9.12a1
+                                 (all ten reflex-components-* stay at their STABLE versions)
+
+$ .../bin/python -m pip install --upgrade --dry-run 'reflex==0.9.12a1'
+Would install reflex-0.9.12a1 reflex-base-0.9.12a1
+```
+
+Both resolvers agree, and for the same reason: an explicit `==<prerelease>` specifier is
+enough to allow that one package's prerelease (PEP 440 / pip and uv both do this), so no
+`--prerelease` flag is needed to get the alpha core; but the component packages are only
+reachable through reflex's **floor** pins, which the stable versions already satisfy:
+
+```
+Requires-Dist: reflex-base==0.9.12a1            <- exact, so reflex-base follows core
+Requires-Dist: reflex-components-core>=0.9.6    <- satisfied by stable 0.9.9
+Requires-Dist: reflex-components-radix>=0.9.9   <- satisfied by stable 0.9.9
+... (all other reflex-components-* are >=0.9.0)
+```
+
+(`verification/reflex_component_pins.txt`; the pin *shape* is byte-identical in
+0.9.11.post1, so this is pre-existing and unchanged by this train.)
+
+I then built that mixed venv for real (`$SB/envs/vupc_mixed`) and ran `quiz` on it
+(port 4042). It **works** — the driver's `results` block is identical to both other runs,
+and the compiled output carries the new core's changes even with stable components
+(`mergeSlotProps` 12x, `mergician` in `.web/package.json`, the #7068 `rx_router_*` state
+keys), because those live in `reflex`/`reflex-base`, not in the component packages. So
+the mixed set is silently *plausible*, which is exactly what makes it a QA hazard: an
+agent or user who upgrades naively gets a half-alpha install that starts and runs, and
+would attribute any component-side bug to the wrong version pair.
+
+Corrected guidance, replacing the finding's "belt-and-braces rather than necessary":
+
+- The brief's instruction to pass `--prerelease=allow` **and** name the component alphas
+  is **necessary**, not redundant. `--prerelease=allow` is what makes the component
+  alphas selectable at all; naming them is what makes the result deterministic.
+- The earlier campaign's mixed-version observation is **correct and still reproduces**;
+  it should not be reconciled away.
+- This is still **not a defect in the release**. Floor-only component pins are
+  deliberate and unchanged; on a final (non-prerelease) release `--upgrade` moves the
+  components too, so the hazard is specific to installing a named prerelease.
+
+**Verdict: not a release defect (as filed), but the finding's stated conclusion and root
+cause are refuted and must not be carried into FINDINGS.md as written.** No fix agent
+action on the framework; the campaign brief's advice stands as originally written.
+
+---
+
+### Cleanup
+
+Servers 4040/9040, 4041/9041, 4042/9042 killed by pid;
+`python3 $SB/bin/ports.py 4040 4041 4042 9040 9041 9042` returns empty. No redis, no
+browser processes left. `$SB/envs/vupc_prev` and `$SB/envs/vupc_mixed` and
+`$SB/apps/verify_up_examples_c/` remain in the scratchpad for re-checking and should be
+deleted when the campaign ends.
