@@ -266,6 +266,11 @@ built by uv because it still carries the workspace `[tool.uv.sources]`; pip inst
 Enterprise import sweep (FINDING-001), framework-only metaclass repro, build-sdk rename/URL precedence,
 hosting-cli non-interactive defaults. `orch_probes/NOTES.md`.
 
+### `orch_pymatrix` (pass 3, anomaly 0, fail 0)
+The train on Python 3.10, 3.14 and 3.15.0rc2: install, import, `reflex init`, dev server and a Chromium page load all
+clean; the lazy loader's native PEP 810 path is active on 3.15 (#6930 provisional support holds); 3.10 prints its
+deprecation notice. `orch_pymatrix/NOTES.md`.
+
 ### `orch_otel` (pass 4, anomaly 0, fail 0)
 reflex-otel 0.1.0 on 0.9.12a1: the initial dev compile worker now exports the complete `reflex.compile`
 `trigger=initial` tree (3 stage children, 0 orphans) on a first and a second run; `hot_reload` and `export`
