@@ -18,6 +18,19 @@ arm of the rubric that put it there, so a maintainer can disagree with a specifi
 
 No open PR addresses FINDING-001, -003, -004 or -007.
 
+## Tracking issues (filed 2026-09-19)
+
+| finding | issue | fix work |
+|---|---|---|
+| FINDING-001 State metaclass conflict (CRITICAL, regression) | [#7211](https://github.com/reflex-dev/reflex/issues/7211) | reflex: `fix/finding-001-state-metaclass`; reflex-enterprise: `fix/reflex-0.9.12-compat` |
+| FINDING-003 withheld uncached var never re-sent (HIGH, regression) | [#7212](https://github.com/reflex-dev/reflex/issues/7212) | reflex: `fix/finding-003-delta-memo` |
+| FINDING-011 REST session-token redaction no-op (HIGH, security, regression) | [#7214](https://github.com/reflex-dev/reflex/issues/7214) | reflex-enterprise: `fix/reflex-0.9.12-compat`; reflex: breaking-change note |
+| FINDING-017 supervisor socket hang in dev (MEDIUM, regression) | [#7213](https://github.com/reflex-dev/reflex/issues/7213) | reflex: `fix/finding-017-supervisor-socket` |
+| FINDING-012 data_editor portal swallowed by the badge (HIGH impact, pre-existing) | [#6143](https://github.com/reflex-dev/reflex/issues/6143) (existing issue, root cause posted as a comment) | reflex: `fix/finding-012-badge-portal` |
+
+Fix agents (Opus, xhigh) work in `/home/user/wt/<name>` worktrees from `origin/main`; briefs under `fixes/briefs/`,
+reports and evidence under `fixes/<name>/`. Branches are local until the maintainers approve pushing them.
+
 ## Fix before release
 
 ### Security
