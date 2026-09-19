@@ -1,0 +1,4 @@
+174:'mergician@v2.0.2', 'react@19.2.8', '@react-router/node@8.4.0', 'isbot@5.2.2', 
+187:Debug: installed mergician@2.0.2
+242:Got progress {'loaded': 202, 'total': 202, 'progress': 1}
+243:Got progress {'loaded': 204, 'total': 204, 'progress': 1}

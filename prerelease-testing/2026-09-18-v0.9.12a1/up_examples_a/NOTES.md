@@ -375,3 +375,141 @@ logs/states-0911/           the two .states pickles written by 0.9.11.post1
 packagejson/                .web/package.json before (`-base`) and after (`-up`) the upgrade
 screenshots/                21 PNGs: base vs up for each app plus the extras/persist probes
 ```
+
+---
+
+## VERIFICATION
+
+Independent adversarial verification of F1 and F2, run 2026-09-19 from the written material only
+(this NOTES.md + `scripts/upload_probe.py`), in a fresh working dir
+`$SB/apps/verify_up_examples_a/` on reserved ports **frontend 3960 / backend 8960**.
+Evidence: `verification/`.
+
+Venvs used (shared, read-only — no installs performed):
+`$SB/envs/shared` = 0.9.12a1 train, `$SB/envs/prev` = 0.9.11.post1, `$SB/envs/driver` = Playwright.
+Resolved versions recorded in `verification/freeze-0.9.12a1.txt` and
+`verification/freeze-0.9.11.post1.txt` (`uv pip freeze --python <venv>/bin/python | grep -i reflex`).
+
+Setup (both apps copied out of the checkout, never run in place):
+
+```bash
+SB=/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad
+W=$SB/apps/verify_up_examples_a; mkdir -p $W/logs $W/shots
+tar -C /home/user/reflex-dev/reflex-examples --exclude=.web --exclude=node_modules \
+    --exclude=.states --exclude=__pycache__ -cf - upload | tar -C $W -xf -
+cp /home/user/reflex/prerelease-testing/2026-09-18-v0.9.12a1/up_examples_a/scripts/upload_probe.py $W/
+rm -rf $W/upload/uploaded_files
+```
+
+### F1 — `upload` example never refreshes its file list — **CONFIRMED (not a reflex defect, not a regression)**
+
+Commands:
+
+```bash
+# 0.9.12a1
+cd $W/upload && REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex run \
+    --frontend-port 3960 --backend-port 8960 --loglevel debug > $W/logs/upload-up.server.log 2>&1 &
+cd $W && NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 \
+    $SB/envs/driver/bin/python $W/upload_probe.py http://localhost:3960/ up12  $W/shots
+cd $W && NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 \
+    $SB/envs/driver/bin/python $W/upload_probe.py http://localhost:3960/ up12b $W/shots   # 2nd, fresh context
+
+# 0.9.11.post1 baseline (separate app copy, uploaded_files pre-seeded with seed.txt)
+cp -r /home/user/reflex-dev/reflex-examples/upload/* $W/upload_prev/ ; echo seed > $W/upload_prev/uploaded_files/seed.txt
+cd $W/upload_prev && REFLEX_TELEMETRY_ENABLED=false $SB/envs/prev/bin/reflex run \
+    --frontend-port 3960 --backend-port 8960 --loglevel debug > $W/logs/upload-prev.server.log 2>&1 &
+cd $W && NO_PROXY=... $SB/envs/driver/bin/python $W/upload_probe.py http://localhost:3960/ prev $W/shots
+```
+
+Results:
+
+| run | version | files on disk at hydrate | `a_texts` after upload | after reload |
+|---|---|---|---|---|
+| `up12`  | 0.9.12a1 | (none) | `[]` | `[]` |
+| `up12b` | 0.9.12a1 | `probe-up12.txt` | `['probe-up12.txt']` | `['probe-up12.txt']` |
+| `prev`  | 0.9.11.post1 | `seed.txt` | `['seed.txt']` | `['seed.txt']` |
+| `fix12` | 0.9.12a1 + `@rx.var(cache=False)` | `probe-up12.txt`, `probe-up12b.txt` | **`['probe-fix12.txt','probe-up12b.txt','probe-up12.txt']`** | same |
+
+The `up12b` run is the decisive one the original repro did not include: a *fresh* browser context
+(new client token -> new state instance) renders exactly the files that were on disk when that
+instance was created, and the file uploaded during the session never appears. That isolates the
+mechanism to per-state-instance caching, not to rendering or to the upload transport. The file
+always reaches disk and `Got progress {... 'progress': 1}` is logged on both versions.
+
+Root cause confirmed in the release source: `computed_var()` takes `cache: bool = True`
+(`/home/user/reflex/packages/reflex-base/src/reflex_base/vars/base.py:3157`), so the example's
+undecorated `@rx.var def files` is cached, and with no state-var access in its body it has no
+dependency that could ever invalidate it. **The proposed fix was validated end to end**: changing
+only `@rx.var` -> `@rx.var(cache=False)` in
+`upload/upload/upload.py` (`verification/upload-cache-false.patch`) makes the newly uploaded file
+appear immediately on 0.9.12a1 (`verification/upload-probe-fix12.json`,
+`verification/upload-probe-fix12-afterupload.png`).
+
+**Regression: no** — identical on 0.9.11.post1 (`verification/upload-probe-prev.json`,
+`verification/upload-probe-prev-afterupload.png`). This is a bug in the *reflex-examples* `upload`
+app, **not in reflex**: no change belongs in this repo and it is not a release blocker. Severity
+low; the actionable outcome is an upstream one-line PR to reflex-examples.
+
+Evidence: `verification/upload-probe-{up12,up12b,prev,fix12}.json`,
+`verification/upload-probe-{up12,prev,fix12}-afterupload.png`,
+`verification/upload-{0912a1,0911post1}-server-grep.txt`, `verification/upload-cache-false.patch`.
+
+### F2 — `"mergician": "v2.0.2"` in generated package.json — **CONFIRMED (cosmetic); written repro is incomplete**
+
+The claim holds, but **the repro as written does not reproduce it**: after a bare `reflex init`
+both generated files have *empty* dependency maps, because framework deps are added at install
+time by `bun add` (`reflex/utils/js_runtimes.py:740`,
+`_pinned_args_from_constants(constants.PackageJson.DEPENDENCIES)`), not by `init`. Verified:
+
+```bash
+mkdir -p $W/mergcheck && cd $W/mergcheck && REFLEX_TELEMETRY_ENABLED=false \
+    $SB/envs/shared/bin/reflex init --template blank          # plain `reflex init` aborts on the
+                                                              # template prompt with stdin closed
+grep -n mergician .web/package.json reflex.lock/package.json  # -> no match
+```
+-> `verification/mergcheck-after-init-web-package.json` and
+`verification/mergcheck-after-init-reflexlock-package.json` both contain
+`"dependencies": {}, "devDependencies": {}` (`verification/mergcheck-init.log`).
+
+Completed repro: run any app once (the install pass is what writes the entry), then grep:
+
+```bash
+cd $W/upload && REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex run \
+    --frontend-port 3960 --backend-port 8960     # wait for "App running at"
+grep -n mergician .web/package.json reflex.lock/package.json .web/bun.lock
+```
+
+Observed (`verification/upload-0912a1-web-package.json` line 13,
+`verification/upload-0912a1-reflexlock-package.json` line 13,
+`verification/upload-0912a1-server-grep.txt`):
+
+```
+.web/package.json:13:    "mergician": "v2.0.2",     (next to "react": "19.2.8", "vite": "8.2.2")
+reflex.lock/package.json:13: "mergician": "v2.0.2",
+.web/bun.lock:417: "mergician": ["mergician@2.0.2", "", {}, "sha512-1GDF4LuMcc7Up..."]
+server log: 'mergician@v2.0.2' on the bun add command line -> "Debug: installed mergician@2.0.2"
+.web/node_modules/mergician/package.json -> 2.0.2
+```
+
+Root cause: a literal in the release source,
+`/home/user/reflex/packages/reflex-base/src/reflex_base/constants/installer.py:151`
+(`"mergician": "v2.0.2"`), added by PR #6850 whose description also spells it "pinned at `v2.0.2`".
+The value is never parsed — `_pinned_args_from_constants()` only renders `f"{name}@{version}"`
+(`reflex/utils/js_runtimes.py:574`) — so nothing in reflex compares or validates it. It is the
+**only** leading-`v` version literal in the whole source tree
+(`grep -rn '"v[0-9]\+\.[0-9]' --include=*.py reflex packages/*/src`), and the installer unit tests
+(`tests/units/reflex_base/constants/test_installer.py`) parse `react`/`vite` pins with
+`packaging.version.parse` but never touch `mergician`; `tests/units/compiler/test_memoize_plugin.py:2673`
+only asserts the *key* is present.
+
+Attempts to refute / find real impact, all negative: bun resolves it as an exact version
+(sha512 recorded, `node_modules/mergician` is 2.0.2), the restored `package.json` and the persisted
+`bun.lock` both carry the identical `"v2.0.2"` spec so `--frozen-lockfile` stays consistent, and a
+later change to a bare `2.0.2` is safe because framework deps are re-added with strict pins on every
+install. **Regression: no** — the key is absent on 0.9.11.post1 (the dependency is new in this
+train). Severity low, cosmetic/consistency only; a one-character fix, not a release blocker.
+
+### Housekeeping
+
+All processes started by this verification were killed (`reflex run` pids plus the orphaned
+`react-router dev` node children); `$SB/bin/ports.py 3960 8960` reports both ports free.
