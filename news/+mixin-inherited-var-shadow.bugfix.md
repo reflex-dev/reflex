@@ -1,1 +1,1 @@
-Reject state mixins that shadow reactive variables inherited from their concrete parent or duplicate variables from unrelated mixins instead of silently compiling an ambiguous default as a constant.
+State variables declared in a mixin could silently shadow the same variable inherited from the concrete parent state (or declared by another unrelated mixin), making class-level access return a plain constant default instead of the reactive Var. Reflex now raises an error at state setup for these conflicts.
