@@ -13,9 +13,13 @@ from reflex_base.vars.base import (
     BaseStateMeta,
     EvenMoreBasicBaseState,
     _linearize_bases,
+    _set_state_declaration_validator,
 )
 
 _FIELD_MAP_NAMES = frozenset({"__fields__", "__own_fields__", "__inherited_fields__"})
+
+# The state class whose subclasses are validated, set by `_install_state_validation`.
+_validated_state_base: type | None = None
 
 
 @cache
@@ -87,36 +91,40 @@ def _validate_inherited_members(base: type, seen: set[str]) -> None:
             _validate_state_name(member, value)
 
 
-class _StateMeta(BaseStateMeta):
-    """Check state declarations before field collection and subclass initialization."""
+def _validate_state_declaration(
+    bases: tuple[type, ...], namespace: dict[str, Any]
+) -> None:
+    """Check a state's declarations and Python mixins before it is constructed.
 
-    def __new__(
-        cls,
-        name: str,
-        bases: tuple[type, ...],
-        namespace: dict[str, Any],
-        mixin: bool = False,
-    ) -> type:
-        """Construct a state after checking its declarations and Python mixins.
+    Classes that do not inherit from the validated state base, such as plain
+    models built on the same metaclass, keep their own namespace.
 
-        Args:
-            name: The class name.
-            bases: The parent classes.
-            namespace: The unmodified class namespace.
-            mixin: Whether the class is a state mixin.
+    Args:
+        bases: The parent classes of the class being created.
+        namespace: The unmodified class namespace.
+    """
+    base_state = _validated_state_base
+    if base_state is None or not any(issubclass(base, base_state) for base in bases):
+        return
+    seen = namespace.keys() | annotations_from_namespace(namespace).keys()
+    for member in seen:
+        _validate_state_name(member, namespace.get(member))
+    for base in _linearize_bases(bases):
+        if (
+            not issubclass(base, base_state)
+            and base is not EvenMoreBasicBaseState
+            and base is not object
+        ):
+            _validate_inherited_members(base, seen)
+        seen.update(vars(base))
 
-        Returns:
-            The validated state class.
-        """
-        if any(isinstance(base, _StateMeta) for base in bases):
-            seen = namespace.keys() | annotations_from_namespace(namespace).keys()
-            for member in seen:
-                _validate_state_name(member, namespace.get(member))
-            for base in _linearize_bases(bases):
-                if not isinstance(base, _StateMeta) and base not in (
-                    EvenMoreBasicBaseState,
-                    object,
-                ):
-                    _validate_inherited_members(base, seen)
-                seen.update(vars(base))
-        return super().__new__(cls, name, bases, namespace, mixin=mixin)
+
+def _install_state_validation(base_state: type) -> None:
+    """Validate every state declared after this call.
+
+    Args:
+        base_state: The state class whose subclasses must be validated.
+    """
+    global _validated_state_base
+    _validated_state_base = base_state
+    _set_state_declaration_validator(_validate_state_declaration)

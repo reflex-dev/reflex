@@ -1,11 +1,18 @@
 """Tests for reserved state names at class creation and dynamic registration."""
 
+from typing import Any
+
 import pytest
 from reflex_base.constants import RouteArgType
 from reflex_base.utils.exceptions import StateValueError
-from reflex_base.vars.base import EvenMoreBasicBaseState, LiteralVar, computed_var
+from reflex_base.vars.base import (
+    BaseStateMeta,
+    EvenMoreBasicBaseState,
+    LiteralVar,
+    computed_var,
+)
 
-from reflex.state import BaseState, _override_base_method
+from reflex.state import BaseState, State, _override_base_method
 
 
 @pytest.mark.parametrize(
@@ -186,3 +193,61 @@ def test_reserved_descriptor(clean_registration_context):
             (BaseState,),
             {"__module__": __name__, "get_fields": Descriptor()},
         )
+
+
+class _CookieMeta(BaseStateMeta):
+    """A downstream-style metaclass that injects fields into the declaration."""
+
+    def __new__(
+        cls, name: str, bases: tuple[type, ...], namespace: dict[str, Any], **kwargs
+    ):
+        """Add an annotated backend var before the state is constructed.
+
+        Args:
+            name: The class name.
+            bases: The parent classes.
+            namespace: The class namespace.
+            **kwargs: Class creation keywords, e.g. `mixin`.
+
+        Returns:
+            The new state class.
+        """
+        namespace.setdefault("__annotations__", {})["_injected"] = str
+        namespace["_injected"] = "by the metaclass"
+        return super().__new__(cls, name, bases, namespace, **kwargs)
+
+
+def test_state_metaclass_is_base_state_meta():
+    """Keep the exported `BaseStateMeta` as the metaclass of every state."""
+    assert type(BaseState) is BaseStateMeta
+    assert type(State) is BaseStateMeta
+
+
+@pytest.mark.parametrize("mixin", [False, True])
+def test_custom_state_metaclass(mixin: bool, clean_registration_context):
+    """Allow a `BaseStateMeta` subclass as the metaclass of a state.
+
+    Args:
+        mixin: Whether the state is declared as a state mixin.
+        clean_registration_context: An isolated state registry.
+    """
+
+    class CustomState(State, mixin=mixin, metaclass=_CookieMeta):
+        value: int = 1
+
+    assert type(CustomState) is _CookieMeta
+    assert CustomState._mixin is mixin
+    assert CustomState.__fields__["_injected"].default == "by the metaclass"
+    assert CustomState.__fields__["value"].default == 1
+
+
+def test_custom_state_metaclass_validates_reserved_names(clean_registration_context):
+    """Keep rejecting reserved names declared through a custom metaclass.
+
+    Args:
+        clean_registration_context: An isolated state registry.
+    """
+    with pytest.raises(StateValueError, match="get_fields"):
+
+        class ShadowState(BaseState, metaclass=_CookieMeta):
+            get_fields: int = 7
