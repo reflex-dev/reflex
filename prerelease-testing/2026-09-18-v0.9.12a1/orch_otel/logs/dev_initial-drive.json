@@ -1,0 +1,17 @@
+{
+  "url": "http://localhost:3052/",
+  "title": "Otelapp | Index",
+  "clean": true,
+  "load_error": null,
+  "actions_performed": [
+    "wait: 2500"
+  ],
+  "action_error": null,
+  "screenshot_error": null,
+  "read_error": null,
+  "console": [],
+  "page_errors": [],
+  "failed_requests": [],
+  "http_4xx_5xx": [],
+  "body_text": "otel test app HOTRELOAD\n\n0\n\n0\n\n0\n\ninc\nchain\nbg\nboom\nuserspan\n\ndrop\n\nselect\nupload\nsecond"
+}
