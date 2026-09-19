@@ -1,0 +1,11 @@
+[c1][log] _call_script ReferenceError: filesById is not defined
+    at eval (eval at applyEvent (http://localhost:3190/assets/link-CAMiucc3.js:2:7464), <anonymous>:1:105)
+    at applyEvent (http://localhost:3190/assets/link-CAMiucc3.js:2:7516)
+    at processEvent (http://localhost:3190/assets/link-CAMiucc3.js:2:8861)
+    at queueEvents (http://localhost:3190/assets/link-CAMiucc3.js:2:8595)
+    at Socket.<anonymous> (http://localhost:3190/assets/link-CAMiucc3.js:2:11943)
+    at Emitter.emit (http://localhost:3190/assets/link-CAMiucc3.js:1:19872)
+    at Socket.emitEvent (http://localhost:3190/assets/link-CAMiucc3.js:1:51627)
+    at Socket.onevent (http://localhost:3190/assets/link-CAMiucc3.js:1:51434)
+    at Socket.onpacket (http://localhost:3190/assets/link-CAMiucc3.js:1:51084)
+    at Emitter.emit (http://localhost:3190/assets/link-CAMiucc3.js:1:19872)

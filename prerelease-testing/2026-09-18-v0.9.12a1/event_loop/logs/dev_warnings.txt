@@ -1,0 +1,50 @@
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+Warning: Attempting to send delta to disconnected client 
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+Debug: 2:26:29 AM [vite] (client) [Unhandled error] ReferenceError: filesById is
+ ReferenceError: filesById is not defined

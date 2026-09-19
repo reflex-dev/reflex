@@ -1,0 +1,13 @@
+[c1][log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+[c1][debug] [vite] connecting...
+[c1][debug] [vite] connected.
+[c1][info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[c1][log] Disconnect websocket on page navigation
+[c1][log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+[c1][debug] [vite] connecting...
+[c1][debug] [vite] connected.
+[c1][info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[c2][log] 💿 Hey developer 👋. You can provide a way better UX than this when your app is loading JS modules and/or running `clientLoader` functions. Check out https://reactrouter.com/start/framework/route-module#hydratefallback for more information.
+[c2][debug] [vite] connecting...
+[c2][debug] [vite] connected.
+[c2][info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold

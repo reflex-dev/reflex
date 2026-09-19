@@ -1,0 +1,200 @@
+Debug: [7.00ms] done
+Debug: Running command: ['/root/.local/share/reflex/bun/bin/bun', 'add', 
+'--legacy-peer-deps', 'mergician@v2.0.2', 'react@19.2.8', 'react-router@8.4.0', 
+'sonner@2.0.8', '@react-router/node@8.4.0', 'universal-cookie@8.1.2', 
+'react-dom@19.2.8', '@radix-ui/themes@3.3.0', 'socket.io-client@4.8.3', 
+'react-helmet@6.1.0', 'lucide-react@1.26.0', 'react-dropzone@15.0.0', 
+'react-error-boundary@6.1.2', 'isbot@5.2.2']
+Debug: Installing frontend packages
+Debug: bun add v1.4.0 (34cbb9a40)
+Debug: 
+Debug: installed mergician@2.0.2
+Debug: installed react@19.2.8
+Debug: installed react-router@8.4.0
+Debug: installed sonner@2.0.8
+Debug: installed @react-router/node@8.4.0
+Debug: installed universal-cookie@8.1.2
+Debug: installed react-dom@19.2.8
+Debug: installed @radix-ui/themes@3.3.0
+Debug: installed socket.io-client@4.8.3
+Debug: installed react-helmet@6.1.0
+Debug: installed lucide-react@1.26.0
+Debug: installed react-dropzone@15.0.0
+Debug: installed react-error-boundary@6.1.2
+Debug: installed isbot@5.2.2
+Debug: 
+Debug: [7.00ms] done
+Debug: Copying .web/bun.lock to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/event_loop/elapp/reflex.lock/bun.lock
+Debug: Copying .web/package.json to 
+/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/
+apps/event_loop/elapp/reflex.lock/package.json
+Debug: [timing] Install Frontend Packages: 0.04s
+Debug: [timing] Write to Disk: 0.00s
+Debug: Started lifespan task: _setup_event_processor as asynccontextmanager
+[INFO] Started worker-1
+Debug: 2:25:39 AM [vite] (client) hmr update /app_components/elapp/elapp.jsx
+Debug: 2:25:39 AM [vite] (client) hmr update /app_components/elapp/elapp.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 2:25:39 AM [vite] (client) hmr update /app/root.jsx
+Debug: 2:25:39 AM [vite] (client) hmr update /app/root.jsx
+Debug: 2:25:39 AM [vite] (client) hmr update /app/root.jsx, 
+/styles/__reflex_global_styles.css?direct
+Debug: 2:25:39 AM [vite] (ssr) page reload app/root.jsx
+Debug: 2:25:39 AM [vite] (ssr) program reload
+Debug: 2:25:39 AM [vite] (client) hmr update /app/routes/[callback]._index.jsx
+Debug: 2:25:39 AM [vite] (client) hmr update /app/routes/[callback]._index.jsx, 
+/styles/__reflex_global_styles.css?direct
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at eval (eval at applyEvent (http://localhost:3180/utils/state.js:386:15), 
+<anonymous>:1:105)
+    at applyEvent (http://localhost:3180/utils/state.js:388:9)
+    at processEvent (http://localhost:3180/utils/state.js:537:11)
+    at queueEvents (http://localhost:3180/utils/state.js:502:9)
+    at Socket.<anonymous> (http://localhost:3180/utils/state.js:758:9)
+    at Emitter.emit 
+(http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:3
+25:70)
+    at Socket.emitEvent 
+(http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:3
+146:14)
+    at Socket.onevent 
+(http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:3
+138:28)
+    at Socket.onpacket 
+(http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:3
+113:10)
+    at Emitter.emit 
+(http://localhost:3180/node_modules/.vite/deps/socket__io-client.js?v=7cb80531:3
+25:70)
+
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at Object.onClick 
+(http://localhost:3180/app_components/elapp/elapp.jsx?t=1789784739560:739:22)
+    at onClick 
+(http://localhost:3180/node_modules/.vite/deps/sonner.js?v=9ea9fa38:715:57)
+    at executeDispatch 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:91
+41:5)
+    at runWithFiberInDEV 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:85
+1:66)
+    at processDispatchQueue 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:91
+67:27)
+    at 
+http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:945
+4:5
+    at batchedUpdates$1 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:20
+44:12)
+    at dispatchEventForPluginEventSystem 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:92
+40:4)
+    at dispatchEvent 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:11
+319:29)
+    at dispatchDiscreteEvent 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:11
+301:56)
+
+Debug: 2:26:29 AM [vite] (client) [Unhandled error] ReferenceError: filesById is
+not defined
+Debug:  > filesById app_components/elapp/elapp.jsx:559:358
+Debug:     557 |  const Button_button_115bace766f00f8849b808448b4c85de_0bf88b62 
+= memo(({children, ...rest}) => {
+Debug:     558 |      const ref_fetoastupload = useRef(null); 
+refs["ref_fetoastupload"] = ref_fetoastupload;
+Debug:     559 |  ...___state____state.elapp___elapp___cb.handle_upload", 
+{files:filesById?.["u2"],upload_param_name:"files",upload_id:...
+Debug:         |                                                                
+^
+Debug:     560 |  
+Debug:     561 |  
+Debug:  > onClick node_modules/sonner/dist/index.mjs:882:73
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+Debug:  > dispatchEventForPluginEventSystem 
+node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+Debug:  > dispatchEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+Debug:  > dispatchDiscreteEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23553:10
+Debug: 
+[Reflex Frontend Exception]
+ ReferenceError: filesById is not defined
+ReferenceError: filesById is not defined
+    at Object.onClick (eval at applyEvent 
+(http://localhost:3180/utils/state.js:377:13), <anonymous>:1:226)
+    at onClick 
+(http://localhost:3180/node_modules/.vite/deps/sonner.js?v=9ea9fa38:715:57)
+    at executeDispatch 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:91
+41:5)
+    at runWithFiberInDEV 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:85
+1:66)
+    at processDispatchQueue 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:91
+67:27)
+    at 
+http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:945
+4:5
+    at batchedUpdates$1 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:20
+44:12)
+    at dispatchEventForPluginEventSystem 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:92
+40:4)
+    at dispatchEvent 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:11
+319:29)
+    at dispatchDiscreteEvent 
+(http://localhost:3180/node_modules/.vite/deps/react-dom_client.js?v=17526588:11
+301:56)
+
+Debug: 2:26:33 AM [vite] (client) [Unhandled error] ReferenceError: filesById is
+not defined
+Debug:  > Object.onClick utils/state.js:377:13
+Debug:     375 |          event.name == "_call_script"
+Debug:     376 |            ? eval(event.payload.javascript_code)
+Debug:     377 |            : eval(event.payload.function)();
+Debug:         |               ^
+Debug:     378 |  
+Debug:     379 |        if (event.payload.callback) {
+Debug:  > onClick node_modules/sonner/dist/index.mjs:882:73
+Debug:  > executeDispatch 
+node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+Debug:  > runWithFiberInDEV 
+node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+Debug:  > processDispatchQueue 
+node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+Debug:  > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+Debug:  > batchedUpdates$1 
+node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+Debug:  > dispatchEventForPluginEventSystem 
+node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+Debug:  > dispatchEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+Debug:  > dispatchDiscreteEvent 
+node_modules/react-dom/cjs/react-dom-client.development.js:23553:10
+Debug: 
+[INFO] Stopping worker-1
+Debug: StateManagerDisk._flush_write_queue: writing 0 remaining items to disk
+Debug: StateManagerDisk._flush_write_queue: Finished writing 0 items
+[ERROR] Unexpected exit from worker-1
+[INFO] Shutting down granian
+[INFO] Stopped worker-1
+[INFO] Granian shutdown completed, see ya!
