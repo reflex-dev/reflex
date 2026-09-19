@@ -23,9 +23,10 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 ### Security
 
 - **FINDING-011 — reflex-enterprise's REST `redact_router_session()` is a no-op against reflex 0.9.12a1's split
-  router vars; server-generated `client_token`/`session_id` reach REST responses and event deltas** (HIGH, claimed
-  by `ent_map_dnd_flow_mantine`, verification pending; currently masked by FINDING-001 because the app cannot
-  start). Arm: security-relevant. Shape: decide where the redaction lives — reflex could expose the
+  router vars; server-generated `client_token`/`session_id` reach REST responses and event deltas** (HIGH,
+  `ent_map_dnd_flow_mantine`, CONFIRMED in-process and over HTTP with the FINDING-001 metaclass shimmed —
+  `verification/v_leak_http.py`). Arm: security-relevant. As soon as FINDING-001 is fixed this leak is live against
+  the published rxe 0.9.5. Shape: decide where the redaction lives — reflex could expose the
   connection-scoped vars under a stable name the plugin can redact, or a lockstep reflex-enterprise release
   redacts `rx_router_session` — and re-verify over HTTP (`retrieve_state`, `/_reflex/event/...`) on the next alpha.
 

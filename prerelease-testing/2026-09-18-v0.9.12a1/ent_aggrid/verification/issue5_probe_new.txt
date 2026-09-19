@@ -1,0 +1,24 @@
+reflex module: /tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex/__init__.py
+reflex-base: 0.9.12a1
+RESULT: reflex_base.utils.exceptions.ReflexRuntimeError: Computing cached property BoomVar._cached_get_all_var_data raised AttributeError: REAL ERROR: module 'x' has no attribute 'y'
+  __cause__: AttributeError("REAL ERROR: module 'x' has no attribute 'y'")
+  __context__: AttributeError("REAL ERROR: module 'x' has no attribute 'y'")
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2235, in __get__
+    GLOBAL_CACHE[unique_id] = self._func(instance)
+                              ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/scripts/probe_masked_attrerror.py", line 38, in _cached_get_all_var_data
+    raise AttributeError("REAL ERROR: module 'x' has no attribute 'y'")
+AttributeError: REAL ERROR: module 'x' has no attribute 'y'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/scripts/probe_masked_attrerror.py", line 43, in <module>
+    v._get_all_var_data()
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2295, in _get_all_var_data
+    return self._cached_get_all_var_data
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/verify_ent_aggrid/venv_new/lib/python3.11/site-packages/reflex_base/vars/base.py", line 2242, in __get__
+    raise ReflexRuntimeError(msg) from err
+reflex_base.utils.exceptions.ReflexRuntimeError: Computing cached property BoomVar._cached_get_all_var_data raised AttributeError: REAL ERROR: module 'x' has no attribute 'y'
