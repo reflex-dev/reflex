@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import signal
 import subprocess
 import sys
+from pathlib import Path
+from unittest import mock
 
 import click
 import click.testing
@@ -431,3 +435,427 @@ def test_init_records_version_check_after_frontend_setup(
     reflex._init("demo")
 
     assert events == ["frontend", "version"]
+
+
+def test_run_dev_frontend_only_holds_for_frontend_lifetime(monkeypatch, tmp_path):
+    """Frontend-only dev run keeps the run context open for the frontend.
+
+    Regression test: with no backend occupying the with-body, the body must
+    hold on the frontend task; an empty body unwinds run_concurrently_context
+    immediately and tears down the freshly launched frontend dev server.
+    """
+    import threading
+    import time
+
+    from reflex_base import constants
+
+    from reflex.testing import DEFAULT_TIMEOUT
+    from reflex.utils import processes
+
+    config_mock = mock.Mock()
+    monkeypatch.setattr(reflex, "get_config", lambda: config_mock)
+    monkeypatch.setattr(reflex, "_compile_app", lambda: None)
+    monkeypatch.setattr("reflex.utils.telemetry.send", lambda *a, **k: None)
+    monkeypatch.setattr("reflex.utils.build.setup_frontend", lambda *a, **k: None)
+    monkeypatch.setattr("atexit.register", lambda *a, **k: None)
+
+    frontend: dict[str, subprocess.Popen] = {}
+
+    def _fake_run_frontend(root, port, backend_present):
+        child = processes.new_process(
+            [sys.executable, "-c", "import time; time.sleep(60)"],
+            run_managed=True,
+        )
+        frontend["child"] = child
+        child.wait()
+
+    monkeypatch.setattr("reflex.utils.exec.run_frontend", _fake_run_frontend)
+
+    errors: list[BaseException] = []
+
+    def _run():
+        try:
+            reflex._run_dev(
+                constants.RunningMode.FRONTEND_ONLY,
+                frontend_port=3000,
+                backend_port=None,
+                backend_host="0.0.0.0",
+            )
+        except BaseException as e:
+            errors.append(e)
+
+    runner = threading.Thread(target=_run)
+    runner.start()
+    try:
+        deadline = time.monotonic() + DEFAULT_TIMEOUT
+        while "child" not in frontend and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert "child" in frontend, "frontend child never started"
+        child = frontend["child"]
+        time.sleep(0.3)
+        assert runner.is_alive(), "frontend-only run exited while the frontend lived"
+        assert child.poll() is None, "frontend child was terminated at startup"
+        child.terminate()
+        runner.join(timeout=DEFAULT_TIMEOUT)
+        assert not runner.is_alive(), "frontend-only run hung after frontend exit"
+        assert errors == []
+    finally:
+        if "child" in frontend and frontend["child"].poll() is None:
+            frontend["child"].kill()
+            frontend["child"].wait()
+        runner.join(timeout=DEFAULT_TIMEOUT)
+
+
+_FRONTEND_ONLY_DRIVER = """
+import sys
+import types
+
+GC_FILE = {gc_file!r}
+
+from reflex.utils import build, exec as exec_mod, processes, telemetry
+
+_CHILD_TREE = (
+    "import subprocess, sys, time\\n"
+    "g = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'])\\n"
+    f"open({{GC_FILE!r}}, 'w').write(str(g.pid))\\n"
+    "time.sleep(60)\\n"
+)
+
+
+def fake_frontend(root, port, backend_present):
+    child = processes.new_process(
+        [sys.executable, "-c", _CHILD_TREE], run_managed=True, start_new_session=True
+    )
+    print(f"READY {{child.pid}}", flush=True)
+    child.wait()
+
+
+exec_mod.run_frontend = fake_frontend
+telemetry.send = lambda *a, **k: None
+build.setup_frontend = lambda *a, **k: None
+
+import reflex.reflex as reflex_module
+
+reflex_module._compile_app = lambda: None
+reflex_module.get_config = lambda: types.SimpleNamespace(
+    _set_persistent=lambda **k: None
+)
+
+from reflex_base import constants
+
+reflex_module._run_dev(
+    constants.RunningMode.FRONTEND_ONLY,
+    frontend_port=3000,
+    backend_port=None,
+    backend_host="0.0.0.0",
+)
+"""
+
+
+def _pid_gone(pid: int) -> bool:
+    """Check whether nothing runnable remains at a pid.
+
+    Args:
+        pid: The process ID.
+
+    Returns:
+        True when the pid is gone or a zombie awaiting reap by its new parent.
+    """
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return True
+    stat = Path(f"/proc/{pid}/stat")
+    if stat.exists():
+        return stat.read_text().split()[2] in ("Z", "X")
+    return False
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="signal semantics are POSIX")
+@pytest.mark.parametrize("sig", [signal.SIGTERM, signal.SIGINT])
+def test_run_dev_frontend_only_signal_tears_down_tree(sig, tmp_path):
+    """A no-TTY frontend-only dev run exits cleanly on SIGTERM/SIGINT.
+
+    Real process-level regression test: the launcher must unwind the run
+    context (rc 0) instead of dying by the raw signal, and the detached
+    frontend tree - a stand-in child and its grandchild for bun/node - must
+    be gone afterwards.
+    """
+    import signal as signal_mod
+    import time
+
+    from reflex.testing import DEFAULT_TIMEOUT
+
+    driver = tmp_path / "frontend_only_driver.py"
+    gc_file = tmp_path / "grandchild.pid"
+    driver.write_text(_FRONTEND_ONLY_DRIVER.format(gc_file=str(gc_file)))
+
+    proc = subprocess.Popen(
+        [sys.executable, str(driver)],
+        cwd=tmp_path,
+        start_new_session=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    child_pid = None
+    try:
+        assert proc.stdout is not None
+        ready = ""
+        for line in proc.stdout:
+            if line.startswith("READY"):
+                ready = line
+                break
+        assert ready, f"driver never became ready: {proc.stdout.read()}"
+        child_pid = int(ready.split()[1])
+        deadline = time.monotonic() + DEFAULT_TIMEOUT
+        while not gc_file.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert gc_file.exists(), "frontend grandchild never spawned"
+        grandchild_pid = int(gc_file.read_text().strip())
+
+        os.kill(proc.pid, sig)
+        returncode = proc.wait(timeout=DEFAULT_TIMEOUT)
+        assert returncode == 0, (
+            f"frontend-only launcher died by signal instead of unwinding (rc {returncode})"
+        )
+        deadline = time.monotonic() + DEFAULT_TIMEOUT
+        while (
+            not (_pid_gone(child_pid) and _pid_gone(grandchild_pid))
+            and time.monotonic() < deadline
+        ):
+            time.sleep(0.05)
+        assert _pid_gone(child_pid), "frontend child survived launcher shutdown"
+        assert _pid_gone(grandchild_pid), (
+            "frontend grandchild survived launcher shutdown"
+        )
+    finally:
+        if proc.poll() is None:
+            with contextlib.suppress(ProcessLookupError):
+                os.killpg(proc.pid, signal_mod.SIGKILL)
+            proc.wait(timeout=DEFAULT_TIMEOUT)
+        for pid in [child_pid] if child_pid else []:
+            if not _pid_gone(pid):
+                with contextlib.suppress(ProcessLookupError):
+                    os.kill(pid, signal_mod.SIGKILL)
+
+
+def _run_driver(
+    driver: Path, timeout: float, *pid_files: Path
+) -> subprocess.CompletedProcess:
+    """Run a driver subprocess, reaping any recorded child pids afterwards.
+
+    Args:
+        driver: The driver script to run.
+        timeout: Seconds before subprocess.run kills the driver.
+        pid_files: Files the driver writes spawned child pids into.
+
+    Returns:
+        The completed process.
+    """
+    try:
+        return subprocess.run(
+            [sys.executable, str(driver)],
+            cwd=driver.parent,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    finally:
+        # subprocess.run kills the driver itself on timeout; the detached
+        # children it recorded would survive, so reap them here.
+        for pid_file in pid_files:
+            if not pid_file.exists():
+                continue
+            with contextlib.suppress(ValueError):
+                pid = int(pid_file.read_text().strip())
+                if not _pid_gone(pid):
+                    with contextlib.suppress(ProcessLookupError):
+                        os.kill(pid, signal.SIGKILL)
+
+
+_FRONTEND_ONLY_FAIL_DRIVER = """
+import sys
+import time
+import types
+
+from reflex.utils import build, exec as exec_mod, telemetry
+
+
+def fake_frontend(root, port, backend_present):
+    time.sleep(0.5)
+    raise RuntimeError("frontend exploded")
+
+
+exec_mod.run_frontend = fake_frontend
+telemetry.send = lambda *a, **k: None
+build.setup_frontend = lambda *a, **k: None
+
+import reflex.reflex as reflex_module
+
+reflex_module._compile_app = lambda: None
+reflex_module.get_config = lambda: types.SimpleNamespace(
+    _set_persistent=lambda **k: None
+)
+
+from reflex_base import constants
+
+reflex_module._run_dev(
+    constants.RunningMode.FRONTEND_ONLY,
+    frontend_port=3000,
+    backend_port=None,
+    backend_host="0.0.0.0",
+)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="signal semantics are POSIX")
+def test_run_dev_frontend_only_task_failure_propagates(tmp_path):
+    """A frontend task failure in frontend-only mode keeps its own error.
+
+    The internal wake-up SIGINT must surface the task's exception (nonzero
+    exit, original error text) instead of being converted into a clean
+    SystemExit(0).
+    """
+    from reflex.testing import DEFAULT_TIMEOUT
+
+    driver = tmp_path / "frontend_only_fail_driver.py"
+    driver.write_text(_FRONTEND_ONLY_FAIL_DRIVER)
+    proc = _run_driver(driver, DEFAULT_TIMEOUT)
+    assert proc.returncode != 0, (
+        f"frontend failure was masked as a clean exit: {proc.stdout}{proc.stderr}"
+    )
+    assert "frontend exploded" in proc.stderr, (
+        f"original error lost: {proc.stdout}{proc.stderr}"
+    )
+
+
+_FRONTEND_ONLY_FAST_FAIL_DRIVER = """
+import types
+
+from reflex.utils import build, exec as exec_mod, telemetry
+
+
+def fake_frontend(root, port, backend_present):
+    raise RuntimeError("frontend exploded immediately")
+
+
+exec_mod.run_frontend = fake_frontend
+telemetry.send = lambda *a, **k: None
+build.setup_frontend = lambda *a, **k: None
+
+import reflex.reflex as reflex_module
+
+reflex_module._compile_app = lambda: None
+reflex_module.get_config = lambda: types.SimpleNamespace(
+    _set_persistent=lambda **k: None
+)
+
+from reflex_base import constants
+
+reflex_module._run_dev(
+    constants.RunningMode.FRONTEND_ONLY,
+    frontend_port=3000,
+    backend_port=None,
+    backend_host="0.0.0.0",
+)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="signal semantics are POSIX")
+def test_run_dev_frontend_only_immediate_failure_never_masked(tmp_path):
+    """A frontend that fails at spawn time must never exit cleanly either.
+
+    The wake-up SIGINT can land before the run tasks are visible to the
+    frontend-only signal handler; that early path must still surface the
+    task's exception. Repeated runs smoke out the race.
+    """
+    from reflex.testing import DEFAULT_TIMEOUT
+
+    driver = tmp_path / "frontend_only_fast_fail_driver.py"
+    driver.write_text(_FRONTEND_ONLY_FAST_FAIL_DRIVER)
+    for attempt in range(5):
+        proc = _run_driver(driver, DEFAULT_TIMEOUT)
+        assert proc.returncode != 0, (
+            f"attempt {attempt}: immediate frontend failure was masked as a "
+            f"clean exit: {proc.stdout}{proc.stderr}"
+        )
+        assert "frontend exploded immediately" in proc.stderr, (
+            f"attempt {attempt}: original error lost: {proc.stdout}{proc.stderr}"
+        )
+
+
+_FRONTEND_ONLY_STARTUP_SIGNAL_DRIVER = """
+import os
+import sys
+import types
+
+CHILD_FILE = {child_file!r}
+SIGNAL = {sig}
+
+from reflex.utils import build, exec as exec_mod, processes, telemetry
+
+
+def fake_frontend(root, port, backend_present):
+    # Fire the signal while the run is still starting up, then spawn a
+    # detached child so teardown has a tree to reap.
+    os.kill(os.getpid(), SIGNAL)
+    child = processes.new_process(
+        [sys.executable, "-c", "import time; time.sleep(60)"],
+        run_managed=True,
+        start_new_session=True,
+    )
+    with open(CHILD_FILE, "w") as f:
+        f.write(str(child.pid))
+    child.wait()
+
+
+exec_mod.run_frontend = fake_frontend
+telemetry.send = lambda *a, **k: None
+build.setup_frontend = lambda *a, **k: None
+
+import reflex.reflex as reflex_module
+
+reflex_module._compile_app = lambda: None
+reflex_module.get_config = lambda: types.SimpleNamespace(
+    _set_persistent=lambda **k: None
+)
+
+from reflex_base import constants
+
+reflex_module._run_dev(
+    constants.RunningMode.FRONTEND_ONLY,
+    frontend_port=3000,
+    backend_port=None,
+    backend_host="0.0.0.0",
+)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="signal semantics are POSIX")
+@pytest.mark.parametrize("sig", [signal.SIGTERM, signal.SIGINT])
+def test_run_dev_frontend_only_startup_signal_exits_cleanly(sig, tmp_path):
+    """A genuine signal during startup still unwinds cleanly.
+
+    Frontend-only mode disables the run context's internal failure wake-up
+    (the main thread blocks on the frontend task's result, which propagates
+    failures itself), so the frontend-only handlers only ever see real
+    external signals. A SIGTERM/SIGINT landing before the run settles must
+    exit 0 and reap the frontend tree - never a KeyboardInterrupt traceback.
+    """
+    from reflex.testing import DEFAULT_TIMEOUT
+
+    driver = tmp_path / "startup_signal_driver.py"
+    child_file = tmp_path / "child.pid"
+    driver.write_text(
+        _FRONTEND_ONLY_STARTUP_SIGNAL_DRIVER.format(
+            child_file=str(child_file), sig=int(sig)
+        )
+    )
+    proc = _run_driver(driver, DEFAULT_TIMEOUT, child_file)
+    assert proc.returncode == 0, (
+        f"early signal was not a clean exit (rc {proc.returncode}): "
+        f"{proc.stdout}{proc.stderr}"
+    )
+    child_pid = int(child_file.read_text().strip())
+    assert _pid_gone(child_pid), "frontend child survived a startup signal"

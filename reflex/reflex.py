@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import logging
+import signal
+import sys
+import threading
 from collections.abc import Callable
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
+from types import FrameType
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import click
@@ -436,21 +440,62 @@ def _run_dev(
             running_mode.has_backend(),
         ))
 
-    # Start the frontend and backend.
-    with processes.run_concurrently_context(*commands):
-        # In dev mode, run the backend on the main thread.
-        if running_mode.has_backend() and backend_port:
-            exec.run_backend(
-                backend_host,
-                int(backend_port),
-                config.loglevel.subprocess_level(),
-                running_mode.has_frontend(),
-            )
-            # The windows uvicorn bug workaround
-            # https://github.com/reflex-dev/reflex/issues/2335
-            if constants.IS_WINDOWS and exec.frontend_process:
-                # Sends SIGTERM in windows
-                exec.kill(exec.frontend_process.pid)
+    # Frontend-only dev mode has no backend server (granian/uvicorn) that
+    # installs signal handling, so a bare SIGTERM would kill the launcher
+    # outright and orphan the frontend tree. Install handlers before the
+    # frontend starts so SIGTERM/SIGINT unwind the run context - which
+    # terminates the frontend - and the launcher exits cleanly. Signal
+    # handlers can only be installed from the main thread.
+    frontend_only_signals = (
+        running_mode.has_frontend()
+        and not running_mode.has_backend()
+        and sys.platform != "win32"
+        and threading.current_thread() is threading.main_thread()
+    )
+    previous_handlers = {}
+    if frontend_only_signals:
+
+        def _exit_gracefully(signum: int, frame: FrameType | None) -> None:
+            raise SystemExit(0)
+
+        previous_handlers = {
+            sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT)
+        }
+        signal.signal(signal.SIGTERM, _exit_gracefully)
+        signal.signal(signal.SIGINT, _exit_gracefully)
+
+    try:
+        # Start the frontend and backend.
+        with processes.run_concurrently_context(
+            *commands,
+            # In frontend-only mode the main thread blocks on the frontend
+            # task's result(), which propagates task failures itself, so the
+            # context's internal failure wake-up is disabled: it uses SIGINT,
+            # which the handlers above could not tell apart from a real
+            # interrupt. With it off, these handlers only ever see genuine
+            # external signals.
+            interrupt_on_failure=running_mode.has_backend(),
+        ) as run_tasks:
+            # In dev mode, run the backend on the main thread.
+            if not running_mode.has_backend() and run_tasks:
+                # Frontend-only: no backend occupies the main thread, so hold
+                # the run open on the frontend task until the frontend exits.
+                run_tasks[0].result()
+            elif running_mode.has_backend() and backend_port:
+                exec.run_backend(
+                    backend_host,
+                    int(backend_port),
+                    config.loglevel.subprocess_level(),
+                    running_mode.has_frontend(),
+                )
+                # The windows uvicorn bug workaround
+                # https://github.com/reflex-dev/reflex/issues/2335
+                if constants.IS_WINDOWS and exec.frontend_process:
+                    # Sends SIGTERM in windows
+                    exec.kill(exec.frontend_process.pid)
+    finally:
+        for sig, previous_handler in previous_handlers.items():
+            signal.signal(sig, previous_handler)
 
 
 def _run_preview(running_mode: constants.RunningMode, port: int, host: str):

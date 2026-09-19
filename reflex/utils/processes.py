@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import ctypes
 import logging
 import os
 import signal
@@ -11,6 +12,7 @@ import socket
 import subprocess
 import sys
 import threading
+import time
 from _thread import interrupt_main
 from collections.abc import Callable, Generator, Sequence
 from concurrent import futures
@@ -191,6 +193,7 @@ def new_process(
     args: str | list[str] | list[str | None] | list[str | Path | None],
     run: Literal[False] = False,
     show_logs: bool = False,
+    run_managed: bool = False,
     **kwargs,
 ) -> subprocess.Popen[str]: ...
 
@@ -200,6 +203,7 @@ def new_process(
     args: str | list[str] | list[str | None] | list[str | Path | None],
     run: Literal[True],
     show_logs: bool = False,
+    run_managed: bool = False,
     **kwargs,
 ) -> subprocess.CompletedProcess[str]: ...
 
@@ -208,6 +212,7 @@ def new_process(
     args: str | list[str] | list[str | None] | list[str | Path | None],
     run: bool = False,
     show_logs: bool = False,
+    run_managed: bool = False,
     **kwargs,
 ) -> subprocess.CompletedProcess[str] | subprocess.Popen[str]:
     """Wrapper over subprocess.Popen to unify the launch of child processes.
@@ -216,6 +221,9 @@ def new_process(
         args: A string, or a sequence of program arguments.
         run: Whether to run the process to completion.
         show_logs: Whether to show the logs of the process.
+        run_managed: Whether the child belongs to the enclosing
+            run_concurrently_context (if any) and must be terminated when that
+            run unwinds. Children that do not opt in are never tracked.
         **kwargs: Kwargs to override default wrap values to pass to subprocess.Popen as arguments.
 
     Returns:
@@ -255,13 +263,364 @@ def new_process(
     }
     logger.debug(f"Running command: {non_empty_args}")
 
-    def subprocess_p_open(args: subprocess._CMD, **kwargs):
-        return subprocess.Popen(args, **kwargs)
+    if run:
+        return subprocess.run(non_empty_args, **kwargs)
 
-    fn: Callable[..., subprocess.CompletedProcess[str] | subprocess.Popen[str]] = (
-        subprocess.run if run else subprocess_p_open
-    )
-    return fn(non_empty_args, **kwargs)
+    process = subprocess.Popen(non_empty_args, **kwargs)
+    if run_managed:
+        registry = getattr(_active_registry, "registry", None)
+        if registry is not None:
+            registry.register(process)
+    return process
+
+
+# Thread-local binding from a run_concurrently_context worker thread to that
+# context's child registry. Threads outside such a context have no registry,
+# so their new_process children are never tracked - or terminated - here.
+_active_registry = threading.local()
+
+
+def _own_process_group(process: subprocess.Popen) -> int | None:
+    """Get the process group a child leads, when it was started detached.
+
+    Args:
+        process: The child process.
+
+    Returns:
+        The process group ID when the child is a group leader, else None.
+    """
+    if sys.platform == "win32":
+        return None
+    try:
+        pgid = os.getpgid(process.pid)
+    except ProcessLookupError:
+        return None
+    return pgid if pgid == process.pid else None
+
+
+def _process_group_exists(pgid: int) -> bool:
+    """Check whether a process group still has members.
+
+    Args:
+        pgid: The process group ID.
+
+    Returns:
+        True while any member of the group is still around.
+    """
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+_JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000
+_JOB_OBJECT_EXTENDED_LIMIT_INFORMATION = 9
+
+
+class _JobObjectBasicLimitInformation(ctypes.Structure):
+    """Win32 JOBOBJECT_BASIC_LIMIT_INFORMATION struct."""
+
+    _fields_ = [
+        ("PerProcessUserTimeLimit", ctypes.c_int64),
+        ("PerJobUserTimeLimit", ctypes.c_int64),
+        ("LimitFlags", ctypes.c_ulong),
+        ("MinimumWorkingSetSize", ctypes.c_size_t),
+        ("MaximumWorkingSetSize", ctypes.c_size_t),
+        ("ActiveProcessLimit", ctypes.c_ulong),
+        ("Affinity", ctypes.c_size_t),
+        ("PriorityClass", ctypes.c_ulong),
+        ("SchedulingClass", ctypes.c_ulong),
+    ]
+
+
+class _IoCounters(ctypes.Structure):
+    """Win32 IO_COUNTERS struct."""
+
+    _fields_ = [
+        ("ReadOperationCount", ctypes.c_uint64),
+        ("WriteOperationCount", ctypes.c_uint64),
+        ("OtherOperationCount", ctypes.c_uint64),
+        ("ReadTransferCount", ctypes.c_uint64),
+        ("WriteTransferCount", ctypes.c_uint64),
+        ("OtherTransferCount", ctypes.c_uint64),
+    ]
+
+
+class _JobObjectExtendedLimitInformation(ctypes.Structure):
+    """Win32 JOBOBJECT_EXTENDED_LIMIT_INFORMATION."""
+
+    _fields_ = [
+        ("BasicLimitInformation", _JobObjectBasicLimitInformation),
+        ("IoInfo", _IoCounters),
+        ("ProcessMemoryLimit", ctypes.c_size_t),
+        ("JobMemoryLimit", ctypes.c_size_t),
+        ("PeakProcessMemoryUsed", ctypes.c_size_t),
+        ("PeakJobMemoryUsed", ctypes.c_size_t),
+    ]
+
+
+def _win32_kernel32():
+    """Return kernel32 with the job-object signatures set, or None off Windows.
+
+    Returns:
+        The configured kernel32 module, or None when WinDLL is unavailable.
+    """
+    windll = getattr(ctypes, "WinDLL", None)
+    if windll is None:
+        return None
+    kernel32 = windll("kernel32", use_last_error=True)
+    kernel32.CreateJobObjectW.restype = ctypes.c_void_p
+    kernel32.CreateJobObjectW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+    kernel32.SetInformationJobObject.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_ulong,
+    ]
+    kernel32.AssignProcessToJobObject.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    kernel32.TerminateJobObject.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    return kernel32
+
+
+def _create_kill_job(process: subprocess.Popen) -> int | None:
+    """Assign a Windows child to a new job object that kills on close.
+
+    Job membership is established at spawn time, so it outlives the child
+    itself: once assigned, every descendant the child spawns joins the job,
+    and terminating the job kills them even when the root already exited -
+    the case a psutil tree walk cannot recover. Any setup failure closes the
+    job handle and returns None, and the caller falls back to the psutil
+    sweep.
+
+    Args:
+        process: The child process to own.
+
+    Returns:
+        The job handle, or None off Windows or when setup failed.
+    """
+    if sys.platform != "win32":
+        return None
+    kernel32 = _win32_kernel32()
+    if kernel32 is None:
+        return None
+    job = kernel32.CreateJobObjectW(None, None)
+    if not job:
+        return None
+    info = _JobObjectExtendedLimitInformation()
+    info.BasicLimitInformation.LimitFlags = _JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+    if not kernel32.SetInformationJobObject(
+        job,
+        _JOB_OBJECT_EXTENDED_LIMIT_INFORMATION,
+        ctypes.byref(info),
+        ctypes.sizeof(info),
+    ):
+        kernel32.CloseHandle(job)
+        return None
+    # Popen keeps the Windows process handle on a private attribute.
+    process_handle = int(getattr(process, "_handle", 0) or 0)
+    if not process_handle or not kernel32.AssignProcessToJobObject(job, process_handle):
+        kernel32.CloseHandle(job)
+        return None
+    return int(job)
+
+
+def _terminate_job(job: int) -> None:
+    """Terminate every process in a job and close the job handle.
+
+    Args:
+        job: The job handle from _create_kill_job.
+    """
+    kernel32 = _win32_kernel32()
+    if kernel32 is None:
+        return
+    kernel32.TerminateJobObject(job, 1)
+    kernel32.CloseHandle(job)
+
+
+def _terminate_process_tree_windows(process: subprocess.Popen, timeout: float) -> None:
+    """Terminate a Windows child tree, including descendants spawned mid-teardown.
+
+    Retains psutil handles so a pid cannot be reused under us while we wait,
+    re-enumerates descendants after the terminate pass to catch children a
+    dying parent just spawned, and force-kills whatever ignores termination.
+    Processes that deny access survive (nothing more can be done without
+    elevation); their AccessDenied is contained per process so one stubborn
+    or protected descendant neither aborts the sweep nor masks the fate of
+    the others.
+
+    This is the fallback sweep for descendants spawned before the child's
+    kill-on-close job assignment landed (or when no job could be created).
+    Tree ownership after the root exits comes from the job object: psutil
+    offers no tree lookup without the root. POSIX teardown has no such gap
+    because the process group is signaled directly.
+
+    Args:
+        process: The root child process.
+        timeout: Seconds to wait for graceful exits before killing.
+    """
+    import psutil
+
+    try:
+        root = psutil.Process(process.pid)
+    except psutil.NoSuchProcess:
+        return
+
+    handles: dict[int, psutil.Process] = {}
+
+    def collect() -> list[psutil.Process]:
+        """Refresh the retained handle set with the current tree.
+
+        Returns:
+            Handles for the root and every descendant currently visible.
+        """
+        try:
+            current = [root, *root.children(recursive=True)]
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            current = [root]
+        for proc in current:
+            handles.setdefault(proc.pid, proc)
+        return list(handles.values())
+
+    for proc in collect():
+        with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
+            proc.terminate()
+    _gone, alive = psutil.wait_procs(collect(), timeout=timeout)
+    # Descendants spawned during the terminate pass join the kill sweep.
+    for proc in collect():
+        if proc in alive or proc.is_running():
+            with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
+                proc.kill()
+    psutil.wait_procs(list(handles.values()), timeout=1)
+
+
+def _terminate_process_tree(process: subprocess.Popen, pgid: int | None) -> None:
+    """SIGTERM a child, signaling its whole process group when it leads one.
+
+    A detached child (e.g. the frontend dev server) takes its descendants down
+    with it via the group signal - and the group is signaled whenever it still
+    has members, even if the leader itself already exited, since its
+    descendants keep the group alive. A non-detached child is terminated
+    directly.
+
+    Args:
+        process: The child process.
+        pgid: The process group captured at registration, if the child led one.
+    """
+    if pgid is not None:
+        if _process_group_exists(pgid):
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                os.killpg(pgid, signal.SIGTERM)
+        return
+    if process.poll() is not None:
+        return
+    with contextlib.suppress(ProcessLookupError, PermissionError):
+        process.terminate()
+
+
+def _drain_process_tree(
+    process: subprocess.Popen,
+    pgid: int | None,
+    timeout: float,
+    job: int | None = None,
+) -> None:
+    """Terminate a child tree, then wait and force-kill survivors.
+
+    Args:
+        process: The child process.
+        pgid: The process group captured at registration, if the child led one.
+        timeout: Seconds to wait for graceful exits before killing.
+        job: The kill-on-close job owning the child's tree, if assigned.
+    """
+    if sys.platform == "win32":
+        # Sweep first: descendants spawned before the job assignment landed
+        # are only discoverable while the root is alive, and the job kill
+        # below takes the root down. The job then kills everything that
+        # joined it, including after a root exit.
+        _terminate_process_tree_windows(process, timeout)
+        if job is not None:
+            _terminate_job(job)
+        return
+    _terminate_process_tree(process, pgid)
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        child_done = process.poll() is not None
+        group_done = pgid is None or not _process_group_exists(pgid)
+        if child_done and group_done:
+            break
+        time.sleep(0.05)
+    if process.poll() is None or (pgid is not None and _process_group_exists(pgid)):
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            if pgid is not None:
+                os.killpg(pgid, signal.SIGKILL)
+            else:
+                process.kill()
+    with contextlib.suppress(subprocess.TimeoutExpired):
+        process.wait(timeout=1)
+
+
+class _RunChildRegistry:
+    """Run-managed children spawned by the tasks of one run_concurrently_context.
+
+    A child is tracked only when its new_process caller opts in with
+    run_managed=True, so unrelated or one-shot children in the same threads
+    are never signaled.
+    """
+
+    def __init__(self) -> None:
+        """Initialize an empty registry."""
+        self._lock = threading.Lock()
+        # process -> process group captured at registration (None when the
+        # child shares our group). Capturing while the child's identity is
+        # certain avoids re-resolving a possibly-reused pid at teardown.
+        self._processes: dict[subprocess.Popen, int | None] = {}
+        # Windows kill-on-close job handles keyed by child: ownership
+        # established at spawn time, valid even after the child exits.
+        self._jobs: dict[subprocess.Popen, int] = {}
+        self._terminating = False
+
+    def register(self, process: subprocess.Popen) -> None:
+        """Track a child, draining it at once if shutdown already began.
+
+        Args:
+            process: The child process to track.
+        """
+        pgid = _own_process_group(process)
+        job = _create_kill_job(process)
+        with self._lock:
+            if not self._terminating:
+                self._processes[process] = pgid
+                if job is not None:
+                    self._jobs[process] = job
+                return
+        # The context is already unwinding: a late child must not outlive it,
+        # even if it ignores the first terminate.
+        _drain_process_tree(process, pgid, timeout=5.0, job=job)
+
+    def terminate_all(self, timeout: float = 5.0) -> None:
+        """Terminate every tracked child still running.
+
+        Args:
+            timeout: Seconds to wait per child for graceful exits before killing.
+        """
+        with self._lock:
+            self._terminating = True
+            entries = list(self._processes.items())
+        for process, pgid in entries:
+            # Drain a dead leader too when its detached group still has
+            # members (its descendants outlived it) or when a job still owns
+            # its tree: both stay valid after the leader exits. The job is
+            # popped so a repeated terminate_all never closes it twice.
+            job = self._jobs.pop(process, None)
+            if (
+                process.poll() is None
+                or job is not None
+                or (pgid is not None and _process_group_exists(pgid))
+            ):
+                _drain_process_tree(process, pgid, timeout, job=job)
 
 
 def _interrupt_main_thread():
@@ -283,6 +642,7 @@ def _interrupt_main_thread():
 @contextlib.contextmanager
 def run_concurrently_context(
     *fns: Callable[..., Any] | tuple[Callable[..., Any], ...],
+    interrupt_on_failure: bool = True,
 ) -> Generator[list[futures.Future], None, None]:
     """Run functions concurrently in a thread pool.
 
@@ -291,8 +651,19 @@ def run_concurrently_context(
     swallowed while the body blocks (e.g. a fatal frontend preflight error
     raising SystemExit while the backend serves on the main thread).
 
+    When the with-body unwinds - normally, on KeyboardInterrupt, or on
+    failure - child processes the tasks launched with new_process(...,
+    run_managed=True) are terminated: the run is over, and a surviving child
+    (e.g. the frontend dev server) would otherwise block the exit waiting on
+    its output. Children not opted in are never touched.
+
     Args:
         *fns: The functions to run.
+        interrupt_on_failure: Interrupt the main thread with SIGINT when a
+            task fails during the body. Disable when the body already blocks
+            on a task's result() (which propagates task failures itself) and
+            the caller installs its own SIGINT handling, so the internal
+            wake-up cannot be mistaken for a real interrupt.
 
     Yields:
         The futures for the functions.
@@ -342,13 +713,23 @@ def run_concurrently_context(
                 raise exc from None
 
     # Run the functions concurrently.
+    registry = _RunChildRegistry()
     executor = None
+
+    def _run_in_registry(fn: tuple[Callable[..., Any], ...]) -> Any:
+        _active_registry.registry = registry
+        try:
+            return fn[0](*fn[1:])
+        finally:
+            _active_registry.registry = None
+
     try:
         executor = futures.ThreadPoolExecutor(max_workers=len(fns))
         # Submit the tasks.
-        tasks = [executor.submit(*fn) for fn in fns]
-        for task in tasks:
-            task.add_done_callback(wake_main_thread)
+        tasks = [executor.submit(_run_in_registry, fn) for fn in fns]
+        if interrupt_on_failure:
+            for task in tasks:
+                task.add_done_callback(wake_main_thread)
 
         try:
             try:
@@ -364,6 +745,12 @@ def run_concurrently_context(
                 # does not wait).
                 with interrupt_lock:
                     in_body = False
+                # Tear down child processes (e.g. the frontend dev server
+                # tree) so tasks blocked streaming their output unblock;
+                # otherwise this exit hangs forever when a signal (e.g.
+                # SIGTERM with no TTY) stops the body but leaves the
+                # children running.
+                registry.terminate_all()
 
             # Get the results in the order completed to check any exceptions.
             for task in futures.as_completed(tasks):
@@ -375,6 +762,9 @@ def run_concurrently_context(
             raise_first_failure(tasks)
             raise
     finally:
+        # Tear down run-managed children even when the run was interrupted
+        # during task submission, before the body's own finally could run.
+        registry.terminate_all()
         # Shutdown the executor
         if executor:
             executor.shutdown(wait=False)
