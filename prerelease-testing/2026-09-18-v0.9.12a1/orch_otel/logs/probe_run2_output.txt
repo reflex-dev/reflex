@@ -1,0 +1,31 @@
+ports free
+[dev_second] frontend 200 after 2s
+[dev_second] drive exit=0 4 lines
+{"pid":7342,"dump_dir":"/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad/apps/orch_otel/dumps/dev_second","traces":true,"metrics":true,"otel_enabled":true,"asgi_middlewa
+[dev_second] span files: metrics-7342.jsonl spans-7312.jsonl spans-7342.jsonl 
+[dev_second] reflex.compile spans by trigger:
+      1 "reflex.compile.trigger": "backend_startup"
+      1 "reflex.compile.trigger": "initial"
+[dev_second] compile-tree roots + stage children (from spantree):
+1:- reflex.compile [INTERNAL] trace=3068088b span=742235 parent=ROOT pid=spans-7312.jsonl
+2:  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "initial"}
+3:  - reflex.compile.pages [INTERNAL] trace=3068088b span=c7dce9 parent=742235 pid=spans-7312.jsonl
+4:  - reflex.compile.install_frontend_packages [INTERNAL] trace=3068088b span=6d8608 parent=742235 pid=spans-7312.jsonl
+5:  - reflex.compile.write [INTERNAL] trace=3068088b span=12bd5c parent=742235 pid=spans-7312.jsonl
+6:- reflex.compile [INTERNAL] trace=4c5b9566 span=098b1e parent=ROOT pid=spans-7342.jsonl
+7:  attrs {"reflex.compile.dry_run": false, "reflex.compile.trigger": "backend_startup"}
+[dev_second] orphans (parent never exported):
+9 spans; 0 orphans: []
+=== hot reload case: edit a page while running, expect a trigger=hot_reload tree
+[dev_hot] 200 after 2s
+sed: can't read otelapp/otelapp.py: No such file or directory
+./run_otel_second.sh: line 7:  7578 Killed                  OTEL_TEST_MODE=programmatic OTEL_DUMP_DIR=$O/dumps/dev_hot setsid $OT/reflex run --frontend-port 3052 --backend-port 8052 --loglevel debug >
+sed: can't read otelapp/otelapp.py: No such file or directory
+[dev_hot] triggers:
+      1 "reflex.compile.trigger": "backend_startup"
+      1 "reflex.compile.trigger": "initial"
+7
+ports free at end
+SECOND DONE
+
+[exited with code 0]

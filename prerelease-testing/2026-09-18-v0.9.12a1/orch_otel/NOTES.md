@@ -31,3 +31,17 @@ Runner quirk (mine, not reflex): the first version of `run_otel_probe.sh` cleane
 processes with `ss -ltnp`, which is not installed in this container, so the first run's server kept
 3052/8052 bound and the second dev case could not start; the script now uses `tools/ports.py`. The
 second dev case and the export control were re-run afterwards — see below.
+
+## Result — dev second run (`dumps/dev_second/`, `logs/dev_second-spantree.txt`)
+
+Frontend already compiled once (bun packages installed): the compile worker (pid 7312) again exported the
+full `reflex.compile trigger=initial` tree with `pages` / `install_frontend_packages` / `write` children,
+the backend worker (pid 7342) its `backend_startup` tree; 9 spans, 0 orphans. Frontend 200 in 2 s.
+
+## Result — `reflex export --frontend-only` (control, `dumps/export/`)
+
+In-process compile: one `reflex.compile trigger=export` tree, as before.
+
+## Result — dev hot reload (`dumps/dev_hot/`, `logs/dev_hot-spantree.txt`)
+
+See the appended section below (re-run after a runner path bug; the edit is applied with an absolute path).
