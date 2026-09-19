@@ -394,3 +394,191 @@ out/*.png                   screenshots
 logs/                       server logs (dev_new, dev_prev, disk_*, mismatch_*)
 evidence/context_jsx_diff.txt   the #6181 diff in compiled output
 ```
+
+## VERIFICATION
+
+Independent adversarial re-run by a second agent, working only from this NOTES.md, the app
+sources and `scripts/` in this directory (the explorer's conversation was not consulted).
+All three issues were reproduced from the written material alone; the written repros were
+sufficient. Evidence under `verification/`.
+
+Environments (identical to the explorer's; `uv pip freeze | grep -i reflex` captured in
+`verification/freeze_shared.txt` and `verification/freeze_prev.txt`):
+
+```
+0.9.12a1 train: reflex==0.9.12a1, reflex-base==0.9.12a1, reflex-components-core==0.9.10a1,
+                reflex-components-radix==0.9.10a1, -code 0.9.6a1, -dataeditor 0.9.3a1,
+                -gridjs 0.9.2a1, -markdown 0.9.4a1, -plotly 0.9.7a1, -recharts 0.9.4a1,
+                -sonner 0.9.4a1, lucide 1.0.4, moment 0.9.4, react-player 0.9.2
+baseline:       reflex==0.9.11.post1, reflex-base==0.9.11.post1, core 0.9.9, radix 0.9.9, ...
+```
+
+Ports used by this verification run: frontend 3720 (new) / 3721 (prev) / 3722 (diskapp) /
+3723 (prev reset probe) / 3724 (prod reset probe); backend 8720/8721/8722/8723. All processes
+started here were killed before returning.
+
+### I-1 — delta for an unknown substate latches the frontend dead — **CONFIRMED, NOT A REGRESSION** (severity lowered to MEDIUM)
+
+Commands run (`W=$SB/apps/verify_render_ctx_statemgr`, apps copied out of this directory):
+
+```bash
+# 0.9.12a1
+cd $W/renderapp && REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/shared/bin/reflex run --frontend-port 3720 --backend-port 8720   # compile clean
+NO_PROXY=localhost,127.0.0.1 curl -s -o /dev/null -w '%{http_code}' --noproxy '*' http://localhost:3720/   # 200
+grep -c backend_only_state $W/renderapp/.web/utils/context.jsx              # 0
+<kill 3720/8720/3760 pids from bin/ports.py>
+touch $W/renderapp/.web/nocompile
+cd $W/renderapp && RENDERAPP_EXTRA_STATE=1 REFLEX_TELEMETRY_ENABLED=false \
+  $SB/envs/shared/bin/reflex run --frontend-port 3720 --backend-port 8720
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $W/scripts/drive_mismatch.py \
+  http://localhost:3720 $W/out v_mismatch_new
+# 0.9.11.post1 baseline: identical recipe, $W/renderapp_prev, $SB/envs/prev/bin/reflex, 3721/8721
+```
+
+Result — `verification/v_mismatch_new_result.json` and `verification/v_mismatch_prev_result.json`
+match each other and the explorer's JSONs field for field:
+
+```
+A_after_load "0" | A_after_clicks "0" | C_after_clicks "0" | sent_frames_from_clicks 0
+events_reach_backend false | after_reload_sent_frames 0 | recv_frames 14 | page_errors []
+console error: Cannot process state update: no dispatch function for substate(s)
+"reflex___state____state.renderapp___renderapp____backend_only_state". ...
+```
+
+Server side stays healthy on both (`verification/v_mismatch_*_server.log` shows the
+`CLIENT_ERROR` round-tripping: `State update failed: no dispatch function for ...`).
+
+Mechanism verified in the compiled bundles of BOTH versions (line numbers as the explorer
+cited them): `.web/utils/state.js` socket `"event"` handler validates the whole delta, and on
+any substate without a dispatcher sets the module-level `backend_state_mismatch = true`
+(new :730 / prev :749); thereafter the `"event"` handler returns at the top (:706 / :725) and
+`processEvent()` clears `event_queue` and returns (:520 / :532). One-way latch, no reset path.
+
+Adversarial notes (why the severity is lowered from HIGH to MEDIUM):
+
+1. **The latch is deliberate, and the code says so.** Both versions carry the comments
+   "Validate the whole delta before dispatching anything, so a bad substate does not result in
+   a partially applied state update" and "A backend/frontend state mismatch is fatal; do not
+   send further events." This is a designed fail-loud, not an oversight. A fix is still worth
+   making (see below), but it is a design change, not a regression repair.
+2. **"A reload does not recover" is an artifact of the repro, not of the framework.** The repro
+   pins the server to the stale bundle with `.web/nocompile`, so a reload necessarily re-serves
+   the same frontend and re-enters the branch. In the real-world shape of this failure (backend
+   redeployed with a new substate, browser holding a cached old bundle) a reload fetches the new
+   bundle and *does* recover — which is exactly what the console message advises. The written
+   repro's strongest claim ("the reload the error message recommends does not recover") therefore
+   does not generalise. What remains genuinely broken is the *unrecoverable-within-the-session*
+   behaviour for any mismatch the reload cannot fix (mixed-version backends behind a load
+   balancer, a frontend pointed at a different backend's `api_url`).
+3. **The "#6181 makes it newly reachable by timing" caveat is weaker than written.** Inspecting
+   `.web/utils/context.jsx` of the 0.9.12a1 build: all 21 `SubstateProvider`s are statically
+   nested inside `StateProvider`'s single `useMemo` (context.jsx:189-213) and are never rendered
+   conditionally, so the `delete dispatchers[substateName]` cleanup can only run when the whole
+   `StateProvider` tree unmounts — at which point `EventLoopProvider` and its socket go with it.
+   `SubstateProvider` also registers from `useIsomorphicLayoutEffect` (context.jsx:177-182),
+   which runs before any passive effect in the same commit. I could not construct a window and
+   saw none in any run. Prev has 0 `SubstateProvider`s (static `useMemo` dispatchers), confirming
+   the shape change, but the fatal branch itself is byte-identical.
+
+Verdict: real, reproducible on both versions, worth fixing (drop/warn on the unknown substate
+and apply the rest, or do not send substates the page never registered), but **not a release
+blocker for this train** — pre-existing and unchanged by anything in it.
+
+### I-2 — `app.modify_state("<client token>")` raises `ValueError: Invalid path: ('',)` — **CONFIRMED, NOT A REGRESSION** (MEDIUM)
+
+```bash
+cd $W/diskapp && REFLEX_TELEMETRY_ENABLED=false REFLEX_STATE_MANAGER_MODE=disk \
+  $SB/envs/shared/bin/reflex run --frontend-port 3722 --backend-port 8722
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python $W/scripts/v_disk_drive.py \
+  http://localhost:3722 $W/out v_disk1 5       # -> token 75de49dd-4be6-4b4e-de49-c1f0e795100b, counter 5
+T=75de49dd-4be6-4b4e-de49-c1f0e795100b
+NO_PROXY=localhost,127.0.0.1 curl -s -w '\nHTTP=%{http_code}\n' --noproxy '*' \
+  "http://localhost:8722/api/poke?token=$T&value=x&legacy=1"   # Internal Server Error / HTTP=500
+NO_PROXY=localhost,127.0.0.1 curl -s -w '\nHTTP=%{http_code}\n' --noproxy '*' \
+  "http://localhost:8722/api/poke?token=$T&value=ctrl-ok"      # {"ok":true,...} / HTTP=200
+```
+
+Reproduced verbatim, including the control. Full traceback captured at
+`verification/v_issue2_traceback.txt`: `diskapp.py:60 -> app.py:1842 modify_state ->
+token.py:247 from_legacy_token -> state.py:1477 get_class_substate -> ValueError: Invalid path: ('',)`.
+
+Root cause and baseline confirmed two ways, both stronger than the explorer's diff:
+
+* `verification/legacy_token_check.py`, run from a neutral cwd against each venv, shows the same
+  behaviour on **both** versions:
+  `_split_substate_key("28e5629b-...")` -> `('28e5629b-...', '')`, then
+  `from_legacy_token(bare)` -> `ValueError: Invalid path: ('',)`;
+  `from_legacy_token(f"{tok}_{rx.State.get_full_name()}")` succeeds;
+  `from_legacy_token("abc_def")` -> `ValueError: Invalid path: ('def',)`.
+* `inspect.getsource(BaseStateToken.from_legacy_token)` is character-identical between
+  `envs/shared` (0.9.12a1) and `envs/prev` (0.9.11.post1), and `App.modify_state`'s two
+  `@overload`s are identical too (new app.py:1801/1809, prev app.py:1742/1750).
+
+Additional point the explorer did not make, which strengthens the case for fixing it: the
+**typed public API advertises the broken form**. `App.modify_state` still carries an
+un-deprecated `token: str` overload (`app.py:1801`), so a type checker accepts
+`app.modify_state(client_token)` and the runtime then rejects it with a `ValueError` naming a
+path the caller never wrote. Either the string overload should accept a bare client token
+(defaulting the state path to the root state — the only sensible reading of a UUID) or it should
+raise a message naming the actual problem and the `BaseStateToken` replacement. No `docs/`
+reference to the string form exists (`grep -rn "modify_state(" /home/user/reflex/docs/` -> no hits),
+so this is API-surface only.
+
+Not a regression; not a release blocker; a small, safe, self-contained fix.
+
+### I-3 — `reflex run` wipes `.states/` at startup, prod included — **CONFIRMED, NOT A REGRESSION** (LOW)
+
+Reproduced end to end, then extended with a baseline and a prod run the explorer had only
+argued from source.
+
+```bash
+# state on disk before the restart
+ls -la $W/diskapp/.states/     # two *.pkl, written 05:48
+NO_PROXY=localhost,127.0.0.1 curl -s --noproxy '*' "http://localhost:8722/api/disk_read?token=$T"
+# -> {"manager":"StateManagerDisk","debounce":2.0,"queue_len":0,
+#     "disk":{"value":"ctrl-ok","counter":5,"api_writes":1},"cache":{...}}
+<SIGTERM then SIGKILL the reflex pids; pkl files still present and unchanged (md5 recorded)>
+cd $W/diskapp && REFLEX_TELEMETRY_ENABLED=false REFLEX_STATE_MANAGER_MODE=disk \
+  $SB/envs/shared/bin/reflex run --frontend-port 3722 --backend-port 8722
+ls -la $W/diskapp/.states/     # EMPTY
+NO_PROXY=localhost,127.0.0.1 curl -s --noproxy '*' "http://localhost:8722/api/disk_read?token=$T"
+# -> {"manager":"StateManagerDisk","debounce":2.0,"queue_len":0,"disk":null,"cache":null}
+```
+
+**Baseline actually executed (the explorer only diffed source).** Seeded
+`renderapp_prev/.states/seed_prev.pkl` plus five real pickles, then
+`cd $W/renderapp_prev && $SB/envs/prev/bin/reflex run --frontend-port 3723 --backend-port 8723`
+-> `.states/` empty. 0.9.11.post1 behaves identically. Pre-existing confirmed empirically, not
+just by source identity. (`verification/v_reset_prev_tail.log`.)
+
+**Prod claim actually executed (the explorer only argued it from `_run` being shared).** Seeded
+`diskapp/.states/seed_prod.pkl` + `seed_prod2.pkl`, then
+`cd $W/diskapp && REFLEX_STATE_MANAGER_MODE=disk $SB/envs/shared/bin/reflex run --env prod
+--frontend-port 3724 --backend-port 3724` -> `.states/` empty while the production build was
+still compiling. The prod claim holds. (`verification/v_reset_prod_tail.log`.)
+
+Source confirmed on both sides: `reflex/reflex.py:597` (`reset_disk_state_manager()`, comment
+"# Delete the states folder if it exists.") with **no `env` guard anywhere earlier in `_run`
+(reflex.py:536-597)**; the prev venv has the same call at `reflex.py:571` — the notes say 570,
+an off-by-one worth correcting. Implementation
+`reflex/istate/manager/__init__.py:260-267` is byte-identical between the two versions.
+
+One scope correction to the notes: this is **not** limited to people who opt in with
+`REFLEX_STATE_MANAGER_MODE=disk`. `renderapp/` was run with no state-manager env var at all and
+still accumulated `.states/*.pkl`, because `StateManagerDisk` is the default when no redis URL
+is configured. So every `reflex run` restart drops every live session's state for the default
+single-process configuration. That is defensible (and probably desirable) in dev, where a stale
+pickle can no longer match the code; it is the `--env prod` case that deserves a decision.
+Severity LOW stands — behaviour is intentional and unchanged, but it should be documented or
+gated for prod.
+
+### Summary of this verification
+
+| issue | reproduced from the written repro | regression vs 0.9.11.post1 | verdict |
+| --- | --- | --- | --- |
+| I-1 unknown-substate latch | yes, byte-identical result JSON on both versions | no | confirmed defect, severity lowered HIGH -> MEDIUM (deliberate design; the "reload cannot recover" claim is an artifact of `.web/nocompile`) |
+| I-2 `modify_state(str)` | yes, HTTP 500 + control 200 | no (`from_legacy_token` identical) | confirmed defect, MEDIUM |
+| I-3 `.states` wiped on run | yes, plus baseline and prod runs the notes had only argued | no | confirmed behaviour, LOW; scope is wider than the notes say (disk is the default manager) |
+
+No issue in this cluster is a regression of the 0.9.12a1 train, and none blocks the release.

@@ -1,0 +1,66 @@
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────── Starting Reflex App ──────────────────────────────
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+───────────────────────────────── App Running ──────────────────────────────────
+Warning: `rx._x` contains experimental features and might be removed at any time
+in the future.
+Warning: `reflex_base.plugins.sitemap.SitemapPlugin` plugin is enabled by 
+default, but not explicitly added to the config. If you want to use it, please 
+add it to the `plugins` list in your config inside of `rxconfig.py`. To disable 
+this plugin, add `SitemapPlugin` to the `disable_plugins` list.
+App running at: http://localhost:3721/
+Backend running at: http://0.0.0.0:8721
+[Reflex Frontend Exception]
+ [SID: 5PnTosSk2AixTjZBAAAB] State update failed: no dispatch function for 
+substate(s) 
+'reflex___state____state.renderapp___renderapp____backend_only_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+[Reflex Frontend Exception]
+ [SID: 5-RhOD9XSMoNFvJ7AAAD] State update failed: no dispatch function for 
+substate(s) 
+'reflex___state____state.renderapp___renderapp____backend_only_state'. This 
+indicates a frontend/backend state mismatch. Rebuild the frontend or check that 
+api_url points to the matching backend.
+
+[ERROR] Unexpected exit from worker-1
+Starting frontend failed with exit code -9
+$ react-router dev --host
+  ➜  Local:   http://localhost:3721/
+  ➜  Network: http://192.0.2.2:3721/  eth0
+5:46:38 AM [vite] (ssr) connected.
+5:46:45 AM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.renderapp___renderapp____backend_only_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+5:46:54 AM [vite] (client) [console.error] Cannot process state update: no 
+dispatch function for substate(s) 
+"reflex___state____state.renderapp___renderapp____backend_only_state". Try 
+refreshing the page or clearing your browser cache. This error usually indicates
+a mismatch between frontend and backend state definitions. If you are the 
+developer of this app, rebuild the frontend and check that api_url is correct.
+error: script "dev" was terminated by signal SIGKILL (Forced quit)
+
+
+
+Run with --loglevel debug  for the full log.
+Info: Reflex app stopped.

@@ -1,0 +1,40 @@
+{
+ "label": "prod-new-bundlebug",
+ "console": [
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+  "error: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "bad": [
+  {
+   "url": "http://localhost:3760/components/logo.svg",
+   "status": 404
+  }
+ ],
+ "requests_logo": [
+  "http://localhost:3760/components/logo.svg"
+ ],
+ "ws": [
+  "42/_event,[\"event\",{\"delta\":{\"reflex___state____state.bpapp___bpapp____dyn_state\":{\"dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_\":\"//__reflex_evaluate\\nconst React = window.__reflex.react;\\n\\nconst {jsx} = window.__reflex['@emotion/react']\\nconst {Fragment,useEffect} = window.__reflex['react']\\nconst {Flex: RadixThemesFlex,Text: RadixThemesText} = window.__reflex['@radix-ui/themes']\\nconst LucideBug = window.__reflex['lucide-react/dist/esm/icons/bug.mjs'].default\\nconst {pyOr} = window.__reflex['$/utils/state']\\n\\nexport default function MySSRComponent () {\\n  \\n\\n\\n\\n  "
+ ],
+ "logo_src_attr": "/components/logo.svg",
+ "logo_natural": {
+  "w": 0,
+  "h": 0,
+  "current": "http://localhost:3760/components/logo.svg"
+ },
+ "dyn_before": {
+  "widget_text": "dyn:rocket",
+  "svg_class": "lucide lucide-rocket",
+  "tag": "tag: rocket"
+ },
+ "dyn_after": {
+  "widget_text": "dyn:bug",
+  "svg_class": "lucide lucide-bug",
+  "tag": "tag: bug"
+ },
+ "dyn_after_reload": {
+  "widget_text": "dyn:bug",
+  "svg_class": "lucide lucide-bug",
+  "tag": "tag: bug"
+ }
+}

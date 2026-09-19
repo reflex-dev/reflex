@@ -1,0 +1,16 @@
+        rx.text("url: ", rx.State.router.url.to_string(), id="router-url"),
+    )
+
+
+if os.environ.get("BP_BUNDLE", "1") == "1":
+    bundle_library(rx.icon("rocket"))
+
+if os.environ.get("BP_BUNDLE_BUG") == "1":
+    bundle_library(rx.icon("bug"))
+
+
+class DynState(rx.State):
+    """State whose var value is a Component referencing a bundled library (#7096)."""
+
+    tag: str = "rocket"
+    plain: str = "hello"
