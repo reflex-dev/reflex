@@ -78,7 +78,7 @@ Index:
 - FINDING-023: a hydrate/event delta naming a substate the compiled frontend has no dispatcher for sets `backend_state_mismatch=true` in `state.js` and every later event is discarded — zero websocket frames leave the browser until the frontend is recompiled (HIGH, pre-existing on both versions; the previous campaign's FINDING-036, re-tested because #6181 rewrote the dispatcher registry and did not change the latch) — re-confirmed by `render_ctx_statemgr`
 - FINDING-024: `app.modify_state("<client token>")` with the bare token raises `ValueError: Invalid path: ('',)` from `BaseStateToken.from_legacy_token` — the deprecated string form is broken for its most obvious argument (MEDIUM, pre-existing) — claimed by `render_ctx_statemgr`, verification pending
 - FINDING-025: `reflex run` deletes the whole `.states/` directory at startup in `--env prod` as well as dev, whatever `REFLEX_STATE_MANAGER_MODE` is, so disk-backed state never survives a restart (LOW, pre-existing, intentional-looking `reset_disk_state_manager()` call) — claimed by `render_ctx_statemgr`
-- FINDING-026: the #7083 changelog understates the behavior change — on a bare install a plain `class Item(rx.Model)` (no `table=True`) now fails at class-definition time with the guided ImportError, where 0.9.11.post1 let it define and failed only at instantiation; intended per the PR discussion, but the entry cites only the `table=True` form (LOW, changelog wording) — claimed by `db_optional_imports`
+- ~~FINDING-026~~: "the #7083 changelog understates the `rx.Model` change" — **REFUTED** as a defect by the verifier: the behavior reproduces (a plain `class Item(rx.Model)` now raises the guided ImportError at definition time on a bare install), but the changelog's scope clause "Subclassing `rx.Model` (e.g. `class Item(rx.Model, table=True)`)" already covers every subclass; the `table=True` form is an example, not a restriction. Kept in the refuted list.
 - FINDING-011: reflex-enterprise's REST `redact_router_session()` became a silent no-op — it looks for the `router` key that #7068 removed from `state.dict()`, so server-generated `client_token`/`session_id` survive into REST responses and event deltas (HIGH, **security-relevant**, regression, cross-package) — **CONFIRMED** by the verifier in-process AND over real HTTP (`/_reflex/retrieve_state` and the event endpoint's ndjson delta return the server-side `client_token` on 0.9.12a1; blanked on 0.9.11.post1)
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (CRITICAL, regression)
@@ -371,6 +371,16 @@ Index:
   campaigns as reflex-dev/reflex#6978)**: refuted for 0.9.12a1 by the verifier — the explorer's own
   `scripts/probe_masked_attrerror.py` yields a chained `ReflexRuntimeError` on reflex-base 0.9.12a1 and the masked
   error only on 0.9.11.post1. #7115 fixes #6978; `vars_typing` reached the same conclusion independently.
+- **FINDING-026 — "#7083's changelog understates the `rx.Model` behavior change" (`db_optional_imports`)**: refuted by
+  the verifier — the entry says "Subclassing `rx.Model` (e.g. `class Item(rx.Model, table=True)`) without the `db`
+  extra installed now raises the guided ImportError"; the plain subclass is a subclass, and PR #7083's body records
+  that the maintainers accepted definition-time failure for every subclass. Behavior confirmed, wording adequate.
+- **"A failing `rx.asession()` inside a background task is invisible to the client" (`db_optional_imports`)**: refuted
+  by the verifier — the server log carries `[Reflex Backend Exception]` markers and the browser shows a red sonner
+  toast ("An error occurred. / ValueError: No async database url configured / See logs for details.") after both the
+  foreground handler and the background task (`db_optional_imports/verification/shots/noasync_new_*.png`); the
+  explorer's driver watched console/pageerror/HTTP/deltas only, and the toast (`id="backend_error"`, ~4 s) had gone
+  before its assertions. The underlying "requires `async_db_url`, nothing hints at it" remains a docs nit.
 - **FINDING-009 — "`rx.cond` evaluates both branches eagerly; a throwing untaken branch fails the prod build"
   (`memo_aschild`)**: refuted by the verifier with a minimal app (`memo_aschild/verification/app_boomy`): an
   `@rx.memo` component containing the throwing Var and an idiomatic `rx.text(S.user["name"])` with `user=None` both
@@ -691,10 +701,9 @@ heavy libraries installed to defer. Relationship payloads semantically identical
 accounting still counts direct-SQLModel apps without importing `reflex.model`; prod with 4 forked granian workers
 served 20 concurrent browser contexts doing DB reads 20/20 with no hangs or registry tracebacks. Bonus fix confirmed:
 on 0.9.11.post1 a later `import reflex.model` silently replaced a user's custom `@rx.serializer` for `SQLModel`;
-0.9.12a1 preserves it (`scripts/serializer_override.py`). Issues: FINDING-026 (changelog wording); pre-existing lows:
-`reflex db init` without the extra prints a raw ~20-line click traceback instead of the guided message;
-`rx.asession()` with only `db_url` set raises `No async database url configured`, invisible client-side inside a
-background task. Latent fragility noted: optional-library serializers are matched by identity against hard-coded
+0.9.12a1 preserves it (`scripts/serializer_override.py`). Verifier: the changelog-wording claim (FINDING-026) and the "asession failure invisible in a background task" claim
+were refuted (see the refuted list); `reflex db init` without the extra printing a raw click traceback (exit 1, 35
+lines, identical on both versions) was CONFIRMED as a pre-existing low. Latent fragility noted: optional-library serializers are matched by identity against hard-coded
 module paths (`pandas.core.frame`, `plotly.graph_objs._figure`, `PIL.Image`, `sqlmodel.main`) — a library reorg would
 disable serialization silently. Skipped: reflex-local-auth (covered by `up_examples_b`).
 

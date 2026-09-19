@@ -114,9 +114,9 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   `_UNKEYABLE_VALUE` branch is unreachable (`event_loop`).
 - Generated `package.json` pins `"mergician": "v2.0.2"` (leading `v`; every other pin is bare semver) — cosmetic,
   new in #6850; literal at `packages/reflex-base/src/reflex_base/constants/installer.py:151` (`up_examples_a`, CONFIRMED).
-- `reflex db init` without the db extra prints a raw click traceback instead of the guided message; `rx.asession()`
-  with only `db_url` configured fails with `No async database url configured` (silently inside background tasks) —
-  both pre-existing (`db_optional_imports`).
+- `reflex db init` without the db extra prints a raw click traceback instead of the guided message (pre-existing,
+  `db_optional_imports`, CONFIRMED); `rx.asession()` requires `async_db_url` and nothing in the docs hints at it
+  (docs nit — the failure IS surfaced as a backend-error toast).
 - Missing app-package `__init__.py` → silent frontend/backend state-name mismatch, every event a no-op, only a browser
   console error (`vars_typing`; pre-existing; `reflex init` skips the file when the app dir exists).
 - `rx.Var.create(x)._replace(_var_data=...)` raises `TypeError` on both versions (`vars_typing`; pre-existing).
@@ -174,9 +174,6 @@ No open PR addresses FINDING-001, -003, -004 or -007.
   False/the default to raising `ReflexRuntimeError` (PR body only) — add to the changelog or not? (`vars_typing`)
 - #7131's changelog line reads as if an existing env var changed; nothing shipped uses `EnvVar[timedelta]` yet
   (#7138 is the follow-up). Consider rewording. (`vars_typing`)
-- FINDING-026 — the #7083 changelog cites only `class Item(rx.Model, table=True)`; on a bare install a plain
-  `class Item(rx.Model)` now also fails at definition time (intended per the PR). Add the plain-subclass case to the
-  entry. (`db_optional_imports`)
 - The metaclass change itself (FINDING-001) is unannounced; if it is kept, it needs a Breaking Changes
   entry naming `BaseStateMeta` and the `type(rx.State)` spelling.
 
