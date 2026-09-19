@@ -1,5 +1,40 @@
+commit eaf3f4822bab98a0030929208249bd6f223cea3f
+Author: Claude <noreply@anthropic.com>
+Date:   Sat Sep 19 16:57:01 2026 +0000
+
+    fix: release the dev backend socket when no worker can serve it
+    
+    The dev supervisor binds the listening socket itself (#7114) so requests
+    made while a worker is being replaced wait in the accept backlog instead of
+    being refused. When no worker is alive at all -- the app module raises on
+    import after a save, or the supervisor is shutting down -- the kernel kept
+    accepting into that backlog with nobody to answer, so every request hung for
+    the client's full timeout. 0.9.11.post1, which has no supervisor-owned
+    socket, refused instantly.
+    
+    ParentBoundGranian now closes the listening socket when a worker that the
+    supervisor did not stop leaves no live worker behind, and re-creates it for
+    the next spawn, so the port refuses connections only while nothing can serve
+    them. Shutdown closes it as well, rather than granian's detach, which leaks
+    the descriptor for the lifetime of the process. Workers stopped by the
+    supervisor (hot reload, rolling respawn) keep the socket bound, so #7114's
+    behaviour is unchanged: 543 pings at 20 Hz across two hot reloads, 0
+    refused.
+    
+    Fixes #7213
+    
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+    Claude-Session: https://claude.ai/code/session_01NeyxWsuC9hqSKq8YcEwZyY
+
+diff --git a/news/+dev-release-socket-without-worker.bugfix.md b/news/+dev-release-socket-without-worker.bugfix.md
+new file mode 100644
+index 000000000..753d0c6ff
+--- /dev/null
++++ b/news/+dev-release-socket-without-worker.bugfix.md
+@@ -0,0 +1 @@
++Release the development backend port again when no worker can serve it, so requests fail fast while the app module raises on import and after the server shuts down, instead of waiting in the accept backlog until the client times out.
 diff --git a/reflex/utils/exec.py b/reflex/utils/exec.py
-index 0b70669bc..d381947e5 100644
+index 0b70669bc..d84f469bc 100644
 --- a/reflex/utils/exec.py
 +++ b/reflex/utils/exec.py
 @@ -13,6 +13,7 @@ import re
@@ -10,7 +45,7 @@ index 0b70669bc..d381947e5 100644
  from collections.abc import Mapping, Sequence
  from pathlib import Path
  from typing import Any, NamedTuple, TypedDict
-@@ -729,8 +730,25 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
+@@ -729,9 +730,27 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
          On Linux each worker otherwise binds only after loading the app, so
          requests during a reload are refused. With the supervisor holding the
          socket they wait in the accept backlog for the new worker.
@@ -34,24 +69,35 @@ index 0b70669bc..d381947e5 100644
 +            self._spawn_count = 0
 +
          def _init_shared_socket(self):
++            """Bind the listening socket in the supervisor process."""
              self._ssp = SocketSpec(self.bind_addr, self.bind_port, self.backlog)
              self._shd = self._ssp.build()
-@@ -739,6 +757,76 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
+             self._sfd = self._shd.get_fd()
+@@ -739,6 +758,85 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
              sock = socket.socket(fileno=self._sfd)
              sock.set_inheritable(True)
              self._sso = sock
 +            # Resolve port 0 so a re-created socket keeps the same port.
 +            self.bind_port = sock.getsockname()[1]
 +
++        def _shared_socket_is_open(self) -> bool:
++            """Report whether the supervisor still holds the listening socket.
++
++            Returns:
++                Whether the listening socket is open.
++            """
++            return self._sso is not None and self._sso.fileno() >= 0
++
 +        def _close_shared_socket(self):
 +            """Release the listening socket, so the port refuses connections."""
 +            with self._socket_lock:
-+                if self._sso is None:
++                if not self._shared_socket_is_open():
 +                    return
 +                # Granian's SocketHolder does not own the descriptor, so
-+                # closing the socket object is what frees the port.
++                # closing the socket object is what frees the port. The closed
++                # object stays in place for granian to detach on shutdown.
 +                self._sso.close()
-+                self._sso = self._shd = self._sfd = None
++                self._shd = self._sfd = None
 +
 +        def _release_socket_unless_served(self, wrk: Any, spawn_count: int):
 +            """Release the socket when an exited worker leaves nobody serving.
@@ -83,7 +129,7 @@ index 0b70669bc..d381947e5 100644
 +                The spawned worker.
 +            """
 +            with self._socket_lock:
-+                if self._sso is None:
++                if not self._shared_socket_is_open():
 +                    self._init_shared_socket()
 +                self._spawn_count += 1
 +                spawn_count = self._spawn_count
@@ -114,7 +160,7 @@ index 0b70669bc..d381947e5 100644
      reset_dev_backend_reload_marker()
      environment.REFLEX_DEV_BACKEND_RELOAD_ACTIVE.set(True)
 diff --git a/tests/units/utils/test_exec.py b/tests/units/utils/test_exec.py
-index f53a14c13..fc78389cf 100644
+index f53a14c13..1516d14a0 100644
 --- a/tests/units/utils/test_exec.py
 +++ b/tests/units/utils/test_exec.py
 @@ -9,6 +9,7 @@ import time
@@ -125,7 +171,7 @@ index f53a14c13..fc78389cf 100644
  from unittest.mock import patch
  
  import pytest
-@@ -476,3 +477,266 @@ def test_run_granian_backend_prod_json_logs_in_json_mode(
+@@ -476,3 +477,269 @@ def test_run_granian_backend_prod_json_logs_in_json_mode(
          if json_mode
          else None
      )
@@ -203,7 +249,8 @@ index f53a14c13..fc78389cf 100644
 +            self.backlog = 16
 +            self.wrks = []
 +            self.shutdowns = []
-+            self._ssp = self._shd = self._sfd = self._sso = None
++            self._ssp = self._shd = self._sfd = None
++            self._sso: Any = None
 +            servers.append(self)
 +
 +        def _spawn_worker(self, idx, target, callback_loader):
@@ -216,6 +263,8 @@ index f53a14c13..fc78389cf 100644
 +            pass
 +
 +        def shutdown(self, exit_code=0):
++            # Granian detaches the socket object while unlinking the pid file.
++            self._sso.detach()
 +            self.shutdowns.append(exit_code)
 +
 +    mocker.patch.object(granian_server, "Server", FakeGranian)
