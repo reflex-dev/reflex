@@ -256,7 +256,9 @@ def test_providers_list_reports_the_fallback_failure(mocker: MockFixture):
     result = runner.invoke(providers_cli, ["list"], env=_WIDE)
 
     assert result.exit_code == 1
+    # Both halves: what was tried, and why it was tried in the first place.
     assert "gateway timeout" in result.output
+    assert "no permission" in result.output
 
 
 def test_providers_list_other_error_exits_nonzero(mocker: MockFixture):
@@ -313,3 +315,31 @@ def test_providers_status_requires_org(mocker: MockFixture):
     result = runner.invoke(providers_cli, ["status"])
 
     assert result.exit_code == 1
+
+
+def test_providers_status_expired_token_says_to_log_in(mocker: MockFixture):
+    """A token that will not authenticate is not a status the command reports."""
+    client = _authed(mocker)
+    client.api.providers.gcp_status.side_effect = api_error(401, "expired")
+
+    result = runner.invoke(providers_cli, ["status"])
+
+    assert result.exit_code == 1
+    assert "reflex login" in result.output
+
+
+def test_providers_status_enrichment_expired_token_says_to_log_in(
+    mocker: MockFixture,
+):
+    """An expired token during enrichment is not a missing admin permission."""
+    client = _authed(mocker)
+    client.api.providers.gcp_status.return_value = _status(
+        connections=[gcp_connection("us-prod", is_default=True)]
+    )
+    client.api.providers.accounts.side_effect = api_error(401, "expired")
+
+    result = runner.invoke(providers_cli, ["status"], env=_WIDE)
+
+    assert result.exit_code == 1
+    assert "reflex login" in result.output
+    assert "(needs org admin)" not in result.output

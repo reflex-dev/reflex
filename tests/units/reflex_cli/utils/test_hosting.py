@@ -635,6 +635,9 @@ def test_validate_token_names_the_product_it_logs_in_through(
     client.__enter__.return_value = client
     client.auth.me.return_value = _client(tier="Enterprise").me
     mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
+    mocker.patch(
+        "reflex_cli.utils.hosting.is_reflex_enterprise_installed", return_value=False
+    )
 
     assert validate_token("some-token")["tier"] == "Enterprise"
     client.auth.me.assert_called_once_with(source="reflex")
@@ -964,3 +967,24 @@ def test_a_two_character_escape_leaves_no_stray_byte(hostile: str):
     cleaned = _strip_terminal_controls(hostile)
 
     assert cleaned == "AB"
+
+
+def test_validate_token_names_reflex_enterprise_when_it_is_installed(
+    mocker: MockerFixture,
+):
+    """An install with reflex-enterprise logs in as that product.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.auth.me.return_value = _client().me
+    mocker.patch("reflex_cli.utils.hosting.new_client", return_value=client)
+    mocker.patch(
+        "reflex_cli.utils.hosting.is_reflex_enterprise_installed", return_value=True
+    )
+
+    validate_token("some-token")
+
+    client.auth.me.assert_called_once_with(source="reflex-enterprise")

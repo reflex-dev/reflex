@@ -817,13 +817,14 @@ def test_list_apps_error(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
         caplog: The pytest log capture fixture.
     """
     client = _authed(mocker)
-    client.api.apps.list.side_effect = Exception("Unable to list deployments")
+    client.api.apps.list.side_effect = api_error(500, "Unable to list deployments")
 
     result = runner.invoke(hosting_cli, ["apps", "list"])
 
     assert result.exit_code == 1
     client.api.apps.list.assert_called_once_with(project_id=None)
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    # The API's own explanation, not a line of the CLI's own.
     assert errors == ["Unable to list deployments"]
 
 
@@ -1717,3 +1718,20 @@ def test_delete_app_json_output_when_app_is_gone(mocker: MockFixture):
         "message": "No application found with ID 'app123'",
     }
     client.api.apps.delete.assert_not_called()
+
+
+def test_list_apps_expired_token(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
+    """A token that expired since it was validated says what to do about it.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        caplog: The pytest log capture fixture.
+    """
+    client = _authed(mocker)
+    client.api.apps.list.side_effect = api_error(401, "expired")
+
+    result = runner.invoke(hosting_cli, ["apps", "list"])
+
+    assert result.exit_code == 1
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert errors == ["You are not authenticated. Run `reflex login` to authenticate."]

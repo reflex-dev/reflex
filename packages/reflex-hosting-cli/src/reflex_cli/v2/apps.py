@@ -770,13 +770,11 @@ def list_apps(
     interactive: bool,
 ):
     """List all the hosted deployments of the authenticated user. Will exit if unable to list deployments."""
-    from reflex_build_sdk import AuthenticationError
-
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
 
-    try:
+    with hosting.reporting_api_errors():
         authenticated_client = hosting.get_authenticated_client(
             token=token, interactive=interactive
         )
@@ -801,12 +799,6 @@ def list_apps(
             hosting.as_json_document(app)
             for app in authenticated_client.api.apps.list(project_id=project_id)
         ]
-    except AuthenticationError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
-    except Exception as ex:
-        logger.error("Unable to list deployments")
-        raise click.exceptions.Exit(1) from ex
 
     if as_json:
         print_json(deployments)

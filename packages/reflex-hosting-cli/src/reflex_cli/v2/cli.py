@@ -495,7 +495,7 @@ def _apply_full_deploy(
             or the server refused the change.
 
     """
-    from reflex_build_sdk import ReflexBuildError
+    from reflex_build_sdk import APIStatusError
 
     from reflex_cli.utils import hosting
 
@@ -517,7 +517,9 @@ def _apply_full_deploy(
 
     try:
         result = client.api.apps.set_full_deploy(app.id, full_deploy)
-    except ReflexBuildError as ex:
+    except APIStatusError as ex:
+        # A status the server answered with is a refusal it definitely applied
+        # nothing for; anything else falls through to the hedge below.
         logger.error(f"set full deploy failed: {hosting.error_message(ex)}")
         raise click.exceptions.Exit(1) from ex
     except BaseException:
@@ -769,6 +771,9 @@ def deploy(
             app_name = app.name
     except click.exceptions.Exit:
         raise
+    except ReflexBuildError as ex:
+        logger.error(f"Deployment failed: {hosting.error_message(ex)}")
+        raise click.exceptions.Exit(1) from ex
     except Exception as ex:
         logger.error(f"Deployment failed: {ex}")
         raise click.exceptions.Exit(1) from ex

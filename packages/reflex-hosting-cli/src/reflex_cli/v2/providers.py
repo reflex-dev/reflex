@@ -109,9 +109,11 @@ def _runtime_service_accounts(
 
     try:
         accounts = client.api.providers.accounts(org_id)
-    except (AuthenticationError, PermissionDeniedError) as ex:
+    except PermissionDeniedError as ex:
         logger.debug(f"Not permitted to read provider account details: {ex}")
         return None, _RUNTIME_SA_UNKNOWN
+    except AuthenticationError:
+        raise
     except Exception as ex:
         logger.warning(f"Could not read the runtime service accounts: {ex}")
         return None, _RUNTIME_SA_UNAVAILABLE
@@ -210,7 +212,7 @@ def providers_status(
     interactive: bool,
 ):
     """Show whether your organization can deploy to Google Cloud (GCP)."""
-    from reflex_build_sdk import ReflexBuildError
+    from reflex_build_sdk import AuthenticationError, ReflexBuildError
 
     from reflex_cli.utils import hosting
 
@@ -222,6 +224,9 @@ def providers_status(
         org_id = _resolve_org_id(org_id, authenticated_client)
         try:
             status = authenticated_client.api.providers.gcp_status(org_id)
+        except AuthenticationError:
+            # Answered by `reporting_api_errors`, which says how to fix it.
+            raise
         except ReflexBuildError as ex:
             logger.error(f"Failed to fetch GCP status: {hosting.error_message(ex)}")
             raise click.exceptions.Exit(1) from ex
@@ -296,7 +301,7 @@ def providers_list(
     into. Pass a connection's name to `reflex deploy --gcp-connection` to
     deploy an app through it instead of the default one.
     """
-    from reflex_build_sdk import AuthenticationError, PermissionDeniedError
+    from reflex_build_sdk import PermissionDeniedError
 
     from reflex_cli.utils import hosting
 
@@ -309,7 +314,7 @@ def providers_list(
         runtime_service_accounts: dict[str, str] | None
         try:
             accounts = authenticated_client.api.providers.accounts(org_id)
-        except (AuthenticationError, PermissionDeniedError) as ex:
+        except PermissionDeniedError as ex:
             # The stored provider accounts are org-admin only, but anyone who
             # can deploy needs the connection names --gcp-connection selects
             # between, so fall back to the GCP status every member can read.
