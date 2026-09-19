@@ -1,0 +1,114 @@
+"""Tests for reflex.utils.js_runtimes install gating."""
+
+from unittest import mock
+
+import pytest
+
+from reflex.utils import js_runtimes
+
+
+@pytest.fixture
+def install_mocks(monkeypatch):
+    """Replace every side effect of install_frontend_packages with recorders.
+
+    Args:
+        monkeypatch: The pytest monkeypatch fixture.
+
+    Returns:
+        A dict of recorder lists keyed by side-effect name.
+    """
+    calls: dict[str, list] = {
+        "managers": [],
+        "sync_to_web": [],
+        "install": [],
+        "drop": [],
+        "sync_to_root": [],
+    }
+    monkeypatch.setattr(
+        js_runtimes,
+        "get_nodejs_compatible_package_managers",
+        lambda raise_on_none=False: calls["managers"].append(1) or ["npm"],
+    )
+    monkeypatch.setattr(
+        js_runtimes,
+        "_sync_root_lockfiles_for_frontend_install",
+        lambda: calls["sync_to_web"].append(1),
+    )
+    monkeypatch.setattr(
+        js_runtimes,
+        "_install_frontend_packages",
+        lambda *args: calls["install"].append(args),
+    )
+    monkeypatch.setattr(
+        js_runtimes,
+        "_drop_lockfile_of_other_package_manager",
+        lambda manager: calls["drop"].append(manager),
+    )
+    monkeypatch.setattr(
+        js_runtimes.frontend_skeleton,
+        "sync_web_lockfiles_to_root",
+        lambda: calls["sync_to_root"].append(1),
+    )
+    return calls
+
+
+def _fake_config() -> mock.Mock:
+    """Build a minimal config for install_frontend_packages.
+
+    Returns:
+        A mock config with no plugins and frozen lockfile installs.
+    """
+    return mock.Mock(plugins=[], frozen_lockfile=True)
+
+
+def test_install_never_starts_with_unsupported_node(monkeypatch, install_mocks):
+    """A failed node-version preflight must leave no lockfile side effects.
+
+    Regression test for #6976: an npm install that the run later rejects
+    persisted npm lockfile state into reflex.lock/, silently switching the
+    project to npm and breaking later bun runs.
+    """
+    monkeypatch.setattr(js_runtimes, "prefer_npm_over_bun", lambda: True)
+    monkeypatch.setattr(js_runtimes, "check_node_version", lambda: False)
+    monkeypatch.setattr(js_runtimes, "get_node_version", lambda: None)
+
+    with pytest.raises(SystemExit):
+        js_runtimes.install_frontend_packages({"react"}, _fake_config())
+
+    assert install_mocks["sync_to_web"] == [], "lockfiles were synced to .web"
+    assert install_mocks["install"] == [], "npm install ran despite the gate"
+    assert install_mocks["sync_to_root"] == [], "lockfiles were persisted"
+
+
+def test_install_proceeds_with_supported_node(monkeypatch, install_mocks):
+    """The gate does not block installs when the node version is supported."""
+    monkeypatch.setattr(js_runtimes, "prefer_npm_over_bun", lambda: True)
+    monkeypatch.setattr(js_runtimes, "check_node_version", lambda: True)
+
+    js_runtimes.install_frontend_packages({"react"}, _fake_config())
+
+    assert install_mocks["install"] != [], "install did not run"
+    assert install_mocks["sync_to_root"] != [], "lockfiles were not persisted"
+
+
+def test_install_ignores_node_version_under_bun(monkeypatch, install_mocks):
+    """The bun path never gated on node version and still does not."""
+    monkeypatch.setattr(js_runtimes, "prefer_npm_over_bun", lambda: False)
+    monkeypatch.setattr(js_runtimes, "check_node_version", lambda: False)
+
+    js_runtimes.install_frontend_packages({"react"}, _fake_config())
+
+    assert install_mocks["install"] != [], "bun install was blocked"
+
+
+def test_validate_frontend_dependencies_still_gates_npm(monkeypatch):
+    """The run-time validation keeps rejecting old node under npm."""
+    monkeypatch.setattr(js_runtimes, "prefer_npm_over_bun", lambda: True)
+    monkeypatch.setattr(js_runtimes, "check_node_version", lambda: False)
+    monkeypatch.setattr(js_runtimes, "get_node_version", lambda: None)
+    monkeypatch.setattr(
+        js_runtimes, "get_js_package_executor", lambda raise_on_none=False: "npm"
+    )
+
+    with pytest.raises(SystemExit):
+        js_runtimes.validate_frontend_dependencies(init=False)

@@ -356,6 +356,25 @@ def validate_bun(bun_path: Path | None = None):
             )
 
 
+def _require_supported_node_for_npm() -> None:
+    """Stop an npm install or run when the system node is too old.
+
+    An npm install must never start with an unsupported node: its side
+    effects (rewritten package.json and a package-lock.json persisted into
+    ``reflex.lock/``) outlive the failed run and silently switch the project
+    to npm management.
+
+    Raises:
+        SystemExit: If npm is preferred and the node version is unsupported.
+    """
+    if prefer_npm_over_bun() and not check_node_version():
+        node_version = get_node_version()
+        logger.error(
+            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
+        )
+        raise SystemExit(1)
+
+
 def validate_frontend_dependencies(init: bool = True):
     """Validate frontend dependencies to ensure they meet requirements.
 
@@ -372,12 +391,7 @@ def validate_frontend_dependencies(init: bool = True):
             logger.error(f"Failed to find a valid package manager due to {e}.")
             raise SystemExit(1) from None
 
-    if prefer_npm_over_bun() and not check_node_version():
-        node_version = get_node_version()
-        logger.error(
-            f"Reflex requires node version {constants.Node.MIN_VERSION} or higher to run, but the detected version is {node_version}",
-        )
-        raise SystemExit(1)
+    _require_supported_node_for_npm()
 
 
 def remove_existing_bun_installation():
@@ -783,6 +797,9 @@ def _install_frontend_packages(
 
 def install_frontend_packages(packages: set[str], config: Config):
     """Install frontend packages while respecting the canonical root bun.lock."""
+    # Never start an npm install the run will reject afterwards: its lockfile
+    # side effects persist into reflex.lock/ and break later bun runs.
+    _require_supported_node_for_npm()
     install_package_managers = tuple(
         get_nodejs_compatible_package_managers(raise_on_none=True)
     )
