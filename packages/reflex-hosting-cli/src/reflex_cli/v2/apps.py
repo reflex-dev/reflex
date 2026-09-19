@@ -709,7 +709,9 @@ def app_logs(
         # carrying a JSON document.
         following = follow and interactive and not as_json
 
-        records = authenticated_client.api.apps.logs(app_id, start=since, end=until)
+        records = authenticated_client.api.apps.logs(
+            app_id, start=since, end=until, order="newest_first"
+        )
 
         if as_json:
             # The whole window in one document: paging is the client's, so a
@@ -840,88 +842,84 @@ def scale_app(
     interactive: bool,
 ):
     """Scale an application by changing the VM type or adding/removing regions."""
-    from reflex_build_sdk import AuthenticationError
-
     from reflex_cli.utils import hosting
 
     console.set_log_level(loglevel)
-    try:
-        authenticated_client = hosting.get_authenticated_client(
-            token=token, interactive=interactive
-        )
-
-        if not app_id:
-            config = hosting.read_config()
-            if config:
-                app_id = config.appid
-                if not isinstance(app_id, (str, type(None))):
-                    logger.error(
-                        "app_id must be a string or None. Please check your config file."
-                    )
-                    raise click.exceptions.Exit(1)
-
-        cli_args = hosting.ScaleAppCliArgs.create(
-            regions=list(regions), vm_type=vmtype, scale_type=scale_type
-        )
-        config = Config.from_yaml_or_toml_or_default().with_overrides(
-            vmtype=cli_args.vm_type,
-            regions=cli_args.regions,
-        )
-
-        if not config.exists() and not cli_args.is_valid:
-            logger.error(
-                "specify either --vmtype or --regions or add them to the cloud.yml or pyproject.toml file"
+    with hosting.reporting_api_errors():
+        try:
+            authenticated_client = hosting.get_authenticated_client(
+                token=token, interactive=interactive
             )
-            raise click.exceptions.Exit(1)
 
-        if config.exists() and cli_args.is_valid:
-            logger.warning(
-                "CLI arguments will override the values in the cloud.yml or pyproject.toml file."
+            if not app_id:
+                config = hosting.read_config()
+                if config:
+                    app_id = config.appid
+                    if not isinstance(app_id, (str, type(None))):
+                        logger.error(
+                            "app_id must be a string or None. Please check your config file."
+                        )
+                        raise click.exceptions.Exit(1)
+
+            cli_args = hosting.ScaleAppCliArgs.create(
+                regions=list(regions), vm_type=vmtype, scale_type=scale_type
             )
-        scale_params = hosting.ScaleParams.from_config(config).set_type_from_cli_args(
-            cli_args
-        )
-
-        # If app_name is provided, find the app_id
-        if app_name is not None and app_id is None:
-            app_result = hosting.search_app(
-                app_name=app_name,
-                project_id=None,
-                client=authenticated_client,
-                interactive=interactive,
+            config = Config.from_yaml_or_toml_or_default().with_overrides(
+                vmtype=cli_args.vm_type,
+                regions=cli_args.regions,
             )
-            app_id = str(app_result.id) if app_result else None
 
-        if not app_id:
-            logger.error("No valid app_id or app_name provided.")
-            raise click.exceptions.Exit(1)
+            if not config.exists() and not cli_args.is_valid:
+                logger.error(
+                    "specify either --vmtype or --regions or add them to the cloud.yml or pyproject.toml file"
+                )
+                raise click.exceptions.Exit(1)
 
-        hosting.scale_app(
-            app_id=app_id, scale_params=scale_params, client=authenticated_client
-        )
-        if as_json:
-            print_json({
-                "app_id": app_id,
-                "scaled": True,
-                "vmtype": scale_params.vm_type,
-                "regions": list(scale_params.regions),
-                "scale_type": scale_params.type,
-            })
-            return
-        logger.log(log.SUCCESS, "Successfully scaled the app.")
+            if config.exists() and cli_args.is_valid:
+                logger.warning(
+                    "CLI arguments will override the values in the cloud.yml or pyproject.toml file."
+                )
+            scale_params = hosting.ScaleParams.from_config(
+                config
+            ).set_type_from_cli_args(cli_args)
 
-    except AuthenticationError as err:
-        logger.error("You are not authenticated. Run `reflex login` to authenticate.")
-        raise click.exceptions.Exit(1) from err
-    except (
-        ScaleAppError,
-        ResponseError,
-        ConfigInvalidFieldValueError,
-        ScaleTypeError,
-        ScaleParamError,
-    ) as err:
-        logger.error(err.args[0])
-        raise click.exceptions.Exit(1) from err
+            # If app_name is provided, find the app_id
+            if app_name is not None and app_id is None:
+                app_result = hosting.search_app(
+                    app_name=app_name,
+                    project_id=None,
+                    client=authenticated_client,
+                    interactive=interactive,
+                )
+                app_id = str(app_result.id) if app_result else None
+
+            if not app_id:
+                logger.error("No valid app_id or app_name provided.")
+                raise click.exceptions.Exit(1)
+
+            hosting.scale_app(
+                app_id=app_id, scale_params=scale_params, client=authenticated_client
+            )
+            if as_json:
+                print_json({
+                    "app_id": app_id,
+                    "scaled": True,
+                    "vmtype": scale_params.vm_type,
+                    "regions": list(scale_params.regions),
+                    "scale_type": scale_params.type,
+                })
+                return
+            logger.log(log.SUCCESS, "Successfully scaled the app.")
+
+        except (
+            ScaleAppError,
+            ResponseError,
+            ConfigInvalidFieldValueError,
+            ScaleTypeError,
+            ScaleParamError,
+        ) as err:
+            logger.error(err.args[0])
+            raise click.exceptions.Exit(1) from err
 
 
 @apps_cli.command(name="inspect")

@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import uuid
+from collections.abc import Iterator
 
 import pytest
 from click.testing import CliRunner
@@ -119,6 +120,22 @@ def deployment_record(**fields) -> DeploymentRecord:
     })
 
 
+def log_records(*messages: str) -> Iterator[LogRecord]:
+    """Yield log lines the way the client does: once, lazily.
+
+    A list would let a caller that reads the whole iterator pass a test it
+    should fail, which is the paging contract `--follow` rests on.
+
+    Args:
+        messages: The lines that were logged.
+
+    Yields:
+        The records.
+    """
+    for message in messages:
+        yield log_record(message)
+
+
 def log_record(message: str) -> LogRecord:
     """Build one line of an app's runtime logs.
 
@@ -188,7 +205,7 @@ def test_app_history_no_deployments(mocker: MockFixture):
 def test_app_history_http_error(mocker: MockFixture):
     """Test retrieving deployment history when an HTTP error occurs."""
     client = _authed(mocker)
-    client.api.apps.history.side_effect = Exception("HTTP request failed")
+    client.api.apps.history.side_effect = api_error(500, "HTTP request failed")
 
     result = runner.invoke(hosting_cli, ["apps", "history", "test_app_id"])
 
@@ -199,24 +216,20 @@ def test_app_history_http_error(mocker: MockFixture):
 def test_deployment_build_logs_success(mocker: MockFixture):
     """Test successful retrieval of build logs."""
     client = _authed(mocker)
-    client.api.deployments.build_logs.return_value = {
-        "log": "Build completed successfully."
-    }
+    client.api.deployments.build_logs.return_value = "Build completed successfully."
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(hosting_cli, ["apps", "build-logs", "test_deployment_id"])
 
     assert result.exit_code == 0, result.output
     client.api.deployments.build_logs.assert_called_once_with("test_deployment_id")
-    mock_console_print.assert_called_once_with({"log": "Build completed successfully."})
+    mock_console_print.assert_called_once_with("Build completed successfully.")
 
 
 def test_deployment_build_logs_with_token(mocker: MockFixture):
     """Test retrieval of build logs with a provided token."""
     client = _authed(mocker)
-    client.api.deployments.build_logs.return_value = {
-        "log": "Build completed successfully."
-    }
+    client.api.deployments.build_logs.return_value = "Build completed successfully."
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(
@@ -226,13 +239,13 @@ def test_deployment_build_logs_with_token(mocker: MockFixture):
 
     assert result.exit_code == 0, result.output
     client.api.deployments.build_logs.assert_called_once_with("test_deployment_id")
-    mock_console_print.assert_called_once_with({"log": "Build completed successfully."})
+    mock_console_print.assert_called_once_with("Build completed successfully.")
 
 
 def test_deployment_build_logs_not_authenticated(mocker: MockFixture):
     """Test retrieval of build logs when not authenticated."""
     client = _authed(mocker)
-    client.api.deployments.build_logs.side_effect = Exception("not authenticated")
+    client.api.deployments.build_logs.side_effect = api_error(500, "not authenticated")
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
 
     result = runner.invoke(hosting_cli, ["apps", "build-logs", "test_deployment_id"])
@@ -245,8 +258,8 @@ def test_deployment_build_logs_not_authenticated(mocker: MockFixture):
 def test_deployment_build_logs_http_error(mocker: MockFixture):
     """Test retrieval of build logs when an HTTP error occurs."""
     client = _authed(mocker)
-    client.api.deployments.build_logs.side_effect = Exception(
-        "HTTP error: bad response from server"
+    client.api.deployments.build_logs.side_effect = api_error(
+        500, "HTTP error: bad response from server"
     )
     mock_console_print = mocker.patch("reflex_cli.utils.console.print")
 
@@ -696,7 +709,7 @@ def test_app_logs_success(mocker: MockFixture, caplog: pytest.LogCaptureFixture)
         caplog: The pytest log capture fixture.
     """
     client = _authed(mocker)
-    client.api.apps.logs.return_value = [log_record(f"log{n}") for n in (1, 2, 3)]
+    client.api.apps.logs.return_value = log_records("log1", "log2", "log3")
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--follow", "false"])
 
@@ -735,7 +748,7 @@ def test_app_logs_empty(mocker: MockFixture, caplog: pytest.LogCaptureFixture):
         caplog: The pytest log capture fixture.
     """
     client = _authed(mocker)
-    client.api.apps.logs.return_value = []
+    client.api.apps.logs.return_value = log_records()
 
     result = runner.invoke(
         hosting_cli,
@@ -1317,7 +1330,7 @@ def test_app_logs_does_not_follow_by_default(mocker: MockFixture):
     that never exits -- which is why it is opt-in.
     """
     client = _authed(mocker)
-    client.api.apps.logs.return_value = [log_record(f"log{n}") for n in range(150)]
+    client.api.apps.logs.return_value = log_records(*(f"log{n}" for n in range(150)))
     prompt = mocker.patch("rich.prompt.Prompt.ask", return_value="")
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--interactive"])
@@ -1330,7 +1343,7 @@ def test_app_logs_does_not_follow_by_default(mocker: MockFixture):
 def test_app_logs_follow_needs_a_person_to_answer_the_prompt(mocker: MockFixture):
     """--follow is ignored without interactive mode rather than hanging."""
     client = _authed(mocker)
-    client.api.apps.logs.return_value = [log_record(f"log{n}") for n in range(150)]
+    client.api.apps.logs.return_value = log_records(*(f"log{n}" for n in range(150)))
     prompt = mocker.patch("rich.prompt.Prompt.ask", return_value="")
 
     result = runner.invoke(
@@ -1346,7 +1359,7 @@ def test_app_logs_follow_needs_a_person_to_answer_the_prompt(mocker: MockFixture
 def test_app_logs_follow_pages_when_asked_interactively(mocker: MockFixture):
     """Passing --follow at a terminal still walks the pages."""
     client = _authed(mocker)
-    client.api.apps.logs.return_value = [log_record(f"log{n}") for n in range(150)]
+    client.api.apps.logs.return_value = log_records(*(f"log{n}" for n in range(150)))
     prompt = mocker.patch("rich.prompt.Prompt.ask", return_value="exit")
 
     result = runner.invoke(
@@ -1362,7 +1375,7 @@ def test_app_logs_follow_pages_when_asked_interactively(mocker: MockFixture):
 def test_app_logs_json_output(mocker: MockFixture):
     """The page and its next cursor come back as one document."""
     client = _authed(mocker)
-    client.api.apps.logs.return_value = [log_record("log1"), log_record("log2")]
+    client.api.apps.logs.return_value = log_records("log1", "log2")
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--json"])
 
@@ -1378,7 +1391,7 @@ def test_app_logs_json_output(mocker: MockFixture):
 def test_app_logs_json_output_never_follows(mocker: MockFixture):
     """--follow cannot page a document that is only complete once."""
     client = _authed(mocker)
-    client.api.apps.logs.return_value = [log_record(f"log{n}") for n in range(150)]
+    client.api.apps.logs.return_value = log_records(*(f"log{n}" for n in range(150)))
     prompt = mocker.patch("rich.prompt.Prompt.ask", return_value="")
 
     result = runner.invoke(
@@ -1395,7 +1408,7 @@ def test_app_logs_json_output_never_follows(mocker: MockFixture):
 def test_app_logs_json_output_when_empty(mocker: MockFixture):
     """No logs is an empty document rather than a warning to parse."""
     client = _authed(mocker)
-    client.api.apps.logs.return_value = []
+    client.api.apps.logs.return_value = log_records()
 
     result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--json"])
 
@@ -1760,3 +1773,32 @@ def test_scale_app_expired_token_says_to_log_in(
     assert result.exit_code == 1
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
     assert errors == ["You are not authenticated. Run `reflex login` to authenticate."]
+
+
+def test_app_logs_stops_after_one_page(mocker: MockFixture):
+    """Without --follow the command reads a page, not the whole window."""
+    client = _authed(mocker)
+    pulled = 0
+
+    def records() -> Iterator[LogRecord]:
+        nonlocal pulled
+        for n in range(500):
+            pulled += 1
+            yield log_record(f"log{n}")
+
+    client.api.apps.logs.return_value = records()
+
+    result = runner.invoke(hosting_cli, ["apps", "logs", "app123", "--follow", "false"])
+
+    assert result.exit_code == 0, result.output
+    assert pulled == 100
+
+
+def test_app_logs_reads_newest_first(mocker: MockFixture):
+    """The most recent lines are the ones a single page should carry."""
+    client = _authed(mocker)
+    client.api.apps.logs.return_value = log_records("newest")
+
+    runner.invoke(hosting_cli, ["apps", "logs", "app123", "--follow", "false"])
+
+    assert client.api.apps.logs.call_args.kwargs["order"] == "newest_first"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import json
 import logging
 import uuid
@@ -8,6 +9,7 @@ from unittest.mock import MagicMock, mock_open
 import click
 import pytest
 from pytest_mock import MockerFixture, MockFixture
+from reflex_base.utils.log import SUCCESS
 from reflex_build_sdk.types import DeploymentReport, GcpConnection, GcpStatus
 from reflex_cli import constants
 from reflex_cli.utils.exceptions import TokenAccessDeniedError, TokenValidationError
@@ -39,6 +41,7 @@ from reflex_cli.utils.hosting import (
     stored_access_token,
     validate_token,
     validate_token_with_retries,
+    watch_deployment_status,
 )
 
 from tests.units.reflex_cli.sdk import api_error, fake_client
@@ -732,8 +735,6 @@ def test_deployment_status_failed(status: str, failed: bool):
 
 def test_as_json_document_renders_ids_and_timestamps_as_strings():
     """A document keeps the shape it had when response bodies were printed."""
-    import datetime
-
     connection = _connection("prod", 1)
     when = datetime.datetime(2026, 7, 1, tzinfo=datetime.timezone.utc)
 
@@ -988,3 +989,162 @@ def test_validate_token_names_reflex_enterprise_when_it_is_installed(
     validate_token("some-token")
 
     client.auth.me.assert_called_once_with(source="reflex-enterprise")
+
+
+def _watch_report(status: str = "Running") -> DeploymentReport:
+    """Build the report a finished wait returns.
+
+    Args:
+        status: The deployment's recorded status.
+
+    Returns:
+        The report.
+    """
+    return _report(status=status, reason="")
+
+
+def test_watch_reports_a_deployment_that_went_live(caplog: pytest.LogCaptureFixture):
+    """A deployment that ran is reported as a success.
+
+    Args:
+        caplog: Pytest log capture fixture.
+    """
+    client = _client()
+    client.api.deployments.wait.return_value = _watch_report()
+
+    with caplog.at_level(SUCCESS, logger="reflex_cli.utils.hosting"):
+        assert watch_deployment_status(str(uuid.UUID(int=5)), client) is True
+    assert "completed successfully" in _log_messages(caplog, SUCCESS)[-1]
+
+
+def test_watch_reports_a_build_awaiting_approval(caplog: pytest.LogCaptureFixture):
+    """A build held for approval says so rather than claiming it deployed.
+
+    Args:
+        caplog: Pytest log capture fixture.
+    """
+    client = _client()
+    client.api.deployments.wait.return_value = _watch_report("AwaitingApproval")
+
+    with caplog.at_level(SUCCESS, logger="reflex_cli.utils.hosting"):
+        assert watch_deployment_status(str(uuid.UUID(int=5)), client) is True
+    assert "approval" in _log_messages(caplog, SUCCESS)[-1]
+
+
+def test_watch_reports_a_failure_from_the_error_it_was_given(
+    caplog: pytest.LogCaptureFixture,
+):
+    """The report the failure carries is the one reported, without re-reading it.
+
+    Args:
+        caplog: Pytest log capture fixture.
+    """
+    from reflex_build_sdk import DeploymentFailedError
+
+    deployment = uuid.UUID(int=5)
+    report = _report(reason="the build failed", guidance="Check your imports.")
+    client = _client()
+    client.api.deployments.wait.side_effect = DeploymentFailedError(deployment, report)
+
+    assert watch_deployment_status(str(deployment), client) is False
+    assert "the build failed" in _log_messages(caplog, logging.ERROR)
+    assert "Check your imports." in _log_messages(caplog, logging.WARNING)
+    client.api.deployments.report.assert_not_called()
+
+
+def test_watch_rejects_an_id_that_is_not_one(caplog: pytest.LogCaptureFixture):
+    """A malformed id is reported rather than raised out of the command.
+
+    Args:
+        caplog: Pytest log capture fixture.
+    """
+    client = _client()
+
+    assert watch_deployment_status("not-a-uuid", client) is False
+    assert _log_messages(caplog, logging.ERROR) == [
+        "'not-a-uuid' is not a deployment id."
+    ]
+    client.api.deployments.wait.assert_not_called()
+
+
+def test_watch_reports_an_id_that_names_nothing(caplog: pytest.LogCaptureFixture):
+    """An id that parses but resolves to no deployment is a failure, not a pass.
+
+    Args:
+        caplog: Pytest log capture fixture.
+    """
+    deployment = uuid.UUID(int=5)
+    client = _client()
+    client.api.deployments.wait.side_effect = api_error(404, "no such deployment")
+
+    assert watch_deployment_status(str(deployment), client) is False
+    assert _log_messages(caplog, logging.ERROR) == [
+        f"no deployment with id {deployment}."
+    ]
+
+
+def test_watch_waits_out_a_dropped_connection(mocker: MockerFixture):
+    """The deployment outlives the connection, so the watch does too.
+
+    Args:
+        mocker: Pytest mocker fixture.
+    """
+    from reflex_build_sdk import APIConnectionError
+    from reflex_build_sdk.transports import Request
+
+    mocker.patch("reflex_cli.utils.hosting.time.sleep")
+    request = Request(method="GET", url="https://build.reflex.dev", headers={})
+    client = _client()
+    client.api.deployments.wait.side_effect = [
+        APIConnectionError("dropped", request=request),
+        APIConnectionError("dropped again", request=request),
+        _watch_report(),
+    ]
+
+    assert watch_deployment_status(str(uuid.UUID(int=5)), client) is True
+    assert client.api.deployments.wait.call_count == 3
+
+
+def test_watch_stops_following_when_the_api_refuses(
+    caplog: pytest.LogCaptureFixture,
+):
+    """A refusal ends the watch without claiming the deployment failed.
+
+    Args:
+        caplog: Pytest log capture fixture.
+    """
+    deployment = uuid.UUID(int=5)
+    client = _client()
+    client.api.deployments.wait.side_effect = api_error(500, "boom")
+
+    assert watch_deployment_status(str(deployment), client) is True
+    warning = _log_messages(caplog, logging.WARNING)[-1]
+    assert "stopped following" in warning
+    assert f"apps status {deployment} --watch" in warning
+
+
+def test_as_json_document_keeps_the_keys_the_api_sent():
+    """A field the client renamed is written back under the API's own key."""
+    from reflex_build_sdk.types import AppDeployment
+
+    deployment = AppDeployment(
+        id=uuid.UUID(int=8),
+        url="https://example.com",
+        status="Running",
+        pause_reason=None,
+        reflex_version="1.2.3",
+        python_version="3.12",
+        created_at=datetime.datetime(2026, 7, 1, tzinfo=datetime.timezone.utc),
+        regions=[],
+        vm_type_name="c1m1",
+        vm_type_cpu=1.0,
+        vm_type_ram=1.0,
+        updated_at=None,
+        updated_by=None,
+    )
+
+    document = as_json_document(deployment)
+
+    # `created_at` is this client's name for it; `timestamp` is the API's.
+    assert "created_at" not in document
+    assert document["timestamp"] == "2026-07-01T00:00:00+00:00"

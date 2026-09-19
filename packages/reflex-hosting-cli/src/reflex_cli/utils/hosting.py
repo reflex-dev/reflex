@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Any, NoReturn, TypedDict
 
 import click
 from reflex_build_sdk import (
+    APIConnectionError,
     APIError,
     APIStatusError,
     AuthenticationError,
@@ -36,9 +37,11 @@ from reflex_build_sdk import (
     LoginDeniedError,
     LoginTimeoutError,
     MissingTokenError,
+    NotFoundError,
     ReflexBuild,
     ReflexBuildError,
 )
+from reflex_build_sdk._decode import json_key
 from reflex_build_sdk._deploy import status_message_outcome
 from reflex_build_sdk.types import DeploymentReport, LoginRequest, Me
 
@@ -62,6 +65,11 @@ logger = logging.getLogger(__name__)
 # The archives `reflex export` produces, which a deployment is built from.
 BACKEND_ARCHIVE = "backend.zip"
 FRONTEND_ARCHIVE = "frontend.zip"
+
+# Per socket operation on an upload, not per upload. A link that cannot move one
+# chunk in this long -- roughly 17 kbps -- cannot finish an upload inside the
+# window its signature was issued for either.
+UPLOAD_IO_TIMEOUT = 120.0
 
 
 class ScaleType(str, Enum):
@@ -272,6 +280,10 @@ class AuthenticatedClient:
         """
         return self.api.token or ""
 
+    def close(self) -> None:
+        """Release the connections the client holds."""
+        self.api.close()
+
 
 def as_json_document(value: Any) -> Any:
     """Render an SDK result as the plain data a ``--json`` document is made of.
@@ -289,7 +301,7 @@ def as_json_document(value: Any) -> Any:
     """
     if dataclasses.is_dataclass(value) and not isinstance(value, type):
         return {
-            field.name: as_json_document(getattr(value, field.name))
+            json_key(field): as_json_document(getattr(value, field.name))
             for field in dataclasses.fields(value)
         }
     if isinstance(value, Mapping):
@@ -319,7 +331,9 @@ def error_message(error: Exception) -> str:
 
     """
     if isinstance(error, APIStatusError) and isinstance(error.detail, str):
-        return error.detail
+        # A refusal the API sent no body with has nothing to say; its status
+        # line is what is left, and it beats an empty message.
+        return error.detail or str(error)
     return str(error)
 
 
@@ -684,11 +698,12 @@ def new_client(token: str | None = None) -> ReflexBuild:
     )
 
 
-def _validate(token: str) -> Me:
+def _validate(token: str, api: ReflexBuild | None = None) -> Me:
     """Ask the control plane who an access token authenticates as.
 
     Args:
         token: The access token to validate.
+        api: The client to ask with. Defaults to one built for the call.
 
     Returns:
         The identity behind the token.
@@ -701,7 +716,8 @@ def _validate(token: str) -> Me:
     """
     global _last_auth_request_id
     source = "reflex-enterprise" if is_reflex_enterprise_installed() else "reflex"
-    with new_client(token) as client:
+    with contextlib.ExitStack() as stack:
+        client = api if api is not None else stack.enter_context(new_client(token))
         try:
             return client.auth.me(source=source)
         except APIStatusError as ex:
@@ -746,6 +762,27 @@ def identity_as_dict(me: Me) -> dict[str, Any]:
     }
 
 
+def upload_client(client: AuthenticatedClient) -> ReflexBuild:
+    """Build a client whose timeouts suit pushing a build's archives.
+
+    The SDK's defaults are sized for API calls. An archive is not one: it is
+    minutes of writing on a link the CLI does not choose, and the reserved
+    signature it goes up under has its own window to finish inside.
+
+    Args:
+        client: The authenticated client the deploy is running under.
+
+    Returns:
+        A client to submit the deployment with. The caller closes it.
+
+    """
+    return ReflexBuild(
+        token=client.token,
+        base_url=constants.Hosting.HOSTING_SERVICE,
+        timeout=UPLOAD_IO_TIMEOUT,
+    )
+
+
 def validate_token(token: str) -> dict[str, Any]:
     """Validate the token with the control plane.
 
@@ -759,11 +796,14 @@ def validate_token(token: str) -> dict[str, Any]:
     return identity_as_dict(_validate(token))
 
 
-def _validate_with_retries(access_token: str) -> Me | None:
+def _validate_with_retries(
+    access_token: str, api: ReflexBuild | None = None
+) -> Me | None:
     """Validate an access token, reporting rather than raising when it does not.
 
     Args:
         access_token: The access token to validate.
+        api: The client to ask with. Defaults to one built for the call.
 
     Returns:
         The identity behind the token, or None if it could not be established.
@@ -771,7 +811,7 @@ def _validate_with_retries(access_token: str) -> Me | None:
     """
     with console.status("Validating access token ..."):
         try:
-            return _validate(access_token)
+            return _validate(access_token, api)
         except ValueError as ex:
             # getattr: mocks/foreign ValueErrors don't carry a request id.
             request_id = getattr(ex, "request_id", "") or get_auth_request_id()
@@ -812,8 +852,12 @@ def get_authentication_client(token: str | None = None) -> AuthenticatedClient |
     access_token = token or get_existing_access_token()
     if not access_token:
         return None
-    me = _validate_with_retries(access_token)
-    return None if me is None else AuthenticatedClient(new_client(access_token), me)
+    api = new_client(access_token)
+    me = _validate_with_retries(access_token, api)
+    if me is None:
+        api.close()
+        return None
+    return AuthenticatedClient(api, me)
 
 
 def get_authenticated_client(
@@ -1312,6 +1356,10 @@ def _strip_terminal_controls(text: str) -> str:
     return _TERMINAL_CONTROL_RE.sub("", text)
 
 
+# How long the watch waits out a dropped connection before looking again. The
+# deployment outlives the connection, so the watch does too.
+_WATCH_RETRY_SLEEP = 2.0
+
 # "failed" is not one of the markers the SDK reads a status message for -- the
 # ones it documents cover the statuses the pipeline publishes -- and is kept
 # because it is what this predicate has always tested for. Dropping it could
@@ -1390,22 +1438,43 @@ def watch_deployment_status(deployment_id: str, client: AuthenticatedClient) -> 
         False when watching ends in fail.
 
     """
+    try:
+        uuid.UUID(deployment_id)
+    except ValueError:
+        logger.error(f"{deployment_id!r} is not a deployment id.")
+        return False
+
     with console.status("listening to status updates!"):
-        try:
-            report = client.api.deployments.wait(deployment_id, on_status=logger.info)
-        except DeploymentFailedError as ex:
-            _report_deployment_failure(deployment_id, ex.report, str(ex))
-            return False
-        except ReflexBuildError as ex:
-            # The build was submitted and is still being worked on; only the
-            # watching stopped. Saying it succeeded would be a guess, and
-            # saying it failed would be a wrong one.
-            logger.warning(
-                f"stopped following the deployment: {error_message(ex)}. It is "
-                f"still running; check it with:\n"
-                f" reflex cloud apps status {deployment_id} --watch"
-            )
-            return True
+        while True:
+            try:
+                report = client.api.deployments.wait(
+                    deployment_id, on_status=logger.info
+                )
+            except DeploymentFailedError as ex:
+                _report_deployment_failure(deployment_id, ex.report, str(ex))
+                return False
+            except NotFoundError:
+                # The id parses but names nothing, so there is no deployment to
+                # report on and nothing to wait for.
+                logger.error(f"no deployment with id {deployment_id}.")
+                return False
+            except APIConnectionError as ex:
+                # The deployment is still there; only this process's view of it
+                # went away. Waiting it out is what the watch is for.
+                logger.debug(f"lost connection, trying again: {ex}")
+                time.sleep(_WATCH_RETRY_SLEEP)
+                continue
+            except ReflexBuildError as ex:
+                # The build was submitted and is still being worked on; only the
+                # watching stopped. Saying it succeeded would be a guess, and
+                # saying it failed would be a wrong one.
+                logger.warning(
+                    f"stopped following the deployment: {error_message(ex)}. It is "
+                    f"still running; check it with:\n"
+                    f" reflex cloud apps status {deployment_id} --watch"
+                )
+                return True
+            break
     if report.status == "AwaitingApproval":
         logger.log(
             log.SUCCESS,

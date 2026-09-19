@@ -1070,10 +1070,13 @@ def deploy(
 
         with _warn_if_bounds_outlive_deploy(app.name, bounds_applied):
             try:
-                with console.transfer_progress() as progress:
+                with (
+                    console.transfer_progress() as progress,
+                    hosting.upload_client(authenticated_client) as uploader,
+                ):
                     upload = progress.add_task("uploading the build")
                     result = str(
-                        authenticated_client.api.deployments.create(
+                        uploader.deployments.create(
                             app.id,
                             backend=temporary_dir_path / hosting.BACKEND_ARCHIVE,
                             frontend=temporary_dir_path / hosting.FRONTEND_ARCHIVE,

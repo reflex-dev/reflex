@@ -49,6 +49,21 @@ def fake_client(**identity: Any) -> FakeClient:
     return FakeClient(api=MagicMock(), me=Me(**fields))
 
 
+def patch_upload_client(mocker: Any, client: FakeClient) -> None:
+    """Make the deploy's upload-sized client the one the test is driving.
+
+    ``deployments.create`` runs on a client of its own, built for the timeouts
+    an archive upload needs; a test wants that to be the same mock as the rest.
+
+    Args:
+        mocker: The pytest-mock fixture.
+        client: The client the command under test receives.
+    """
+    uploader = MagicMock()
+    uploader.__enter__.return_value = client.api
+    mocker.patch("reflex_cli.utils.hosting.upload_client", return_value=uploader)
+
+
 def api_error(status_code: int, detail: str) -> APIStatusError:
     """Build the error the SDK raises for a refused request.
 

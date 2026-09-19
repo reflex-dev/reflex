@@ -25,7 +25,7 @@ from reflex_build_sdk.types import (
 )
 from reflex_cli.v2 import cli
 
-from .utils import FakeClient, api_error, fake_client
+from .utils import FakeClient, api_error, fake_client, patch_upload_client
 
 _APP_ID = uuid.UUID(int=51)
 _PROJECT_ID = uuid.UUID(int=52)
@@ -50,6 +50,7 @@ def _authed(mocker: MockFixture):
     mocker.patch(
         "reflex_cli.utils.hosting.get_authenticated_client", return_value=client
     )
+    patch_upload_client(mocker, client)
     return client
 
 
@@ -644,6 +645,7 @@ def _common_deploy_mocks(mocker: MockerFixture, *, selected_project: str | None 
         "reflex_cli.utils.hosting.watch_deployment_status",
         return_value={"status": "ready"},
     )
+    patch_upload_client(mocker, client)
     return client
 
 
