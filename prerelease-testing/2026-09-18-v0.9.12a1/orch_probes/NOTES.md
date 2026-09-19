@@ -76,3 +76,36 @@ the forward-compatible spelling for downstream code; a framework-side fix that k
 reflex-enterprise 0.9.5 working would be to perform #7136's validation inside `BaseStateMeta.__new__`
 (guarded on "some base is a BaseState") instead of introducing a second metaclass, or to have
 `_StateMeta.__new__`/`BaseStateMeta` resolve the most-derived metaclass automatically.
+
+## Probe 5 — #7136 reserved names: downstream scan and behavior matrix (`reserved_scan.py`, `reserved_names_probe.py`, `mixin_get_delta_probe.py`, `reserved_names.log`)
+
+`reserved_scan.py` walks every `class X(...State)` in reflex-examples, the enterprise demos and the
+enterprise package with `ast` and intersects declared members with `reflex.istate.validation._reserved_state_members()`
+(92 names on 0.9.12a1). **One hit in all of downstream:** `reflex_enterprise/auth/oidc/state.py`
+`OIDCAuthState.get_delta` — and that override is decorated with reflex's private
+`@rx.state._override_base_method`, which `_validate_state_name` honors, so it passes (verified with an
+enterprise-shaped mixin in `mixin_get_delta_probe.py`: unmarked override → `EventHandlerShadowsBuiltInStateMethodError`
+on both versions; marked → OK). No `deps=["router"]` and no `rx_router_*` declarations anywhere downstream.
+So FINDING-001 is purely the metaclass conflict; note that enterprise depends on the private
+`_override_base_method` helper staying importable from `reflex.state`.
+
+Behavior matrix (`reserved_names_probe.py`), 0.9.11.post1 → 0.9.12a1:
+
+| declaration on an `rx.State` subclass | 0.9.11.post1 | 0.9.12a1 |
+|---|---|---|
+| `def get_delta(self)` unmarked | `EventHandlerShadowsBuiltInStateMethodError` | same |
+| `def get_delta` with `__override_base_method__` | OK | OK |
+| `_get_was_touched: bool = False` | OK (but persistence silently stopped — #7132) | **`StateValueError: State name `_get_was_touched` is reserved by BaseState`** |
+| `def process(self)` | OK | OK (not a framework member) |
+| `dirty_vars: list[str] = []` | OK (silently shadowed bookkeeping) | `StateValueError ... reserved` |
+| `def get_value(self)` | shadows error | same |
+| `router: str = "x"` | OK (silently shadowed) | `StateValueError: State name `router` is reserved` |
+| `@rx.var def router` | `ComputedVarShadowsBaseVarsError` | `StateValueError ... reserved` |
+| `def add_field(self)` | OK | `EventHandlerShadowsBuiltInStateMethodError` |
+| `substates: int = 0` | OK (silently shadowed) | `StateValueError ... reserved` |
+| `def set(self)` / `def dict(self)` | shadows error | same |
+
+All new rejections are clear, name the offending member and say to rename it — consistent with the
+#7136 breaking-change entry. The one inconsistency is #7132's bug-fix entry ("Keep saving state to disk
+and Redis when a state defines a var named `_get_was_touched`"): on the published 0.9.12a1 such a state
+cannot be declared at all, so the entry describes unreachable behavior (FINDING-002).

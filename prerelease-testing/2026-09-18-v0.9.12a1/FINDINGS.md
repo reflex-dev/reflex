@@ -45,6 +45,7 @@ compile span tree that 0.9.11 lost (#7155).
 
 Index:
 - FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — reflex-enterprise OIDC auth cannot import (HIGH, regression) — CONFIRMED
+- FINDING-002: the #7132 changelog entry describes behavior #7136 made unreachable — a `_get_was_touched` var is now rejected at class creation (LOW, changelog/behavior mismatch, maintainer decision)
 
 ## FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` (HIGH, regression)
 
@@ -82,6 +83,20 @@ Index:
   `BaseStateMeta.__new__` (guarded on "a base is a BaseState") so `rx.State` keeps `BaseStateMeta` as its
   metaclass, or make the validating metaclass compose with sibling `BaseStateMeta` subclasses; and add a
   changelog note either way. Enterprise can independently switch to `class OIDCCookieMeta(type(rx.State))`.
+
+## FINDING-002: #7132's changelog entry describes behavior that #7136 made unreachable (LOW, changelog mismatch)
+
+- Cluster: `orch_probes` | Regression vs 0.9.11.post1: behavior change (declaration now rejected instead of
+  silently breaking persistence) | Verifier: orchestrator, both versions
+- Repro: `orch_probes/reserved_names_probe.py` — `class S(rx.State): _get_was_touched: bool = False` raises
+  `StateValueError: State name `_get_was_touched` is reserved by BaseState; use a different name instead.` on
+  0.9.12a1; on 0.9.11.post1 the class is accepted (and, per #7132, disk/redis persistence silently stopped).
+- Evidence: `orch_probes/reserved_names.log`.
+- The root changelog's Bug Fixes say "Keep saving state to disk and Redis when a state defines a var named
+  `_get_was_touched`. (#7132)" while the Breaking Changes say reserved names are rejected (#7136). The
+  rejection is the better outcome, but a reader of the #7132 line will expect the declaration to work.
+  Decision for the maintainers: reword/drop the #7132 entry (or fold it into #7136's). Also newly rejected
+  with clear messages: base vars named `router`, `substates`, `dirty_vars`; handlers named `add_field`.
 
 ## Refuted / reclassified claims
 
