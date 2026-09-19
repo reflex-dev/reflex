@@ -263,3 +263,155 @@ out/              JSON results of every probe (new + baseline)
 logs/             server logs, marker scenarios, export logs, compile --dry, rxconfig isolation
 shots/            screenshots: prod pages, lazy-mode components page, backend-only dyn page
 ```
+
+## VERIFICATION
+
+Independent adversarial verification, 2026-09-19, working only from this NOTES.md + the app
+sources/scripts in this directory (the explorer's conversation was not consulted).
+Workspace: `$SB/apps/verify_build_prod_export/` (fresh copy of `bpapp/`, `prev/`, `scripts/`).
+Ports used: frontend/backend **3760**, backend-only **8760** (reserved range only).
+Evidence written to `verification/`.
+
+Versions (`uv pip freeze --python $SB/envs/shared/bin/python | grep -i reflex`):
+`reflex==0.9.12a1`, `reflex-base==0.9.12a1`, `-components-core==0.9.10a1`, `-radix==0.9.10a1`,
+`-code==0.9.6a1`, `-markdown==0.9.4a1`, `-lucide==1.0.4`, `-recharts==0.9.4a1`,
+`-sonner==0.9.4a1`, `-plotly==0.9.7a1`, `-gridjs==0.9.2a1`, `-dataeditor==0.9.3a1`,
+`-moment==0.9.4`, `-react-player==0.9.2`, `reflex-hosting-cli==0.1.72`.
+Baseline (`$SB/envs/prev`): `reflex==0.9.11.post1`, `reflex-base==0.9.11.post1`, stable components.
+The shared read-only venv was used instead of a new one (same resolved set as the NOTES recipe).
+
+### ISSUE 1 — non-UTF-8 stateful-pages marker crashes backend startup — **CONFIRMED** (severity low, not a regression)
+
+Reproduced exactly as written, including the permanence claim and both controls.
+
+```bash
+D=$SB/apps/verify_build_prod_export; W=$D/bpapp/.web/backend
+cd $D/bpapp && REFLEX_TELEMETRY_ENABLED=false BP_API_URL=http://localhost:3760 \
+  $SB/envs/shared/bin/reflex run --env prod --frontend-port 3760 --backend-port 3760   # writes the marker
+head -c 64 /dev/urandom > $W/stateful_pages.json
+cd $D/bpapp && REFLEX_TELEMETRY_ENABLED=false BP_API_URL=http://localhost:8760 \
+  $SB/envs/shared/bin/reflex run --env prod --backend-only --backend-port 8760
+curl --noproxy '*' -o /dev/null -w '%{http_code}' http://localhost:8760/ping
+```
+
+| scenario | backend listens on 8760 | marker afterwards |
+|---|---|---|
+| S3 `head -c 64 /dev/urandom` | **no** | still the 64 random bytes |
+| S3b restart, same corrupt file | **no** | unchanged — permanently wedged |
+| S1 `printf '["comp'` (truncated, UTF-8) | yes | rebuilt to `["components"]` |
+| S2 marker deleted | yes | rebuilt to `["components"]` |
+
+Traceback identical to the report (`verification/logs/marker_s3_garbage.log:24-49`), ending in
+`UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa3 in position 0` →
+`[ERROR] Unexpected exit from worker-1` → `Info: Reflex app stopped.`
+
+Root cause confirmed in the release source: `reflex/compiler/compiler.py:1218-1226`
+(`marker.read_text()` inside `except (FileNotFoundError, json.JSONDecodeError)`), called from
+`compile_app` at `compiler.py:1256`. The installed 0.9.12a1 wheel is byte-identical at those lines.
+
+Baseline: **not a regression.** 0.9.11.post1 has no `try` at all
+(`compiler.py:1223-1231`, `with marker.open("r"): json.load(file)`), and replaying those exact two
+lines under `$SB/envs/prev/bin/python` on the same files raises `UnicodeDecodeError` for the
+garbage marker **and** `JSONDecodeError` for the truncated one — i.e. 0.9.12a1 strictly improves on
+the baseline and only this one corruption shape is left uncovered
+(`verification/scripts/prev_marker_read.py`). A full 0.9.11.post1 server run of this scenario was
+not done (it needs a second 4-minute prod build); the code path is inline and unguarded, so the
+line-level replay is the baseline evidence.
+
+Severity note: the explorer's *medium* looks a notch high. The atomic writer added by #7142 cannot
+itself produce a non-UTF-8 marker, so this needs external corruption (or a 0.9.11 write interrupted
+mid-multibyte-character in a non-ASCII route name). It is still a real gap against the changelog's
+"rebuilt when missing or corrupt" promise, with an opaque failure mode, and the fix is one line
+(add `UnicodeDecodeError`, or catch `OSError`/`ValueError`, or `json.loads(marker.read_bytes())`).
+
+### ISSUE 2 — `@rx.dynamic` never re-renders — **REFUTED** (the sample app under-bundles; the written root cause is wrong)
+
+The symptom reproduces, but the written diagnosis ("the dynamic-component var does not appear to be
+tracked as a computed var ... nothing marks it dirty") is **false**. The websocket delta after the
+flip *does* carry the recomputed component var
+(`verification/out/vcheck_prod_new.json`, key `ws`):
+
+```
+42/_event,["event",{"delta":{"reflex___state____state.bpapp___bpapp____dyn_state":{
+  "tag_rx_state_":"bug",
+  "dynamic_reflex_state_dynamic_locals_wrapper_locals_lambda_rx_state_":
+    "//__reflex_evaluate\nimport LucideBug from \"https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/bug.mjs\"..."}}}]
+```
+
+The widget does not update because that generated module **fails to import in the browser**:
+`lucide-react/.../bug.mjs` is not in the bundled-library registry (the app only calls
+`bundle_library(rx.icon("rocket"))`, and only the *initial* state's imports are bundled
+automatically), so the serializer falls back to a jsdelivr URL, which this container's egress proxy
+refuses (`net::ERR_TUNNEL_CONNECTION_FAILED`, and the server log shows the frontend exception
+`TypeError: Failed to fetch dynamically imported module: data:text/javascript,...import LucideBug
+from "https://cdn.jsdelivr.net/..."` — `verification/logs/prod_new_unbundled.log:44-102`). React
+keeps the previous render, which is exactly the "stuck on dyn:rocket" symptom.
+
+Decisive control: adding one line to the app,
+
+```python
+if os.environ.get("BP_BUNDLE_BUG") == "1":
+    bundle_library(rx.icon("bug"))
+```
+
+and rebuilding (`BP_BUNDLE_BUG=1 reflex run --env prod --frontend-port 3760 --backend-port 3760`),
+the very same click now flips the widget:
+
+| run | before flip | after flip | after reload |
+|---|---|---|---|
+| as-written (`verification/out/vcheck_prod_new.json`) | `dyn:rocket` / `lucide lucide-rocket` | `dyn:rocket` / `lucide-rocket` | `dyn:rocket` (tag `bug`) |
+| `BP_BUNDLE_BUG=1` (`verification/out/vcheck_prod_bundlebug.json`) | `dyn:rocket` / `lucide-rocket` | **`dyn:bug` / `lucide lucide-bug`** | `dyn:bug` |
+
+Screenshots `verification/shots/prod-new-dyn-after.png` vs `verification/shots/prod-bundlebug-dyn-after.png`.
+Script `verification/scripts/vcheck.py`.
+
+What the written repro was missing: it never captured the browser console for the `/dyn` page (the
+two `ERR_TUNNEL_CONNECTION_FAILED` errors), never read the server log's
+`[Reflex Frontend Exception]` block, and read the ws frames only from the *backend-only* run. In
+backend-only mode the delta really does contain only `tag_rx_state_` — but that is a different
+phenomenon (the marker is `["components"]`, so `/dyn` is never re-evaluated and the dynamic var is
+never created on `DynState` at all), not the dependency-tracking failure that was claimed.
+
+So: **`@rx.dynamic` re-rendering works**; nothing here for a fix agent on the claim as written.
+
+Two side observations from this verification (neither is the claimed issue, both **pre-existing** —
+`reflex_base/components/dynamic.py` is byte-identical between 0.9.11.post1 and 0.9.12a1, `cmp` clean):
+
+* **The CDN fallback URL for a sub-path import is malformed.** In
+  `reflex_base/components/dynamic.py:205-214`, `fallback = get_cdn_url(lib)` is computed for the
+  *root* library (`lucide-react@1.26.0` → `https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm`)
+  and the import's `package_path` is then appended to it, producing
+  `https://cdn.jsdelivr.net/npm/lucide-react@1.26.0/+esm/dist/esm/icons/bug.mjs` — jsdelivr's
+  `/+esm` marker has to terminate the path, so this URL cannot resolve even with working egress.
+  An unbundled dynamic component therefore fails silently-ish (only a frontend-exception log)
+  rather than falling back to the CDN as designed. Worth its own issue.
+* **The first prod run died right after four such frontend exceptions**
+  (`verification/logs/prod_new_unbundled.log:103-104`: `[ERROR] Unexpected exit from worker-1`,
+  `Info: Reflex app stopped.`) while the browser was idle. The second run, with the library
+  bundled and no frontend exceptions, stayed up. One occurrence, shared 4-CPU host, so this could
+  equally be memory pressure from another agent — recorded as unexplained, not as a finding.
+
+### ISSUE 3 — asset URLs in component props not prefixed with `frontend_path` — **CONFIRMED as behavior, NOT a defect** (severity not-a-defect / docs)
+
+Reproduced: `#logo` keeps `src="/components/logo.svg"`, the browser requests
+`http://localhost:3760/components/logo.svg` → 404, `naturalWidth == 0`
+(`verification/out/vcheck_prod_new.json`, keys `logo_src_attr`, `logo_natural`, `bad`;
+screenshot `verification/shots/prod-new-components.png`). The built static tree contains **only**
+`.web/build/client/app/...` (`find` shows `app/components/logo.svg`, `app/apple/note.txt` and no
+root-level copies), so a literal root path can never resolve under `frontend_path`.
+
+This is the app using the wrong API, not a framework defect. The supported way to reference an asset
+is `rx.asset()`, whose `AssetPathStr.__new__` applies `get_config().prepend_frontend_path(...)`
+(`reflex/assets.py:95`); an arbitrary string in a `src` prop is just a string and the compiler has no
+way to tell an asset path from any other URL. Identical line exists in 0.9.11.post1
+(`envs/prev/.../reflex/assets.py:95`), so it is pre-existing by construction and matches the
+explorer's own `out/routes_prod_prev.json`. The only actionable part is the documentation point the
+explorer already raised (nothing under `docs/` mentions `frontend_path` together with assets) —
+a docs task, not a release blocker.
+
+### Cleanup
+
+All processes started here were terminated (`reflex run` on 3760 and 8760, Chromium via Playwright);
+`ports.py 3760 8760` reports nothing listening and `ps` shows no `verify_build_prod_export` process.
+Note for future runs: `pkill -f "...--backend-port 8760"` matches the running shell's own command
+line and kills it — build the pattern by concatenation, or kill by pid from `ports.py`.

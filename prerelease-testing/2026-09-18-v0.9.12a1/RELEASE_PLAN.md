@@ -67,7 +67,9 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 ### Trivially small / significant impact
 
 - **FINDING-019 — a non-UTF-8 stateful-pages marker still wedges backend startup permanently; #7142 says corrupt
-  markers are rebuilt** (MEDIUM, `build_prod_export`, verification pending). Arm: trivially small — catch
+  markers are rebuilt** (LOW after verification; `build_prod_export`, CONFIRMED verbatim, not a regression — 0.9.11.post1
+  had no guard at all — and lowered from MEDIUM because only external corruption produces such a marker). Arm: trivially
+  small — catch
   `UnicodeDecodeError` (or `ValueError`/`OSError`) alongside `JSONDecodeError` in `_read_stateful_pages_marker()` and
   fall through to the rebuild path.
 
@@ -102,8 +104,12 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 - Clean group-SIGTERM shutdown logs `[ERROR] Unexpected exit from worker-1` — granian's own message, identical on
   0.9.11.post1; a reflex-side fix would filter it in `_granian_log_dictconfig` (`exec.py:689`) (`dev_server_cli`).
   The npm-stickiness claim was refuted (`REFLEX_USE_NPM=0` switches back); document the flag if it is not already.
-- FINDING-020 — `@rx.dynamic` components never re-render on state change (pre-existing; `build_prod_export`).
-- FINDING-021 — literal asset `src` paths not prefixed with `frontend_path` (pre-existing; docs or compile-time prefix).
+- FINDING-027 — the CDN fallback URL for an unbundled sub-path `@rx.dynamic` import is malformed
+  (`reflex_base/components/dynamic.py:205-214` appends `package_path` after the `/+esm` terminator); pre-existing,
+  identical on 0.9.11.post1, surfaced by the verifier while refuting FINDING-020 — confirm against jsdelivr, then file
+  (`build_prod_export`).
+- FINDING-021 (refuted as a defect; docs gap) — nothing under `docs/` mentions `frontend_path` together with assets;
+  document that `rx.asset()` is what applies the prefix, so a literal `src` breaks silently (`build_prod_export`).
 - FINDING-022 — `frontend_lazy_bundled_libraries=True` added ~65 KB of initial JS on every page of the test app;
   confirm with wire bytes on a larger app before deciding whether the #7078 claim needs rewording (`build_prod_export`).
 - FINDING-023 — the `backend_state_mismatch` latch in `state.js` (previous campaign's FINDING-036) still deadens the
