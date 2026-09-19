@@ -113,6 +113,11 @@ No open PR addresses FINDING-001, -003, -004 or -007.
 
 ## Decisions needed from a maintainer
 
+- Release notes for the alpha: `pip install --pre reflex==0.9.12a1` / `uv pip install --prerelease=allow` pull the
+  component alphas, but `uv pip install --upgrade 'reflex==0.9.12a1'` in an existing venv leaves every
+  `reflex-components-*` at its stable release (the floors allow it). Worth one sentence telling users to name the
+  component alphas, since that mixed state is what a pinned in-place upgrade produces (`up_examples_b`, `packaging`).
+
 - FINDING-002 — the #7132 changelog entry ("keep saving state … when a state defines a var named
   `_get_was_touched`") describes behavior #7136 made unreachable: the declaration now raises
   `StateValueError`. Reword/drop the entry, or fold it into #7136's breaking note.
