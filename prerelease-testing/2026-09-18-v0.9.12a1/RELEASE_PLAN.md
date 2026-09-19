@@ -5,9 +5,18 @@ fix before release = confirmed regression vs 0.9.11.post1, OR security-relevant,
 impact / trivially small. Everything else is filed as an issue and fixed after. Each entry names the
 arm of the rubric that put it there, so a maintainer can disagree with a specific judgment.
 
-## Already in flight
+## Already in flight (open PRs on reflex-dev/reflex as of 2026-09-19 02:05 UTC)
 
-_(pending — open PRs checked at the end of the campaign)_
+| PR | Covers | Gap check |
+|---|---|---|
+| [#6996](https://github.com/reflex-dev/reflex/pull/6996) SPA fallback 200 for routable paths in prod static serving (closes #6983) | the `router_vars` prod anomaly: a direct load of a dynamic route returns 404 with the SPA body before rendering — so that anomaly is **pre-existing**, not #7068's | does not touch the trailing-slash rewrite (`/search?q=` → `/search/?q=`) the same anomaly noted; `build_prod_export` is baselining both |
+| [#7206](https://github.com/reflex-dev/reflex/pull/7206) Reject inherited state var shadowing through mixins (closes #7190) | extends #7077's guard to `mixin=True` states | does **not** cover backend (underscore) vars — FINDING-006 stays open |
+| [#7144](https://github.com/reflex-dev/reflex/pull/7144) preserve preloaded rxconfig classes | follow-up to #7075 (rxconfig reload keeps project modules) | `dev_server_cli` tests the published #7075 behavior; no finding yet |
+| [#7138](https://github.com/reflex-dev/reflex/pull/7138) migrate all time env vars to timedelta | builds on #7131's `EnvVar` timedelta parsing | `vars_typing` tests the published parser; no finding yet |
+| [#6757](https://github.com/reflex-dev/reflex/pull/6757) fast-path framework bookkeeping fields | touches `_FRAMEWORK_ATTR_NAMES`, the same list #7136 reserves | nothing for FINDING-001: no open PR changes the `_StateMeta` metaclass |
+| [#7207](https://github.com/reflex-dev/reflex/pull/7207) move reflex-hosting-cli onto reflex-build-sdk | future coupling of the two packages probed in `orch_probes` | n/a for this train |
+
+No open PR addresses FINDING-001, -003, -004 or -007.
 
 ## Fix before release
 
