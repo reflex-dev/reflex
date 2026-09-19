@@ -399,3 +399,200 @@ baseline_de/             minimal data_editor app used for the 0.9.11.post1 prod-
 logs/                    dev/prod server logs (trimmed), driver output, probe output
 shots/                   screenshots + dev-results.json / dev-results2.json / prod-results.json
 ```
+
+---
+
+# VERIFICATION
+
+Independent adversarial verifier, 2026-09-19. Worked **only** from this NOTES.md + the app
+sources/scripts in this directory; wrote a fresh minimal app rather than reusing `gallery/`, so
+every result below is an independent reproduction, not a re-run of the explorer's artifacts.
+
+Working dir `$SB/apps/verify_components_bumps/` (`SB=/tmp/claude-0/-home-user-reflex/4bc251b7-1728-51b6-97f5-dc5c7f35130a/scratchpad`).
+Reserved ports used: frontend 3800 (dev) / 3801 (prod) / 3802 (baseline prod), backend 8800.
+All servers killed afterwards (`python3 $SB/bin/ports.py 3800 3801 3802 8800` -> empty).
+
+Venvs (both pre-existing shared, read-only — no new install needed):
+
+```
+uv pip freeze --python $SB/envs/shared/bin/python | grep -i reflex
+reflex==0.9.12a1  reflex-base==0.9.12a1  reflex-components-code==0.9.6a1
+reflex-components-core==0.9.10a1  reflex-components-dataeditor==0.9.3a1
+reflex-components-gridjs==0.9.2a1  reflex-components-lucide==1.0.4
+reflex-components-markdown==0.9.4a1  reflex-components-moment==0.9.4
+reflex-components-plotly==0.9.7a1  reflex-components-radix==0.9.10a1
+reflex-components-react-player==0.9.2  reflex-components-recharts==0.9.4a1
+reflex-components-sonner==0.9.4a1  reflex-hosting-cli==0.1.72
+
+uv pip freeze --python $SB/envs/prev/bin/python | grep -i reflex
+reflex==0.9.11.post1  reflex-base==0.9.11.post1  reflex-components-core==0.9.9
+reflex-components-dataeditor==0.9.2  reflex-components-code==0.9.5  (+ matching stables)
+```
+
+Verifier app: `verification/vapp/` — 3 pages (`/editor` data_editor with two `type="image"` rows,
+`/ids` the `use_id()`-in-`rx.foreach` case plus an `@rx.memo` control row, `/`). Baseline copy
+`vapp_prev/` is the same app with the `/ids` page stripped (`rx.vars.use_id` does not exist on
+0.9.11.post1). Probes: `verification/vdrive.py`, `ids_probe.py`, `editor_probe.py`, `req404.py`.
+
+## Issue 1 — data_editor overlay editor swallowed by the sticky badge in prod: **CONFIRMED**
+
+Reproduced end-to-end on a fresh minimal app, and the causal chain was isolated by A/B test.
+
+```bash
+cd $SB/apps/verify_components_bumps/vapp
+# dev
+REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex run --frontend-port 3800 --backend-port 8800
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python ../vdrive.py http://localhost:3800 dev ../out
+# prod (default rxconfig, show_built_with_reflex unset -> True)
+REFLEX_TELEMETRY_ENABLED=false $SB/envs/shared/bin/reflex run --env prod --frontend-port 3801 --backend-port 3801
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python ../vdrive.py http://localhost:3801 prod ../out
+# prod with show_built_with_reflex=False in rxconfig.py, same command, same port
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python ../vdrive.py http://localhost:3801 prod-nobadge ../out
+```
+
+| build | `#portal` in DOM | badge in DOM | overlay after dblclick | carousel CSS rules |
+|---|---|---|---|---|
+| 0.9.12a1 dev | **true** (`<div id="portal" class="css-7zxn5u">`) | false | `carousel-root` + 2 imgs | 40 |
+| 0.9.12a1 prod, badge ON (default) | **false** | true | **none**, `overlay_imgs: []` | 40 |
+| 0.9.12a1 prod, `show_built_with_reflex=False` | **true** | false | `carousel-root` + 2 imgs | 40 |
+| 0.9.11.post1 prod, badge ON (default) | **false** | true | **none** | 0 |
+
+Console in both badge-ON prod builds:
+`Cannot open Data Grid overlay editor, because portal not found.  Please add <div id="portal" /> as the last child of your <body>.` (x2, one per dblclick).
+
+Compiled-output proof (the explorer's `grep` line works as written):
+
+```
+$ grep -o 'MemoizedBadge_[0-9a-f]*,{},jsx("div"[^)]*)' .web/app/root.jsx
+MemoizedBadge_04c36749,{},jsx("div",{css:({ ["position"] : "fixed", ["top"] : 0 })
+```
+
+and the memo component itself provably drops children —
+`verification/logs/root_prod_withbadge.jsx` plus `.web/app_components/reflex/app.jsx`:
+
+```js
+export const MemoizedBadge_04c36749 = (() => {
+const MemoizedBadge_04c36749 = memo(({}) => { ... return jsx("a",{...},<svg/>,<label/>) });
+```
+
+`memo(({}) => ...)` destructures an empty props object: `props.children` is never read, so the
+portal `<div>` passed as its child is discarded. Root cause, in the release source:
+
+* `reflex/app.py:1574-1590` `_app_root()` — app wraps are sorted by priority **descending** and
+  each next-lower wrap is appended as a *child* of the previous one, so `(-1, "DataEditorPortal")`
+  always lands inside `(0, "StickyBadge")`.
+* `reflex/app.py:1639-1649` `_setup_sticky_badge()` registers `app_wraps[0, "StickyBadge"]`.
+* `reflex/compiler/compiler.py:1356` gates that on `is_prod_mode() and config.show_built_with_reflex`
+  (defaulted to `True` at `compiler.py:1347-1353` for everyone except pro/team/enterprise DEPLOY).
+* `reflex_components_core/core/sticky.py:90-107` `StickyBadge.create(cls)` takes **no** `*children`
+  and passes only its own two children to `super().create()`.
+* `reflex_components_dataeditor/dataeditor.py:583-600` registers the portal at priority `-1`.
+
+`(-1, "DataEditorPortal")` is the only negative-priority app wrap in the whole installed alpha
+train (`grep -rn '_get_app_wrap_components' -A14 .../reflex_components_*/` → only it and
+`(45, "RadixThemesColorModeProvider")`), so the blast radius is data_editor (and any third-party
+component that uses a negative priority), not the framework at large. Within that radius it is
+total: every overlay cell editor (image preview, text, markdown, uri) is dead in production for
+every app that has not turned the badge off.
+
+**Regression: NO** — reproduced identically on 0.9.11.post1 in a real browser (table row 4), which
+is stronger than the explorer's export-only baseline. The mechanism is unchanged between versions:
+`_app_root` byte-identical, `_setup_sticky_badge` byte-identical, dataeditor's
+`_get_app_wrap_components` byte-identical; `sticky.py` differs only by the new
+`aria_label="Built with Reflex"` line. What *is* new in 0.9.12a1 is the carousel CSS
+(40 matching rules vs 0 on 0.9.11.post1) — i.e. #7081 ships the styling for an overlay that
+production can never open. The explorer's framing is right.
+
+Refutation attempts that failed: not a port/proxy/container quirk (dev on the same box works);
+not app misuse (10-line app, default `rx.Config`); not the explorer's gallery app (fresh app);
+not flaky (3 prod builds, consistent); the A/B on `show_built_with_reflex` flips it deterministically.
+
+Evidence: `verification/logs/prod_results.json` (`portal_exists:false`, `overlay_imgs:[]`,
+console errors), `verification/logs/prod_nobadge_results.json` (`portal_exists:true`,
+`overlay_imgs:["/green.png","/red.png",...]`), `verification/logs/prev_prod_editor.json`
+(0.9.11.post1 baseline, `carousel_css_rules:0`), `verification/logs/root_prod_withbadge.jsx`,
+`verification/logs/root_prod_nobadge.jsx`, `verification/logs/root_prev_prod.jsx`,
+`verification/shots/prod-editor-overlay.png` (no overlay, badge visible),
+`verification/shots/prod-nobadge-editor-overlay.png` (carousel "1 of 2" with arrows and dots),
+`verification/shots/dev-editor-overlay.png`, `verification/shots/prev-prod-editor.png`.
+
+Repro completeness: the written steps were sufficient. Only gap: step 5 in the claim list prints
+`reflex run --env prod --frontend-port 3301 --backend-port 3301` as a single-port command (correct)
+but the earlier text says 3301/3301 while the header says `--backend-port 3301` — no ambiguity in
+practice. Nothing else was missing.
+
+## Issue 2 — `use_id()` inside `rx.foreach` yields duplicate DOM ids: **CONFIRMED (as documented-behaviour footgun, low/medium)**
+
+```bash
+NO_PROXY=localhost,127.0.0.1 $SB/envs/driver/bin/python ../ids_probe.py http://localhost:3800
+```
+
+dev (`verification/logs/ids_dev.json`):
+
+```json
+{"foreach_ids": ["_r_0_","_r_0_","_r_0_"],
+ "foreach_label_for": ["_r_0_","_r_0_","_r_0_"],
+ "memo_ids": ["_r_1_","_r_2_","_r_3_"]}
+```
+
+prod (`verification/logs/prod_results.json`): `foreach_ids ["_R_2iqj5_" x3]`,
+`memo_ids ["_R_7iqj5_","_R_biqj5_","_R_fiqj5_"]`, `dup_id_check.dups ["_R_2iqj5_"]`,
+`label_click_focus_values ["ia","ia","ia"]` — clicking the "ib"/"ic" labels focuses row 1's input,
+exactly as claimed. `@rx.memo` rows in the same page get three distinct ids, which confirms the
+explorer's "memo path works" claim. No compile-time or runtime warning.
+Screenshots `verification/shots/dev-ids.png`, `verification/shots/prod-ids.png`.
+
+**Regression: n/a** — `rx.vars.use_id()` is new in 0.9.12a1.
+
+Severity argument (I pushed back on the explorer here and landed lower than "medium"): the
+constraint *is* documented, on `use_hook_var` itself —
+`reflex_base/vars/special.py:31-45`: "The hook is called once in each compiled component that reads
+the var, so every element sharing one value must render inside the same component, such as an
+`rx.el.svg` root, an `@rx.memo` body, or a custom renderer body." The observed behaviour follows
+from that sentence. What is genuinely missing is (a) `use_id()`'s own docstring
+(`special.py:58-64`) repeats none of it and says "for a component", and (b) neither
+`docs/api-reference/var_system.md:100-105`, `docs/wrapping-react/custom-code-and-hooks.md:133`, nor
+`docs/library/graphing/charts/sankeychart.md:120,175` mentions `rx.foreach` — and per-row ids are
+the canonical React `useId` use case. So: real, silent, worth a doc line (and cheap to make loud),
+but not a code defect and not release-blocking. Actionable for a fix agent as a docs/docstring
+change; I would not gate the release on it.
+
+## Issue 3 — `from reflex.components.datadisplay import code` fails: **REFUTED (not a defect to act on)**
+
+```bash
+cd $SB/apps/verify_components_bumps
+for V in shared prev; do $SB/envs/$V/bin/python -c "
+from reflex.components.datadisplay import code"; done
+```
+
+0.9.12a1: `ImportError: cannot import name 'code' from 'reflex_components_core.datadisplay'`.
+0.9.11.post1: **identical** `ImportError`. `import reflex.components.datadisplay.code as c` and
+`from reflex.components.datadisplay.code import CodeBlock` succeed on both
+(`c.__file__` -> `reflex_components_code/code.py` on 0.9.12a1). `rx.code_block` and
+`rx.data_editor` both work on 0.9.12a1 (`CodeblockNamespace()` / `DataEditor.create`).
+
+The changelog line (verbatim from
+`git show origin/r/pre-2026.09.18-35410916948:packages/reflex-components-core/CHANGELOG.md`) is
+"Reach them as before via `rx.code_block` / `rx.data_editor`, or `reflex.components.datadisplay.code`."
+That names a **module path**, and the module path imports fine; the failing spelling
+(`from <pkg> import <submodule>`) is not what the changelog suggests, and it never worked — on
+0.9.11.post1 the lazy loader's `_SUBMOD_ATTRS` listed the *attributes* (`code_block`, `data_editor`,
+…) but not the submodule names either, so `dir()` never contained `code`. So the claim
+"the changelog's suggested import path fails" over-reads the sentence.
+
+The explorer's facts are all correct and their own regression verdict (not a regression) is right;
+only the framing as an issue does not survive. Optional polish, not a release action: add
+`"code": []` / `"dataeditor": []` to
+`packages/reflex-components-core/.../datadisplay/__init__.py:_SUBMOD_ATTRS` so both spellings work.
+
+Evidence: `verification/logs/` (the import matrix is reproduced by the one-liner above; it needs no
+server and runs in ~2 s).
+
+## Other observations while verifying
+
+* The unexplained prod `404` console error the explorer flagged reproduced once
+  (`prod_results.json`, `prod_nobadge_results.json`) but a dedicated pass recording every
+  response >= 400 and every failed request across `/editor`, `/ids`, `/` returned `[]`
+  (`verification/req404.py`). Agreed: no actionable URL.
+* The dev server logs the `@rx.memo` without explicit `rx.Var[...]` annotations deprecation and the
+  SitemapPlugin/Radix-Themes warnings, as the explorer noted. Benign.
