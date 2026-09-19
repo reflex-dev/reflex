@@ -40,7 +40,8 @@ Verified changelog claims (orchestrator, not findings): all 19 packages publishe
 mergician 2.0.2 (#6850) in the generated `package.json`; `reflex-build-sdk` 0.0.2 exposes the renamed
 clients and honors `REFLEX_BUILD_BACKEND_URL` over `REFLEX_CLOUD_BACKEND_URL` (#7201); `reflex cloud`
 refuses non-interactive use without a token (0.1.72, #6917); reflex-local-auth 0.5.0 and
-reflex-global-hotkey 1.2.3 import surfaces resolve on 0.9.12a1.
+reflex-global-hotkey 1.2.3 import surfaces resolve on 0.9.12a1; reflex-otel 0.1.0 exports the initial dev
+compile span tree that 0.9.11 lost (#7155).
 
 Index:
 - FINDING-001: State metaclass change breaks downstream metaclasses derived from `BaseStateMeta` — reflex-enterprise OIDC auth cannot import (HIGH, regression) — CONFIRMED
@@ -101,7 +102,13 @@ built by uv because it still carries the workspace `[tool.uv.sources]`; pip inst
 `packaging/NOTES.md`.
 
 ### `orch_probes`
-Enterprise import sweep (FINDING-001), build-sdk rename/URL precedence, hosting-cli non-interactive
-defaults. `orch_probes/NOTES.md`.
+Enterprise import sweep (FINDING-001), framework-only metaclass repro, build-sdk rename/URL precedence,
+hosting-cli non-interactive defaults. `orch_probes/NOTES.md`.
+
+### `orch_otel` (pass 4, anomaly 0, fail 0)
+reflex-otel 0.1.0 on 0.9.12a1: the initial dev compile worker now exports the complete `reflex.compile`
+`trigger=initial` tree (3 stage children, 0 orphans) on a first and a second run; `hot_reload` and `export`
+trees complete as well. #7155 verified; the previous campaign's FINDING-028 (issue #7095) is fixed.
+`orch_otel/NOTES.md`.
 
 _(other clusters pending)_
