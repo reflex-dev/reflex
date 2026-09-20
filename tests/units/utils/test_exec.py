@@ -248,6 +248,7 @@ def test_load_granian_target_logs_import_error_as_json(
     monkeypatch: pytest.MonkeyPatch, capsys, mocker: MockerFixture
 ):
     """Worker target import errors use the managed JSON logging pipeline."""
+    pytest.importorskip("granian")
     monkeypatch.setenv("REFLEX_LOG_JSON", "true")
     monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
     log._reset()
@@ -272,6 +273,7 @@ def test_load_granian_target_reraises_import_error_without_json(
     monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
 ):
     """Non-JSON mode preserves Granian's existing worker traceback behavior."""
+    pytest.importorskip("granian")
     monkeypatch.delenv("REFLEX_LOG_JSON", raising=False)
     load_target = mocker.patch(
         "granian._internal.load_target", side_effect=RuntimeError("boom")
