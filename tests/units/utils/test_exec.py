@@ -1,6 +1,7 @@
 """Tests for development backend launchers in ``reflex.utils.exec``."""
 
 import builtins
+import json
 import multiprocessing
 import os
 import socket
@@ -14,7 +15,7 @@ from unittest.mock import patch
 import pytest
 from pytest_mock import MockerFixture
 from reflex_base.environment import environment
-from reflex_base.utils import serializers
+from reflex_base.utils import log, serializers
 
 from reflex.utils import exec as exec_utils
 
@@ -231,8 +232,8 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
         def on_reload(self, _callback):
             pass
 
-        def serve(self):
-            pass
+        def serve(self, **kwargs):
+            assert kwargs["target_loader"] is exec_utils._load_granian_target
 
     mocker.patch.object(granian_server, "Server", FakeGranian)
 
@@ -241,6 +242,45 @@ def test_run_granian_backend_sets_reload_env_var_and_clears_marker(
     )
 
     assert seen["value"] == "True"
+
+
+def test_load_granian_target_logs_import_error_as_json(
+    monkeypatch: pytest.MonkeyPatch, capsys, mocker: MockerFixture
+):
+    """Worker target import errors use the managed JSON logging pipeline."""
+    monkeypatch.setenv("REFLEX_LOG_JSON", "true")
+    monkeypatch.setenv(log._MANAGED_ENV_VAR, "true")
+    log._reset()
+    load_target = mocker.patch(
+        "granian._internal.load_target", side_effect=RuntimeError("boom")
+    )
+
+    try:
+        with pytest.raises(SystemExit, match="1"):
+            exec_utils._load_granian_target("app:app")
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        record = json.loads(captured.err)
+        assert record["message"] == "Failed to load backend application"
+        assert "RuntimeError: boom" in record["exception"]
+        load_target.assert_called_once_with("app:app", factory=True)
+    finally:
+        log._reset()
+
+
+def test_load_granian_target_reraises_import_error_without_json(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
+):
+    """Non-JSON mode preserves Granian's existing worker traceback behavior."""
+    monkeypatch.delenv("REFLEX_LOG_JSON", raising=False)
+    load_target = mocker.patch(
+        "granian._internal.load_target", side_effect=RuntimeError("boom")
+    )
+
+    with pytest.raises(RuntimeError, match="boom"):
+        exec_utils._load_granian_target("app:app")
+
+    load_target.assert_called_once_with("app:app", factory=True)
 
 
 def test_run_granian_backend_binds_listen_socket_in_supervisor(
@@ -269,8 +309,8 @@ def test_run_granian_backend_binds_listen_socket_in_supervisor(
         def on_reload(self, _callback):
             pass
 
-        def serve(self):
-            pass
+        def serve(self, **kwargs):
+            assert kwargs["target_loader"] is exec_utils._load_granian_target
 
     mocker.patch.object(granian_server, "Server", FakeGranian)
 

@@ -37,6 +37,32 @@ frontend_process = None
 DEV_BACKEND_RELOAD_MARKER = ".reflex_dev_backend_started"
 
 
+def _load_granian_target(target: str):
+    """Load the Granian application target through Reflex logging.
+
+    Args:
+        target: The Granian application target.
+
+    Returns:
+        The loaded application target.
+
+    Raises:
+        SystemExit: If the application cannot be imported.
+    """
+    from granian._internal import load_target
+
+    try:
+        return load_target(target, factory=True)
+    except Exception:
+        from reflex_base.utils import log
+
+        if not log.is_json_mode():
+            raise
+        log.ensure_configured()
+        logger.exception("Failed to load backend application")
+        raise SystemExit(1) from None
+
+
 def get_dev_backend_reload_marker() -> Path:
     """Get the marker path for dev backend reload-capable worker starts.
 
@@ -743,7 +769,7 @@ def run_granian_backend(host: str, port: int, loglevel: LogLevel):
 
     granian_app.on_reload(_load_dotenv_from_env)
 
-    granian_app.serve()
+    granian_app.serve(target_loader=_load_granian_target)
 
 
 def run_backend_prod(
@@ -863,7 +889,7 @@ def run_granian_backend_prod(
         workers=int(os.getenv("GRANIAN_WORKERS", str(_get_backend_workers()))),
     )
 
-    granian_app.serve()
+    granian_app.serve(target_loader=_load_granian_target)
 
 
 def output_system_info():
