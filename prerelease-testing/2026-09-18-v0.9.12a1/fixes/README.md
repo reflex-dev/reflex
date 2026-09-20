@@ -7,17 +7,22 @@ carries a regression test that was seen to fail before the fix, a news fragment 
 `ruff`/`ruff format`/`pyright`, and the campaign's own end-to-end repro passing on the fixed tree and failing on the
 published 0.9.12a1.
 
-Nothing has been pushed to a branch other than this campaign directory: the fix commits live in local worktrees
-under `/home/user/wt/<name>` (ephemeral) and, durably, as `patches/*.patch` files here (`git am` them onto `main`),
-and the reflex commits are also cherry-picked onto `claude/upbeat-feynman-m41a1u` (see "Integration" below).
+Pull requests (opened 2026-09-19 for maintainer review, all against `main`): reflex
+[#7215](https://github.com/reflex-dev/reflex/pull/7215) (f001), [#7216](https://github.com/reflex-dev/reflex/pull/7216) (f003),
+[#7217](https://github.com/reflex-dev/reflex/pull/7217) (f017), [#7218](https://github.com/reflex-dev/reflex/pull/7218) (f012);
+reflex-enterprise [#232](https://github.com/reflex-dev/reflex-enterprise/pull/232) (rxe). The pushed branches are
+`claude/fix-finding-001-state-metaclass`, `claude/fix-finding-003-delta-memo`, `claude/fix-finding-017-supervisor-socket`,
+`claude/fix-finding-012-badge-portal` (reflex) and `claude/fix-reflex-0.9.12-compat` (reflex-enterprise); the same
+commits are in `patches/*.patch` here and, for reflex, cherry-picked onto `claude/upbeat-feynman-m41a1u` (see
+"Integration" below).
 
-| fix | finding / issue | repo | branch (local worktree) | commits on the branch | review |
-|---|---|---|---|---|---|
-| `f001/` | FINDING-001 · [#7211](https://github.com/reflex-dev/reflex/issues/7211) | reflex | `fix/finding-001-state-metaclass` | `6ab3edbc9` fix; `4290548fe` docs: router dict-shape breaking note (for #7214) | approved, no blocking issues |
-| `f003/` | FINDING-003 · [#7212](https://github.com/reflex-dev/reflex/issues/7212) | reflex | `fix/finding-003-delta-memo` | `91020caec` (amended after review) | blocked once — two pyright errors and two vacuous tests — follow-up fixed both |
-| `f017/` | FINDING-017 · [#7213](https://github.com/reflex-dev/reflex/issues/7213) | reflex | `fix/finding-017-supervisor-socket` | `eaf3f4822` | approved, no blocking issues |
-| `f012/` | FINDING-012 · [#6143](https://github.com/reflex-dev/reflex/issues/6143) | reflex | `fix/finding-012-badge-portal` | `94554d771` | approved, no blocking issues |
-| `rxe/` | FINDING-011 · [#7214](https://github.com/reflex-dev/reflex/issues/7214), plus the reflex-enterprise half of #7211 | reflex-enterprise | `fix/reflex-0.9.12-compat` (from rxe `main` 592d5cc) | `038c613` metaclass compat; `c0e6b5d` session-token redaction | approved, no blocking issues |
+| fix | finding / issue | repo | pushed branch | commits on the branch | review | PR |
+|---|---|---|---|---|---|---|
+| `f001/` | FINDING-001 · [#7211](https://github.com/reflex-dev/reflex/issues/7211) | reflex | `claude/fix-finding-001-state-metaclass` | `6ab3edbc9` fix; `4290548fe` docs: router dict-shape breaking note (for #7214) | approved, no blocking issues | [#7215](https://github.com/reflex-dev/reflex/pull/7215) |
+| `f003/` | FINDING-003 · [#7212](https://github.com/reflex-dev/reflex/issues/7212) | reflex | `claude/fix-finding-003-delta-memo` | `91020caec` (amended after review) | blocked once — two pyright errors and two vacuous tests — follow-up fixed both | [#7216](https://github.com/reflex-dev/reflex/pull/7216) |
+| `f017/` | FINDING-017 · [#7213](https://github.com/reflex-dev/reflex/issues/7213) | reflex | `claude/fix-finding-017-supervisor-socket` | `eaf3f4822` | approved, no blocking issues | [#7217](https://github.com/reflex-dev/reflex/pull/7217) |
+| `f012/` | FINDING-012 · [#6143](https://github.com/reflex-dev/reflex/issues/6143) | reflex | `claude/fix-finding-012-badge-portal` | `94554d771` | approved, no blocking issues | [#7218](https://github.com/reflex-dev/reflex/pull/7218) |
+| `rxe/` | FINDING-011 · [#7214](https://github.com/reflex-dev/reflex/issues/7214), plus the reflex-enterprise half of #7211 | reflex-enterprise | `claude/fix-reflex-0.9.12-compat` | `038c613` metaclass compat; `c0e6b5d` session-token redaction | approved, no blocking issues | [reflex-enterprise#232](https://github.com/reflex-dev/reflex-enterprise/pull/232) |
 
 Each `<name>/` directory holds `REPORT.md` (the fix agent's report, then `## REVIEW`, then `## FOLLOW-UP` where
 one ran), `patches/` (git format-patch output against `origin/main`) and `evidence/` (logs, JSON results,
