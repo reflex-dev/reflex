@@ -107,3 +107,26 @@ def test_reference_html_stays_within_payload_budget(route, budget):
     """Catch accidental reintroduction of repeated inherited API tables."""
     page = WEB / "build/client/docs" / route / "index.html"
     assert page.stat().st_size < budget, (route, page.stat().st_size, budget)
+
+
+def test_introduction_counter_uses_high_contrast_buttons():
+    """The introductory live demo keeps readable labels on its colored buttons."""
+    page = WEB / "build/client/docs/getting-started/introduction/index.html"
+    if not page.is_file():
+        pytest.skip("Build the docs before checking exported counter buttons.")
+
+    class Buttons(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.colors = set()
+
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            accent = attrs.get("data-accent-color")
+            if tag == "button" and accent in {"ruby", "grass"}:
+                assert "rt-high-contrast" in attrs.get("class", "").split()
+                self.colors.add(accent)
+
+    buttons = Buttons()
+    buttons.feed(page.read_text())
+    assert buttons.colors == {"ruby", "grass"}
