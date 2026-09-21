@@ -279,3 +279,100 @@ From this cluster's surface: **release-ready.** The two release blockers that to
 shim, over four channels, with the previous stable as the reference. Nothing in 0.9.6a1's other changes
 regressed the demos. The only items left are one pre-existing enterprise packaging gap (`pyyaml`) and the
 release-note line telling users that reflex 0.9.12 needs reflex-enterprise >= 0.9.6.
+
+## VERIFICATION
+
+Independent adversarial verifier, 2026-09-21. Ports 3640–3643 / 8640–8643 (all released; `ports.py` clear).
+Nothing installed into `envs/*`. Own venvs under
+`$SB/reverify/rv_enterprise-verify/` (`venv_a2` = reflex 0.9.12a2 + the component alphas + rxe 0.9.6a1[mcp]
+from the offline wheel + `aiosqlite greenlet`, **deliberately without pyyaml**; `venv_entprev` = reflex
+0.9.11.post1 + stable components + rxe 0.9.5 + `aiosqlite greenlet`, also without pyyaml). Demo copied fresh
+from the read-only `/home/user/wt/rxe/demos/tickets`, unmodified. Evidence under `verify/`.
+
+### Claim — `GET /_reflex/events/openapi.yaml` 500s without pyyaml: **CONFIRMED, pre-existing, not a blocker**
+
+Reproduced from the written repro alone, in a venv I built myself, and refuted every alternative explanation
+I could construct. Verdict matches the cluster's, including the classification and the severity.
+
+| run | tree | pyyaml | `GET /_reflex/events/openapi.yaml` | `/.well-known/api-catalog` |
+|---|---|---|---|---|
+| a2 | reflex 0.9.12a2 + rxe 0.9.6a1 | absent | **500** `Internal Server Error` (`text/plain`) | **200**, points at that exact URL |
+| a2 + fix | same venv, `uv pip install pyyaml` (6.0.3) | present | **200**, 27 210 B, `application/vnd.oai.openapi`, 34 paths, `Link: </.well-known/api-catalog>; rel="api-catalog"` | 200 |
+| baseline | reflex **0.9.11.post1 + rxe 0.9.5** | absent | **500**, same assertion, same code path (0.9.5's `event_handler_api.py:1686`) | **200** |
+| a1 | reflex 0.9.12a1 + rxe 0.9.5 | absent | **not reachable** — worker dies before serving | n/a |
+
+Four channels on the a2 no-pyyaml run: server log = the traceback below; network = 500 on the openapi URL
+with a 200 api-catalog advertising it; rendered body = the literal string `Internal Server Error`;
+browser console = n/a (curl surface).
+
+```
+reflex_enterprise/plugins/event_handler_api.py, line 1731, in openapi_response
+    schema = schemas.get_schema(routes=routes)
+starlette/schemas.py, line 138, in get_schema
+    parsed = self.parse_docstring(endpoint.func)
+starlette/schemas.py, line 106, in parse_docstring
+    assert yaml is not None, "`pyyaml` must be installed to use parse_docstring."
+AssertionError: `pyyaml` must be installed to use parse_docstring.
+```
+(`verify/openapi_a2_noyaml_traceback.txt`; the byte-for-byte same assertion on the 0.9.11.post1 pair in
+`verify/openapi_entprev_noyaml.txt`.)
+
+### Root cause, read out of the installed wheel
+
+`starlette/schemas.py` treats pyyaml as optional — `try: import yaml / except ModuleNotFoundError: yaml = None` —
+and then asserts on it in **two** places: `SchemaGenerator.parse_docstring` (line 106, the one that fires) and
+`OpenAPIResponse.render` (line 23, which would fire next even if no route had a docstring). Starlette declares
+pyyaml only under its `full` extra and documents it as "Required for `SchemaGenerator` support".
+`reflex_enterprise/plugins/event_handler_api.py:1518` imports both symbols unconditionally and calls them from
+the route handler at :1731–1732, while the wheel's `Requires-Dist` is `asgiproxy>=0.2.0, httpx, joserfc, psutil,
+reflex[db]>=0.9.6` (+ `mcp` / `testing` extras) — no pyyaml, no `starlette[full]`. Nothing in reflex,
+reflex-base or reflex-hosting-cli pulls yaml in (absent from all seven campaign venvs and from both of mine),
+so a clean `pip install reflex-enterprise` always lands in the failing state. The blast radius is exactly this
+one endpoint: yaml is used nowhere else in reflex_enterprise (grep over the installed package: the only hits are
+the two starlette symbols and the URL string), and `/ping`, the 401 auth checks, the event endpoints, the
+ndjson delta stream and the api-catalog are all unaffected.
+
+**Why nobody noticed** (new detail, corroborates the "pre-existing and invisible" story): rxe *does* test this
+endpoint — `tests/units/plugins/test_api_security.py:214 test_openapi_documents_the_token_endpoint` asserts
+`spec.status_code == 200`. It passes because the rxe development venv carries pyyaml transitively:
+`/home/user/wt/rxe/.venv/.../site-packages/yaml/` exists, pulled in by the `[dependency-groups] dev` entries
+`pre-commit` and `oidc-provider-mock` and by `uvicorn` / `pydantic-settings` / `markdown-it-py`. None of those
+are runtime dependencies of the published wheel, so the green test is testing an environment users never get.
+
+### Refutation attempts, all failed
+
+* **Environment quirk / dirty venv** — no. Built two clean venvs from PyPI + the offline wheel from a neutral
+  cwd; the 500 appears in both, on two different reflex versions, and disappears the moment pyyaml is added
+  to the very same venv.
+* **Misuse** — no. A plain unauthenticated `GET` on the URL the demo's own `rxconfig.py` docstring advertises
+  and the RFC 9727 catalog returns with a 200.
+* **Introduced by this train** — no, and the cluster's code argument holds up: `diff` of
+  `event_handler_api.py` between the 0.9.5 and 0.9.6a1 wheels is 139 changed lines, **zero** of them matching
+  `yaml|SchemaGenerator|OpenAPIResponse|get_schema|openapi`; the `openapi_response` region is byte-identical
+  (0.9.5 L1680–1705 == 0.9.6a1 L1725–1750); the two wheels' `Requires-Dist` blocks are identical; starlette is
+  1.6.0 in both venvs. And I did not rest on the diff — I **ran** the 0.9.11.post1 + rxe 0.9.5 pair and got the
+  same 500.
+* **"Not runnable on a1" unverified** — verified independently, not just inherited from FINDING-001. A
+  12-line `EventHandlerAPIPlugin`-only app of my own on `envs/ent` (0.9.12a1 + rxe 0.9.5) never binds its port:
+  the granian worker dies in `App.__call__ -> plugin.post_compile -> iter_public_event_handlers ->
+  is_exempt -> auth/oidc/state.py:381` with `TypeError: metaclass conflict`
+  (`verify/mini_a1_rxe095_post_compile.tail.log`). So the a1 row is genuinely "cannot start", and the same
+  minimal app is also a fresh, non-demo reproduction of FINDING-001.
+* **Already recorded** — no. `FINDINGS.md` mentions openapi exactly once, at line 705, in the
+  `ent_map_dnd_flow_mantine` summary listing "tickets REST/OpenAPI (blocked)" among the *skipped* checks. No
+  FINDING covers it; the word pyyaml appears nowhere in `FINDINGS.md` or `RELEASE_PLAN.md`.
+* **Known-benign noise** — no. A 500 on a documented endpoint is not on the agent brief's benign list.
+
+### Severity and release impact — agree with the cluster
+
+LOW-MEDIUM, reflex-enterprise-side, **not a reflex 0.9.12 release blocker**: pre-existing on the previous
+stable pair, confined to one discovery endpoint, no security or data impact, and worked around by installing
+pyyaml. It does deserve a reflex-enterprise ticket, because the failure is a bare 500 whose cause is visible
+only in the server log while the catalog next to it returns 200 and points straight at it. Two candidate
+fixes, either one line: declare `pyyaml` (or `starlette[full]`) in the wheel's dependencies, or catch the
+missing module at route-registration time and serve a 501 carrying starlette's own explanation. The latter
+also wants the unit test to run without pyyaml so the gap cannot reopen.
+
+Evidence: `verify/openapi_a2_noyaml.txt`, `verify/openapi_a2_noyaml_traceback.txt`,
+`verify/openapi_entprev_noyaml.txt`, `verify/openapi_a2_withyaml.txt`,
+`verify/openapi_a2_withyaml.head.yaml`, `verify/mini_a1_rxe095_post_compile.tail.log`.
